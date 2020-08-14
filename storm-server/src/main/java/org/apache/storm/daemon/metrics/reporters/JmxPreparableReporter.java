@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.metrics.ClientMetricsUtils;
+import org.apache.storm.daemon.metrics.MetricsUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,19 +28,18 @@ public class JmxPreparableReporter implements PreparableReporter {
     JmxReporter reporter = null;
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> daemonConf) {
         LOG.info("Preparing...");
         JmxReporter.Builder builder = JmxReporter.forRegistry(metricsRegistry);
-        String domain = ObjectReader.getString(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN), null);
+        String domain = ObjectReader.getString(daemonConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN), null);
         if (domain != null) {
             builder.inDomain(domain);
         }
-        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(topoConf);
+        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(daemonConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }
         reporter = builder.build();
-
     }
 
     @Override

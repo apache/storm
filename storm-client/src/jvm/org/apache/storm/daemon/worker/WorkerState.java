@@ -120,6 +120,8 @@ public class WorkerState {
     final ConcurrentMap<String, Long> blobToLastKnownVersion;
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
+    // cachedNodeToHost can be temporarily out of sync with cachedTaskToNodePort
+    final AtomicReference<Map<String, String>> cachedNodeToHost;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
     // executor id is in form [start_task_id end_task_id]
     final Map<List<Long>, JCQueue> executorReceiveQueueMap;
@@ -184,7 +186,9 @@ public class WorkerState {
         this.isWorkerActive = new CountDownLatch(1);
         this.isTopologyActive = new AtomicBoolean(false);
         this.stormComponentToDebug = new AtomicReference<>();
-        this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors);
+        this.topology = ConfigUtils.readSupervisorTopology(conf, topologyId, AdvancedFSOps.make(conf));
+        this.taskToComponent = StormCommon.stormTaskInfo(topology, topologyConf);
+        this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors, taskToComponent);
         this.localTaskIds = new ArrayList<>();
         this.taskToExecutorQueue = new HashMap<>();
         this.blobToLastKnownVersion = new ConcurrentHashMap<>();
@@ -197,9 +201,7 @@ public class WorkerState {
         }
         Collections.sort(localTaskIds);
         this.topologyConf = topologyConf;
-        this.topology = ConfigUtils.readSupervisorTopology(conf, topologyId, AdvancedFSOps.make(conf));
         this.systemTopology = StormCommon.systemTopology(topologyConf, topology);
-        this.taskToComponent = StormCommon.stormTaskInfo(topology, topologyConf);
         this.componentToStreamToFields = new HashMap<>();
         for (String c : ThriftTopologyUtils.getComponentIds(systemTopology)) {
             Map<String, Fields> streamToFields = new HashMap<>();
@@ -214,6 +216,7 @@ public class WorkerState {
         this.endpointSocketLock = new ReentrantReadWriteLock();
         this.cachedNodeToPortSocket = new AtomicReference<>(new HashMap<>());
         this.cachedTaskToNodePort = new AtomicReference<>(new HashMap<>());
+        this.cachedNodeToHost = new AtomicReference<>(new HashMap<>());
         this.suicideCallback = Utils.mkSuicideFn();
         this.uptime = Utils.makeUptimeComputer();
         this.defaultSharedResources = makeDefaultResources();
@@ -381,17 +384,23 @@ public class WorkerState {
     }
 
     public void suicideIfLocalAssignmentsChanged(Assignment assignment) {
+        boolean shouldHalt = false;
         if (assignment != null) {
             Set<List<Long>> assignedExecutors = new HashSet<>(readWorkerExecutors(assignmentId, port, assignment));
             if (!localExecutors.equals(assignedExecutors)) {
-                LOG.info("Found conflicting assignments. We shouldn't be alive!"
-                         + " Assigned: " + assignedExecutors + ", Current: "
-                         + localExecutors);
-                if (!ConfigUtils.isLocalMode(conf)) {
-                    suicideCallback.run();
-                } else {
-                    LOG.info("Local worker tried to commit suicide!");
-                }
+                LOG.info("Found conflicting assignments. We shouldn't be alive!" + " Assigned: " + assignedExecutors
+                         + ", Current: " + localExecutors);
+                shouldHalt = true;
+            }
+        } else {
+            LOG.info("Assigment is null. We should not be alive!");
+            shouldHalt = true;
+        }
+        if (shouldHalt) {
+            if (!ConfigUtils.isLocalMode(conf)) {
+                suicideCallback.run();
+            } else {
+                LOG.info("Local worker tried to commit suicide!");
             }
         }
     }
@@ -420,9 +429,9 @@ public class WorkerState {
             }
         }
 
-        Set<NodeInfo> currentConnections = cachedNodeToPortSocket.get().keySet();
-        Set<NodeInfo> newConnections = Sets.difference(neededConnections, currentConnections);
-        Set<NodeInfo> removeConnections = Sets.difference(currentConnections, neededConnections);
+        final Set<NodeInfo> currentConnections = cachedNodeToPortSocket.get().keySet();
+        final Set<NodeInfo> newConnections = Sets.difference(neededConnections, currentConnections);
+        final Set<NodeInfo> removeConnections = Sets.difference(currentConnections, neededConnections);
 
         Map<String, String> nodeHost = assignment != null ? assignment.get_node_host() : null;
         // Add new connections atomically
@@ -440,12 +449,18 @@ public class WorkerState {
             return next;
         });
 
-
         try {
             endpointSocketLock.writeLock().lock();
             cachedTaskToNodePort.set(newTaskToNodePort);
         } finally {
             endpointSocketLock.writeLock().unlock();
+        }
+
+        // It is okay that cachedNodeToHost can be temporarily out of sync with cachedTaskToNodePort
+        if (nodeHost != null) {
+            cachedNodeToHost.set(nodeHost);
+        } else {
+            cachedNodeToHost.set(new HashMap<>());
         }
 
         for (NodeInfo nodeInfo : removeConnections) {
@@ -604,7 +619,7 @@ public class WorkerState {
             return new WorkerTopologyContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
                                              componentToStreamToFields, topologyId, codeDir, pidDir, port, localTaskIds,
                                              defaultSharedResources,
-                                             userSharedResources, cachedTaskToNodePort, assignmentId);
+                                             userSharedResources, cachedTaskToNodePort, assignmentId, cachedNodeToHost);
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -689,7 +704,8 @@ public class WorkerState {
         }
     }
 
-    private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
+    private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf,
+                                                       Set<List<Long>> executors, Map<Integer, String> taskToComponent) {
         Integer recvQueueSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE));
         Integer recvBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
         Integer overflowLimit = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT));
@@ -702,11 +718,19 @@ public class WorkerState {
 
         IWaitStrategy backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         Map<List<Long>, JCQueue> receiveQueueMap = new HashMap<>();
+
         for (List<Long> executor : executors) {
             List<Integer> taskIds = StormCommon.executorIdToTasks(executor);
+            int taskId = taskIds.get(0);
+            String compId;
+            if (taskId == Constants.SYSTEM_TASK_ID) {
+                compId = Constants.SYSTEM_COMPONENT_ID;
+            } else {
+                compId = taskToComponent.get(taskId);
+            }
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(), "receive-queue",
                                                       recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
-                this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, taskIds, this.getPort(), metricRegistry));
+                this.getTopologyId(), compId, taskIds, this.getPort(), metricRegistry));
 
         }
         return receiveQueueMap;

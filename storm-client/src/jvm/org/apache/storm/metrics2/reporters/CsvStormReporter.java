@@ -53,7 +53,7 @@ public class CsvStormReporter extends ScheduledStormReporter {
     }
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map stormConf, Map reporterConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf, Map<String, Object> reporterConf) {
         LOG.debug("Preparing...");
         CsvReporter.Builder builder = CsvReporter.forRegistry(metricsRegistry);
 
@@ -83,7 +83,7 @@ public class CsvStormReporter extends ScheduledStormReporter {
         //defaults to seconds
         reportingPeriodUnit = getReportPeriodUnit(reporterConf);
 
-        File csvMetricsDir = getCsvLogDir(stormConf, reporterConf);
+        File csvMetricsDir = getCsvLogDir(topoConf, reporterConf);
         reporter = builder.build(csvMetricsDir);
     }
 }

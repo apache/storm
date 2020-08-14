@@ -32,7 +32,7 @@ public class JmxStormReporter implements StormReporter {
     }
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> stormConf, Map<String, Object> reporterConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf,  Map<String, Object> reporterConf) {
         LOG.info("Preparing...");
         JmxReporter.Builder builder = JmxReporter.forRegistry(metricsRegistry);
 

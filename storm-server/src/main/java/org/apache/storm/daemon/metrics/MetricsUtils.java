@@ -21,7 +21,10 @@ package org.apache.storm.daemon.metrics;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter;
 import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
@@ -32,10 +35,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MetricsUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(ClientMetricsUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MetricsUtils.class);
 
-    public static List<PreparableReporter> getPreparableReporters(Map<String, Object> topoConf) {
-        List<String> clazzes = (List<String>) topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGINS);
+    public static List<PreparableReporter> getPreparableReporters(Map<String, Object> daemonConf) {
+        List<String> clazzes = (List<String>) daemonConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGINS);
         List<PreparableReporter> reporterList = new ArrayList<>();
 
         if (clazzes != null) {
@@ -58,10 +61,11 @@ public class MetricsUtils {
         return reporter;
     }
 
-    public static File getCsvLogDir(Map<String, Object> topoConf) {
-        String csvMetricsLogDirectory = ObjectReader.getString(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_CSV_LOG_DIR), null);
+    public static File getCsvLogDir(Map<String, Object> daemonConf) {
+        String csvMetricsLogDirectory =
+            ObjectReader.getString(daemonConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_CSV_LOG_DIR), null);
         if (csvMetricsLogDirectory == null) {
-            csvMetricsLogDirectory = ConfigUtils.absoluteStormLocalDir(topoConf);
+            csvMetricsLogDirectory = ConfigUtils.absoluteStormLocalDir(daemonConf);
             csvMetricsLogDirectory = csvMetricsLogDirectory + ConfigUtils.FILE_SEPARATOR + "csvmetrics";
         }
         File csvMetricsDir = new File(csvMetricsLogDirectory);
@@ -79,5 +83,29 @@ public class MetricsUtils {
         if (!dir.isDirectory()) {
             throw new IllegalStateException(dir.getName() + " is not a directory.");
         }
+    }
+
+    public static TimeUnit getMetricsRateUnit(Map<String, Object> daemonConf) {
+        return getTimeUnitForConfig(daemonConf, Config.STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT);
+    }
+
+    public static TimeUnit getMetricsDurationUnit(Map<String, Object> daemonConf) {
+        return getTimeUnitForConfig(daemonConf, Config.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT);
+    }
+
+    public static Locale getMetricsReporterLocale(Map<String, Object> daemonConf) {
+        String languageTag = ObjectReader.getString(daemonConf.get(Config.STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE), null);
+        if (languageTag != null) {
+            return Locale.forLanguageTag(languageTag);
+        }
+        return null;
+    }
+
+    private static TimeUnit getTimeUnitForConfig(Map<String, Object> daemonConf, String configName) {
+        String timeUnitString = ObjectReader.getString(daemonConf.get(configName), null);
+        if (timeUnitString != null) {
+            return TimeUnit.valueOf(timeUnitString);
+        }
+        return null;
     }
 }

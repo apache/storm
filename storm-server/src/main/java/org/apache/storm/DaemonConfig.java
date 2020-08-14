@@ -70,13 +70,13 @@ public class DaemonConfig implements Validated {
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGINS = "storm.daemon.metrics.reporter.plugins";
 
     /**
-     * A specify domain for daemon metrics reporter plugin to limit reporting to specific domain.
+     * Specify the domain for daemon metrics reporter plugin to limit reporting to specific domain.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN = "storm.daemon.metrics.reporter.plugin.domain";
 
     /**
-     * A specify csv reporter directory for CvsPreparableReporter daemon metrics reporter.
+     * Specify the csv reporter directory for CvsPreparableReporter daemon metrics reporter.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_CSV_LOG_DIR = "storm.daemon.metrics.reporter.csv.log.dir";

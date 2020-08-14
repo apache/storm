@@ -1172,8 +1172,21 @@ public class Config extends HashMap<String, Object> {
      */
     @IsString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
+
+    /**
+     * Configure the topology metrics reporters to be used on workers.
+     */
+    @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
+    public static final String TOPOLOGY_METRICS_REPORTERS = "topology.metrics.reporters";
+
+    /**
+     * Configure the topology metrics reporters to be used on workers.
+     * @deprecated Use {@link Config#TOPOLOGY_METRICS_REPORTERS} instead.
+     */
+    @Deprecated
     @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
     public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
+
     /**
      * What blobstore implementation the storm client should use.
      */
@@ -1731,21 +1744,31 @@ public class Config extends HashMap<String, Object> {
     @IsInteger
     @IsPositiveNumber
     public static final String WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS = "worker.blob.update.poll.interval.secs";
+
     /**
-     * A specify Locale for daemon metrics reporter plugin. Use the specified IETF BCP 47 language tag string for a Locale.
+     * Specify the Locale for daemon metrics reporter plugin. Use the specified IETF BCP 47 language tag string for a Locale.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE = "storm.daemon.metrics.reporter.plugin.locale";
+
     /**
-     * A specify rate-unit in TimeUnit to specify reporting frequency for daemon metrics reporter plugin.
+     * Specify the rate unit in TimeUnit for daemon metrics reporter plugin.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT = "storm.daemon.metrics.reporter.plugin.rate.unit";
+
     /**
-     * A specify duration-unit in TimeUnit to specify reporting window for daemon metrics reporter plugin.
+     * Specify the duration unit in TimeUnit for daemon metrics reporter plugin.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT = "storm.daemon.metrics.reporter.plugin.duration.unit";
+
     //DO NOT CHANGE UNLESS WE ADD IN STATE NOT STORED IN THE PARENT CLASS
     private static final long serialVersionUID = -1550278723792864455L;
 
