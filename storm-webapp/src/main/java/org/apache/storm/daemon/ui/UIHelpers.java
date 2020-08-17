@@ -1421,6 +1421,35 @@ public class UIHelpers {
     }
 
     /**
+     * getComponentLastErrorInfo.
+     * Internal helper method that populates a hashmap with the component's most recently reported error.
+     * If the component has no such error reported, an empty "template" suitable for return over the
+     * REST api is returned.
+     *
+     * @param lastError errorInfo The components most recently reported error.
+     * @param config config Topology configuration map.
+     * @param topologyId topologyId.
+     * @return Map of values representing details about the most recently reported error.
+     */
+    private static Map<String, Object> getComponentLastErrorInfo(ErrorInfo lastError, Map config, String topologyId) {
+        Map<String, Object> result = new HashMap<>();
+
+        // Maintain backwards compatibility by defaulting these fields to empty string or null.
+        // If the lastError parameter is non-null, these keys will be populated with the appropriate values below.
+        result.put("lastError", "");
+        result.put("errorHost", "");
+        result.put("errorPort", (Integer) null);
+        result.put("errorWorkerLogLink", "");
+        result.put("errorTime", null);
+        result.put("errorLapsedSecs", null);
+
+        if (!Objects.isNull(lastError)) {
+            result.putAll(getComponentErrorInfo(lastError, config, topologyId, true));
+        }
+        return result;
+    }
+
+    /**
      * getComponentErrorInfo.
      * @param errorInfo errorInfo
      * @param config config
@@ -1503,13 +1532,7 @@ public class UIHelpers {
         result.put("encodedSpoutId", Utils.urlEncodeUtf8(spoutId));
         SpoutAggregateStats spoutAggregateStats = componentAggregateStats.get_specific_stats().get_spout();
         result.put("completeLatency", StatsUtil.floatStr(spoutAggregateStats.get_complete_latency_ms()));
-        ErrorInfo lastError = componentAggregateStats.get_last_error();
-        if (!Objects.isNull(lastError)) {
-            result.putAll(getComponentErrorInfo(lastError, config, topologyId, true));
-        } else {
-            // Maintain backwards compatibility in the API response by setting empty string value
-            result.put("lastError", "");
-        }
+        result.putAll(getComponentLastErrorInfo(componentAggregateStats.get_last_error(), config, topologyId));
         return result;
     }
 
@@ -1531,14 +1554,7 @@ public class UIHelpers {
         result.put("executeLatency", StatsUtil.floatStr(boltAggregateStats.get_execute_latency_ms()));
         result.put("executed", boltAggregateStats.get_executed());
         result.put("processLatency", StatsUtil.floatStr(boltAggregateStats.get_process_latency_ms()));
-
-        ErrorInfo lastError = componentAggregateStats.get_last_error();
-        if (!Objects.isNull(lastError)) {
-            result.putAll(getComponentErrorInfo(lastError, config, topologyId, true));
-        } else {
-            // Maintain backwards compatibility in the API response by setting empty string value
-            result.put("lastError", "");
-        }
+        result.putAll(getComponentLastErrorInfo(componentAggregateStats.get_last_error(), config, topologyId));
         return result;
     }
 

@@ -693,6 +693,10 @@ Sample response:
             "spoutId": "spout",
             "tasks": 5,
             "lastError": "",
+            "errorHost": "",
+            "errorPort": null,
+            "errorWorkerLogLink": "",
+            "errorTime": null,
             "errorLapsedSecs": null,
             "failed": 0
         }
@@ -709,6 +713,10 @@ Sample response:
             "processLatency": "0.043",
             "boltId": "count",
             "lastError": "",
+            "errorHost": "",
+            "errorPort": null,
+            "errorWorkerLogLink": "",
+            "errorTime": null,
             "errorLapsedSecs": null,
             "capacity": "0.003",
             "failed": 0
@@ -723,8 +731,12 @@ Sample response:
             "executed": 28780,
             "processLatency": "2.112",
             "boltId": "split",
-            "lastError": "",
-            "errorLapsedSecs": null,
+            "lastError": "java.lang.RuntimeException: Error here! at org.apache.storm.starter.bolt.TestErrorBolt.nextTuple(TestErrorBolt.java:50) at org.apache.storm.executor.spout.SpoutExecutor$2.call",
+            "errorHost": "192.168.0.129",
+            "errorPort": 6701,
+            "errorWorkerLogLink": "http://192.168.0.129:8000/api/v1/log?file=testtopology-2-1%2Fworker.log",
+            "errorTime": 1597626060,
+            "errorLapsedSecs": 65,
             "capacity": "0.000",
             "failed": 0
         }

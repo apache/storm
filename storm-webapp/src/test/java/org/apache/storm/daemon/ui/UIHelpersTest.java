@@ -41,6 +41,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UIHelpersTest {
@@ -190,13 +191,22 @@ class UIHelpersTest {
         assertEquals(expectedBoltId, boltResult.get("boltId"));
         assertEquals(expectedBoltId, boltResult.get("encodedBoltId"));
 
-        // Verify error fields are not populated.
+        // Verify error fields exist, but are not populated.
+        // These fields default to empty string.
         assertTrue(boltResult.containsKey("lastError"));
         assertEquals("", boltResult.get("lastError"), "Backwards compat. with API docs say this should be empty string when empty");
-        assertFalse(boltResult.containsKey("errorPort"));
-        assertFalse(boltResult.containsKey("errorHost"));
-        assertFalse(boltResult.containsKey("errorTime"));
-        assertFalse(boltResult.containsKey("errorLapsedSecs"));
+        assertTrue(boltResult.containsKey("errorHost"));
+        assertEquals("", boltResult.get("errorHost"));
+        assertTrue(boltResult.containsKey("errorWorkerLogLink"));
+        assertEquals("", boltResult.get("errorWorkerLogLink"));
+
+        // These fields default to null.
+        assertTrue(boltResult.containsKey("errorPort"));
+        assertNull(boltResult.get("errorPort"));
+        assertTrue(boltResult.containsKey("errorTime"));
+        assertNull(boltResult.get("errorTime"));
+        assertTrue(boltResult.containsKey("errorLapsedSecs"));
+        assertNull(boltResult.get("errorLapsedSecs"));
     }
 
     /**
@@ -376,13 +386,22 @@ class UIHelpersTest {
         assertEquals(expectedSpoutId, spoutResult.get("spoutId"));
         assertEquals(expectedSpoutId, spoutResult.get("encodedSpoutId"));
 
-        // Verify error fields are not populated.
+        // Verify error fields exist, but are not populated.
+        // These fields default to empty string.
         assertTrue(spoutResult.containsKey("lastError"));
         assertEquals("", spoutResult.get("lastError"), "Backwards compat. with API docs say this should be empty string when empty");
-        assertFalse(spoutResult.containsKey("errorPort"));
-        assertFalse(spoutResult.containsKey("errorHost"));
-        assertFalse(spoutResult.containsKey("errorTime"));
-        assertFalse(spoutResult.containsKey("errorLapsedSecs"));
+        assertTrue(spoutResult.containsKey("errorHost"));
+        assertEquals("", spoutResult.get("errorHost"));
+        assertTrue(spoutResult.containsKey("errorWorkerLogLink"));
+        assertEquals("", spoutResult.get("errorWorkerLogLink"));
+
+        // These fields default to null.
+        assertTrue(spoutResult.containsKey("errorPort"));
+        assertNull(spoutResult.get("errorPort"));
+        assertTrue(spoutResult.containsKey("errorTime"));
+        assertNull(spoutResult.get("errorTime"));
+        assertTrue(spoutResult.containsKey("errorLapsedSecs"));
+        assertNull(spoutResult.get("errorLapsedSecs"));
     }
 
     /**
