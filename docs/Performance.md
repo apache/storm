@@ -106,7 +106,7 @@ conserving CPU. The chosen strategy can be further configured using the `topolog
 
 
 #### Built-in wait strategies:
-These wait strategies are availabe for use with all of the above mentioned wait situations.
+These wait strategies are available for use with all of the above mentioned wait situations.
 
 - **ProgressiveWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to 'org.apache.storm.policy.WaitStrategyProgressive' to
 select this wait strategy. This is a dynamic wait strategy that enters into progressively deeper states of CPU conservation if the Backpressure Wait or Bolt Wait situations persist.

@@ -122,6 +122,8 @@ public class LatencyStat {
         }
     }
 
+    // This is still used by a unit test.  Removing this method caused a difference
+    // in reported values for the test that needs to be debugged before removal.
     synchronized Object getValueAndReset(long now) {
         long lat;
         long count;

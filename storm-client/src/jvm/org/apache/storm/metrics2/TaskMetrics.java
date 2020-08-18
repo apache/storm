@@ -30,7 +30,7 @@ public class TaskMetrics {
     private static final String METRIC_NAME_EXECUTE_LATENCY = "__execute-latency";
 
     private final ConcurrentMap<String, Counter> counters = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ResettingAverageGauge> gauges = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RollingAverageGauge> gauges = new ConcurrentHashMap<>();
 
     private final String topologyId;
     private final String componentId;
@@ -52,112 +52,92 @@ public class TaskMetrics {
 
     public void spoutAckedTuple(String streamId, long latencyMs) {
         String metricName = METRIC_NAME_ACKED + "-" + streamId;
-        Counter c = this.counters.get(metricName);
-        if (c == null) {
-            c = metricRegistry.counter(metricName, this.topologyId, this.componentId,
-                    this.taskId, this.workerPort, streamId);
-            this.counters.put(metricName, c);
-        }
+        Counter c = this.getCounter(metricName, streamId);
         c.inc(this.samplingRate);
 
         metricName = METRIC_NAME_COMPLETE_LATENCY + "-" + streamId;
-        ResettingAverageGauge gauge = this.gauges.get(metricName);
-        if (gauge == null) {
-            gauge = new ResettingAverageGauge();
-            metricRegistry.gauge(metricName, gauge, this.topologyId, this.componentId,
-                    streamId, this.taskId, this.workerPort);
-            this.gauges.put(metricName, gauge);
-        }
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, streamId);
         gauge.addValue(latencyMs);
     }
 
     public void boltAckedTuple(String sourceComponentId, String sourceStreamId, long latencyMs) {
         String key = sourceComponentId + ":" + sourceStreamId;
         String metricName = METRIC_NAME_ACKED + "-" + key;
-        Counter c = this.counters.get(metricName);
-        if (c == null) {
-            c = metricRegistry.counter(metricName, this.topologyId, this.componentId,
-                    this.taskId, this.workerPort, sourceStreamId);
-            this.counters.put(metricName, c);
-        }
+        Counter c = this.getCounter(metricName, sourceStreamId);
         c.inc(this.samplingRate);
 
         metricName = METRIC_NAME_PROCESS_LATENCY + "-" + key;
-        ResettingAverageGauge gauge = this.gauges.get(metricName);
-        if (gauge == null) {
-            gauge = new ResettingAverageGauge();
-            metricRegistry.gauge(metricName, gauge, this.topologyId, this.componentId,
-                    sourceStreamId, this.taskId, this.workerPort);
-            this.gauges.put(metricName, gauge);
-        }
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, sourceStreamId);
         gauge.addValue(latencyMs);
     }
 
     public void spoutFailedTuple(String streamId) {
         String key = streamId;
         String metricName = METRIC_NAME_FAILED + "-" + key;
-        Counter c = this.counters.get(metricName);
-        if (c == null) {
-            c = metricRegistry.counter(metricName, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
-            this.counters.put(metricName, c);
-        }
+        Counter c = this.getCounter(metricName, streamId);
         c.inc(this.samplingRate);
     }
 
     public void boltFailedTuple(String sourceComponentId, String sourceStreamId) {
         String key = sourceComponentId + ":" + sourceStreamId;
         String metricName = METRIC_NAME_FAILED + "-" + key;
-        Counter c = this.counters.get(metricName);
-        if (c == null) {
-            c = metricRegistry.counter(metricName, this.topologyId, this.componentId,
-                    this.taskId, this.workerPort, sourceStreamId);
-            this.counters.put(metricName, c);
-        }
+        Counter c = this.getCounter(metricName, sourceStreamId);
         c.inc(this.samplingRate);
     }
 
     public void emittedTuple(String streamId) {
         String key = streamId;
         String metricName = METRIC_NAME_EMITTED + "-" + key;
-        Counter c = this.counters.get(metricName);
-        if (c == null) {
-            c = metricRegistry.counter(metricName, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
-            this.counters.put(metricName, c);
-        }
+        Counter c = this.getCounter(metricName, streamId);
         c.inc(this.samplingRate);
     }
 
     public void transferredTuples(String streamId, int amount) {
         String key = streamId;
         String metricName = METRIC_NAME_TRANSFERRED + "-" + key;
-        Counter c = this.counters.get(metricName);
-        if (c == null) {
-            c = metricRegistry.counter(metricName, this.topologyId, this.componentId, this.taskId, this.workerPort,
-                    streamId);
-            this.counters.put(metricName, c);
-        }
+        Counter c = this.getCounter(metricName, streamId);
         c.inc(amount * this.samplingRate);
     }
 
     public void boltExecuteTuple(String sourceComponentId, String sourceStreamId, long latencyMs) {
         String key = sourceComponentId + ":" + sourceStreamId;
         String metricName = METRIC_NAME_EXECUTED + "-" + key;
-        Counter c = this.counters.get(metricName);
-        if (c == null) {
-            c = metricRegistry.counter(metricName, this.topologyId, this.componentId,
-                    this.taskId, this.workerPort, sourceStreamId);
-            this.counters.put(metricName, c);
-        }
+        Counter c = this.getCounter(metricName, sourceStreamId);
         c.inc(this.samplingRate);
 
         metricName = METRIC_NAME_EXECUTE_LATENCY + "-" + key;
-        ResettingAverageGauge gauge = this.gauges.get(metricName);
-        if (gauge == null) {
-            gauge = new ResettingAverageGauge();
-            metricRegistry.gauge(metricName, gauge, this.topologyId, this.componentId,
-                    sourceStreamId, this.taskId, this.workerPort);
-            this.gauges.put(metricName, gauge);
-        }
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, sourceStreamId);
         gauge.addValue(latencyMs);
+    }
+
+    private Counter getCounter(String metricName, String streamId) {
+        Counter c = this.counters.get(metricName);
+        if (c == null) {
+            synchronized (this) {
+                c = this.counters.get(metricName);
+                if (c == null) {
+                    c = metricRegistry.counter(metricName, this.topologyId, this.componentId,
+                            this.taskId, this.workerPort, streamId);
+                    this.counters.put(metricName, c);
+                }
+            }
+        }
+        return c;
+    }
+
+    private RollingAverageGauge getRollingAverageGauge(String metricName, String streamId) {
+        RollingAverageGauge gauge = this.gauges.get(metricName);
+        if (gauge == null) {
+            synchronized (this) {
+                gauge = this.gauges.get(metricName);
+                if (gauge == null) {
+                    gauge = new RollingAverageGauge();
+                    metricRegistry.gauge(metricName, gauge, this.topologyId, this.componentId,
+                            streamId, this.taskId, this.workerPort);
+                    this.gauges.put(metricName, gauge);
+                }
+            }
+        }
+        return gauge;
     }
 }

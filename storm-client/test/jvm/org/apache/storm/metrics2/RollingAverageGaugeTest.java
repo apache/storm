@@ -12,38 +12,24 @@
 
 package org.apache.storm.metrics2;
 
-import com.codahale.metrics.Gauge;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class ResettingAverageGauge implements Gauge<Long> {
-    private long total = 0L;
-    private long samples = 0L;
+public class RollingAverageGaugeTest {
 
-    public ResettingAverageGauge() {
-    }
-
-    public void addValue(long value) {
-        synchronized (this) {
-            total++;
-            samples += value;
-        }
-    }
-
-    /**
-     * Returns the metric's current average value.  The data stored is reset when read.
-     *
-     * @return the metric's average value
-     */
-    @Override
-    public Long getValue() {
-        synchronized (this) {
-            if (samples <= 0L) {
-                return 0L;
-            } else {
-                long result = total / samples;
-                total = 0L;
-                samples = 0L;
-                return result;
-            }
-        }
+    @Test
+    public void testAverage() {
+        RollingAverageGauge gauge = new RollingAverageGauge();
+        Assert.assertEquals(0.0, gauge.getValue(), 0.001);
+        gauge.addValue(30);
+        Assert.assertEquals(10.0, gauge.getValue(), 0.001);
+        gauge.addValue(30);
+        Assert.assertEquals(20.0, gauge.getValue(), 0.001);
+        gauge.addValue(30);
+        Assert.assertEquals(30.0, gauge.getValue(), 0.001);
+        gauge.addValue(90);
+        Assert.assertEquals(50.0, gauge.getValue(), 0.001);
+        gauge.addValue(0);
+        Assert.assertEquals(40.0, gauge.getValue(), 0.001);
     }
 }

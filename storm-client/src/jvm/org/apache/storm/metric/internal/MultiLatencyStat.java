@@ -13,12 +13,11 @@
 package org.apache.storm.metric.internal;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Keeps track of approximate counts for the last 10 mins, 3 hours, 1 day, and all time. for
+ * Keeps track of approximate latency for the last 10 mins, 3 hours, 1 day, and all time. for
  * the same keys
  */
 public class MultiLatencyStat<T> {
@@ -55,16 +54,6 @@ public class MultiLatencyStat<T> {
      */
     public void record(T key, long latency) {
         get(key).record(latency);
-    }
-
-    protected String keyToString(T key) {
-        if (key instanceof List) {
-            //This is a bit of a hack.  If it is a list, then it is [component, stream]
-            //we want to format this as component:stream
-            List<String> lk = (List<String>) key;
-            return lk.get(0) + ":" + lk.get(1);
-        }
-        return key.toString();
     }
 
     public Map<String, Map<T, Double>> getTimeLatAvg() {
