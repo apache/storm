@@ -139,23 +139,18 @@ There are several different metrics related to counting what a bolt or spout doe
 
 In general all of these tuple count metrics are randomly sub-sampled unless otherwise stated.  This means that the counts you see both on the UI and from the built in metrics are not necessarily exact.  In fact by default we sample only 5% of the events and estimate the total number of events from that.  The sampling percentage is configurable per topology through the `topology.stats.sample.rate` config.  Setting it to 1.0 will make the counts exact, but be aware that the more events we sample the slower your topology will run (as the metrics are counted in the same code path as tuples are processed).  This is why we have a 5% sample rate as the default.
 
-The tuple counting metrics are generally reported to the metrics consumers as maps unless explicitly stated otherwise.  They break down each count for finer grained reporting.
-The keys to these maps fall into two categories `"${stream_name}"` or `"${upstream_component}:${stream_name}"`.  The former is used for all spout metrics and for outgoing bolt metrics (`__emit-count` and `__transfer-count`).  The latter is used for bolt metrics that deal with incoming tuples.
+The tuple counting metric names contain `"${stream_name}"` or `"${upstream_component}:${stream_name}"`.  The former is used for all spout metrics and for outgoing bolt metrics (`__emit-count` and `__transfer-count`).  The latter is used for bolt metrics that deal with incoming tuples.
 
 So for a word count topology the count bolt might show something like the following for the `__ack-count` metric
 
 ```
-{
-    "split:default": 80080
-}
+    "__ack-count-split:default": 80080
 ```
 
 But the spout instead would show something like the following for the `__ack-count` metric.
 
 ```
-{
-    "default": 12500
-}
+    "__ack-count-default": 12500
 ```
 
 

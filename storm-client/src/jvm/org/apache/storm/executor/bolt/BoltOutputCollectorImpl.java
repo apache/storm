@@ -139,8 +139,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             boltAckInfo.applyOn(task.getUserContext());
         }
         if (delta >= 0) {
-            executor.getStats().boltAckedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta,
-                                               task.getTaskMetrics().getAcked(input.getSourceStreamId()));
+            executor.getStats().boltAckedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta);
+            task.getTaskMetrics().boltAckedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta);
         }
     }
 
@@ -161,8 +161,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         BoltFailInfo boltFailInfo = new BoltFailInfo(input, taskId, delta);
         boltFailInfo.applyOn(task.getUserContext());
         if (delta >= 0) {
-            executor.getStats().boltFailedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta,
-                                                task.getTaskMetrics().getFailed(input.getSourceStreamId()));
+            executor.getStats().boltFailedTuple(input.getSourceComponent(), input.getSourceStreamId());
+            task.getTaskMetrics().boltFailedTuple(input.getSourceComponent(), input.getSourceStreamId());
         }
     }
 

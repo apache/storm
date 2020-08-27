@@ -74,6 +74,14 @@ public class StormMetricRegistry {
         return gauge;
     }
 
+    public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String topologyId, String componentId,
+                              String streamId, Integer taskId, Integer port) {
+        MetricNames metricNames = workerMetricName(name, topologyId, componentId, streamId, taskId, port);
+        gauge = registry.register(metricNames.getLongName(), gauge);
+        saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
+        return gauge;
+    }
+
     public Meter meter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId) {
         MetricNames metricNames = workerMetricName(name, context.getStormId(), componentId, streamId, taskId, context.getThisWorkerPort());
         Meter meter = registry.meter(metricNames.getLongName());
@@ -156,6 +164,10 @@ public class StormMetricRegistry {
     private static <T extends Metric> void saveMetricTaskIdMapping(Integer taskId, MetricNames names, T metric, Map<Integer,
             Map<String, T>> taskIdMetrics) {
         Map<String, T> metrics = taskIdMetrics.computeIfAbsent(taskId, (tid) -> new HashMap<>());
+        if (metrics.get(names.getV2TickName()) != null) {
+            LOG.warn("Adding duplicate short metric for {} with long name {}, only the last metric "
+                    + "will be reported during the V2 metrics tick.", names.getV2TickName(), names.longName);
+        }
         metrics.put(names.getV2TickName(), metric);
     }
 

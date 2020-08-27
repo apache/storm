@@ -17,9 +17,9 @@ import junit.framework.TestCase;
 import org.junit.Test;
 
 /**
- * Unit test for LatencyStatAndMetric
+ * Unit test for LatencyStat
  */
-public class LatencyStatAndMetricTest extends TestCase {
+public class LatencyStatTest extends TestCase {
     final long TEN_MIN = 10 * 60 * 1000;
     final long THIRTY_SEC = 30 * 1000;
     final long THREE_HOUR = 3 * 60 * 60 * 1000;
@@ -28,7 +28,7 @@ public class LatencyStatAndMetricTest extends TestCase {
     @Test
     public void testBasic() {
         long time = 0l;
-        LatencyStatAndMetric lat = new LatencyStatAndMetric(10, time);
+        LatencyStat lat = new LatencyStat(10, time);
         while (time < TEN_MIN) {
             lat.record(100);
             time += THIRTY_SEC;

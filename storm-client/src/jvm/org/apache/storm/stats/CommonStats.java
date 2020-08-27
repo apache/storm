@@ -12,33 +12,32 @@
 
 package org.apache.storm.stats;
 
-import com.codahale.metrics.Counter;
 import java.util.Map;
 import org.apache.storm.generated.ExecutorStats;
-import org.apache.storm.metric.internal.MultiCountStatAndMetric;
-import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
+import org.apache.storm.metric.internal.MultiCountStat;
+import org.apache.storm.metric.internal.MultiLatencyStat;
 
 @SuppressWarnings("unchecked")
 public abstract class CommonStats {
     protected final int rate;
-    private final MultiCountStatAndMetric emittedStats;
-    private final MultiCountStatAndMetric transferredStats;
-    private final MultiCountStatAndMetric ackedStats;
-    private final MultiCountStatAndMetric failedStats;
+    private final MultiCountStat emittedStats;
+    private final MultiCountStat transferredStats;
+    private final MultiCountStat ackedStats;
+    private final MultiCountStat failedStats;
 
     public CommonStats(int rate, int numStatBuckets) {
         this.rate = rate;
-        this.emittedStats = new MultiCountStatAndMetric(numStatBuckets);
-        this.transferredStats = new MultiCountStatAndMetric(numStatBuckets);
-        this.ackedStats = new MultiCountStatAndMetric(numStatBuckets);
-        this.failedStats = new MultiCountStatAndMetric(numStatBuckets);
+        this.emittedStats = new MultiCountStat(numStatBuckets);
+        this.transferredStats = new MultiCountStat(numStatBuckets);
+        this.ackedStats = new MultiCountStat(numStatBuckets);
+        this.failedStats = new MultiCountStat(numStatBuckets);
     }
 
-    public MultiCountStatAndMetric getFailed() {
+    public MultiCountStat getFailed() {
         return failedStats;
     }
 
-    public MultiCountStatAndMetric getAcked() {
+    public MultiCountStat getAcked() {
         return ackedStats;
     }
 
@@ -46,22 +45,20 @@ public abstract class CommonStats {
         return this.rate;
     }
 
-    public MultiCountStatAndMetric getEmitted() {
+    public MultiCountStat getEmitted() {
         return emittedStats;
     }
 
-    public MultiCountStatAndMetric getTransferred() {
+    public MultiCountStat getTransferred() {
         return transferredStats;
     }
 
-    public void emittedTuple(String stream, Counter emittedCounter) {
+    public void emittedTuple(String stream) {
         this.getEmitted().incBy(stream, this.rate);
-        emittedCounter.inc(this.rate);
     }
 
-    public void transferredTuples(String stream, int amount, Counter transferredCounter) {
+    public void transferredTuples(String stream, int amount) {
         this.getTransferred().incBy(stream, this.rate * amount);
-        transferredCounter.inc(amount);
     }
 
     public void cleanupStats() {
@@ -71,11 +68,11 @@ public abstract class CommonStats {
         failedStats.close();
     }
 
-    protected Map<String, Map<String, Long>> valueStat(MultiCountStatAndMetric metric) {
+    protected Map<String, Map<String, Long>> valueStat(MultiCountStat metric) {
         return metric.getTimeCounts();
     }
 
-    protected Map<String, Map<String, Double>> valueStat(MultiLatencyStatAndMetric metric) {
+    protected Map<String, Map<String, Double>> valueStat(MultiLatencyStat metric) {
         return metric.getTimeLatAvg();
     }
 

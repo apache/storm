@@ -13,35 +13,33 @@
 package org.apache.storm.metric.internal;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.storm.metric.api.IMetric;
 
 /**
- * Acts as a Latnecy Metric for multiple keys, but keeps track of approximate counts for the last 10 mins, 3 hours, 1 day, and all time. for
+ * Keeps track of approximate latency for the last 10 mins, 3 hours, 1 day, and all time. for
  * the same keys
  */
-public class MultiLatencyStatAndMetric<T> implements IMetric {
+public class MultiLatencyStat<T> {
     private final int numBuckets;
-    private ConcurrentHashMap<T, LatencyStatAndMetric> lat = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<T, LatencyStat> lat = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
      *
      * @param numBuckets the number of buckets to divide the time periods into.
      */
-    public MultiLatencyStatAndMetric(int numBuckets) {
+    public MultiLatencyStat(int numBuckets) {
         this.numBuckets = numBuckets;
     }
 
-    LatencyStatAndMetric get(T key) {
-        LatencyStatAndMetric c = lat.get(key);
+    LatencyStat get(T key) {
+        LatencyStat c = lat.get(key);
         if (c == null) {
             synchronized (this) {
                 c = lat.get(key);
                 if (c == null) {
-                    c = new LatencyStatAndMetric(numBuckets);
+                    c = new LatencyStat(numBuckets);
                     lat.put(key, c);
                 }
             }
@@ -58,30 +56,9 @@ public class MultiLatencyStatAndMetric<T> implements IMetric {
         get(key).record(latency);
     }
 
-    protected String keyToString(T key) {
-        if (key instanceof List) {
-            //This is a bit of a hack.  If it is a list, then it is [component, stream]
-            //we want to format this as component:stream
-            List<String> lk = (List<String>) key;
-            return lk.get(0) + ":" + lk.get(1);
-        }
-        return key.toString();
-    }
-
-    @Override
-    public Object getValueAndReset() {
-        Map<String, Double> ret = new HashMap<String, Double>();
-        for (Map.Entry<T, LatencyStatAndMetric> entry : lat.entrySet()) {
-            String key = keyToString(entry.getKey());
-            Double val = (Double) entry.getValue().getValueAndReset();
-            ret.put(key, val);
-        }
-        return ret;
-    }
-
     public Map<String, Map<T, Double>> getTimeLatAvg() {
         Map<String, Map<T, Double>> ret = new HashMap<>();
-        for (Map.Entry<T, LatencyStatAndMetric> entry : lat.entrySet()) {
+        for (Map.Entry<T, LatencyStat> entry : lat.entrySet()) {
             T key = entry.getKey();
             Map<String, Double> toFlip = entry.getValue().getTimeLatAvg();
             for (Map.Entry<String, Double> subEntry : toFlip.entrySet()) {
@@ -98,7 +75,7 @@ public class MultiLatencyStatAndMetric<T> implements IMetric {
     }
 
     public void close() {
-        for (LatencyStatAndMetric l : lat.values()) {
+        for (LatencyStat l : lat.values()) {
             l.close();
         }
     }

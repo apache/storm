@@ -16,12 +16,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.storm.metric.api.IMetric;
 
 /**
- * Acts as a Count Metric, but also keeps track of approximate counts for the last 10 mins, 3 hours, 1 day, and all time.
+ * Keeps track of approximate counts for the last 10 mins, 3 hours, 1 day, and all time.
  */
-public class CountStatAndMetric implements IMetric {
+public class CountStat {
     private final AtomicLong currentBucket;
     //10 min values
     private final int tmSize;
@@ -49,7 +48,7 @@ public class CountStatAndMetric implements IMetric {
      *
      * @param numBuckets the number of buckets to divide the time periods into.
      */
-    public CountStatAndMetric(int numBuckets) {
+    public CountStat(int numBuckets) {
         this(numBuckets, -1);
     }
 
@@ -59,7 +58,7 @@ public class CountStatAndMetric implements IMetric {
      * @param numBuckets the number of buckets to divide the time periods into.
      * @param startTime  if positive the simulated time to start the from.
      */
-    CountStatAndMetric(int numBuckets, long startTime) {
+    CountStat(int numBuckets, long startTime) {
         numBuckets = Math.max(numBuckets, 2);
         //We want to capture the full time range, so the target size is as
         // if we had one bucket less, then we do
@@ -95,23 +94,6 @@ public class CountStatAndMetric implements IMetric {
      */
     public void incBy(long count) {
         currentBucket.addAndGet(count);
-    }
-
-
-    @Override
-    public synchronized Object getValueAndReset() {
-        return getValueAndReset(System.currentTimeMillis());
-    }
-
-    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
-    synchronized Object getValueAndReset(long now) {
-        long value = currentBucket.getAndSet(0);
-        long timeSpent = now - bucketStart;
-        long ret = value + exactExtra;
-        bucketStart = now;
-        exactExtra = 0;
-        rotateBuckets(value, timeSpent);
-        return ret;
     }
 
     synchronized void rotateSched(long now) {
