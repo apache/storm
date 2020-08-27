@@ -98,7 +98,7 @@ public class ServerUtilsTest {
             String line;
             while ((line = input.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty()) {
+                if (line.isEmpty() || line.startsWith("PID")) {
                     continue;
                 }
                 try {
@@ -180,7 +180,7 @@ public class ServerUtilsTest {
     @Test
     public void testIsAnyProcessPosixProcessPidDirAlive() throws IOException {
         final String testName = "testIsAnyProcessPosixProcessPidDirAlive";
-        int errCnt = 0;
+        List<String> errors = new ArrayList<>();
         int maxPidCnt = 5;
         if (ServerUtils.IS_ON_WINDOWS) {
             LOG.info("{}: test cannot be run on Windows. Marked as successful", testName);
@@ -201,8 +201,9 @@ public class ServerUtilsTest {
             long pid = getPidOfUnixProcess(process);
             LOG.info("{}: ({}) ran process \"{}\" with pid={}", testName, i, cmd, pid);
             if (pid < 0) {
-                errCnt++;
-                LOG.error("{}: ({}) Cannot obtain process id for executed command \"{}\"", testName, i, cmd);
+                String e = String.format("%s: (%d) Cannot obtain process id for executed command \"%s\"", testName, i, cmd);
+                errors.add(e);
+                LOG.error(e);
                 continue;
             }
             observables.add(pid);
@@ -227,20 +228,22 @@ public class ServerUtilsTest {
                 if (pidDirsAvailable) {
                     LOG.info("{}: ({}) Found existing process directories before killing last process", testName, i);
                 } else {
-                    errCnt++;
-                    LOG.error("{}: ({}) Found no existing process directories before killing last process", testName, i);
+                    String e = String.format("%s: (%d) Found no existing process directories before killing last process", testName, i);
+                    errors.add(e);
+                    LOG.error(e);
                 }
             } else {
                 if (pidDirsAvailable) {
-                    errCnt++;
-                    LOG.error("{}: ({}) Found existing process directories after killing last process", testName, i);
+                    String e = String.format("%s: (%d) Found existing process directories after killing last process", testName, i);
+                    errors.add(e);
+                    LOG.error(e);
                 } else {
                     LOG.info("{}: ({}) Found no existing process directories after killing last process", testName, i);
                 }
             }
         }
-        if (errCnt > 0) {
-            fail("There are " + errCnt + " failures in test");
+        if (!errors.isEmpty()) {
+            fail(String.format("There are %d failures in test:\n\t%s", errors.size(), String.join("\n\t", errors)));
         }
     }
 
