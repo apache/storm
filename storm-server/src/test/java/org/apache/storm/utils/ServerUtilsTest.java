@@ -198,7 +198,7 @@ public class ServerUtilsTest {
         for (int i = 0 ; i < maxPidCnt ; i++) {
             String cmd = "sleep 2000";
             Process process = Runtime.getRuntime().exec(cmd);
-            long pid = getPidOfUnixProcess(process);
+            long pid = getPidOfUnixProcess(process, errors);
             LOG.info("{}: ({}) ran process \"{}\" with pid={}", testName, i, cmd, pid);
             if (pid < 0) {
                 String e = String.format("%s: (%d) Cannot obtain process id for executed command \"%s\"", testName, i, cmd);
@@ -247,17 +247,22 @@ public class ServerUtilsTest {
         }
     }
 
-    private synchronized long getPidOfUnixProcess(Process p) {
+    private synchronized long getPidOfUnixProcess(Process p, List<String> errors) {
         long pid = -1;
 
         try {
-            if (p.getClass().getName().equals("java.lang.UNIXProcess")) {
-                Field f = p.getClass().getDeclaredField("pid");
+            Class pClass = p.getClass();
+            String pclassName = pClass.getName();
+            if (pclassName.equals("java.lang.UNIXProcess")) {
+                Field f = pClass.getDeclaredField("pid");
                 f.setAccessible(true);
                 pid = f.getLong(p);
                 f.setAccessible(false);
+            } else {
+                errors.add("\t Cannot examine class " + pclassName + " to determine process-id from field \"pid\"");
             }
         } catch (Exception e) {
+            errors.add("\t" + e.getMessage());
             pid = -1;
         }
         return pid;
