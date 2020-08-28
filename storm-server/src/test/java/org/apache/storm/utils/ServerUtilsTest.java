@@ -30,6 +30,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +41,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipFile;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.storm.testing.TmpPath;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -190,6 +193,14 @@ public class ServerUtilsTest {
         if (!parentDir.toFile().exists()) {
             LOG.info("{}: test cannot be run on system without process directory {}, os.name={}",
                     testName, parentDir, System.getProperty("os.name"));
+            {
+                // check if we can get process id on this Posix system - testing test code, useful on Mac
+                String cmd = "/bin/sleep 10";
+                if (getPidOfPosixProcess(Runtime.getRuntime().exec(cmd), errors) < 0) {
+                    fail(String.format("%s: Cannot obtain process id for executed command \"%s\"\n%s",
+                            testName, cmd, String.join("\n\t", errors)));
+                }
+            }
             return;
         }
         // Create processes and wait for their termination
@@ -198,7 +209,7 @@ public class ServerUtilsTest {
         for (int i = 0 ; i < maxPidCnt ; i++) {
             String cmd = "sleep 2000";
             Process process = Runtime.getRuntime().exec(cmd);
-            long pid = getPidOfUnixProcess(process, errors);
+            long pid = getPidOfPosixProcess(process, errors);
             LOG.info("{}: ({}) ran process \"{}\" with pid={}", testName, i, cmd, pid);
             if (pid < 0) {
                 String e = String.format("%s: (%d) Cannot obtain process id for executed command \"%s\"", testName, i, cmd);
@@ -247,25 +258,63 @@ public class ServerUtilsTest {
         }
     }
 
-    private synchronized long getPidOfUnixProcess(Process p, List<String> errors) {
-        long pid = -1;
-
+    /**
+     * Make the best effort to obtain the Process ID from the Process object. Thus staying entirely with the JVM.
+     *
+     * @param p Process instance returned upon executing {@link Runtime#exec(String)}.
+     * @param errors Populate errors when PID is a negative number.
+     * @return positive PID upon success, otherwise negative.
+     */
+    private synchronized long getPidOfPosixProcess(Process p, List<String> errors) {
+        Class<? extends Process> pClass = p.getClass();
+        String pObjStr = ToStringBuilder.reflectionToString(p, ToStringStyle.SHORT_PREFIX_STYLE);
+        String pclassName = pClass.getName();
         try {
-            Class pClass = p.getClass();
-            String pclassName = pClass.getName();
             if (pclassName.equals("java.lang.UNIXProcess")) {
                 Field f = pClass.getDeclaredField("pid");
                 f.setAccessible(true);
-                pid = f.getLong(p);
+                long pid = f.getLong(p);
                 f.setAccessible(false);
-            } else {
-                errors.add("\t Cannot examine class " + pclassName + " to determine process-id from field \"pid\"");
+                if (pid < 0) {
+                    errors.add("\t \"pid\" attribute in Process class " + pclassName + " returned -1, process=" + pObjStr);
+                }
+                return pid;
             }
+            for (Field f : pClass.getDeclaredFields()) {
+                if (!f.getName().equalsIgnoreCase("pid")) {
+                    continue;
+                }
+                LOG.info("ServerUtilsTest.getPidOfPosixProcess(): found attribute {}}#{}}", pclassName, f.getName());
+                f.setAccessible(true);
+                long pid = f.getLong(p);
+                f.setAccessible(false);
+                if (pid < 0) {
+                    errors.add("\t \"pid\" attribute in Process class " + pclassName + " returned -1, process=" + pObjStr);
+                }
+                return pid;
+            }
+            // post JDK 9 there should be getPid() - future JDK-11 compatibility only for the sake of Travis test in community
+            try {
+                Method m = pClass.getDeclaredMethod("getPid");
+                LOG.info("ServerUtilsTest.getPidOfPosixProcess(): found method {}}#getPid()\n", pclassName);
+                long pid = (Long)m.invoke(p);
+                if (pid < 0) {
+                    errors.add("\t \"getPid()\" method in Process class " + pclassName + " returned -1, process=" + pObjStr);
+                }
+                return pid;
+            } catch (SecurityException e) {
+                errors.add("\t getPid() method in Process class " + pclassName + " cannot be called: " + e.getMessage() + ", process=" + pObjStr);
+                return -1;
+            } catch (NoSuchMethodException e) {
+                // ignore and try something else
+            }
+            errors.add("\t Process class " + pclassName + " missing field \"pid\" and missing method \"getPid()\", process=" + pObjStr);
+            return -1;
         } catch (Exception e) {
-            errors.add("\t" + e.getMessage());
-            pid = -1;
+            errors.add("\t Exception in Process class " + pclassName + ": " + e.getMessage() + ", process=" + pObjStr);
+            e.printStackTrace();
+            return -1;
         }
-        return pid;
     }
 
     /**
