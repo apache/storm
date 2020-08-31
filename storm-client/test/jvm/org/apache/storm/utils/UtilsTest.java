@@ -313,7 +313,7 @@ public class UtilsTest {
                     // loop bolt 3  (also connect bolt3 to spout 1)
                     tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt3");
                     ret.add(new CycleDetectionScenario(String.format("(%d) One Loop", testNo),
-                            "Four level component hierarchy with 1 cycle in bolt3",
+                            "Three level component hierarchy with 1 cycle in bolt3",
                             tb.createTopology(),
                             1));
                 }
@@ -364,7 +364,7 @@ public class UtilsTest {
 
                 // complex cycle
                 {
-                    // (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> B2)
+                    // (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> B1)
                     testNo++;
                     tb = new TopologyBuilder();
                     tb.setSpout("spout1", new TestWordSpout(), 10);
@@ -374,7 +374,7 @@ public class UtilsTest {
                     tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2").shuffleGrouping("bolt4");
                     tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3").shuffleGrouping("spout2");
                     ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops#1", testNo),
-                            "Complex cycle (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> B2)",
+                            "Complex cycle (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> B1)",
                             tb.createTopology(),
                             1));
                 }
@@ -395,17 +395,33 @@ public class UtilsTest {
                             1));
                 }
 
+                // no spouts but with loops; the loops wont be detected
+                {
+                    testNo++;
+                    tb = new TopologyBuilder();
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("bolt4").shuffleGrouping("bolt2");
+                    tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2").shuffleGrouping("bolt4");
+                    tb.setBolt("bolt4", new TestWordCounter(), 10);
+                    ret.add(new CycleDetectionScenario(String.format("(%d) No spout complex loops", testNo),
+                            "No Spouts, but with cycles (B1 <-> B2 -> B3 ), (B4 -> B3), (B4 -> B1)",
+                            tb.createTopology(),
+                            0));
+                }
+
                 // now some randomly generated topologies
+                int maxSpouts = 10;
+                int maxBolts = 30;
                 int randomTopoCnt = 100;
                 for (int iRandTest = 0; iRandTest < randomTopoCnt; iRandTest++) {
                     testNo++;
                     tb = new TopologyBuilder();
 
                     // topology component and connection counts
-                    int spoutCnt = ThreadLocalRandom.current().nextInt(0, 10) + 1;
-                    int boltCnt = ThreadLocalRandom.current().nextInt(0, 30) + 1;
-                    int spoutToBoltConnectionCnt = (spoutCnt * boltCnt) / 2; // less than one fully connected graph
-                    int boltToBoltConnectionCnt =  (boltCnt * boltCnt) / 2; //less than fullly connected bolt graph
+                    int spoutCnt = ThreadLocalRandom.current().nextInt(0, maxSpouts) + 1;
+                    int boltCnt = ThreadLocalRandom.current().nextInt(0, maxBolts) + 1;
+                    int spoutToBoltConnectionCnt = ThreadLocalRandom.current().nextInt(spoutCnt * boltCnt) + 1;
+                    int boltToBoltConnectionCnt =  ThreadLocalRandom.current().nextInt(boltCnt * boltCnt) + 1;
 
                     Map<Integer, BoltDeclarer> boltDeclarers = new HashMap<>();
                     for (int iSpout = 0 ; iSpout  < spoutCnt ; iSpout++) {

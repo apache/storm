@@ -2002,7 +2002,6 @@ public class Utils {
 
         if (topology.get_spouts_size() == 0) {
             LOG.error("Topology {} does not contain any spouts, cannot traverse graph to determine cycles", topoId);
-            ret.add(new ArrayList(edgesOut.keySet()));
             return ret;
         }
 
