@@ -1958,7 +1958,7 @@ public class Utils {
                 List<String> possibleCycle = new ArrayList<>();
                 if (compId1.equals(compId2)) {
                     possibleCycle.add(compId2);
-                } else if (edgesOut.get(compId2).contains(compId1)) {
+                } else if (edgesOut.get(compId2) != null && edgesOut.get(compId2).contains(compId1)) {
                     possibleCycle.addAll(Arrays.asList(compId1, compId2));
                 } else {
                     List<String> tmp = Collections.list(stack.elements());

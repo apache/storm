@@ -21,9 +21,12 @@ package org.apache.storm.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import org.apache.storm.Config;
@@ -34,6 +37,8 @@ import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.thrift.transport.TTransportException;
+import org.apache.storm.topology.BoltDeclarer;
+import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.Assert;
 import org.junit.Test;
@@ -368,10 +373,64 @@ public class UtilsTest {
                     tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("bolt1");
                     tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2").shuffleGrouping("bolt4");
                     tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3").shuffleGrouping("spout2");
-                    ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops", testNo),
+                    ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops#1", testNo),
                             "Complex cycle (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> B2)",
                             tb.createTopology(),
                             1));
+                }
+
+                // another complex
+                {
+                    testNo++;
+                    tb = new TopologyBuilder();
+                    tb.setSpout("spout1", new TestWordSpout(), 10);
+                    tb.setSpout("spout2", new TestWordSpout(), 10);
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt4").shuffleGrouping("bolt2");
+                    tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("bolt1");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2").shuffleGrouping("bolt4");
+                    tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("spout2");
+                    ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops#2", testNo),
+                            "Complex cycle 2 (S1 -> B1 <-> B2 -> B3 ), (S2 -> B4 -> B3), (B4 -> B1)",
+                            tb.createTopology(),
+                            1));
+                }
+
+                // now some randomly generated topologies
+                int randomTopoCnt = 100;
+                for (int iRandTest = 0; iRandTest < randomTopoCnt; iRandTest++) {
+                    testNo++;
+                    tb = new TopologyBuilder();
+
+                    // topology component and connection counts
+                    int spoutCnt = ThreadLocalRandom.current().nextInt(0, 10) + 1;
+                    int boltCnt = ThreadLocalRandom.current().nextInt(0, 30) + 1;
+                    int spoutToBoltConnectionCnt = (spoutCnt * boltCnt) / 2; // less than one fully connected graph
+                    int boltToBoltConnectionCnt =  (boltCnt * boltCnt) / 2; //less than fullly connected bolt graph
+
+                    Map<Integer, BoltDeclarer> boltDeclarers = new HashMap<>();
+                    for (int iSpout = 0 ; iSpout  < spoutCnt ; iSpout++) {
+                        tb.setSpout("spout" + iSpout, new TestWordSpout(), 10);
+                    }
+                    for (int iBolt = 0 ; iBolt  < boltCnt ; iBolt++) {
+                        boltDeclarers.put(iBolt, tb.setBolt("bolt" + iBolt, new TestWordCounter(), 10));
+                    }
+                    // spout to bolt connections
+                    for (int i = 0 ; i < spoutToBoltConnectionCnt ; i++) {
+                        int iSpout = ThreadLocalRandom.current().nextInt(0, spoutCnt);
+                        int iBolt = ThreadLocalRandom.current().nextInt(0, boltCnt);
+                        boltDeclarers.get(iBolt).shuffleGrouping("spout" + iSpout);
+                    }
+                    // bolt to bolt connections
+                    for (int i = 0 ; i < boltToBoltConnectionCnt ; i++) {
+                        int iBolt1 = ThreadLocalRandom.current().nextInt(0, boltCnt);
+                        int iBolt2 = ThreadLocalRandom.current().nextInt(0, boltCnt);
+                        boltDeclarers.get(iBolt2).shuffleGrouping("bolt" + iBolt1);
+                    }
+                    ret.add(new CycleDetectionScenario(String.format("(%d) Random Topo#%d", testNo, iRandTest),
+                            String.format("Random topology #%d, spouts=%d, bolts=%d, connections: fromSpouts=%d/fromBolts=%d",
+                                    iRandTest, spoutCnt, boltCnt, spoutToBoltConnectionCnt, boltToBoltConnectionCnt),
+                            tb.createTopology(),
+                            -1));
                 }
 
                 return ret;
@@ -384,26 +443,31 @@ public class UtilsTest {
             LOG.info("{}: {}", x.testName, x.testDescription);
 
             List<List<String>> loops = Utils.findComponentCycles(x.topology, x.testName);
-            if (!loops.isEmpty()) {
-                LOG.info("{} detected loops are \"{}\"", x.testName,
-                        loops.stream()
-                                .map(y -> String.join(",", y))
-                                .collect(Collectors.joining(" ; "))
-                );
-            }
-            if (loops.size() != x.expectedCycles) {
-                testFailures.add(
-                        String.format("Test \"%s\" failed, detected cycles=%d does not match expected=%d for \"%s\"",
-                                x.testName, loops.size(), x.expectedCycles, x.testDescription));
+            if (x.expectedCycles >= 0) {
                 if (!loops.isEmpty()) {
-                    testFailures.add(
-                            String.format("\t\tdetected loops are \"{}\"",
-                                    loops.stream()
-                                            .map(y -> String.join(",", y))
-                                            .collect(Collectors.joining(" ; "))
-                            )
+                    LOG.info("{} detected loops are \"{}\"", x.testName,
+                            loops.stream()
+                                    .map(y -> String.join(",", y))
+                                    .collect(Collectors.joining(" ; "))
                     );
                 }
+                if (loops.size() != x.expectedCycles) {
+                    testFailures.add(
+                            String.format("Test \"%s\" failed, detected cycles=%d does not match expected=%d for \"%s\"",
+                                    x.testName, loops.size(), x.expectedCycles, x.testDescription));
+                    if (!loops.isEmpty()) {
+                        testFailures.add(
+                                String.format("\t\tdetected loops are \"{}\"",
+                                        loops.stream()
+                                                .map(y -> String.join(",", y))
+                                                .collect(Collectors.joining(" ; "))
+                                )
+                        );
+                    }
+                }
+            } else {
+                // these are random topologies, with indeterminate number of loops
+                LOG.info("{} detected loop count is \"{}\"", x.testName, loops.size());
             }
         });
         if (!testFailures.isEmpty()) {
