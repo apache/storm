@@ -138,6 +138,10 @@ public interface StormMetricsFilter extends MetricFilter {
 }
 ```
 
+V2 metrics can be reported with a long name (such as storm.topology.mytopologyname-17-1595349167.hostname.__system.-1.6700-memory.pools.Code-Cache.max) or with a short
+name and dimensions (such as memory.pools.Code-Cache.max with dimensions task Id of -1 and component Id of __system) if reporters support this.  Each reporter defaults
+to using the long metric name, but can report the short name by configuring report.dimensions.enabled to true for the reporter.
+
 ## Backwards Compatibility Notes
 
 1. V2 metrics can also be reported to the Metrics Consumers registered with `topology.metrics.consumer.register` by enabling the `topology.enable.v2.metrics.tick` configuration.

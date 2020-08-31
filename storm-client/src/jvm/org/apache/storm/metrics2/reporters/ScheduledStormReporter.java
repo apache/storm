@@ -37,6 +37,10 @@ public abstract class ScheduledStormReporter implements StormReporter {
         return ObjectReader.getInt(reporterConf.get(REPORT_PERIOD), 10).longValue();
     }
 
+    public static boolean isReportDimensionsEnabled(Map<String, Object> reporterConf) {
+        return ObjectReader.getBoolean(reporterConf.get(REPORT_DIMENSIONS_ENABLED), false);
+    }
+
     public static StormMetricsFilter getMetricsFilter(Map<String, Object> reporterConf) {
         StormMetricsFilter filter = null;
         Map<String, Object> filterConf = (Map<String, Object>) reporterConf.get("filter");

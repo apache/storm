@@ -10,28 +10,14 @@
  * and limitations under the License.
  */
 
-package org.apache.storm.metrics2.reporters;
+package org.apache.storm.metrics2;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Reporter;
 import java.util.Map;
-import org.apache.storm.metrics2.MetricRegistryProvider;
 
+public interface MetricRegistryProvider {
 
-public interface StormReporter extends Reporter {
-    String REPORT_PERIOD = "report.period";
-    String REPORT_PERIOD_UNITS = "report.period.units";
-    String REPORT_DIMENSIONS_ENABLED = "report.dimensions.enabled";
+    MetricRegistry getRegistry();
 
-    @Deprecated
-    void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf, Map<String, Object> reporterConf);
-
-    default void prepare(MetricRegistryProvider metricRegistryProvider, Map<String, Object> topoConf,
-                         Map<String, Object> reporterConf) {
-        prepare(metricRegistryProvider.getRegistry(), topoConf, reporterConf);
-    }
-
-    void start();
-
-    void stop();
+    Map<TaskMetricDimensions, TaskMetricRepo> getTaskMetrics();
 }
