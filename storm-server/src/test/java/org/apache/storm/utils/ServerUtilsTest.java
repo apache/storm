@@ -193,13 +193,11 @@ public class ServerUtilsTest {
         if (!parentDir.toFile().exists()) {
             LOG.info("{}: test cannot be run on system without process directory {}, os.name={}",
                     testName, parentDir, System.getProperty("os.name"));
-            {
-                // check if we can get process id on this Posix system - testing test code, useful on Mac
-                String cmd = "/bin/sleep 10";
-                if (getPidOfPosixProcess(Runtime.getRuntime().exec(cmd), errors) < 0) {
-                    fail(String.format("%s: Cannot obtain process id for executed command \"%s\"\n%s",
-                            testName, cmd, String.join("\n\t", errors)));
-                }
+            // check if we can get process id on this Posix system - testing test code, useful on Mac
+            String cmd = "/bin/sleep 10";
+            if (getPidOfPosixProcess(Runtime.getRuntime().exec(cmd), errors) < 0) {
+                fail(String.format("%s: Cannot obtain process id for executed command \"%s\"\n%s",
+                        testName, cmd, String.join("\n\t", errors)));
             }
             return;
         }
@@ -223,7 +221,7 @@ public class ServerUtilsTest {
         // now kill processes one by one
         List<Long> pidList = new ArrayList<>(observables);
         final long processKillIntervalMs = 2000;
-        for (int i = 0 ; i < pidList.size() ; i++) {
+        for (int i = 0; i < pidList.size(); i++) {
             long pid = pidList.get(i);
             LOG.info("{}: ({}) Sleeping for {} milliseconds before kill", testName, i, processKillIntervalMs);
             if (sleepInterrupted(processKillIntervalMs)) {
@@ -284,7 +282,7 @@ public class ServerUtilsTest {
                 if (!f.getName().equalsIgnoreCase("pid")) {
                     continue;
                 }
-                LOG.info("ServerUtilsTest.getPidOfPosixProcess(): found attribute {}}#{}}", pclassName, f.getName());
+                LOG.info("ServerUtilsTest.getPidOfPosixProcess(): found attribute {}#{}", pclassName, f.getName());
                 f.setAccessible(true);
                 long pid = f.getLong(p);
                 f.setAccessible(false);
@@ -296,7 +294,7 @@ public class ServerUtilsTest {
             // post JDK 9 there should be getPid() - future JDK-11 compatibility only for the sake of Travis test in community
             try {
                 Method m = pClass.getDeclaredMethod("getPid");
-                LOG.info("ServerUtilsTest.getPidOfPosixProcess(): found method {}}#getPid()\n", pclassName);
+                LOG.info("ServerUtilsTest.getPidOfPosixProcess(): found method {}#getPid()\n", pclassName);
                 long pid = (Long)m.invoke(p);
                 if (pid < 0) {
                     errors.add("\t \"getPid()\" method in Process class " + pclassName + " returned -1, process=" + pObjStr);
