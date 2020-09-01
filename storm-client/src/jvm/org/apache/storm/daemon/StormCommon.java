@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
@@ -577,5 +579,21 @@ public class StormCommon {
         }
 
         return aznHandler;
+    }
+
+    /**
+     * Validate that the topology is cycle free. If not, then throw an InvalidTopologyException describing the cycle(s).
+     *
+     * @param topology StormTopology instance to examine.
+     * @param name Name of the topology, used in exception error message.
+     * @throws InvalidTopologyException if there are cycles, with message describing the cycles encountered.
+     */
+    public static void validateCycleFree(StormTopology topology, String name) throws InvalidTopologyException {
+        List<List<String>> cycles = Utils.findComponentCycles(topology, name);
+        if (!cycles.isEmpty()) {
+            String err = String.format("Topology %s contains cycles in components \"%s\"", name,
+                    cycles.stream().map(x -> String.join(",", x)).collect(Collectors.joining(" ; ")));
+            throw new InvalidTopologyException(err);
+        }
     }
 }
