@@ -69,9 +69,9 @@ public final class ConstraintSolverConfig {
 
     private void computeComponentConstraints() {
         comps.forEach(k -> incompatibleComponentSets.computeIfAbsent(k, x -> new HashSet<>()));
-        Object rasConstraints = topoConf.getOrDefault(Config.TOPOLOGY_RAS_CONSTRAINTS, topoConf.get(Config.TOPOLOGY_CONSTRAINTS));
+        Object rasConstraints = topoConf.get(Config.TOPOLOGY_RAS_CONSTRAINTS);
         if (rasConstraints == null) {
-            LOG.warn("No config supplied for {} or deprecated {}", Config.TOPOLOGY_RAS_CONSTRAINTS, Config.TOPOLOGY_CONSTRAINTS);
+            LOG.warn("No config supplied for {}", Config.TOPOLOGY_RAS_CONSTRAINTS);
         } else if (rasConstraints instanceof List) {
             // old style
             List<List<String>> constraints = (List<List<String>>) rasConstraints;

@@ -345,13 +345,6 @@ public class Config extends HashMap<String, Object> {
      */
     @IsExactlyOneOf(valueValidatorClasses = { ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class })
     public static final String TOPOLOGY_RAS_CONSTRAINTS = "topology.ras.constraints";
-    /**
-     * Declare scheduling constraints for a topology.
-     * @deprecated please use TOPOLOGY_RAS_CONSTRAINTS.
-     */
-    @Deprecated
-    @CustomValidator(validatorClass = ListOfListOfStringValidator.class)
-    public static final String TOPOLOGY_CONSTRAINTS = "topology.constraints";
 
     /**
      * Array of components that scheduler should try to place on separate hosts when using the constraint solver strategy or the
@@ -368,15 +361,6 @@ public class Config extends HashMap<String, Object> {
     @IsInteger
     @IsPositiveNumber
     public static final String TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH = "topology.ras.constraint.max.state.search";
-    /**
-     * The maximum number of states that will be searched looking for a solution in resource aware strategies, e.g.
-     * in BaseResourceAwareStrategy. Backward compatibility config value for old topologies.
-     * @deprecated please use {@link Config#TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH}
-     */
-    @IsInteger
-    @IsPositiveNumber
-    @Deprecated
-    public static final String TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_TRAVERSAL = "topology.ras.constraint.max.state.traversal";
     /**
      * Declare max traversal depth for find solutions that satisfy constraints.
      * @deprecated please use {@link Config#TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH}
