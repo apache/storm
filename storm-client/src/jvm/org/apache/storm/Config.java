@@ -313,9 +313,8 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
 
     /**
-     * When DefaultResourceAwareStrategy or GenericResourceAwareStrategy is used,
-     * scheduler will sort unassigned executors based on a particular order.
-     * If this config is set to true, unassigned executors will be sorted by topological order with network proximity needs.
+     * If set to true, unassigned executors will be sorted by topological order with network proximity needs before being scheduled.
+     * This is a best-effort to split the topology to slices and allocate executors in each slice to closest physical location as possible.
      */
     public static final String TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS = "topology.ras.order.executors.by.proximity.needs";
 
@@ -347,6 +346,14 @@ public class Config extends HashMap<String, Object> {
     @IsExactlyOneOf(valueValidatorClasses = { ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class })
     public static final String TOPOLOGY_RAS_CONSTRAINTS = "topology.ras.constraints";
     /**
+     * Declare scheduling constraints for a topology.
+     * @deprecated please use TOPOLOGY_RAS_CONSTRAINTS.
+     */
+    @Deprecated
+    @CustomValidator(validatorClass = ListOfListOfStringValidator.class)
+    public static final String TOPOLOGY_CONSTRAINTS = "topology.constraints";
+
+    /**
      * Array of components that scheduler should try to place on separate hosts when using the constraint solver strategy or the
      * multi-tenant scheduler. Note that this configuration can be specified in TOPOLOGY_RAS_CONSTRAINTS using the
      * "maxNodeCoLocationCnt" map entry with value of 1.
@@ -355,12 +362,30 @@ public class Config extends HashMap<String, Object> {
     @IsStringList
     public static final String TOPOLOGY_SPREAD_COMPONENTS = "topology.spread.components";
     /**
-     * The maximum number of states that will be searched looking for a solution in the constraint solver strategy.
+     * The maximum number of states that will be searched looking for a solution in resource aware strategies, e.g.
+     * in BaseResourceAwareStrategy.
      */
     @IsInteger
     @IsPositiveNumber
     public static final String TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH = "topology.ras.constraint.max.state.search";
     /**
+     * The maximum number of states that will be searched looking for a solution in resource aware strategies, e.g.
+     * in BaseResourceAwareStrategy. Backward compatibility config value for old topologies.
+     * @deprecated please use {@link Config#TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH}
+     */
+    @IsInteger
+    @IsPositiveNumber
+    @Deprecated
+    public static final String TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_TRAVERSAL = "topology.ras.constraint.max.state.traversal";
+    /**
+     * Declare max traversal depth for find solutions that satisfy constraints.
+     * @deprecated please use {@link Config#TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH}
+     */
+    @IsInteger
+    @IsPositiveNumber
+    @Deprecated
+    public static final String TOPOLOGY_CONSTRAINTS_MAX_DEPTH_TRAVERSAL = "topology.constraints.max.depth.traversal";
+    /*
      * Whether to limit each worker to one executor. This is useful for debugging topologies to clearly identify workers that
      * are slow/crashing and for estimating resource requirements and capacity.
      * If both {@link #TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER} and {@link #TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER} are enabled,
@@ -377,7 +402,8 @@ public class Config extends HashMap<String, Object> {
     @IsBoolean
     public static final String TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER = "topology.ras.one.component.per.worker";
     /**
-     * The maximum number of seconds to spend scheduling a topology using the constraint solver.  Null means no limit.
+     * The maximum number of seconds to spend scheduling a topology using resource aware strategies, e.g.
+     * in BaseResourceAwareStrategy. Null means no limit.
      */
     @IsInteger
     @IsPositiveNumber

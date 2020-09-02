@@ -19,11 +19,18 @@ import org.apache.storm.scheduler.resource.SchedulingResult;
 
 /**
  * An interface to for implementing different scheduling strategies for the resource aware scheduling.
+ * Scheduler should call {@link #prepare(Map)} followed by {@link #schedule(Cluster, TopologyDetails)}.
+ * <p>
+ *     A fully functioning implementation is in the abstract class {@link BaseResourceAwareStrategy}.
+ *     Subclasses classes should extend {@link BaseResourceAwareStrategy#BaseResourceAwareStrategy(boolean, ObjectResourceSortType)}
+ *     in their constructors (as in {@link GenericResourceAwareStrategy} and {@link DefaultResourceAwareStrategy}).
+ * </p>
  */
 public interface IStrategy {
 
     /**
      * Prepare the Strategy for scheduling.
+     *
      * @param config the cluster configuration
      */
     void prepare(Map<String, Object> config);
@@ -31,9 +38,10 @@ public interface IStrategy {
     /**
      * This method is invoked to calculate a scheduling for topology td.  Cluster will reject any changes that are
      * not for the given topology.  Any changes made to the cluster will be committed if the scheduling is successful.
-     * <P></P>
-     * NOTE: scheduling occurs as a runnable in an interruptible thread.  Scheduling should consider being interrupted if
+     * <p>
+     * NOTE: scheduling occurs as a runnable in an interruptable thread.  Scheduling should consider being interrupted if
      * long running.
+     * </p>
      *
      * @param schedulingState the current state of the cluster
      * @param td the topology to schedule for

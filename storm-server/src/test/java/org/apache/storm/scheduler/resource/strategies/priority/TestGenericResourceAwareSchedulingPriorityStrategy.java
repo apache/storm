@@ -29,6 +29,7 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
 import org.apache.storm.utils.Time;
 import org.junit.After;
 import org.junit.Test;
@@ -46,7 +47,6 @@ import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareSched
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesNotBeenEvicted;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesNotScheduled;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.createGrasClusterConfig;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userRes;
@@ -55,8 +55,8 @@ import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareSched
 public class TestGenericResourceAwareSchedulingPriorityStrategy {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareSchedulingPriorityStrategy.class);
-    private static int currentTime = Time.currentTimeSecs();
-    private static IScheduler scheduler = null;
+    private int currentTime = Time.currentTimeSecs();
+    private IScheduler scheduler = null;
 
     @After
     public void cleanup() {
@@ -64,6 +64,17 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
             scheduler.cleanup();
             scheduler = null;
         }
+    }
+
+    protected Class getGenericResourceAwareStrategyClass() {
+        return GenericResourceAwareStrategy.class;
+    }
+
+    private Config createGrasClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                                 Map<String, Map<String, Number>> pools, Map<String, Double> genericResourceMap) {
+        Config config = TestUtilsForResourceAwareScheduler.createGrasClusterConfig(compPcore, compOnHeap, compOffHeap, pools, genericResourceMap);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getGenericResourceAwareStrategyClass().getName());
+        return config;
     }
 
     /*

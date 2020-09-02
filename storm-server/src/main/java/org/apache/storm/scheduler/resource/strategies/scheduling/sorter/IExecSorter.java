@@ -16,8 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource.strategies.scheduling;
+package org.apache.storm.scheduler.resource.strategies.scheduling.sorter;
 
-public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy {
+import java.util.List;
+import java.util.Set;
+
+import org.apache.storm.scheduler.ExecutorDetails;
+
+
+public interface IExecSorter {
+    /**
+     * Sort the supplied unique collection of ExecutorDetails in the order
+     * in which they should be scheduled. Both the input and output collections
+     * contain the same number of unique ExecutorDetails.
+     *
+     * @param execs an unmodifiable set of executors that need to be scheduled.
+     * @return a list of executors in sorted order for scheduling.
+     */
+    List<ExecutorDetails> sortExecutors(Set<ExecutorDetails> execs);
 }
-

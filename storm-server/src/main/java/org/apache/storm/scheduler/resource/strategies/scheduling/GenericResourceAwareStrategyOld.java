@@ -18,6 +18,9 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
-public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy {
-}
+public class GenericResourceAwareStrategyOld extends BaseResourceAwareStrategy {
 
+    public GenericResourceAwareStrategyOld() {
+        super(true, NodeSortType.GENERIC_RAS);
+    }
+}

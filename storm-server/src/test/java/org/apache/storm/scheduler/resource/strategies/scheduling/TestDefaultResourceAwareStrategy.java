@@ -20,6 +20,7 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.scheduler.IScheduler;
+import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesExtension;
 import java.util.Collections;
 import org.apache.storm.Config;
@@ -38,7 +39,8 @@ import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.RasNode;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
-import org.apache.storm.scheduler.resource.strategies.scheduling.BaseResourceAwareStrategy.ObjectResources;
+import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.INodeSorter;
+import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.NodeSorter;
 import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
@@ -49,6 +51,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,11 +85,22 @@ public class TestDefaultResourceAwareStrategy {
         SHARED_OFF_HEAP_WORKER,
         SHARED_ON_HEAP_WORKER
     };
-    private enum WorkerRestrictionType {
+    protected enum WorkerRestrictionType {
         WORKER_RESTRICTION_ONE_EXECUTOR,
         WORKER_RESTRICTION_ONE_COMPONENT,
         WORKER_RESTRICTION_NONE
     };
+
+    protected Class getDefaultResourceAwareStrategyClass() {
+        return DefaultResourceAwareStrategy.class;
+    }
+
+    private Config createClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                             Map<String, Map<String, Number>> pools) {
+        Config config = TestUtilsForResourceAwareScheduler.createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
+        return config;
+    }
 
     private static class TestDNSToSwitchMapping implements DNSToSwitchMapping {
         private final Map<String, String> result;
@@ -477,8 +491,9 @@ public class TestDefaultResourceAwareStrategy {
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy (when made by network proximity needs.) is correct
      */
-    @Test
-    public void testDefaultResourceAwareStrategyInFavorOfShuffle() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testDefaultResourceAwareStrategyInFavorOfShuffle(boolean useDeprecatedConfigForProximity) {
         int spoutParallelism = 1;
         int boltParallelism = 2;
         TopologyBuilder builder = new TopologyBuilder();
@@ -500,7 +515,11 @@ public class TestDefaultResourceAwareStrategy {
         conf.put(Config.TOPOLOGY_NAME, "testTopology");
         conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
         conf.put(Config.TOPOLOGY_SUBMITTER_USER, "user");
-        conf.put(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
+        if (useDeprecatedConfigForProximity) {
+            conf.put(BaseResourceAwareStrategy.EXPERIMENTAL_TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
+        } else {
+            conf.put(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
+        }
 
         TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
             genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
@@ -530,7 +549,8 @@ public class TestDefaultResourceAwareStrategy {
             foundScheduling.add(new HashSet<>(execs));
         }
 
-        Assert.assertEquals(expectedScheduling, foundScheduling);
+        Assert.assertEquals("useDeprecatedConfigForProximity=" + useDeprecatedConfigForProximity,
+                expectedScheduling, foundScheduling);
     }
 
     /**
@@ -596,14 +616,14 @@ public class TestDefaultResourceAwareStrategy {
         }
         cluster.setNetworkTopography(rackToNodes);
 
-        DefaultResourceAwareStrategy rs = new DefaultResourceAwareStrategy();
+        DefaultResourceAwareStrategyOld rs = new DefaultResourceAwareStrategyOld();
         
-        rs.prepare(cluster);
-        TreeSet<ObjectResources> sortedRacks = rs.sortRacks(null, topo1);
-        LOG.info("Sorted Racks {}", sortedRacks);
+        rs.prepareForScheduling(cluster, topo1);
+        INodeSorter nodeSorter = new NodeSorter(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
+        TreeSet<ObjectResourcesItem> sortedRacks = nodeSorter.sortRacks(null);
 
         Assert.assertEquals("# of racks sorted", 6, sortedRacks.size());
-        Iterator<ObjectResources> it = sortedRacks.iterator();
+        Iterator<ObjectResourcesItem> it = sortedRacks.iterator();
         // Ranked first since rack-0 has the most balanced set of resources
         Assert.assertEquals("rack-0 should be ordered first", "rack-0", it.next().id);
         // Ranked second since rack-1 has a balanced set of resources but less than rack-0
@@ -622,7 +642,8 @@ public class TestDefaultResourceAwareStrategy {
         SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
         for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             //make sure all workers on scheduled in rack-0
-            Assert.assertEquals("assert worker scheduled on rack-0", "rack-0", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
+            Assert.assertEquals("assert worker scheduled on rack-0", "rack-0",
+                    resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
         }
         Assert.assertEquals("All executors in topo-1 scheduled", 0, cluster.getUnassignedExecutors(topo1).size());
 
@@ -638,16 +659,17 @@ public class TestDefaultResourceAwareStrategy {
             node.assign(targetSlot, topo2, Arrays.asList(targetExec));
         }
 
-        rs = new DefaultResourceAwareStrategy();
+        rs = new DefaultResourceAwareStrategyOld();
         // schedule topo2
         schedulingResult = rs.schedule(cluster, topo2);
         assert(schedulingResult.isSuccess());
         assignment = cluster.getAssignmentById(topo2.getId());
         for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             //make sure all workers on scheduled in rack-1
-            Assert.assertEquals("assert worker scheduled on rack-1", "rack-1", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
+            Assert.assertEquals("assert worker scheduled on rack-1", "rack-1",
+                    resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
         }
-        Assert.assertEquals("All executors in topo-2 scheduled", 0, cluster.getUnassignedExecutors(topo1).size());
+        Assert.assertEquals("All executors in topo-2 scheduled", 0, cluster.getUnassignedExecutors(topo2).size());
     }
 
     /**
@@ -720,13 +742,14 @@ public class TestDefaultResourceAwareStrategy {
         }
         cluster.setNetworkTopography(rackToNodes);
 
-        DefaultResourceAwareStrategy rs = new DefaultResourceAwareStrategy();
+        DefaultResourceAwareStrategyOld rs = new DefaultResourceAwareStrategyOld();
 
-        rs.prepare(cluster);
-        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(null, topo1);
+        rs.prepareForScheduling(cluster, topo1);
+        INodeSorter nodeSorter = new NodeSorter(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
+        TreeSet<ObjectResourcesItem> sortedRacks= nodeSorter.sortRacks(null);
 
         Assert.assertEquals("# of racks sorted", 5, sortedRacks.size());
-        Iterator<ObjectResources> it = sortedRacks.iterator();
+        Iterator<ObjectResourcesItem> it = sortedRacks.iterator();
         // Ranked first since rack-0 has the most balanced set of resources
         Assert.assertEquals("rack-0 should be ordered first", "rack-0", it.next().id);
         // Ranked second since rack-1 has a balanced set of resources but less than rack-0
@@ -763,7 +786,7 @@ public class TestDefaultResourceAwareStrategy {
             node.assign(targetSlot, topo2, Arrays.asList(targetExec));
         }
 
-        rs = new DefaultResourceAwareStrategy();
+        rs = new DefaultResourceAwareStrategyOld();
         // schedule topo2
         schedulingResult = rs.schedule(cluster, topo2);
         assert(schedulingResult.isSuccess());
@@ -772,8 +795,9 @@ public class TestDefaultResourceAwareStrategy {
             //make sure all workers on scheduled in rack-1
             // The favored nodes would have put it on a different rack, but because that rack does not have free space to run the
             // topology it falls back to this rack
-            Assert.assertEquals("assert worker scheduled on rack-1", "rack-1", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
+            Assert.assertEquals("assert worker scheduled on rack-1", "rack-1",
+                    resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
         }
-        Assert.assertEquals("All executors in topo-2 scheduled", 0, cluster.getUnassignedExecutors(topo1).size());
+        Assert.assertEquals("All executors in topo-2 scheduled", 0, cluster.getUnassignedExecutors(topo2).size());
     }
 }

@@ -18,9 +18,11 @@
 
 package org.apache.storm.scheduler.resource;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
@@ -33,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class RasNodes {
 
     private static final Logger LOG = LoggerFactory.getLogger(RasNodes.class);
-    private Map<String, RasNode> nodeMap;
+    private final Map<String, RasNode> nodeMap;
 
     public RasNodes(Cluster cluster) {
         this.nodeMap = getAllNodesFrom(cluster);
@@ -57,20 +59,20 @@ public class RasNodes {
                 String nodeId = slot.getNodeId();
                 if (!assignmentRelationshipMap.containsKey(nodeId)) {
                     assignmentRelationshipMap.put(
-                        nodeId, new HashMap<String, Map<String, Collection<ExecutorDetails>>>());
-                    workerIdToWorker.put(nodeId, new HashMap<String, WorkerSlot>());
+                        nodeId, new HashMap<>());
+                    workerIdToWorker.put(nodeId, new HashMap<>());
                 }
                 workerIdToWorker.get(nodeId).put(slot.getId(), slot);
                 if (!assignmentRelationshipMap.get(nodeId).containsKey(topId)) {
                     assignmentRelationshipMap
                         .get(nodeId)
-                        .put(topId, new HashMap<String, Collection<ExecutorDetails>>());
+                        .put(topId, new HashMap<>());
                 }
                 if (!assignmentRelationshipMap.get(nodeId).get(topId).containsKey(slot.getId())) {
                     assignmentRelationshipMap
                         .get(nodeId)
                         .get(topId)
-                        .put(slot.getId(), new LinkedList<ExecutorDetails>());
+                        .put(slot.getId(), new LinkedList<>());
                 }
                 Collection<ExecutorDetails> execs = entry.getValue();
                 assignmentRelationshipMap.get(nodeId).get(topId).get(slot.getId()).addAll(execs);
@@ -82,7 +84,7 @@ public class RasNodes {
             for (int port : sup.getAllPorts()) {
                 WorkerSlot worker = new WorkerSlot(sup.getId(), port);
                 if (!workerIdToWorker.containsKey(sup.getId())) {
-                    workerIdToWorker.put(sup.getId(), new HashMap<String, WorkerSlot>());
+                    workerIdToWorker.put(sup.getId(), new HashMap<>());
                 }
                 if (!workerIdToWorker.get(sup.getId()).containsKey(worker.getId())) {
                     workerIdToWorker.get(sup.getId()).put(worker.getId(), worker);
@@ -140,6 +142,18 @@ public class RasNodes {
 
     public Collection<RasNode> getNodes() {
         return this.nodeMap.values();
+    }
+
+    /**
+     * Get a map with list of RasNode for each hostname.
+     *
+     * @return map of hostname to a list of RasNode
+     */
+    public Map<String, List<RasNode>> getHostnameToNodes() {
+        Map<String, List<RasNode>> hostnameToNodes = new HashMap<>();
+        nodeMap.values()
+                .forEach(node -> hostnameToNodes.computeIfAbsent(node.getHostname(), (hn) -> new ArrayList<>()).add(node));
+        return hostnameToNodes;
     }
 
     @Override
