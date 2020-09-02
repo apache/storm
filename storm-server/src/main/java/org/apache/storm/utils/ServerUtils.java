@@ -70,7 +70,6 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
-import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.blobstore.LocalModeClientBlobStore;
 import org.apache.storm.daemon.StormCommon;
@@ -87,7 +86,7 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.security.auth.SingleUserPrincipal;
-import org.apache.storm.thrift.TException;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -656,34 +655,6 @@ public class ServerUtils {
         }
     }
 
-    private static boolean downloadResourcesAsSupervisorAttempt(ClientBlobStore cb, String key, String localFile) {
-        boolean isSuccess = false;
-        try (FileOutputStream out = new FileOutputStream(localFile);
-             InputStreamWithMeta in = cb.getBlob(key);) {
-            long fileSize = in.getFileLength();
-
-            byte[] buffer = new byte[1024];
-            int len;
-            int downloadFileSize = 0;
-            while ((len = in.read(buffer)) >= 0) {
-                out.write(buffer, 0, len);
-                downloadFileSize += len;
-            }
-
-            isSuccess = (fileSize == downloadFileSize);
-        } catch (TException | IOException e) {
-            LOG.error("An exception happened while downloading {} from blob store.", localFile, e);
-        }
-        if (!isSuccess) {
-            try {
-                Files.deleteIfExists(Paths.get(localFile));
-            } catch (IOException ex) {
-                LOG.error("Failed trying to delete the partially downloaded {}", localFile, ex);
-            }
-        }
-        return isSuccess;
-    }
-
     /**
      * Check if the scheduler is resource aware or not.
      *
@@ -1226,6 +1197,29 @@ public class ServerUtils {
      * @throws IOException on I/O exception
      */
     public static boolean isAnyPosixProcessPidDirAlive(Collection<Long> pids, String user) throws IOException {
+        return isAnyPosixProcessPidDirAlive(pids, user, false);
+    }
+
+    /**
+     * Find if the process is alive using the existence of /proc/&lt;pid&gt; directory
+     * owned by the supplied expectedUser. This is an alternative to "ps -p pid -u uid" command
+     * used in {@link #isAnyPosixProcessAlive(Collection, int)}
+     *
+     * <p>
+     * Processes are tracked using the existence of the directory "/proc/&lt;pid&gt;
+     * For each of the supplied PIDs, their PID directory is checked for existence and ownership
+     * by the specified uid.
+     * </p>
+     *
+     * @param pids Process IDs that need to be monitored for liveness
+     * @param expectedUser the userId that is expected to own that process
+     * @param mockFileOwnerToUid if true (used for testing), then convert File.owner to UID
+     * @return true if any one of the processes is owned by expectedUser and alive, else false
+     * @throws IOException on I/O exception
+     */
+    @VisibleForTesting
+    public static boolean isAnyPosixProcessPidDirAlive(Collection<Long> pids, String expectedUser, boolean mockFileOwnerToUid)
+            throws IOException {
         File procDir = new File("/proc");
         if (!procDir.exists()) {
             throw new IOException("Missing process directory " + procDir.getAbsolutePath() + ": method not supported on "
@@ -1236,22 +1230,71 @@ public class ServerUtils {
             if (!pidDir.exists()) {
                 continue;
             }
-            // check if existing process is owned by the specified user, if not, the process is dead
+            // check if existing process is owned by the specified expectedUser, if not, the process is dead
+            String actualUser;
             try {
-                String pidUser = Files.getOwner(pidDir.toPath()).getName();
-                LOG.debug("Process directory {} owner is {}", pidDir, pidUser);
-                if (!user.equals(pidUser)) {
-                    LOG.info("Prior process is dead, since directory {} owner {} is not same as expected user {}, "
-                            + "likely pid {} was reused for a new process for user {}", pidDir, pidUser, user, pid, pidUser);
-                    continue;
-                }
+                actualUser = Files.getOwner(pidDir.toPath()).getName();
             } catch (NoSuchFileException ex) {
-                continue; // process died before the user can be checked
+                continue; // process died before the expectedUser can be checked
             }
-            LOG.debug("Processes {} is alive and owned by user {}", pid, user);
+            if (mockFileOwnerToUid) {
+                // code activated in testing to simulate Files.getOwner returning UID (which sometimes happens in runtime)
+                if (StringUtils.isNumeric(actualUser)) {
+                    LOG.info("Skip mocking, since owner {} of pidDir {} is already numeric", actualUser, pidDir);
+                } else {
+                    Integer actualUid = cachedUserToUidMap.get(actualUser);
+                    if (actualUid == null) {
+                        actualUid = ServerUtils.getUserId(actualUser);
+                        if (actualUid < 0) {
+                            String err = String.format("Cannot get UID for %s, while mocking the owner of pidDir %s",
+                                    actualUser, pidDir.getAbsolutePath());
+                            throw new IOException(err);
+                        }
+                        cachedUserToUidMap.put(actualUser, actualUid);
+                        LOG.info("Found UID {} for {}, while mocking the owner of pidDir {}", actualUid, actualUser, pidDir);
+                    } else {
+                        LOG.info("Found cached UID {} for {}, while mocking the owner of pidDir {}", actualUid, actualUser, pidDir);
+                    }
+                    actualUser = String.valueOf(actualUid);
+                }
+            }
+            //sometimes uid is returned instead of username - if so, try to convert and compare with uid
+            if (StringUtils.isNumeric(actualUser)) {
+                // numeric actualUser - this is UID not user
+                LOG.debug("Process directory {} owner is uid={}", pidDir, actualUser);
+                int actualUid = Integer.parseInt(actualUser);
+                Integer expectedUid = cachedUserToUidMap.get(expectedUser);
+                if (expectedUid == null) {
+                    expectedUid = ServerUtils.getUserId(expectedUser);
+                    if (expectedUid < 0) {
+                        String err = String.format("Cannot get uid for %s to compare with owner id=%d of process directory %s",
+                                expectedUser, actualUid, pidDir.getAbsolutePath());
+                        throw new IOException(err);
+                    }
+                    cachedUserToUidMap.put(expectedUser, expectedUid);
+                }
+                if (expectedUid == actualUid) {
+                    LOG.debug("Process {} is alive and owned by expectedUser {}/{}", pid, expectedUser, expectedUid);
+                    return true;
+                }
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expected expectedUser {}/{}, "
+                        + "likely pid {} was reused for a new process for uid {}",
+                        pidDir, actualUser, expectedUser, expectedUid, pid, actualUid);
+            } else {
+                // actualUser is a string
+                LOG.debug("Process directory {} owner is {}", pidDir, actualUser);
+                if (expectedUser.equals(actualUser)) {
+                    LOG.debug("Process {} is alive and owned by expectedUser {}", pid, expectedUser);
+                    return true;
+                }
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expected expectedUser {}, "
+                        + "likely pid {} was reused for a new process for expectedUser {}",
+                        pidDir, actualUser, expectedUser, pid, actualUser);
+            }
+            LOG.debug("Process {} is alive and owned by user {}", pid, expectedUser);
             return true;
         }
-        LOG.info("None of the processes {} are alive AND owned by user {}", pids, user);
+        LOG.info("None of the processes {} are alive AND owned by expectedUser {}", pids, expectedUser);
         return false;
     }
 }

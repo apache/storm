@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
@@ -253,6 +254,35 @@ public class ServerUtilsTest {
         }
         if (!errors.isEmpty()) {
             fail(String.format("There are %d failures in test:\n\t%s", errors.size(), String.join("\n\t", errors)));
+        }
+    }
+
+    /**
+     * Simulate the production scenario where the owner of the process directory is sometimes returned as the
+     * UID instead of user. This scenario is simulated by calling
+     * {@link ServerUtils#isAnyPosixProcessPidDirAlive(Collection, String, boolean)} with the last parameter
+     * set to true as well as false.
+     *
+     * @throws Exception on I/O exception
+     */
+    @Test
+    public void testIsAnyPosixProcessPidDirAliveMockingFileOwnerUid() throws Exception {
+        File procDir = new File("/proc");
+        if (!procDir.exists()) {
+            LOG.info("Test testIsAnyPosixProcessPidDirAlive is designed to run on systems with /proc directory only, marking as success");
+            return;
+        }
+        Collection<Long> pids = getRunningProcessIds();
+        assertFalse(pids.isEmpty());
+
+        for (int i = 0 ; i < 2 ; i++) {
+            boolean mockFileOwnerToUid = (i % 2 == 0);
+            // at least one pid will be owned by the current user (doing the testing)
+            String currentUser = System.getProperty("user.name");
+            boolean status = ServerUtils.isAnyPosixProcessPidDirAlive(pids, currentUser, mockFileOwnerToUid);
+            String err = String.format("(mockFileOwnerToUid=%s) Expecting user %s to own at least one process",
+                    mockFileOwnerToUid, currentUser);
+            assertTrue(err, status);
         }
     }
 
