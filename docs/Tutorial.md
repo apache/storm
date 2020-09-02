@@ -59,7 +59,7 @@ A topology runs forever, or until you kill it. Storm will automatically reassign
 
 Storm uses tuples as its data model. A tuple is a named list of values, and a field in a tuple can be an object of any type. Out of the box, Storm supports all the primitive types, strings, and byte arrays as tuple field values. To use an object of another type, you just need to implement [a serializer](Serialization.html) for the type.
 
-Every node in topology must declare the output fields for the tuples it emits. For example, this bolt declares that it emits 2-tuples with the fields "double" and "triple":
+Every node in a topology must declare the output fields for the tuples it emits. For example, this bolt declares that it emits 2-tuples with the fields "double" and "triple":
 
 ```java
 public class DoubleAndTripleBolt extends BaseRichBolt {
@@ -172,7 +172,7 @@ The `execute` method receives a tuple from one of the bolt's inputs. The `Exclam
 
 There are a few other things going on in the `execute` method, namely that the input tuple is passed as the first argument to `emit` and the input tuple is acked on the final line. These are part of Storm's reliability API for guaranteeing no data loss and will be explained later in this tutorial. 
 
-The `cleanup` method is called when a Bolt is being shutdown and should cleanup any resources that were opened. There's no guarantee that this method will be called on the cluster: for example, if the machine the task is running on blows up, there's no way to invoke the method. The `cleanup` method is intended for when you run topologies in [local mode](Local-mode.html) (where a Storm cluster is simulated in the process), and you want to be able to run and kill many topologies without suffering any resource leaks.
+The `cleanup` method is called when a Bolt is being shutdown and should cleanup any resources that were opened. There's no guarantee that this method will be called on the cluster: for example, if the machine the task is running on blows up, there's no way to invoke the method. The `cleanup` method is intended for when you run topologies in [local mode](Local-mode.html) (where a Storm cluster is simulated in a process), and you want to be able to run and kill many topologies without suffering any resource leaks.
 
 The `declareOutputFields` method declares that the `ExclamationBolt` emits 1-tuples with one field called "word".
 
@@ -206,13 +206,13 @@ public static class ExclamationBolt extends BaseRichBolt {
 
 Let's see how to run the `ExclamationTopology` in local mode and see that it's working.
 
-Storm has two modes of operation: local mode and distributed mode. In local mode, Storm executes completely in the process by simulating worker nodes with threads. Local mode is useful for testing and development of topologies. You can read more about running topologies in local mode on [Local mode](Local-mode.html).
+Storm has two modes of operation: local mode and distributed mode. In local mode, Storm executes completely in a process by simulating worker nodes with threads. Local mode is useful for testing and development of topologies. You can read more about running topologies in local mode on [Local mode](Local-mode.html).
 
 To run a topology in local mode run the command `storm local` instead of `storm jar`.
 
 ## Stream groupings
 
-A stream grouping tells a topology how to send tuples between two components. Remember, spouts and bolts execute in parallel as many tasks across the cluster. If you look at how topology is executing at the task level, it looks something like this:
+A stream grouping tells a topology how to send tuples between two components. Remember, spouts and bolts execute in parallel as many tasks across the cluster. If you look at how a topology is executing at the task level, it looks something like this:
 
 ![Tasks in a topology](images/topology-tasks.png)
 
