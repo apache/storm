@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.dependency.DependencyPropertiesParser;
 import org.apache.storm.dependency.DependencyUploader;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -238,9 +237,9 @@ public class StormSubmitter {
         validateConfs(conf);
 
         try {
-            StormCommon.validateCycleFree(topology, name);
+            Utils.validateCycleFree(topology, name);
         } catch (InvalidTopologyException ex) {
-            LOG.warn(ex.get_msg(), ex);
+            LOG.warn("", ex);
         }
 
         Map<String, String> passedCreds = new HashMap<>();

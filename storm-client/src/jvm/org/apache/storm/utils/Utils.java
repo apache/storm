@@ -1991,6 +1991,7 @@ public class Utils {
      * @return a List of cycles. Each cycle has a list of component names.
      *
      */
+    @VisibleForTesting
     public static List<List<String>> findComponentCycles(StormTopology topology, String topoId) {
         List<List<String>> ret = new ArrayList<>();
         Map<String, Set<String>> edgesOut = getStormTopologyForwardGraph(topology);
@@ -2020,5 +2021,21 @@ public class Utils {
             LOG.warn("Topology {} contains unreachable components \"{}\"", topoId, String.join(",", unreachable));
         }
         return ret;
+    }
+
+    /**
+     * Validate that the topology is cycle free. If not, then throw an InvalidTopologyException describing the cycle(s).
+     *
+     * @param topology StormTopology instance to examine.
+     * @param name Name of the topology, used in exception error message.
+     * @throws InvalidTopologyException if there are cycles, with message describing the cycles encountered.
+     */
+    public static void validateCycleFree(StormTopology topology, String name) throws InvalidTopologyException {
+        List<List<String>> cycles = Utils.findComponentCycles(topology, name);
+        if (!cycles.isEmpty()) {
+            String err = String.format("Topology %s contains cycles in components \"%s\"", name,
+                    cycles.stream().map(x -> String.join(",", x)).collect(Collectors.joining(" ; ")));
+            throw new WrappedInvalidTopologyException(err);
+        }
     }
 }

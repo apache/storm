@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -92,7 +91,7 @@ public class StormCommon {
         }
     }
 
-    private static Set<String> validateIds(Map<String, ? extends Object> componentMap) throws InvalidTopologyException {
+    private static Set<String> validateIds(Map<String, ?> componentMap) throws InvalidTopologyException {
         Set<String> keys = componentMap.keySet();
         for (String id : keys) {
             if (Utils.isSystemId(id)) {
@@ -330,7 +329,7 @@ public class StormCommon {
 
     public static Map<GlobalStreamId, Grouping> eventLoggerInputs(StormTopology topology) {
         Map<GlobalStreamId, Grouping> inputs = new HashMap<GlobalStreamId, Grouping>();
-        Set<String> allIds = new HashSet<String>();
+        Set<String> allIds = new HashSet<>();
         allIds.addAll(topology.get_bolts().keySet());
         allIds.addAll(topology.get_spouts().keySet());
 
@@ -375,14 +374,14 @@ public class StormCommon {
 
         List<Map<String, Object>> registerInfo = (List<Map<String, Object>>) conf.get(Config.TOPOLOGY_METRICS_CONSUMER_REGISTER);
         if (registerInfo != null) {
-            Map<String, Integer> classOccurrencesMap = new HashMap<String, Integer>();
+            Map<String, Integer> classOccurrencesMap = new HashMap<>();
             for (Map<String, Object> info : registerInfo) {
                 String className = (String) info.get(TOPOLOGY_METRICS_CONSUMER_CLASS);
                 Object argument = info.get(TOPOLOGY_METRICS_CONSUMER_ARGUMENT);
                 Integer maxRetainMetricTuples = ObjectReader.getInt(info.get(
                     TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES), 100);
                 Integer phintNum = ObjectReader.getInt(info.get(TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT), 1);
-                Map<String, Object> metricsConsumerConf = new HashMap<String, Object>();
+                Map<String, Object> metricsConsumerConf = new HashMap<>();
                 metricsConsumerConf.put(Config.TOPOLOGY_TASKS, phintNum);
                 List<String> whitelist = (List<String>) info.get(
                     TOPOLOGY_METRICS_CONSUMER_WHITELIST);
@@ -399,7 +398,7 @@ public class StormCommon {
                 Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
                                                                                boltInstance, null, phintNum, metricsConsumerConf);
 
-                String id = className;
+                String id;
                 if (classOccurrencesMap.containsKey(className)) {
                     // e.g. [\"a\", \"b\", \"a\"]) => [\"a\", \"b\", \"a#2\"]"
                     int occurrenceNum = classOccurrencesMap.get(className);
@@ -579,21 +578,5 @@ public class StormCommon {
         }
 
         return aznHandler;
-    }
-
-    /**
-     * Validate that the topology is cycle free. If not, then throw an InvalidTopologyException describing the cycle(s).
-     *
-     * @param topology StormTopology instance to examine.
-     * @param name Name of the topology, used in exception error message.
-     * @throws InvalidTopologyException if there are cycles, with message describing the cycles encountered.
-     */
-    public static void validateCycleFree(StormTopology topology, String name) throws InvalidTopologyException {
-        List<List<String>> cycles = Utils.findComponentCycles(topology, name);
-        if (!cycles.isEmpty()) {
-            String err = String.format("Topology %s contains cycles in components \"%s\"", name,
-                    cycles.stream().map(x -> String.join(",", x)).collect(Collectors.joining(" ; ")));
-            throw new InvalidTopologyException(err);
-        }
     }
 }

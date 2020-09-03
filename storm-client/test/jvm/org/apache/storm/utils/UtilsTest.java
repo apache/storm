@@ -21,11 +21,9 @@ package org.apache.storm.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -38,7 +36,6 @@ import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.topology.BoltDeclarer;
-import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.Assert;
 import org.junit.Test;
@@ -92,9 +89,7 @@ public class UtilsTest {
     }
 
     private void doParseJvmHeapMemByChildOptsTest(String message, List<String> opts, double expected) {
-        Assert.assertEquals(
-            message,
-            Utils.parseJvmHeapMemByChildOpts(opts, 123.0).doubleValue(), expected, 0);
+        Assert.assertEquals(message, Utils.parseJvmHeapMemByChildOpts(opts, 123.0), expected, 0);
     }
 
     @Test
@@ -473,7 +468,7 @@ public class UtilsTest {
                                     x.testName, loops.size(), x.expectedCycles, x.testDescription));
                     if (!loops.isEmpty()) {
                         testFailures.add(
-                                String.format("\t\tdetected loops are \"{}\"",
+                                String.format("\t\tdetected loops are \"%s\"",
                                         loops.stream()
                                                 .map(y -> String.join(",", y))
                                                 .collect(Collectors.joining(" ; "))
