@@ -570,9 +570,6 @@ public class TestConstraintSolverStrategy {
 
         Assert.assertEquals(10_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
 
-        topoConf.put(Config.TOPOLOGY_CONSTRAINTS_MAX_DEPTH_TRAVERSAL, 20_000);
-        Assert.assertEquals(20_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
-
         topoConf.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, 40_000);
         Assert.assertEquals(40_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
     }

@@ -227,13 +227,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             confMaxStateSearch = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH));
         } else {
             // For backwards compatibility
-            // topologies of older versions (e.g. 0.10) might not have Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH configured
-            if (topoConf.containsKey(Config.TOPOLOGY_CONSTRAINTS_MAX_DEPTH_TRAVERSAL)) {
-                //this config is to keep backwards compatibility for 0.10 topologies
-                confMaxStateSearch = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_CONSTRAINTS_MAX_DEPTH_TRAVERSAL));
-            } else {
-                confMaxStateSearch = 10_000;
-            }
+            confMaxStateSearch = 10_000;
         }
         return confMaxStateSearch;
     }
