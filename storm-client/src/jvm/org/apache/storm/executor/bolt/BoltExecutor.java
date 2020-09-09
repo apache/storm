@@ -227,9 +227,11 @@ public class BoltExecutor extends Executor {
                 new BoltExecuteInfo(tuple, taskId, delta).applyOn(topologyContext);
             }
             if (delta >= 0) {
-                stats.boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
-                Task task = idToTask.get(taskId - idToTaskBase);
-                task.getTaskMetrics().boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
+                Task firstTask = idToTask.get(taskIds.get(0) - idToTaskBase);
+                stats.boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta,
+                        workerData.getUptime().upTime(), firstTask);
+                Task currentTask = idToTask.get(taskId - idToTaskBase);
+                currentTask.getTaskMetrics().boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
             }
         }
     }

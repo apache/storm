@@ -21,6 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Acts as a MultiCount Stat, but keeps track of approximate counts for the last 10 mins, 3 hours, 1 day, and all time. for the same keys
  */
 public class MultiCountStat<T> {
+    public static final int TEN_MIN_IN_SECONDS = 60 * 10;
+    public static final String TEN_MIN_IN_SECONDS_STR = TEN_MIN_IN_SECONDS + "";
     private final int numBuckets;
     private ConcurrentHashMap<T, CountStat> counts = new ConcurrentHashMap<>();
 

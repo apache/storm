@@ -12,7 +12,12 @@
 
 package org.apache.storm.stats;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.storm.daemon.Task;
 import org.apache.storm.generated.BoltStats;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
@@ -53,10 +58,53 @@ public class BoltExecutorStats extends CommonStats {
         super.cleanupStats();
     }
 
-    public void boltExecuteTuple(String component, String stream, long latencyMs) {
+    public void boltExecuteTuple(String component, String stream, long latencyMs, long workerUptimeSecs,
+                                 Task firstExecutorTask) {
         List key = Lists.newArrayList(component, stream);
         this.getExecuted().incBy(key, this.rate);
         this.getExecuteLatencies().record(key, latencyMs);
+
+        // Calculate capacity:  This is really for the whole executor, but we will use the executor's first task
+        // for reporting the metric.
+        double capacity = calculateCapacity(workerUptimeSecs);
+        firstExecutorTask.getTaskMetrics().setCapacity(capacity);
+    }
+
+    private double calculateCapacity(long workerUptimeSecs) {
+        if (workerUptimeSecs > 0) {
+            Map<String, Double> execAvg = valueStat(this.getExecuteLatencies()).get(MultiCountStat.TEN_MIN_IN_SECONDS_STR);
+            Map<String, Long> exec = valueStat(this.getExecuted()).get(MultiCountStat.TEN_MIN_IN_SECONDS_STR);
+
+            Set<Object> allKeys = new HashSet<>();
+            if (execAvg != null) {
+                allKeys.addAll(execAvg.keySet());
+            }
+            if (exec != null) {
+                allKeys.addAll(exec.keySet());
+            }
+
+            double totalAvg = 0;
+            for (Object k : allKeys) {
+                double avg = getOr0(execAvg, k).doubleValue();
+                long cnt = getOr0(exec, k).longValue();
+                totalAvg += avg * cnt;
+            }
+
+            return totalAvg / (Math.min(workerUptimeSecs, MultiCountStat.TEN_MIN_IN_SECONDS) * 1000);
+        }
+        return 0.0;
+    }
+
+    private static Number getOr0(Map m, Object k) {
+        if (m == null) {
+            return 0;
+        }
+
+        Number n = (Number) m.get(k);
+        if (n == null) {
+            return 0;
+        }
+        return n;
     }
 
     public void boltAckedTuple(String component, String stream, long latencyMs) {
