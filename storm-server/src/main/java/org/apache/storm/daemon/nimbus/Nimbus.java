@@ -4097,14 +4097,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 
-    private TopologyInfo getTopologyInfoByNameImpl(String name, GetInfoOptions options) throws TException, Exception {
+    private TopologyInfo getTopologyInfoByNameImpl(String name, GetInfoOptions options)
+        throws NotAliveException, AuthorizationException, Exception {
         IStormClusterState state = stormClusterState;
-        String id = state.getTopoId(name).orElseThrow(() -> new WrappedNotAliveException(name + " is not alive"));
+        String id = state.getTopoId(name).orElseThrow(() -> new NotAliveException(name + " is not alive"));
         return getTopologyInfoWithOptsImpl(id, options);
     }
 
     @Override
-    public TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws TException {
+    public TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options)
+        throws NotAliveException, AuthorizationException, TException {
         try {
             getTopologyInfoByNameWithOptsCalls.mark();
             return getTopologyInfoByNameImpl(name, options);
@@ -4137,7 +4139,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         AuthorizationException, InvalidTopologyException, Exception {
         CommonTopoInfo common = getCommonTopoInfo(topoId, "getTopologyInfo");
         if (common.base == null) {
-            throw new WrappedNotAliveException(topoId);
+            throw new NotAliveException(topoId);
         }
         IStormClusterState state = stormClusterState;
         NumErrorsChoice numErrChoice = Utils.OR(options.get_num_err_choice(), NumErrorsChoice.ALL);
@@ -4722,7 +4724,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public List<TopologySummary> getTopologySummaries() throws TException {
+    public List<TopologySummary> getTopologySummaries() throws AuthorizationException, TException {
         try {
             getTopologySummariesCalls.mark();
             checkAuthorization(null, null, "getTopologySummaries");
@@ -4737,12 +4739,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public TopologySummary getTopologySummaryByName(String name) throws TException {
+    public TopologySummary getTopologySummaryByName(String name)
+        throws NotAliveException, AuthorizationException, TException {
         try {
             getTopologySummaryByNameCalls.mark();
             checkAuthorization(name, null, "getTopologySummaryByName");
             IStormClusterState state = stormClusterState;
-            String topoId = state.getTopoId(name).orElseThrow(() -> new WrappedNotAliveException(name + " is not alive"));
+            String topoId = state.getTopoId(name).orElseThrow(() -> new NotAliveException(name + " is not alive"));
             return getTopologySummaryImpl(topoId, state.topologyBases().get(topoId));
         } catch (Exception e) {
             LOG.warn("Get TopologySummaryByName info exception.", e);
@@ -4754,13 +4757,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public TopologySummary getTopologySummary(String id) throws TException {
+    public TopologySummary getTopologySummary(String id)
+        throws NotAliveException, AuthorizationException, TException {
         try {
             getTopologySummaryCalls.mark();
             IStormClusterState state = stormClusterState;
             StormBase base = state.topologyBases().get(id);
             if (base == null) {
-                throw new WrappedNotAliveException(id + " is not alive");
+                throw new NotAliveException(id + " is not alive");
             }
             checkAuthorization(base.get_name(), null, "getTopologySummary");
             return getTopologySummaryImpl(id, base);
@@ -4862,7 +4866,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 for (StormBase base : ownerToBasesEntry.getValue()) {
                     try {
                         String topoId = state.getTopoId(base.get_name())
-                                             .orElseThrow(() -> new WrappedNotAliveException(base.get_name() + " is not alive"));
+                                             .orElseThrow(() -> new NotAliveException(base.get_name() + " is not alive"));
                         TopologyResources resources = getResourcesForTopology(topoId, base);
                         totalResourcesAggregate = totalResourcesAggregate.add(resources);
                         Assignment ownerAssignment = topoIdToAssignments.get(topoId);

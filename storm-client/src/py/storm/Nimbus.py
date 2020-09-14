@@ -1681,6 +1681,8 @@ class Client(Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
+        if result.aze is not None:
+            raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologySummaries failed: unknown result")
 
     def getTopologySummaryByName(self, name):
@@ -1713,6 +1715,10 @@ class Client(Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
+        if result.e is not None:
+            raise result.e
+        if result.aze is not None:
+            raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologySummaryByName failed: unknown result")
 
     def getTopologySummary(self, id):
@@ -1745,6 +1751,10 @@ class Client(Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
+        if result.e is not None:
+            raise result.e
+        if result.aze is not None:
+            raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologySummary failed: unknown result")
 
     def getLeader(self):
@@ -1839,6 +1849,10 @@ class Client(Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
+        if result.e is not None:
+            raise result.e
+        if result.aze is not None:
+            raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyInfoByName failed: unknown result")
 
     def getTopologyInfo(self, id):
@@ -1909,6 +1923,10 @@ class Client(Iface):
         iprot.readMessageEnd()
         if result.success is not None:
             return result.success
+        if result.e is not None:
+            raise result.e
+        if result.aze is not None:
+            raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyInfoByNameWithOpts failed: unknown result")
 
     def getTopologyInfoWithOpts(self, id, options):
@@ -3421,6 +3439,9 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -3444,6 +3465,12 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except NotAliveException as e:
+            msg_type = TMessageType.REPLY
+            result.e = e
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -3467,6 +3494,12 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except NotAliveException as e:
+            msg_type = TMessageType.REPLY
+            result.e = e
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -3542,6 +3575,12 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except NotAliveException as e:
+            msg_type = TMessageType.REPLY
+            result.e = e
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -3594,6 +3633,12 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.REPLY
         except TTransport.TTransportException:
             raise
+        except NotAliveException as e:
+            msg_type = TMessageType.REPLY
+            result.e = e
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
         except TApplicationException as ex:
             logging.exception('TApplication exception in handler')
             msg_type = TMessageType.EXCEPTION
@@ -8739,12 +8784,14 @@ class getTopologySummaries_result(object):
     """
     Attributes:
      - success
+     - aze
 
     """
 
 
-    def __init__(self, success=None,):
+    def __init__(self, success=None, aze=None,):
         self.success = success
+        self.aze = aze
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -8766,6 +8813,12 @@ class getTopologySummaries_result(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -8782,6 +8835,10 @@ class getTopologySummaries_result(object):
             for iter879 in self.success:
                 iter879.write(oprot)
             oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 1)
+            self.aze.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -8802,6 +8859,7 @@ class getTopologySummaries_result(object):
 all_structs.append(getTopologySummaries_result)
 getTopologySummaries_result.thrift_spec = (
     (0, TType.LIST, 'success', (TType.STRUCT, [TopologySummary, None], False), None, ),  # 0
+    (1, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 1
 )
 
 
@@ -8871,12 +8929,16 @@ class getTopologySummaryByName_result(object):
     """
     Attributes:
      - success
+     - e
+     - aze
 
     """
 
 
-    def __init__(self, success=None,):
+    def __init__(self, success=None, e=None, aze=None,):
         self.success = success
+        self.e = e
+        self.aze = aze
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -8893,6 +8955,18 @@ class getTopologySummaryByName_result(object):
                     self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.e = NotAliveException()
+                    self.e.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -8906,6 +8980,14 @@ class getTopologySummaryByName_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)
             self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.e is not None:
+            oprot.writeFieldBegin('e', TType.STRUCT, 1)
+            self.e.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+            self.aze.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -8926,6 +9008,8 @@ class getTopologySummaryByName_result(object):
 all_structs.append(getTopologySummaryByName_result)
 getTopologySummaryByName_result.thrift_spec = (
     (0, TType.STRUCT, 'success', [TopologySummary, None], None, ),  # 0
+    (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
+    (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
 )
 
 
@@ -8995,12 +9079,16 @@ class getTopologySummary_result(object):
     """
     Attributes:
      - success
+     - e
+     - aze
 
     """
 
 
-    def __init__(self, success=None,):
+    def __init__(self, success=None, e=None, aze=None,):
         self.success = success
+        self.e = e
+        self.aze = aze
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -9017,6 +9105,18 @@ class getTopologySummary_result(object):
                     self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.e = NotAliveException()
+                    self.e.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -9030,6 +9130,14 @@ class getTopologySummary_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)
             self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.e is not None:
+            oprot.writeFieldBegin('e', TType.STRUCT, 1)
+            self.e.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+            self.aze.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -9050,6 +9158,8 @@ class getTopologySummary_result(object):
 all_structs.append(getTopologySummary_result)
 getTopologySummary_result.thrift_spec = (
     (0, TType.STRUCT, 'success', [TopologySummary, None], None, ),  # 0
+    (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
+    (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
 )
 
 
@@ -9373,12 +9483,16 @@ class getTopologyInfoByName_result(object):
     """
     Attributes:
      - success
+     - e
+     - aze
 
     """
 
 
-    def __init__(self, success=None,):
+    def __init__(self, success=None, e=None, aze=None,):
         self.success = success
+        self.e = e
+        self.aze = aze
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -9395,6 +9509,18 @@ class getTopologyInfoByName_result(object):
                     self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.e = NotAliveException()
+                    self.e.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -9408,6 +9534,14 @@ class getTopologyInfoByName_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)
             self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.e is not None:
+            oprot.writeFieldBegin('e', TType.STRUCT, 1)
+            self.e.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+            self.aze.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -9428,6 +9562,8 @@ class getTopologyInfoByName_result(object):
 all_structs.append(getTopologyInfoByName_result)
 getTopologyInfoByName_result.thrift_spec = (
     (0, TType.STRUCT, 'success', [TopologyInfo, None], None, ),  # 0
+    (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
+    (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
 )
 
 
@@ -9660,12 +9796,16 @@ class getTopologyInfoByNameWithOpts_result(object):
     """
     Attributes:
      - success
+     - e
+     - aze
 
     """
 
 
-    def __init__(self, success=None,):
+    def __init__(self, success=None, e=None, aze=None,):
         self.success = success
+        self.e = e
+        self.aze = aze
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -9682,6 +9822,18 @@ class getTopologyInfoByNameWithOpts_result(object):
                     self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.e = NotAliveException()
+                    self.e.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -9695,6 +9847,14 @@ class getTopologyInfoByNameWithOpts_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRUCT, 0)
             self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.e is not None:
+            oprot.writeFieldBegin('e', TType.STRUCT, 1)
+            self.e.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+            self.aze.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -9715,6 +9875,8 @@ class getTopologyInfoByNameWithOpts_result(object):
 all_structs.append(getTopologyInfoByNameWithOpts_result)
 getTopologyInfoByNameWithOpts_result.thrift_spec = (
     (0, TType.STRUCT, 'success', [TopologyInfo, None], None, ),  # 0
+    (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
+    (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
 )
 
 

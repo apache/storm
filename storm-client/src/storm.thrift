@@ -777,14 +777,14 @@ service Nimbus {
   string getNimbusConf() throws (1: AuthorizationException aze);
   // stats functions
   ClusterSummary getClusterInfo() throws (1: AuthorizationException aze);
-  list<TopologySummary> getTopologySummaries();
-  TopologySummary getTopologySummaryByName(1: string name);
-  TopologySummary getTopologySummary(1: string id);
+  list<TopologySummary> getTopologySummaries() throws (1: AuthorizationException aze);
+  TopologySummary getTopologySummaryByName(1: string name) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  TopologySummary getTopologySummary(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   NimbusSummary getLeader() throws (1: AuthorizationException aze);
   bool isTopologyNameAllowed(1: string name) throws (1: AuthorizationException aze);
-  TopologyInfo getTopologyInfoByName(1: string name);
+  TopologyInfo getTopologyInfoByName(1: string name) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
-  TopologyInfo getTopologyInfoByNameWithOpts(1: string name, 2: GetInfoOptions options);
+  TopologyInfo getTopologyInfoByNameWithOpts(1: string name, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfoWithOpts(1: string id, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyPageInfo getTopologyPageInfo(1: string id, 2: string window, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   SupervisorPageInfo getSupervisorPageInfo(1: string id, 2: string host, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
