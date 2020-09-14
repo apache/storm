@@ -1238,7 +1238,6 @@ public class UIHelpers {
         result.put("failed", commonStats.get_failed());
         result.put("completeLatency", spoutAggregateStats.get_complete_latency_ms());
 
-
         ErrorInfo lastError = componentAggregateStats.get_last_error();
         result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
         return result;
@@ -1421,14 +1420,45 @@ public class UIHelpers {
     }
 
     /**
+     * getComponentLastErrorInfo.
+     * Internal helper method that populates a hashmap with the component's most recently reported error.
+     * If the component has no such error reported, an empty "template" suitable for return over the
+     * REST api is returned.
+     *
+     * @param lastError errorInfo The components most recently reported error.
+     * @param config config Topology configuration map.
+     * @param topologyId topologyId.
+     * @return Map of values representing details about the most recently reported error.
+     */
+    private static Map<String, Object> getComponentLastErrorInfo(ErrorInfo lastError, Map config, String topologyId) {
+        Map<String, Object> result = new HashMap<>();
+
+        // Maintain backwards compatibility by defaulting these fields to empty string or null.
+        // If the lastError parameter is non-null, these keys will be populated with the appropriate values below.
+        result.put("lastError", "");
+        result.put("errorHost", "");
+        result.put("errorPort", (Integer) null);
+        result.put("errorWorkerLogLink", "");
+        result.put("errorTime", null);
+        result.put("errorLapsedSecs", null);
+
+        if (!Objects.isNull(lastError)) {
+            result.putAll(getComponentErrorInfo(lastError, config, topologyId, true));
+        }
+        return result;
+    }
+
+    /**
      * getComponentErrorInfo.
      * @param errorInfo errorInfo
      * @param config config
      * @param topologyId topologyId
+     * @param asLastError Pass a value of true if the result is to be used as part of a components 'lastError' response.
+     *                    Pass a value of false if the result is to be used as part of a components 'errors' response.
      * @return getComponentErrorInfo
      */
     private static Map<String, Object> getComponentErrorInfo(ErrorInfo errorInfo, Map config,
-                                                             String topologyId) {
+                                                             String topologyId, boolean asLastError) {
         Map<String, Object> result = new HashMap();
         result.put("errorTime",
                 errorInfo.get_error_time_secs());
@@ -1438,7 +1468,13 @@ public class UIHelpers {
         result.put("errorPort", port);
         result.put("errorWorkerLogLink", getWorkerLogLink(host, port, config, topologyId));
         result.put("errorLapsedSecs", Time.deltaSecs(errorInfo.get_error_time_secs()));
-        result.put("error", errorInfo.get_error());
+
+        if (asLastError) {
+            result.put("lastError", getTruncatedErrorString(errorInfo.get_error()));
+        } else {
+            result.put("error", errorInfo.get_error());
+        }
+
         return result;
     }
 
@@ -1455,7 +1491,7 @@ public class UIHelpers {
         errorInfoList.sort(Comparator.comparingInt(ErrorInfo::get_error_time_secs));
         result.put(
                 "componentErrors",
-                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId))
+                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId, false))
                         .collect(Collectors.toList())
         );
         return result;
@@ -1474,7 +1510,7 @@ public class UIHelpers {
         errorInfoList.sort(Comparator.comparingInt(ErrorInfo::get_error_time_secs));
         result.put(
                 "topologyErrors",
-                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId))
+                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId, false))
                         .collect(Collectors.toList())
         );
         return result;
@@ -1487,16 +1523,15 @@ public class UIHelpers {
      * @return getTopologySpoutAggStatsMap
      */
     private static Map<String, Object> getTopologySpoutAggStatsMap(ComponentAggregateStats componentAggregateStats,
-                                                                   String spoutId) {
+                                                                   String spoutId, Map<String, Object> config, String topologyId) {
         Map<String, Object> result = new HashMap();
         CommonAggregateStats commonStats = componentAggregateStats.get_common_stats();
         result.putAll(getCommonAggStatsMap(commonStats));
         result.put("spoutId", spoutId);
         result.put("encodedSpoutId", Utils.urlEncodeUtf8(spoutId));
         SpoutAggregateStats spoutAggregateStats = componentAggregateStats.get_specific_stats().get_spout();
-        result.put("completeLatency", spoutAggregateStats.get_complete_latency_ms());
-        ErrorInfo lastError = componentAggregateStats.get_last_error();
-        result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
+        result.put("completeLatency", StatsUtil.floatStr(spoutAggregateStats.get_complete_latency_ms()));
+        result.putAll(getComponentLastErrorInfo(componentAggregateStats.get_last_error(), config, topologyId));
         return result;
     }
 
@@ -1507,7 +1542,7 @@ public class UIHelpers {
      * @return getTopologyBoltAggStatsMap
      */
     private static Map<String, Object> getTopologyBoltAggStatsMap(ComponentAggregateStats componentAggregateStats,
-                                                                  String boltId) {
+                                                                  String boltId, Map<String, Object> config, String topologyId) {
         Map<String, Object> result = new HashMap();
         CommonAggregateStats commonStats = componentAggregateStats.get_common_stats();
         result.putAll(getCommonAggStatsMap(commonStats));
@@ -1518,8 +1553,7 @@ public class UIHelpers {
         result.put("executeLatency", StatsUtil.floatStr(boltAggregateStats.get_execute_latency_ms()));
         result.put("executed", boltAggregateStats.get_executed());
         result.put("processLatency", StatsUtil.floatStr(boltAggregateStats.get_process_latency_ms()));
-        ErrorInfo lastError = componentAggregateStats.get_last_error();
-        result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
+        result.putAll(getComponentLastErrorInfo(componentAggregateStats.get_last_error(), config, topologyId));
         return result;
     }
 
@@ -1606,7 +1640,7 @@ public class UIHelpers {
         List<Map> spoutStats = new ArrayList();
 
         for (Map.Entry<String, ComponentAggregateStats> spoutEntry : spouts.entrySet()) {
-            spoutStats.add(getTopologySpoutAggStatsMap(spoutEntry.getValue(), spoutEntry.getKey()));
+            spoutStats.add(getTopologySpoutAggStatsMap(spoutEntry.getValue(), spoutEntry.getKey(), config, topologyPageInfo.get_id()));
         }
         result.put("spouts", spoutStats);
 
@@ -1614,7 +1648,7 @@ public class UIHelpers {
         List<Map> boltStats = new ArrayList();
 
         for (Map.Entry<String, ComponentAggregateStats> boltEntry : bolts.entrySet()) {
-            boltStats.add(getTopologyBoltAggStatsMap(boltEntry.getValue(), boltEntry.getKey()));
+            boltStats.add(getTopologyBoltAggStatsMap(boltEntry.getValue(), boltEntry.getKey(), config, topologyPageInfo.get_id()));
         }
         result.put("bolts", boltStats);
 

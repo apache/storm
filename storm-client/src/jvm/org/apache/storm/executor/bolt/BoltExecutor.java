@@ -23,12 +23,9 @@ import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
-import org.apache.storm.daemon.metrics.BuiltinBoltMetrics;
-import org.apache.storm.daemon.metrics.BuiltinMetrics;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
-import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
 import org.apache.storm.messaging.IConnection;
@@ -37,7 +34,6 @@ import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.IWaitStrategy.WaitSituation;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.security.auth.IAutoCredentials;
-import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.task.IBolt;
@@ -46,7 +42,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.JCQueue.ExitCondition;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
@@ -65,7 +60,6 @@ public class BoltExecutor extends Executor {
     private final IWaitStrategy consumeWaitStrategy;       // employed when no incoming data
     private final IWaitStrategy backPressureWaitStrategy;  // employed when outbound path is congested
     private final BoltExecutorStats stats;
-    private final BuiltinMetrics builtInMetrics;
     private BoltOutputCollectorImpl outputCollector;
 
     public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
@@ -82,7 +76,6 @@ public class BoltExecutor extends Executor {
         this.backPressureWaitStrategy.prepare(topoConf, WaitSituation.BACK_PRESSURE_WAIT);
         this.stats = new BoltExecutorStats(ConfigUtils.samplingRate(this.getTopoConf()),
                                            ObjectReader.getInt(this.getTopoConf().get(Config.NUM_STAT_BUCKETS)));
-        this.builtInMetrics = new BuiltinBoltMetrics(stats);
     }
 
     private static IWaitStrategy makeSystemBoltWaitStrategy() {
@@ -117,7 +110,6 @@ public class BoltExecutor extends Executor {
             }
             IBolt boltObject = (IBolt) taskData.getTaskObject();
             TopologyContext userContext = taskData.getUserContext();
-            builtInMetrics.registerAll(topoConf, userContext);
             if (boltObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) boltObject).setCredentials(credentials);
             }
@@ -236,6 +228,8 @@ public class BoltExecutor extends Executor {
             }
             if (delta >= 0) {
                 stats.boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
+                Task task = idToTask.get(taskId - idToTaskBase);
+                task.getTaskMetrics().boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
             }
         }
     }

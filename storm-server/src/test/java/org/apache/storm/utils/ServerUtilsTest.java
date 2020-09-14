@@ -24,21 +24,34 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipFile;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.storm.testing.TmpPath;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerUtilsTest {
+
+    public static final Logger LOG = LoggerFactory.getLogger(ServerUtilsTest.class);
 
     @Test
     public void testExtractZipFileDisallowsPathTraversal() throws Exception {
@@ -47,7 +60,7 @@ public class ServerUtilsTest {
             Path extractionDest = testRoot.resolve("dest");
             Files.createDirectories(extractionDest);
 
-            /**
+            /*
              * Contains good.txt and ../evil.txt. Evil.txt will path outside the target dir, and should not be extracted.
              */
             try (ZipFile zip = new ZipFile(Paths.get("src/test/resources/evil-path-traversal.jar").toFile())) {
@@ -67,7 +80,7 @@ public class ServerUtilsTest {
             Path extractionDest = destParent.resolve("resources");
             Files.createDirectories(extractionDest);
 
-            /**
+            /*
              * Contains resources/good.txt and resources/../evil.txt. Evil.txt should not be extracted as it would end
              * up outside the extraction dest.
              */
@@ -89,7 +102,7 @@ public class ServerUtilsTest {
             String line;
             while ((line = input.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty()) {
+                if (line.isEmpty() || line.startsWith("PID")) {
                     continue;
                 }
                 try {
@@ -162,6 +175,190 @@ public class ServerUtilsTest {
         int uid1 = ServerUtils.getUserId(null);
         Path p = Files.createTempFile("testGetUser", ".txt");
         int uid2 = ServerUtils.getPathOwnerUid(p.toString());
+        if (!p.toFile().delete()) {
+            LOG.warn("Could not delete tempoary file {}", p);
+        }
         assertEquals("User UID " + uid1 + " is not same as file " + p.toString() + " owner UID of " + uid2, uid1, uid2);
+    }
+
+    @Test
+    public void testIsAnyProcessPosixProcessPidDirAlive() throws IOException {
+        final String testName = "testIsAnyProcessPosixProcessPidDirAlive";
+        List<String> errors = new ArrayList<>();
+        int maxPidCnt = 5;
+        if (ServerUtils.IS_ON_WINDOWS) {
+            LOG.info("{}: test cannot be run on Windows. Marked as successful", testName);
+            return;
+        }
+        final Path parentDir = Paths.get("/proc");
+        if (!parentDir.toFile().exists()) {
+            LOG.info("{}: test cannot be run on system without process directory {}, os.name={}",
+                    testName, parentDir, System.getProperty("os.name"));
+            // check if we can get process id on this Posix system - testing test code, useful on Mac
+            String cmd = "/bin/sleep 10";
+            if (getPidOfPosixProcess(Runtime.getRuntime().exec(cmd), errors) < 0) {
+                fail(String.format("%s: Cannot obtain process id for executed command \"%s\"\n%s",
+                        testName, cmd, String.join("\n\t", errors)));
+            }
+            return;
+        }
+        // Create processes and wait for their termination
+        Set<Long> observables = new HashSet<>();
+
+        for (int i = 0 ; i < maxPidCnt ; i++) {
+            String cmd = "sleep 2000";
+            Process process = Runtime.getRuntime().exec(cmd);
+            long pid = getPidOfPosixProcess(process, errors);
+            LOG.info("{}: ({}) ran process \"{}\" with pid={}", testName, i, cmd, pid);
+            if (pid < 0) {
+                String e = String.format("%s: (%d) Cannot obtain process id for executed command \"%s\"", testName, i, cmd);
+                errors.add(e);
+                LOG.error(e);
+                continue;
+            }
+            observables.add(pid);
+        }
+        String userName = System.getProperty("user.name");
+        // now kill processes one by one
+        List<Long> pidList = new ArrayList<>(observables);
+        final long processKillIntervalMs = 2000;
+        for (int i = 0; i < pidList.size(); i++) {
+            long pid = pidList.get(i);
+            LOG.info("{}: ({}) Sleeping for {} milliseconds before kill", testName, i, processKillIntervalMs);
+            if (sleepInterrupted(processKillIntervalMs)) {
+                return;
+            }
+            Runtime.getRuntime().exec("kill -9 " + pid);
+            LOG.info("{}: ({}) Sleeping for {} milliseconds after kill", testName, i, processKillIntervalMs);
+            if (sleepInterrupted(processKillIntervalMs)) {
+                return;
+            }
+            boolean pidDirsAvailable = ServerUtils.isAnyPosixProcessPidDirAlive(observables, userName);
+            if (i < pidList.size() - 1) {
+                if (pidDirsAvailable) {
+                    LOG.info("{}: ({}) Found existing process directories before killing last process", testName, i);
+                } else {
+                    String e = String.format("%s: (%d) Found no existing process directories before killing last process", testName, i);
+                    errors.add(e);
+                    LOG.error(e);
+                }
+            } else {
+                if (pidDirsAvailable) {
+                    String e = String.format("%s: (%d) Found existing process directories after killing last process", testName, i);
+                    errors.add(e);
+                    LOG.error(e);
+                } else {
+                    LOG.info("{}: ({}) Found no existing process directories after killing last process", testName, i);
+                }
+            }
+        }
+        if (!errors.isEmpty()) {
+            fail(String.format("There are %d failures in test:\n\t%s", errors.size(), String.join("\n\t", errors)));
+        }
+    }
+
+    /**
+     * Simulate the production scenario where the owner of the process directory is sometimes returned as the
+     * UID instead of user. This scenario is simulated by calling
+     * {@link ServerUtils#isAnyPosixProcessPidDirAlive(Collection, String, boolean)} with the last parameter
+     * set to true as well as false.
+     *
+     * @throws Exception on I/O exception
+     */
+    @Test
+    public void testIsAnyPosixProcessPidDirAliveMockingFileOwnerUid() throws Exception {
+        File procDir = new File("/proc");
+        if (!procDir.exists()) {
+            LOG.info("Test testIsAnyPosixProcessPidDirAlive is designed to run on systems with /proc directory only, marking as success");
+            return;
+        }
+        Collection<Long> pids = getRunningProcessIds();
+        assertFalse(pids.isEmpty());
+
+        for (int i = 0 ; i < 2 ; i++) {
+            boolean mockFileOwnerToUid = (i % 2 == 0);
+            // at least one pid will be owned by the current user (doing the testing)
+            String currentUser = System.getProperty("user.name");
+            boolean status = ServerUtils.isAnyPosixProcessPidDirAlive(pids, currentUser, mockFileOwnerToUid);
+            String err = String.format("(mockFileOwnerToUid=%s) Expecting user %s to own at least one process",
+                    mockFileOwnerToUid, currentUser);
+            assertTrue(err, status);
+        }
+    }
+
+    /**
+     * Make the best effort to obtain the Process ID from the Process object. Thus staying entirely with the JVM.
+     *
+     * @param p Process instance returned upon executing {@link Runtime#exec(String)}.
+     * @param errors Populate errors when PID is a negative number.
+     * @return positive PID upon success, otherwise negative.
+     */
+    private synchronized long getPidOfPosixProcess(Process p, List<String> errors) {
+        Class<? extends Process> pClass = p.getClass();
+        String pObjStr = ToStringBuilder.reflectionToString(p, ToStringStyle.SHORT_PREFIX_STYLE);
+        String pclassName = pClass.getName();
+        try {
+            if (pclassName.equals("java.lang.UNIXProcess")) {
+                Field f = pClass.getDeclaredField("pid");
+                f.setAccessible(true);
+                long pid = f.getLong(p);
+                f.setAccessible(false);
+                if (pid < 0) {
+                    errors.add("\t \"pid\" attribute in Process class " + pclassName + " returned -1, process=" + pObjStr);
+                }
+                return pid;
+            }
+            for (Field f : pClass.getDeclaredFields()) {
+                if (!f.getName().equalsIgnoreCase("pid")) {
+                    continue;
+                }
+                LOG.info("ServerUtilsTest.getPidOfPosixProcess(): found attribute {}#{}", pclassName, f.getName());
+                f.setAccessible(true);
+                long pid = f.getLong(p);
+                f.setAccessible(false);
+                if (pid < 0) {
+                    errors.add("\t \"pid\" attribute in Process class " + pclassName + " returned -1, process=" + pObjStr);
+                }
+                return pid;
+            }
+            // post JDK 9 there should be getPid() - future JDK-11 compatibility only for the sake of Travis test in community
+            try {
+                Method m = pClass.getDeclaredMethod("getPid");
+                LOG.info("ServerUtilsTest.getPidOfPosixProcess(): found method {}#getPid()\n", pclassName);
+                long pid = (Long)m.invoke(p);
+                if (pid < 0) {
+                    errors.add("\t \"getPid()\" method in Process class " + pclassName + " returned -1, process=" + pObjStr);
+                }
+                return pid;
+            } catch (SecurityException e) {
+                errors.add("\t getPid() method in Process class " + pclassName + " cannot be called: " + e.getMessage() + ", process=" + pObjStr);
+                return -1;
+            } catch (NoSuchMethodException e) {
+                // ignore and try something else
+            }
+            errors.add("\t Process class " + pclassName + " missing field \"pid\" and missing method \"getPid()\", process=" + pObjStr);
+            return -1;
+        } catch (Exception e) {
+            errors.add("\t Exception in Process class " + pclassName + ": " + e.getMessage() + ", process=" + pObjStr);
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    /**
+     * Sleep for specified milliseconds and return true if sleep was interrupted.
+     *
+     * @param milliSeconds number of milliseconds to sleep
+     * @return true if sleep was interrupted, false otherwise.
+     */
+    private boolean sleepInterrupted(long milliSeconds) {
+        try {
+            Thread.sleep(milliSeconds);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+            Thread.currentThread().interrupt();
+            return true;
+        }
+        return false;
     }
 }

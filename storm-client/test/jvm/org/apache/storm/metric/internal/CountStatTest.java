@@ -18,9 +18,9 @@ import junit.framework.TestCase;
 import org.junit.Test;
 
 /**
- * Unit test for CountStatAndMetric
+ * Unit test for CountStat
  */
-public class CountStatAndMetricTest extends TestCase {
+public class CountStatTest extends TestCase {
     final long TEN_MIN = 10 * 60 * 1000;
     final long THIRTY_SEC = 30 * 1000;
     final long THREE_HOUR = 3 * 60 * 60 * 1000;
@@ -29,7 +29,7 @@ public class CountStatAndMetricTest extends TestCase {
     @Test
     public void testBasic() {
         long time = 0l;
-        CountStatAndMetric count = new CountStatAndMetric(10, time);
+        CountStat count = new CountStat(10, time);
         while (time < TEN_MIN) {
             //For this part of the test we interleve the differnt rotation types.
             count.incBy(50);
@@ -37,7 +37,6 @@ public class CountStatAndMetricTest extends TestCase {
             count.rotateSched(time);
             count.incBy(50);
             time += THIRTY_SEC / 2;
-            assertEquals(100l, ((Long) count.getValueAndReset(time)).longValue());
         }
 
         long val = 100 * TEN_MIN / THIRTY_SEC;
@@ -51,7 +50,6 @@ public class CountStatAndMetricTest extends TestCase {
         while (time < THREE_HOUR) {
             count.incBy(100);
             time += THIRTY_SEC;
-            assertEquals(100l, ((Long) count.getValueAndReset(time)).longValue());
         }
 
         val = 100 * THREE_HOUR / THIRTY_SEC;
@@ -65,7 +63,6 @@ public class CountStatAndMetricTest extends TestCase {
         while (time < ONE_DAY) {
             count.incBy(100);
             time += THIRTY_SEC;
-            assertEquals(100l, ((Long) count.getValueAndReset(time)).longValue());
         }
 
         val = 100 * ONE_DAY / THIRTY_SEC;

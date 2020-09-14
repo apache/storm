@@ -16,6 +16,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metered;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import java.io.IOException;
@@ -396,12 +397,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private void processMeters(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
         Map<String, Meter> meters = workerData.getMetricRegistry().getTaskMeters(taskId);
         for (Map.Entry<String, Meter> entry : meters.entrySet()) {
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
-            dataPoints.add(dataPoint);
-            addConvertedMetric(entry.getKey(), ".m1_rate", entry.getValue().getOneMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".m5_rate", entry.getValue().getFiveMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".m15_rate", entry.getValue().getFifteenMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".mean_rate", entry.getValue().getMeanRate(), dataPoints);
+            addMeteredDatapoints(entry.getKey(), entry.getValue(), dataPoints);
         }
     }
 
@@ -410,9 +406,17 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         for (Map.Entry<String, Timer> entry : timers.entrySet()) {
             Snapshot snapshot =  entry.getValue().getSnapshot();
             addSnapshotDatapoints(entry.getKey(), snapshot, dataPoints);
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
-            dataPoints.add(dataPoint);
+            addMeteredDatapoints(entry.getKey(), entry.getValue(), dataPoints);
         }
+    }
+
+    private void addMeteredDatapoints(String baseName, Metered metered, List<IMetricsConsumer.DataPoint> dataPoints) {
+        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + ".count", metered.getCount());
+        dataPoints.add(dataPoint);
+        addConvertedMetric(baseName, ".m1_rate", metered.getOneMinuteRate(), dataPoints);
+        addConvertedMetric(baseName, ".m5_rate", metered.getFiveMinuteRate(), dataPoints);
+        addConvertedMetric(baseName, ".m15_rate", metered.getFifteenMinuteRate(), dataPoints);
+        addConvertedMetric(baseName, ".mean_rate", metered.getMeanRate(), dataPoints);
     }
 
     private void addSnapshotDatapoints(String baseName, Snapshot snapshot, List<IMetricsConsumer.DataPoint> dataPoints) {

@@ -660,7 +660,7 @@ public class StatsUtil {
             m.remove(EXEC_LAT_TOTAL);
             m.remove(PROC_LAT_TOTAL);
             String id = (String) e.getKey();
-            m.put("last-error", getLastError(clusterState, topologyId, id));
+            m.put(LAST_ERROR, getLastError(clusterState, topologyId, id));
 
             aggBolt2stats.put(id, thriftifyBoltAggStats(m));
         }
@@ -677,7 +677,7 @@ public class StatsUtil {
                 m.put(COMP_LATENCY, compLatencyTotal / acked);
             }
             m.remove(COMP_LAT_TOTAL);
-            m.put("last-error", getLastError(clusterState, topologyId, id));
+            m.put(LAST_ERROR, getLastError(clusterState, topologyId, id));
 
             aggSpout2stats.put(id, thriftifySpoutAggStats(m));
         }

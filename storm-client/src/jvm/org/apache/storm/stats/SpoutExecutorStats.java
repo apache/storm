@@ -12,22 +12,21 @@
 
 package org.apache.storm.stats;
 
-import com.codahale.metrics.Counter;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.SpoutStats;
-import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
+import org.apache.storm.metric.internal.MultiLatencyStat;
 
 @SuppressWarnings("unchecked")
 public class SpoutExecutorStats extends CommonStats {
-    private final MultiLatencyStatAndMetric completeLatencyStats;
+    private final MultiLatencyStat completeLatencyStats;
 
     public SpoutExecutorStats(int rate, int numStatBuckets) {
         super(rate, numStatBuckets);
-        this.completeLatencyStats = new MultiLatencyStatAndMetric(numStatBuckets);
+        this.completeLatencyStats = new MultiLatencyStat(numStatBuckets);
     }
 
-    public MultiLatencyStatAndMetric getCompleteLatencies() {
+    public MultiLatencyStat getCompleteLatencies() {
         return completeLatencyStats;
     }
 
@@ -37,15 +36,13 @@ public class SpoutExecutorStats extends CommonStats {
         super.cleanupStats();
     }
 
-    public void spoutAckedTuple(String stream, long latencyMs, Counter ackedCounter) {
+    public void spoutAckedTuple(String stream, long latencyMs) {
         this.getAcked().incBy(stream, this.rate);
-        ackedCounter.inc(this.rate);
         this.getCompleteLatencies().record(stream, latencyMs);
     }
 
-    public void spoutFailedTuple(String stream, long latencyMs, Counter failedCounter) {
+    public void spoutFailedTuple(String stream) {
         this.getFailed().incBy(stream, this.rate);
-        failedCounter.inc(this.rate);
     }
 
     @Override
