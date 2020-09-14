@@ -8,7 +8,7 @@ documentation: true
 
 ### Motivation
 
-Apache Storm 2.0 introduced locality awareness to LoadAwareShuffleGrouping based on Bang-Bang control theory. 
+Apache Storm has introduced locality awareness to LoadAwareShuffleGrouping based on Bang-Bang control theory. 
 It aims to keep traffic to closer downstream executors to avoid network latency when those executors are not under heavy load. 
 It can also avoid serialization/deserialization overhead if the traffic happens in the same worker.  
 
