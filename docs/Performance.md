@@ -5,14 +5,14 @@ documentation: true
 ---
 
 Latency, throughput and resource consumption are the three key dimensions involved in performance tuning.
-In the following sections we discuss the settings that can used to tune along these dimension and understand the trade-offs.
+In the following sections, we discuss the settings that can be used to tune along these dimensions and understand the trade-offs.
 
-It is important to understand that these settings can vary depending on the topology, the type of hardware and the number of hosts used by the topology.
+It is important to understand that these settings can vary depending on the topology, the type of hardware, and the number of hosts used by the topology.
 
 ## 1. Buffer Size
 Spouts and Bolts operate asynchronously using message passing. Message queues used for this purpose are of fixed but configurable size. Buffer size
 refers to the size of these queues. Every consumer has its own receive queue. The messages wait in the queue until the consumer is ready to process them.
-The queue will typically be almost empty or almost full depending whether the consumer is operating faster or slower than the rate at which producers
+The queue will typically be almost empty or almost full depending on whether the consumer is operating faster or slower than the rate at which producers
 are generating messages for it. Storm queues always have a single consumer and potentially multiple producers. There are two buffer size settings
 of interest:
 
@@ -33,14 +33,14 @@ reported on the Storm UI. Large queues also imply higher memory consumption espe
 
 ## 2. Batch Size
 Producers can either write a batch of messages to the consumer's queue or write each message individually. This batch size can be configured.
-Inserting messages in batches to downstream queues helps reduce the number of synchronization operations required for the inserts. Consequently this helps achieve higher throughput. However,
+Inserting messages in batches to downstream queues helps reduce the number of synchronization operations required for the inserts. Consequently, this helps achieve higher throughput. However,
 sometimes it may take a little time for the buffer to fill up, before it is flushed into the downstream queue. This implies that the buffered messages
 will take longer to become visible to the downstream consumer who is waiting to process them. This can increase the average end-to-end latency for
 these messages. The latency can get very bad if the batch sizes are large and the topology is not experiencing high traffic.
 
 - `topology.producer.batch.size` : The batch size for writes into the receive queue of any spout/bolt is controlled via this setting. This setting
 impacts the communication within a worker process. Each upstream producer maintains a separate batch to a component's receive queue. So if two spout
-instances are writing to the same downstream bolt instance, each of the spout instances will have maintain a separate batch.
+instances are writing to the same downstream bolt instance, each of the spout instances will have to maintain a separate batch.
 
 -  `topology.transfer.batch.size` : Messages that are destined to a spout/bolt running on a different worker process, are sent to a queue called
 the **Worker Transfer Queue**. The Worker Transfer Thread is responsible for draining the messages in this queue and send them to the appropriate
@@ -73,7 +73,7 @@ set to 0 or if (`topology.producer.batch.size`=1 and `topology.transfer.batch.si
 
 
 #### Guidance
-Flushing interval can be used as tool to retain the higher throughput benefits of batching and avoid batched messages getting stuck for too long waiting for their.
+Flushing interval can be used as a tool to retain the higher throughput benefits of batching and avoid batched messages getting stuck for too long waiting for theirs.
 batch to fill. Preferably this value should be larger than the average execute latencies of the bolts in the topology. Trying to flush the queues more frequently than
 the amount of time it takes to produce the messages may hurt performance. Understanding the average execute latencies of each bolt will help determine the average
 number of messages in the queues between two flushes.
@@ -95,13 +95,13 @@ this wait strategy is used between nextTuple() calls, allowing the spout's execu
 when the `topology.max.spout.pending` limit has been reached when ACKers are enabled. Select a strategy using `topology.spout.wait.strategy`. Configure the
 chosen wait strategy using one of the `topology.spout.wait.*` settings.
 
-4.2 **Bolt Wait:** : When a bolt polls it's receive queue for new messages to process, it is possible that the queue is empty. This typically happens
+4.2 **Bolt Wait:** : When a bolt polls it's receive a queue for new messages to process, it is possible that the queue is empty. This typically happens
 in case of low/no traffic situations or when the upstream spout/bolt is inherently slower. This wait strategy is used in such cases. It avoids high CPU usage
 due to the bolt continuously checking on a typically empty queue. Select a strategy using `topology.bolt.wait.strategy`. The chosen strategy can be further configured
 using the `topology.bolt.wait.*` settings.
 
 4.3 **Backpressure Wait** : Select a strategy using `topology.backpressure.wait.strategy`. When a spout/bolt tries to write to a downstream component's receive queue,
-there is a possibility that the queue is full. In such cases the write needs to be retried. This wait strategy is used to induce some idling in-between re-attempts for
+there is a possibility that the queue is full. In such cases, the write needs to be retried. This wait strategy is used to induce some idling in-between re-attempts for
 conserving CPU. The chosen strategy can be further configured using the `topology.backpressure.wait.*` settings.
 
 
@@ -166,8 +166,8 @@ The *system bolt* generally processes very few messages per second, and so requi
 
 
 ## 9. Garbage Collection
-Choice of GC is an important concern for topologies that are latency or throughput sensitive. It is recommended to try the both the CMS and G1 collectors. Performance characteristics
-of the collectors can change between single and multiworker modes and is dependent on hardware characteristics such as number of CPUs and memory localities. Number of GC threads can
+Choice of GC is an important concern for topologies that are latency or throughput sensitive. It is recommended to try both the CMS and G1 collectors. Performance characteristics
+of the collectors can change between single and multiworker modes and are dependent on hardware characteristics such as the number of CPUs and memory localities. Number of GC threads can
 also affect performance. Sometimes fewer GC threads can yield better performance. It is advisable to select a collector and tune it by mimicking anticipated peak data rates on hardware
 similar to what is used in production.
 
