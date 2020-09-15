@@ -5,7 +5,7 @@ documentation: true
 ---
 ### Storm is an Application Container
 
-Storm provides an application container environment, a la Apache Tomcat, which creates potential for classpath conflicts between Storm and your application.  The most common way of using Storm involves submitting an "uber JAR" containing your application code with all of its dependencies bundled in, and then Storm distributes this JAR to Worker nodes.  Then Storm runs your application within a Storm process called a `Worker` -- thus the JVM's classpath contains the dependencies of your JAR as well as whatever dependencies the Worker itself has.  So careful handling of classpaths and dependencies is critical for the correct functioning of Storm.
+Storm provides an application container environment, a la Apache Tomcat, which creates a potential for classpath conflicts between Storm and your application.  The most common way of using Storm involves submitting an "uber JAR" containing your application code with all of its dependencies bundled in, and then Storm distributes this JAR to Worker nodes.  Then Storm runs your application within a Storm process called a `Worker` -- thus the JVM's classpath contains the dependencies of your JAR as well as whatever dependencies the Worker itself has.  So careful handling of classpaths and dependencies is critical for the correct functioning of Storm.
 
 ### Adding Extra Dependencies to Classpath
 
@@ -13,8 +13,8 @@ You no longer *need* to bundle your dependencies into your topology and create a
 
 The `storm.py` launcher script allows you to include dependencies into the launched program's classpath via a few different mechanisms:
 
-1. The `--jar` and `--artifacts` options for the `storm jar` command: allow inclusion of non-bundled dependencies with your topology; i.e., allowing specification of JARs that were not bundled into the topology uber-jar.  This is required when using the `storm sql` command, which constructs a topology automatically without needing you to write code and build a topology JAR.
-2. The `${STORM_DIR}/extlib/` and `${STORM_DIR}/extlib-daemon/` directories can have dependencies added to them for inclusion of plugins & 3rd-party libraries into the Storm daemons (e.g., Nimbus, UI, Supervisor, etc. -- use `extlib-daemon/`) and other commands launched via the `storm.py` script, e.g., `storm sql` and `storm jar` (use `extlib`). Notably, this means that the Storm Worker process does not include the `extlib-daemon/` directory into its classpath.
+1. The `--jar` and `--artifacts` options for the `storm jar` command: allow the inclusion of non-bundled dependencies with your topology; i.e., allowing specification of JARs that were not bundled into the topology uber-jar.  This is required when using the `storm sql` command, which constructs a topology automatically without needing you to write code and build a topology JAR.
+2. The `${STORM_DIR}/extlib/` and `${STORM_DIR}/extlib-daemon/` directories can have dependencies added to them for the inclusion of plugins & 3rd-party libraries into the Storm daemons (e.g., Nimbus, UI, Supervisor, etc. -- use `extlib-daemon/`) and other commands launched via the `storm.py` script, e.g., `storm sql` and `storm jar` (use `extlib`). Notably, this means that the Storm Worker process does not include the `extlib-daemon/` directory into its classpath.
 3. The `STORM_EXT_CLASSPATH` and `STORM_EXT_CLASSPATH_DAEMON` environment variables provide a similar functionality as those directories, but allows the user to place their external dependencies in alternative locations.
  * There is a wrinkle here: because the Supervisor daemon launches the Worker process, if you want `STORM_EXT_CLASSPATH` to impact your Workers, you will need to specify the `STORM_EXT_CLASSPATH` for the Supervisor daemon.  That will allow the Supervisor to consult this environment variable as it constructs the classpath of the Worker processes.
 
