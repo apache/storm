@@ -84,6 +84,7 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.NotAliveException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
@@ -1191,6 +1192,8 @@ public class Utils {
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
         try (NimbusClient client = NimbusClient.getConfiguredClientAs(topoConf, asUser)) {
             return client.getClient().getTopologyInfoByName(name);
+        } catch (NotAliveException notAliveException) {
+            return null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1202,6 +1205,8 @@ public class Utils {
             if (topologySummary != null) {
                 return topologySummary.get_id();
             }
+        } catch (NotAliveException notAliveException) {
+            return null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -17,6 +17,7 @@ import java.util.Map;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.RebalanceOptions;
+import org.apache.storm.generated.NotAliveException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
@@ -44,9 +45,11 @@ public class TestRebalance {
     private static final Logger LOG = LoggerFactory.getLogger(TestRebalance.class);
 
     public static String topoNameToId(String topoName, ILocalCluster cluster) throws TException {
-        TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
-        if (topoSum != null) {
+        try {
+            TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
             return topoSum.get_id();
+        } catch (NotAliveException e) {
+            LOG.error("Failed to getTopologySummaryByName from " + topoName, e);
         }
         return null;
     }

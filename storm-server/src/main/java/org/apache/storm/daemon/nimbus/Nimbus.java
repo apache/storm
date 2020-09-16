@@ -4100,7 +4100,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private TopologyInfo getTopologyInfoByNameImpl(String name, GetInfoOptions options)
         throws NotAliveException, AuthorizationException, Exception {
         IStormClusterState state = stormClusterState;
-        String id = state.getTopoId(name).orElseThrow(() -> new NotAliveException(name + " is not alive"));
+        String id = state.getTopoId(name).orElseThrow(() -> new WrappedNotAliveException(name + " is not alive"));
         return getTopologyInfoWithOptsImpl(id, options);
     }
 
@@ -4139,7 +4139,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         AuthorizationException, InvalidTopologyException, Exception {
         CommonTopoInfo common = getCommonTopoInfo(topoId, "getTopologyInfo");
         if (common.base == null) {
-            throw new NotAliveException(topoId);
+            throw new WrappedNotAliveException(topoId);
         }
         IStormClusterState state = stormClusterState;
         NumErrorsChoice numErrChoice = Utils.OR(options.get_num_err_choice(), NumErrorsChoice.ALL);
@@ -4745,7 +4745,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             getTopologySummaryByNameCalls.mark();
             checkAuthorization(name, null, "getTopologySummaryByName");
             IStormClusterState state = stormClusterState;
-            String topoId = state.getTopoId(name).orElseThrow(() -> new NotAliveException(name + " is not alive"));
+            String topoId = state.getTopoId(name).orElseThrow(() -> new WrappedNotAliveException(name + " is not alive"));
             return getTopologySummaryImpl(topoId, state.topologyBases().get(topoId));
         } catch (Exception e) {
             LOG.warn("Get TopologySummaryByName info exception.", e);
@@ -4764,7 +4764,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             IStormClusterState state = stormClusterState;
             StormBase base = state.topologyBases().get(id);
             if (base == null) {
-                throw new NotAliveException(id + " is not alive");
+                throw new WrappedNotAliveException(id + " is not alive");
             }
             checkAuthorization(base.get_name(), null, "getTopologySummary");
             return getTopologySummaryImpl(id, base);

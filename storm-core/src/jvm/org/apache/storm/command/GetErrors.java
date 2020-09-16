@@ -43,11 +43,9 @@ public class GetErrors {
             public void run(Nimbus.Iface client) throws Exception {
                 GetInfoOptions opts = new GetInfoOptions();
                 opts.set_num_err_choice(NumErrorsChoice.ONE);
-                TopologyInfo topologyInfo;
-                Map<String, Object> outputMap = null;
-                outputMap = new HashMap<>();
+                Map<String, Object> outputMap = new HashMap<>();
                 try {
-                    topologyInfo = client.getTopologyInfoByNameWithOpts(name, opts);
+                    TopologyInfo topologyInfo = client.getTopologyInfoByNameWithOpts(name, opts);
                     String topologyName = topologyInfo.get_name();
                     Map<String, List<ErrorInfo>> topologyErrors = topologyInfo.get_errors();
                     outputMap.put("Topology Name", topologyName);
