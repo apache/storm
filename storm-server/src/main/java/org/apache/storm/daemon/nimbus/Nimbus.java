@@ -2671,18 +2671,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private Map<String, Object> tryReadTopoConfFromName(final String topoName) throws NotAliveException,
         AuthorizationException, IOException {
-        IStormClusterState state = stormClusterState;
-        String topoId = state.getTopoId(topoName)
-                             .orElseThrow(() -> new WrappedNotAliveException(topoName + " is not alive"));
-        return tryReadTopoConf(topoId, topoCache);
+        return tryReadTopoConf(toTopoId(topoName), topoCache);
     }
 
     private StormTopology tryReadTopologyFromName(final String topoName) throws NotAliveException,
             AuthorizationException, IOException {
-        IStormClusterState state = stormClusterState;
-        String topoId = state.getTopoId(topoName)
-                .orElseThrow(() -> new WrappedNotAliveException(topoName + " is not alive"));
-        return tryReadTopology(topoId, topoCache);
+        return tryReadTopology(toTopoId(topoName), topoCache);
     }
 
     @VisibleForTesting
@@ -4766,8 +4760,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
                 for (StormBase base : ownerToBasesEntry.getValue()) {
                     try {
-                        String topoId = state.getTopoId(base.get_name())
-                                             .orElseThrow(() -> new WrappedNotAliveException(base.get_name() + " is not alive"));
+                        String topoId = toTopoId(base.get_name());
                         TopologyResources resources = getResourcesForTopology(topoId, base);
                         totalResourcesAggregate = totalResourcesAggregate.add(resources);
                         Assignment ownerAssignment = topoIdToAssignments.get(topoId);
