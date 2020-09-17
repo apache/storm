@@ -781,8 +781,8 @@ def initialize_rebalance_subcommand(subparsers):
     )
 
     sub_parser.add_argument(
-        "-e", "--executors", action="append", default=[],
-        help="change the number of executors for a given component e.g component_name:5"
+        "-e", "--executor", action="append", default=[],
+        help="change the number of executors for a given component e.g. --executor component_name=6"
     )
 
     sub_parser.add_argument(
@@ -1204,7 +1204,7 @@ def deactivate(args):
 
 
 def rebalance(args):
-    for executor in args.executors:
+    for executor in args.executor:
         try:
             _, new_value = executor.split("=")
             new_value = int(new_value)

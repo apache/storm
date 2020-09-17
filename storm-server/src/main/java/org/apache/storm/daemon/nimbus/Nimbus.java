@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -2674,10 +2675,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private Map<String, Object> tryReadTopoConfFromName(final String topoName) throws NotAliveException,
         AuthorizationException, IOException {
-        IStormClusterState state = stormClusterState;
-        String topoId = state.getTopoId(topoName)
-                             .orElseThrow(() -> new WrappedNotAliveException(topoName + " is not alive"));
-        return tryReadTopoConf(topoId, topoCache);
+        return tryReadTopoConf(toTopoId(topoName), topoCache);
+    }
+
+    private StormTopology tryReadTopologyFromName(final String topoName) throws NotAliveException,
+            AuthorizationException, IOException {
+        return tryReadTopology(toTopoId(topoName), topoCache);
     }
 
     @VisibleForTesting
@@ -3374,8 +3377,23 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             checkAuthorization(topoName, topoConf, operation);
             // Set principal in RebalanceOptions to nil because users are not suppose to set this
             options.set_principal(null);
+            // check if executor counts are correctly specified
+            StormTopology stormTopology = tryReadTopologyFromName(topoName);
+            Set<String> comps = new TreeSet<>();
+            comps.addAll(stormTopology.get_spouts().keySet());
+            comps.addAll(stormTopology.get_bolts().keySet());
             Map<String, Integer> execOverrides = options.is_set_num_executors() ? options.get_num_executors() : Collections.emptyMap();
-            for (Integer value : execOverrides.values()) {
+            for (Map.Entry<String, Integer> e: execOverrides.entrySet()) {
+                String comp = e.getKey();
+                // validate non-system component ids
+                if (!Utils.isSystemId(comp) && !comps.contains(comp)) {
+                    throw new WrappedInvalidTopologyException(
+                            String.format("Invalid component %s for topology %s, valid values are %s",
+                                    comp, topoName, String.join(",", comps))
+                    );
+                }
+                // validate executor count for component
+                Integer value = e.getValue();
                 if (value == null || value <= 0) {
                     throw new WrappedInvalidTopologyException("Number of executors must be greater than 0");
                 }
@@ -4746,8 +4764,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
                 for (StormBase base : ownerToBasesEntry.getValue()) {
                     try {
-                        String topoId = state.getTopoId(base.get_name())
-                                             .orElseThrow(() -> new WrappedNotAliveException(base.get_name() + " is not alive"));
+                        String topoId = toTopoId(base.get_name());
                         TopologyResources resources = getResourcesForTopology(topoId, base);
                         totalResourcesAggregate = totalResourcesAggregate.add(resources);
                         Assignment ownerAssignment = topoIdToAssignments.get(topoId);
