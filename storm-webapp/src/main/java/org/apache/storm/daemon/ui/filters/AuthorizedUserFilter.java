@@ -115,7 +115,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
             try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)) {
                 topoConf = (Map) JSONValue.parse(nimbusClient.getClient().getTopologyConf(topoId));
             } catch (AuthorizationException ae) {
-                LOG.error("Nimbus isn't allowing {} to access the topology conf of {}. {}", ReqContext.context(), topoId, ae.get_msg());
+                LOG.error("Nimbus isn't allowing {} to access the topology conf of {}. {}", ReqContext.context(), topoId, ae.getMessage());
                 containerRequestContext.abortWith(makeResponse(ae, containerRequestContext, 403));
                 return;
             } catch (TException e) {
