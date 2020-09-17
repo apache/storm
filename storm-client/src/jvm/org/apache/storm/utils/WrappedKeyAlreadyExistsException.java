@@ -23,6 +23,7 @@ import org.apache.storm.generated.KeyAlreadyExistsException;
 /**
  * Wraps the generated TException to allow getMessage() to return a valid string.
  */
+@Deprecated
 public class WrappedKeyAlreadyExistsException extends KeyAlreadyExistsException {
     public WrappedKeyAlreadyExistsException(String msg) {
         super(msg);

@@ -23,6 +23,7 @@ import org.apache.storm.generated.InvalidTopologyException;
 /**
  * Wraps the generated TException to allow getMessage() to return a valid string.
  */
+@Deprecated
 public class WrappedInvalidTopologyException extends InvalidTopologyException {
     public WrappedInvalidTopologyException(String msg) {
         super(msg);

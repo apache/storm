@@ -20,6 +20,7 @@ package org.apache.storm.utils;
 
 import org.apache.storm.generated.IllegalStateException;
 
+@Deprecated
 public class WrappedIllegalStateException extends IllegalStateException {
     public WrappedIllegalStateException(String msg) {
         super(msg);

@@ -23,6 +23,7 @@ import org.apache.storm.generated.AlreadyAliveException;
 /**
  * Wraps the generated TException to allow getMessage() to return a valid string.
  */
+@Deprecated
 public class WrappedAlreadyAliveException extends AlreadyAliveException {
     public WrappedAlreadyAliveException(String msg) {
         super(msg);

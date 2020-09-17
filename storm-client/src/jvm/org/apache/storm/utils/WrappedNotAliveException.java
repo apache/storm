@@ -23,6 +23,7 @@ import org.apache.storm.generated.NotAliveException;
 /**
  * Wraps the generated TException to allow getMessage() to return a valid string.
  */
+@Deprecated
 public class WrappedNotAliveException extends NotAliveException {
     public WrappedNotAliveException(String msg) {
         super(msg);
