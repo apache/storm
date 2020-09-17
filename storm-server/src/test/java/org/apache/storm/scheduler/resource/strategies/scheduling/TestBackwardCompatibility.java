@@ -144,15 +144,8 @@ public class TestBackwardCompatibility {
     }
 
     @Test
-    public void testGenericResourceAwareStrategyInFavorOfShuffleWithNewProximityConfig() {
-        boolean useDeprecatedConfigForProximity = false;
-        testGenericResourceAwareStrategy.testGenericResourceAwareStrategyInFavorOfShuffle(useDeprecatedConfigForProximity);
-    }
-
-    @Test
-    public void testGenericResourceAwareStrategyInFavorOfShuffleWithDeprecatedProximityConfig() {
-        boolean useDeprecatedConfigForProximity = true;
-        testGenericResourceAwareStrategy.testGenericResourceAwareStrategyInFavorOfShuffle(useDeprecatedConfigForProximity);
+    public void testGenericResourceAwareStrategyInFavorOfShuffle() {
+        testGenericResourceAwareStrategy.testGenericResourceAwareStrategyInFavorOfShuffle();
     }
 
     @Test
@@ -374,15 +367,8 @@ public class TestBackwardCompatibility {
     }
 
     @Test
-    public void testDefaultResourceAwareStrategyInFavorOfShuffleWithNewProximityConfig() {
-        boolean useDeprecatedConfigForProximity = false;
-        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle(useDeprecatedConfigForProximity);
-    }
-
-    @Test
-    public void testDefaultResourceAwareStrategyInFavorOfShuffleWithDeprecatedProximityConfig() {
-        boolean useDeprecatedConfigForProximity = true;
-        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle(useDeprecatedConfigForProximity);
+    public void testDefaultResourceAwareStrategyInFavorOfShuffle() {
+        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle();
     }
 
     @Test

@@ -318,9 +318,7 @@ public class TestGenericResourceAwareStrategy {
     /**
      * test if the scheduling logic for the GenericResourceAwareStrategy (when in favor of shuffle) is correct.
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testGenericResourceAwareStrategyInFavorOfShuffle(boolean useDeprecatedConfigForProximity) {
+    public void testGenericResourceAwareStrategyInFavorOfShuffle() {
         int spoutParallelism = 1;
         int boltParallelism = 2;
         TopologyBuilder builder = new TopologyBuilder();
@@ -347,11 +345,7 @@ public class TestGenericResourceAwareStrategy {
         conf.put(Config.TOPOLOGY_NAME, "testTopology");
         conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
         conf.put(Config.TOPOLOGY_SUBMITTER_USER, "user");
-        if (useDeprecatedConfigForProximity) {
-            conf.put(BaseResourceAwareStrategy.EXPERIMENTAL_TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
-        } else {
-            conf.put(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
-        }
+        conf.put(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
 
         TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
             genExecsAndComps(stormToplogy), currentTime, "user");
@@ -380,8 +374,7 @@ public class TestGenericResourceAwareStrategy {
             foundScheduling.add(new HashSet<>(execs));
         }
 
-        assertEquals("useDeprecatedConfigForProximity=" + useDeprecatedConfigForProximity,
-                expectedScheduling, foundScheduling);
+        assertEquals(expectedScheduling, foundScheduling);
     }
 
     @Test

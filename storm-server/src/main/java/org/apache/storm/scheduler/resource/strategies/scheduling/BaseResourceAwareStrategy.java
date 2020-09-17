@@ -233,17 +233,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     }
 
     public static boolean isOrderByProximity(Map<String, Object> topoConf) {
-        Boolean orderByProximity = (Boolean) topoConf.get(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS);
-        if (orderByProximity == null) {
-            orderByProximity = (Boolean) topoConf.get(EXPERIMENTAL_TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS);
-            if (orderByProximity == null) {
-                orderByProximity = false;
-            } else {
-                LOG.warn("{} is deprecated; please use {} instead", EXPERIMENTAL_TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS,
-                        Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS);
-            }
-        }
-        return orderByProximity;
+        return ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS), false);
     }
 
     /**
@@ -330,14 +320,6 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         }
         return true;
     }
-
-    /**
-     * If this config is set to true, unassigned executors will be sorted by topological order with network proximity needs.
-     * @deprecated Use {@link Config#TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS} instead.
-     */
-    @Deprecated
-    public static final String EXPERIMENTAL_TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS
-            = "experimental.topology.ras.order.executors.by.proximity.needs";
 
     /**
      * Log a bunch of stuff for debugging.
