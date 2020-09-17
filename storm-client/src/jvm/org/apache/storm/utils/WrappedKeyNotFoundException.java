@@ -28,10 +28,6 @@ public class WrappedKeyNotFoundException extends KeyNotFoundException {
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }
 
 

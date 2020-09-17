@@ -28,8 +28,4 @@ public class WrappedKeyAlreadyExistsException extends KeyAlreadyExistsException 
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }

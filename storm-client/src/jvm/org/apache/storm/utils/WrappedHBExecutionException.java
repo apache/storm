@@ -29,8 +29,4 @@ public class WrappedHBExecutionException extends HBExecutionException {
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }

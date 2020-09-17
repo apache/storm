@@ -28,8 +28,4 @@ public class WrappedAuthorizationException extends AuthorizationException {
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }

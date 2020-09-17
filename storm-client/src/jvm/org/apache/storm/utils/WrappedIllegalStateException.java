@@ -25,8 +25,4 @@ public class WrappedIllegalStateException extends IllegalStateException {
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }

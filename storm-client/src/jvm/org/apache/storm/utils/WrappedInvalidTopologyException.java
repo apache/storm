@@ -28,8 +28,4 @@ public class WrappedInvalidTopologyException extends InvalidTopologyException {
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }

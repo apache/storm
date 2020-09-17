@@ -28,8 +28,4 @@ public class WrappedAlreadyAliveException extends AlreadyAliveException {
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }
