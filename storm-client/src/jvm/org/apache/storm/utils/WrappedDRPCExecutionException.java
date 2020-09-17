@@ -30,4 +30,9 @@ public class WrappedDRPCExecutionException extends DRPCExecutionException {
         super(msg);
     }
 
+    @Override
+    public String getMessage() {
+        return super.get_msg();
+    }
+
 }
