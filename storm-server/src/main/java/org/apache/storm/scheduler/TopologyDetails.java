@@ -123,6 +123,15 @@ public class TopologyDetails {
         return ret;
     }
 
+    public Map<String, Set<ExecutorDetails>> getComponentToExecutors() {
+        Map<String, Set<ExecutorDetails>> ret = new HashMap<>();
+        Map<ExecutorDetails, String> execToComp = getExecutorToComponent();
+        if (execToComp != null) {
+            execToComp.forEach((exec, comp) -> ret.computeIfAbsent(comp, (k) -> new HashSet<>()).add(exec));
+        }
+        return ret;
+    }
+
     public Set<ExecutorDetails> getExecutors() {
         return executorToComponent.keySet();
     }
@@ -244,6 +253,24 @@ public class TopologyDetails {
             }
         }
         return ret;
+    }
+
+    /**
+     * Determine if there are non-system spouts.
+     *
+     * @return true if there is at least one non-system spout, false otherwise
+     */
+    public boolean hasSpouts() {
+        Map<String, SpoutSpec> spouts = topology.get_spouts();
+        if (spouts == null) {
+            return false;
+        }
+        for (String compId : spouts.keySet()) {
+            if (!Utils.isSystemId(compId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String getComponentFromExecutor(ExecutorDetails exec) {

@@ -16,8 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource.strategies.scheduling;
+package org.apache.storm.scheduler.resource.strategies.scheduling.sorter;
 
-public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy {
+import java.util.TreeSet;
+import org.apache.storm.scheduler.ExecutorDetails;
+import org.apache.storm.scheduler.resource.strategies.scheduling.ObjectResourcesItem;
+
+
+public interface INodeSorter {
+
+    TreeSet<ObjectResourcesItem> sortRacks(ExecutorDetails exec);
+
+    Iterable<String> sortAllNodes(ExecutorDetails exec);
 }
-

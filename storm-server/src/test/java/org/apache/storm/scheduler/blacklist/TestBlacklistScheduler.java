@@ -55,8 +55,12 @@ public class TestBlacklistScheduler {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestBlacklistScheduler.class);
 
-    private static int currentTime = 1468216504;
-    private static IScheduler scheduler = null;
+    private int currentTime = 1468216504;
+    private IScheduler scheduler = null;
+
+    protected Class getDefaultResourceAwareStrategyClass() {
+        return DefaultResourceAwareStrategy.class;
+    }
 
     @After
     public void cleanup() {
@@ -238,7 +242,7 @@ public class TestBlacklistScheduler {
         config.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 0.0);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 0);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0);
-        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, DefaultResourceAwareStrategy.class.getName());
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
         config.put(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, true);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();

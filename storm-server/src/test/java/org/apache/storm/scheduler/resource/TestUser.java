@@ -22,13 +22,13 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.utils.Time;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.createClusterConfig;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.toDouble;
@@ -40,6 +40,17 @@ import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class TestUser {
     private static final Logger LOG = LoggerFactory.getLogger(TestUser.class);
+
+    protected Class getDefaultResourceAwareStrategyClass() {
+        return DefaultResourceAwareStrategy.class;
+    }
+
+    private Config createClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                       Map<String, Map<String, Number>> pools) {
+        Config config = TestUtilsForResourceAwareScheduler.createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
+        return config;
+    }
 
     @Test
     public void testResourcePoolUtilization() {

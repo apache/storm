@@ -43,12 +43,15 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
+import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,8 +64,8 @@ import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 public class TestGenericResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareStrategy.class);
 
-    private static int currentTime = 1450418597;
-    private static IScheduler scheduler = null;
+    private final int currentTime = 1450418597;
+    private IScheduler scheduler = null;
 
     @After
     public void cleanup() {
@@ -70,6 +73,17 @@ public class TestGenericResourceAwareStrategy {
             scheduler.cleanup();
             scheduler = null;
         }
+    }
+
+    protected Class getGenericResourceAwareStrategyClass() {
+        return GenericResourceAwareStrategy.class;
+    }
+
+    private Config createGrasClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                                 Map<String, Map<String, Number>> pools, Map<String, Double> genericResourceMap) {
+        Config config = TestUtilsForResourceAwareScheduler.createGrasClusterConfig(compPcore, compOnHeap, compOffHeap, pools, genericResourceMap);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getGenericResourceAwareStrategyClass().getName());
+        return config;
     }
 
     /**
@@ -304,7 +318,6 @@ public class TestGenericResourceAwareStrategy {
     /**
      * test if the scheduling logic for the GenericResourceAwareStrategy (when in favor of shuffle) is correct.
      */
-    @Test
     public void testGenericResourceAwareStrategyInFavorOfShuffle() {
         int spoutParallelism = 1;
         int boltParallelism = 2;
