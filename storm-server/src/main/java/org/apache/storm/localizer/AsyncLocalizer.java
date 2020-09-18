@@ -467,8 +467,8 @@ public class AsyncLocalizer implements AutoCloseable {
         // Will need further investigation if the race condition happens again
         List<LocalResource> localResources;
         try {
-            // Precondition1: Base blob stormconf.ser and stormcode.ser have been localized
-            // Precondition2: Both these two blob files are fully downloaded and proper permission been set
+            // Precondition1: Base blob stormconf.ser and stormcode.ser are available
+            // Precondition2: Both files have proper permission
             localResources = getLocalResources(pna);
         } catch (IOException e) {
             LOG.info("Port and assignment info: {}", pna);
