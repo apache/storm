@@ -13,6 +13,7 @@
 package org.apache.storm.metrics2;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -29,7 +30,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.storm.Config;
-import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.metrics2.reporters.StormReporter;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -38,7 +38,7 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StormMetricRegistry {
+public class StormMetricRegistry implements MetricRegistryProvider {
     private static final Logger LOG = LoggerFactory.getLogger(StormMetricRegistry.class);
     private static final String WORKER_METRIC_PREFIX = "storm.worker.";
     private static final String TOPOLOGY_METRIC_PREFIX = "storm.topology.";
@@ -50,26 +50,30 @@ public class StormMetricRegistry {
     private final ConcurrentMap<Integer, Map<String, Counter>> taskIdCounters = new ConcurrentHashMap<>();
     private final ConcurrentMap<Integer, Map<String, Timer>> taskIdTimers = new ConcurrentHashMap<>();
     private final ConcurrentMap<Integer, Map<String, Histogram>> taskIdHistograms = new ConcurrentHashMap<>();
+    private final ConcurrentMap<TaskMetricDimensions, TaskMetricRepo> taskMetrics = new ConcurrentHashMap<>();
     private String hostName = null;
+    private int port = -1;
+    private String topologyId = null;
 
     public <T> SimpleGauge<T> gauge(
         T initialValue, String name, String topologyId, String componentId, Integer taskId, Integer port) {
+        Gauge gauge = new SimpleGauge<>(initialValue);
         MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
-        Gauge gauge = registry.gauge(metricNames.getLongName(), () -> new SimpleGauge<>(initialValue));
+        gauge = registerGauge(metricNames, gauge, taskId, componentId, null);
         saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
         return (SimpleGauge<T>) gauge;
     }
 
     public <T> Gauge<T> gauge(String name, Gauge<T> gauge, TopologyContext context) {
         MetricNames metricNames = topologyMetricName(name, context);
-        gauge = registry.register(metricNames.getLongName(), gauge);
+        gauge = registerGauge(metricNames, gauge, context.getThisTaskId(), context.getThisComponentId(), null);
         saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, gauge, taskIdGauges);
         return gauge;
     }
 
     public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String topologyId, String componentId, Integer taskId, Integer port) {
         MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
-        gauge = registry.register(metricNames.getLongName(), gauge);
+        gauge = registerGauge(metricNames, gauge, taskId, componentId, null);
         saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
         return gauge;
     }
@@ -77,51 +81,66 @@ public class StormMetricRegistry {
     public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String topologyId, String componentId,
                               String streamId, Integer taskId, Integer port) {
         MetricNames metricNames = workerMetricName(name, topologyId, componentId, streamId, taskId, port);
-        gauge = registry.register(metricNames.getLongName(), gauge);
+        gauge = registerGauge(metricNames, gauge, taskId, componentId, streamId);
         saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
         return gauge;
     }
 
     public Meter meter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId) {
         MetricNames metricNames = workerMetricName(name, context.getStormId(), componentId, streamId, taskId, context.getThisWorkerPort());
-        Meter meter = registry.meter(metricNames.getLongName());
+        Meter meter = registerMeter(metricNames, new Meter(), taskId, componentId, streamId);
         saveMetricTaskIdMapping(taskId, metricNames, meter, taskIdMeters);
         return meter;
     }
 
     public Meter meter(String name, WorkerTopologyContext context, String componentId, Integer taskId) {
         MetricNames metricNames = workerMetricName(name, context.getStormId(), componentId, taskId, context.getThisWorkerPort());
-        Meter meter = registry.meter(metricNames.getLongName());
+        Meter meter = registerMeter(metricNames, new Meter(), taskId, componentId, null);
         saveMetricTaskIdMapping(taskId, metricNames, meter, taskIdMeters);
         return meter;
     }
 
     public Meter meter(String name, TopologyContext context) {
         MetricNames metricNames = topologyMetricName(name, context);
-        Meter meter = registry.meter(metricNames.getLongName());
+        Meter meter = registerMeter(metricNames, new Meter(), context.getThisTaskId(), context.getThisComponentId(), null);
         saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, meter, taskIdMeters);
         return meter;
     }
 
     public Counter counter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId) {
         MetricNames metricNames = workerMetricName(name, context.getStormId(), componentId, streamId, taskId, context.getThisWorkerPort());
-        Counter counter = registry.counter(metricNames.getLongName());
+        Counter counter = registerCounter(metricNames, new Counter(), taskId, componentId, streamId);
         saveMetricTaskIdMapping(taskId, metricNames, counter, taskIdCounters);
         return counter;
     }
 
     public Counter counter(String name, String topologyId, String componentId, Integer taskId, Integer workerPort, String streamId) {
         MetricNames metricNames = workerMetricName(name, topologyId, componentId, streamId, taskId, workerPort);
-        Counter counter = registry.counter(metricNames.getLongName());
+        Counter counter = registerCounter(metricNames, new Counter(), taskId, componentId, streamId);
         saveMetricTaskIdMapping(taskId, metricNames, counter, taskIdCounters);
         return counter;
     }
 
     public Counter counter(String name, TopologyContext context) {
         MetricNames metricNames = topologyMetricName(name, context);
-        Counter counter = registry.counter(metricNames.getLongName());
+        Counter counter = registerCounter(metricNames, new Counter(), context.getThisTaskId(), context.getThisComponentId(), null);
         saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, counter, taskIdCounters);
         return counter;
+    }
+
+    public Timer timer(String name, TopologyContext context) {
+        MetricNames metricNames = topologyMetricName(name, context);
+        Timer timer = registerTimer(metricNames, new Timer(), context.getThisTaskId(), context.getThisComponentId(), null);
+        saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, timer, taskIdTimers);
+        return timer;
+    }
+
+    public Histogram histogram(String name, TopologyContext context) {
+        MetricNames metricNames = topologyMetricName(name, context);
+        Histogram histogram = registerHistogram(metricNames, new Histogram(new ExponentiallyDecayingReservoir()),
+                context.getThisTaskId(), context.getThisComponentId(), null);
+        saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, histogram, taskIdHistograms);
+        return histogram;
     }
 
     public void metricSet(String prefix, MetricSet set, TopologyContext context) {
@@ -130,16 +149,23 @@ public class StormMetricRegistry {
         // to work as expected.
         for (Map.Entry<String, Metric> entry : set.getMetrics().entrySet()) {
             MetricNames metricNames = topologyMetricName(prefix + "." + entry.getKey(), context);
-            Metric metric = registry.register(metricNames.getLongName(), entry.getValue());
+            Metric metric = entry.getValue();
             if (metric instanceof Gauge) {
+                registerGauge(metricNames, (Gauge) metric, context.getThisTaskId(), context.getThisComponentId(), null);
                 saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, (Gauge) metric, taskIdGauges);
             } else if (metric instanceof Meter) {
+                registerMeter(metricNames, (Meter) metric, context.getThisTaskId(), context.getThisComponentId(), null);
                 saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, (Meter) metric, taskIdMeters);
             } else if (metric instanceof Counter) {
+                registerCounter(metricNames, (Counter) metric, context.getThisTaskId(),
+                        context.getThisComponentId(), null);
                 saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, (Counter) metric, taskIdCounters);
             } else if (metric instanceof Timer) {
+                registerTimer(metricNames, (Timer) metric, context.getThisTaskId(), context.getThisComponentId(), null);
                 saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, (Timer) metric, taskIdTimers);
             } else if (metric instanceof Histogram) {
+                registerHistogram(metricNames, (Histogram) metric, context.getThisTaskId(),
+                        context.getThisComponentId(), null);
                 saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, (Histogram) metric, taskIdHistograms);
             } else {
                 LOG.error("Unable to save taskId mapping for metric {} named {}", metric, metricNames.getLongName());
@@ -147,28 +173,53 @@ public class StormMetricRegistry {
         }
     }
 
-    public Timer timer(String name, TopologyContext context) {
-        MetricNames metricNames = topologyMetricName(name, context);
-        Timer timer = registry.timer(metricNames.getLongName());
-        saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, timer, taskIdTimers);
-        return timer;
-    }
-
-    public Histogram histogram(String name, TopologyContext context) {
-        MetricNames metricNames = topologyMetricName(name, context);
-        Histogram histogram = registry.histogram(metricNames.getLongName());
-        saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, histogram, taskIdHistograms);
-        return histogram;
-    }
-
     private static <T extends Metric> void saveMetricTaskIdMapping(Integer taskId, MetricNames names, T metric, Map<Integer,
             Map<String, T>> taskIdMetrics) {
         Map<String, T> metrics = taskIdMetrics.computeIfAbsent(taskId, (tid) -> new HashMap<>());
-        if (metrics.get(names.getV2TickName()) != null) {
-            LOG.warn("Adding duplicate short metric for {} with long name {}, only the last metric "
-                    + "will be reported during the V2 metrics tick.", names.getV2TickName(), names.longName);
-        }
-        metrics.put(names.getV2TickName(), metric);
+        metrics.put(names.getShortName(), metric);
+    }
+
+    private <T> Gauge<T> registerGauge(MetricNames metricNames, Gauge<T> gauge, int taskId,
+                                       String componentId, String streamId) {
+        TaskMetricDimensions taskMetricDimensions = new TaskMetricDimensions(taskId, componentId, streamId, this);
+        TaskMetricRepo repo = taskMetrics.computeIfAbsent(taskMetricDimensions, (k) -> new TaskMetricRepo());
+        repo.addGauge(metricNames.getShortName(), gauge);
+        gauge = registry.register(metricNames.getLongName(), gauge);
+        return gauge;
+    }
+
+    private Meter registerMeter(MetricNames metricNames, Meter meter, int taskId, String componentId, String streamId) {
+        TaskMetricDimensions taskMetricDimensions = new TaskMetricDimensions(taskId, componentId, streamId, this);
+        TaskMetricRepo repo = taskMetrics.computeIfAbsent(taskMetricDimensions, (k) -> new TaskMetricRepo());
+        repo.addMeter(metricNames.getShortName(), meter);
+        meter = registry.register(metricNames.getLongName(), meter);
+        return meter;
+    }
+
+    private Counter registerCounter(MetricNames metricNames, Counter counter, int taskId,
+                                    String componentId, String streamId) {
+        TaskMetricDimensions taskMetricDimensions = new TaskMetricDimensions(taskId, componentId, streamId, this);
+        TaskMetricRepo repo = taskMetrics.computeIfAbsent(taskMetricDimensions, (k) -> new TaskMetricRepo());
+        repo.addCounter(metricNames.getShortName(), counter);
+        counter = registry.register(metricNames.getLongName(), counter);
+        return counter;
+    }
+
+    private Timer registerTimer(MetricNames metricNames, Timer timer, int taskId, String componentId, String streamId) {
+        TaskMetricDimensions taskMetricDimensions = new TaskMetricDimensions(taskId, componentId, streamId, this);
+        TaskMetricRepo repo = taskMetrics.computeIfAbsent(taskMetricDimensions, (k) -> new TaskMetricRepo());
+        repo.addTimer(metricNames.getShortName(), timer);
+        timer = registry.register(metricNames.getLongName(), timer);
+        return timer;
+    }
+
+    private Histogram registerHistogram(MetricNames metricNames, Histogram histogram, int taskId,
+                                        String componentId, String streamId) {
+        TaskMetricDimensions taskMetricDimensions = new TaskMetricDimensions(taskId, componentId, streamId, this);
+        TaskMetricRepo repo = taskMetrics.computeIfAbsent(taskMetricDimensions, (k) -> new TaskMetricRepo());
+        repo.addHistogram(metricNames.getShortName(), histogram);
+        histogram = registry.register(metricNames.getLongName(), histogram);
+        return histogram;
     }
 
     private <T extends Metric> Map<String, T> getMetricNameMap(int taskId, Map<Integer, Map<String, T>> taskIdMetrics) {
@@ -198,13 +249,16 @@ public class StormMetricRegistry {
         return getMetricNameMap(taskId, taskIdTimers);
     }
 
-    public void start(Map<String, Object> topoConf) {
+    public void start(Map<String, Object> topoConf, int port) {
         try {
             hostName = dotToUnderScore(Utils.localHostname());
         } catch (UnknownHostException e) {
             LOG.warn("Unable to determine hostname while starting the metrics system. Hostname will be reported"
                      + " as 'localhost'.");
         }
+
+        this.topologyId = (String) topoConf.get(Config.STORM_ID);
+        this.port = port;
 
         LOG.info("Starting metrics reporters...");
         List<Map<String, Object>> reporterList = (List<Map<String, Object>>) topoConf.get(Config.TOPOLOGY_METRICS_REPORTERS);
@@ -221,7 +275,7 @@ public class StormMetricRegistry {
         LOG.info("Attempting to instantiate reporter class: {}", clazz);
         StormReporter reporter = ReflectionUtils.newInstance(clazz);
         if (reporter != null) {
-            reporter.prepare(registry, topoConf, reporterConfig);
+            reporter.prepare(this, topoConf, reporterConfig);
             reporter.start();
             reporters.add(reporter);
         }
@@ -232,6 +286,26 @@ public class StormMetricRegistry {
         for (StormReporter sr : reporters) {
             sr.stop();
         }
+    }
+
+    public MetricRegistry getRegistry() {
+        return registry;
+    }
+
+    public Map<TaskMetricDimensions, TaskMetricRepo> getTaskMetrics() {
+        return taskMetrics;
+    }
+
+    String getHostName() {
+        return hostName;
+    }
+
+    String getTopologyId() {
+        return topologyId;
+    }
+
+    Integer getPort() {
+        return port;
     }
 
     private MetricNames workerMetricName(String name, String stormId, String componentId, String streamId,
@@ -313,10 +387,10 @@ public class StormMetricRegistry {
         }
 
         /**
-         * Returns the short metric name to be used for reporting during the V2 metrics tick.
-         * @return The V2 metrics tick name.
+         * Returns the short metric name (without dimensions).
+         * @return The short metric name.
          */
-        String getV2TickName() {
+        String getShortName() {
             return shortName;
         }
     }
