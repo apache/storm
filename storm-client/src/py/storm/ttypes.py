@@ -269,7 +269,15 @@ class WorkerTokenServiceType(object):
 
 
 class AlreadyAliveException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -280,6 +288,11 @@ class AlreadyAliveException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -290,10 +303,16 @@ class AlreadyAliveException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('AlreadyAliveException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -312,7 +331,15 @@ class AlreadyAliveException(TException):
 
 
 class NotAliveException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -323,6 +350,11 @@ class NotAliveException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -333,10 +365,16 @@ class NotAliveException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('NotAliveException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -355,7 +393,15 @@ class NotAliveException(TException):
 
 
 class AuthorizationException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -366,6 +412,11 @@ class AuthorizationException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -376,10 +427,16 @@ class AuthorizationException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('AuthorizationException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -398,7 +455,15 @@ class AuthorizationException(TException):
 
 
 class InvalidTopologyException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -409,6 +474,11 @@ class InvalidTopologyException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -419,10 +489,16 @@ class InvalidTopologyException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('InvalidTopologyException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -441,7 +517,15 @@ class InvalidTopologyException(TException):
 
 
 class KeyNotFoundException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -452,6 +536,11 @@ class KeyNotFoundException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -462,10 +551,16 @@ class KeyNotFoundException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('KeyNotFoundException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -484,7 +579,15 @@ class KeyNotFoundException(TException):
 
 
 class IllegalStateException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -495,6 +598,11 @@ class IllegalStateException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -505,10 +613,16 @@ class IllegalStateException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('IllegalStateException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -527,7 +641,15 @@ class IllegalStateException(TException):
 
 
 class KeyAlreadyExistsException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -538,6 +660,11 @@ class KeyAlreadyExistsException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -548,10 +675,16 @@ class KeyAlreadyExistsException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('KeyAlreadyExistsException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -570,7 +703,15 @@ class KeyAlreadyExistsException(TException):
 
 
 class HBAuthorizationException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -581,6 +722,11 @@ class HBAuthorizationException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -591,10 +737,16 @@ class HBAuthorizationException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('HBAuthorizationException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -613,7 +765,15 @@ class HBAuthorizationException(TException):
 
 
 class HBExecutionException(TException):
+    """
+    Attributes:
+     - message
 
+    """
+
+
+    def __init__(self, message=None,):
+        self.message = message
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -624,6 +784,11 @@ class HBExecutionException(TException):
             (fname, ftype, fid) = iprot.readFieldBegin()
             if ftype == TType.STOP:
                 break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.message = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -634,10 +799,16 @@ class HBExecutionException(TException):
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
         oprot.writeStructBegin('HBExecutionException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
     def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
         return
 
     def __str__(self):
@@ -10184,30 +10355,48 @@ class PrivateWorkerKey(object):
         return not (self == other)
 all_structs.append(AlreadyAliveException)
 AlreadyAliveException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(NotAliveException)
 NotAliveException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(AuthorizationException)
 AuthorizationException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(InvalidTopologyException)
 InvalidTopologyException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(KeyNotFoundException)
 KeyNotFoundException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(IllegalStateException)
 IllegalStateException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(KeyAlreadyExistsException)
 KeyAlreadyExistsException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(HBAuthorizationException)
 HBAuthorizationException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(HBExecutionException)
 HBExecutionException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
 )
 all_structs.append(JavaObjectArg)
 JavaObjectArg.thrift_spec = (
