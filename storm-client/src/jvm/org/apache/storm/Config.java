@@ -409,14 +409,41 @@ public class Config extends HashMap<String, Object> {
     /**
      * How many executors to spawn for ackers.
      *
-     * <p>By not setting this variable or setting it as null, Storm will set the number of acker executors to be equal to
-     * the number of workers configured for this topology (or the estimated number of workers if the Resource Aware Scheduler is used).
-     * If this variable is set to 0, then Storm will immediately ack tuples as soon as they come off the spout,
-     * effectively disabling reliability.</p>
+     * <p>
+     * 1. If not setting this variable or setting it as null,
+     *   a. If RAS is not used:
+     *        Nimbus will set it to {@link Config#TOPOLOGY_WORKERS}.
+     *   b. If RAS is used:
+     *        Nimbus will set it to (the estimate number of workers *  {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER}).
+     *        {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} is default to be 1 if not set.
+     * 2. If this variable is set to 0,
+     *    then Storm will immediately ack tuples as soon as they come off the spout,
+     *    effectively disabling reliability.
+     * 3. If this variable is set to a positive integer,
+     *    Storm will not honor {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} setting.
+     *    Instead, nimbus will set it as (this variable / estimate num of workers).
+     * </p>
      */
     @IsInteger
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_ACKER_EXECUTORS = "topology.acker.executors";
+
+    /**
+     * How many ackers to put in when launching a new worker until we run out of ackers.
+     *
+     * <p>
+     * This setting is RAS specific.
+     * If {@link Config#TOPOLOGY_ACKER_EXECUTORS} is not configured,
+     * this setting will be used to calculate {@link Config#TOPOLOGY_ACKER_EXECUTORS}.
+     *
+     * If {@link Config#TOPOLOGY_ACKER_EXECUTORS} is configured,
+     * nimbus will ignore this and set it as ({@link Config#TOPOLOGY_ACKER_EXECUTORS} / estimate num of workers).
+     * </p>
+     */
+    @IsInteger
+    @IsPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER = "topology.ras.acker.executors.per.worker";
+
     /**
      * A list of classes implementing IEventLogger (See storm.yaml.example for exact config format). Each listed class will be routed all
      * the events sampled from emitting tuples. If there's no class provided to the option, default event logger will be initialized and

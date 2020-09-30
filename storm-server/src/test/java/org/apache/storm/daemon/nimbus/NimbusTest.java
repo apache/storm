@@ -31,6 +31,7 @@ import org.apache.storm.scheduler.resource.strategies.priority.DefaultScheduling
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,7 +62,7 @@ public class NimbusTest {
         config1.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 128.0);
         config1.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 129.0);
         try {
-            Nimbus.validateTopologyWorkerMaxHeapSizeConfigs(config1, stormTopology1, 768.0);
+            ServerUtils.validateTopologyWorkerMaxHeapSizeConfigs(config1, stormTopology1, 768.0);
             fail("Expected exception not thrown");
         } catch (InvalidTopologyException e) {
             //Expected...

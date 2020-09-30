@@ -37,7 +37,6 @@ import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResources;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesExtension;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
-import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
@@ -237,6 +236,9 @@ public class TestLargeCluster {
             if (!conf.containsKey(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH)) {
                 conf.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, 10_000);
             }
+            if (!conf.containsKey(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER)) {
+                conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, 1);
+            }
 
             String topoId = nm;
             String topoName = (String) conf.getOrDefault(Config.TOPOLOGY_NAME, nm);
@@ -256,7 +258,7 @@ public class TestLargeCluster {
             int numWorkers = Integer.parseInt("" + conf.getOrDefault(Config.TOPOLOGY_WORKERS, "0"));
             TopologyDetails topo = new TopologyDetails(topoId, conf, stormTopology,  numWorkers,
                     execToComp, Time.currentTimeSecs(), "user");
-            topo.getComponents(); // sanity check - normally this should not fail
+            topo.getUserTopolgyComponents(); // sanity check - normally this should not fail
 
             topoDetailsList.add(topo);
         }

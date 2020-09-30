@@ -72,6 +72,7 @@ import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.blobstore.LocalModeClientBlobStore;
+import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.generated.AccessControl;
 import org.apache.storm.generated.AccessControlType;
@@ -1315,4 +1316,94 @@ public class ServerUtils {
         LOG.info("None of the processes {} are alive AND owned by expectedUser {}", pids, expectedUser);
         return false;
     }
+
+    @VisibleForTesting
+    public static void validateTopologyWorkerMaxHeapSizeConfigs(
+        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMb)
+        throws InvalidTopologyException {
+
+        double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
+        double topologyWorkerMaxHeapSize =
+            ObjectReader.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeapSizeMb);
+        if (topologyWorkerMaxHeapSize < largestMemReq) {
+            throw new InvalidTopologyException(
+                "Topology will not be able to be successfully scheduled: Config "
+                    + "TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB="
+                    + topologyWorkerMaxHeapSize
+                    + " < " + largestMemReq + " (Largest memory requirement of a component in the topology)."
+                    + " Perhaps set TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB to a larger amount");
+        }
+    }
+
+    /**
+     * RAS scheduler will try to distribute ackers evenly over workers by adding some ackers to each newly launched worker.
+     * Validations are performed here:
+     * ({@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} * memory for an acker
+     *      + memory for the biggest topo executor) < max worker heap memory.
+     *    When RAS tries to schedule an executor to a new worker,
+     *    it will put {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} ackers into the worker first.
+     *    So {@link Config#TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB} need to be able to accommodate this.
+     * @param topoConf Topology conf
+     * @param topology Topology (not system topology)
+     * @param topoName The name of the topology
+     */
+    public static void validateTopologyAckerBundleResource(Map<String, Object> topoConf,
+                                                           StormTopology topology, String topoName)
+        throws InvalidTopologyException {
+
+        boolean oneExecutorPerWorker = (Boolean) topoConf.getOrDefault(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, false);
+        boolean oneComponentPerWorker = (Boolean) topoConf.getOrDefault(Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER, false);
+
+        double topologyWorkerMaxHeapSize =
+            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB));
+
+        int numOfAckerExecutorsPerWorker = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER));
+        double maxTopoExecMem = getMaxExecutorMemoryUsageForTopo(topology, topoConf);
+        double ackerExecMem = getAckerExecutorMemoryUsageForTopo(topology, topoConf);
+        double minMemReqForWorker = maxTopoExecMem + ackerExecMem * numOfAckerExecutorsPerWorker;
+
+        // A worker need to have enough resources for a bigest topo executor + topology.acker.executors.per.worker ackers
+        if (!oneExecutorPerWorker
+            && !oneComponentPerWorker
+            && topologyWorkerMaxHeapSize < minMemReqForWorker) {
+            String warnMsg
+                = String.format("For topology %s. Worker max on-heap limit %s is %s. "
+                    + "The biggest topo executor requires %s MB on-heap memory, "
+                    + "there might not be enough space for %s ackers. "
+                    + "Real acker-per-worker will be determined by scheduler.",
+                    topoName, Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, topologyWorkerMaxHeapSize,
+                    maxTopoExecMem, numOfAckerExecutorsPerWorker);
+            LOG.warn(warnMsg);
+        }
+    }
+
+    private static double getMaxExecutorMemoryUsageForTopo(
+        StormTopology topology, Map<String, Object> topologyConf) {
+        double largestMemoryOperator = 0.0;
+        for (NormalizedResourceRequest entry :
+            ResourceUtils.getBoltsResources(topology, topologyConf).values()) {
+            double memoryRequirement = entry.getTotalMemoryMb();
+            if (memoryRequirement > largestMemoryOperator) {
+                largestMemoryOperator = memoryRequirement;
+            }
+        }
+        for (NormalizedResourceRequest entry :
+            ResourceUtils.getSpoutsResources(topology, topologyConf).values()) {
+            double memoryRequirement = entry.getTotalMemoryMb();
+            if (memoryRequirement > largestMemoryOperator) {
+                largestMemoryOperator = memoryRequirement;
+            }
+        }
+        return largestMemoryOperator;
+    }
+
+    private static double getAckerExecutorMemoryUsageForTopo(
+        StormTopology topology, Map<String, Object> topologyConf)
+        throws InvalidTopologyException {
+        topology = StormCommon.systemTopology(topologyConf, topology);
+        Map<String, NormalizedResourceRequest> boltResources = ResourceUtils.getBoltsResources(topology, topologyConf);
+        NormalizedResourceRequest entry = boltResources.get(Acker.ACKER_COMPONENT_ID);
+        return entry.getTotalMemoryMb();
+    }
+
 }

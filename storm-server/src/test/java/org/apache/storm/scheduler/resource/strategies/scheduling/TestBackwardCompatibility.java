@@ -20,6 +20,7 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import org.apache.storm.TestRebalance;
 import org.apache.storm.daemon.nimbus.NimbusTest;
+import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.scheduler.blacklist.TestBlacklistScheduler;
 import org.apache.storm.scheduler.resource.TestResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUser;
@@ -362,13 +363,23 @@ public class TestBackwardCompatibility {
     }
 
     @Test
-    public void testDefaultResourceAwareStrategy() {
-        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategy();
+    public void testDefaultResourceAwareStrategy()
+        throws InvalidTopologyException {
+        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyWithoutSettingAckerExecutors(0);
     }
 
     @Test
-    public void testDefaultResourceAwareStrategyInFavorOfShuffle() {
-        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle();
+    public void testDefaultResourceAwareStrategyInFavorOfShuffleWithNewProximityConfig()
+        throws InvalidTopologyException {
+        boolean useDeprecatedConfigForProximity = false;
+        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle(useDeprecatedConfigForProximity);
+    }
+
+    @Test
+    public void testDefaultResourceAwareStrategyInFavorOfShuffleWithDeprecatedProximityConfig()
+        throws InvalidTopologyException {
+        boolean useDeprecatedConfigForProximity = true;
+        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle(useDeprecatedConfigForProximity);
     }
 
     @Test
