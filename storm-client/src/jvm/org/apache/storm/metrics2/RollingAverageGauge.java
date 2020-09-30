@@ -15,18 +15,18 @@ package org.apache.storm.metrics2;
 import com.codahale.metrics.Gauge;
 
 public class RollingAverageGauge implements Gauge<Double> {
-    private long[] samples = new long[3];
+    private double[] samples = new double[3];
     private int index = 0;
 
     @Override
     public Double getValue() {
         synchronized (this) {
-            long total = samples[0] + samples[1] + samples[2];
+            double total = samples[0] + samples[1] + samples[2];
             return total / 3.0;
         }
     }
 
-    public void addValue(long value) {
+    public void addValue(double value) {
         synchronized (this) {
             samples[index] = value;
             index = (++index % 3);

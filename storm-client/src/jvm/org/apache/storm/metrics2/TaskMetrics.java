@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.Utils;
 
 public class TaskMetrics {
     private static final String METRIC_NAME_ACKED = "__ack-count";
@@ -28,6 +29,7 @@ public class TaskMetrics {
     private static final String METRIC_NAME_PROCESS_LATENCY = "__process-latency";
     private static final String METRIC_NAME_COMPLETE_LATENCY = "__complete-latency";
     private static final String METRIC_NAME_EXECUTE_LATENCY = "__execute-latency";
+    private static final String METRIC_NAME_CAPACITY = "__capacity";
 
     private final ConcurrentMap<String, Counter> counters = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, RollingAverageGauge> gauges = new ConcurrentHashMap<>();
@@ -48,6 +50,13 @@ public class TaskMetrics {
         this.taskId = taskid;
         this.workerPort = context.getThisWorkerPort();
         this.samplingRate = ConfigUtils.samplingRate(topoConf);
+    }
+
+    public void setCapacity(double capacity) {
+        String metricName = METRIC_NAME_CAPACITY;
+        // capacity is over all streams, will report using the default streamId
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, Utils.DEFAULT_STREAM_ID);
+        gauge.addValue(capacity);
     }
 
     public void spoutAckedTuple(String streamId, long latencyMs) {
