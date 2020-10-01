@@ -77,8 +77,7 @@ public class EstimateThroughput {
             Nimbus.Iface client = nc.getClient();
             List<String> topologyNames = cmd.getArgList();
 
-            ClusterSummary clusterSummary = client.getClusterInfo();
-            for (TopologySummary topologySummary: clusterSummary.get_topologies()) {
+            for (TopologySummary topologySummary: client.getTopologySummaries()) {
                 if (topologyNames.isEmpty() || topologyNames.contains(topologySummary.get_name())) {
                     TopologyLoadConf capturedConf = CaptureLoad.captureTopology(client, topologySummary);
                     if (capturedConf.looksLikeTrident()) {

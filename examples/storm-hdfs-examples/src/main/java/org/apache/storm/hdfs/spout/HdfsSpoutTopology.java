@@ -110,17 +110,7 @@ public class HdfsSpoutTopology {
     }
 
     static void printMetrics(Nimbus.Iface client, String name) throws Exception {
-        ClusterSummary summary = client.getClusterInfo();
-        String id = null;
-        for (TopologySummary ts : summary.get_topologies()) {
-            if (name.equals(ts.get_name())) {
-                id = ts.get_id();
-            }
-        }
-        if (id == null) {
-            throw new Exception("Could not find a topology named " + name);
-        }
-        TopologyInfo info = client.getTopologyInfo(id);
+        TopologyInfo info = client.getTopologyInfoByName(name);
         int uptime = info.get_uptime_secs();
         long acked = 0;
         long failed = 0;

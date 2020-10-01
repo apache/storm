@@ -84,6 +84,7 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.NotAliveException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
@@ -1190,10 +1191,8 @@ public class Utils {
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
         try (NimbusClient client = NimbusClient.getConfiguredClientAs(topoConf, asUser)) {
-            String topologyId = getTopologyId(name, client.getClient());
-            if (null != topologyId) {
-                return client.getClient().getTopologyInfo(topologyId);
-            }
+            return client.getClient().getTopologyInfoByName(name);
+        } catch (NotAliveException notAliveException) {
             return null;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -1202,12 +1201,12 @@ public class Utils {
 
     public static String getTopologyId(String name, Nimbus.Iface client) {
         try {
-            ClusterSummary summary = client.getClusterInfo();
-            for (TopologySummary s : summary.get_topologies()) {
-                if (s.get_name().equals(name)) {
-                    return s.get_id();
-                }
+            TopologySummary topologySummary = client.getTopologySummaryByName(name);
+            if (topologySummary != null) {
+                return topologySummary.get_id();
             }
+        } catch (NotAliveException notAliveException) {
+            return null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

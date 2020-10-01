@@ -314,6 +314,25 @@ class Iface(object):
     def getClusterInfo(self):
         pass
 
+    def getTopologySummaries(self):
+        pass
+
+    def getTopologySummaryByName(self, name):
+        """
+        Parameters:
+         - name
+
+        """
+        pass
+
+    def getTopologySummary(self, id):
+        """
+        Parameters:
+         - id
+
+        """
+        pass
+
     def getLeader(self):
         pass
 
@@ -325,10 +344,27 @@ class Iface(object):
         """
         pass
 
+    def getTopologyInfoByName(self, name):
+        """
+        Parameters:
+         - name
+
+        """
+        pass
+
     def getTopologyInfo(self, id):
         """
         Parameters:
          - id
+
+        """
+        pass
+
+    def getTopologyInfoByNameWithOpts(self, name, options):
+        """
+        Parameters:
+         - name
+         - options
 
         """
         pass
@@ -1621,6 +1657,106 @@ class Client(Iface):
             raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "getClusterInfo failed: unknown result")
 
+    def getTopologySummaries(self):
+        self.send_getTopologySummaries()
+        return self.recv_getTopologySummaries()
+
+    def send_getTopologySummaries(self):
+        self._oprot.writeMessageBegin('getTopologySummaries', TMessageType.CALL, self._seqid)
+        args = getTopologySummaries_args()
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_getTopologySummaries(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = getTopologySummaries_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        if result.aze is not None:
+            raise result.aze
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologySummaries failed: unknown result")
+
+    def getTopologySummaryByName(self, name):
+        """
+        Parameters:
+         - name
+
+        """
+        self.send_getTopologySummaryByName(name)
+        return self.recv_getTopologySummaryByName()
+
+    def send_getTopologySummaryByName(self, name):
+        self._oprot.writeMessageBegin('getTopologySummaryByName', TMessageType.CALL, self._seqid)
+        args = getTopologySummaryByName_args()
+        args.name = name
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_getTopologySummaryByName(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = getTopologySummaryByName_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        if result.e is not None:
+            raise result.e
+        if result.aze is not None:
+            raise result.aze
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologySummaryByName failed: unknown result")
+
+    def getTopologySummary(self, id):
+        """
+        Parameters:
+         - id
+
+        """
+        self.send_getTopologySummary(id)
+        return self.recv_getTopologySummary()
+
+    def send_getTopologySummary(self, id):
+        self._oprot.writeMessageBegin('getTopologySummary', TMessageType.CALL, self._seqid)
+        args = getTopologySummary_args()
+        args.id = id
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_getTopologySummary(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = getTopologySummary_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        if result.e is not None:
+            raise result.e
+        if result.aze is not None:
+            raise result.aze
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologySummary failed: unknown result")
+
     def getLeader(self):
         self.send_getLeader()
         return self.recv_getLeader()
@@ -1683,6 +1819,42 @@ class Client(Iface):
             raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "isTopologyNameAllowed failed: unknown result")
 
+    def getTopologyInfoByName(self, name):
+        """
+        Parameters:
+         - name
+
+        """
+        self.send_getTopologyInfoByName(name)
+        return self.recv_getTopologyInfoByName()
+
+    def send_getTopologyInfoByName(self, name):
+        self._oprot.writeMessageBegin('getTopologyInfoByName', TMessageType.CALL, self._seqid)
+        args = getTopologyInfoByName_args()
+        args.name = name
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_getTopologyInfoByName(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = getTopologyInfoByName_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        if result.e is not None:
+            raise result.e
+        if result.aze is not None:
+            raise result.aze
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyInfoByName failed: unknown result")
+
     def getTopologyInfo(self, id):
         """
         Parameters:
@@ -1718,6 +1890,44 @@ class Client(Iface):
         if result.aze is not None:
             raise result.aze
         raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyInfo failed: unknown result")
+
+    def getTopologyInfoByNameWithOpts(self, name, options):
+        """
+        Parameters:
+         - name
+         - options
+
+        """
+        self.send_getTopologyInfoByNameWithOpts(name, options)
+        return self.recv_getTopologyInfoByNameWithOpts()
+
+    def send_getTopologyInfoByNameWithOpts(self, name, options):
+        self._oprot.writeMessageBegin('getTopologyInfoByNameWithOpts', TMessageType.CALL, self._seqid)
+        args = getTopologyInfoByNameWithOpts_args()
+        args.name = name
+        args.options = options
+        args.write(self._oprot)
+        self._oprot.writeMessageEnd()
+        self._oprot.trans.flush()
+
+    def recv_getTopologyInfoByNameWithOpts(self):
+        iprot = self._iprot
+        (fname, mtype, rseqid) = iprot.readMessageBegin()
+        if mtype == TMessageType.EXCEPTION:
+            x = TApplicationException()
+            x.read(iprot)
+            iprot.readMessageEnd()
+            raise x
+        result = getTopologyInfoByNameWithOpts_result()
+        result.read(iprot)
+        iprot.readMessageEnd()
+        if result.success is not None:
+            return result.success
+        if result.e is not None:
+            raise result.e
+        if result.aze is not None:
+            raise result.aze
+        raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyInfoByNameWithOpts failed: unknown result")
 
     def getTopologyInfoWithOpts(self, id, options):
         """
@@ -2269,9 +2479,14 @@ class Processor(Iface, TProcessor):
         self._processMap["downloadChunk"] = Processor.process_downloadChunk
         self._processMap["getNimbusConf"] = Processor.process_getNimbusConf
         self._processMap["getClusterInfo"] = Processor.process_getClusterInfo
+        self._processMap["getTopologySummaries"] = Processor.process_getTopologySummaries
+        self._processMap["getTopologySummaryByName"] = Processor.process_getTopologySummaryByName
+        self._processMap["getTopologySummary"] = Processor.process_getTopologySummary
         self._processMap["getLeader"] = Processor.process_getLeader
         self._processMap["isTopologyNameAllowed"] = Processor.process_isTopologyNameAllowed
+        self._processMap["getTopologyInfoByName"] = Processor.process_getTopologyInfoByName
         self._processMap["getTopologyInfo"] = Processor.process_getTopologyInfo
+        self._processMap["getTopologyInfoByNameWithOpts"] = Processor.process_getTopologyInfoByNameWithOpts
         self._processMap["getTopologyInfoWithOpts"] = Processor.process_getTopologyInfoWithOpts
         self._processMap["getTopologyPageInfo"] = Processor.process_getTopologyPageInfo
         self._processMap["getSupervisorPageInfo"] = Processor.process_getSupervisorPageInfo
@@ -3214,6 +3429,90 @@ class Processor(Iface, TProcessor):
         oprot.writeMessageEnd()
         oprot.trans.flush()
 
+    def process_getTopologySummaries(self, seqid, iprot, oprot):
+        args = getTopologySummaries_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = getTopologySummaries_result()
+        try:
+            result.success = self._handler.getTopologySummaries()
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("getTopologySummaries", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
+    def process_getTopologySummaryByName(self, seqid, iprot, oprot):
+        args = getTopologySummaryByName_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = getTopologySummaryByName_result()
+        try:
+            result.success = self._handler.getTopologySummaryByName(args.name)
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except NotAliveException as e:
+            msg_type = TMessageType.REPLY
+            result.e = e
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("getTopologySummaryByName", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
+    def process_getTopologySummary(self, seqid, iprot, oprot):
+        args = getTopologySummary_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = getTopologySummary_result()
+        try:
+            result.success = self._handler.getTopologySummary(args.id)
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except NotAliveException as e:
+            msg_type = TMessageType.REPLY
+            result.e = e
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("getTopologySummary", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
     def process_getLeader(self, seqid, iprot, oprot):
         args = getLeader_args()
         args.read(iprot)
@@ -3266,6 +3565,35 @@ class Processor(Iface, TProcessor):
         oprot.writeMessageEnd()
         oprot.trans.flush()
 
+    def process_getTopologyInfoByName(self, seqid, iprot, oprot):
+        args = getTopologyInfoByName_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = getTopologyInfoByName_result()
+        try:
+            result.success = self._handler.getTopologyInfoByName(args.name)
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except NotAliveException as e:
+            msg_type = TMessageType.REPLY
+            result.e = e
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("getTopologyInfoByName", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
     def process_getTopologyInfo(self, seqid, iprot, oprot):
         args = getTopologyInfo_args()
         args.read(iprot)
@@ -3291,6 +3619,35 @@ class Processor(Iface, TProcessor):
             msg_type = TMessageType.EXCEPTION
             result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
         oprot.writeMessageBegin("getTopologyInfo", msg_type, seqid)
+        result.write(oprot)
+        oprot.writeMessageEnd()
+        oprot.trans.flush()
+
+    def process_getTopologyInfoByNameWithOpts(self, seqid, iprot, oprot):
+        args = getTopologyInfoByNameWithOpts_args()
+        args.read(iprot)
+        iprot.readMessageEnd()
+        result = getTopologyInfoByNameWithOpts_result()
+        try:
+            result.success = self._handler.getTopologyInfoByNameWithOpts(args.name, args.options)
+            msg_type = TMessageType.REPLY
+        except TTransport.TTransportException:
+            raise
+        except NotAliveException as e:
+            msg_type = TMessageType.REPLY
+            result.e = e
+        except AuthorizationException as aze:
+            msg_type = TMessageType.REPLY
+            result.aze = aze
+        except TApplicationException as ex:
+            logging.exception('TApplication exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = ex
+        except Exception:
+            logging.exception('Unexpected exception in handler')
+            msg_type = TMessageType.EXCEPTION
+            result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+        oprot.writeMessageBegin("getTopologyInfoByNameWithOpts", msg_type, seqid)
         result.write(oprot)
         oprot.writeMessageEnd()
         oprot.trans.flush()
@@ -8380,6 +8737,432 @@ getClusterInfo_result.thrift_spec = (
 )
 
 
+class getTopologySummaries_args(object):
+
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologySummaries_args')
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologySummaries_args)
+getTopologySummaries_args.thrift_spec = (
+)
+
+
+class getTopologySummaries_result(object):
+    """
+    Attributes:
+     - success
+     - aze
+
+    """
+
+
+    def __init__(self, success=None, aze=None,):
+        self.success = success
+        self.aze = aze
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.LIST:
+                    self.success = []
+                    (_etype876, _size873) = iprot.readListBegin()
+                    for _i877 in range(_size873):
+                        _elem878 = TopologySummary()
+                        _elem878.read(iprot)
+                        self.success.append(_elem878)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologySummaries_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.LIST, 0)
+            oprot.writeListBegin(TType.STRUCT, len(self.success))
+            for iter879 in self.success:
+                iter879.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 1)
+            self.aze.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologySummaries_result)
+getTopologySummaries_result.thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT, [TopologySummary, None], False), None, ),  # 0
+    (1, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 1
+)
+
+
+class getTopologySummaryByName_args(object):
+    """
+    Attributes:
+     - name
+
+    """
+
+
+    def __init__(self, name=None,):
+        self.name = name
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.name = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologySummaryByName_args')
+        if self.name is not None:
+            oprot.writeFieldBegin('name', TType.STRING, 1)
+            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologySummaryByName_args)
+getTopologySummaryByName_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
+)
+
+
+class getTopologySummaryByName_result(object):
+    """
+    Attributes:
+     - success
+     - e
+     - aze
+
+    """
+
+
+    def __init__(self, success=None, e=None, aze=None,):
+        self.success = success
+        self.e = e
+        self.aze = aze
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = TopologySummary()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.e = NotAliveException()
+                    self.e.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologySummaryByName_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.e is not None:
+            oprot.writeFieldBegin('e', TType.STRUCT, 1)
+            self.e.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+            self.aze.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologySummaryByName_result)
+getTopologySummaryByName_result.thrift_spec = (
+    (0, TType.STRUCT, 'success', [TopologySummary, None], None, ),  # 0
+    (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
+    (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
+)
+
+
+class getTopologySummary_args(object):
+    """
+    Attributes:
+     - id
+
+    """
+
+
+    def __init__(self, id=None,):
+        self.id = id
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologySummary_args')
+        if self.id is not None:
+            oprot.writeFieldBegin('id', TType.STRING, 1)
+            oprot.writeString(self.id.encode('utf-8') if sys.version_info[0] == 2 else self.id)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologySummary_args)
+getTopologySummary_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'id', 'UTF8', None, ),  # 1
+)
+
+
+class getTopologySummary_result(object):
+    """
+    Attributes:
+     - success
+     - e
+     - aze
+
+    """
+
+
+    def __init__(self, success=None, e=None, aze=None,):
+        self.success = success
+        self.e = e
+        self.aze = aze
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = TopologySummary()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.e = NotAliveException()
+                    self.e.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologySummary_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.e is not None:
+            oprot.writeFieldBegin('e', TType.STRUCT, 1)
+            self.e.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+            self.aze.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologySummary_result)
+getTopologySummary_result.thrift_spec = (
+    (0, TType.STRUCT, 'success', [TopologySummary, None], None, ),  # 0
+    (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
+    (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
+)
+
+
 class getLeader_args(object):
 
 
@@ -8634,6 +9417,156 @@ isTopologyNameAllowed_result.thrift_spec = (
 )
 
 
+class getTopologyInfoByName_args(object):
+    """
+    Attributes:
+     - name
+
+    """
+
+
+    def __init__(self, name=None,):
+        self.name = name
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.name = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologyInfoByName_args')
+        if self.name is not None:
+            oprot.writeFieldBegin('name', TType.STRING, 1)
+            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologyInfoByName_args)
+getTopologyInfoByName_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
+)
+
+
+class getTopologyInfoByName_result(object):
+    """
+    Attributes:
+     - success
+     - e
+     - aze
+
+    """
+
+
+    def __init__(self, success=None, e=None, aze=None,):
+        self.success = success
+        self.e = e
+        self.aze = aze
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = TopologyInfo()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.e = NotAliveException()
+                    self.e.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologyInfoByName_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.e is not None:
+            oprot.writeFieldBegin('e', TType.STRUCT, 1)
+            self.e.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+            self.aze.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologyInfoByName_result)
+getTopologyInfoByName_result.thrift_spec = (
+    (0, TType.STRUCT, 'success', [TopologyInfo, None], None, ),  # 0
+    (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
+    (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
+)
+
+
 class getTopologyInfo_args(object):
     """
     Attributes:
@@ -8778,6 +9711,169 @@ class getTopologyInfo_result(object):
         return not (self == other)
 all_structs.append(getTopologyInfo_result)
 getTopologyInfo_result.thrift_spec = (
+    (0, TType.STRUCT, 'success', [TopologyInfo, None], None, ),  # 0
+    (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
+    (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
+)
+
+
+class getTopologyInfoByNameWithOpts_args(object):
+    """
+    Attributes:
+     - name
+     - options
+
+    """
+
+
+    def __init__(self, name=None, options=None,):
+        self.name = name
+        self.options = options
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.name = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.options = GetInfoOptions()
+                    self.options.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologyInfoByNameWithOpts_args')
+        if self.name is not None:
+            oprot.writeFieldBegin('name', TType.STRING, 1)
+            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeFieldEnd()
+        if self.options is not None:
+            oprot.writeFieldBegin('options', TType.STRUCT, 2)
+            self.options.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologyInfoByNameWithOpts_args)
+getTopologyInfoByNameWithOpts_args.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
+    (2, TType.STRUCT, 'options', [GetInfoOptions, None], None, ),  # 2
+)
+
+
+class getTopologyInfoByNameWithOpts_result(object):
+    """
+    Attributes:
+     - success
+     - e
+     - aze
+
+    """
+
+
+    def __init__(self, success=None, e=None, aze=None,):
+        self.success = success
+        self.e = e
+        self.aze = aze
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 0:
+                if ftype == TType.STRUCT:
+                    self.success = TopologyInfo()
+                    self.success.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 1:
+                if ftype == TType.STRUCT:
+                    self.e = NotAliveException()
+                    self.e.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.aze = AuthorizationException()
+                    self.aze.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('getTopologyInfoByNameWithOpts_result')
+        if self.success is not None:
+            oprot.writeFieldBegin('success', TType.STRUCT, 0)
+            self.success.write(oprot)
+            oprot.writeFieldEnd()
+        if self.e is not None:
+            oprot.writeFieldBegin('e', TType.STRUCT, 1)
+            self.e.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aze is not None:
+            oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+            self.aze.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+all_structs.append(getTopologyInfoByNameWithOpts_result)
+getTopologyInfoByNameWithOpts_result.thrift_spec = (
     (0, TType.STRUCT, 'success', [TopologyInfo, None], None, ),  # 0
     (1, TType.STRUCT, 'e', [NotAliveException, None], None, ),  # 1
     (2, TType.STRUCT, 'aze', [AuthorizationException, None], None, ),  # 2
@@ -10154,11 +11250,11 @@ class getOwnerResourceSummaries_result(object):
             if fid == 0:
                 if ftype == TType.LIST:
                     self.success = []
-                    (_etype876, _size873) = iprot.readListBegin()
-                    for _i877 in range(_size873):
-                        _elem878 = OwnerResourceSummary()
-                        _elem878.read(iprot)
-                        self.success.append(_elem878)
+                    (_etype883, _size880) = iprot.readListBegin()
+                    for _i884 in range(_size880):
+                        _elem885 = OwnerResourceSummary()
+                        _elem885.read(iprot)
+                        self.success.append(_elem885)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -10181,8 +11277,8 @@ class getOwnerResourceSummaries_result(object):
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.LIST, 0)
             oprot.writeListBegin(TType.STRUCT, len(self.success))
-            for iter879 in self.success:
-                iter879.write(oprot)
+            for iter886 in self.success:
+                iter886.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.aze is not None:

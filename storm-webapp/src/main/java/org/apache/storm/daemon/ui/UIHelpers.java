@@ -804,8 +804,7 @@ public class UIHelpers {
             return unpackOwnerResourceSummary(new OwnerResourceSummary(id));
         }
 
-        List<TopologySummary> topologies = null;
-        topologies = client.getClusterInfo().get_topologies();
+        List<TopologySummary> topologies = client.getTopologySummaries();
         List<Map> topologySummaries = getTopologiesMap(id, topologies);
 
         result.putAll(unpackOwnerResourceSummary(ownerResourceSummaries.get(0)));

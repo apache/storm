@@ -55,9 +55,8 @@ public class MetricsSample {
     public static MetricsSample factory(Nimbus.Iface client, String topologyName) throws Exception {
         // "************ Sampling Metrics *****************
 
-        ClusterSummary clusterSummary = client.getClusterInfo();
         // get topology info
-        TopologySummary topSummary = getTopologySummary(clusterSummary, topologyName);
+        TopologySummary topSummary = client.getTopologySummaryByName(topologyName);
         int topologyExecutors = topSummary.get_num_executors();
         int topologyWorkers = topSummary.get_num_workers();
         int topologyTasks = topSummary.get_num_tasks();
@@ -166,16 +165,6 @@ public class MetricsSample {
         ret.spoutExecutors = spoutExecCount;
         return ret;
     }
-
-    public static TopologySummary getTopologySummary(ClusterSummary cs, String name) {
-        for (TopologySummary ts : cs.get_topologies()) {
-            if (name.equals(ts.get_name())) {
-                return ts;
-            }
-        }
-        return null;
-    }
-
 
     // getters
     public long getSampleTime() {

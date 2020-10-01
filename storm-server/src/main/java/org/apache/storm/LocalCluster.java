@@ -82,6 +82,7 @@ import org.apache.storm.generated.SupervisorWorkerHeartbeats;
 import org.apache.storm.generated.TopologyHistoryInfo;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyPageInfo;
+import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
@@ -573,8 +574,38 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
+    public List<TopologySummary> getTopologySummaries() throws TException {
+        return getNimbus().getTopologySummaries();
+    }
+
+    @Override
+    public TopologySummary getTopologySummaryByName(String name) throws TException {
+        return getNimbus().getTopologySummaryByName(name);
+    }
+
+    @Override
+    public TopologySummary getTopologySummary(String id) throws TException {
+        return getNimbus().getTopologySummary(id);
+    }
+
+    @Override
     public TopologyInfo getTopologyInfo(String id) throws TException {
         return getNimbus().getTopologyInfo(id);
+    }
+
+    @Override
+    public TopologyInfo getTopologyInfoByName(String name) throws TException {
+        return getNimbus().getTopologyInfoByName(name);
+    }
+
+    @Override
+    public TopologyInfo getTopologyInfoWithOpts(String id, GetInfoOptions options) throws TException {
+        return nimbus.getTopologyInfoWithOpts(id, options);
+    }
+
+    @Override
+    public TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws TException {
+        return nimbus.getTopologyInfoByNameWithOpts(name, options);
     }
 
     public int getThriftServerPort() {
@@ -968,13 +999,6 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     @Override
     public boolean isTopologyNameAllowed(String name) throws AuthorizationException, TException {
         return nimbus.isTopologyNameAllowed(name);
-    }
-
-    @Override
-    public TopologyInfo getTopologyInfoWithOpts(String id, GetInfoOptions options)
-        throws NotAliveException, AuthorizationException, TException {
-        // TODO Auto-generated method stub
-        throw new RuntimeException("NOT IMPLEMENTED YET");
     }
 
     @Override
