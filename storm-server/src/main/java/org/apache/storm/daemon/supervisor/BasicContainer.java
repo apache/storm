@@ -39,6 +39,7 @@ import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.ServerConstants;
 import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.container.oci.OciContainerManager;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
@@ -151,11 +152,20 @@ public class BasicContainer extends Container {
             createNewWorkerId();
         }
 
-        if (profileCmd == null) {
-            profileCmd = stormHome + File.separator + "bin" + File.separator
-                         + conf.get(DaemonConfig.WORKER_PROFILER_COMMAND);
+        if (resourceIsolationManager instanceof OciContainerManager) {
+            //When we use OciContainerManager, we will only use the profiler configured in worker-launcher.cfg due to security reasons
+            LOG.debug("Supervisor is using {} as the {}."
+                    + "The profiler set at worker.profiler.script.path in worker-launcher.cfg is the only profiler to be used. "
+                    + "Please make sure it is configured properly",
+                resourceIsolationManager.getClass().getName(), ResourceIsolationInterface.class.getName());
+            this.profileCmd = "";
+        } else {
+            if (profileCmd == null) {
+                profileCmd = stormHome + File.separator + "bin" + File.separator
+                    + conf.get(DaemonConfig.WORKER_PROFILER_COMMAND);
+            }
+            this.profileCmd = profileCmd;
         }
-        this.profileCmd = profileCmd;
 
         hardMemoryLimitMultiplier =
             ObjectReader.getDouble(conf.get(DaemonConfig.STORM_SUPERVISOR_HARD_MEMORY_LIMIT_MULTIPLIER), 2.0);

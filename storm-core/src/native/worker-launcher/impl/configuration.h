@@ -34,8 +34,15 @@ char *get_value(const char* key);
 //comma seperated strings.
 char ** get_values(const char* key);
 
-// Extracts array of values from the comma separated list of values.
-char ** extract_values(char *value);
+/**
+ * Extracts array of values from the delim separated list of values.
+ * A sequence of two or more contiguous delimiter bytes in the parsed string
+ * is considered to be a single delimiter, and that delimiter bytes at the
+ * start or end of the string are ignored.
+ * For example, extract_values_delim("aaa;;bbb,", ";,") would
+ * return the strings "aaa" and "bbb", and then a NULL pointer.
+ */
+char ** extract_values_delim(char *value, const char *delim);
 
 // free the memory returned by get_values
 void free_values(char** values);

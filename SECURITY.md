@@ -405,7 +405,7 @@ supervisor.run.worker.as.user: true
 
 There are several files that go along with this that need to be configured properly to make storm secure.
 
-The `worker-launcher` executable is a special program that allows the supervisor to launch workers as different users.  For this to work, `worker-launcher` needs to be owned by root, but with the group set to be a group that only the supervisor headless user is a part of.  `worker-launcher` also needs to have `6550` octal permissions.  There is also a `worker-launcher.cfg` file, usually located under /etc/, that should look something like the following:
+The `worker-launcher` executable is a special program that allows the supervisor to launch workers as different users.  For this to work, `worker-launcher` needs to be owned by root, but with the group set to be a group that only the supervisor headless user is a part of.  `worker-launcher` also needs to have `6550` octal permissions.  There is also a `worker-launcher.cfg` file, usually located under `/etc/storm`, that should look something like the following:
 
 ```ini
 storm.worker-launcher.group=$(worker_launcher_group)

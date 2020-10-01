@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+typedef enum { FALSE, TRUE } boolean;
+
 enum errorcodes {
   INVALID_ARGUMENT_NUMBER = 1,
   INVALID_USER_NAME, //2
@@ -45,19 +47,32 @@ enum errorcodes {
   // PREPARE_JOB_LOGS_FAILED (NOT USED) 23
   INVALID_CONFIG_FILE =  24,
   SETSID_OPER_FAILED = 25,
-  WRITE_PIDFILE_FAILED = 26
+  WRITE_PIDFILE_FAILED = 26,
+  DOCKER_RUN_FAILED=29,
+  ERROR_OPENING_FILE = 30,
+  ERROR_READING_FILE = 31,
+  ERROR_SANITIZING_DOCKER_COMMAND = 39,
+  DOCKER_IMAGE_INVALID = 40,
+  DOCKER_CONTAINER_NAME_INVALID = 41,
+  ERROR_COMPILING_REGEX = 42,
+  ERROR_CHANGING_USER = 43
 };
 
 #define LAUNCHER_GROUP_KEY "storm.worker-launcher.group"
-
-#define USER_DIR_PATTERN "%s/usercache/%s"
-#define NM_APP_DIR_PATTERN USER_DIR_PATTERN "/appcache/%s"
-#define CONTAINER_DIR_PATTERN NM_APP_DIR_PATTERN "/%s"
 #define CONTAINER_SCRIPT "launch_container.sh"
-#define CREDENTIALS_FILENAME "container_tokens"
 #define MIN_USERID_KEY "min.user.id"
 #define BANNED_USERS_KEY "banned.users"
-#define TMP_DIR "tmp"
+#define DOCKER_BINARY_KEY "docker.binary"
+#define NSENTER_BINARY_KEY "nsenter.binary"
+#define WORKER_PROFILER_SCRIPT_PATH "worker.profiler.script.path"
+
+/* Macros for min/max. */
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif /* MIN */
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif  /* MAX */
 
 extern struct passwd *user_detail;
 
@@ -66,7 +81,14 @@ extern FILE *LOGFILE;
 // the log file for error messages
 extern FILE *ERRORFILE;
 
-int setup_dir_permissions(const char* local_dir, int for_blob_permission);
+int setup_dir_permissions(const char* local_dir, int for_blob_permission, boolean setgid_on_dir);
+
+/**
+ * /tmp inside the container is bind mounted to worker-id/tmp directory
+ * remove setgid on worker-id/tmp directory so that java profiling can work
+ * This is not required for non-container workers. But better to keep them consistent
+ */ 
+int setup_worker_tmp_permissions(const char *worker_dir);
 
 int exec_as_user(const char * working_dir, const char * args);
 
@@ -127,3 +149,30 @@ int set_user(const char *user);
 char *get_container_launcher_file(const char* work_dir);
 
 int change_user(uid_t user, gid_t group);
+
+/**
+ * Get the docker binary path.
+ */
+char *get_docker_binary();
+
+/**
+ * Run a docker command passing the command file as an argument
+ */
+int run_docker_cmd(const char * working_dir, const char * command_file);
+
+/**
+ * Get the nsenter binary path.
+ */
+char *get_nsenter_binary();
+
+/**
+ * Get the pid of the docker container
+ */
+int get_docker_container_pid(const char *worker_id);
+
+/**
+ * Utility function to concatenate argB to argA using the concat_pattern.
+ */
+char *concatenate(char *concat_pattern, char *return_path_name, int numArgs, ...);
+
+int profile_oci_container(int container_pid, const char* command_file);

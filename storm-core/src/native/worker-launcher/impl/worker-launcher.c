@@ -30,14 +30,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/stat.h>
+#include <getopt.h>
+#include <regex.h>
 
 static const int DEFAULT_MIN_USERID = 1000;
 
 static const char* DEFAULT_BANNED_USERS[] = {"bin", 0};
 
+static const char* DEFAULT_DOCKER_BINARY_PATH = "/usr/bin/docker";
+/**
+ * For security reasons, we can drop the privileges of containers including PTRACE.
+ * In that case, debugging tools (like jmap, strace, jstack -F) inside the container won't work
+ * when entered via docker-exec.
+ * So we need to use nsenter to enter the filesystem and pid namespace without losing privileges.
+ */
+static const char* DEFAULT_NSENTER_BINARY_PATH = "/usr/bin/nsenter";
+
 //struct to store the user details
 struct passwd *user_detail = NULL;
+
+//Docker container related constants.
+static const char* DOCKER_CLIENT_CONFIG_ARG = "--config=";
+static const char* DOCKER_PULL_COMMAND = "pull";
 
 FILE* LOGFILE = NULL;
 FILE* ERRORFILE = NULL;
@@ -382,10 +398,11 @@ static int copy_file(int input, const char* in_filename,
  * is able to read and execute, and in certain directories, write. The setGID bit is set
  * to make sure any files created under the directory will be accessible to storm's user for
  * cleanup purposes.
+ * If setgid_on_dir is FALSE, don't set sticky bit on group permission on the directory.
  */
-static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
+static int setup_permissions(FTSENT* entry, uid_t euser, int user_write, boolean setgid_on_dir) {
   if (lchown(entry->fts_path, euser, launcher_gid) != 0) {
-    fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
+    fprintf(ERRORFILE, "ERROR: Failure to exec app initialization process - %s, fts_path=%s\n",
             strerror(errno), entry->fts_path);
      return -1;
   }
@@ -397,10 +414,14 @@ static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
   }
   // If the entry is a directory, Add group execute and setGID bits.
   if ((mode & S_IFDIR) == S_IFDIR) {
-    new_mode = new_mode | S_IXGRP | S_ISGID;
+    new_mode = new_mode | S_IXGRP;
+    if (setgid_on_dir)
+    {
+      new_mode = new_mode | S_ISGID;
+    }
   }
   if (chmod(entry->fts_path, new_mode) != 0) {
-    fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
+    fprintf(ERRORFILE, "ERROR: Failure to exec app initialization process - %s, fts_path=%s\n",
             strerror(errno), entry->fts_path);
     return -1;
   }
@@ -408,7 +429,7 @@ static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
 }
 
 
-int setup_dir_permissions(const char* local_dir, int user_writable) {
+int setup_dir_permissions(const char* local_dir, int user_writable, boolean setgid_on_dir) {
   //This is the same as
   //> chmod g+rwX -R $local_dir
   //> chmod g+s -R $local_dir
@@ -423,13 +444,13 @@ int setup_dir_permissions(const char* local_dir, int user_writable) {
   } else {
     char *(paths[]) = {strndup(local_dir,PATH_MAX), 0};
     if (paths[0] == NULL) {
-      fprintf(ERRORFILE, "Malloc failed in setup_dir_permissions\n");
+      fprintf(ERRORFILE, "ERROR: Malloc failed in setup_dir_permissions\n");
       return -1;
     }
     // check to make sure the directory exists
     if (access(local_dir, F_OK) != 0) {
       if (errno == ENOENT) {
-        fprintf(ERRORFILE, "Path does not exist %s\n", local_dir);
+        fprintf(ERRORFILE, "ERROR: Path does not exist %s\n", local_dir);
         free(paths[0]);
         paths[0] = NULL;
         return UNABLE_TO_BUILD_PATH;
@@ -441,7 +462,7 @@ int setup_dir_permissions(const char* local_dir, int user_writable) {
 
     if (tree == NULL) {
       fprintf(ERRORFILE,
-              "Cannot open file traversal structure for the path %s:%s.\n", 
+              "ERROR: Cannot open file traversal structure for the path %s:%s.\n",
               local_dir, strerror(errno));
       free(paths[0]);
       paths[0] = NULL;
@@ -449,7 +470,7 @@ int setup_dir_permissions(const char* local_dir, int user_writable) {
     }
 
     if (seteuid(0) != 0) {
-      fprintf(ERRORFILE, "Could not become root\n");
+      fprintf(ERRORFILE, "ERROR: Could not become root\n");
       return -1;
     }
 
@@ -464,7 +485,7 @@ int setup_dir_permissions(const char* local_dir, int user_writable) {
         fprintf(LOGFILE, "NOOP: %s\n", entry->fts_path); break;
       case FTS_D:         // A directory in pre-order
       case FTS_F:         // A regular file
-        if (setup_permissions(entry, euser, user_writable) != 0) {
+        if (setup_permissions(entry, euser, user_writable, setgid_on_dir) != 0) {
             exit_code = -1;
         }
         break;
@@ -475,22 +496,47 @@ int setup_dir_permissions(const char* local_dir, int user_writable) {
       case FTS_NSOK:      // No stat information requested
       case FTS_ERR:       // Error return
       default:
-        fprintf(LOGFILE, "Unexpected...\n");
+        fprintf(LOGFILE, "ERROR: Unexpected...\n");
         exit_code = -1;
         break;
       }
     }
     ret = fts_close(tree);
     if (exit_code == 0 && ret != 0) {
-      fprintf(LOGFILE, "Error in fts_close while setting up %s\n", local_dir);
+      fprintf(LOGFILE, "ERROR: Error in fts_close while setting up %s\n", local_dir);
       exit_code = -1;
     }
     free(paths[0]);
     paths[0] = NULL;
+
+    if (seteuid(euser) != 0)
+    {
+      fprintf(ERRORFILE, "ERROR: Could not switch euid back to %d\n", euser);
+      return -1;
+    }
   }
   return exit_code;
 }
 
+/**
+ * /tmp inside the container is bind mounted to worker-id/tmp directory
+ * remove setgid on worker-id/tmp directory so that java profiling can work
+ * This is not required for non-container workers. But better to keep them consistent
+ */ 
+int setup_worker_tmp_permissions(const char *worker_dir)
+{
+  char* worker_tmp = concatenate("%s/tmp", "worker tmp dir", 1, worker_dir);
+  if (worker_tmp != NULL) {
+    int exit_code = setup_dir_permissions(worker_tmp, 1, FALSE);
+    if (exit_code != 0) {
+      fprintf(ERRORFILE, "ERROR: setup_dir_permissions on %s failed\n", worker_tmp);
+      fflush(ERRORFILE);
+    } 
+    return exit_code;
+  } else {
+    return -1;
+  }
+}
 
 int signal_container_as_user(const char *user, int pid, int sig) {
   if(pid <= 0) {
@@ -737,4 +783,513 @@ int fork_as_user(const char * working_dir, const char * script_file) {
 
   //Unreachable
   return -1;
+}
+
+//functions below are docker related.
+
+char *get_docker_binary()
+{
+  char *docker_binary = get_value(DOCKER_BINARY_KEY);
+  if (docker_binary == NULL)
+  {
+    docker_binary = strdup(DEFAULT_DOCKER_BINARY_PATH);
+  }
+  return docker_binary;
+}
+
+char **tokenize_docker_command(const char *input, int *split_counter)
+{
+  char *line = (char *)calloc(strlen(input) + 1, sizeof(char));
+  char **linesplit = (char **)malloc(sizeof(char *));
+  char *p = NULL;
+  *split_counter = 0;
+  strncpy(line, input, strlen(input));
+
+  p = strtok(line, " ");
+  while (p != NULL)
+  {
+    linesplit[*split_counter] = p;
+    (*split_counter)++;
+    linesplit = realloc(linesplit, (sizeof(char *) * (*split_counter + 1)));
+    if (linesplit == NULL)
+    {
+      fprintf(ERRORFILE, "ERROR: Cannot allocate memory to parse docker command %s",
+              strerror(errno));
+      fflush(ERRORFILE);
+      exit(OUT_OF_MEMORY);
+    }
+    p = strtok(NULL, " ");
+  }
+  linesplit[*split_counter] = NULL;
+  return linesplit;
+}
+
+int execute_regex_match(const char *regex_str, const char *input)
+{
+  regex_t regex;
+  int regex_match;
+  if (0 != regcomp(&regex, regex_str, REG_EXTENDED | REG_NOSUB))
+  {
+    fprintf(LOGFILE, "ERROR: Unable to compile regex.");
+    fflush(LOGFILE);
+    exit(ERROR_COMPILING_REGEX);
+  }
+  regex_match = regexec(&regex, input, (size_t)0, NULL, 0);
+  regfree(&regex);
+  if (0 == regex_match)
+  {
+    return 0;
+  }
+  return 1;
+}
+
+int validate_docker_image_name(const char *image_name)
+{
+  char *regex_str = "^(([a-zA-Z0-9.-]+)(:[0-9]+)?/)?([a-z0-9_./-]+)(:[a-zA-Z0-9_.-]+)?$";
+  return execute_regex_match(regex_str, image_name);
+}
+
+/**
+ * Only allow certain options for any docker commands.
+ * Since most options are from docker-run command, we don't have
+ * separate checks for other docker-xx (e.g docker-inspect) commands.
+ */
+char *sanitize_docker_command(const char *line)
+{
+  static struct option long_options[] = {
+      {"name", required_argument, 0, 'n'},
+      {"user", required_argument, 0, 'u'},
+      {"rm", no_argument, 0, 'r'},
+      {"workdir", required_argument, 0, 'w'},
+      {"net", required_argument, 0, 'e'},
+      {"cgroup-parent", required_argument, 0, 'g'},
+      {"cap-add", required_argument, 0, 'a'},
+      {"cap-drop", required_argument, 0, 'o'},
+      {"device", required_argument, 0, 'i'},
+      {"detach", required_argument, 0, 't'},
+      {"group-add", required_argument, 0, 'x'},
+      {"read-only", no_argument, 0, 'R'},
+      {"security-opt", required_argument, 0, 'S'},
+      {"cpu-shares", required_argument, 0, 'c'},
+      {"cpus", required_argument, 0, 'C'},
+      {"cpuset-cpus", required_argument, 0, 's'},
+      {"cpuset-mems", required_argument, 0, 'm'},
+      {"cidfile", required_argument, 0, 'I'},
+      {"format", required_argument, 0, 'f'}, //belongs to docker-inspect command
+      {"force", no_argument, 0, 'F'},        //belongs to docker-rm command
+      {"time", required_argument, 0, 'T'},   //belongs to docker-stop command
+      {"filter", required_argument, 0, 'l'}, //belongs to docker-ps command
+      {"quiet", required_argument, 0, 'q'},  //belongs to docker-ps command
+      {0, 0, 0, 0}};
+
+  int c = 0;
+  int option_index = 0;
+  char *output = NULL;
+  size_t output_size = 0;
+  char **linesplit;
+  int split_counter = 0;
+  int len = strlen(line);
+
+  linesplit = tokenize_docker_command(line, &split_counter);
+
+  output_size = len * 2;
+  output = (char *)calloc(output_size, sizeof(char));
+  if (output == NULL)
+  {
+    exit(OUT_OF_MEMORY);
+  }
+
+  // Handle docker client config option.
+  if (0 == strncmp(linesplit[0], DOCKER_CLIENT_CONFIG_ARG, strlen(DOCKER_CLIENT_CONFIG_ARG)))
+  {
+    strcat(output, linesplit[0]);
+    strcat(output, " ");
+    long index = 0;
+    while (index < split_counter)
+    {
+      linesplit[index] = linesplit[index + 1];
+      if (linesplit[index] == NULL)
+      {
+        split_counter--;
+        break;
+      }
+      index++;
+    }
+  }
+
+  // Handle docker pull and image name validation.
+  if (0 == strncmp(linesplit[0], DOCKER_PULL_COMMAND, strlen(DOCKER_PULL_COMMAND)))
+  {
+    if (0 != validate_docker_image_name(linesplit[1]))
+    {
+      fprintf(ERRORFILE, "ERROR: Invalid Docker image name, exiting.");
+      fflush(ERRORFILE);
+      exit(DOCKER_IMAGE_INVALID);
+    }
+    strcat(output, linesplit[0]);
+    strcat(output, " ");
+    strcat(output, linesplit[1]);
+    return output;
+  }
+
+  strcat(output, linesplit[0]);
+  strcat(output, " ");
+  optind = 1;
+  while ((c = getopt_long(split_counter, linesplit, "dv:", long_options, &option_index)) != -1)
+  {
+    switch (c)
+    {
+    case 'n':
+      strcat(output, "--name=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'w':
+      strcat(output, "--workdir=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'u':
+      strcat(output, "--user=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'e':
+      strcat(output, "--net=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'v':
+      strcat(output, "-v ");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'a':
+      strcat(output, "--cap-add=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'o':
+      strcat(output, "--cap-drop=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'd':
+      strcat(output, "-d ");
+      break;
+    case 'r':
+      strcat(output, "--rm ");
+      break;
+    case 'R':
+      strcat(output, "--read-only ");
+      break;
+    case 'S':
+      strcat(output, "--security-opt ");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'g':
+      strcat(output, "--cgroup-parent=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'c':
+      strcat(output, "--cpu-shares=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'C':
+      strcat(output, "--cpus=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 's':
+      strcat(output, "--cpuset-cpus=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'm':
+      strcat(output, "--cpuset-mems=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'i':
+      strcat(output, "--device=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 't':
+      strcat(output, "--detach=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'x':
+      strcat(output, "--group-add ");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'I':
+      strcat(output, "--cidfile=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'f':
+      strcat(output, "--format=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'F':
+      strcat(output, "--force ");
+      break;
+    case 'T':
+      strcat(output, "--time=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'l':
+      strcat(output, "--filter=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    case 'q':
+      strcat(output, "--quiet=");
+      strcat(output, optarg);
+      strcat(output, " ");
+      break;
+    default:
+      fprintf(LOGFILE, "Unknown option in docker command, character %d %c, optionindex = %d\n", c, c, optind);
+      fflush(LOGFILE);
+      return NULL;
+      break;
+    }
+  }
+
+  while (optind < split_counter)
+  {
+    strcat(output, linesplit[optind++]);
+    strcat(output, " ");
+  }
+
+  return output;
+}
+
+char *parse_docker_command_file(const char *command_file)
+{
+
+  size_t len = 0;
+  char *line = NULL;
+  ssize_t read;
+  FILE *stream;
+
+  uid_t user = geteuid();
+  gid_t group = getegid();
+  if (change_effective_user(launcher_uid, launcher_gid) != 0)
+  {
+    fprintf(ERRORFILE, "ERROR: Cannot change effective user to supervisor user");
+    fflush(ERRORFILE);
+    exit(ERROR_CHANGING_USER);
+  }
+
+  stream = fopen(command_file, "r");
+  if (stream == NULL)
+  {
+    fprintf(ERRORFILE, "ERROR: Cannot open file %s - %s in parse_docker_command",
+            command_file, strerror(errno));
+    fflush(ERRORFILE);
+    exit(ERROR_OPENING_FILE);
+  }
+  if ((read = getline(&line, &len, stream)) == -1)
+  {
+    fprintf(ERRORFILE, "ERROR: Failed reading command_file %s in parse_docker_command\n", command_file);
+    fflush(ERRORFILE);
+    exit(ERROR_READING_FILE);
+  }
+  fclose(stream);
+  if (change_effective_user(user, group))
+  {
+    fprintf(ERRORFILE, "ERROR: Cannot change effective user from supervisor user back to original in parse_docker_command");
+    fflush(ERRORFILE);
+    exit(ERROR_CHANGING_USER);
+  }
+
+  char *ret = sanitize_docker_command(line);
+  if (ret == NULL)
+  {
+    exit(ERROR_SANITIZING_DOCKER_COMMAND);
+  }
+
+  return ret;
+}
+
+int run_docker_cmd(const char *working_dir, const char *command_file)
+{
+  char *docker_command = parse_docker_command_file(command_file);
+  char *docker_binary = get_docker_binary();
+  size_t command_size = MIN(sysconf(_SC_ARG_MAX), 128 * 1024);
+
+  char *docker_command_with_binary = calloc(sizeof(char), command_size);
+  snprintf(docker_command_with_binary, command_size, "%s %s", docker_binary, docker_command);
+
+  fprintf(LOGFILE, "command: %s\n", docker_command_with_binary);
+  fflush(LOGFILE);
+
+  setsid();
+
+  char **args = extract_values_delim(docker_command_with_binary, " ");
+
+  if (execvp(docker_binary, args) != 0)
+  {
+    fprintf(ERRORFILE, "ERROR: Couldn't execute the container launch with args %s - %s",
+            docker_binary, strerror(errno));
+    fflush(LOGFILE);
+    fflush(ERRORFILE);
+    free(docker_binary);
+    free(args);
+    free(docker_command_with_binary);
+    free(docker_command);
+    return DOCKER_RUN_FAILED;
+  }
+  //Unreachable
+  return -1;
+}
+
+//functions below are nsenter related.
+//Used for running profiling inside docker container through nsenter.
+
+char *get_nsenter_binary()
+{
+  char *nsenter_binary = get_value(NSENTER_BINARY_KEY);
+  if (nsenter_binary == NULL)
+  {
+    nsenter_binary = strdup(DEFAULT_NSENTER_BINARY_PATH);
+  }
+  return nsenter_binary;
+}
+
+int get_docker_container_pid(const char *worker_id) {
+  size_t command_size = MIN(sysconf(_SC_ARG_MAX), 128 * 1024);
+  char *docker_inspect_command = calloc(sizeof(char), command_size);
+  char *docker_binary = get_docker_binary();
+  snprintf(docker_inspect_command, command_size, "%s inspect --format {{.State.Pid}} %s", docker_binary, worker_id);
+
+  fprintf(LOGFILE, "Inspecting docker container...\n");
+  fflush(LOGFILE);
+  FILE *inspect_docker = popen(docker_inspect_command, "r");
+  int pid = -1;
+  int res = fscanf(inspect_docker, "%d", &pid);
+  if (pclose(inspect_docker) != 0 || res <= 0)
+  {
+    fprintf(ERRORFILE,
+            "ERROR: Could not inspect docker to get pid %s in get_docker_container_pid\n", docker_inspect_command);
+    fflush(ERRORFILE);
+    pid = -1;
+    goto cleanup;
+  }
+
+  fprintf(LOGFILE, "The pid of the container is %d.\n", pid);
+  fflush(LOGFILE);
+
+cleanup:
+  free(docker_inspect_command);
+  free(docker_binary);
+  return pid;
+}
+
+int profile_oci_container(int container_pid, const char* command_file) {
+  if (container_pid <= 0) {
+    fprintf(ERRORFILE, "ERROR: The container pid is %d in profile_oci_container\n", container_pid);
+    fflush(ERRORFILE);
+    return UNABLE_TO_EXECUTE_CONTAINER_SCRIPT;
+  }
+
+  char *profiler_path = get_value(WORKER_PROFILER_SCRIPT_PATH);
+  if (profiler_path == NULL)
+  {
+    fprintf(ERRORFILE, "ERROR: ATTENTION: %s is not set. worker profiling won't work!\n", WORKER_PROFILER_SCRIPT_PATH);
+    fflush(ERRORFILE);
+    return -1;
+  }
+
+  size_t len = 0;
+  char *line = NULL;
+  ssize_t read;
+  FILE *stream = fopen(command_file, "r");
+  if (stream == NULL)
+  {
+    fprintf(ERRORFILE, "ERROR: Cannot open file %s - %s in profile_oci_container", command_file, strerror(errno));
+    fflush(ERRORFILE);
+    exit(ERROR_OPENING_FILE);
+  }
+  if ((read = getline(&line, &len, stream)) == -1)
+  {
+    fprintf(ERRORFILE, "ERROR: Failed reading command_file %s in profile_oci_container\n", command_file);
+    fflush(ERRORFILE);
+    exit(ERROR_READING_FILE);
+  }
+  fclose(stream);
+
+  if (seteuid(0) != 0)
+  {
+    fprintf(ERRORFILE, "ERROR: Could not become root in profile_oci_container\n");
+    fflush(LOGFILE);
+    return -1;
+  }
+
+  //run profiling command
+  size_t command_size = MIN(sysconf(_SC_ARG_MAX), 128 * 1024);
+  char *nsenter_binary = get_nsenter_binary();
+  char *nsenter_command_with_binary = calloc(sizeof(char), command_size);
+  snprintf(nsenter_command_with_binary, command_size, 
+    "%s --target %d --mount --pid --setuid %d --setgid %d", 
+    nsenter_binary, container_pid, user_detail->pw_uid, user_detail->pw_gid);
+
+  fprintf(LOGFILE, "command is %s\n", nsenter_command_with_binary);
+  fflush(LOGFILE);
+
+  FILE *fp = popen(nsenter_command_with_binary, "w");
+  fprintf(fp, "umask 0027; %s %s\nexit\n", profiler_path, line);
+  pclose(fp);
+
+  free(nsenter_binary);
+  free(nsenter_command_with_binary);
+  return 0;
+}
+
+/**
+ * Utility function to concatenate argB to argA using the concat_pattern.
+ */
+char *concatenate(char *concat_pattern, char *return_path_name,
+                  int numArgs, ...)
+{
+  va_list ap;
+  va_start(ap, numArgs);
+  int strlen_args = 0;
+  char *arg = NULL;
+  int j;
+  for (j = 0; j < numArgs; j++)
+  {
+    arg = va_arg(ap, char *);
+    if (arg == NULL)
+    {
+      fprintf(LOGFILE, "One of the arguments passed for %s in null.\n",
+              return_path_name);
+      return NULL;
+    }
+    strlen_args += strlen(arg);
+  }
+  va_end(ap);
+
+  char *return_path = NULL;
+  int str_len = strlen(concat_pattern) + strlen_args + 1;
+
+  return_path = (char *)malloc(str_len);
+  if (return_path == NULL)
+  {
+    fprintf(LOGFILE, "Unable to allocate memory for %s.\n", return_path_name);
+    return NULL;
+  }
+  va_start(ap, numArgs);
+  vsnprintf(return_path, str_len, concat_pattern, ap);
+  va_end(ap);
+  return return_path;
 }
