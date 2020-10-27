@@ -214,6 +214,7 @@ Metrics associated with the supervisor, which launches the workers for a topolog
 | supervisor:time-worker-spent-in-state-waiting-for-blob-localization-ms | timer | time spent in waiting-for-blob-localization state as it transitions out. Not necessarily in ms. |
 | supervisor:time-worker-spent-in-state-waiting-for-blob-update-ms | timer | time spent in waiting-for-blob-update state as it transitions out. Not necessarily in ms. |
 | supervisor:time-worker-spent-in-state-waiting-for-worker-start-ms | timer | time spent in waiting-for-worker-start state as it transitions out. Not necessarily in ms. |
+| supervisor:update-blob-exceptions | meter | number of exceptions updating blobs. |
 | supervisor:worker-launch-duration | timer | Time taken for a worker to launch. |
 | supervisor:worker-per-call-clean-up-duration-ns | meter | how long it takes to cleanup a worker (ns). |
 | supervisor:worker-shutdown-duration-ns | meter | how long it takes to shutdown a worker (ns). |
