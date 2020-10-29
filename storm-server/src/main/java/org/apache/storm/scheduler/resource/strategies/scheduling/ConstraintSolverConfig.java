@@ -55,12 +55,14 @@ public final class ConstraintSolverConfig {
 
     private final Map<String, Object> topoConf;
     private final Set<String> comps;
+    private final String topoId; // used only in LOG messages
 
     public ConstraintSolverConfig(TopologyDetails topo) {
-        this(topo.getConf(), new HashSet<>(topo.getExecutorToComponent().values()));
+        this(topo.getId(), topo.getConf(), new HashSet<>(topo.getExecutorToComponent().values()));
     }
 
-    public ConstraintSolverConfig(Map<String, Object> topoConf, Set<String> comps) {
+    public ConstraintSolverConfig(String topoId, Map<String, Object> topoConf, Set<String> comps) {
+        this.topoId = (topoId == null) ? "<null>" : topoId;
         this.topoConf = Collections.unmodifiableMap(topoConf);
         this.comps = Collections.unmodifiableSet(comps);
 
@@ -71,7 +73,7 @@ public final class ConstraintSolverConfig {
         comps.forEach(k -> incompatibleComponentSets.computeIfAbsent(k, x -> new HashSet<>()));
         Object rasConstraints = topoConf.get(Config.TOPOLOGY_RAS_CONSTRAINTS);
         if (rasConstraints == null) {
-            LOG.warn("No config supplied for {}", Config.TOPOLOGY_RAS_CONSTRAINTS);
+            LOG.warn("TopoId {}: No config supplied for {}", topoId, Config.TOPOLOGY_RAS_CONSTRAINTS);
         } else if (rasConstraints instanceof List) {
             // old style
             List<List<String>> constraints = (List<List<String>>) rasConstraints;
@@ -79,11 +81,11 @@ public final class ConstraintSolverConfig {
                 String comp1 = constraintPair.get(0);
                 String comp2 = constraintPair.get(1);
                 if (!comps.contains(comp1)) {
-                    LOG.warn("Comp: {} declared in constraints is not valid!", comp1);
+                    LOG.warn("TopoId {}: Comp {} declared in constraints is not valid!", topoId, comp1);
                     continue;
                 }
                 if (!comps.contains(comp2)) {
-                    LOG.warn("Comp: {} declared in constraints is not valid!", comp2);
+                    LOG.warn("TopoId {}: Comp {} declared in constraints is not valid!", topoId, comp2);
                     continue;
                 }
                 incompatibleComponentSets.get(comp1).add(comp2);
@@ -99,26 +101,28 @@ public final class ConstraintSolverConfig {
                                 try {
                                     int numValue = Integer.parseInt("" + constraint);
                                     if (numValue < 1) {
-                                        LOG.warn("{} {} declared for Comp {} is not valid, expected >= 1", ctype, numValue, comp1);
+                                        LOG.warn("TopoId {}: {} {} declared for Comp {} is not valid, expected >= 1",
+                                                topoId, ctype, numValue, comp1);
                                     } else {
                                         maxNodeCoLocationCnts.put(comp1, numValue);
                                     }
                                 } catch (Exception ex) {
-                                    LOG.warn("{} {} declared for Comp {} is not valid, expected >= 1", ctype, constraint, comp1);
+                                    LOG.warn("TopoId {}: {} {} declared for Comp {} for topoId {} is not valid, expected >= 1",
+                                            topoId, ctype, constraint, comp1);
                                 }
                                 break;
 
                             case CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS:
                                 if (!(constraint instanceof List || constraint instanceof String)) {
-                                    LOG.warn("{} {} declared for Comp {} is not valid, expecting a list of components or 1 component",
-                                            ctype, constraint, comp1);
+                                    LOG.warn("TopoId {}: {} {} declared for Comp {} is not valid, expecting a list of Comps or 1 Comp",
+                                            topoId, ctype, constraint, comp1);
                                     break;
                                 }
                                 List<String> list;
                                 list = (constraint instanceof String) ? Arrays.asList((String) constraint) : (List<String>) constraint;
                                 for (String comp2: list) {
                                     if (!comps.contains(comp2)) {
-                                        LOG.warn("{} {} declared for Comp {} is not a valid component", ctype, comp2, comp1);
+                                        LOG.warn("TopoId {}: {} {} declared for Comp {} is not a valid Comp", topoId, ctype, comp2, comp1);
                                         continue;
                                     }
                                     incompatibleComponentSets.get(comp1).add(comp2);
@@ -127,14 +131,14 @@ public final class ConstraintSolverConfig {
                                 break;
 
                             default:
-                                LOG.warn("ConstraintType={} invalid for component={}, valid values are {} and {}, ignoring value={}",
-                                        ctype, comp1, CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                                LOG.warn("TopoId {}: ConstraintType={} invalid for Comp={}, valid values are {} and {}, ignoring value={}",
+                                        topoId, ctype, comp1, CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
                                         CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, constraint);
                                 break;
                         }
                     });
                 } else {
-                    LOG.warn("Component {} is not a valid component", comp1);
+                    LOG.warn("TopoId {}: Component {} is not a valid component", topoId, comp1);
                 }
             });
         }
@@ -149,18 +153,18 @@ public final class ConstraintSolverConfig {
             List<String> spread = (List<String>) obj;
             for (String comp : spread) {
                 if (!comps.contains(comp)) {
-                    LOG.warn("Invalid Component {} declared in spread {}", comp, spread);
+                    LOG.warn("TopoId {}: Invalid Component {} declared in spread {}", topoId, comp, spread);
                     continue;
                 }
                 if (maxNodeCoLocationCnts.containsKey(comp)) {
-                    LOG.warn("Component {} maxNodeCoLocationCnt={} already defined in {}, ignoring spread config in {}", comp,
-                            maxNodeCoLocationCnts.get(comp), Config.TOPOLOGY_RAS_CONSTRAINTS, Config.TOPOLOGY_SPREAD_COMPONENTS);
+                    LOG.warn("TopoId {}: Component {} maxNodeCoLocationCnt={} already defined in {}, ignoring spread config in {}", topoId,
+                            comp, maxNodeCoLocationCnts.get(comp), Config.TOPOLOGY_RAS_CONSTRAINTS, Config.TOPOLOGY_SPREAD_COMPONENTS);
                     continue;
                 }
                 maxNodeCoLocationCnts.put(comp, 1);
             }
         } else {
-            LOG.warn("Ignoring invalid {} config={}", Config.TOPOLOGY_SPREAD_COMPONENTS, obj);
+            LOG.warn("TopoId {}: Ignoring invalid {} config={}", topoId, Config.TOPOLOGY_SPREAD_COMPONENTS, obj);
         }
     }
 
