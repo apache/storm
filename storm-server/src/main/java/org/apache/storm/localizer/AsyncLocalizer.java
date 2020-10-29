@@ -79,6 +79,7 @@ public class AsyncLocalizer implements AutoCloseable {
     private final Timer blobLocalizationDuration;
     private final Meter numBlobUpdateVersionChanged;
     private final Meter localResourceFileNotFoundWhenReleasingSlot;
+    private final Meter updateBlobExceptions;
 
     // track resources - user to resourceSet
     //ConcurrentHashMap is explicitly used everywhere in this class because it uses locks to guarantee atomicity for compute and
@@ -113,6 +114,7 @@ public class AsyncLocalizer implements AutoCloseable {
         this.numBlobUpdateVersionChanged = metricsRegistry.registerMeter("supervisor:num-blob-update-version-changed");
         this.localResourceFileNotFoundWhenReleasingSlot
                 = metricsRegistry.registerMeter("supervisor:local-resource-file-not-found-when-releasing-slot");
+        this.updateBlobExceptions = metricsRegistry.registerMeter("supervisor:update-blob-exceptions");
         this.metricsRegistry = metricsRegistry;
         isLocalMode = ConfigUtils.isLocalMode(conf);
         fsOps = ops;
@@ -330,6 +332,7 @@ public class AsyncLocalizer implements AutoCloseable {
                 try {
                     f.get();
                 } catch (Exception e) {
+                    updateBlobExceptions.mark();
                     if (Utils.exceptionCauseIsInstanceOf(TTransportException.class, e)) {
                         LOG.error("Network error while updating blobs, will retry again later", e);
                     } else if (Utils.exceptionCauseIsInstanceOf(NimbusLeaderNotFoundException.class, e)) {
