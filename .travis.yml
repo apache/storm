@@ -13,6 +13,10 @@ addons:
   hosts:
     - node1
 
+arch:
+  - amd64
+  - arm64-graviton2
+
 env:
   - MODULES=Client
   - MODULES=Server
@@ -36,8 +40,6 @@ jdk:
 matrix:
   include:
     - arch: s390x
-      jdk: openjdk11
-    - arch: arm64
       jdk: openjdk11
 
 before_install:
