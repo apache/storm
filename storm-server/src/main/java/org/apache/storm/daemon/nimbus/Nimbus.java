@@ -2440,6 +2440,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             List<String> assignedTopologyIds = state.assignments(null);
             Map<String, Assignment> existingAssignments = new HashMap<>();
             for (String id : assignedTopologyIds) {
+                // A rare race condition between IStormClusterState#syncRemoteAssignments and REMOVE_TRANSITION for killing topo.
+                // For example, if a topo were killed when syncRemoteAssignments is happening.
+                // Local assignment-backend might still has the killed topo while the bases does not.
+                // Scheduling should consider the zookeeper as source of truth.
+                // So we clean up again for the set as (in-memory backend - remote state).
+                if (!bases.containsKey(id)) {
+                    state.removeStorm(id);
+                    continue;
+                }
                 //for the topology which wants rebalance (specified by the scratchTopoId)
                 // we exclude its assignment, meaning that all the slots occupied by its assignment
                 // will be treated as free slot in the scheduler code.
