@@ -15,7 +15,6 @@ addons:
 
 arch:
   - amd64
-  - arm64-graviton2
 
 env:
   - MODULES=Client
@@ -41,6 +40,48 @@ matrix:
   include:
     - arch: s390x
       jdk: openjdk11
+    - dist: focal
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Client
+    - dist: focal
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Server
+    - dist: focal
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Core
+    - dist: focal
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=External
+    - dist: focal
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Integration-Test
+    - dist: focal
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Check-Updated-License-Files
 
 before_install:
   - rvm reload
