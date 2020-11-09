@@ -273,7 +273,7 @@ public class SchedulingSearcherState {
 
             int maxBoundAckers = (int) Math.floor(workerHeapSpace / ackerOnHeapReq);
             if (maxBoundAckers < ackersPerWorker) {
-                LOG.warn("For exec {}, can only bind up to {} ackers due to {} limit. Acker Per worker setting: {}.",
+                LOG.debug("For exec {}, can only bind up to {} ackers due to {} limit. Acker Per worker setting: {}.",
                     exec, maxBoundAckers, Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, ackersPerWorker);
             }
             int ret =  Math.min(Math.min(maxBoundAckers, unassignedAckers.size()), ackersPerWorker);

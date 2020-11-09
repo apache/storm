@@ -397,7 +397,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         // the order of unassigned ackers in orderedExecutors and searcherState.getUnassignedAckers() are same
         orderedExecutors.removeAll(searcherState.getUnassignedAckers());
         orderedExecutors.addAll(searcherState.getUnassignedAckers());
-        LOG.info("For topology: {}, we have sorted execs: {} and unassigned ackers: {}",
+        LOG.debug("For topology: {}, we have sorted execs: {} and unassigned ackers: {}",
                     topoName, orderedExecutors, searcherState.getUnassignedAckers());
 
         long         startTimeMilli     = Time.currentTimeMillis();
