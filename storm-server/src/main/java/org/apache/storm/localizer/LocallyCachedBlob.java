@@ -221,7 +221,8 @@ public abstract class LocallyCachedBlob {
      * @param cb an optional callback indicating that they want to know/synchronize when a blob is updated.
      */
     public void addReference(final PortAndAssignment pna, BlobChangingCallback cb) {
-        LOG.debug("Adding reference {}", pna);
+        touch();
+        LOG.info("Adding reference {} with timestamp {} to {}", pna, getLastUsed(), blobDescription);
         if (cb == null) {
             cb = NOOP_CB;
         }
@@ -235,9 +236,10 @@ public abstract class LocallyCachedBlob {
      * @param pna the slot + assignment that no longer needs this blob.
      */
     public void removeReference(final PortAndAssignment pna) {
-        LOG.debug("Removing reference {}", pna);
+        LOG.info("Removing reference {} from {}", pna, blobDescription);
         if (references.remove(pna) == null) {
-            LOG.warn("{} had no reservation for {}", pna, blobDescription);
+            LOG.warn("{} had no reservation for {}, current references are {} with last update at {}",
+                    pna, blobDescription, getDependencies(), getLastUsed());
         }
         touch();
     }

@@ -157,7 +157,9 @@ public class AsyncLocalizer implements AutoCloseable {
                                                       LocallyCachedTopologyBlob.TopologyBlobType
                                                           .TOPO_JAR, owner, metricsRegistry);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    String message = "Failed getTopoJar for " + topologyId;
+                    LOG.error(message, e);
+                    throw new RuntimeException(message, e);
                 }
             });
     }
@@ -171,7 +173,9 @@ public class AsyncLocalizer implements AutoCloseable {
                                                       LocallyCachedTopologyBlob.TopologyBlobType
                                                           .TOPO_CODE, owner, metricsRegistry);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    String message = "Failed getTopoCode for " + topologyId;
+                    LOG.error(message, e);
+                    throw new RuntimeException(message, e);
                 }
             });
     }
@@ -185,7 +189,9 @@ public class AsyncLocalizer implements AutoCloseable {
                                                       LocallyCachedTopologyBlob.TopologyBlobType
                                                           .TOPO_CONF, owner, metricsRegistry);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    String message = "Failed getTopoConf for " + topologyId;
+                    LOG.error(message, e);
+                    throw new RuntimeException(message, e);
                 }
             });
     }
@@ -219,6 +225,8 @@ public class AsyncLocalizer implements AutoCloseable {
         final PortAndAssignment pna = new TimePortAndAssignment(new PortAndAssignmentImpl(port, assignment), blobLocalizationDuration);
         final String topologyId = pna.getToplogyId();
 
+        LOG.info("requestDownloadTopologyBlobs for {}", pna);
+
         CompletableFuture<Void> baseBlobs = requestDownloadBaseTopologyBlobs(pna, cb);
         return baseBlobs.thenComposeAsync((v) ->
             blobPending.compute(topologyId, (tid, old) -> {
@@ -229,6 +237,7 @@ public class AsyncLocalizer implements AutoCloseable {
                     try {
                         addReferencesToBlobs(pna, cb);
                     } catch (Exception e) {
+                        LOG.error("Failed adding references to blobs for " + pna, e);
                         throw new RuntimeException(e);
                     } finally {
                         pna.complete();
@@ -416,6 +425,7 @@ public class AsyncLocalizer implements AutoCloseable {
                                        final BlobChangingCallback cb) throws IOException {
         final PortAndAssignment pna = new PortAndAssignmentImpl(port, currentAssignment);
         final String topologyId = pna.getToplogyId();
+        LOG.info("recoverRunningTopology for {}", pna);
 
         LocallyCachedBlob topoJar = getTopoJar(topologyId, pna.getAssignment().get_owner());
         topoJar.addReference(pna, cb);
@@ -447,7 +457,7 @@ public class AsyncLocalizer implements AutoCloseable {
     public void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
         PortAndAssignment pna = new PortAndAssignmentImpl(port, assignment);
         final String topologyId = assignment.get_topology_id();
-        LOG.debug("Releasing slot for {} {}", topologyId, port);
+        LOG.info("Releasing slot for {} {}", topologyId, port);
 
         String topoJarKey = ConfigUtils.masterStormJarKey(topologyId);
         String topoCodeKey = ConfigUtils.masterStormCodeKey(topologyId);
