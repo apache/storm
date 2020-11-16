@@ -653,9 +653,8 @@ public class TestDefaultResourceAwareStrategy {
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy (when made by network proximity needs.) is correct
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testDefaultResourceAwareStrategyInFavorOfShuffle(boolean useDeprecatedConfigForProximity)
+    @Test
+    public void testDefaultResourceAwareStrategyInFavorOfShuffle()
         throws InvalidTopologyException {
         int spoutParallelism = 1;
         int boltParallelism = 2;

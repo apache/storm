@@ -372,14 +372,14 @@ public class TestBackwardCompatibility {
     public void testDefaultResourceAwareStrategyInFavorOfShuffleWithNewProximityConfig()
         throws InvalidTopologyException {
         boolean useDeprecatedConfigForProximity = false;
-        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle(useDeprecatedConfigForProximity);
+        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle();
     }
 
     @Test
     public void testDefaultResourceAwareStrategyInFavorOfShuffleWithDeprecatedProximityConfig()
         throws InvalidTopologyException {
         boolean useDeprecatedConfigForProximity = true;
-        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle(useDeprecatedConfigForProximity);
+        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle();
     }
 
     @Test
