@@ -782,7 +782,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      * @return {topology-id -> {executor [node port]}} mapping
      */
     private static Map<String, Map<List<Long>, List<Object>>> computeTopoToExecToNodePort(
-        Map<String, SchedulerAssignment> schedAssignments, List<String> assignedTopologyIds) {
+        Map<String, SchedulerAssignment> schedAssignments, Map<String, Assignment> existingAssignments) {
         Map<String, Map<List<Long>, List<Object>>> ret = new HashMap<>();
         for (Entry<String, SchedulerAssignment> schedEntry : schedAssignments.entrySet()) {
             Map<List<Long>, List<Object>> execToNodePort = new HashMap<>();
@@ -793,7 +793,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
             ret.put(schedEntry.getKey(), execToNodePort);
         }
-        for (String id : assignedTopologyIds) {
+        for (String id : existingAssignments.keySet()) {
             ret.putIfAbsent(id, null);
         }
         return ret;
@@ -2466,7 +2466,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
 
             // make the new assignments for topologies
-            lockingMkAssignments(existingAssignments, bases, scratchTopoId, assignedTopologyIds, state, tds);
+            lockingMkAssignments(existingAssignments, bases, scratchTopoId, state, tds);
         } catch (Exception e) {
             this.mkAssignmentsErrors.mark();
             throw e;
@@ -2474,7 +2474,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private void lockingMkAssignments(Map<String, Assignment> existingAssignments, Map<String, StormBase> bases,
-                                      String scratchTopoId, List<String> assignedTopologyIds, IStormClusterState state,
+                                      String scratchTopoId, IStormClusterState state,
                                       Map<String, TopologyDetails> tds) throws Exception {
         Topologies topologies = new Topologies(tds);
 
@@ -2483,7 +2483,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     computeNewSchedulerAssignments(existingAssignments, topologies, bases, scratchTopoId);
 
             Map<String, Map<List<Long>, List<Object>>> topologyToExecutorToNodePort =
-                    computeTopoToExecToNodePort(newSchedulerAssignments, assignedTopologyIds);
+                    computeTopoToExecToNodePort(newSchedulerAssignments, existingAssignments);
             Map<String, Map<WorkerSlot, WorkerResources>> newAssignedWorkerToResources =
                     computeTopoToNodePortToResources(newSchedulerAssignments);
             int nowSecs = Time.currentTimeSecs();
