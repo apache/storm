@@ -369,20 +369,6 @@ public class TestBackwardCompatibility {
     }
 
     @Test
-    public void testDefaultResourceAwareStrategyInFavorOfShuffleWithNewProximityConfig()
-        throws InvalidTopologyException {
-        boolean useDeprecatedConfigForProximity = false;
-        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle();
-    }
-
-    @Test
-    public void testDefaultResourceAwareStrategyInFavorOfShuffleWithDeprecatedProximityConfig()
-        throws InvalidTopologyException {
-        boolean useDeprecatedConfigForProximity = true;
-        testDefaultResourceAwareStrategy.testDefaultResourceAwareStrategyInFavorOfShuffle();
-    }
-
-    @Test
     public void testMultipleRacks() {
         testDefaultResourceAwareStrategy.testMultipleRacks();
     }

@@ -3212,7 +3212,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
                 int numEventLoggerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS), estimatedNumWorker);
                 totalConfToSave.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numEventLoggerExecs);
-                LOG.info("Config {} set to: {} for topology: {}",
+                LOG.debug("Config {} set to: {} for topology: {}",
                     Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numEventLoggerExecs, topoName);
 
             }

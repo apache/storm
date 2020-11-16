@@ -13,7 +13,6 @@
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import java.util.Map;
-
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.SchedulingResult;
@@ -23,8 +22,7 @@ import org.apache.storm.scheduler.resource.SchedulingResult;
  * Scheduler should call {@link #prepare(Map)} followed by {@link #schedule(Cluster, TopologyDetails)}.
  * <p>
  *     A fully functioning implementation is in the abstract class {@link BaseResourceAwareStrategy}.
- *     Subclasses classes should extend
- *     {@link BaseResourceAwareStrategy#BaseResourceAwareStrategy(boolean, BaseResourceAwareStrategy.NodeSortType)}
+ *     Subclasses classes should extend {@link BaseResourceAwareStrategy#BaseResourceAwareStrategy()}
  *     in their constructors (as in {@link GenericResourceAwareStrategy}, {@link DefaultResourceAwareStrategy}
  *     and {@link ConstraintSolverStrategy}).
  * </p>

@@ -497,7 +497,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                     if (searcherState.areAllExecsScheduled()) {
                         //Everything is scheduled correctly, so no need to search any more.
                         LOG.info("scheduleExecutorsOnNodes: Done at loopCnt={} in {}ms, state.elapsedtime={}, backtrackCnt={}, topo={}",
-                                loopCnt, Time.currentTimeMillis() - startTimeMilli,
+                                loopCnt, System.currentTimeMillis() - startTimeMilli,
                                 Time.currentTimeMillis() - searcherState.startTimeMillis,
                                 searcherState.getNumBacktrack(),
                                 topoName);
@@ -524,7 +524,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         }
         boolean success = searcherState.areAllExecsScheduled();
         LOG.info("scheduleExecutorsOnNodes: Scheduled={} in {} milliseconds, state.elapsedtime={}, backtrackCnt={}, topo={}",
-                success, Time.currentTimeMillis() - startTimeMilli, Time.currentTimeMillis() - searcherState.startTimeMillis,
+                success, System.currentTimeMillis() - startTimeMilli, Time.currentTimeMillis() - searcherState.startTimeMillis,
                 searcherState.getNumBacktrack(),
                 topoName);
         return searcherState.createSchedulingResult(success, this.getClass().getSimpleName());
