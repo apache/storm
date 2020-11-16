@@ -47,6 +47,7 @@ import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.BufferFileInputStream;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.WrappedInvalidTopologyException;
 import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -228,6 +229,11 @@ public class StormSubmitter {
         if (!Utils.isValidConf(topoConf)) {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }
+
+        if (topology.get_spouts_size() == 0) {
+            throw new WrappedInvalidTopologyException("Topology " + name + " does not have any spout");
+        }
+
         topoConf = new HashMap<>(topoConf);
         topoConf.putAll(Utils.readCommandLineOpts());
         Map<String, Object> conf = Utils.readStormConfig();
