@@ -592,7 +592,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         if (leaderElector == null) {
             leaderElector = Zookeeper.zkLeaderElector(conf, zkClient, blobStore, topoCache, stormClusterState, getNimbusAcls(conf),
-                metricsRegistry);
+                metricsRegistry, submitLock);
         }
         this.leaderElector = leaderElector;
         this.blobStore.setLeaderElector(this.leaderElector);
