@@ -104,3 +104,7 @@ for i in {1..20} ; do
 done
 list_storm_processes
 mvn test -DfailIfNoTests=false -DskipTests=false -Dstorm.version=${STORM_VERSION} -Dui.url=http://localhost:8744
+
+# Kill all storm processes after tests running, otherwise the Travis CI(ARM) will still wait and then fail by
+# timeout error even though all the tests passed
+sudo pkill -9 -u storm
