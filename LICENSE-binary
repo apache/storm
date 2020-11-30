@@ -687,7 +687,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Commons IO (commons-io:commons-io:2.6 - http://commons.apache.org/proper/commons-io/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.2 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.6 - http://commons.apache.org/proper/commons-lang/)
-        * Apache Commons Lang (org.apache.commons:commons-lang3:3.7 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.8.1 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Logging (commons-logging:commons-logging:1.2 - http://commons.apache.org/proper/commons-logging/)
         * Apache Commons Math (org.apache.commons:commons-math3:3.6.1 - http://commons.apache.org/proper/commons-math/)
@@ -934,7 +933,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * jersey-media-jaxb (org.glassfish.jersey.media:jersey-media-jaxb:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-media-jaxb)
         * jersey-core-server (org.glassfish.jersey.core:jersey-server:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
         * jersey-core-common (org.glassfish.jersey.core:jersey-common:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
-        * Hibernate Validator Engine (org.hibernate:hibernate-validator:5.4.2.Final - http://hibernate.org/validator/hibernate-validator)
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:6.0.17.Final - http://hibernate.org/validator/hibernate-validator)
 
     BSD 3-Clause License
@@ -1032,7 +1030,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Checker Qual (org.checkerframework:checker-qual:2.5.2 - https://checkerframework.org)
         * JCodings (org.jruby.jcodings:jcodings:1.0.18 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Joni (org.jruby.joni:joni:2.1.11 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
-        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.26 - http://www.slf4j.org)
+        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.25 - http://www.slf4j.org)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.26 - http://www.slf4j.org)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.26 - http://www.slf4j.org)
         * SLF4J LOG4J-12 Binding (org.slf4j:slf4j-log4j12:1.7.26 - http://www.slf4j.org)
