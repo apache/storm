@@ -46,7 +46,6 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.3 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.4 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.6 - http://commons.apache.org/proper/commons-lang/)
-        * Apache Commons Lang (org.apache.commons:commons-lang3:3.7 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.8.1 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Logging (commons-logging:commons-logging:1.2 - http://commons.apache.org/proper/commons-logging/)
         * Apache Commons Math (org.apache.commons:commons-math3:3.6.1 - http://commons.apache.org/proper/commons-math/)
@@ -284,7 +283,7 @@ List of third-party dependencies grouped by their license type.
         * hawtbuf (org.fusesource.hawtbuf:hawtbuf:1.11 - http://hawtbuf.fusesource.org/hawtbuf)
         * hawtdispatch (org.fusesource.hawtdispatch:hawtdispatch:1.22 - http://hawtdispatch.fusesource.org/hawtdispatch/)
         * hawtdispatch-transport (org.fusesource.hawtdispatch:hawtdispatch-transport:1.22 - http://hawtdispatch.fusesource.org/hawtdispatch-transport/)
-        * Hibernate Validator Engine (org.hibernate:hibernate-validator:5.4.2.Final - http://hibernate.org/validator/hibernate-validator)
+        * Hibernate Validator Engine (org.hibernate:hibernate-validator:5.4.3.Final - http://hibernate.org/validator/hibernate-validator)
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:6.0.17.Final - http://hibernate.org/validator/hibernate-validator)
         * HikariCP (com.zaxxer:HikariCP:2.4.7 - https://github.com/brettwooldridge/HikariCP)
         * HikariCP (com.zaxxer:HikariCP:2.5.1 - https://github.com/brettwooldridge/HikariCP)
@@ -541,7 +540,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, LGPL 2.1, MPL 1.1
 
-        * Javassist (org.javassist:javassist:3.22.0-GA - http://www.javassist.org/)
+        * Javassist (org.javassist:javassist:3.24.1-GA - http://www.javassist.org/)
 
     BSD-2-Clause, Public Domain, per Creative Commons CC0
 
@@ -683,11 +682,12 @@ List of third-party dependencies grouped by their license type.
         * Checker Qual (org.checkerframework:checker-qual:2.5.2 - https://checkerframework.org)
         * JCL 1.1.1 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.7 - http://www.slf4j.org)
         * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.25 - http://www.slf4j.org)
+        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.26 - http://www.slf4j.org)
         * JCodings (org.jruby.jcodings:jcodings:1.0.18 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Jedis (redis.clients:jedis:2.9.0 - https://github.com/xetorthio/jedis)
         * jnr-x86asm (com.github.jnr:jnr-x86asm:1.0.2 - http://github.com/jnr/jnr-x86asm)
         * Joni (org.jruby.joni:joni:2.1.11 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
-        * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.25 - http://www.slf4j.org)
+        * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.26 - http://www.slf4j.org)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.26 - http://www.slf4j.org)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.6 - http://www.slf4j.org)
         * SLF4J LOG4J-12 Binding (org.slf4j:slf4j-log4j12:1.7.26 - http://www.slf4j.org)
