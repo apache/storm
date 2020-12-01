@@ -1031,7 +1031,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * JCodings (org.jruby.jcodings:jcodings:1.0.18 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Joni (org.jruby.joni:joni:2.1.11 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
         * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.25 - http://www.slf4j.org)
-        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.26 - http://www.slf4j.org)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.26 - http://www.slf4j.org)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.26 - http://www.slf4j.org)
         * SLF4J LOG4J-12 Binding (org.slf4j:slf4j-log4j12:1.7.26 - http://www.slf4j.org)
