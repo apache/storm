@@ -100,6 +100,7 @@ public class AsyncLocalizer implements AutoCloseable {
     private final ScheduledExecutorService downloadExecService;
     private final ScheduledExecutorService taskExecService;
     private final long cacheCleanupPeriod;
+    private final long updateBlobPeriod;
     private final StormMetricsRegistry metricsRegistry;
     // cleanup
     @VisibleForTesting
@@ -125,6 +126,9 @@ public class AsyncLocalizer implements AutoCloseable {
         // default 30 seconds. (we cache the size so it is cheap to do)
         cacheCleanupPeriod = ObjectReader.getInt(conf.get(
             DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS), 30 * 1000).longValue();
+
+        updateBlobPeriod = ObjectReader.getInt(conf.get(
+                DaemonConfig.SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS), 30).longValue();
 
         blobDownloadRetries = ObjectReader.getInt(conf.get(
             DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_MAX_RETRIES), 3);
@@ -349,7 +353,8 @@ public class AsyncLocalizer implements AutoCloseable {
      * Start any background threads needed.  This includes updating blobs and cleaning up unused blobs over the configured size limit.
      */
     public void start() {
-        taskExecService.scheduleWithFixedDelay(this::updateBlobs, 30, 30, TimeUnit.SECONDS);
+        LOG.debug("Scheduling updateBlobs every {} seconds", updateBlobPeriod);
+        taskExecService.scheduleWithFixedDelay(this::updateBlobs, updateBlobPeriod, updateBlobPeriod, TimeUnit.SECONDS);
         LOG.debug("Scheduling cleanup every {} millis", cacheCleanupPeriod);
         taskExecService.scheduleAtFixedRate(this::cleanup, cacheCleanupPeriod, cacheCleanupPeriod, TimeUnit.MILLISECONDS);
     }

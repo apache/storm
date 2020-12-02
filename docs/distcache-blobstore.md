@@ -290,7 +290,10 @@ appropriate runtime values for this worker. The distributed cache target size in
 of the distributed cache contents. It is set to 10240 MB.
 
 supervisor.localizer.cleanup.interval.ms: The distributed cache cleanup interval. Controls how often it scans to attempt to 
-cleanup anything over the cache target size. By default it is set to 600000 milliseconds.
+cleanup anything over the cache target size. By default it is set to 300000 milliseconds.
+
+supervisor.localizer.update.blob.interval.secs: The distributed cache interval for checking for blobs to update. By
+default it is set to 30 seconds.
 
 nimbus.blobstore.class:  Sets the blobstore implementation nimbus uses. It is set to "org.apache.storm.blobstore.LocalFsBlobStore"
 
