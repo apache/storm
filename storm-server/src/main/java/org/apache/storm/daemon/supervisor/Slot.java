@@ -640,7 +640,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                             : MachineState.WAITING_FOR_BLOB_LOCALIZATION);
         }
 
-        LOG.warn("SLOT {} force kill and wait...", staticState.port);
+        LOG.info("SLOT {} force kill and wait...", staticState.port);
         dynamicState.container.forceKill();
         Time.sleep(staticState.killSleepMs);
         return dynamicState;
