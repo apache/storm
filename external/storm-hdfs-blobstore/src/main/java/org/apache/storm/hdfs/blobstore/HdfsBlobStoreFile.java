@@ -45,7 +45,6 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
     private final String key;
     private final boolean isTmp;
     private final Path path;
-    private Long modTime = null;
     private final boolean mustBeNew;
     private final Configuration hadoopConf;
     private final FileSystem fileSystem;
@@ -106,11 +105,7 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
 
     @Override
     public long getModTime() throws IOException {
-        if (modTime == null) {
-            FileSystem fs = path.getFileSystem(hadoopConf);
-            modTime = fs.getFileStatus(path).getModificationTime();
-        }
-        return modTime;
+        return fileSystem.getFileStatus(path).getModificationTime();
     }
 
     private void checkIsNotTmp() {
