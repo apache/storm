@@ -234,14 +234,27 @@ public abstract class LocallyCachedBlob {
     /**
      * Removes a reservation for this blob from a given slot and assignemnt.
      * @param pna the slot + assignment that no longer needs this blob.
+     * @return false if a reference was failed to be removed
      */
-    public void removeReference(final PortAndAssignment pna) {
+    public boolean removeReference(final PortAndAssignment pna) {
         LOG.info("Removing reference {} from {}", pna, blobDescription);
-        if (references.remove(pna) == null) {
+        PortAndAssignment reservedReference = null;
+        for (Map.Entry<PortAndAssignment, BlobChangingCallback> entry : references.entrySet()) {
+            if (entry.getKey().isEquivalentTo(pna)) {
+                reservedReference = entry.getKey();
+                break;
+            }
+        }
+
+        if (reservedReference != null) {
+            references.remove(reservedReference);
+            touch();
+            return true;
+        } else {
             LOG.warn("{} had no reservation for {}, current references are {} with last update at {}",
                     pna, blobDescription, getDependencies(), getLastUsed());
+            return false;
         }
-        touch();
     }
 
     /**
