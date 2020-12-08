@@ -763,6 +763,13 @@ public class DaemonConfig implements Validated {
     public static final String SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS = "supervisor.localizer.cleanup.interval.ms";
 
     /**
+     * The distributed cache interval for checking for blobs to update.
+     */
+    @IsPositiveNumber
+    @IsInteger
+    public static final String SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS = "supervisor.localizer.update.blob.interval.secs";
+
+    /**
      * What blobstore download parallelism the supervisor should use.
      */
     @IsPositiveNumber
