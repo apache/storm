@@ -20,7 +20,6 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.storm.Config;
@@ -251,7 +250,7 @@ public class TestConstraintSolverStrategy {
     @Test
     public void testMissingConfig() {
         // no configs
-        new ConstraintSolverConfig(new HashMap<>(), new HashSet<>());
+        new ConstraintSolverConfig("test-topoid-1", new HashMap<>(), new HashSet<>());
 
         // with one or more undefined components with partial constraints
         {
@@ -286,10 +285,10 @@ public class TestConstraintSolverStrategy {
             Object jsonValue = JSONValue.parse(s);
             Map<String, Object> conf = new HashMap<>();
             conf.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
-            new ConstraintSolverConfig(conf, new HashSet<>());
-            new ConstraintSolverConfig(conf, new HashSet<>(Arrays.asList("comp-x")));
-            new ConstraintSolverConfig(conf, new HashSet<>(Arrays.asList("comp-1")));
-            new ConstraintSolverConfig(conf, new HashSet<>(Arrays.asList("comp-1, comp-x")));
+            new ConstraintSolverConfig("test-topoid-2", conf, new HashSet<>());
+            new ConstraintSolverConfig("test-topoid-3", conf, new HashSet<>(Arrays.asList("comp-x")));
+            new ConstraintSolverConfig("test-topoid-4", conf, new HashSet<>(Arrays.asList("comp-1")));
+            new ConstraintSolverConfig("test-topoid-5", conf, new HashSet<>(Arrays.asList("comp-1, comp-x")));
         }
     }
 
@@ -314,7 +313,7 @@ public class TestConstraintSolverStrategy {
         config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
         Set<String> allComps = new HashSet<>();
         allComps.addAll(Arrays.asList("comp-1", "comp-2", "comp-3", "comp-4", "comp-5"));
-        ConstraintSolverConfig constraintSolverConfig = new ConstraintSolverConfig(config, allComps);
+        ConstraintSolverConfig constraintSolverConfig = new ConstraintSolverConfig("test-topoid-1", config, allComps);
 
         Set<String> expectedSetComp1 = new HashSet<>();
         expectedSetComp1.addAll(Arrays.asList("comp-2", "comp-3"));
