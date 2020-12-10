@@ -13,19 +13,15 @@ addons:
   hosts:
     - node1
 
-arch:
-  - amd64
-  - arm64-graviton2
+#env:
+#  - MODULES=Client
+#  - MODULES=Server
+#  - MODULES=Core
+#  - MODULES=External
+#  - MODULES=Integration-Test
+#  - MODULES=Check-Updated-License-Files
 
-env:
-  - MODULES=Client
-  - MODULES=Server
-  - MODULES=Core
-  - MODULES=External
-  - MODULES=Integration-Test
-  - MODULES=Check-Updated-License-Files
-
-dist: trusty
+#dist: trusty
 sudo: required
 
 before_cache:
@@ -33,14 +29,54 @@ before_cache:
   - rm -rf $HOME/.m2/repository/org/apache/storm
 
 language: java
-jdk:
-  - oraclejdk8
-  - openjdk11
+#jdk:
+#  - oraclejdk8
+#  - openjdk11
   
 matrix:
   include:
-    - arch: s390x
+    - dist: trusty
+      group: edge
+      arch: arm64-graviton2
+      language: java
       jdk: openjdk11
+      virt: lxd
+      env: MODULES=Client
+    - dist: xenial
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Server
+    - dist: bionic
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Core
+    - dist: focal
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=External
+    - dist: trusty
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Integration-Test
+    - dist: trusty
+      group: edge
+      arch: arm64-graviton2
+      language: java
+      jdk: openjdk11
+      virt: lxd
+      env: MODULES=Check-Updated-License-Files
 
 before_install:
   - rvm reload
