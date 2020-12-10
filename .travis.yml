@@ -15,7 +15,7 @@ addons:
 
 arch:
   - amd64
-  - arm64-graviton2
+  - arm64
 
 env:
   - MODULES=Client
