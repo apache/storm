@@ -29,7 +29,6 @@ public class LocalFsBlobStoreFile extends BlobStoreFile {
     private final boolean isTmp;
     private final File path;
     private final boolean mustBeNew;
-    private Long modTime = null;
     private SettableBlobMeta meta;
 
     public LocalFsBlobStoreFile(File base, String name) {
@@ -75,10 +74,7 @@ public class LocalFsBlobStoreFile extends BlobStoreFile {
 
     @Override
     public long getModTime() throws IOException {
-        if (modTime == null) {
-            modTime = path.lastModified();
-        }
-        return modTime;
+        return path.lastModified();
     }
 
     @Override
