@@ -35,44 +35,44 @@ language: java
   
 matrix:
   include:
-    - dist: xenial
+    - dist: trusty
       #group: edge
-      arch: arm64-graviton2
+      arch: arm64
       language: java
       jdk: openjdk11
       virt: lxd
       env: MODULES=Client
-    - dist: xenial
+    - dist: trusty
       #group: edge
-      arch: arm64-graviton2
+      arch: arm64
       language: java
       jdk: openjdk11
       virt: lxd
       env: MODULES=Server
-    - dist: xenial
+    - dist: trusty
       #group: edge
-      arch: arm64-graviton2
+      arch: arm64
       language: java
       jdk: openjdk11
       virt: lxd
       env: MODULES=Core
-    - dist: xenial
+    - dist: trusty
       #group: edge
-      arch: arm64-graviton2
+      arch: arm64
       language: java
       jdk: openjdk11
       virt: lxd
       env: MODULES=External
-    - dist: xenial
+    - dist: trusty
       #group: edge
-      arch: arm64-graviton2
+      arch: arm64
       language: java
       jdk: openjdk11
       virt: lxd
       env: MODULES=Integration-Test
-    - dist: xenial
+    - dist: trusty
       #group: edge
-      arch: arm64-graviton2
+      arch: arm64
       language: java
       jdk: openjdk11
       virt: lxd
