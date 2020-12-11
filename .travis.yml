@@ -25,7 +25,7 @@ env:
   - MODULES=Integration-Test
   - MODULES=Check-Updated-License-Files
 
-dist: trusty
+dist: focal
 sudo: required
 
 before_cache:
@@ -34,7 +34,7 @@ before_cache:
 
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk8
   - openjdk11
   
 matrix:
