@@ -34,13 +34,16 @@ before_cache:
 
 language: java
 jdk:
-  - openjdk8
+  - oraclejdk8
   - openjdk11
   
 matrix:
   include:
     - arch: s390x
       jdk: openjdk11
+  exclude:
+    - arch: arm64
+      jdk: oraclejdk8
 
 before_install:
   - rvm reload
