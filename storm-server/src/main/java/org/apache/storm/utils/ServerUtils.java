@@ -1309,8 +1309,6 @@ public class ServerUtils {
                         + "likely pid {} was reused for a new process for expectedUser {}",
                         pidDir, actualUser, expectedUser, pid, actualUser);
             }
-            LOG.debug("Process {} is alive and owned by user {}", pid, expectedUser);
-            return true;
         }
         LOG.info("None of the processes {} are alive AND owned by expectedUser {}", pids, expectedUser);
         return false;

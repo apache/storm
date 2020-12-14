@@ -36,12 +36,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipFile;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.storm.testing.TmpPath;
@@ -94,10 +96,18 @@ public class ServerUtilsTest {
         }
     }
 
-    private Collection<Long> getRunningProcessIds() throws IOException {
+    /**
+     * Get running processes for all or specified user.
+     *
+     * @param user Null for all users, otherwise specify the user. e.g. "root"
+     * @return List of ProcessIds for the user
+     * @throws IOException
+     */
+    private Collection<Long> getRunningProcessIds(String user) throws IOException {
         // get list of few running processes
         Collection<Long> pids = new ArrayList<>();
-        Process p = Runtime.getRuntime().exec(ServerUtils.IS_ON_WINDOWS ? "tasklist" : "ps -e");
+        String cmd = ServerUtils.IS_ON_WINDOWS ? "tasklist" : (user == null) ? "ps -e" : "ps -U " + user ;
+        Process p = Runtime.getRuntime().exec(cmd);
         try (BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
             while ((line = input.readLine()) != null) {
@@ -106,7 +116,15 @@ public class ServerUtilsTest {
                     continue;
                 }
                 try {
-                    pids.add(Long.parseLong(line.split("\\s")[0]));
+                     String pidStr = line.split("\\s")[0];
+                     if (pidStr.equalsIgnoreCase("pid")) {
+                         continue; // header line
+                     }
+                     if (!StringUtils.isNumeric(pidStr)) {
+                         LOG.debug("Ignoring line \"{}\" while looking for PIDs in output of \"{}\"", line, cmd);
+                         continue;
+                     }
+                     pids.add(Long.parseLong(pidStr));
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -121,7 +139,7 @@ public class ServerUtilsTest {
         String randomUser = RandomStringUtils.randomAlphanumeric(12);
 
         // get list of few running processes
-        Collection<Long> pids = getRunningProcessIds();
+        Collection<Long> pids = getRunningProcessIds(null);
         assertFalse(pids.isEmpty());
         for (long pid: pids) {
             boolean status = ServerUtils.isProcessAlive(pid, randomUser);
@@ -144,7 +162,7 @@ public class ServerUtilsTest {
     public void testIsAnyProcessAlive() throws Exception {
         // no process should be alive for a randomly generated user
         String randomUser = RandomStringUtils.randomAlphanumeric(12);
-        Collection<Long> pids = getRunningProcessIds();
+        Collection<Long> pids = getRunningProcessIds(null);
 
         assertFalse(pids.isEmpty());
         boolean status = ServerUtils.isAnyProcessAlive(pids, randomUser);
@@ -206,7 +224,7 @@ public class ServerUtilsTest {
         Set<Long> observables = new HashSet<>();
 
         for (int i = 0 ; i < maxPidCnt ; i++) {
-            String cmd = "sleep 2000";
+            String cmd = "sleep 20000";
             Process process = Runtime.getRuntime().exec(cmd);
             long pid = getPidOfPosixProcess(process, errors);
             LOG.info("{}: ({}) ran process \"{}\" with pid={}", testName, i, cmd, pid);
@@ -272,17 +290,27 @@ public class ServerUtilsTest {
             LOG.info("Test testIsAnyPosixProcessPidDirAlive is designed to run on systems with /proc directory only, marking as success");
             return;
         }
-        Collection<Long> pids = getRunningProcessIds();
-        assertFalse(pids.isEmpty());
+        Collection<Long> allPids = getRunningProcessIds(null);
+        Collection<Long> rootPids = getRunningProcessIds("root");
+        assertFalse(allPids.isEmpty());
+        assertFalse(rootPids.isEmpty());
 
-        for (int i = 0 ; i < 2 ; i++) {
-            boolean mockFileOwnerToUid = (i % 2 == 0);
+        String currentUser = System.getProperty("user.name");
+
+        for (boolean mockFileOwnerToUid: Arrays.asList(true, false)) {
             // at least one pid will be owned by the current user (doing the testing)
-            String currentUser = System.getProperty("user.name");
-            boolean status = ServerUtils.isAnyPosixProcessPidDirAlive(pids, currentUser, mockFileOwnerToUid);
+            boolean status = ServerUtils.isAnyPosixProcessPidDirAlive(allPids, currentUser, mockFileOwnerToUid);
             String err = String.format("(mockFileOwnerToUid=%s) Expecting user %s to own at least one process",
                     mockFileOwnerToUid, currentUser);
             assertTrue(err, status);
+        }
+
+        // simulate reassignment of all process id to a different user (root)
+        for (boolean mockFileOwnerToUid: Arrays.asList(true, false)) {
+            boolean status = ServerUtils.isAnyPosixProcessPidDirAlive(rootPids, currentUser, mockFileOwnerToUid);
+            String err = String.format("(mockFileOwnerToUid=%s) Expecting user %s to own no process",
+                    mockFileOwnerToUid, currentUser);
+            assertFalse(err, status);
         }
     }
 
