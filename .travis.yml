@@ -25,7 +25,7 @@ env:
   - MODULES=Integration-Test
   - MODULES=Check-Updated-License-Files
 
-dist: xenial
+dist: focal
 sudo: required
 
 before_cache:
