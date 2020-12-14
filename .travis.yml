@@ -25,7 +25,7 @@ env:
   - MODULES=Integration-Test
   - MODULES=Check-Updated-License-Files
 
-dist: focal
+dist: trusty
 sudo: required
 
 before_cache:
@@ -34,7 +34,7 @@ before_cache:
 
 language: java
 jdk:
-  - oraclejdk9
+  - oraclejdk8
   - openjdk11
   
 matrix:
@@ -43,7 +43,7 @@ matrix:
       jdk: openjdk11
   exclude:
     - arch: arm64
-      jdk: oraclejdk9
+      jdk: oraclejdk8
 
 before_install:
   - rvm reload
