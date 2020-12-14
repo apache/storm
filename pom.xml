@@ -245,6 +245,24 @@
             </roles>
             <timezone>-6</timezone>
         </developer>
+        <developer>
+            <id>ruili</id>
+            <name>Rui Li</name>
+            <email>ruili@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <id>bipinprasad</id>
+            <name>Bipin Prasad</name>
+            <email>bipinprasad@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
 
     </developers>
 
