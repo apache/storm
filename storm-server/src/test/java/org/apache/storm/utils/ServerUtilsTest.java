@@ -116,15 +116,15 @@ public class ServerUtilsTest {
                     continue;
                 }
                 try {
-                     String pidStr = line.split("\\s")[0];
-                     if (pidStr.equalsIgnoreCase("pid")) {
-                         continue; // header line
-                     }
-                     if (!StringUtils.isNumeric(pidStr)) {
-                         LOG.debug("Ignoring line \"{}\" while looking for PIDs in output of \"{}\"", line, cmd);
-                         continue;
-                     }
-                     pids.add(Long.parseLong(pidStr));
+                    String pidStr = line.split("\\s")[0];
+                    if (pidStr.equalsIgnoreCase("pid")) {
+                        continue; // header line
+                    }
+                    if (!StringUtils.isNumeric(pidStr)) {
+                        LOG.debug("Ignoring line \"{}\" while looking for PIDs in output of \"{}\"", line, cmd);
+                        continue;
+                    }
+                    pids.add(Long.parseLong(pidStr));
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
