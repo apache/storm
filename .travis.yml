@@ -34,7 +34,7 @@ before_cache:
 
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk8
   - openjdk11
   
 matrix:
@@ -43,7 +43,7 @@ matrix:
       jdk: openjdk11
   exclude:
     - arch: arm64
-      jdk: oraclejdk8
+      jdk: openjdk8
 
 before_install:
   - rvm reload
