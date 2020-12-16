@@ -74,10 +74,8 @@ public class AsyncLocalizer implements AutoCloseable {
     private static final CompletableFuture<Void> ALL_DONE_FUTURE = CompletableFuture.completedFuture(null);
     private static final int ATTEMPTS_INTERVAL_TIME = 100;
 
-    private final Timer singleBlobLocalizationDuration;
     private final Timer blobCacheUpdateDuration;
     private final Timer blobLocalizationDuration;
-    private final Meter numBlobUpdateVersionChanged;
     private final Meter localResourceFileNotFoundWhenReleasingSlot;
     private final Meter updateBlobExceptions;
 
@@ -109,10 +107,8 @@ public class AsyncLocalizer implements AutoCloseable {
     @VisibleForTesting
     AsyncLocalizer(Map<String, Object> conf, AdvancedFSOps ops, String baseDir, StormMetricsRegistry metricsRegistry) throws IOException {
         this.conf = conf;
-        this.singleBlobLocalizationDuration = metricsRegistry.registerTimer("supervisor:single-blob-localization-duration");
         this.blobCacheUpdateDuration = metricsRegistry.registerTimer("supervisor:blob-cache-update-duration");
         this.blobLocalizationDuration = metricsRegistry.registerTimer("supervisor:blob-localization-duration");
-        this.numBlobUpdateVersionChanged = metricsRegistry.registerMeter("supervisor:num-blob-update-version-changed");
         this.localResourceFileNotFoundWhenReleasingSlot
                 = metricsRegistry.registerMeter("supervisor:local-resource-file-not-found-when-releasing-slot");
         this.updateBlobExceptions = metricsRegistry.registerMeter("supervisor:update-blob-exceptions");
@@ -271,29 +267,7 @@ public class AsyncLocalizer implements AutoCloseable {
                     long failures = 0;
                     while (!done) {
                         try {
-                            synchronized (blob) {
-                                if (blob.isUsed()) {
-                                    long localVersion = blob.getLocalVersion();
-                                    long remoteVersion = blob.getRemoteVersion(blobStore);
-                                    if (localVersion != remoteVersion || !blob.isFullyDownloaded()) {
-                                        if (blob.isFullyDownloaded()) {
-                                            //Avoid case of different blob version
-                                            // when blob is not downloaded (first time download)
-                                            numBlobUpdateVersionChanged.mark();
-                                        }
-                                        Timer.Context t = singleBlobLocalizationDuration.time();
-                                        try {
-                                            long newVersion = blob.fetchUnzipToTemp(blobStore);
-                                            blob.informReferencesAndCommitNewVersion(newVersion);
-                                            t.stop();
-                                        } finally {
-                                            blob.cleanupOrphanedData();
-                                        }
-                                    }
-                                } else {
-                                    LOG.debug("Skipping update of unused blob {}", blob);
-                                }
-                            }
+                            blob.update(blobStore);
                             done = true;
                         } catch (Exception e) {
                             failures++;

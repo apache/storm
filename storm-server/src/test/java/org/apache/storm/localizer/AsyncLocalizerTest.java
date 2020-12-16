@@ -148,18 +148,9 @@ public class AsyncLocalizerTest {
             Future<Void> f = victim.requestDownloadBaseTopologyBlobs(pna, null);
             f.get(20, TimeUnit.SECONDS);
 
-            verify(jarBlob).fetchUnzipToTemp(any());
-            verify(jarBlob).informReferencesAndCommitNewVersion(100L);
-            verify(jarBlob).cleanupOrphanedData();
-
-            verify(codeBlob).fetchUnzipToTemp(any());
-            verify(codeBlob).informReferencesAndCommitNewVersion(200L);
-            verify(codeBlob).cleanupOrphanedData();
-
-            verify(confBlob).fetchUnzipToTemp(any());
-            verify(confBlob).informReferencesAndCommitNewVersion(300L);
-            verify(confBlob).cleanupOrphanedData();
-
+            verify(jarBlob).update(eq(blobStore));
+            verify(codeBlob).update(eq(blobStore));
+            verify(confBlob).update(eq(blobStore));
         } finally {
             ReflectionUtils.setInstance(previousReflectionUtils);
             ServerUtils.setInstance(previousServerUtils);
