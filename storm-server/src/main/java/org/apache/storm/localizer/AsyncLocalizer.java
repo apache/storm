@@ -59,6 +59,7 @@ import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusLeaderNotFoundException;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
@@ -123,8 +124,7 @@ public class AsyncLocalizer implements AutoCloseable {
         cacheCleanupPeriod = ObjectReader.getInt(conf.get(
             DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS), 30 * 1000).longValue();
 
-        updateBlobPeriod = ObjectReader.getInt(conf.get(
-                DaemonConfig.SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS), 30).longValue();
+        updateBlobPeriod = ServerConfigUtils.getLocalizerUpdateBlobInterval(conf);
 
         blobDownloadRetries = ObjectReader.getInt(conf.get(
             DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_MAX_RETRIES), 3);

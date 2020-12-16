@@ -328,6 +328,15 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
+     * Validates that the modification time of the blobstore is up to date with the current existing blobs.
+     *
+     * @throws IOException on any error
+     */
+    public void validateModTime() throws IOException {
+        // default implementation is a NOOP.
+    }
+
+    /**
      * Blob store implements its own version of iterator to list the blobs.
      */
     public static class KeyTranslationIterator implements Iterator<String> {

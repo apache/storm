@@ -413,4 +413,9 @@ public class HdfsBlobStore extends BlobStore {
     public void updateLastModTime() throws IOException {
         hbs.updateLastModTime();
     }
+
+    @Override
+    public void validateModTime() throws IOException {
+        hbs.validateModTime();
+    }
 }

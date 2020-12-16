@@ -335,4 +335,32 @@ public class HdfsBlobStoreImpl {
         fileSystem.setTimes(fullPath, timestamp, timestamp);
         LOG.debug("Updated blobstore modtime of {} to {}", fullPath, timestamp);
     }
+
+    /**
+     * Validates that the modification time of the blobstore is up to date with the current existing blobs.
+     *
+     * @throws IOException on any error
+     */
+    public void validateModTime() throws IOException {
+        int currentBucket = 0;
+        long baseModTime = 0;
+        while (currentBucket < BUCKETS) {
+            String name = String.valueOf(currentBucket);
+            Path bucketDir = new Path(fullPath, name);
+
+            // only consider bucket dirs that exist with files in them
+            if (fileSystem.exists(bucketDir) && fileSystem.listStatus(bucketDir).length > 0) {
+                long modtime = fileSystem.getFileStatus(bucketDir).getModificationTime();
+                if (modtime > baseModTime) {
+                    baseModTime = modtime;
+                }
+            }
+
+            currentBucket++;
+        }
+        if (baseModTime > 0 && baseModTime > getLastModTime()) {
+            LOG.info("Blobstore modTime requires an update to at least {}", baseModTime);
+            updateLastModTime();
+        }
+    }
 }
