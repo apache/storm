@@ -12,6 +12,7 @@
 
 package org.apache.storm.blobstore;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.storm.generated.AuthorizationException;
@@ -122,5 +123,10 @@ public class LocalModeClientBlobStore extends ClientBlobStore {
     @Override
     public void close() {
         wrapped.shutdown();
+    }
+
+    @Override
+    public long getRemoteBlobstoreModtime() throws IOException {
+        return -1L; // not supported
     }
 }

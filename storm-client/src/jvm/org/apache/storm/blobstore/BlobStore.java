@@ -319,6 +319,15 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
+     * Updates the modification time of the blobstore to the current time.
+     *
+     * @throws IOException on any error
+     */
+    public void updateLastModTime() throws IOException {
+        // default implementation is a NOOP.
+    }
+
+    /**
      * Blob store implements its own version of iterator to list the blobs.
      */
     public static class KeyTranslationIterator implements Iterator<String> {

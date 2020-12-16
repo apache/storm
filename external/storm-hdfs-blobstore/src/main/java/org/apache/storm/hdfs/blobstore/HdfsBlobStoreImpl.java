@@ -34,6 +34,7 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStoreFile;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -311,5 +312,27 @@ public class HdfsBlobStoreImpl {
         if (timer != null) {
             timer.cancel();
         }
+    }
+
+    /**
+     * Get the last modification time of any blob.
+     *
+     * @return the last modification time of blobs within the blobstore.
+     * @throws IOException on any error
+     */
+    public long getLastModTime() throws IOException {
+        long modtime =  fileSystem.getFileStatus(fullPath).getModificationTime();
+        return modtime;
+    }
+
+    /**
+     * Updates the modification time of the blobstore to the current time.
+     *
+     * @throws IOException on any error
+     */
+    public void updateLastModTime() throws IOException {
+        long timestamp = Time.currentTimeMillis();
+        fileSystem.setTimes(fullPath, timestamp, timestamp);
+        LOG.debug("Updated blobstore modtime of {} to {}", fullPath, timestamp);
     }
 }

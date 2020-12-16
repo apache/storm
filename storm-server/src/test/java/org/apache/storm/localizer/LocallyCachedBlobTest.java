@@ -37,7 +37,7 @@ public class LocallyCachedBlobTest {
         LocallyCachedBlob blob = new LocalizedResource("key", Paths.get("/bogus"), false,
                 AdvancedFSOps.make(conf), conf, "user1", new StormMetricsRegistry());
         Assert.assertFalse(blob.isUsed());
-        Assert.assertFalse(blob.requiresUpdate(blobStore));
+        Assert.assertFalse(blob.requiresUpdate(blobStore, -1L));
     }
 
     @Test
@@ -47,7 +47,7 @@ public class LocallyCachedBlobTest {
         blob.addReference(pna, null);
         Assert.assertTrue(blob.isUsed());
         Assert.assertFalse(blob.isFullyDownloaded());
-        Assert.assertTrue(blob.requiresUpdate(blobStore));
+        Assert.assertTrue(blob.requiresUpdate(blobStore, -1L));
     }
 
     @Test
@@ -59,7 +59,22 @@ public class LocallyCachedBlobTest {
         Assert.assertTrue(blob.isFullyDownloaded());
 
         // validate blob needs update due to version mismatch
-        Assert.assertTrue(blob.requiresUpdate(blobStore));
+        Assert.assertTrue(blob.requiresUpdate(blobStore, -1L));
+
+        // when blob update time matches remote blobstore modtime, validate blob
+        // will skip looking at remote version and assume it's up to date
+        blob.updatedModTime = 101L;
+        Assert.assertFalse(blob.requiresUpdate(blobStore, 101L));
+
+        // now when the mod time on the remote blobstore differs, we should again see that the
+        // blob version differs from the remote blobstore
+        Assert.assertTrue(blob.requiresUpdate(blobStore, 102L));
+
+        // now validate we don't need any update as versions match, regardless of remote blobstore mod time
+        blob.localVersion = blob.getRemoteVersion(blobStore);
+        Assert.assertFalse(blob.requiresUpdate(blobStore, -1L));
+        Assert.assertFalse(blob.requiresUpdate(blobStore, 101L));
+        Assert.assertFalse(blob.requiresUpdate(blobStore, 102L));
     }
 
     public class TestableBlob extends LocalizedResource {

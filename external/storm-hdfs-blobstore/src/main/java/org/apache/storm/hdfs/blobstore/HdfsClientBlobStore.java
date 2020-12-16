@@ -18,6 +18,7 @@
 
 package org.apache.storm.hdfs.blobstore;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -132,5 +133,10 @@ public class HdfsClientBlobStore extends ClientBlobStore {
             client.close();
             client = null;
         }
+    }
+
+    @Override
+    public long getRemoteBlobstoreModtime() throws IOException {
+        return blobStore.getLastModeTime();
     }
 }

@@ -217,6 +217,11 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
         shutdown();
     }
 
+    @Override
+    public long getRemoteBlobstoreModtime() throws IOException {
+        return -1L; // not supported
+    }
+
     public class NimbusKeyIterator implements Iterator<String> {
         private ListBlobsResult listBlobs = null;
         private int offset = 0;
