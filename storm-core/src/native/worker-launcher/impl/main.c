@@ -18,6 +18,8 @@
 
 #include "configuration.h"
 #include "worker-launcher.h"
+#include "oci/oci.h"
+#include "oci/oci_reap.h"
 
 #include <errno.h>
 #include <grp.h>
@@ -51,6 +53,9 @@ void display_usage(FILE *stream) {
   fprintf(stream, "   launch a docker container: launch-docker-container <working-directory> <script-to-run>\n");
   fprintf(stream, "   run a docker command: run-docker-cmd <working-directory> <script-to-run>\n");
   fprintf(stream, "   profile a docker container: profile-docker-container <worker-id> <script-to-run>\n");
+  fprintf(stream, "   launch an oci container:  run-oci-container <working-directory> <command-file> <worker-artifacts-dir>\n");
+  fprintf(stream, "   reap an oci container: reap-oci-container <container-id> <num-reap-layers-keep>\n");
+  fprintf(stream, "   profile a oci container: profile-oci-container <container-pid> <script-to-run>\n");
 }
 
 int main(int argc, char **argv) {
@@ -269,6 +274,45 @@ int main(int argc, char **argv) {
       return INVALID_ARGUMENT_NUMBER;
     }
     exit_code = signal_container_as_user(user_detail->pw_name, container_pid, signal);
+  } else if (strcasecmp("run-oci-container", command) == 0) {
+    if (argc != 6) {
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 6) for run-oci-container\n", argc);
+      fflush(ERRORFILE);
+      return INVALID_ARGUMENT_NUMBER;
+    }
+    working_dir = argv[optind++];
+    const char* command_file = argv[optind++];
+    const char* worker_artifacts_dir = argv[optind];
+    exit_code = setup_dir_permissions(working_dir, 1, TRUE);
+    if (exit_code == 0) {
+      exit_code = setup_worker_tmp_permissions(working_dir);
+      if (exit_code == 0) {
+        //becomes root.
+        setuid(0);
+        exit_code = run_oci_container(command_file, worker_artifacts_dir);
+      }
+    }
+  } else if (strcasecmp("reap-oci-container", command) == 0) {
+    if (argc != 5) {
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for reap-oci-container\n",
+	      argc);
+      fflush(ERRORFILE);
+      return INVALID_ARGUMENT_NUMBER;
+    }
+    char* container_id = argv[optind++];
+    int num_reap_layers_keep = atoi(argv[optind]);
+    //becomes root.
+    setuid(0);
+    exit_code = cleanup_oci_container_by_id(container_id, num_reap_layers_keep);
+  } else if (strcasecmp("profile-oci-container", command) == 0) {
+    if (argc != 5) {
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for profile-oci-container\n",
+	      argc);
+      fflush(ERRORFILE);
+      return INVALID_ARGUMENT_NUMBER;
+    }
+    char* container_pid = argv[optind++];
+    exit_code = profile_oci_container(atoi(container_pid), argv[optind]);
   } else {
     fprintf(ERRORFILE, "Invalid command %s not supported.",command);
     fflush(ERRORFILE);

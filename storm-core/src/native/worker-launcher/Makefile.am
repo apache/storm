@@ -16,6 +16,8 @@
 
 AM_CFLAGS=-I$(srcdir)/impl -Wall -g -Werror
 
+LIBS=-lcrypto
+
 # Define the programs that need to be built
 bin_PROGRAMS = worker-launcher
 check_PROGRAMS = test-worker-launcher
@@ -23,7 +25,7 @@ check_PROGRAMS = test-worker-launcher
 TESTS = test-worker-launcher
 
 # Define the sources for the common files
-common_SOURCES = impl/configuration.c impl/worker-launcher.c
+common_SOURCES = impl/configuration.c impl/worker-launcher.c impl/utils/cJSON.c impl/utils/file-utils.c impl/utils/string-utils.c impl/utils/storm_user_info.c impl/oci/oci_base_ctx.c impl/oci/oci_launch_cmd.c impl/oci/oci_write_config.c impl/oci/oci_reap.c impl/oci/oci.c
 
 # Define the sources for the real executable
 worker_launcher_SOURCES = $(common_SOURCES) impl/main.c

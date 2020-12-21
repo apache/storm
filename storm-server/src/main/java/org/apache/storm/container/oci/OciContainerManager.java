@@ -118,6 +118,8 @@ public abstract class OciContainerManager implements ResourceIsolationInterface 
     public void releaseResourcesForWorker(String workerId) {
         workerToCpu.remove(workerId);
         workerToMemoryMb.remove(workerId);
+        workerToCores.remove(workerId);
+        workerToMemoryZone.remove(workerId);
     }
 
     @Override
@@ -161,7 +163,10 @@ public abstract class OciContainerManager implements ResourceIsolationInterface 
     protected enum CmdType {
         LAUNCH_DOCKER_CONTAINER("launch-docker-container"),
         RUN_DOCKER_CMD("run-docker-cmd"),
-        PROFILE_DOCKER_CONTAINER("profile-docker-container");
+        PROFILE_DOCKER_CONTAINER("profile-docker-container"),
+        RUN_OCI_CONTAINER("run-oci-container"),
+        REAP_OCI_CONTAINER("reap-oci-container"),
+        PROFILE_OCI_CONTAINER("profile-oci-container");
 
         private final String name;
 
