@@ -1296,9 +1296,9 @@ public class ServerUtils {
                     LOG.debug("Process {} is alive and owned by expectedUser {}/{}", pid, expectedUser, expectedUid);
                     return true;
                 }
-                LOG.info("Prior process is dead, since directory {} owner {} is not same as expected expectedUser {}/{}, "
-                        + "likely pid {} was reused for a new process for uid {}",
-                        pidDir, actualUser, expectedUser, expectedUid, pid, actualUid);
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expectedUser {}/{}, "
+                        + "likely pid {} was reused for a new process for uid {}, {}",
+                        pidDir, actualUser, expectedUser, expectedUid, pid, actualUid, getProcessDesc(pidDir));
             } else {
                 // actualUser is a string
                 LOG.debug("Process directory {} owner is {}", pidDir, actualUser);
@@ -1306,12 +1306,10 @@ public class ServerUtils {
                     LOG.debug("Process {} is alive and owned by expectedUser {}", pid, expectedUser);
                     return true;
                 }
-                LOG.info("Prior process is dead, since directory {} owner {} is not same as expected expectedUser {}, "
-                        + "likely pid {} was reused for a new process for expectedUser {}",
-                        pidDir, actualUser, expectedUser, pid, actualUser);
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expectedUser {}, "
+                        + "likely pid {} was reused for a new process for actualUser {}, {}}",
+                        pidDir, actualUser, expectedUser, pid, actualUser, getProcessDesc(pidDir));
             }
-            LOG.debug("Process {} is alive and owned by user {}", pid, expectedUser);
-            return true;
         }
         LOG.info("None of the processes {} are alive AND owned by expectedUser {}", pids, expectedUser);
         return false;
@@ -1406,4 +1404,28 @@ public class ServerUtils {
         return entry.getTotalMemoryMb();
     }
 
+    /**
+     * Support method to obtain additional log info for the process. Use the contents of comm and cmdline
+     * in the process directory. Note that this method works properly only on posix systems with /proc directory.
+     *
+     * @param pidDir PID directory (/proc/&lt;pid&gt;)
+     * @return process description string
+     */
+    private static String getProcessDesc(File pidDir) {
+        String comm = "";
+        Path p = pidDir.toPath().resolve("comm");
+        try {
+            comm = String.join(", ", Files.readAllLines(p));
+        } catch (IOException ex) {
+            LOG.warn("Cannot get contents of " + p, ex);
+        }
+        String cmdline = "";
+        p = pidDir.toPath().resolve("cmdline");
+        try {
+            cmdline = String.join(", ", Files.readAllLines(p)).replace('\0', ' ');
+        } catch (IOException ex) {
+            LOG.warn("Cannot get contents of " + p, ex);
+        }
+        return String.format("process(comm=\"%s\", cmdline=\"%s\")", comm, cmdline);
+    }
 }

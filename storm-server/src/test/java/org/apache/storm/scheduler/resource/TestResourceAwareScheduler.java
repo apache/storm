@@ -208,6 +208,7 @@ public class TestResourceAwareScheduler {
         assertEquals(1, assignedSlots.size());
         assertEquals(1, nodesIDs.size());
         assertEquals(2, executors.size());
+        assertFalse(cluster.needsSchedulingRas(topology1));
         assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
     }
 
@@ -257,6 +258,7 @@ public class TestResourceAwareScheduler {
         assertEquals(1, assignedSlots1.size());
         assertEquals(1, nodesIDs1.size());
         assertEquals(7, executors1.size());
+        assertFalse(cluster.needsSchedulingRas(topology1));
         assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
 
         SchedulerAssignment assignment2 = cluster.getAssignmentById(topology2.getId());
@@ -270,6 +272,7 @@ public class TestResourceAwareScheduler {
         assertEquals(1, assignedSlots2.size());
         assertEquals(1, nodesIDs2.size());
         assertEquals(2, executors2.size());
+        assertFalse(cluster.needsSchedulingRas(topology2));
         assertTrue(cluster.getStatusMap().get(topology2.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
     }
 
@@ -314,6 +317,7 @@ public class TestResourceAwareScheduler {
         assertEquals(2, executors1.size());
         assertEquals(400.0, assignedMemory, 0.001);
         assertEquals(40.0, assignedCpu, 0.001);
+        assertFalse(cluster.needsSchedulingRas(topology1));
         String expectedStatusPrefix = "Running - Fully Scheduled by DefaultResourceAwareStrategy";
         assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith(expectedStatusPrefix));
     }
@@ -401,6 +405,7 @@ public class TestResourceAwareScheduler {
         for (Map.Entry<Double, Double> entry : cpuAvailableToUsed.entrySet()) {
             assertTrue(entry.getKey() - entry.getValue() >= 0);
         }
+        assertFalse(cluster.needsSchedulingRas(topology1));
         assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
     }
 
@@ -458,6 +463,7 @@ public class TestResourceAwareScheduler {
         for (ExecutorDetails executor : healthyExecutors) {
             assertEquals(copyOfOldMapping.get(executor), newExecutorToSlot.get(executor));
         }
+        assertFalse(cluster.needsSchedulingRas(topology2));
         assertTrue(cluster.getStatusMap().get(topology2.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
         // end of Test1
 
@@ -513,6 +519,7 @@ public class TestResourceAwareScheduler {
         for (ExecutorDetails executor : existingExecutors) {
             assertEquals(copyOfOldMapping.get(executor), newExecutorToSlot.get(executor));
         }
+        assertFalse(cluster1.needsSchedulingRas(topology1));
         assertEquals("Fully Scheduled", cluster1.getStatusMap().get(topology1.getId()));
         // end of Test3
 
@@ -534,6 +541,8 @@ public class TestResourceAwareScheduler {
         for (ExecutorDetails executor : copyOfOldMapping.keySet()) {
             assertEquals(copyOfOldMapping.get(executor), newExecutorToSlot.get(executor));
         }
+        assertFalse(cluster1.needsSchedulingRas(topology1));
+        assertFalse(cluster1.needsSchedulingRas(topology2));
         String expectedStatusPrefix = "Running - Fully Scheduled by DefaultResourceAwareStrategy";
         assertTrue(cluster1.getStatusMap().get(topology1.getId()).startsWith(expectedStatusPrefix));
         assertTrue(cluster1.getStatusMap().get(topology2.getId()).startsWith(expectedStatusPrefix));
@@ -620,6 +629,10 @@ public class TestResourceAwareScheduler {
 
         try {
             rs.schedule(topologies, cluster);
+
+            assertFalse(cluster.needsSchedulingRas(topology1));
+            assertFalse(cluster.needsSchedulingRas(topology2));
+            assertFalse(cluster.needsSchedulingRas(topology3));
 
             String expectedMsgPrefix = "Running - Fully Scheduled by " + strategyName;
             assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith(expectedMsgPrefix));
@@ -727,6 +740,7 @@ public class TestResourceAwareScheduler {
         rs.prepare(config1, new StormMetricsRegistry());
         try {
             rs.schedule(topologies, cluster);
+            assertFalse(cluster.needsSchedulingRas(topology1));
             assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
             assertEquals(4, cluster.getAssignedNumWorkers(topology1));
         } finally {
@@ -751,6 +765,7 @@ public class TestResourceAwareScheduler {
         rs.prepare(config2, new StormMetricsRegistry());
         try {
             rs.schedule(topologies, cluster);
+            assertTrue(cluster.needsSchedulingRas(topology2));
             String status = cluster.getStatusMap().get(topology2.getId());
             assert status.startsWith("Not enough resources to schedule") : status;
             //assert status.endsWith("5 executors not scheduled") : status;
@@ -989,6 +1004,7 @@ public class TestResourceAwareScheduler {
         scheduler = new ResourceAwareScheduler();
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+        assertFalse(cluster.needsSchedulingRas(topo1));
         assertTrue("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
     }
 
@@ -1010,6 +1026,9 @@ public class TestResourceAwareScheduler {
         scheduler = new ResourceAwareScheduler();
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+        assertFalse(cluster.needsSchedulingRas(topo1));
+        assertFalse(cluster.needsSchedulingRas(topo2));
+        assertTrue(cluster.needsSchedulingRas(topo3));
         assertTrue("topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
         assertTrue("topo-2 scheduled?", cluster.getAssignmentById(topo2.getId()) != null);
         assertFalse("topo-3 unscheduled?", cluster.getAssignmentById(topo3.getId()) != null);
@@ -1056,6 +1075,18 @@ public class TestResourceAwareScheduler {
         scheduler = new ResourceAwareScheduler();
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+
+        assertFalse(cluster.needsSchedulingRas(topo0));
+        assertFalse(cluster.needsSchedulingRas(topo1));
+        assertFalse(cluster.needsSchedulingRas(topo2));
+        assertFalse(cluster.needsSchedulingRas(topo3));
+        assertFalse(cluster.needsSchedulingRas(topo4));
+        assertFalse(cluster.needsSchedulingRas(topo5));
+        assertFalse(cluster.needsSchedulingRas(topo6));
+        assertFalse(cluster.needsSchedulingRas(topo7));
+        assertFalse(cluster.needsSchedulingRas(topo8));
+        assertTrue(cluster.needsSchedulingRas(topo9));
+
         assertTrue("topo-0 scheduled?", cluster.getAssignmentById(topo0.getId()) != null);
         assertTrue("topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
         assertTrue("topo-2 scheduled?", cluster.getAssignmentById(topo2.getId()) != null);
@@ -1085,6 +1116,7 @@ public class TestResourceAwareScheduler {
         scheduler = new ResourceAwareScheduler();
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+        assertTrue(cluster.needsSchedulingRas(topo1));
         assertFalse("Topo-1 unscheduled?", cluster.getAssignmentById(topo1.getId()) != null);
     }
 
@@ -1423,6 +1455,10 @@ public class TestResourceAwareScheduler {
 
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+
+        assertFalse(cluster.needsSchedulingRas(topo1));
+        assertTrue(cluster.needsSchedulingRas(topo2));
+        assertFalse(cluster.needsSchedulingRas(topo3));
 
         assertTrue("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
         assertEquals("Topo-1 all executors scheduled?", 2, cluster.getAssignmentById(topo1.getId()).getExecutorToSlot().size());
