@@ -546,7 +546,6 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @param workerSlot        WorkerSlot on which to schedule.
      * @return                  If we successfully assigned bound worker for this exec
      */
-
     private int assignBoundAckersForNewWorkerSlot(ExecutorDetails exec, RasNode node, WorkerSlot workerSlot) {
         int numOfAckersToBind = searcherState.getNumOfAckersToBind(exec, workerSlot);
         if (numOfAckersToBind > 0) {

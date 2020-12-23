@@ -131,7 +131,7 @@ public class TestBackwardCompatibility {
     }
 
     /**********************************************************************************
-     *  Tests for  testGenericResourceAwareStrategy
+     *  Tests for  testGenericResourceAwareStrategyWithoutSettingAckerExecutors
      ***********************************************************************************/
 
     @Test
@@ -140,12 +140,14 @@ public class TestBackwardCompatibility {
     }
 
     @Test
-    public void testGenericResourceAwareStrategy() {
-        testGenericResourceAwareStrategy.testGenericResourceAwareStrategy();
+    public void testGenericResourceAwareStrategy()
+        throws InvalidTopologyException {
+        testGenericResourceAwareStrategy.testGenericResourceAwareStrategyWithoutSettingAckerExecutors(0);
     }
 
     @Test
-    public void testGenericResourceAwareStrategyInFavorOfShuffle() {
+    public void testGenericResourceAwareStrategyInFavorOfShuffle()
+        throws InvalidTopologyException {
         testGenericResourceAwareStrategy.testGenericResourceAwareStrategyInFavorOfShuffle();
     }
 
