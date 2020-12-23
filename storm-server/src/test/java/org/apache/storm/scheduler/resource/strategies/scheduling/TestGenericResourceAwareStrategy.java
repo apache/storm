@@ -186,7 +186,7 @@ public class TestGenericResourceAwareStrategy {
 
     /**
      * Test if the scheduling logic for the GenericResourceAwareStrategy is correct
-     * without setting acker executors.
+     * without setting {@link Config#TOPOLOGY_ACKER_EXECUTORS}.
      *
      * Test details refer to {@link TestDefaultResourceAwareStrategy#testDefaultResourceAwareStrategyWithoutSettingAckerExecutors(int)}
      */
@@ -320,7 +320,7 @@ public class TestGenericResourceAwareStrategy {
 
     /**
      * Test if the scheduling logic for the GenericResourceAwareStrategy is correct
-     * with setting acker executors.
+     * with setting {@link Config#TOPOLOGY_ACKER_EXECUTORS}.
      *
      * Test details refer to {@link TestDefaultResourceAwareStrategy#testDefaultResourceAwareStrategyWithSettingAckerExecutors(int)}
      */
