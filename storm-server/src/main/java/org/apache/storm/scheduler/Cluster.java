@@ -109,10 +109,10 @@ public class Cluster implements ISchedulingState {
         INimbus nimbus,
         ResourceMetrics resourceMetrics,
         Map<String, SupervisorDetails> supervisors,
-        Map<String, ? extends SchedulerAssignment> map,
+        Map<String, ? extends SchedulerAssignment> assignments,
         Topologies topologies,
         Map<String, Object> conf) {
-        this(nimbus, resourceMetrics, supervisors, map, topologies, conf, null, null, null, null,
+        this(nimbus, resourceMetrics, supervisors, assignments, topologies, conf, null, null, null, null,
             Double.NaN, Double.NaN, null);
     }
 

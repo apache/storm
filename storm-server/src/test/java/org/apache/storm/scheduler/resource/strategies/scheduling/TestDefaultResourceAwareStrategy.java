@@ -18,7 +18,10 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import org.apache.storm.daemon.StormCommon;
+import org.apache.storm.daemon.nimbus.Nimbus;
 import org.apache.storm.daemon.nimbus.TopologyResources;
+import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesExtension;
@@ -45,6 +48,7 @@ import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.utils.ServerUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -430,36 +434,69 @@ public class TestDefaultResourceAwareStrategy {
             assertThat(numNodes, is(1L));
         }
     }
-    
+
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
+     * when topology.acker.executors.per.worker is set to different values.
+     *
+     * If {@link Config#TOPOLOGY_ACKER_EXECUTORS} is not set,
+     * it will be calculated by Nimbus as (num of estimated worker * topology.acker.executors.per.worker).
+     * In this test, {@link Config#TOPOLOGY_ACKER_EXECUTORS} is set to 2 (num of estimated workers based on topo resources usage)
+     *
+     * For different value for {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER}:
+     * -1: Note we don't really set it to be -1.
+     *     It is just a special case in this test that topology.acker.executors.per.worker is unset, nimbus will set to 1 by default.
+     * 0:  Since {@link Config#TOPOLOGY_ACKER_EXECUTORS} is not set either, acking is disabled.
+     * 1:  2 ackers in total. Distribute 1 acker per worker. With ackers being added, this topology will now need 3 workers.
+     *     Then first two worker will get 1 acker and last worker get 0.
+     * 2:  4 ackers in total. First two workers will get 2 acker per worker respectively.
      */
-    @Test
-    public void testDefaultResourceAwareStrategy() {
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 0, 1, 2})
+    public void testDefaultResourceAwareStrategyWithoutSettingAckerExecutors(int numOfAckersPerWorker)
+        throws InvalidTopologyException {
         int spoutParallelism = 1;
         int boltParallelism = 2;
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new TestSpout(),
-                spoutParallelism);
+            spoutParallelism);
         builder.setBolt("bolt-1", new TestBolt(),
-                boltParallelism).shuffleGrouping("spout");
+            boltParallelism).shuffleGrouping("spout");
         builder.setBolt("bolt-2", new TestBolt(),
-                boltParallelism).shuffleGrouping("bolt-1");
+            boltParallelism).shuffleGrouping("bolt-1");
         builder.setBolt("bolt-3", new TestBolt(),
-                boltParallelism).shuffleGrouping("bolt-2");
+            boltParallelism).shuffleGrouping("bolt-2");
+
+        String topoName = "testTopology";
 
         StormTopology stormToplogy = builder.createTopology();
 
         INimbus iNimbus = new INimbusTest();
-        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 150, 1500);
-        Config conf = createClusterConfig(50, 250, 250, null);
+        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 200, 2000);
+        Config conf = createClusterConfig(50, 450, 0, null);
         conf.put(Config.TOPOLOGY_PRIORITY, 0);
-        conf.put(Config.TOPOLOGY_NAME, "testTopology");
-        conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
+        conf.put(Config.TOPOLOGY_NAME, topoName);
+        conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
         conf.put(Config.TOPOLOGY_SUBMITTER_USER, "user");
 
+        // Topology needs 2 workers (estimated by nimbus based on resources),
+        // but with ackers added, probably more worker will be launched.
+        // Parameterized test on different numOfAckersPerWorker
+        if (numOfAckersPerWorker == -1) {
+            // Both Config.TOPOLOGY_ACKER_EXECUTORS and Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER are not set
+            // Default will be 2 (estimate num of workers) and 1 respectively
+        } else {
+            conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
+        }
+
+        int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(conf, stormToplogy);
+        Nimbus.setUpAckerExecutorConfigs(topoName, conf, conf, estimatedNumWorker);
+
+        conf.put(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB, 250);
+        conf.put(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT, 50);
+
         TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
-                genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
+            genExecsAndComps(StormCommon.systemTopology(conf, stormToplogy)), CURRENT_TIME, "user");
 
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
@@ -469,16 +506,141 @@ public class TestDefaultResourceAwareStrategy {
         scheduler.prepare(conf, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
+        // Ordered execs: [[6, 6], [2, 2], [4, 4], [5, 5], [1, 1], [3, 3], [0, 0], [8, 8], [7, 7]]
+        // Ackers: [[8, 8], [7, 7]] (+ [[9, 9], [10, 10]] when numOfAckersPerWorker=2)
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
-        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(0, 0)))); //Spout
+        if (numOfAckersPerWorker == -1 || numOfAckersPerWorker == 1) {
+            // Setting topology.acker.executors = null and topology.acker.executors.per.worker = null
+            // are equivalent to topology.acker.executors = null and topology.acker.executors.per.worker = 1
+            expectedScheduling.add(new HashSet<>(Arrays.asList(
+                new ExecutorDetails(6, 6), //bolt-3
+                new ExecutorDetails(2, 2), //bolt-1
+                new ExecutorDetails(4, 4), //bolt-2
+                new ExecutorDetails(8, 8)))); //acker
+            expectedScheduling.add(new HashSet<>(Arrays.asList(
+                new ExecutorDetails(5, 5), //bolt-3
+                new ExecutorDetails(1, 1), //bolt-1
+                new ExecutorDetails(3, 3), //bolt-2
+                new ExecutorDetails(7, 7)))); //acker
+            expectedScheduling.add(new HashSet<>(Arrays.asList(
+                new ExecutorDetails(0, 0)))); //spout
+        } else if (numOfAckersPerWorker == 0) {
+            expectedScheduling.add(new HashSet<>(Arrays.asList(
+                new ExecutorDetails(6, 6), //bolt-3
+                new ExecutorDetails(2, 2), //bolt-1
+                new ExecutorDetails(4, 4), //bolt-2
+                new ExecutorDetails(5, 5)))); //bolt-3
+            expectedScheduling.add(new HashSet<>(Arrays.asList(
+                new ExecutorDetails(0, 0), //spout
+                new ExecutorDetails(3, 3), //bolt-2
+                new ExecutorDetails(1, 1)))); //bolt-1
+        } else if (numOfAckersPerWorker == 2) {
+            expectedScheduling.add(new HashSet<>(Arrays.asList(
+                new ExecutorDetails(6, 6), //bolt-3
+                new ExecutorDetails(2, 2), //bolt-1
+                new ExecutorDetails(7, 7), //acker
+                new ExecutorDetails(8, 8)))); //acker
+            expectedScheduling.add(new HashSet<>(Arrays.asList(
+                new ExecutorDetails(4, 4), //bolt-2
+                new ExecutorDetails(5, 5), //bolt-3
+                new ExecutorDetails(9, 9), //acker
+                new ExecutorDetails(10, 10)))); //acker
+            expectedScheduling.add(new HashSet<>(Arrays.asList(
+                new ExecutorDetails(1, 1), //bolt-1
+                new ExecutorDetails(3, 3), //bolt-2
+                new ExecutorDetails(0, 0)))); //spout
+        }
+        HashSet<HashSet<ExecutorDetails>> foundScheduling = new HashSet<>();
+        SchedulerAssignment assignment = cluster.getAssignmentById("testTopology-id");
+        for (Collection<ExecutorDetails> execs : assignment.getSlotToExecutors().values()) {
+            foundScheduling.add(new HashSet<>(execs));
+        }
+
+        Assert.assertEquals(expectedScheduling, foundScheduling);
+    }
+
+    /**
+     * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
+     * when topology.acker.executors is set.
+     *
+     * If yes, topology.acker.executors.per.worker setting will be ignored and calculated as
+     * Math.ceil(topology.acker.executors / estimate num of workers) by Nimbus
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 0, 2, 300})
+    public void testDefaultResourceAwareStrategyWithSettingAckerExecutors(int numOfAckersPerWorker)
+        throws InvalidTopologyException {
+
+        int spoutParallelism = 1;
+        int boltParallelism = 2;
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("spout", new TestSpout(),
+            spoutParallelism);
+        builder.setBolt("bolt-1", new TestBolt(),
+            boltParallelism).shuffleGrouping("spout");
+        builder.setBolt("bolt-2", new TestBolt(),
+            boltParallelism).shuffleGrouping("bolt-1");
+        builder.setBolt("bolt-3", new TestBolt(),
+            boltParallelism).shuffleGrouping("bolt-2");
+
+        String topoName = "testTopology";
+
+        StormTopology stormToplogy = builder.createTopology();
+
+        INimbus iNimbus = new INimbusTest();
+        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 200, 2000);
+        Config conf = createClusterConfig(50, 450, 0, null);
+        conf.put(Config.TOPOLOGY_PRIORITY, 0);
+        conf.put(Config.TOPOLOGY_NAME, topoName);
+        conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
+        conf.put(Config.TOPOLOGY_SUBMITTER_USER, "user");
+
+        conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 4);
+        conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
+
+
+        if (numOfAckersPerWorker == -1) {
+            // Leave topology.acker.executors.per.worker unset
+        } else {
+            conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
+        }
+
+        int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(conf, stormToplogy);
+        Nimbus.setUpAckerExecutorConfigs(topoName, conf, conf, estimatedNumWorker);
+
+        conf.put(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB, 250);
+        conf.put(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT, 50);
+
+        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
+            genExecsAndComps(StormCommon.systemTopology(conf, stormToplogy)), CURRENT_TIME, "user");
+
+        Topologies topologies = new Topologies(topo);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
+
+        scheduler = new ResourceAwareScheduler();
+
+        scheduler.prepare(conf, new StormMetricsRegistry());
+        scheduler.schedule(topologies, cluster);
+
+        // Sorted execs: [[6, 6], [2, 2], [4, 4], [5, 5], [1, 1], [3, 3], [0, 0], [8, 8], [7, 7], [10, 10], [9, 9]]
+        // Ackers: [[8, 8], [7, 7], [10, 10], [9, 9]]
+
+        HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
         expectedScheduling.add(new HashSet<>(Arrays.asList(
+            new ExecutorDetails(6, 6), //bolt-3
             new ExecutorDetails(2, 2), //bolt-1
-            new ExecutorDetails(4, 4), //bolt-2
-            new ExecutorDetails(6, 6)))); //bolt-3
+            new ExecutorDetails(7, 7), //acker
+            new ExecutorDetails(8, 8)))); //acker
         expectedScheduling.add(new HashSet<>(Arrays.asList(
-            new ExecutorDetails(1, 1), //bolt-1
+            new ExecutorDetails(5, 5), //bolt-3
+            new ExecutorDetails(4, 4), //bolt-2
+            new ExecutorDetails(9, 9), //acker
+            new ExecutorDetails(10, 10)))); //acker
+        expectedScheduling.add(new HashSet<>(Arrays.asList(
+            new ExecutorDetails(0, 0), //spout
             new ExecutorDetails(3, 3), //bolt-2
-            new ExecutorDetails(5, 5)))); //bolt-3
+            new ExecutorDetails(1, 1)))); //bolt-1
+
         HashSet<HashSet<ExecutorDetails>> foundScheduling = new HashSet<>();
         SchedulerAssignment assignment = cluster.getAssignmentById("testTopology-id");
         for (Collection<ExecutorDetails> execs : assignment.getSlotToExecutors().values()) {
@@ -491,7 +653,9 @@ public class TestDefaultResourceAwareStrategy {
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy (when made by network proximity needs.) is correct
      */
-    public void testDefaultResourceAwareStrategyInFavorOfShuffle() {
+    @Test
+    public void testDefaultResourceAwareStrategyInFavorOfShuffle()
+        throws InvalidTopologyException {
         int spoutParallelism = 1;
         int boltParallelism = 2;
         TopologyBuilder builder = new TopologyBuilder();
@@ -507,7 +671,7 @@ public class TestDefaultResourceAwareStrategy {
         StormTopology stormToplogy = builder.createTopology();
 
         INimbus iNimbus = new INimbusTest();
-        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 150, 1500);
+        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 200, 2000);
         Config conf = createClusterConfig(50, 250, 250, null);
         conf.put(Config.TOPOLOGY_PRIORITY, 0);
         conf.put(Config.TOPOLOGY_NAME, "testTopology");
@@ -516,7 +680,7 @@ public class TestDefaultResourceAwareStrategy {
         conf.put(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
 
         TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
-            genExecsAndComps(stormToplogy), CURRENT_TIME, "user");
+            genExecsAndComps(StormCommon.systemTopology(conf, stormToplogy)), CURRENT_TIME, "user");
 
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
@@ -525,15 +689,17 @@ public class TestDefaultResourceAwareStrategy {
 
         rs.prepare(conf, new StormMetricsRegistry());
         rs.schedule(topologies, cluster);
-        //:<[[[0, 0], [6, 6], [2, 2]], [[3, 3]], [[5, 5], [4, 4], [1, 1]]]>
+        // Sorted execs: [[0, 0], [2, 2], [6, 6], [4, 4], [1, 1], [5, 5], [3, 3], [7, 7]]
+        // Ackers: [[7, 7]]]
 
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
         expectedScheduling.add(new HashSet<>(Arrays.asList(
             new ExecutorDetails(0, 0), //spout
             new ExecutorDetails(6, 6), //bolt-2
-            new ExecutorDetails(2, 2)))); //bolt-1
-        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(3, 3)))); //bolt-3
+            new ExecutorDetails(2, 2), //bolt-1
+            new ExecutorDetails(7, 7)))); //acker
         expectedScheduling.add(new HashSet<>(Arrays.asList(
+            new ExecutorDetails(3, 3), //bolt-3
             new ExecutorDetails(5, 5), //bolt-2
             new ExecutorDetails(4, 4), //bolt-3
             new ExecutorDetails(1, 1)))); //bolt-1

@@ -22,12 +22,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.daemon.Acker;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SchedulerAssignment;
@@ -178,6 +180,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         maxSchedulingTimeMs = computeMaxSchedulingTimeMs(topoConf);
 
         // From Cluster and TopologyDetails - and cleaned-up
+        // all unassigned executors including system components execs
         unassignedExecutors = Collections.unmodifiableSet(new HashSet<>(cluster.getUnassignedExecutors(topologyDetails)));
         int confMaxStateSearch = getMaxStateSearchFromTopoConf(topologyDetails.getConf());
         int daemonMaxStateSearch = ObjectReader.getInt(cluster.getConf().get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_STATE_SEARCH));
@@ -259,9 +262,18 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                 compCnts.put(compId, compCnts.getOrDefault(compId, 0) + 1); // increment
             });
         }
+        LinkedList<ExecutorDetails> unassignedAckers = new LinkedList<>();
+        if (compToExecs.containsKey(Acker.ACKER_COMPONENT_ID)) {
+            for (ExecutorDetails acker : compToExecs.get(Acker.ACKER_COMPONENT_ID)) {
+                if (unassignedExecutors.contains(acker)) {
+                    unassignedAckers.add(acker);
+                }
+            }
+        }
 
         return new SchedulingSearcherState(workerCompCnts, nodeCompCnts,
-                maxStateSearch, maxSchedulingTimeMs, new ArrayList<>(unassignedExecutors), topologyDetails, execToComp);
+                maxStateSearch, maxSchedulingTimeMs, new ArrayList<>(unassignedExecutors),
+                unassignedAckers, topologyDetails, execToComp);
     }
 
     /**
@@ -381,7 +393,14 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @return SchedulingResult with success attribute set to true or false indicting whether ALL executors were assigned.
      */
     protected SchedulingResult scheduleExecutorsOnNodes(List<ExecutorDetails> orderedExecutors, Iterable<String> sortedNodesIter) {
-        long         startTimeMilli     = System.currentTimeMillis();
+        // isolate ackers and put it to the end of orderedExecutors
+        // the order of unassigned ackers in orderedExecutors and searcherState.getUnassignedAckers() are same
+        orderedExecutors.removeAll(searcherState.getUnassignedAckers());
+        orderedExecutors.addAll(searcherState.getUnassignedAckers());
+        LOG.debug("For topology: {}, we have sorted execs: {} and unassigned ackers: {}",
+                    topoName, orderedExecutors, searcherState.getUnassignedAckers());
+
+        long         startTimeMilli     = Time.currentTimeMillis();
         searcherState.setSortedExecs(orderedExecutors);
         int          maxExecCnt         = searcherState.getExecSize();
 
@@ -410,6 +429,24 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
             int execIndex = searcherState.getExecIndex();
             ExecutorDetails exec = searcherState.currentExec();
+
+            // If current exec is found in searcherState assigned Ackers,
+            // it means it has been assigned as a bound acker already.
+            // So we skip to the next.
+            if (searcherState.getBoundAckers().contains(exec)) {
+                if (searcherState.areAllExecsScheduled()) {
+                    //Everything is scheduled correctly, so no need to search any more.
+                    LOG.info("scheduleExecutorsOnNodes: Done at loopCnt={} in {}ms, state.elapsedtime={}, backtrackCnt={}, topo={}",
+                        loopCnt, Time.currentTimeMillis() - startTimeMilli,
+                        Time.currentTimeMillis() - searcherState.startTimeMillis,
+                        searcherState.getNumBacktrack(),
+                        topoName);
+                    return searcherState.createSchedulingResult(true, this.getClass().getSimpleName());
+                }
+                searcherState = searcherState.nextExecutor();
+                continue OUTERMOST_LOOP;
+            }
+
             String comp = execToComp.get(exec);
             if (sortedNodesIter == null || (this.sortNodesForEachExecutor && searcherState.isExecCompDifferentFromPrior())) {
                 progressIdx = -1;
@@ -428,12 +465,35 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                     }
                     progressIdxForExec[execIndex]++;
 
+                    int numBoundAckerAssigned
+                        = assignBoundAckersForNewWorkerSlot(exec, node, workerSlot);
+                    if (numBoundAckerAssigned == -1) {
+                        // This only happens when trying to assign bound ackers to the worker slot and failed.
+                        // Free the entire worker slot and put those bound ackers back to unassigned list
+                        LOG.debug("Failed to assign bound acker for exec: {} of topo: {} to worker: {}.  Backtracking.",
+                            exec, topoName, workerSlot);
+                        searcherState.freeWorkerSlotWithBoundAckers(node, workerSlot);
+                        continue;
+                    }
+
                     if (!isExecAssignmentToWorkerValid(exec, workerSlot)) {
+                        // This only happens when this exec can not fit in the workerSlot
+                        // and this is not the first exec to this workerSlot.
+                        // So just go to next workerSlot and don't free the worker.
+                        if (numBoundAckerAssigned > 0) {
+                            LOG.debug("Failed to assign exec: {} of topo: {} with bound ackers to worker: {}.  Backtracking.",
+                                exec, topoName, workerSlot);
+                            searcherState.freeWorkerSlotWithBoundAckers(node, workerSlot);
+                        }
                         continue;
                     }
 
                     searcherState.incStatesSearched();
                     searcherState.assignCurrentExecutor(execToComp, node, workerSlot);
+                    if (numBoundAckerAssigned > 0) {
+                        // This exec with its bounded ackers have all been successfully assigned
+                        searcherState.getExecsWithBoundAckers().add(exec);
+                    }
                     if (searcherState.areAllExecsScheduled()) {
                         //Everything is scheduled correctly, so no need to search any more.
                         LOG.info("scheduleExecutorsOnNodes: Done at loopCnt={} in {}ms, state.elapsedtime={}, backtrackCnt={}, topo={}",
@@ -468,5 +528,41 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                 searcherState.getNumBacktrack(),
                 topoName);
         return searcherState.createSchedulingResult(success, this.getClass().getSimpleName());
+    }
+
+    /**
+     * <p>
+     * Determine how many bound ackers to put into the given workerSlot.
+     * Then try to assign the ackers one by one into this workerSlot.
+     *
+     * Return -1 only if the bound ackers assignment process failed.
+     * Return 0 if one of the conditions hold true:
+     *  1. No bound ackers are used.
+     *  2. This is not first exec assigned to this worker.
+     * Return positive int if all bound ackers assignments succeed.
+     * </p>
+     * @param exec              being scheduled.
+     * @param node              RasNode on which to schedule.
+     * @param workerSlot        WorkerSlot on which to schedule.
+     * @return                  If we successfully assigned bound worker for this exec
+     */
+    private int assignBoundAckersForNewWorkerSlot(ExecutorDetails exec, RasNode node, WorkerSlot workerSlot) {
+        int numOfAckersToBind = searcherState.getNumOfAckersToBind(exec, workerSlot);
+        if (numOfAckersToBind > 0) {
+            for (int i = 0; i < numOfAckersToBind; i++) {
+                if (!isExecAssignmentToWorkerValid(searcherState.peekUnassignedAckers(), workerSlot)) {
+                    return -1;
+                } else {
+                    try {
+                        searcherState.assignSingleBoundAcker(node, workerSlot);
+                    } catch (Exception e) {
+                        LOG.error("Exception happens when assigning {}th acker executor to workerSlot: {} for topology: {}",
+                                    i, workerSlot, topoName, e);
+                        return -1;
+                    }
+                }
+            }
+        }
+        return numOfAckersToBind;
     }
 }

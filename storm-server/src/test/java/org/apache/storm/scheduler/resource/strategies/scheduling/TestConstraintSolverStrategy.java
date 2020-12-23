@@ -550,7 +550,7 @@ public class TestConstraintSolverStrategy {
     public void testZeroExecutorScheduling() {
         ConstraintSolverStrategy cs = new ConstraintSolverStrategy();
         cs.prepare(new HashMap<>());
-        Map<String, Object> topoConf = new HashMap<>();
+        Map<String, Object> topoConf = Utils.readDefaultConfig();
         topoConf.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, 1_000);
         topoConf.put(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, false);
         topoConf.put(Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER, false);

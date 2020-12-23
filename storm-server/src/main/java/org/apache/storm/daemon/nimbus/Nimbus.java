@@ -1657,42 +1657,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                      basicSupervisorDetailsMap(clusterState), metricsRegistry);
     }
 
-    @VisibleForTesting
-    static void validateTopologyWorkerMaxHeapSizeConfigs(
-        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMb) throws InvalidTopologyException {
-        double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
-        double topologyWorkerMaxHeapSize =
-            ObjectReader.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeapSizeMb);
-        if (topologyWorkerMaxHeapSize < largestMemReq) {
-            throw new InvalidTopologyException(
-                "Topology will not be able to be successfully scheduled: Config "
-                + "TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB="
-                + topologyWorkerMaxHeapSize
-                + " < " + largestMemReq + " (Largest memory requirement of a component in the topology)."
-                + " Perhaps set TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB to a larger amount");
-        }
-    }
-
-    private static double getMaxExecutorMemoryUsageForTopo(
-        StormTopology topology, Map<String, Object> topologyConf) {
-        double largestMemoryOperator = 0.0;
-        for (NormalizedResourceRequest entry :
-            ResourceUtils.getBoltsResources(topology, topologyConf).values()) {
-            double memoryRequirement = entry.getTotalMemoryMb();
-            if (memoryRequirement > largestMemoryOperator) {
-                largestMemoryOperator = memoryRequirement;
-            }
-        }
-        for (NormalizedResourceRequest entry :
-            ResourceUtils.getSpoutsResources(topology, topologyConf).values()) {
-            double memoryRequirement = entry.getTotalMemoryMb();
-            if (memoryRequirement > largestMemoryOperator) {
-                largestMemoryOperator = memoryRequirement;
-            }
-        }
-        return largestMemoryOperator;
-    }
-
     Map<String, Object> getConf() {
         return conf;
     }
@@ -1725,10 +1689,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private Set<List<Integer>> getOrUpdateExecutors(String topoId, StormBase base, Map<String, Object> topoConf,
                                                     StormTopology topology)
-        throws IOException, AuthorizationException, InvalidTopologyException, KeyNotFoundException {
+        throws InvalidTopologyException {
         Set<List<Integer>> executors = idToExecutors.get().get(topoId);
         if (null == executors) {
-            executors = new HashSet<>(computeExecutors(topoId, base, topoConf, topology));
+            executors = new HashSet<>(computeExecutors(base, topoConf, topology));
             idToExecutors.getAndUpdate(new Assoc<>(topoId, executors));
         }
         return executors;
@@ -2038,9 +2002,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return heartbeatsCache.getAliveExecutors(topoId, allExecutors, assignment, getTopologyLaunchHeartbeatTimeoutSec(topoId));
     }
 
-    private List<List<Integer>> computeExecutors(String topoId, StormBase base, Map<String, Object> topoConf,
+    private List<List<Integer>> computeExecutors(StormBase base, Map<String, Object> topoConf,
                                                  StormTopology topology)
-        throws KeyNotFoundException, AuthorizationException, IOException, InvalidTopologyException {
+        throws InvalidTopologyException {
+
         assert (base != null);
 
         Map<String, Integer> compToExecutors = base.get_component_executors();
@@ -2049,11 +2014,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Map<Integer, String> taskInfo = StormCommon.stormTaskInfo(topology, topoConf);
             Map<String, List<Integer>> compToTaskList = Utils.reverseMap(taskInfo);
             for (Entry<String, List<Integer>> entry : compToTaskList.entrySet()) {
-                List<Integer> comps = entry.getValue();
-                comps.sort(null);
-                Integer numExecutors = compToExecutors.get(entry.getKey());
+                String compId = entry.getKey();
+                List<Integer> tasks = entry.getValue();
+                tasks.sort(null);
+                Integer numExecutors = compToExecutors.get(compId);
                 if (numExecutors != null) {
-                    List<List<Integer>> partitioned = Utils.partitionFixed(numExecutors, comps);
+                    List<List<Integer>> partitioned = Utils.partitionFixed(numExecutors, tasks);
                     for (List<Integer> partition : partitioned) {
                         ret.add(Arrays.asList(partition.get(0), partition.get(partition.size() - 1)));
                     }
@@ -2065,7 +2031,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private Map<List<Integer>, String> computeExecutorToComponent(String topoId, StormBase base,
                                                                   Map<String, Object> topoConf, StormTopology topology)
-        throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
+        throws InvalidTopologyException {
         List<List<Integer>> executors = new ArrayList<>(getOrUpdateExecutors(topoId, base, topoConf, topology));
         Map<Integer, String> taskToComponent = StormCommon.stormTaskInfo(topology, topoConf);
         Map<List<Integer>, String> ret = new HashMap<>();
@@ -2649,7 +2615,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private void startTopology(String topoName, String topoId, TopologyStatus initStatus, String owner,
                                String principal, Map<String, Object> topoConf, StormTopology stormTopology)
-        throws KeyNotFoundException, AuthorizationException, IOException, InvalidTopologyException {
+        throws InvalidTopologyException {
         assert (TopologyStatus.ACTIVE == initStatus || TopologyStatus.INACTIVE == initStatus);
         Map<String, Integer> numExecutors = new HashMap<>();
         StormTopology topology = StormCommon.systemTopology(topoConf, stormTopology);
@@ -2672,7 +2638,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         IStormClusterState state = stormClusterState;
         state.activateStorm(topoId, base, topoConf);
         idToExecutors.getAndUpdate(new Assoc<>(topoId,
-            new HashSet<>(computeExecutors(topoId, base, topoConf, stormTopology))));
+            new HashSet<>(computeExecutors(base, topoConf, stormTopology))));
         notifyTopologyActionListener(topoName, "activate");
     }
 
@@ -3177,7 +3143,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                        + Config.TOPOLOGY_BLOBSTORE_MAP + " = " + blobMap);
                 }
             }
-            validateTopologyWorkerMaxHeapSizeConfigs(topoConf, topology,
+            ServerUtils.validateTopologyWorkerMaxHeapSizeConfigs(topoConf, topology,
                                                      ObjectReader.getDouble(conf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB)));
             Utils.validateTopologyBlobStoreMap(topoConf, blobStore);
             long uniqueNum = submittedCount.incrementAndGet();
@@ -3240,14 +3206,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             // we might need to set the number of acker executors and eventlogger executors to be the estimated number of workers.
             if (ServerUtils.isRas(conf)) {
                 int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(totalConf, topology);
-                int numAckerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_ACKER_EXECUTORS), estimatedNumWorker);
+
+                setUpAckerExecutorConfigs(topoName, totalConfToSave, totalConf, estimatedNumWorker);
+                ServerUtils.validateTopologyAckerBundleResource(totalConfToSave, topology, topoName);
+
                 int numEventLoggerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS), estimatedNumWorker);
-
-                totalConfToSave.put(Config.TOPOLOGY_ACKER_EXECUTORS, numAckerExecs);
                 totalConfToSave.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numEventLoggerExecs);
+                LOG.debug("Config {} set to: {} for topology: {}",
+                    Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numEventLoggerExecs, topoName);
 
-                LOG.debug("{} set to: {}", Config.TOPOLOGY_ACKER_EXECUTORS, numAckerExecs);
-                LOG.debug("{} set to: {}", Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numEventLoggerExecs);
             }
 
             //Remove any configs that are specific to a host that might mess with the running topology.
@@ -3318,6 +3285,36 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
             throw new RuntimeException(e);
         }
+    }
+
+    @VisibleForTesting
+    public static void setUpAckerExecutorConfigs(String topoName, Map<String, Object> totalConfToSave,
+                                                 Map<String, Object> totalConf, int estimatedNumWorker) {
+
+        int numAckerExecs;
+        int numAckerExecsPerWorker;
+
+        if (totalConf.get(Config.TOPOLOGY_ACKER_EXECUTORS) == null) {
+            numAckerExecsPerWorker = ObjectReader.getInt(
+                totalConf.get(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER));
+            numAckerExecs = estimatedNumWorker * numAckerExecsPerWorker;
+        } else {
+            numAckerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
+            if (estimatedNumWorker == 0) {
+                numAckerExecsPerWorker = 0;
+            } else {
+                numAckerExecsPerWorker = (int) Math.ceil((double) numAckerExecs / (double) estimatedNumWorker);
+            }
+        }
+
+        totalConfToSave.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numAckerExecsPerWorker);
+        totalConfToSave.put(Config.TOPOLOGY_ACKER_EXECUTORS, numAckerExecs);
+
+        LOG.info("Config {} set to: {} for topology: {}",
+            Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numAckerExecsPerWorker, topoName);
+        LOG.info("Config {} set to: {} for topology: {}",
+            Config.TOPOLOGY_ACKER_EXECUTORS, numAckerExecs, topoName);
+
     }
 
     @Override
