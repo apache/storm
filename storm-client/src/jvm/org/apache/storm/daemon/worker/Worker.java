@@ -121,6 +121,12 @@ public class Worker implements Shutdownable, DaemonCommon {
 
         this.topologyConf = ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
 
+        // See STORM-3728.
+        // Writes to Pacemaker are currently always allowed.
+        // Ignore Config.PACEMAKER_AUTH_METHOD on Workers.
+        topologyConf.put(Config.PACEMAKER_AUTH_METHOD, "NONE");
+        conf.put(Config.PACEMAKER_AUTH_METHOD, "NONE");
+
         if (supervisorIfaceSupplier == null) {
             this.supervisorIfaceSupplier = () -> {
                 try {
