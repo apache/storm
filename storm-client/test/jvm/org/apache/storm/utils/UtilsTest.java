@@ -89,9 +89,7 @@ public class UtilsTest {
     }
 
     private void doParseJvmHeapMemByChildOptsTest(String message, List<String> opts, double expected) {
-        Assert.assertEquals(
-            message,
-            expected, Utils.parseJvmHeapMemByChildOpts(opts, 123.0).doubleValue(), 0);
+        Assert.assertEquals(message, expected, Utils.parseJvmHeapMemByChildOpts(opts, 123.0), 0);
     }
 
     @Test
