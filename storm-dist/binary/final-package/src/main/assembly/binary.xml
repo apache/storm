@@ -331,6 +331,12 @@
             <fileMode>0755</fileMode>
         </file>
         <file>
+            <source>${project.basedir}/../../../conf/seccomp.json.example</source>
+            <outputDirectory>/conf</outputDirectory>
+            <destName>seccomp.json.example</destName>
+            <fileMode>0755</fileMode>
+        </file>
+        <file>
             <source>${project.basedir}/../../../VERSION</source>
             <outputDirectory>.</outputDirectory>
             <destName>RELEASE</destName>

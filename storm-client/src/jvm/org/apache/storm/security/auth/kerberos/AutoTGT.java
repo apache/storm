@@ -13,9 +13,7 @@
 package org.apache.storm.security.auth.kerberos;
 
 import com.codahale.metrics.Gauge;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.security.Principal;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -210,35 +208,16 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
                 return;
             }
 
-            // We are just trying to do the following:
-            //
-            // Configuration conf = new Configuration();
-            // HadoopKerberosName.setConfiguration(conf);
-            // subject.getPrincipals().add(new User(tgt.getClient().toString(), AuthenticationMethod.KERBEROS, null));
+            LOG.info("Invoking Hadoop UserGroupInformation.loginUserFromSubject.");
+            Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
+            login.invoke(null, subject);
 
-            Class<?> confClass = Class.forName("org.apache.hadoop.conf.Configuration");
-            Constructor confCons = confClass.getConstructor();
-            Object conf = confCons.newInstance();
-            Class<?> hknClass = Class.forName("org.apache.hadoop.security.HadoopKerberosName");
-            Method hknSetConf = hknClass.getMethod("setConfiguration", confClass);
-            hknSetConf.invoke(null, conf);
-
-            Class<?> authMethodClass = Class.forName("org.apache.hadoop.security.UserGroupInformation$AuthenticationMethod");
-            Object kerbAuthMethod = null;
-            for (Object authMethod : authMethodClass.getEnumConstants()) {
-                if ("KERBEROS".equals(authMethod.toString())) {
-                    kerbAuthMethod = authMethod;
-                    break;
-                }
-            }
-
-            Class<?> userClass = Class.forName("org.apache.hadoop.security.User");
-            Constructor userCons = userClass.getConstructor(String.class, authMethodClass, LoginContext.class);
-            userCons.setAccessible(true);
-            String name = getTGT(subject).getClient().toString();
-            Object user = userCons.newInstance(name, kerbAuthMethod, null);
-            subject.getPrincipals().add((Principal) user);
-
+            //Refer to STORM-3606 for details
+            LOG.warn("UserGroupInformation.loginUserFromSubject will spawn a TGT renewal thread (\"TGT Renewer for <username>\") "
+                    + "to execute \"kinit -R\" command some time before the current TGT expires. "
+                    + "It will fail because TGT is not in the local TGT cache and the thread will eventually abort. "
+                    + "Exceptions from this TGT renewal thread can be ignored. Note: TGT for the Worker is kept in memory. "
+                    + "Please refer to STORM-3606 for detailed explanations");
         } catch (Exception e) {
             LOG.error("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop "
                      + "may not be compatible.", e);

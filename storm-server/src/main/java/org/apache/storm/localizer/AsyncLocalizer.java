@@ -79,6 +79,7 @@ public class AsyncLocalizer implements AutoCloseable {
     private final Timer blobLocalizationDuration;
     private final Meter numBlobUpdateVersionChanged;
     private final Meter localResourceFileNotFoundWhenReleasingSlot;
+    private final Meter updateBlobExceptions;
 
     // track resources - user to resourceSet
     //ConcurrentHashMap is explicitly used everywhere in this class because it uses locks to guarantee atomicity for compute and
@@ -99,6 +100,7 @@ public class AsyncLocalizer implements AutoCloseable {
     private final ScheduledExecutorService downloadExecService;
     private final ScheduledExecutorService taskExecService;
     private final long cacheCleanupPeriod;
+    private final long updateBlobPeriod;
     private final StormMetricsRegistry metricsRegistry;
     // cleanup
     @VisibleForTesting
@@ -113,6 +115,7 @@ public class AsyncLocalizer implements AutoCloseable {
         this.numBlobUpdateVersionChanged = metricsRegistry.registerMeter("supervisor:num-blob-update-version-changed");
         this.localResourceFileNotFoundWhenReleasingSlot
                 = metricsRegistry.registerMeter("supervisor:local-resource-file-not-found-when-releasing-slot");
+        this.updateBlobExceptions = metricsRegistry.registerMeter("supervisor:update-blob-exceptions");
         this.metricsRegistry = metricsRegistry;
         isLocalMode = ConfigUtils.isLocalMode(conf);
         fsOps = ops;
@@ -123,6 +126,9 @@ public class AsyncLocalizer implements AutoCloseable {
         // default 30 seconds. (we cache the size so it is cheap to do)
         cacheCleanupPeriod = ObjectReader.getInt(conf.get(
             DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS), 30 * 1000).longValue();
+
+        updateBlobPeriod = ObjectReader.getInt(conf.get(
+                DaemonConfig.SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS), 30).longValue();
 
         blobDownloadRetries = ObjectReader.getInt(conf.get(
             DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_MAX_RETRIES), 3);
@@ -330,6 +336,7 @@ public class AsyncLocalizer implements AutoCloseable {
                 try {
                     f.get();
                 } catch (Exception e) {
+                    updateBlobExceptions.mark();
                     if (Utils.exceptionCauseIsInstanceOf(TTransportException.class, e)) {
                         LOG.error("Network error while updating blobs, will retry again later", e);
                     } else if (Utils.exceptionCauseIsInstanceOf(NimbusLeaderNotFoundException.class, e)) {
@@ -346,7 +353,8 @@ public class AsyncLocalizer implements AutoCloseable {
      * Start any background threads needed.  This includes updating blobs and cleaning up unused blobs over the configured size limit.
      */
     public void start() {
-        taskExecService.scheduleWithFixedDelay(this::updateBlobs, 30, 30, TimeUnit.SECONDS);
+        LOG.debug("Scheduling updateBlobs every {} seconds", updateBlobPeriod);
+        taskExecService.scheduleWithFixedDelay(this::updateBlobs, updateBlobPeriod, updateBlobPeriod, TimeUnit.SECONDS);
         LOG.debug("Scheduling cleanup every {} millis", cacheCleanupPeriod);
         taskExecService.scheduleAtFixedRate(this::cleanup, cacheCleanupPeriod, cacheCleanupPeriod, TimeUnit.MILLISECONDS);
     }
@@ -467,14 +475,14 @@ public class AsyncLocalizer implements AutoCloseable {
         // Will need further investigation if the race condition happens again
         List<LocalResource> localResources;
         try {
-            // Precondition1: Base blob stormconf.ser and stormcode.ser have been localized
-            // Precondition2: Both these two blob files are fully downloaded and proper permission been set
+            // Precondition1: Base blob stormconf.ser and stormcode.ser are available
+            // Precondition2: Both files have proper permission
             localResources = getLocalResources(pna);
         } catch (IOException e) {
             LOG.info("Port and assignment info: {}", pna);
             if (e instanceof FileNotFoundException) {
                 localResourceFileNotFoundWhenReleasingSlot.mark();
-                LOG.warn("Local base blobs have not been downloaded yet. ", e);
+                LOG.warn("Local base blobs are not available. ", e);
                 return;
             } else {
                 LOG.error("Unable to read local file. ", e);
@@ -613,6 +621,7 @@ public class AsyncLocalizer implements AutoCloseable {
     @VisibleForTesting
     void cleanup() {
         try {
+            LOG.info("Starting cleanup");
             LocalizedResourceRetentionSet toClean = new LocalizedResourceRetentionSet(cacheTargetSize);
             // need one large set of all and then clean via LRU
             for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userArchives.entrySet()) {
@@ -641,7 +650,12 @@ public class AsyncLocalizer implements AutoCloseable {
 
             try {
                 forEachTopologyDistDir((p, topologyId) -> {
-                    if (!safeTopologyIds.contains(topologyId)) {
+                    String topoJarKey = ConfigUtils.masterStormJarKey(topologyId);
+                    String topoCodeKey = ConfigUtils.masterStormCodeKey(topologyId);
+                    String topoConfKey = ConfigUtils.masterStormConfKey(topologyId);
+                    if (!topologyBlobs.containsKey(topoJarKey)
+                        && !topologyBlobs.containsKey(topoCodeKey)
+                        && !topologyBlobs.containsKey(topoConfKey)) {
                         fsOps.deleteIfExists(p.toFile());
                     }
                 });
@@ -673,6 +687,8 @@ public class AsyncLocalizer implements AutoCloseable {
         } catch (Error error) {
             LOG.error("AsyncLocalizer cleanup failure", error);
             Utils.exitProcess(20, "AsyncLocalizer cleanup failure");
+        } finally {
+            LOG.info("Finish cleanup");
         }
     }
 

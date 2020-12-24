@@ -38,7 +38,6 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.hooks.info.EmitInfo;
-import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.metrics2.TaskMetrics;
 import org.apache.storm.spout.ShellSpout;
 import org.apache.storm.stats.CommonStats;
@@ -89,7 +88,8 @@ public class Task {
         this.taskObject = mkTaskObject();
         this.debug = topoConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) topoConf.get(Config.TOPOLOGY_DEBUG);
         this.addTaskHooks();
-        this.taskMetrics = new TaskMetrics(this.workerTopologyContext, this.componentId, this.taskId, workerData.getMetricRegistry());
+        this.taskMetrics = new TaskMetrics(this.workerTopologyContext, this.componentId, this.taskId,
+                workerData.getMetricRegistry(), topoConf);
     }
 
     private static HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> getGroupersPerStream(
@@ -129,9 +129,11 @@ public class Task {
 
         try {
             if (emitSampler.getAsBoolean()) {
-                executorStats.emittedTuple(stream, this.taskMetrics.getEmitted(stream));
+                executorStats.emittedTuple(stream);
+                this.taskMetrics.emittedTuple(stream);
                 if (null != outTaskId) {
-                    executorStats.transferredTuples(stream, 1, this.taskMetrics.getTransferred(stream));
+                    executorStats.transferredTuples(stream, 1);
+                    this.taskMetrics.transferredTuples(stream, 1);
                 }
             }
         } catch (Exception e) {
@@ -169,8 +171,10 @@ public class Task {
         }
         try {
             if (emitSampler.getAsBoolean()) {
-                executorStats.emittedTuple(stream, this.taskMetrics.getEmitted(stream));
-                executorStats.transferredTuples(stream, outTasks.size(), this.taskMetrics.getTransferred(stream));
+                executorStats.emittedTuple(stream);
+                this.taskMetrics.emittedTuple(stream);
+                executorStats.transferredTuples(stream, outTasks.size());
+                this.taskMetrics.transferredTuples(stream, outTasks.size());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

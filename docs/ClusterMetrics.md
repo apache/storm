@@ -4,13 +4,13 @@ layout: documentation
 documentation: true
 ---
 
-#Cluster Metrics
+# Cluster Metrics
 
 There are lots of metrics to help you monitor a running cluster.  Many of these metrics are still a work in progress and so is the metrics system itself so any of them may change, even between minor version releases.  We will try to keep them as stable as possible, but they should all be considered somewhat unstable. Some of the metrics may also be for experimental features, or features that are not complete yet, so please read the description of the metric before using it for monitoring or alerting.
 
 Also be aware that depending on the metrics system you use, the names are likely to be translated into a different format that is compatible with the system.  Typically this means that the ':' separating character will be replaced with a '.' character.
 
-Most metrics should have the units that they are reported in as a part of the description.  For Timers often this is configured by the reporter that is uploading them to your system.  Pay attention because even if the metric name has a time unit in it, it may be false.
+Most metrics should have the units that they are reported in as a part of the description. For Timers often this is configured by the reporter that is uploading them to your system.  Pay attention because even if the metric name has a time unit in it, it may be false.
 
 Also most metrics, except for gauges and counters, are a collection of numbers, and not a single value.  Often these result in multiple metrics being uploaded to a reporting system, such as percentiles for a histogram, or rates for a meter.  It is dependent on the configured metrics reporter how this happens, or how the name here corresponds to the metric in your reporting system.
 
@@ -214,6 +214,7 @@ Metrics associated with the supervisor, which launches the workers for a topolog
 | supervisor:time-worker-spent-in-state-waiting-for-blob-localization-ms | timer | time spent in waiting-for-blob-localization state as it transitions out. Not necessarily in ms. |
 | supervisor:time-worker-spent-in-state-waiting-for-blob-update-ms | timer | time spent in waiting-for-blob-update state as it transitions out. Not necessarily in ms. |
 | supervisor:time-worker-spent-in-state-waiting-for-worker-start-ms | timer | time spent in waiting-for-worker-start state as it transitions out. Not necessarily in ms. |
+| supervisor:update-blob-exceptions | meter | number of exceptions updating blobs. |
 | supervisor:worker-launch-duration | timer | Time taken for a worker to launch. |
 | supervisor:worker-per-call-clean-up-duration-ns | meter | how long it takes to cleanup a worker (ns). |
 | supervisor:worker-shutdown-duration-ns | meter | how long it takes to shutdown a worker (ns). |
@@ -259,3 +260,16 @@ The pacemaker process is deprecated and only still exists for backwards compatib
 | pacemaker:size-total-keys | gauge | total number of keys in this pacemaker instance |
 | pacemaker:total-receive-size | meter | total size in bytes of heartbeats received |
 | pacemaker:total-sent-size | meter | total size in bytes of heartbeats read |
+
+
+## Metric Reporters
+
+For metrics to be reported, configure reporters using `storm.daemon.metrics.reporter.plugins`. The following metric reporters are supported:
+  * Console Reporter (`org.apache.storm.daemon.metrics.reporters.ConsolePreparableReporter`):
+    Reports metrics to `System.out`.
+  * CSV Reporter (`org.apache.storm.daemon.metrics.reporters.CsvPreparableReporter`):
+    Reports metrics to a CSV file.
+  * JMX Reporter (`org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter`):
+    Exposes metrics via JMX.
+
+Custom reporter can be created by implementing `org.apache.storm.daemon.metrics.reporters.PreparableReporter` interface.

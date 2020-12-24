@@ -66,8 +66,10 @@ public class LoadAwareShuffleGroupingTest {
         NodeInfo nodeInfo = new NodeInfo("node-id", Sets.newHashSet(6700L));
         availableTaskIds.forEach(e -> taskNodeToPort.put(e, nodeInfo));
         when(context.getTaskToNodePort()).thenReturn(new AtomicReference<>(taskNodeToPort));
-        when(context.getThisWorkerHost()).thenReturn("node-id");
+        when(context.getAssignmentId()).thenReturn("node-id");
         when(context.getThisWorkerPort()).thenReturn(6700);
+        AtomicReference<Map<String, String>> nodeToHost = new AtomicReference<>(Collections.singletonMap("node-id", "hostname1"));
+        when(context.getNodeToHost()).thenReturn(nodeToHost);
         return context;
     }
 
@@ -566,8 +568,14 @@ public class LoadAwareShuffleGroupingTest {
         taskNodeToPort.put(3, new NodeInfo("node-id2", Sets.newHashSet(6703L)));
 
         when(context.getTaskToNodePort()).thenReturn(new AtomicReference<>(taskNodeToPort));
-        when(context.getThisWorkerHost()).thenReturn("node-id");
+        when(context.getAssignmentId()).thenReturn("node-id");
         when(context.getThisWorkerPort()).thenReturn(6701);
+
+        Map<String, String> nodeToHost = new HashMap<>();
+        nodeToHost.put("node-id", "hostname1");
+        nodeToHost.put("node-id2", "hostname2");
+        when(context.getNodeToHost()).thenReturn(new AtomicReference<>(nodeToHost));
+
         return context;
     }
 }

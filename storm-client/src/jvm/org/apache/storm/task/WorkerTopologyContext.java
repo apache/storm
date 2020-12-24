@@ -32,6 +32,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     private String pidDir;
     private AtomicReference<Map<Integer, NodeInfo>> taskToNodePort;
     private String assignmentId;
+    private final AtomicReference<Map<String, String>> nodeToHost;
 
     public WorkerTopologyContext(
         StormTopology topology,
@@ -47,7 +48,8 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         Map<String, Object> defaultResources,
         Map<String, Object> userResources,
         AtomicReference<Map<Integer, NodeInfo>> taskToNodePort,
-        String assignmentId
+        String assignmentId,
+        AtomicReference<Map<String, String>> nodeToHost
     ) {
         super(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId);
         this.codeDir = codeDir;
@@ -66,6 +68,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         this.workerTasks = workerTasks;
         this.taskToNodePort = taskToNodePort;
         this.assignmentId = assignmentId;
+        this.nodeToHost = nodeToHost;
 
     }
 
@@ -83,7 +86,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         Map<String, Object> defaultResources,
         Map<String, Object> userResources) {
         this(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId,
-             codeDir, pidDir, workerPort, workerTasks, defaultResources, userResources, null, null);
+             codeDir, pidDir, workerPort, workerTasks, defaultResources, userResources, null, null, null);
     }
 
     /**
@@ -97,7 +100,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         return workerPort;
     }
 
-    public String getThisWorkerHost() {
+    public String getAssignmentId() {
         return assignmentId;
     }
 
@@ -108,6 +111,14 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
      */
     public AtomicReference<Map<Integer, NodeInfo>> getTaskToNodePort() {
         return taskToNodePort;
+    }
+
+    /**
+     * Get a map from nodeId to hostname.
+     * @return a map from nodeId to hostname
+     */
+    public AtomicReference<Map<String, String>> getNodeToHost() {
+        return nodeToHost;
     }
 
     /**

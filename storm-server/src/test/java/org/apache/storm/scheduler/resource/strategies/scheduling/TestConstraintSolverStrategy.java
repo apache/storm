@@ -21,7 +21,6 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.NavigableMap;
 import java.util.Set;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -35,9 +34,10 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
+import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.ExecSorterByConstraintSeverity;
+import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.IExecSorter;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.junit.Assert;
 import org.junit.Test;
@@ -101,7 +101,7 @@ public class TestConstraintSolverStrategy {
      * configuration is assumed to be 1.
      *
      * @param maxCoLocationCnt Maximum co-located component (spout-0), minimum value is 1.
-     * @return
+     * @return topology configuration map
      */
     public Map<String, Object> makeTestTopoConf(int maxCoLocationCnt) {
         if (maxCoLocationCnt < 1) {
@@ -154,11 +154,11 @@ public class TestConstraintSolverStrategy {
                 String comp = constraint.get(0);
                 List<String> others = constraint.subList(1, constraint.size());
                 List<Object> incompatibleComponents = (List<Object>) modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<>())
-                        .computeIfAbsent(ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, k -> new ArrayList<>());
+                        .computeIfAbsent(ConstraintSolverConfig.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, k -> new ArrayList<>());
                 incompatibleComponents.addAll(others);
             }
             for (String comp: spreads.keySet()) {
-                modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<>()).put(ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, "" + spreads.get(comp));
+                modifiedConstraints.computeIfAbsent(comp, k -> new HashMap<>()).put(ConstraintSolverConfig.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, "" + spreads.get(comp));
             }
             config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
         } else {
@@ -167,7 +167,7 @@ public class TestConstraintSolverStrategy {
             for (Map.Entry<String, Integer> e: spreads.entrySet()) {
                 if (e.getValue() > 1) {
                     Assert.fail(String.format("Invalid %s=%d for component=%s, expecting 1 for old-style configuration",
-                            ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                            ConstraintSolverConfig.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
                             e.getValue(),
                             e.getKey()));
                 }
@@ -211,7 +211,7 @@ public class TestConstraintSolverStrategy {
         Assert.assertTrue("Assert scheduling topology success " + result, result.isSuccess());
         Assert.assertEquals("Assert no unassigned executors, found unassigned: " + cluster.getUnassignedExecutors(topo),
             0, cluster.getUnassignedExecutors(topo).size());
-        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo, null));
+        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo));
         LOG.info("Slots Used {}", cluster.getAssignmentById(topo.getId()).getSlots());
         LOG.info("Assignment {}", cluster.getAssignmentById(topo.getId()).getSlotToExecutors());
 
@@ -241,7 +241,55 @@ public class TestConstraintSolverStrategy {
 
         Assert.assertTrue("Assert scheduling topology success " + result, result.isSuccess());
         Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
-        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo, null));
+        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo));
+    }
+
+    /**
+     * See if constraint configuration can be instantiated with no or partial constraints.
+     */
+    @Test
+    public void testMissingConfig() {
+        // no configs
+        new ConstraintSolverConfig("test-topoid-1", new HashMap<>(), new HashSet<>());
+
+        // with one or more undefined components with partial constraints
+        {
+            String s = consolidatedConfigFlag ?
+                    String.format(
+                            "{ \"comp-1\": "
+                                    + "                  { \"%s\": 2, "
+                                    + "                    \"%s\": [\"comp-2\", \"comp-3\" ] }, "
+                                    + "     \"comp-2\": "
+                                    + "                  { \"%s\": [ \"comp-4\" ] }, "
+                                    + "     \"comp-3\": "
+                                    + "                  { \"%s\": \"comp-5\" }, "
+                                    + "     \"comp-6\": "
+                                    + "                  { \"%s\": 2 }"
+                                    + "}",
+                            ConstraintSolverConfig.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                            ConstraintSolverConfig.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
+                            ConstraintSolverConfig.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
+                            ConstraintSolverConfig.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
+                            ConstraintSolverConfig.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT
+                    )
+                    :
+                    "[ "
+                            + "[ \"comp-1\", \"comp-2\" ], "
+                            + "[ \"comp-1\", \"comp-3\" ], "
+                            + "[ \"comp-2\", \"comp-3\" ], "
+                            + "[ \"comp-2\", \"comp-4\" ], "
+                            + "[ \"comp-3\", \"comp-5\" ] "
+                            + "]"
+                    ;
+
+            Object jsonValue = JSONValue.parse(s);
+            Map<String, Object> conf = new HashMap<>();
+            conf.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
+            new ConstraintSolverConfig("test-topoid-2", conf, new HashSet<>());
+            new ConstraintSolverConfig("test-topoid-3", conf, new HashSet<>(Arrays.asList("comp-x")));
+            new ConstraintSolverConfig("test-topoid-4", conf, new HashSet<>(Arrays.asList("comp-1")));
+            new ConstraintSolverConfig("test-topoid-5", conf, new HashSet<>(Arrays.asList("comp-1, comp-x")));
+        }
     }
 
     @Test
@@ -255,17 +303,17 @@ public class TestConstraintSolverStrategy {
                         + "     \"comp-3\": "
                         + "                  { \"%s\": \"comp-5\" } "
                         + "}",
-                ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
-                ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
-                ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
-                ConstraintSolverStrategy.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS
+                ConstraintSolverConfig.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                ConstraintSolverConfig.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
+                ConstraintSolverConfig.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS,
+                ConstraintSolverConfig.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS
         );
         Object jsonValue = JSONValue.parse(s);
         Map<String, Object> config = Utils.readDefaultConfig();
         config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
         Set<String> allComps = new HashSet<>();
         allComps.addAll(Arrays.asList("comp-1", "comp-2", "comp-3", "comp-4", "comp-5"));
-        ConstraintSolverStrategy.ConstraintConfig constraintConfig = new ConstraintSolverStrategy.ConstraintConfig(config, allComps);
+        ConstraintSolverConfig constraintSolverConfig = new ConstraintSolverConfig("test-topoid-1", config, allComps);
 
         Set<String> expectedSetComp1 = new HashSet<>();
         expectedSetComp1.addAll(Arrays.asList("comp-2", "comp-3"));
@@ -273,11 +321,11 @@ public class TestConstraintSolverStrategy {
         expectedSetComp2.addAll(Arrays.asList("comp-1", "comp-4"));
         Set<String> expectedSetComp3 = new HashSet<>();
         expectedSetComp3.addAll(Arrays.asList("comp-1", "comp-5"));
-        Assert.assertEquals("comp-1 incompatible components", expectedSetComp1, constraintConfig.getIncompatibleComponents().get("comp-1"));
-        Assert.assertEquals("comp-2 incompatible components", expectedSetComp2, constraintConfig.getIncompatibleComponents().get("comp-2"));
-        Assert.assertEquals("comp-3 incompatible components", expectedSetComp3, constraintConfig.getIncompatibleComponents().get("comp-3"));
-        Assert.assertEquals("comp-1 maxNodeCoLocationCnt", 2, (int) constraintConfig.getMaxCoLocationCnts().getOrDefault("comp-1", -1));
-        Assert.assertNull("comp-2 maxNodeCoLocationCnt", constraintConfig.getMaxCoLocationCnts().get("comp-2"));
+        Assert.assertEquals("comp-1 incompatible components", expectedSetComp1, constraintSolverConfig.getIncompatibleComponentSets().get("comp-1"));
+        Assert.assertEquals("comp-2 incompatible components", expectedSetComp2, constraintSolverConfig.getIncompatibleComponentSets().get("comp-2"));
+        Assert.assertEquals("comp-3 incompatible components", expectedSetComp3, constraintSolverConfig.getIncompatibleComponentSets().get("comp-3"));
+        Assert.assertEquals("comp-1 maxNodeCoLocationCnt", 2, (int) constraintSolverConfig.getMaxNodeCoLocationCnts().getOrDefault("comp-1", -1));
+        Assert.assertNull("comp-2 maxNodeCoLocationCnt", constraintSolverConfig.getMaxNodeCoLocationCnts().get("comp-2"));
     }
 
     @Test
@@ -287,16 +335,29 @@ public class TestConstraintSolverStrategy {
         if (CO_LOCATION_CNT > 1 && !consolidatedConfigFlag) {
             LOG.info("INFO: Skipping Test {} with {}={} (required 1), and consolidatedConfigFlag={} (required false)",
                     "testConstraintSolverForceBacktrackWithSpreadCoLocation",
-                    ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                    ConstraintSolverConfig.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
                     CO_LOCATION_CNT,
                     consolidatedConfigFlag);
             return;
         }
 
         ConstraintSolverStrategy cs = new ConstraintSolverStrategy() {
-            @Override
-            public <K extends Comparable<K>, V extends Comparable<V>> NavigableMap<K, V> sortByValues(final Map<K, V> map) {
-                return super.sortByValues(map).descendingMap();
+            protected void prepareForScheduling(Cluster cluster, TopologyDetails topologyDetails) {
+                super.prepareForScheduling(cluster, topologyDetails);
+
+                // set a reversing execSorter instance
+                IExecSorter execSorter = new ExecSorterByConstraintSeverity(cluster, topologyDetails) {
+                    @Override
+                    public List<ExecutorDetails> sortExecutors(Set<ExecutorDetails> unassignedExecutors) {
+                        List<ExecutorDetails> tmp = super.sortExecutors(unassignedExecutors);
+                        List<ExecutorDetails> reversed = new ArrayList<>();
+                        while (!tmp.isEmpty()) {
+                            reversed.add(0, tmp.remove(0));
+                        }
+                        return reversed;
+                    }
+                };
+                setExecSorter(execSorter);
             }
         };
         basicUnitTestWithKillAndRecover(cs, BACKTRACK_BOLT_PARALLEL, CO_LOCATION_CNT);
@@ -312,7 +373,7 @@ public class TestConstraintSolverStrategy {
         if (CO_LOCATION_CNT > 1 && !consolidatedConfigFlag) {
             LOG.info("INFO: Skipping Test {} with {}={} (required 1), and consolidatedConfigFlag={} (required false)",
                     "testConstraintSolverWithSpreadCoLocation",
-                    ConstraintSolverStrategy.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                    ConstraintSolverConfig.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
                     CO_LOCATION_CNT,
                     consolidatedConfigFlag);
             return;
@@ -347,11 +408,10 @@ public class TestConstraintSolverStrategy {
         try (Time.SimulatedTime simulating = new Time.SimulatedTime()) {
             ConstraintSolverStrategy cs = new ConstraintSolverStrategy() {
                 @Override
-                protected SolverResult backtrackSearch(SearcherState state) {
+                protected SchedulingResult scheduleExecutorsOnNodes(List<ExecutorDetails> orderedExecutors, Iterable<String> sortedNodes) {
                     //Each time we try to schedule a new component simulate taking 1 second longer
                     Time.advanceTime(1_001);
-                    return super.backtrackSearch(state);
-
+                    return super.scheduleExecutorsOnNodes(orderedExecutors, sortedNodes);
                 }
             };
             basicFailureTest(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS, 1, cs);
@@ -484,5 +544,32 @@ public class TestConstraintSolverStrategy {
         } finally {
             rs.cleanup();
         }
+    }
+
+    @Test
+    public void testZeroExecutorScheduling() {
+        ConstraintSolverStrategy cs = new ConstraintSolverStrategy();
+        cs.prepare(new HashMap<>());
+        Map<String, Object> topoConf = Utils.readDefaultConfig();
+        topoConf.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, 1_000);
+        topoConf.put(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, false);
+        topoConf.put(Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER, false);
+
+        TopologyDetails topo = makeTopology(topoConf, 1);
+        Cluster cluster = makeCluster(new Topologies(topo));
+        cs.schedule(cluster, topo);
+        LOG.info("********************* Scheduling Zero Unassigned Executors *********************");
+        cs.schedule(cluster, topo); // reschedule a fully schedule topology
+        LOG.info("********************* End of Scheduling Zero Unassigned Executors *********************");
+    }
+
+    @Test
+    public void testGetMaxStateSearchFromTopoConf() {
+        Map<String, Object> topoConf = new HashMap<>();
+
+        Assert.assertEquals(10_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
+
+        topoConf.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, 40_000);
+        Assert.assertEquals(40_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
     }
 }

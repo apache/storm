@@ -47,8 +47,8 @@ public class JCQueuePerfTest {
     private static void ackingProducerSimulation() {
         WaitStrategyPark ws = new WaitStrategyPark(100);
         StormMetricRegistry registry = new StormMetricRegistry();
-        JCQueue spoutQ = new JCQueue("spoutQ", 1024, 0, 100, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
-        JCQueue ackQ = new JCQueue("ackQ", 1024, 0, 100, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
+        JCQueue spoutQ = new JCQueue("spoutQ", "spoutQ", 1024, 0, 100, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
+        JCQueue ackQ = new JCQueue("ackQ", "ackQ", 1024, 0, 100, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
 
         final AckingProducer ackingProducer = new AckingProducer(spoutQ, ackQ);
         final Acker acker = new Acker(ackQ, spoutQ);
@@ -59,9 +59,9 @@ public class JCQueuePerfTest {
     private static void producerFwdConsumer(int prodBatchSz) {
         WaitStrategyPark ws = new WaitStrategyPark(100);
         StormMetricRegistry registry = new StormMetricRegistry();
-        JCQueue q1 = new JCQueue("q1", 1024, 0, prodBatchSz, ws, "test", "test",
+        JCQueue q1 = new JCQueue("q1", "q1", 1024, 0, prodBatchSz, ws, "test", "test",
                 Collections.singletonList(1000), 1000, registry);
-        JCQueue q2 = new JCQueue("q2", 1024, 0, prodBatchSz, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
+        JCQueue q2 = new JCQueue("q2", "q2", 1024, 0, prodBatchSz, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
 
         final Producer prod = new Producer(q1);
         final Forwarder fwd = new Forwarder(q1, q2);
@@ -72,7 +72,7 @@ public class JCQueuePerfTest {
 
 
     private static void oneProducer1Consumer(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", 50_000, 0, prodBatchSz, new WaitStrategyPark(100), "test", "test",
+        JCQueue q1 = new JCQueue("q1", "q1", 50_000, 0, prodBatchSz, new WaitStrategyPark(100), "test", "test",
                 Collections.singletonList(1000), 1000, new StormMetricRegistry());
 
         final Producer prod1 = new Producer(q1);
@@ -82,7 +82,7 @@ public class JCQueuePerfTest {
     }
 
     private static void twoProducer1Consumer(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", 50_000, 0, prodBatchSz, new WaitStrategyPark(100), "test", "test",
+        JCQueue q1 = new JCQueue("q1", "q1", 50_000, 0, prodBatchSz, new WaitStrategyPark(100), "test", "test",
                 Collections.singletonList(1000), 1000, new StormMetricRegistry());
 
         final Producer prod1 = new Producer(q1);
@@ -93,7 +93,7 @@ public class JCQueuePerfTest {
     }
 
     private static void threeProducer1Consumer(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", 50_000, 0, prodBatchSz, new WaitStrategyPark(100), "test", "test",
+        JCQueue q1 = new JCQueue("q1", "q1", 50_000, 0, prodBatchSz, new WaitStrategyPark(100), "test", "test",
                 Collections.singletonList(1000), 1000, new StormMetricRegistry());
 
         final Producer prod1 = new Producer(q1);
@@ -108,8 +108,8 @@ public class JCQueuePerfTest {
     private static void oneProducer2Consumers(int prodBatchSz) {
         WaitStrategyPark ws = new WaitStrategyPark(100);
         StormMetricRegistry registry = new StormMetricRegistry();
-        JCQueue q1 = new JCQueue("q1", 1024, 0, prodBatchSz, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
-        JCQueue q2 = new JCQueue("q2", 1024, 0, prodBatchSz, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
+        JCQueue q1 = new JCQueue("q1", "q1", 1024, 0, prodBatchSz, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
+        JCQueue q2 = new JCQueue("q2", "q2", 1024, 0, prodBatchSz, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
 
         final Producer2 prod1 = new Producer2(q1, q2);
         final Consumer cons1 = new Consumer(q1);

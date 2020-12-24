@@ -12,37 +12,41 @@
 
 package org.apache.storm.stats;
 
-import com.codahale.metrics.Counter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.storm.daemon.Task;
 import org.apache.storm.generated.BoltStats;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
-import org.apache.storm.metric.internal.MultiCountStatAndMetric;
-import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
+import org.apache.storm.metric.internal.MultiCountStat;
+import org.apache.storm.metric.internal.MultiLatencyStat;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 
 @SuppressWarnings("unchecked")
 public class BoltExecutorStats extends CommonStats {
-    MultiCountStatAndMetric executedStats;
-    MultiLatencyStatAndMetric processLatencyStats;
-    MultiLatencyStatAndMetric executeLatencyStats;
+    MultiCountStat executedStats;
+    MultiLatencyStat processLatencyStats;
+    MultiLatencyStat executeLatencyStats;
 
     public BoltExecutorStats(int rate, int numStatBuckets) {
         super(rate, numStatBuckets);
-        this.executedStats = new MultiCountStatAndMetric(numStatBuckets);
-        this.processLatencyStats = new MultiLatencyStatAndMetric(numStatBuckets);
-        this.executeLatencyStats = new MultiLatencyStatAndMetric(numStatBuckets);
+        this.executedStats = new MultiCountStat(numStatBuckets);
+        this.processLatencyStats = new MultiLatencyStat(numStatBuckets);
+        this.executeLatencyStats = new MultiLatencyStat(numStatBuckets);
     }
 
-    public MultiCountStatAndMetric getExecuted() {
+    public MultiCountStat getExecuted() {
         return executedStats;
     }
 
-    public MultiLatencyStatAndMetric getProcessLatencies() {
+    public MultiLatencyStat getProcessLatencies() {
         return processLatencyStats;
     }
 
-    public MultiLatencyStatAndMetric getExecuteLatencies() {
+    public MultiLatencyStat getExecuteLatencies() {
         return executeLatencyStats;
     }
 
@@ -54,23 +58,64 @@ public class BoltExecutorStats extends CommonStats {
         super.cleanupStats();
     }
 
-    public void boltExecuteTuple(String component, String stream, long latencyMs) {
+    public void boltExecuteTuple(String component, String stream, long latencyMs, long workerUptimeSecs,
+                                 Task firstExecutorTask) {
         List key = Lists.newArrayList(component, stream);
         this.getExecuted().incBy(key, this.rate);
         this.getExecuteLatencies().record(key, latencyMs);
+
+        // Calculate capacity:  This is really for the whole executor, but we will use the executor's first task
+        // for reporting the metric.
+        double capacity = calculateCapacity(workerUptimeSecs);
+        firstExecutorTask.getTaskMetrics().setCapacity(capacity);
     }
 
-    public void boltAckedTuple(String component, String stream, long latencyMs, Counter ackedCounter) {
+    private double calculateCapacity(long workerUptimeSecs) {
+        if (workerUptimeSecs > 0) {
+            Map<String, Double> execAvg = valueStat(this.getExecuteLatencies()).get(MultiCountStat.TEN_MIN_IN_SECONDS_STR);
+            Map<String, Long> exec = valueStat(this.getExecuted()).get(MultiCountStat.TEN_MIN_IN_SECONDS_STR);
+
+            Set<Object> allKeys = new HashSet<>();
+            if (execAvg != null) {
+                allKeys.addAll(execAvg.keySet());
+            }
+            if (exec != null) {
+                allKeys.addAll(exec.keySet());
+            }
+
+            double totalAvg = 0;
+            for (Object k : allKeys) {
+                double avg = getOr0(execAvg, k).doubleValue();
+                long cnt = getOr0(exec, k).longValue();
+                totalAvg += avg * cnt;
+            }
+
+            return totalAvg / (Math.min(workerUptimeSecs, MultiCountStat.TEN_MIN_IN_SECONDS) * 1000);
+        }
+        return 0.0;
+    }
+
+    private static Number getOr0(Map m, Object k) {
+        if (m == null) {
+            return 0;
+        }
+
+        Number n = (Number) m.get(k);
+        if (n == null) {
+            return 0;
+        }
+        return n;
+    }
+
+    public void boltAckedTuple(String component, String stream, long latencyMs) {
         List key = Lists.newArrayList(component, stream);
         this.getAcked().incBy(key, this.rate);
-        ackedCounter.inc(this.rate);
         this.getProcessLatencies().record(key, latencyMs);
     }
 
-    public void boltFailedTuple(String component, String stream, long latencyMs, Counter failedCounter) {
+    public void boltFailedTuple(String component, String stream) {
         List key = Lists.newArrayList(component, stream);
         this.getFailed().incBy(key, this.rate);
-        failedCounter.inc(this.rate);
     }
 
     @Override

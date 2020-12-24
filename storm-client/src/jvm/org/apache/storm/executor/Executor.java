@@ -16,6 +16,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metered;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
+import org.apache.storm.ICredentialsListener;
 import org.apache.storm.StormTimer;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
@@ -55,6 +57,7 @@ import org.apache.storm.executor.error.ReportError;
 import org.apache.storm.executor.error.ReportErrorAndDie;
 import org.apache.storm.executor.spout.SpoutExecutor;
 import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.DebugOptions;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.SpoutSpec;
@@ -124,6 +127,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected int idToTaskBase;
     protected String hostname;
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
+    private AtomicBoolean needToRefreshCreds = new AtomicBoolean(false);
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -275,7 +279,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
         TupleImpl tuple = (TupleImpl) addressedTuple.getTuple();
         if (isDebug) {
-            LOG.info("Processing received message FOR {} TUPLE: {}", taskId, tuple);
+            LOG.info("Processing received TUPLE: {} for TASK: {} ", tuple, taskId);
         }
 
         try {
@@ -288,6 +292,22 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void setNeedToRefreshCreds() {
+        this.needToRefreshCreds.set(true);
+    }
+
+    protected void updateExecCredsIfRequired() {
+        if (this.needToRefreshCreds.get()) {
+            this.needToRefreshCreds.set(false);
+            LOG.info("The credentials are being updated {}.", executorId);
+            Credentials creds = this.workerData.getCredentials();
+            idToTask.stream().map(Task::getTaskObject).filter(taskObject -> taskObject instanceof ICredentialsListener)
+                    .forEach(taskObject -> {
+                        ((ICredentialsListener) taskObject).setCredentials(creds == null ? null : creds.get_creds());
+                    });
         }
     }
 
@@ -377,12 +397,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private void processMeters(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
         Map<String, Meter> meters = workerData.getMetricRegistry().getTaskMeters(taskId);
         for (Map.Entry<String, Meter> entry : meters.entrySet()) {
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
-            dataPoints.add(dataPoint);
-            addConvertedMetric(entry.getKey(), ".m1_rate", entry.getValue().getOneMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".m5_rate", entry.getValue().getFiveMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".m15_rate", entry.getValue().getFifteenMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".mean_rate", entry.getValue().getMeanRate(), dataPoints);
+            addMeteredDatapoints(entry.getKey(), entry.getValue(), dataPoints);
         }
     }
 
@@ -391,9 +406,17 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         for (Map.Entry<String, Timer> entry : timers.entrySet()) {
             Snapshot snapshot =  entry.getValue().getSnapshot();
             addSnapshotDatapoints(entry.getKey(), snapshot, dataPoints);
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
-            dataPoints.add(dataPoint);
+            addMeteredDatapoints(entry.getKey(), entry.getValue(), dataPoints);
         }
+    }
+
+    private void addMeteredDatapoints(String baseName, Metered metered, List<IMetricsConsumer.DataPoint> dataPoints) {
+        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + ".count", metered.getCount());
+        dataPoints.add(dataPoint);
+        addConvertedMetric(baseName, ".m1_rate", metered.getOneMinuteRate(), dataPoints);
+        addConvertedMetric(baseName, ".m5_rate", metered.getFiveMinuteRate(), dataPoints);
+        addConvertedMetric(baseName, ".m15_rate", metered.getFifteenMinuteRate(), dataPoints);
+        addConvertedMetric(baseName, ".mean_rate", metered.getMeanRate(), dataPoints);
     }
 
     private void addSnapshotDatapoints(String baseName, Snapshot snapshot, List<IMetricsConsumer.DataPoint> dataPoints) {

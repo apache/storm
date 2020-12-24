@@ -36,7 +36,6 @@ import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
-import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
@@ -45,6 +44,7 @@ import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.daemon.worker.BackPressureTracker.BackpressureState;
 import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.generated.Assignment;
+import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.DebugOptions;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.InvalidTopologyException;
@@ -70,14 +70,12 @@ import org.apache.storm.serialization.ITupleSerializer;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.Sets;
-import org.apache.storm.shade.org.apache.commons.lang.Validate;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.SupervisorClient;
 import org.apache.storm.utils.SupervisorIfaceFactory;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.Utils;
@@ -122,6 +120,8 @@ public class WorkerState {
     final ConcurrentMap<String, Long> blobToLastKnownVersion;
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
+    // cachedNodeToHost can be temporarily out of sync with cachedTaskToNodePort
+    final AtomicReference<Map<String, String>> cachedNodeToHost;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
     // executor id is in form [start_task_id end_task_id]
     final Map<List<Long>, JCQueue> executorReceiveQueueMap;
@@ -152,6 +152,7 @@ public class WorkerState {
     private final AtomicLong nextLoadUpdate = new AtomicLong(0);
     private final boolean trySerializeLocal;
     private final Collection<IAutoCredentials> autoCredentials;
+    private final AtomicReference<Credentials> credentialsAtom;
     private final StormMetricRegistry metricRegistry;
 
     public WorkerState(Map<String, Object> conf,
@@ -165,13 +166,14 @@ public class WorkerState {
             IStateStorage stateStorage,
             IStormClusterState stormClusterState,
             Collection<IAutoCredentials> autoCredentials,
-            StormMetricRegistry metricRegistry) throws IOException,
+            StormMetricRegistry metricRegistry,
+            Credentials initialCredentials) throws IOException,
             InvalidTopologyException {
         this.metricRegistry = metricRegistry;
         this.autoCredentials = autoCredentials;
+        this.credentialsAtom = new AtomicReference(initialCredentials);
         this.conf = conf;
         this.supervisorIfaceSupplier = supervisorIfaceSupplier;
-        this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
         this.topologyId = topologyId;
         this.assignmentId = assignmentId;
@@ -179,10 +181,14 @@ public class WorkerState {
         this.workerId = workerId;
         this.stateStorage = stateStorage;
         this.stormClusterState = stormClusterState;
+        this.localExecutors =
+            new HashSet<>(readWorkerExecutors(assignmentId, port, getLocalAssignment(this.stormClusterState, topologyId)));
         this.isWorkerActive = new CountDownLatch(1);
         this.isTopologyActive = new AtomicBoolean(false);
         this.stormComponentToDebug = new AtomicReference<>();
-        this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors);
+        this.topology = ConfigUtils.readSupervisorTopology(conf, topologyId, AdvancedFSOps.make(conf));
+        this.taskToComponent = StormCommon.stormTaskInfo(topology, topologyConf);
+        this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, localExecutors, taskToComponent);
         this.localTaskIds = new ArrayList<>();
         this.taskToExecutorQueue = new HashMap<>();
         this.blobToLastKnownVersion = new ConcurrentHashMap<>();
@@ -195,9 +201,7 @@ public class WorkerState {
         }
         Collections.sort(localTaskIds);
         this.topologyConf = topologyConf;
-        this.topology = ConfigUtils.readSupervisorTopology(conf, topologyId, AdvancedFSOps.make(conf));
         this.systemTopology = StormCommon.systemTopology(topologyConf, topology);
-        this.taskToComponent = StormCommon.stormTaskInfo(topology, topologyConf);
         this.componentToStreamToFields = new HashMap<>();
         for (String c : ThriftTopologyUtils.getComponentIds(systemTopology)) {
             Map<String, Fields> streamToFields = new HashMap<>();
@@ -212,6 +216,7 @@ public class WorkerState {
         this.endpointSocketLock = new ReentrantReadWriteLock();
         this.cachedNodeToPortSocket = new AtomicReference<>(new HashMap<>());
         this.cachedTaskToNodePort = new AtomicReference<>(new HashMap<>());
+        this.cachedNodeToHost = new AtomicReference<>(new HashMap<>());
         this.suicideCallback = Utils.mkSuicideFn();
         this.uptime = Utils.makeUptimeComputer();
         this.defaultSharedResources = makeDefaultResources();
@@ -377,7 +382,29 @@ public class WorkerState {
     public SmartThread makeTransferThread() {
         return workerTransfer.makeTransferThread();
     }
-    
+
+    public void suicideIfLocalAssignmentsChanged(Assignment assignment) {
+        boolean shouldHalt = false;
+        if (assignment != null) {
+            Set<List<Long>> assignedExecutors = new HashSet<>(readWorkerExecutors(assignmentId, port, assignment));
+            if (!localExecutors.equals(assignedExecutors)) {
+                LOG.info("Found conflicting assignments. We shouldn't be alive!" + " Assigned: " + assignedExecutors
+                         + ", Current: " + localExecutors);
+                shouldHalt = true;
+            }
+        } else {
+            LOG.info("Assigment is null. We should not be alive!");
+            shouldHalt = true;
+        }
+        if (shouldHalt) {
+            if (!ConfigUtils.isLocalMode(conf)) {
+                suicideCallback.run();
+            } else {
+                LOG.info("Local worker tried to commit suicide!");
+            }
+        }
+    }
+
     public void refreshConnections() {
         Assignment assignment = null;
         try {
@@ -386,6 +413,7 @@ public class WorkerState {
             LOG.warn("Failed to read assignment. This should only happen when topology is shutting down.", e);
         }
 
+        suicideIfLocalAssignmentsChanged(assignment);
         Set<NodeInfo> neededConnections = new HashSet<>();
         Map<Integer, NodeInfo> newTaskToNodePort = new HashMap<>();
         if (null != assignment) {
@@ -401,9 +429,9 @@ public class WorkerState {
             }
         }
 
-        Set<NodeInfo> currentConnections = cachedNodeToPortSocket.get().keySet();
-        Set<NodeInfo> newConnections = Sets.difference(neededConnections, currentConnections);
-        Set<NodeInfo> removeConnections = Sets.difference(currentConnections, neededConnections);
+        final Set<NodeInfo> currentConnections = cachedNodeToPortSocket.get().keySet();
+        final Set<NodeInfo> newConnections = Sets.difference(neededConnections, currentConnections);
+        final Set<NodeInfo> removeConnections = Sets.difference(currentConnections, neededConnections);
 
         Map<String, String> nodeHost = assignment != null ? assignment.get_node_host() : null;
         // Add new connections atomically
@@ -421,12 +449,18 @@ public class WorkerState {
             return next;
         });
 
-
         try {
             endpointSocketLock.writeLock().lock();
             cachedTaskToNodePort.set(newTaskToNodePort);
         } finally {
             endpointSocketLock.writeLock().unlock();
+        }
+
+        // It is okay that cachedNodeToHost can be temporarily out of sync with cachedTaskToNodePort
+        if (nodeHost != null) {
+            cachedNodeToHost.set(nodeHost);
+        } else {
+            cachedNodeToHost.set(new HashMap<>());
         }
 
         for (NodeInfo nodeInfo : removeConnections) {
@@ -569,7 +603,7 @@ public class WorkerState {
         queue.recordMsgDrop();
         LOG.warn(
             "Dropping message as overflow threshold has reached for Q = {}. OverflowCount = {}. Total Drop Count= {}, Dropped Message : {}",
-            queue.getName(), queue.getOverflowCount(), dropCount, tuple);
+            queue.getQueueName(), queue.getOverflowCount(), dropCount, tuple);
     }
 
     public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {
@@ -585,7 +619,7 @@ public class WorkerState {
             return new WorkerTopologyContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
                                              componentToStreamToFields, topologyId, codeDir, pidDir, port, localTaskIds,
                                              defaultSharedResources,
-                                             userSharedResources, cachedTaskToNodePort, assignmentId);
+                                             userSharedResources, cachedTaskToNodePort, assignmentId, cachedNodeToHost);
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -634,13 +668,19 @@ public class WorkerState {
         return this.autoCredentials;
     }
 
-    private List<List<Long>> readWorkerExecutors(IStormClusterState stormClusterState, String topologyId, String assignmentId,
-                                                 int port) {
-        LOG.info("Reading assignments");
+    public Credentials getCredentials() {
+        return credentialsAtom.get();
+    }
+
+    public void setCredentials(Credentials credentials) {
+        this.credentialsAtom.set(credentials);
+    }
+
+    private List<List<Long>> readWorkerExecutors(String assignmentId, int port, Assignment assignment) {
         List<List<Long>> executorsAssignedToThisWorker = new ArrayList<>();
         executorsAssignedToThisWorker.add(Constants.SYSTEM_EXECUTOR_ID);
         Map<List<Long>, NodeInfo> executorToNodePort = 
-            getLocalAssignment(stormClusterState, topologyId).get_executor_node_port();
+            assignment.get_executor_node_port();
         for (Map.Entry<List<Long>, NodeInfo> entry : executorToNodePort.entrySet()) {
             NodeInfo nodeInfo = entry.getValue();
             if (nodeInfo.get_node().equals(assignmentId) && nodeInfo.get_port().iterator().next() == port) {
@@ -664,7 +704,8 @@ public class WorkerState {
         }
     }
 
-    private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
+    private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf,
+                                                       Set<List<Long>> executors, Map<Integer, String> taskToComponent) {
         Integer recvQueueSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE));
         Integer recvBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
         Integer overflowLimit = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT));
@@ -677,11 +718,19 @@ public class WorkerState {
 
         IWaitStrategy backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         Map<List<Long>, JCQueue> receiveQueueMap = new HashMap<>();
+
         for (List<Long> executor : executors) {
             List<Integer> taskIds = StormCommon.executorIdToTasks(executor);
-            receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
+            int taskId = taskIds.get(0);
+            String compId;
+            if (taskId == Constants.SYSTEM_TASK_ID) {
+                compId = Constants.SYSTEM_COMPONENT_ID;
+            } else {
+                compId = taskToComponent.get(taskId);
+            }
+            receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(), "receive-queue",
                                                       recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
-                this.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, taskIds, this.getPort(), metricRegistry));
+                this.getTopologyId(), compId, taskIds, this.getPort(), metricRegistry));
 
         }
         return receiveQueueMap;

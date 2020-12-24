@@ -124,7 +124,6 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
     private static Map<String, Double> parseResources(String input) {
         Map<String, Double> topologyResources = new HashMap<>();
         JSONParser parser = new JSONParser();
-        LOG.debug("Input to parseResources {}", input);
         try {
             if (input != null) {
                 Object obj = parser.parse(input);
@@ -193,9 +192,11 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
      */
     public static Map<String, Double> addResourceMap(Map<String, Double> resources1, Map<String, Double> resources2) {
         Map<String, Double> sum = new HashMap<>(resources1);
-        for (Map.Entry<String, Double> me : resources2.entrySet()) {
-            Double cur = sum.getOrDefault(me.getKey(), 0.0) + me.getValue();
-            sum.put(me.getKey(), cur);
+        if (resources2 != null) {
+            for (Map.Entry<String, Double> me : resources2.entrySet()) {
+                Double cur = sum.getOrDefault(me.getKey(), 0.0) + me.getValue();
+                sum.put(me.getKey(), cur);
+            }
         }
         return sum;
     }

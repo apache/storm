@@ -70,13 +70,13 @@ public class DaemonConfig implements Validated {
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGINS = "storm.daemon.metrics.reporter.plugins";
 
     /**
-     * A specify domain for daemon metrics reporter plugin to limit reporting to specific domain.
+     * Specify the domain for daemon metrics reporter plugin to limit reporting to specific domain.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN = "storm.daemon.metrics.reporter.plugin.domain";
 
     /**
-     * A specify csv reporter directory for CvsPreparableReporter daemon metrics reporter.
+     * Specify the csv reporter directory for CvsPreparableReporter daemon metrics reporter.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_CSV_LOG_DIR = "storm.daemon.metrics.reporter.csv.log.dir";
@@ -763,6 +763,13 @@ public class DaemonConfig implements Validated {
     public static final String SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS = "supervisor.localizer.cleanup.interval.ms";
 
     /**
+     * The distributed cache interval for checking for blobs to update.
+     */
+    @IsPositiveNumber
+    @IsInteger
+    public static final String SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS = "supervisor.localizer.update.blob.interval.secs";
+
+    /**
      * What blobstore download parallelism the supervisor should use.
      */
     @IsPositiveNumber
@@ -1230,6 +1237,58 @@ public class DaemonConfig implements Validated {
      */
     @IsPositiveNumber
     public static String STORM_WORKER_TOKEN_LIFE_TIME_HOURS = "storm.worker.token.life.time.hours";
+
+    /**
+     * The directory of nscd - name service cache daemon, e.g. "/var/run/nscd/".
+     * nscd must be running so that profiling can work properly.
+     */
+    @IsString
+    @NotNull
+    public static String STORM_OCI_NSCD_DIR = "storm.oci.nscd.dir";
+
+    /**
+     * A list of read only bind mounted directories.
+     */
+    @IsStringList
+    public static String STORM_OCI_READONLY_BINDMOUNTS = "storm.oci.readonly.bindmounts";
+
+    /**
+     * A list of read-write bind mounted directories.
+     */
+    @IsStringList
+    public static String STORM_OCI_READWRITE_BINDMOUNTS = "storm.oci.readwrite.bindmounts";
+
+    /**
+     * The cgroup root for oci container. (Also a --cgroup-parent config for docker command)
+     * Must follow the constraints of the docker command.
+     * The path will be made as absolute path if it's a relative path
+     * because we saw some weird bugs (the cgroup memory directory disappears after a while) when a relative path is used.
+     * Note that we only support cgroupfs cgroup driver because of some issues with systemd; restricting to `cgroupfs`
+     * also makes cgroup paths simple.
+     */
+    @IsString
+    @NotNull
+    public static String STORM_OCI_CGROUP_PARENT = "storm.oci.cgroup.parent";
+
+    /**
+     * Default oci image to use if the topology doesn't specify which oci image to use.
+     */
+    @IsString
+    public static String STORM_OCI_IMAGE = "storm.oci.image";
+
+    /**
+     * A list of oci image that are allowed.
+     * A special entry of asterisk(*) means any image is allowed, but the image has to pass other checks.
+     * Storm currently assumes OCI container is not supported on the cluster if this is not configured.
+     */
+    @IsStringList
+    public static String STORM_OCI_ALLOWED_IMAGES = "storm.oci.allowed.images";
+
+    /**
+     * White listed syscalls seccomp Json file to be used as a seccomp filter.
+     */
+    @IsString
+    public static String STORM_OCI_SECCOMP_PROFILE = "storm.oci.seccomp.profile";
 
     public static String getCgroupRootDir(Map<String, Object> conf) {
         return (String) conf.get(STORM_SUPERVISOR_CGROUP_ROOTDIR);

@@ -43,7 +43,7 @@ public final class SqlTestUtil {
         try (LocalCluster.LocalTopology stormTopo = cluster.submitTopology("storm-sql", conf, topo)) {
             waitForCompletion(1000 * 1000, () -> watchedList.size() < expectedValueSize);
         } finally {
-            while (cluster.getClusterInfo().get_topologies_size() > 0) {
+            while (cluster.getTopologySummaries().size() > 0) {
                 Thread.sleep(10);
             }
             Utils.resetClassLoaderForJavaDeSerialize();

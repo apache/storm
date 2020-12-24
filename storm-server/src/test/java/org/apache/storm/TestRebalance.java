@@ -14,8 +14,10 @@ package org.apache.storm;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.RebalanceOptions;
+import org.apache.storm.generated.NotAliveException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
@@ -43,12 +45,17 @@ public class TestRebalance {
     private static final Logger LOG = LoggerFactory.getLogger(TestRebalance.class);
 
     public static String topoNameToId(String topoName, ILocalCluster cluster) throws TException {
-        for (TopologySummary topoSum : cluster.getClusterInfo().get_topologies()) {
-            if (topoSum.get_name().equals(topoName)) {
-                return topoSum.get_id();
-            }
+        try {
+            TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
+            return topoSum.get_id();
+        } catch (NotAliveException e) {
+            LOG.error("Failed to getTopologySummaryByName from " + topoName, e);
         }
         return null;
+    }
+
+    protected Class getDefaultResourceAwareStrategyClass() {
+        return DefaultResourceAwareStrategy.class;
     }
 
     @Test
@@ -60,7 +67,7 @@ public class TestRebalance {
         Config conf = new Config();
         conf.put(DaemonConfig.STORM_SCHEDULER, ResourceAwareScheduler.class.getName());
         conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, DefaultSchedulingPriorityStrategy.class.getName());
-        conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, DefaultResourceAwareStrategy.class.getName());
+        conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
         conf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10.0);
         conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 10.0);
         conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 100.0);
@@ -151,15 +158,11 @@ public class TestRebalance {
 
     public boolean checkTopologyScheduled(String topoName, ILocalCluster cluster) throws TException {
         if (checkTopologyUp(topoName, cluster)) {
-            ClusterSummary sum = cluster.getClusterInfo();
-            for (TopologySummary topoSum : sum.get_topologies()) {
-                if (topoSum.get_name().equals(topoName)) {
-                    String status = topoSum.get_status();
-                    String sched_status = topoSum.get_sched_status();
-                    if (status.equals("ACTIVE") && (sched_status != null && !sched_status.equals(""))) {
-                        return true;
-                    }
-                }
+            TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
+            String status = topoSum.get_status();
+            String sched_status = topoSum.get_sched_status();
+            if (status.equals("ACTIVE") && (sched_status != null && !sched_status.equals(""))) {
+                return true;
             }
         }
         return false;
@@ -167,12 +170,10 @@ public class TestRebalance {
 
     public boolean checkTopologyUp(String topoName, ILocalCluster cluster) throws TException {
         ClusterSummary sum = cluster.getClusterInfo();
-
-        for (TopologySummary topoSum : sum.get_topologies()) {
-            if (topoSum.get_name().equals(topoName)) {
+        TopologySummary topoSum = cluster.getTopologySummaryByName(topoName);
+            if (topoSum != null) {
                 return true;
             }
-        }
         return false;
     }
 }

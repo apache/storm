@@ -35,6 +35,7 @@ import java.io.RandomAccessFile;
 import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
@@ -69,9 +70,9 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
-import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.blobstore.LocalModeClientBlobStore;
+import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.generated.AccessControl;
 import org.apache.storm.generated.AccessControlType;
@@ -86,7 +87,7 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.security.auth.SingleUserPrincipal;
-import org.apache.storm.thrift.TException;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -227,14 +228,6 @@ public class ServerUtils {
     }
 
     /**
-     * Meant to be called only by the supervisor for stormjar/stormconf/stormcode files.
-     */
-    public static void downloadResourcesAsSupervisor(String key, String localFile,
-                                                     ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
-        _instance.downloadResourcesAsSupervisorImpl(key, localFile, cb);
-    }
-
-    /**
      * Returns the value of java.class.path System property. Kept separate for testing.
      *
      * @return the classpath
@@ -294,6 +287,20 @@ public class ServerUtils {
      */
     public static String writeScript(String dir, List<String> command,
                                      Map<String, String> environment) throws IOException {
+        return writeScript(dir, command, environment, null);
+    }
+
+    /**
+     * Writes a posix shell script file to be executed in its own process.
+     *
+     * @param dir         the directory under which the script is to be written
+     * @param command     the command the script is to execute
+     * @param environment optional environment variables to set before running the script's command. May be  null.
+     * @param umask umask to be set. It can be null.
+     * @return the path to the script that has been written
+     */
+    public static String writeScript(String dir, List<String> command,
+                                     Map<String, String> environment, String umask) throws IOException {
         String path = scriptFilePath(dir);
         try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
             out.write("#!/bin/bash");
@@ -312,6 +319,10 @@ public class ServerUtils {
                 }
             }
             out.newLine();
+            if (umask != null) {
+                out.write("umask " + umask);
+                out.newLine();
+            }
             out.write("exec " + shellCmd(command) + ";");
         }
         return path;
@@ -663,34 +674,6 @@ public class ServerUtils {
         }
     }
 
-    private static boolean downloadResourcesAsSupervisorAttempt(ClientBlobStore cb, String key, String localFile) {
-        boolean isSuccess = false;
-        try (FileOutputStream out = new FileOutputStream(localFile);
-             InputStreamWithMeta in = cb.getBlob(key);) {
-            long fileSize = in.getFileLength();
-
-            byte[] buffer = new byte[1024];
-            int len;
-            int downloadFileSize = 0;
-            while ((len = in.read(buffer)) >= 0) {
-                out.write(buffer, 0, len);
-                downloadFileSize += len;
-            }
-
-            isSuccess = (fileSize == downloadFileSize);
-        } catch (TException | IOException e) {
-            LOG.error("An exception happened while downloading {} from blob store.", localFile, e);
-        }
-        if (!isSuccess) {
-            try {
-                Files.deleteIfExists(Paths.get(localFile));
-            } catch (IOException ex) {
-                LOG.error("Failed trying to delete the partially downloaded {}", localFile, ex);
-            }
-        }
-        return isSuccess;
-    }
-
     /**
      * Check if the scheduler is resource aware or not.
      *
@@ -768,18 +751,6 @@ public class ServerUtils {
 
     public URL getResourceFromClassloaderImpl(String name) {
         return Thread.currentThread().getContextClassLoader().getResource(name);
-    }
-
-    public void downloadResourcesAsSupervisorImpl(String key, String localFile,
-                                                  ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
-        final int maxRetryAttempts = 2;
-        final int attemptsIntervalTime = 100;
-        for (int retryAttempts = 0; retryAttempts < maxRetryAttempts; retryAttempts++) {
-            if (downloadResourcesAsSupervisorAttempt(cb, key, localFile)) {
-                break;
-            }
-            Utils.sleep(attemptsIntervalTime);
-        }
     }
 
     private static final Pattern MEMINFO_PATTERN = Pattern.compile("^([^:\\s]+):\\s*([0-9]+)\\s*kB$");
@@ -1202,11 +1173,16 @@ public class ServerUtils {
             return true;
         }
 
-        boolean allDead = true;
         if (ServerUtils.IS_ON_WINDOWS) {
-            return allDead = !isAnyProcessAlive(pids, user);
+            return !isAnyProcessAlive(pids, user);
         }
-        // optimized for Posix - try to use uid
+        // optimized for Posix - first examine /proc and then use optimized version of "ps" with uid
+        try {
+            return !isAnyPosixProcessPidDirAlive(pids, user);
+        } catch (IOException ex) {
+            LOG.warn("Failed to determine if processes {} for user {} are dead using filesystem, will try \"ps\" command: {}",
+                    pids, user, ex);
+        }
         if (!cachedUserToUidMap.containsKey(user)) {
             int uid = ServerUtils.getWorkerPathOwnerUid(conf, workerId);
             if (uid < 0) {
@@ -1217,9 +1193,239 @@ public class ServerUtils {
             }
         }
         if (cachedUserToUidMap.containsKey(user)) {
-            return allDead = !ServerUtils.isAnyProcessAlive(pids, cachedUserToUidMap.get(user));
+            return !ServerUtils.isAnyProcessAlive(pids, cachedUserToUidMap.get(user));
         } else {
-            return allDead = !ServerUtils.isAnyProcessAlive(pids, user);
+            return !ServerUtils.isAnyProcessAlive(pids, user);
         }
+    }
+
+    /**
+     * Find if the process is alive using the existence of /proc/&lt;pid&gt; directory
+     * owned by the supplied user. This is an alternative to "ps -p pid -u uid" command
+     * used in {@link #isAnyPosixProcessAlive(Collection, int)}
+     *
+     * <p>
+     * Processes are tracked using the existence of the directory "/proc/&lt;pid&gt;
+     * For each of the supplied PIDs, their PID directory is checked for existence and ownership
+     * by the specified uid.
+     * </p>
+     *
+     * @param pids Process IDs that need to be monitored for liveness
+     * @param user the userId that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    public static boolean isAnyPosixProcessPidDirAlive(Collection<Long> pids, String user) throws IOException {
+        return isAnyPosixProcessPidDirAlive(pids, user, false);
+    }
+
+    /**
+     * Find if the process is alive using the existence of /proc/&lt;pid&gt; directory
+     * owned by the supplied expectedUser. This is an alternative to "ps -p pid -u uid" command
+     * used in {@link #isAnyPosixProcessAlive(Collection, int)}
+     *
+     * <p>
+     * Processes are tracked using the existence of the directory "/proc/&lt;pid&gt;
+     * For each of the supplied PIDs, their PID directory is checked for existence and ownership
+     * by the specified uid.
+     * </p>
+     *
+     * @param pids Process IDs that need to be monitored for liveness
+     * @param expectedUser the userId that is expected to own that process
+     * @param mockFileOwnerToUid if true (used for testing), then convert File.owner to UID
+     * @return true if any one of the processes is owned by expectedUser and alive, else false
+     * @throws IOException on I/O exception
+     */
+    @VisibleForTesting
+    public static boolean isAnyPosixProcessPidDirAlive(Collection<Long> pids, String expectedUser, boolean mockFileOwnerToUid)
+            throws IOException {
+        File procDir = new File("/proc");
+        if (!procDir.exists()) {
+            throw new IOException("Missing process directory " + procDir.getAbsolutePath() + ": method not supported on "
+                    + "os.name=" + System.getProperty("os.name"));
+        }
+        for (long pid: pids) {
+            File pidDir = new File(procDir, String.valueOf(pid));
+            if (!pidDir.exists()) {
+                continue;
+            }
+            // check if existing process is owned by the specified expectedUser, if not, the process is dead
+            String actualUser;
+            try {
+                actualUser = Files.getOwner(pidDir.toPath()).getName();
+            } catch (NoSuchFileException ex) {
+                continue; // process died before the expectedUser can be checked
+            }
+            if (mockFileOwnerToUid) {
+                // code activated in testing to simulate Files.getOwner returning UID (which sometimes happens in runtime)
+                if (StringUtils.isNumeric(actualUser)) {
+                    LOG.info("Skip mocking, since owner {} of pidDir {} is already numeric", actualUser, pidDir);
+                } else {
+                    Integer actualUid = cachedUserToUidMap.get(actualUser);
+                    if (actualUid == null) {
+                        actualUid = ServerUtils.getUserId(actualUser);
+                        if (actualUid < 0) {
+                            String err = String.format("Cannot get UID for %s, while mocking the owner of pidDir %s",
+                                    actualUser, pidDir.getAbsolutePath());
+                            throw new IOException(err);
+                        }
+                        cachedUserToUidMap.put(actualUser, actualUid);
+                        LOG.info("Found UID {} for {}, while mocking the owner of pidDir {}", actualUid, actualUser, pidDir);
+                    } else {
+                        LOG.info("Found cached UID {} for {}, while mocking the owner of pidDir {}", actualUid, actualUser, pidDir);
+                    }
+                    actualUser = String.valueOf(actualUid);
+                }
+            }
+            //sometimes uid is returned instead of username - if so, try to convert and compare with uid
+            if (StringUtils.isNumeric(actualUser)) {
+                // numeric actualUser - this is UID not user
+                LOG.debug("Process directory {} owner is uid={}", pidDir, actualUser);
+                int actualUid = Integer.parseInt(actualUser);
+                Integer expectedUid = cachedUserToUidMap.get(expectedUser);
+                if (expectedUid == null) {
+                    expectedUid = ServerUtils.getUserId(expectedUser);
+                    if (expectedUid < 0) {
+                        String err = String.format("Cannot get uid for %s to compare with owner id=%d of process directory %s",
+                                expectedUser, actualUid, pidDir.getAbsolutePath());
+                        throw new IOException(err);
+                    }
+                    cachedUserToUidMap.put(expectedUser, expectedUid);
+                }
+                if (expectedUid == actualUid) {
+                    LOG.debug("Process {} is alive and owned by expectedUser {}/{}", pid, expectedUser, expectedUid);
+                    return true;
+                }
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expectedUser {}/{}, "
+                        + "likely pid {} was reused for a new process for uid {}, {}",
+                        pidDir, actualUser, expectedUser, expectedUid, pid, actualUid, getProcessDesc(pidDir));
+            } else {
+                // actualUser is a string
+                LOG.debug("Process directory {} owner is {}", pidDir, actualUser);
+                if (expectedUser.equals(actualUser)) {
+                    LOG.debug("Process {} is alive and owned by expectedUser {}", pid, expectedUser);
+                    return true;
+                }
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expectedUser {}, "
+                        + "likely pid {} was reused for a new process for actualUser {}, {}}",
+                        pidDir, actualUser, expectedUser, pid, actualUser, getProcessDesc(pidDir));
+            }
+        }
+        LOG.info("None of the processes {} are alive AND owned by expectedUser {}", pids, expectedUser);
+        return false;
+    }
+
+    @VisibleForTesting
+    public static void validateTopologyWorkerMaxHeapSizeConfigs(
+        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMb)
+        throws InvalidTopologyException {
+
+        double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
+        double topologyWorkerMaxHeapSize =
+            ObjectReader.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeapSizeMb);
+        if (topologyWorkerMaxHeapSize < largestMemReq) {
+            throw new InvalidTopologyException(
+                "Topology will not be able to be successfully scheduled: Config "
+                    + "TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB="
+                    + topologyWorkerMaxHeapSize
+                    + " < " + largestMemReq + " (Largest memory requirement of a component in the topology)."
+                    + " Perhaps set TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB to a larger amount");
+        }
+    }
+
+    /**
+     * RAS scheduler will try to distribute ackers evenly over workers by adding some ackers to each newly launched worker.
+     * Validations are performed here:
+     * ({@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} * memory for an acker
+     *      + memory for the biggest topo executor) < max worker heap memory.
+     *    When RAS tries to schedule an executor to a new worker,
+     *    it will put {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} ackers into the worker first.
+     *    So {@link Config#TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB} need to be able to accommodate this.
+     * @param topoConf Topology conf
+     * @param topology Topology (not system topology)
+     * @param topoName The name of the topology
+     */
+    public static void validateTopologyAckerBundleResource(Map<String, Object> topoConf,
+                                                           StormTopology topology, String topoName)
+        throws InvalidTopologyException {
+
+        boolean oneExecutorPerWorker = (Boolean) topoConf.getOrDefault(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, false);
+        boolean oneComponentPerWorker = (Boolean) topoConf.getOrDefault(Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER, false);
+
+        double topologyWorkerMaxHeapSize =
+            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB));
+
+        int numOfAckerExecutorsPerWorker = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER));
+        double maxTopoExecMem = getMaxExecutorMemoryUsageForTopo(topology, topoConf);
+        double ackerExecMem = getAckerExecutorMemoryUsageForTopo(topology, topoConf);
+        double minMemReqForWorker = maxTopoExecMem + ackerExecMem * numOfAckerExecutorsPerWorker;
+
+        // A worker need to have enough resources for a bigest topo executor + topology.acker.executors.per.worker ackers
+        if (!oneExecutorPerWorker
+            && !oneComponentPerWorker
+            && topologyWorkerMaxHeapSize < minMemReqForWorker) {
+            String warnMsg
+                = String.format("For topology %s. Worker max on-heap limit %s is %s. "
+                    + "The biggest topo executor requires %s MB on-heap memory, "
+                    + "there might not be enough space for %s ackers. "
+                    + "Real acker-per-worker will be determined by scheduler.",
+                    topoName, Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, topologyWorkerMaxHeapSize,
+                    maxTopoExecMem, numOfAckerExecutorsPerWorker);
+            LOG.warn(warnMsg);
+        }
+    }
+
+    private static double getMaxExecutorMemoryUsageForTopo(
+        StormTopology topology, Map<String, Object> topologyConf) {
+        double largestMemoryOperator = 0.0;
+        for (NormalizedResourceRequest entry :
+            ResourceUtils.getBoltsResources(topology, topologyConf).values()) {
+            double memoryRequirement = entry.getTotalMemoryMb();
+            if (memoryRequirement > largestMemoryOperator) {
+                largestMemoryOperator = memoryRequirement;
+            }
+        }
+        for (NormalizedResourceRequest entry :
+            ResourceUtils.getSpoutsResources(topology, topologyConf).values()) {
+            double memoryRequirement = entry.getTotalMemoryMb();
+            if (memoryRequirement > largestMemoryOperator) {
+                largestMemoryOperator = memoryRequirement;
+            }
+        }
+        return largestMemoryOperator;
+    }
+
+    private static double getAckerExecutorMemoryUsageForTopo(
+        StormTopology topology, Map<String, Object> topologyConf)
+        throws InvalidTopologyException {
+        topology = StormCommon.systemTopology(topologyConf, topology);
+        Map<String, NormalizedResourceRequest> boltResources = ResourceUtils.getBoltsResources(topology, topologyConf);
+        NormalizedResourceRequest entry = boltResources.get(Acker.ACKER_COMPONENT_ID);
+        return entry.getTotalMemoryMb();
+    }
+
+    /**
+     * Support method to obtain additional log info for the process. Use the contents of comm and cmdline
+     * in the process directory. Note that this method works properly only on posix systems with /proc directory.
+     *
+     * @param pidDir PID directory (/proc/&lt;pid&gt;)
+     * @return process description string
+     */
+    private static String getProcessDesc(File pidDir) {
+        String comm = "";
+        Path p = pidDir.toPath().resolve("comm");
+        try {
+            comm = String.join(", ", Files.readAllLines(p));
+        } catch (IOException ex) {
+            LOG.warn("Cannot get contents of " + p, ex);
+        }
+        String cmdline = "";
+        p = pidDir.toPath().resolve("cmdline");
+        try {
+            cmdline = String.join(", ", Files.readAllLines(p)).replace('\0', ' ');
+        } catch (IOException ex) {
+            LOG.warn("Cannot get contents of " + p, ex);
+        }
+        return String.format("process(comm=\"%s\", cmdline=\"%s\")", comm, cmdline);
     }
 }

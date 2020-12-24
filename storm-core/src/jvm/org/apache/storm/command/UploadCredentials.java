@@ -74,38 +74,33 @@ public class UploadCredentials {
         //Try to get the topology conf from nimbus, so we can reuse it.
         try (NimbusClient nc = NimbusClient.getConfiguredClient(new HashMap<>())) {
             Nimbus.Iface client = nc.getClient();
-            ClusterSummary summary = client.getClusterInfo();
-            for (TopologySummary topo : summary.get_topologies()) {
-                if (topologyName.equals(topo.get_name())) {
-                    //We found the topology, lets get the conf
-                    String topologyId = topo.get_id();
-                    topologyConf = (Map<String, Object>) JSONValue.parse(client.getTopologyConf(topologyId));
-                    LOG.info("Using topology conf from {} as basis for getting new creds", topologyId);
+            TopologySummary topo = client.getTopologySummaryByName(topologyName);
+            //We found the topology, lets get the conf
+            String topologyId = topo.get_id();
+            topologyConf = (Map<String, Object>) JSONValue.parse(client.getTopologyConf(topologyId));
+            LOG.info("Using topology conf from {} as basis for getting new creds", topologyId);
 
-                    Map<String, Object> commandLine = Utils.readCommandLineOpts();
-                    List<String> clCreds = (List<String>) commandLine.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
-                    List<String> topoCreds = (List<String>) topologyConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
-                    
-                    if (clCreds != null) {
-                        Set<String> extra = new HashSet<>(clCreds);
-                        if (topoCreds != null) {
-                            extra.removeAll(topoCreds);
-                        }
-                        if (!extra.isEmpty()) {
-                            LOG.warn("The topology {} is not using {} but they were included here.", topologyId, extra);
-                        }
+            Map<String, Object> commandLine = Utils.readCommandLineOpts();
+            List<String> clCreds = (List<String>) commandLine.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+            List<String> topoCreds = (List<String>) topologyConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
 
-                        //Now check for autoCreds that are missing from the command line, but only if the
-                        // command line is used.
-                        if (topoCreds != null) {
-                            Set<String> missing = new HashSet<>(topoCreds);
-                            missing.removeAll(clCreds);
-                            if (!missing.isEmpty()) {
-                                LOG.warn("The topology {} is using {} but they were not included here.", topologyId, missing);
-                            }
-                        }
+            if (clCreds != null) {
+                Set<String> extra = new HashSet<>(clCreds);
+                if (topoCreds != null) {
+                    extra.removeAll(topoCreds);
+                }
+                if (!extra.isEmpty()) {
+                    LOG.warn("The topology {} is not using {} but they were included here.", topologyId, extra);
+                }
+
+                //Now check for autoCreds that are missing from the command line, but only if the
+                // command line is used.
+                if (topoCreds != null) {
+                    Set<String> missing = new HashSet<>(topoCreds);
+                    missing.removeAll(clCreds);
+                    if (!missing.isEmpty()) {
+                        LOG.warn("The topology {} is using {} but they were not included here.", topologyId, missing);
                     }
-                    break;
                 }
             }
         }

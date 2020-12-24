@@ -15,6 +15,7 @@ package org.apache.storm.metrics2.reporters;
 import com.codahale.metrics.ScheduledReporter;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.apache.storm.daemon.metrics.ClientMetricsUtils;
 import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
@@ -28,25 +29,21 @@ public abstract class ScheduledStormReporter implements StormReporter {
     protected TimeUnit reportingPeriodUnit;
 
     public static TimeUnit getReportPeriodUnit(Map<String, Object> reporterConf) {
-        TimeUnit unit = getTimeUnitForConfig(reporterConf, REPORT_PERIOD_UNITS);
+        TimeUnit unit = ClientMetricsUtils.getTimeUnitForConfig(reporterConf, REPORT_PERIOD_UNITS);
         return unit == null ? TimeUnit.SECONDS : unit;
     }
 
-    private static TimeUnit getTimeUnitForConfig(Map reporterConf, String configName) {
-        String rateUnitString = ObjectReader.getString(reporterConf.get(configName), null);
-        if (rateUnitString != null) {
-            return TimeUnit.valueOf(rateUnitString);
-        }
-        return null;
-    }
-
-    public static long getReportPeriod(Map reporterConf) {
+    public static long getReportPeriod(Map<String, Object> reporterConf) {
         return ObjectReader.getInt(reporterConf.get(REPORT_PERIOD), 10).longValue();
     }
 
-    public static StormMetricsFilter getMetricsFilter(Map reporterConf) {
+    public static boolean isReportDimensionsEnabled(Map<String, Object> reporterConf) {
+        return ObjectReader.getBoolean(reporterConf.get(REPORT_DIMENSIONS_ENABLED), false);
+    }
+
+    public static StormMetricsFilter getMetricsFilter(Map<String, Object> reporterConf) {
         StormMetricsFilter filter = null;
-        Map<String, Object> filterConf = (Map) reporterConf.get("filter");
+        Map<String, Object> filterConf = (Map<String, Object>) reporterConf.get("filter");
         if (filterConf != null) {
             String clazz = (String) filterConf.get("class");
             if (clazz != null) {

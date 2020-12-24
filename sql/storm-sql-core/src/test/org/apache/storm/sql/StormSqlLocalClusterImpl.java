@@ -68,7 +68,7 @@ public class StormSqlLocalClusterImpl {
                 try (LocalCluster.LocalTopology stormTopo = localCluster.submitTopology("storm-sql", conf, topo)) {
                     waitForCompletion(waitTimeoutMs, waitCondition);
                 } finally {
-                    while (localCluster.getClusterInfo().get_topologies_size() > 0) {
+                    while (localCluster.getTopologySummaries().size() > 0) {
                         Thread.sleep(10);
                     }
                     Utils.resetClassLoaderForJavaDeSerialize();

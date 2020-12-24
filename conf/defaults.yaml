@@ -139,6 +139,7 @@ supervisor.blobstore.download.thread.count: 5
 supervisor.blobstore.download.max_retries: 3
 supervisor.localizer.cache.target.size.mb: 10240
 supervisor.localizer.cleanup.interval.ms: 30000
+supervisor.localizer.update.blob.interval.secs: 30
 
 nimbus.blobstore.class: "org.apache.storm.blobstore.LocalFsBlobStore"
 nimbus.blobstore.expiration.secs: 600
@@ -254,6 +255,7 @@ topology.enable.message.timeouts: true
 topology.debug: false
 topology.workers: 1
 topology.acker.executors: null
+topology.ras.acker.executors.per.worker: 1
 topology.eventlogger.executors: 0
 topology.tasks: null
 # maximum amount of time a message has to complete before it's considered failed
@@ -398,6 +400,9 @@ storm.supervisor.low.memory.threshold.mb: 1024
 storm.supervisor.medium.memory.threshold.mb: 1536
 storm.supervisor.medium.memory.grace.period.ms: 30000
 
+storm.oci.cgroup.root: "/sys/fs/cgroup"
+storm.oci.cgroup.parent: "/storm"
+storm.oci.nscd.dir: "/var/run/nscd"
 storm.worker.min.cpu.pcore.percent: 0.0
 
 storm.topology.classpath.beginning.enabled: false
@@ -406,29 +411,7 @@ worker.metrics:
     "CGroupMemoryLimit": "org.apache.storm.metric.cgroup.CGroupMemoryLimit"
     "CGroupCpu": "org.apache.storm.metric.cgroup.CGroupCpu"
     "CGroupCpuGuarantee": "org.apache.storm.metric.cgroup.CGroupCpuGuarantee"
+    "CGroupCpuGuaranteeByCfsQuota": "org.apache.storm.metric.cgroup.CGroupCpuGuaranteeByCfsQuota"
 
 # The number of buckets for running statistics
 num.stat.buckets: 20
-
-# Metrics v2 configuration (optional)
-#storm.metrics.reporters:
-#  # Graphite Reporter
-#  - class: "org.apache.storm.metrics2.reporters.GraphiteStormReporter"
-#    daemons:
-#        - "supervisor"
-#        - "nimbus"
-#        - "worker"
-#    report.period: 60
-#    report.period.units: "SECONDS"
-#    graphite.host: "localhost"
-#    graphite.port: 2003
-#
-#  # Console Reporter
-#  - class: "org.apache.storm.metrics2.reporters.ConsoleStormReporter"
-#    daemons:
-#        - "worker"
-#    report.period: 10
-#    report.period.units: "SECONDS"
-#    filter:
-#        class: "org.apache.storm.metrics2.filters.RegexFilter"
-#        expression: ".*my_component.*emitted.*"

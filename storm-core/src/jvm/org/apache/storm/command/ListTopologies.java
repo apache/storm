@@ -27,7 +27,7 @@ public class ListTopologies {
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
             @Override
             public void run(Nimbus.Iface nimbus) throws Exception {
-                List<TopologySummary> topologies = nimbus.getClusterInfo().get_topologies();
+                List<TopologySummary> topologies = nimbus.getTopologySummaries();
                 if (topologies == null || topologies.isEmpty()) {
                     System.out.println("No topologies running.");
                 } else {

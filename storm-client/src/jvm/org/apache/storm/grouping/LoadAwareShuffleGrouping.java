@@ -51,6 +51,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     private NodeInfo sourceNodeInfo;
     private List<Integer> targetTasks;
     private AtomicReference<Map<Integer, NodeInfo>> taskToNodePort;
+    private AtomicReference<Map<String, String>> nodeToHost;
     private Map<String, Object> conf;
     private DNSToSwitchMapping dnsToSwitchMapping;
     private Map<LocalityScope, List<Integer>> localityGroup;
@@ -60,8 +61,9 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
         random = new Random();
-        sourceNodeInfo = new NodeInfo(context.getThisWorkerHost(), Sets.newHashSet((long) context.getThisWorkerPort()));
+        sourceNodeInfo = new NodeInfo(context.getAssignmentId(), Sets.newHashSet((long) context.getThisWorkerPort()));
         taskToNodePort = context.getTaskToNodePort();
+        nodeToHost = context.getNodeToHost();
         this.targetTasks = targetTasks;
         capacity = targetTasks.size() == 1 ? 1 : Math.max(1000, targetTasks.size() * 5);
         conf = context.getConf();
@@ -110,13 +112,18 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     }
 
     private void refreshLocalityGroup() {
+        // taskToNodePort and nodeToHost might be out of sync when they are refreshed by WorkerState
+        // but this is okay since it will only cause a temporary misjudgement on LocalityScope
         Map<Integer, NodeInfo> cachedTaskToNodePort = taskToNodePort.get();
-        Map<String, String> hostToRack = getHostToRackMapping(cachedTaskToNodePort);
+        Map<String, String> cachedNodeToHost = nodeToHost.get();
+
+        Map<String, String> hostToRack = getHostToRackMapping(cachedTaskToNodePort, cachedNodeToHost);
 
         localityGroup.values().stream().forEach(v -> v.clear());
 
         for (int target : targetTasks) {
-            LocalityScope scope = calculateScope(cachedTaskToNodePort, hostToRack, target);
+            LocalityScope scope = calculateScope(cachedTaskToNodePort, cachedNodeToHost, hostToRack, target);
+            LOG.debug("targetTask {} is in LocalityScope {}", target, scope);
             if (!localityGroup.containsKey(scope)) {
                 localityGroup.put(scope, new ArrayList<>());
             }
@@ -249,41 +256,55 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         arr[j] = tmp;
     }
 
-    private LocalityScope calculateScope(Map<Integer, NodeInfo> taskToNodePort, Map<String, String> hostToRack, int target) {
+    private LocalityScope calculateScope(Map<Integer, NodeInfo> taskToNodePort, Map<String, String> nodeToHost,
+                                         Map<String, String> hostToRack, int target) {
         NodeInfo targetNodeInfo = taskToNodePort.get(target);
 
         if (targetNodeInfo == null) {
             return LocalityScope.EVERYTHING;
         }
 
-        String sourceRack = hostToRack.get(sourceNodeInfo.get_node());
-        String targetRack = hostToRack.get(targetNodeInfo.get_node());
-
-        if (sourceRack != null && targetRack != null && sourceRack.equals(targetRack)) {
-            if (sourceNodeInfo.get_node().equals(targetNodeInfo.get_node())) {
-                if (sourceNodeInfo.get_port().equals(targetNodeInfo.get_port())) {
-                    return LocalityScope.WORKER_LOCAL;
-                }
-                return LocalityScope.HOST_LOCAL;
+        if (sourceNodeInfo.get_node().equals(targetNodeInfo.get_node())) {
+            if (sourceNodeInfo.get_port().equals(targetNodeInfo.get_port())) {
+                return LocalityScope.WORKER_LOCAL;
             }
-            return LocalityScope.RACK_LOCAL;
+            return LocalityScope.HOST_LOCAL;
         } else {
-            return LocalityScope.EVERYTHING;
+            String sourceHostname = nodeToHost.get(sourceNodeInfo.get_node());
+            String targetHostname = nodeToHost.get(targetNodeInfo.get_node());
+
+            String sourceRack = (sourceHostname == null) ? null : hostToRack.get(sourceHostname);
+            String targetRack = (targetHostname == null) ? null : hostToRack.get(targetHostname);
+
+            if (sourceRack != null && sourceRack.equals(targetRack)) {
+                return LocalityScope.RACK_LOCAL;
+            } else {
+                return LocalityScope.EVERYTHING;
+            }
         }
     }
 
-    private Map<String, String> getHostToRackMapping(Map<Integer, NodeInfo> taskToNodePort) {
-        Set<String> hosts = new HashSet();
+    private Map<String, String> getHostToRackMapping(Map<Integer, NodeInfo> taskToNodePort, Map<String, String> nodeToHost) {
+        Set<String> hosts = new HashSet<>();
         for (int task : targetTasks) {
             //if this task containing worker will be killed by a assignments sync,
             //taskToNodePort will be an empty map which is refreshed by WorkerState
             if (taskToNodePort.containsKey(task)) {
-                hosts.add(taskToNodePort.get(task).get_node());
+                String node = taskToNodePort.get(task).get_node();
+                String hostname = nodeToHost.get(node);
+                if (hostname != null) {
+                    hosts.add(hostname);
+                }
             } else {
                 LOG.error("Could not find task NodeInfo from local cache.");
             }
         }
-        hosts.add(sourceNodeInfo.get_node());
+
+        String node = sourceNodeInfo.get_node();
+        String hostname = nodeToHost.get(node);
+        if (hostname != null) {
+            hosts.add(hostname);
+        }
         return dnsToSwitchMapping.resolve(new ArrayList<>(hosts));
     }
 

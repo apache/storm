@@ -117,6 +117,9 @@ The LICENSE and NOTICE files cover the source distributions. The LICENSE-binary 
 * Roshan Naik ([@roshannaik](http://github.com/roshannaik))
 * Ethan Li ([@Ethanlm](https://github.com/Ethanlm))
 * Govind Menon ([@govind](https://github.com/govind-menon))
+* Aaron Gresch ([@agresch](https://github.com/agresch))
+* Rui Li ([@ruili](https://github.com/RuiLi8080))
+* Bipin Prasad ([@bipinprasad](https://github.com/bipinprasad))
 
 ## Acknowledgements
 

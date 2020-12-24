@@ -71,7 +71,10 @@ public class ClientSupervisorUtils {
         try {
             process.waitFor();
         } catch (InterruptedException e) {
-            LOG.info("{} interrupted.", logPreFix);
+            LOG.warn("{} interrupted.", logPreFix);
+            Thread.currentThread().interrupt();
+            process.destroy();
+            throw new IOException(logPreFix + " interrupted", e);
         }
         ret = process.exitValue();
         return ret;

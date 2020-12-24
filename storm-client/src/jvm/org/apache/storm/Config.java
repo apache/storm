@@ -313,9 +313,8 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
 
     /**
-     * When DefaultResourceAwareStrategy or GenericResourceAwareStrategy is used,
-     * scheduler will sort unassigned executors based on a particular order.
-     * If this config is set to true, unassigned executors will be sorted by topological order with network proximity needs.
+     * If set to true, unassigned executors will be sorted by topological order with network proximity needs before being scheduled.
+     * This is a best-effort to split the topology to slices and allocate executors in each slice to closest physical location as possible.
      */
     public static final String TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS = "topology.ras.order.executors.by.proximity.needs";
 
@@ -346,6 +345,7 @@ public class Config extends HashMap<String, Object> {
      */
     @IsExactlyOneOf(valueValidatorClasses = { ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class })
     public static final String TOPOLOGY_RAS_CONSTRAINTS = "topology.ras.constraints";
+
     /**
      * Array of components that scheduler should try to place on separate hosts when using the constraint solver strategy or the
      * multi-tenant scheduler. Note that this configuration can be specified in TOPOLOGY_RAS_CONSTRAINTS using the
@@ -355,12 +355,13 @@ public class Config extends HashMap<String, Object> {
     @IsStringList
     public static final String TOPOLOGY_SPREAD_COMPONENTS = "topology.spread.components";
     /**
-     * The maximum number of states that will be searched looking for a solution in the constraint solver strategy.
+     * The maximum number of states that will be searched looking for a solution in resource aware strategies, e.g.
+     * in BaseResourceAwareStrategy.
      */
     @IsInteger
     @IsPositiveNumber
     public static final String TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH = "topology.ras.constraint.max.state.search";
-    /**
+    /*
      * Whether to limit each worker to one executor. This is useful for debugging topologies to clearly identify workers that
      * are slow/crashing and for estimating resource requirements and capacity.
      * If both {@link #TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER} and {@link #TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER} are enabled,
@@ -377,7 +378,8 @@ public class Config extends HashMap<String, Object> {
     @IsBoolean
     public static final String TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER = "topology.ras.one.component.per.worker";
     /**
-     * The maximum number of seconds to spend scheduling a topology using the constraint solver.  Null means no limit.
+     * The maximum number of seconds to spend scheduling a topology using resource aware strategies, e.g.
+     * in BaseResourceAwareStrategy. Null means no limit.
      */
     @IsInteger
     @IsPositiveNumber
@@ -385,26 +387,63 @@ public class Config extends HashMap<String, Object> {
     /**
      * A list of host names that this topology would prefer to be scheduled on (no guarantee is given though). This is intended for
      * debugging only.
+     *
+     * <p>Favored nodes are moved to the front of the node selection list.
+     * If the same node is also present in {@link #TOPOLOGY_SCHEDULER_UNFAVORED_NODES}
+     * then the node is considered only as a favored node and is removed from the unfavored list.
+     * </p>
      */
     @IsStringList
     public static final String TOPOLOGY_SCHEDULER_FAVORED_NODES = "topology.scheduler.favored.nodes";
     /**
      * A list of host names that this topology would prefer to NOT be scheduled on (no guarantee is given though). This is intended for
      * debugging only.
+     *
+     * <p>Unfavored nodes are moved to the end of the node selection list.
+     * If the same node is also present in {@link #TOPOLOGY_SCHEDULER_FAVORED_NODES}
+     * then the node is considered only as a favored node and is removed from the unfavored list.
+     * </p>
      */
     @IsStringList
     public static final String TOPOLOGY_SCHEDULER_UNFAVORED_NODES = "topology.scheduler.unfavored.nodes";
     /**
      * How many executors to spawn for ackers.
      *
-     * <p>By not setting this variable or setting it as null, Storm will set the number of acker executors to be equal to
-     * the number of workers configured for this topology (or the estimated number of workers if the Resource Aware Scheduler is used).
-     * If this variable is set to 0, then Storm will immediately ack tuples as soon as they come off the spout,
-     * effectively disabling reliability.</p>
+     * <p>
+     * 1. If not setting this variable or setting it as null,
+     *   a. If RAS is not used:
+     *        Nimbus will set it to {@link Config#TOPOLOGY_WORKERS}.
+     *   b. If RAS is used:
+     *        Nimbus will set it to (the estimate number of workers *  {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER}).
+     *        {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} is default to be 1 if not set.
+     * 2. If this variable is set to 0,
+     *    then Storm will immediately ack tuples as soon as they come off the spout,
+     *    effectively disabling reliability.
+     * 3. If this variable is set to a positive integer,
+     *    Storm will not honor {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} setting.
+     *    Instead, nimbus will set it as (this variable / estimate num of workers).
+     * </p>
      */
     @IsInteger
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_ACKER_EXECUTORS = "topology.acker.executors";
+
+    /**
+     * How many ackers to put in when launching a new worker until we run out of ackers.
+     *
+     * <p>
+     * This setting is RAS specific.
+     * If {@link Config#TOPOLOGY_ACKER_EXECUTORS} is not configured,
+     * this setting will be used to calculate {@link Config#TOPOLOGY_ACKER_EXECUTORS}.
+     *
+     * If {@link Config#TOPOLOGY_ACKER_EXECUTORS} is configured,
+     * nimbus will ignore this and set it as ({@link Config#TOPOLOGY_ACKER_EXECUTORS} / estimate num of workers).
+     * </p>
+     */
+    @IsInteger
+    @IsPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER = "topology.ras.acker.executors.per.worker";
+
     /**
      * A list of classes implementing IEventLogger (See storm.yaml.example for exact config format). Each listed class will be routed all
      * the events sampled from emitting tuples. If there's no class provided to the option, default event logger will be initialized and
@@ -1162,8 +1201,21 @@ public class Config extends HashMap<String, Object> {
      */
     @IsString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
+
+    /**
+     * Configure the topology metrics reporters to be used on workers.
+     */
+    @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
+    public static final String TOPOLOGY_METRICS_REPORTERS = "topology.metrics.reporters";
+
+    /**
+     * Configure the topology metrics reporters to be used on workers.
+     * @deprecated Use {@link Config#TOPOLOGY_METRICS_REPORTERS} instead.
+     */
+    @Deprecated
     @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
     public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
+
     /**
      * What blobstore implementation the storm client should use.
      */
@@ -1666,10 +1718,9 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber
     public static final String EXECUTOR_METRICS_FREQUENCY_SECS = "executor.metrics.frequency.secs";
     /**
-     * How often a task should heartbeat its status to the master, deprecated for 2.0 RPC heartbeat reporting, see {@code
+     * How often a task should heartbeat its status to the Pacamker. For 2.0 RPC heartbeat reporting, see {@code
      * EXECUTOR_METRICS_FREQUENCY_SECS }.
      */
-    @Deprecated
     @IsInteger
     @IsPositiveNumber
     public static final String TASK_HEARTBEAT_FREQUENCY_SECS = "task.heartbeat.frequency.secs";
@@ -1717,26 +1768,47 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber
     public static final String NUM_STAT_BUCKETS = "num.stat.buckets";
     /**
+     * The root of cgroup for oci to use. On RHEL7, it should be "/sys/fs/cgroup".
+     */
+    @IsString
+    @NotNull
+    public static String STORM_OCI_CGROUP_ROOT = "storm.oci.cgroup.root";
+    /**
+     * Specify the oci image to use.
+     */
+    @IsString
+    public static String TOPOLOGY_OCI_IMAGE = "topology.oci.image";
+    /**
      * Interval to check for the worker to check for updated blobs and refresh worker state accordingly. The default is 10 seconds
      */
     @IsInteger
     @IsPositiveNumber
     public static final String WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS = "worker.blob.update.poll.interval.secs";
+
     /**
-     * A specify Locale for daemon metrics reporter plugin. Use the specified IETF BCP 47 language tag string for a Locale.
+     * Specify the Locale for daemon metrics reporter plugin. Use the specified IETF BCP 47 language tag string for a Locale.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE = "storm.daemon.metrics.reporter.plugin.locale";
+
     /**
-     * A specify rate-unit in TimeUnit to specify reporting frequency for daemon metrics reporter plugin.
+     * Specify the rate unit in TimeUnit for daemon metrics reporter plugin.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT = "storm.daemon.metrics.reporter.plugin.rate.unit";
+
     /**
-     * A specify duration-unit in TimeUnit to specify reporting window for daemon metrics reporter plugin.
+     * Specify the duration unit in TimeUnit for daemon metrics reporter plugin.
+     * This config should have been placed in the DaemonConfig class since it is intended only for use by daemons.
+     * Keeping it here only for backwards compatibility.
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT = "storm.daemon.metrics.reporter.plugin.duration.unit";
+
     //DO NOT CHANGE UNLESS WE ADD IN STATE NOT STORED IN THE PARENT CLASS
     private static final long serialVersionUID = -1550278723792864455L;
 
