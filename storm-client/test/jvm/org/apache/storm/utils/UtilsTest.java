@@ -94,7 +94,7 @@ public class UtilsTest {
         doParseJvmHeapMemByChildOptsTest("Xmx100M results in 100 MB", "Xmx100m", 100.0);
         doParseJvmHeapMemByChildOptsTest("Xmx100m results in 100 MB", "Xmx100M", 100.0);
         doParseJvmHeapMemByChildOptsTest("-Xmx100M results in 100 MB", "-Xmx100m", 100.0);
-	doParseJvmHeapMemByChildOptsTest("-Xmx2048M results in 2048 MB", "-Xmx2048m", 2048.0);
+        doParseJvmHeapMemByChildOptsTest("-Xmx2048M results in 2048 MB", "-Xmx2048m", 2048.0);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class UtilsTest {
         doParseJvmHeapMemByChildOptsTest("Xmx1g results in 1024 MB", "Xmx1g", 1024.0);
         doParseJvmHeapMemByChildOptsTest("Xmx1G results in 1024 MB", "Xmx1G", 1024.0);
         doParseJvmHeapMemByChildOptsTest("-Xmx1g results in 1024 MB", "-Xmx1g", 1024.0);
-	doParseJvmHeapMemByChildOptsTest("-Xmx2g results in 2048 MB", "-Xmx2g", 2048.0);
+        doParseJvmHeapMemByChildOptsTest("-Xmx2g results in 2048 MB", "-Xmx2g", 2048.0);
     }
 
     @Test
