@@ -1086,7 +1086,7 @@ public class Utils {
                 }
                 Matcher m = optsPattern.matcher(option);
                 while (m.find()) {
-                    int value = Integer.parseInt(m.group(1));
+                    long value = Long.parseLong(m.group(1));
                     char unitChar = m.group(2).toLowerCase().charAt(0);
                     int unit;
                     switch (unitChar) {
