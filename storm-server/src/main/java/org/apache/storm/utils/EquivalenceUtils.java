@@ -73,6 +73,9 @@ public class EquivalenceUtils {
         if (first == null) {
             return false;
         }
+        if (second == null) {
+            return false;
+        }
         if (first == second) {
             return true;
         }

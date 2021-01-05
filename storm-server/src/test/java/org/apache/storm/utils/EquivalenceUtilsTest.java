@@ -116,6 +116,8 @@ public class EquivalenceUtilsTest {
         WorkerResources resourcesOffHeapMemNull = mkWorkerResources(100.0, 100.0,null);
         WorkerResources resourcesOffHeapMemZero = mkWorkerResources(100.0, 100.0,0.0);
         assertTrue(EquivalenceUtils.customWorkerResourcesEquality(resourcesOffHeapMemNull, resourcesOffHeapMemZero));
+
+        assertFalse(EquivalenceUtils.customWorkerResourcesEquality(resourcesOffHeapMemNull, null));
     }
 
     @Test
