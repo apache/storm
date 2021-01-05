@@ -21,9 +21,7 @@ package org.apache.storm.loadgen;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.nashorn.internal.objects.Global;
 import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.loadgen.NormalDistStats;
 
 /**
  * A set of measurements about a stream so we can statistically reproduce it.
