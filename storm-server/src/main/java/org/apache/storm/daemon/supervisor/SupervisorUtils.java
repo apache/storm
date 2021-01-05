@@ -92,8 +92,13 @@ public class SupervisorUtils {
     }
 
     public static List<Integer> getSlotsPorts(Map<String, Object> supervisorConf) {
-        List<Integer> slotsPorts = (List<Integer>) supervisorConf.getOrDefault(DaemonConfig.SUPERVISOR_SLOTS_PORTS,
+        List<Integer> slotsPorts = new ArrayList<>();
+        List<Number> ports = (List<Number>) supervisorConf.getOrDefault(DaemonConfig.SUPERVISOR_SLOTS_PORTS,
                 new ArrayList<>());
+        for (Number port : ports) {
+            slotsPorts.add(port.intValue());
+        }
+
         // It's possible we have numaPorts specified that weren't configured in SUPERVISOR_SLOTS_PORTS.  Make
         // sure we handle these ports as well.
         Set<Integer> numaPorts = SupervisorUtils.getNumaPorts(supervisorConf);
