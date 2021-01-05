@@ -27,9 +27,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.storm.Config;
+import org.apache.storm.StormTimer;
 import org.apache.storm.metrics2.reporters.StormReporter;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -42,6 +44,7 @@ public class StormMetricRegistry implements MetricRegistryProvider {
     private static final Logger LOG = LoggerFactory.getLogger(StormMetricRegistry.class);
     private static final String WORKER_METRIC_PREFIX = "storm.worker.";
     private static final String TOPOLOGY_METRIC_PREFIX = "storm.topology.";
+    private static final int RATE_COUNTER_UPDATE_INTERVAL_SECONDS = 2;
     
     private final MetricRegistry registry = new MetricRegistry();
     private final List<StormReporter> reporters = new ArrayList<>();
@@ -54,6 +57,16 @@ public class StormMetricRegistry implements MetricRegistryProvider {
     private String hostName = null;
     private int port = -1;
     private String topologyId = null;
+    private StormTimer metricTimer;
+    private Set<RateCounter> rateCounters = ConcurrentHashMap.newKeySet();
+
+    public RateCounter rateCounter(String metricName, String topologyId,
+                                   String componentId, int taskId, int workerPort, String streamId) {
+        RateCounter rateCounter = new RateCounter(this, metricName, topologyId, componentId, taskId,
+                workerPort, streamId);
+        rateCounters.add(rateCounter);
+        return rateCounter;
+    }
 
     public <T> SimpleGauge<T> gauge(
         T initialValue, String name, String topologyId, String componentId, Integer taskId, Integer port) {
@@ -260,6 +273,13 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         this.topologyId = (String) topoConf.get(Config.STORM_ID);
         this.port = port;
 
+        this.metricTimer = new StormTimer("MetricRegistryTimer", (thread, exception) -> {
+            LOG.error("Error when processing metric event", exception);
+            Utils.exitProcess(20, "Error when processing metric event");
+        });
+        this.metricTimer.scheduleRecurring(RATE_COUNTER_UPDATE_INTERVAL_SECONDS,
+                RATE_COUNTER_UPDATE_INTERVAL_SECONDS, new RateCounterUpdater());
+
         LOG.info("Starting metrics reporters...");
         List<Map<String, Object>> reporterList = (List<Map<String, Object>>) topoConf.get(Config.TOPOLOGY_METRICS_REPORTERS);
         
@@ -286,6 +306,15 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         for (StormReporter sr : reporters) {
             sr.stop();
         }
+        try {
+            metricTimer.close();
+        } catch (InterruptedException e) {
+            LOG.warn("Exception while stopping", e);
+        }
+    }
+
+    public int getRateCounterUpdateIntervalSeconds() {
+        return RATE_COUNTER_UPDATE_INTERVAL_SECONDS;
     }
 
     public MetricRegistry getRegistry() {
@@ -368,7 +397,7 @@ public class StormMetricRegistry implements MetricRegistryProvider {
     private String dotToUnderScore(String str) {
         return str.replace('.', '_');
     }
-
+    
     private static class MetricNames {
         private String longName;
         private String shortName;
@@ -392,6 +421,15 @@ public class StormMetricRegistry implements MetricRegistryProvider {
          */
         String getShortName() {
             return shortName;
+        }
+    }
+
+    private class RateCounterUpdater implements Runnable {
+        @Override
+        public void run() {
+            for (RateCounter rateCounter : rateCounters) {
+                rateCounter.update();
+            }
         }
     }
 }
