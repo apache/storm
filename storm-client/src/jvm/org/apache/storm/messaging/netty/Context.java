@@ -22,6 +22,7 @@ import org.apache.storm.Config;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.IContext;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.shade.io.netty.channel.EventLoopGroup;
 import org.apache.storm.shade.io.netty.channel.nio.NioEventLoopGroup;
 import org.apache.storm.shade.io.netty.util.HashedWheelTimer;
@@ -32,12 +33,18 @@ public class Context implements IContext {
     private List<Server> serverConnections;
     private EventLoopGroup workerEventLoopGroup;
     private HashedWheelTimer clientScheduleService;
+    private StormMetricRegistry metricRegistry = null;
 
     /**
      * initialization per Storm configuration.
      */
     @Override
     public void prepare(Map<String, Object> topoConf) {
+        prepare(topoConf, null);
+    }
+
+    @Override
+    public void prepare(Map<String, Object> topoConf, StormMetricRegistry metricRegistry) {
         this.topoConf = topoConf;
         serverConnections = new ArrayList<>();
 
@@ -49,6 +56,7 @@ public class Context implements IContext {
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
 
         clientScheduleService = new HashedWheelTimer(new NettyRenameThreadFactory("client-schedule-service"));
+        this.metricRegistry = metricRegistry;
     }
 
     /**
@@ -67,7 +75,7 @@ public class Context implements IContext {
     @Override
     public IConnection connect(String stormId, String host, int port, AtomicBoolean[] remoteBpStatus) {
         return new Client(topoConf, remoteBpStatus, workerEventLoopGroup,
-                                        clientScheduleService, host, port);
+                                        clientScheduleService, host, port, metricRegistry);
     }
 
     /**

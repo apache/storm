@@ -34,23 +34,33 @@ public class TaskMetricRepo {
     private SortedMap<String, Timer> timers = new TreeMap<>();
 
     public void addCounter(String name, Counter counter) {
-        counters.put(name, counter);
+        synchronized (this) {
+            counters.put(name, counter);
+        }
     }
 
     public void addGauge(String name, Gauge gauge) {
-        gauges.put(name, gauge);
+        synchronized (this) {
+            gauges.put(name, gauge);
+        }
     }
 
     public void addMeter(String name, Meter meter) {
-        meters.put(name, meter);
+        synchronized (this) {
+            meters.put(name, meter);
+        }
     }
 
     public void addHistogram(String name, Histogram histogram) {
-        histograms.put(name, histogram);
+        synchronized (this) {
+            histograms.put(name, histogram);
+        }
     }
 
     public void addTimer(String name, Timer timer) {
-        timers.put(name, timer);
+        synchronized (this) {
+            timers.put(name, timer);
+        }
     }
 
     public void report(ScheduledReporter reporter, MetricFilter filter) {
@@ -89,6 +99,16 @@ public class TaskMetricRepo {
             reporter.report(filteredGauges, filteredCounters, filteredHistograms, filteredMeters, filteredTimers);
         } else {
             reporter.report(gauges, counters, histograms, meters, timers);
+        }
+    }
+
+    void degisterMetrics(MetricFilter metricFilter) {
+        synchronized (this) {
+            gauges.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+            counters.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+            histograms.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+            meters.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+            timers.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
         }
     }
 }
