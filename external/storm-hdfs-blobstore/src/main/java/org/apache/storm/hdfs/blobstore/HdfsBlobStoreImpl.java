@@ -18,15 +18,22 @@
 
 package org.apache.storm.hdfs.blobstore;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -47,6 +54,7 @@ public class HdfsBlobStoreImpl {
     // blobstore directory is private!
     public static final FsPermission BLOBSTORE_DIR_PERMISSION =
             FsPermission.createImmutable((short) 0700); // rwx--------
+    private static final String BLOBSTORE_MOD_TIME_FILE = "lastModifiedBlobTime";
 
     private static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStoreImpl.class);
 
@@ -321,8 +329,20 @@ public class HdfsBlobStoreImpl {
      * @throws IOException on any error
      */
     public long getLastModTime() throws IOException {
-        long modtime =  fileSystem.getFileStatus(fullPath).getModificationTime();
-        return modtime;
+        Path modTimeFile = new Path(fullPath, BLOBSTORE_MOD_TIME_FILE);
+        if (!fileSystem.exists(modTimeFile)) {
+            return -1L;
+        }
+        FSDataInputStream inputStream = fileSystem.open(modTimeFile);
+        String timestamp = IOUtils.toString(inputStream, "UTF-8");
+        inputStream.close();
+        try {
+            long modTime = Long.parseLong(timestamp);
+            return modTime;
+        } catch (NumberFormatException e) {
+            LOG.error("Invalid blobstore modtime {} in file {}", timestamp, modTimeFile);
+            return -1L;
+        }
     }
 
     /**
@@ -331,8 +351,12 @@ public class HdfsBlobStoreImpl {
      * @throws IOException on any error
      */
     public void updateLastModTime() throws IOException {
-        long timestamp = Time.currentTimeMillis();
-        fileSystem.setTimes(fullPath, timestamp, timestamp);
+        Long timestamp = Time.currentTimeMillis();
+        Path modTimeFile = new Path(fullPath, BLOBSTORE_MOD_TIME_FILE);
+        FSDataOutputStream fsDataOutputStream = fileSystem.create(modTimeFile, true);
+        BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(fsDataOutputStream, StandardCharsets.UTF_8));
+        bufferedWriter.write(timestamp.toString());
+        bufferedWriter.close();
         LOG.debug("Updated blobstore modtime of {} to {}", fullPath, timestamp);
     }
 

@@ -99,7 +99,7 @@ public class AsyncLocalizer implements AutoCloseable {
     private final ScheduledExecutorService downloadExecService;
     private final ScheduledExecutorService taskExecService;
     private final long cacheCleanupPeriod;
-    private final long updateBlobPeriod;
+    private final int updateBlobPeriod;
     private final StormMetricsRegistry metricsRegistry;
     // cleanup
     @VisibleForTesting

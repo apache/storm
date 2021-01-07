@@ -159,8 +159,8 @@ public class ServerConfigUtils {
         return new LocalState((masterLocalDir(conf) + FILE_SEPARATOR + "history"), true);
     }
 
-    public static long getLocalizerUpdateBlobInterval(Map<String, Object> conf) {
+    public static int getLocalizerUpdateBlobInterval(Map<String, Object> conf) {
         return ObjectReader.getInt(conf.get(
-                DaemonConfig.SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS), 30).longValue();
+                DaemonConfig.SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS), 30);
     }
 }

@@ -1430,7 +1430,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             // Periodically make sure the blobstore modtime is up to date.  This could have failed if Nimbus encountered
             // an exception updating the mod time, or due to bugs causing a missed update of the blobstore mod time on a blob
             // update.
-            timer.scheduleRecurring(30, (int) ServerConfigUtils.getLocalizerUpdateBlobInterval(conf) * 5,
+            timer.scheduleRecurring(30, ServerConfigUtils.getLocalizerUpdateBlobInterval(conf) * 5,
                 () -> {
                     try {
                         blobStore.validateModTime();
