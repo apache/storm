@@ -55,7 +55,7 @@ public abstract class LocallyCachedBlob {
     private final Histogram fetchingRate;
     private final Meter numBlobUpdateVersionChanged;
     private final Timer singleBlobLocalizationDuration;
-    protected long updatedModTime = -1L;
+    protected long localUpdateTime = -1L;
 
     /**
      * Create a new LocallyCachedBlob.
@@ -305,13 +305,13 @@ public abstract class LocallyCachedBlob {
      * Checks to see if the local blob requires update with respect to a remote blob.
      *
      * @param blobStore the client blobstore
-     * @param remoteBlobstoreModTime last modification time of remote blobstore
+     * @param remoteBlobstoreUpdateTime last update time of remote blobstore
      * @return true of the local blob requires update, false otherwise.
      *
      * @throws KeyNotFoundException if the remote blob is missing
      * @throws AuthorizationException if authorization is failed
      */
-    boolean requiresUpdate(ClientBlobStore blobStore, long remoteBlobstoreModTime) throws KeyNotFoundException, AuthorizationException {
+    boolean requiresUpdate(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime) throws KeyNotFoundException, AuthorizationException {
         if (!this.isUsed()) {
             return false;
         }
@@ -323,8 +323,8 @@ public abstract class LocallyCachedBlob {
         // If we are already up to date with respect to the remote blob store, don't query
         // the remote blobstore for the remote file.  This reduces Hadoop namenode impact of
         // 100's of supervisors querying multiple blobs.
-        if (remoteBlobstoreModTime > 0 && this.updatedModTime == remoteBlobstoreModTime) {
-            LOG.debug("{} is up to date, blob updatedModTime matches remote timestamp {}", this, remoteBlobstoreModTime);
+        if (remoteBlobstoreUpdateTime > 0 && this.localUpdateTime == remoteBlobstoreUpdateTime) {
+            LOG.debug("{} is up to date, blob updatedModTime matches remote timestamp {}", this, remoteBlobstoreUpdateTime);
             return false;
         }
 
@@ -334,7 +334,7 @@ public abstract class LocallyCachedBlob {
             return true;
         } else {
             // track that we are now up to date with respect to last time the remote blobstore was updated
-            this.updatedModTime = remoteBlobstoreModTime;
+            this.localUpdateTime = remoteBlobstoreUpdateTime;
             return false;
         }
     }
@@ -358,7 +358,7 @@ public abstract class LocallyCachedBlob {
         try {
             long newVersion = this.fetchUnzipToTemp(blobStore);
             this.informReferencesAndCommitNewVersion(newVersion);
-            this.updatedModTime = remoteBlobstoreModTime;
+            this.localUpdateTime = remoteBlobstoreModTime;
             LOG.debug("local blob {} downloaded, in sync with remote blobstore to time {}", this, remoteBlobstoreModTime);
         } finally {
             timer.stop();

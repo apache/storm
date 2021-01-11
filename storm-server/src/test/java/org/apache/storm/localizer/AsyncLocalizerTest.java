@@ -120,7 +120,7 @@ public class AsyncLocalizerTest {
             final int port = 8080;
 
             ClientBlobStore blobStore = mock(ClientBlobStore.class);
-            when(blobStore.getRemoteBlobstoreModtime()).thenReturn(-1L);
+            when(blobStore.getRemoteBlobstoreUpdateTime()).thenReturn(-1L);
 
             LocallyCachedTopologyBlob jarBlob = mock(LocallyCachedTopologyBlob.class);
             doReturn(jarBlob).when(victim).getTopoJar(topoId, localAssignment.get_owner());

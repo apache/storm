@@ -136,7 +136,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     }
 
     @Override
-    public long getRemoteBlobstoreModtime() throws IOException {
-        return blobStore.getLastModeTime();
+    public long getRemoteBlobstoreUpdateTime() throws IOException {
+        return blobStore.getLastBlobUpdateTime();
     }
 }

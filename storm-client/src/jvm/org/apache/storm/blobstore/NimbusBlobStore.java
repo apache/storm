@@ -218,7 +218,7 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     }
 
     @Override
-    public long getRemoteBlobstoreModtime() throws IOException {
+    public long getRemoteBlobstoreUpdateTime() throws IOException {
         return -1L; // not supported
     }
 

@@ -188,7 +188,7 @@ public class ClientBlobStoreTest {
         }
 
         @Override
-        public long getRemoteBlobstoreModtime() throws IOException {
+        public long getRemoteBlobstoreUpdateTime() throws IOException {
             return -1L; // not supported
         }
     }

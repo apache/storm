@@ -54,7 +54,7 @@ public class HdfsBlobStoreImpl {
     // blobstore directory is private!
     public static final FsPermission BLOBSTORE_DIR_PERMISSION =
             FsPermission.createImmutable((short) 0700); // rwx--------
-    private static final String BLOBSTORE_MOD_TIME_FILE = "lastModifiedBlobTime";
+    private static final String BLOBSTORE_UPDATE_TIME_FILE = "lastUpdatedBlobTime";
 
     private static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStoreImpl.class);
 
@@ -323,13 +323,13 @@ public class HdfsBlobStoreImpl {
     }
 
     /**
-     * Get the last modification time of any blob.
+     * Get the last update time of any blob.
      *
-     * @return the last modification time of blobs within the blobstore.
+     * @return the last updated time of blobs within the blobstore.
      * @throws IOException on any error
      */
-    public long getLastModTime() throws IOException {
-        Path modTimeFile = new Path(fullPath, BLOBSTORE_MOD_TIME_FILE);
+    public long getLastBlobUpdateTime() throws IOException {
+        Path modTimeFile = new Path(fullPath, BLOBSTORE_UPDATE_TIME_FILE);
         if (!fileSystem.exists(modTimeFile)) {
             return -1L;
         }
@@ -346,26 +346,26 @@ public class HdfsBlobStoreImpl {
     }
 
     /**
-     * Updates the modification time of the blobstore to the current time.
+     * Updates the last updated time of existing blobstores to the current time.
      *
      * @throws IOException on any error
      */
-    public void updateLastModTime() throws IOException {
+    public synchronized void updateLastBlobUpdateTime() throws IOException {
         Long timestamp = Time.currentTimeMillis();
-        Path modTimeFile = new Path(fullPath, BLOBSTORE_MOD_TIME_FILE);
+        Path modTimeFile = new Path(fullPath, BLOBSTORE_UPDATE_TIME_FILE);
         FSDataOutputStream fsDataOutputStream = fileSystem.create(modTimeFile, true);
         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(fsDataOutputStream, StandardCharsets.UTF_8));
         bufferedWriter.write(timestamp.toString());
         bufferedWriter.close();
-        LOG.debug("Updated blobstore modtime of {} to {}", fullPath, timestamp);
+        LOG.debug("Updated blobstore update time of {} to {}", modTimeFile, timestamp);
     }
 
     /**
-     * Validates that the modification time of the blobstore is up to date with the current existing blobs.
+     * Validates that the last updated blob time of the blobstore is up to date with the current existing blobs.
      *
      * @throws IOException on any error
      */
-    public void validateModTime() throws IOException {
+    public void validateBlobUpdateTime() throws IOException {
         int currentBucket = 0;
         long baseModTime = 0;
         while (currentBucket < BUCKETS) {
@@ -382,9 +382,9 @@ public class HdfsBlobStoreImpl {
 
             currentBucket++;
         }
-        if (baseModTime > 0 && baseModTime > getLastModTime()) {
-            LOG.info("Blobstore modTime requires an update to at least {}", baseModTime);
-            updateLastModTime();
+        if (baseModTime > 0 && baseModTime > getLastBlobUpdateTime()) {
+            LOG.info("Blobstore update time requires an update to at least {}", baseModTime);
+            updateLastBlobUpdateTime();
         }
     }
 }

@@ -1433,7 +1433,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             timer.scheduleRecurring(30, ServerConfigUtils.getLocalizerUpdateBlobInterval(conf) * 5,
                 () -> {
                     try {
-                        blobStore.validateModTime();
+                        blobStore.validateBlobUpdateTime();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -3780,7 +3780,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             os.close();
             LOG.info("Finished uploading blob for session {}. Closing session.", session);
             blobUploaders.remove(session);
-            blobStore.updateLastModTime();
+            blobStore.updateLastBlobUpdateTime();
         } catch (Exception e) {
             LOG.warn("finish blob upload exception.", e);
             if (e instanceof TException) {
@@ -3828,7 +3828,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         throws AuthorizationException, KeyNotFoundException, TException {
         try {
             blobStore.setBlobMeta(key, meta, getSubject());
-            blobStore.updateLastModTime();
+            blobStore.updateLastBlobUpdateTime();
         } catch (Exception e) {
             LOG.warn("set blob meta exception.", e);
             if (e instanceof TException) {
@@ -4052,7 +4052,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             channel.close();
             LOG.info("Finished uploading file from client: {}", location);
             uploaders.remove(location);
-            blobStore.updateLastModTime();
+            blobStore.updateLastBlobUpdateTime();
         } catch (Exception e) {
             LOG.warn("finish file upload exception.", e);
             if (e instanceof TException) {

@@ -319,20 +319,20 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
-     * Updates the modification time of the blobstore to the current time.
+     * Updates the last update time of existing blobs in the blobstore to the current time.
      *
      * @throws IOException on any error
      */
-    public void updateLastModTime() throws IOException {
+    public void updateLastBlobUpdateTime() throws IOException {
         // default implementation is a NOOP.
     }
 
     /**
-     * Validates that the modification time of the blobstore is up to date with the current existing blobs.
+     * Validates that the blob update time of the blobstore is up to date with the current existing blobs.
      *
      * @throws IOException on any error
      */
-    public void validateModTime() throws IOException {
+    public void validateBlobUpdateTime() throws IOException {
         // default implementation is a NOOP.
     }
 
