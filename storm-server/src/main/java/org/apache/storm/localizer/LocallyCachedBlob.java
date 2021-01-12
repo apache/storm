@@ -221,7 +221,8 @@ public abstract class LocallyCachedBlob {
      * @param cb an optional callback indicating that they want to know/synchronize when a blob is updated.
      */
     public void addReference(final PortAndAssignment pna, BlobChangingCallback cb) {
-        LOG.debug("Adding reference {}", pna);
+        touch();
+        LOG.info("Adding reference {} with timestamp {} to {}", pna, getLastUsed(), blobDescription);
         if (cb == null) {
             cb = NOOP_CB;
         }
@@ -233,13 +234,27 @@ public abstract class LocallyCachedBlob {
     /**
      * Removes a reservation for this blob from a given slot and assignemnt.
      * @param pna the slot + assignment that no longer needs this blob.
+     * @return false if a reference was failed to be removed
      */
-    public void removeReference(final PortAndAssignment pna) {
-        LOG.debug("Removing reference {}", pna);
-        if (references.remove(pna) == null) {
-            LOG.warn("{} had no reservation for {}", pna, blobDescription);
+    public boolean removeReference(final PortAndAssignment pna) {
+        LOG.info("Removing reference {} from {}", pna, blobDescription);
+        PortAndAssignment reservedReference = null;
+        for (Map.Entry<PortAndAssignment, BlobChangingCallback> entry : references.entrySet()) {
+            if (entry.getKey().isEquivalentTo(pna)) {
+                reservedReference = entry.getKey();
+                break;
+            }
         }
-        touch();
+
+        if (reservedReference != null) {
+            references.remove(reservedReference);
+            touch();
+            return true;
+        } else {
+            LOG.warn("{} had no reservation for {}, current references are {} with last update at {}",
+                    pna, blobDescription, getDependencies(), getLastUsed());
+            return false;
+        }
     }
 
     /**
