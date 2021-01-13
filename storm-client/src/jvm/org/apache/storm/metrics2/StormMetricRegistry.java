@@ -474,11 +474,7 @@ public class StormMetricRegistry implements MetricRegistryProvider {
          */
         @Override
         public boolean matches(String name, Metric metric) {
-            if (this.metrics.contains(metric)) {
-                return true;
-            } else {
-                return false;
-            }
+            return this.metrics.contains(metric);
         }
     }
 }
