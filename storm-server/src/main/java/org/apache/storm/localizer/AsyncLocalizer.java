@@ -258,7 +258,7 @@ public class AsyncLocalizer implements AutoCloseable {
 
     private CompletableFuture<Void> downloadOrUpdate(Collection<? extends LocallyCachedBlob> blobs) {
 
-        final long remoteBlobstoreModTime = getRemoteBlobstoreUpdateTime();
+        final long remoteBlobstoreUpdateTime = getRemoteBlobstoreUpdateTime();
 
         CompletableFuture<Void>[] all = new CompletableFuture[blobs.size()];
         int i = 0;
@@ -270,7 +270,7 @@ public class AsyncLocalizer implements AutoCloseable {
                     long failures = 0;
                     while (!done) {
                         try {
-                            blob.update(blobStore, remoteBlobstoreModTime);
+                            blob.update(blobStore, remoteBlobstoreUpdateTime);
                             done = true;
                         } catch (Exception e) {
                             failures++;
@@ -294,7 +294,7 @@ public class AsyncLocalizer implements AutoCloseable {
             try {
                 return blobStore.getRemoteBlobstoreUpdateTime();
             } catch (IOException e) {
-                LOG.error("Failed to get remote blobstore modtime", e);
+                LOG.error("Failed to get remote blobstore update time", e);
                 return -1L;
             }
         }

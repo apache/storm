@@ -61,16 +61,16 @@ public class LocallyCachedBlobTest {
         // validate blob needs update due to version mismatch
         Assert.assertTrue(blob.requiresUpdate(blobStore, -1L));
 
-        // when blob update time matches remote blobstore modtime, validate blob
+        // when blob update time matches remote blobstore update time, validate blob
         // will skip looking at remote version and assume it's up to date
         blob.localUpdateTime = 101L;
         Assert.assertFalse(blob.requiresUpdate(blobStore, 101L));
 
-        // now when the mod time on the remote blobstore differs, we should again see that the
+        // now when the update time on the remote blobstore differs, we should again see that the
         // blob version differs from the remote blobstore
         Assert.assertTrue(blob.requiresUpdate(blobStore, 102L));
 
-        // now validate we don't need any update as versions match, regardless of remote blobstore mod time
+        // now validate we don't need any update as versions match, regardless of remote blobstore update time
         blob.localVersion = blob.getRemoteVersion(blobStore);
         Assert.assertFalse(blob.requiresUpdate(blobStore, -1L));
         Assert.assertFalse(blob.requiresUpdate(blobStore, 101L));

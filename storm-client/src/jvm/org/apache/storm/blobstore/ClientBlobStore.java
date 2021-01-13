@@ -184,10 +184,10 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
-     * Client facing API to get the last update time of existing blobs in a blobstore.  This only required for use on
+     * Client facing API to get the last update time of existing blobs in a blobstore.  This is only required for use on
      * supervisors.
      *
-     * @return the timestamp of when the blobstore was last modified.  -1L if the blobstore
+     * @return the timestamp of when the blobstore was last updated.  -1L if the blobstore
      *     does not support this.
      */
     public abstract long getRemoteBlobstoreUpdateTime() throws IOException;

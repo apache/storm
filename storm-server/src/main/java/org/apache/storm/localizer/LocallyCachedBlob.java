@@ -324,7 +324,7 @@ public abstract class LocallyCachedBlob {
         // the remote blobstore for the remote file.  This reduces Hadoop namenode impact of
         // 100's of supervisors querying multiple blobs.
         if (remoteBlobstoreUpdateTime > 0 && this.localUpdateTime == remoteBlobstoreUpdateTime) {
-            LOG.debug("{} is up to date, blob updatedModTime matches remote timestamp {}", this, remoteBlobstoreUpdateTime);
+            LOG.debug("{} is up to date, blob localUpdateTime matches remote timestamp {}", this, remoteBlobstoreUpdateTime);
             return false;
         }
 
@@ -343,13 +343,13 @@ public abstract class LocallyCachedBlob {
      * Downloads a blob locally.
      *
      * @param blobStore the client blobstore
-     * @param remoteBlobstoreModTime last modification time of remote blobstore
+     * @param remoteBlobstoreUpdateTime last modification time of remote blobstore
      *
      * @throws KeyNotFoundException if the remote blob is missing
      * @throws AuthorizationException if authorization is failed
      * @throws IOException on errors
      */
-    private void download(ClientBlobStore blobStore, long remoteBlobstoreModTime)
+    private void download(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime)
             throws AuthorizationException, IOException, KeyNotFoundException {
         if (this.isFullyDownloaded()) {
             numBlobUpdateVersionChanged.mark();
@@ -358,8 +358,8 @@ public abstract class LocallyCachedBlob {
         try {
             long newVersion = this.fetchUnzipToTemp(blobStore);
             this.informReferencesAndCommitNewVersion(newVersion);
-            this.localUpdateTime = remoteBlobstoreModTime;
-            LOG.debug("local blob {} downloaded, in sync with remote blobstore to time {}", this, remoteBlobstoreModTime);
+            this.localUpdateTime = remoteBlobstoreUpdateTime;
+            LOG.debug("local blob {} downloaded, in sync with remote blobstore to time {}", this, remoteBlobstoreUpdateTime);
         } finally {
             timer.stop();
             this.cleanupOrphanedData();
@@ -370,17 +370,17 @@ public abstract class LocallyCachedBlob {
      * Checks and downloads a blob locally as necessary.
      *
      * @param blobStore the client blobstore
-     * @param remoteBlobstoreModTime last modification time of remote blobstore
+     * @param remoteBlobstoreUpdateTime last update time of remote blobstore
      *
      * @throws KeyNotFoundException if the remote blob is missing
      * @throws AuthorizationException if authorization is failed
      * @throws IOException on errors
      */
-    public void update(ClientBlobStore blobStore, long remoteBlobstoreModTime)
+    public void update(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime)
             throws KeyNotFoundException, AuthorizationException, IOException {
         synchronized (this) {
-            if (this.requiresUpdate(blobStore, remoteBlobstoreModTime)) {
-                this.download(blobStore, remoteBlobstoreModTime);
+            if (this.requiresUpdate(blobStore, remoteBlobstoreUpdateTime)) {
+                this.download(blobStore, remoteBlobstoreUpdateTime);
             }
         }
     }

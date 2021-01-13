@@ -1427,8 +1427,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     }
                 });
 
-            // Periodically make sure the blobstore modtime is up to date.  This could have failed if Nimbus encountered
-            // an exception updating the mod time, or due to bugs causing a missed update of the blobstore mod time on a blob
+            // Periodically make sure the blobstore update time is up to date.  This could have failed if Nimbus encountered
+            // an exception updating the update time, or due to bugs causing a missed update of the blobstore mod time on a blob
             // update.
             timer.scheduleRecurring(30, ServerConfigUtils.getLocalizerUpdateBlobInterval(conf) * 5,
                 () -> {
@@ -3969,7 +3969,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public int updateBlobReplication(String key, int replication)
         throws AuthorizationException, KeyNotFoundException, TException {
         try {
-            return blobStore.updateBlobReplication(key, replication, getSubject());
+            int result = blobStore.updateBlobReplication(key, replication, getSubject());
+            blobStore.updateLastBlobUpdateTime();
+            return result;
         } catch (Exception e) {
             LOG.warn("update blob replication exception.", e);
             if (e instanceof TException) {

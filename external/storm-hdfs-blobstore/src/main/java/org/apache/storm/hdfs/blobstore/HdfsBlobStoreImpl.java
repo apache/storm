@@ -329,18 +329,18 @@ public class HdfsBlobStoreImpl {
      * @throws IOException on any error
      */
     public long getLastBlobUpdateTime() throws IOException {
-        Path modTimeFile = new Path(fullPath, BLOBSTORE_UPDATE_TIME_FILE);
-        if (!fileSystem.exists(modTimeFile)) {
+        Path updateTimeFile = new Path(fullPath, BLOBSTORE_UPDATE_TIME_FILE);
+        if (!fileSystem.exists(updateTimeFile)) {
             return -1L;
         }
-        FSDataInputStream inputStream = fileSystem.open(modTimeFile);
+        FSDataInputStream inputStream = fileSystem.open(updateTimeFile);
         String timestamp = IOUtils.toString(inputStream, "UTF-8");
         inputStream.close();
         try {
-            long modTime = Long.parseLong(timestamp);
-            return modTime;
+            long updateTime = Long.parseLong(timestamp);
+            return updateTime;
         } catch (NumberFormatException e) {
-            LOG.error("Invalid blobstore modtime {} in file {}", timestamp, modTimeFile);
+            LOG.error("Invalid blobstore update time {} in file {}", timestamp, updateTimeFile);
             return -1L;
         }
     }
@@ -352,12 +352,12 @@ public class HdfsBlobStoreImpl {
      */
     public synchronized void updateLastBlobUpdateTime() throws IOException {
         Long timestamp = Time.currentTimeMillis();
-        Path modTimeFile = new Path(fullPath, BLOBSTORE_UPDATE_TIME_FILE);
-        FSDataOutputStream fsDataOutputStream = fileSystem.create(modTimeFile, true);
+        Path updateTimeFile = new Path(fullPath, BLOBSTORE_UPDATE_TIME_FILE);
+        FSDataOutputStream fsDataOutputStream = fileSystem.create(updateTimeFile, true);
         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(fsDataOutputStream, StandardCharsets.UTF_8));
         bufferedWriter.write(timestamp.toString());
         bufferedWriter.close();
-        LOG.debug("Updated blobstore update time of {} to {}", modTimeFile, timestamp);
+        LOG.debug("Updated blobstore update time of {} to {}", updateTimeFile, timestamp);
     }
 
     /**
