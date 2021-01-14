@@ -120,6 +120,7 @@ public class AsyncLocalizerTest {
             final int port = 8080;
 
             ClientBlobStore blobStore = mock(ClientBlobStore.class);
+            when(blobStore.getRemoteBlobstoreUpdateTime()).thenReturn(-1L);
 
             LocallyCachedTopologyBlob jarBlob = mock(LocallyCachedTopologyBlob.class);
             doReturn(jarBlob).when(victim).getTopoJar(topoId, localAssignment.get_owner());
@@ -148,18 +149,9 @@ public class AsyncLocalizerTest {
             Future<Void> f = victim.requestDownloadBaseTopologyBlobs(pna, null);
             f.get(20, TimeUnit.SECONDS);
 
-            verify(jarBlob).fetchUnzipToTemp(any());
-            verify(jarBlob).informReferencesAndCommitNewVersion(100L);
-            verify(jarBlob).cleanupOrphanedData();
-
-            verify(codeBlob).fetchUnzipToTemp(any());
-            verify(codeBlob).informReferencesAndCommitNewVersion(200L);
-            verify(codeBlob).cleanupOrphanedData();
-
-            verify(confBlob).fetchUnzipToTemp(any());
-            verify(confBlob).informReferencesAndCommitNewVersion(300L);
-            verify(confBlob).cleanupOrphanedData();
-
+            verify(jarBlob).update(eq(blobStore), eq(-1L));
+            verify(codeBlob).update(eq(blobStore), eq(-1L));
+            verify(confBlob).update(eq(blobStore), eq(-1L));
         } finally {
             ReflectionUtils.setInstance(previousReflectionUtils);
             ServerUtils.setInstance(previousServerUtils);

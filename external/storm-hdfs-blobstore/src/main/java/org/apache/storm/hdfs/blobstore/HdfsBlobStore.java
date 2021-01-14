@@ -404,4 +404,18 @@ public class HdfsBlobStore extends BlobStore {
     public void fullCleanup(long age) throws IOException {
         hbs.fullCleanup(age);
     }
+
+    public long getLastBlobUpdateTime() throws IOException {
+        return hbs.getLastBlobUpdateTime();
+    }
+
+    @Override
+    public void updateLastBlobUpdateTime() throws IOException {
+        hbs.updateLastBlobUpdateTime();
+    }
+
+    @Override
+    public void validateBlobUpdateTime() throws IOException {
+        hbs.validateBlobUpdateTime();
+    }
 }

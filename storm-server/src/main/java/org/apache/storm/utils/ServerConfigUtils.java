@@ -158,4 +158,9 @@ public class ServerConfigUtils {
     public LocalState nimbusTopoHistoryStateImpl(Map<String, Object> conf) throws IOException {
         return new LocalState((masterLocalDir(conf) + FILE_SEPARATOR + "history"), true);
     }
+
+    public static int getLocalizerUpdateBlobInterval(Map<String, Object> conf) {
+        return ObjectReader.getInt(conf.get(
+                DaemonConfig.SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS), 30);
+    }
 }

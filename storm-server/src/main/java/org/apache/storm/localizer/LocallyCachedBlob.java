@@ -13,6 +13,8 @@
 package org.apache.storm.localizer;
 
 import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.generated.AuthorizationException;
@@ -52,6 +53,9 @@ public abstract class LocallyCachedBlob {
     private AtomicLong lastUsed = new AtomicLong(Time.currentTimeMillis());
 
     private final Histogram fetchingRate;
+    private final Meter numBlobUpdateVersionChanged;
+    private final Timer singleBlobLocalizationDuration;
+    protected long localUpdateTime = -1L;
 
     /**
      * Create a new LocallyCachedBlob.
@@ -63,6 +67,8 @@ public abstract class LocallyCachedBlob {
         this.blobDescription = blobDescription;
         this.blobKey = blobKey;
         this.fetchingRate = metricsRegistry.registerHistogram("supervisor:blob-fetching-rate-MB/s");
+        this.numBlobUpdateVersionChanged = metricsRegistry.registerMeter("supervisor:num-blob-update-version-changed");
+        this.singleBlobLocalizationDuration = metricsRegistry.registerTimer("supervisor:single-blob-localization-duration");
     }
 
     /**
@@ -309,6 +315,90 @@ public abstract class LocallyCachedBlob {
     }
 
     public abstract boolean isFullyDownloaded();
+
+    /**
+     * Checks to see if the local blob requires update with respect to a remote blob.
+     *
+     * @param blobStore the client blobstore
+     * @param remoteBlobstoreUpdateTime last update time of remote blobstore
+     * @return true of the local blob requires update, false otherwise.
+     *
+     * @throws KeyNotFoundException if the remote blob is missing
+     * @throws AuthorizationException if authorization is failed
+     */
+    boolean requiresUpdate(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime) throws KeyNotFoundException, AuthorizationException {
+        if (!this.isUsed()) {
+            return false;
+        }
+
+        if (!this.isFullyDownloaded()) {
+            return true;
+        }
+
+        // If we are already up to date with respect to the remote blob store, don't query
+        // the remote blobstore for the remote file.  This reduces Hadoop namenode impact of
+        // 100's of supervisors querying multiple blobs.
+        if (remoteBlobstoreUpdateTime > 0 && this.localUpdateTime == remoteBlobstoreUpdateTime) {
+            LOG.debug("{} is up to date, blob localUpdateTime matches remote timestamp {}", this, remoteBlobstoreUpdateTime);
+            return false;
+        }
+
+        long localVersion = this.getLocalVersion();
+        long remoteVersion = this.getRemoteVersion(blobStore);
+        if (localVersion != remoteVersion) {
+            return true;
+        } else {
+            // track that we are now up to date with respect to last time the remote blobstore was updated
+            this.localUpdateTime = remoteBlobstoreUpdateTime;
+            return false;
+        }
+    }
+
+    /**
+     * Downloads a blob locally.
+     *
+     * @param blobStore the client blobstore
+     * @param remoteBlobstoreUpdateTime last modification time of remote blobstore
+     *
+     * @throws KeyNotFoundException if the remote blob is missing
+     * @throws AuthorizationException if authorization is failed
+     * @throws IOException on errors
+     */
+    private void download(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime)
+            throws AuthorizationException, IOException, KeyNotFoundException {
+        if (this.isFullyDownloaded()) {
+            numBlobUpdateVersionChanged.mark();
+        }
+        Timer.Context timer = singleBlobLocalizationDuration.time();
+        try {
+            long newVersion = this.fetchUnzipToTemp(blobStore);
+            this.informReferencesAndCommitNewVersion(newVersion);
+            this.localUpdateTime = remoteBlobstoreUpdateTime;
+            LOG.debug("local blob {} downloaded, in sync with remote blobstore to time {}", this, remoteBlobstoreUpdateTime);
+        } finally {
+            timer.stop();
+            this.cleanupOrphanedData();
+        }
+    }
+
+    /**
+     * Checks and downloads a blob locally as necessary.
+     *
+     * @param blobStore the client blobstore
+     * @param remoteBlobstoreUpdateTime last update time of remote blobstore
+     *
+     * @throws KeyNotFoundException if the remote blob is missing
+     * @throws AuthorizationException if authorization is failed
+     * @throws IOException on errors
+     */
+    public void update(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime)
+            throws KeyNotFoundException, AuthorizationException, IOException {
+        synchronized (this) {
+            if (this.requiresUpdate(blobStore, remoteBlobstoreUpdateTime)) {
+                this.download(blobStore, remoteBlobstoreUpdateTime);
+            }
+        }
+    }
 
     static class DownloadMeta {
         private final Path downloadPath;

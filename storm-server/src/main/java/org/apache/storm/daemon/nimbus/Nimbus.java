@@ -1427,6 +1427,18 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     }
                 });
 
+            // Periodically make sure the blobstore update time is up to date.  This could have failed if Nimbus encountered
+            // an exception updating the update time, or due to bugs causing a missed update of the blobstore mod time on a blob
+            // update.
+            timer.scheduleRecurring(30, ServerConfigUtils.getLocalizerUpdateBlobInterval(conf) * 5,
+                () -> {
+                    try {
+                        blobStore.validateBlobUpdateTime();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
             metricsRegistry.registerGauge("nimbus:total-available-memory-non-negative", () -> nodeIdToResources.get().values()
                     .parallelStream()
                     .mapToDouble(supervisorResources -> Math.max(supervisorResources.getAvailableMem(), 0))
@@ -3765,6 +3777,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             os.close();
             LOG.info("Finished uploading blob for session {}. Closing session.", session);
             blobUploaders.remove(session);
+            blobStore.updateLastBlobUpdateTime();
         } catch (Exception e) {
             LOG.warn("finish blob upload exception.", e);
             if (e instanceof TException) {
@@ -3812,6 +3825,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         throws AuthorizationException, KeyNotFoundException, TException {
         try {
             blobStore.setBlobMeta(key, meta, getSubject());
+            blobStore.updateLastBlobUpdateTime();
         } catch (Exception e) {
             LOG.warn("set blob meta exception.", e);
             if (e instanceof TException) {
@@ -3952,7 +3966,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public int updateBlobReplication(String key, int replication)
         throws AuthorizationException, KeyNotFoundException, TException {
         try {
-            return blobStore.updateBlobReplication(key, replication, getSubject());
+            int result = blobStore.updateBlobReplication(key, replication, getSubject());
+            blobStore.updateLastBlobUpdateTime();
+            return result;
         } catch (Exception e) {
             LOG.warn("update blob replication exception.", e);
             if (e instanceof TException) {
@@ -4035,6 +4051,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             channel.close();
             LOG.info("Finished uploading file from client: {}", location);
             uploaders.remove(location);
+            blobStore.updateLastBlobUpdateTime();
         } catch (Exception e) {
             LOG.warn("finish file upload exception.", e);
             if (e instanceof TException) {
