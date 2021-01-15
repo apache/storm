@@ -245,10 +245,10 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         return histogram;
     }
 
-    public void deregisterMetrics(Set<Metric> toRemove) {
+    public void deregister(Set<Metric> toRemove) {
         MetricFilter metricFilter = new RemoveMetricFilter(toRemove);
         for (TaskMetricRepo taskMetricRepo : taskMetrics.values()) {
-            taskMetricRepo.degisterMetrics(metricFilter);
+            taskMetricRepo.degister(metricFilter);
         }
         registry.removeMatching(metricFilter);
     }

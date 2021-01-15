@@ -180,7 +180,7 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
                     return totalConnectionAttempts.get();
                 }
             };
-            metricRegistry.gauge("__send-connection-reconnects-" + host + ":" + port, reconnects,
+            metricRegistry.gauge("__send-iconnection-reconnects-" + host + ":" + port, reconnects,
                     Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
             metrics.add(reconnects);
 
@@ -190,7 +190,7 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
                     return messagesSent.get();
                 }
             };
-            metricRegistry.gauge("__send-connection-sent-" + host + ":" + port, sent,
+            metricRegistry.gauge("__send-iconnection-sent-" + host + ":" + port, sent,
                     Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
             metrics.add(sent);
 
@@ -200,7 +200,7 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
                     return pendingMessages.get();
                 }
             };
-            metricRegistry.gauge("__send-connection-pending-" + host + ":" + port, pending,
+            metricRegistry.gauge("__send-iconnection-pending-" + host + ":" + port, pending,
                     Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
             metrics.add(pending);
 
@@ -210,7 +210,7 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
                     return messagesLost.get();
                 }
             };
-            metricRegistry.gauge("__send-connection-lostOnSend-" + host + ":" + port, lostOnSend,
+            metricRegistry.gauge("__send-iconnection-lostOnSend-" + host + ":" + port, lostOnSend,
                     Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
             metrics.add(lostOnSend);
         }
@@ -469,7 +469,7 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
 
             // stop tracking metrics for this client
             if (this.metricRegistry != null) {
-                this.metricRegistry.deregisterMetrics(this.metrics);
+                this.metricRegistry.deregister(this.metrics);
             }
         }
     }

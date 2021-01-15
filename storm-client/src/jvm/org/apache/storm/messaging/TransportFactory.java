@@ -41,6 +41,7 @@ public class TransportFactory {
                 transport.prepare(topoConf, metricRegistry);
             } else {
                 //case 2: Non-IContext plugin must have a makeContext(topoConf) method that returns IContext object
+                // StormMetricRegistry is ignored if IContext is created this way
                 Method method = klass.getMethod("makeContext", Map.class);
                 LOG.debug("object:" + obj + " method:" + method);
                 transport = (IContext) method.invoke(obj, topoConf);
