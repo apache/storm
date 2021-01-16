@@ -29,6 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
+
+import com.codahale.metrics.SharedMetricRegistries;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -69,6 +71,8 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.storm.Constants.WORKER_METRICS_REGISTRY;
 
 public class Worker implements Shutdownable, DaemonCommon {
 
@@ -187,6 +191,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, null, csContext);
 
         metricRegistry.start(topologyConf, port);
+        SharedMetricRegistries.add(WORKER_METRICS_REGISTRY, metricRegistry.getRegistry());
 
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();
@@ -536,7 +541,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             }
 
             metricRegistry.stop();
-
+            SharedMetricRegistries.remove(WORKER_METRICS_REGISTRY);
             LOG.info("Shut down worker {} {} {}", topologyId, assignmentId, port);
         } catch (Exception ex) {
             throw Utils.wrapInRuntime(ex);
