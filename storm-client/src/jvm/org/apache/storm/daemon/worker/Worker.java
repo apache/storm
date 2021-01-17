@@ -12,7 +12,10 @@
 
 package org.apache.storm.daemon.worker;
 
+import static org.apache.storm.Constants.WORKER_METRICS_REGISTRY;
+
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.SharedMetricRegistries;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -30,7 +33,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 
-import com.codahale.metrics.SharedMetricRegistries;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -71,8 +73,6 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.Constants.WORKER_METRICS_REGISTRY;
 
 public class Worker implements Shutdownable, DaemonCommon {
 
