@@ -18,6 +18,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Timer;
@@ -25,6 +26,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,7 +86,15 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         return gauge;
     }
 
+    @Deprecated
     public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String topologyId, String componentId, Integer taskId, Integer port) {
+        MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
+        gauge = registerGauge(metricNames, gauge, taskId, componentId, null);
+        saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
+        return gauge;
+    }
+
+    public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String componentId, Integer taskId) {
         MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
         gauge = registerGauge(metricNames, gauge, taskId, componentId, null);
         saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
@@ -233,6 +243,14 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         repo.addHistogram(metricNames.getShortName(), histogram);
         histogram = registry.register(metricNames.getLongName(), histogram);
         return histogram;
+    }
+
+    public void deregister(Set<Metric> toRemove) {
+        MetricFilter metricFilter = new RemoveMetricFilter(toRemove);
+        for (TaskMetricRepo taskMetricRepo : taskMetrics.values()) {
+            taskMetricRepo.degister(metricFilter);
+        }
+        registry.removeMatching(metricFilter);
     }
 
     private <T extends Metric> Map<String, T> getMetricNameMap(int taskId, Map<Integer, Map<String, T>> taskIdMetrics) {
@@ -430,6 +448,33 @@ public class StormMetricRegistry implements MetricRegistryProvider {
             for (RateCounter rateCounter : rateCounters) {
                 rateCounter.update();
             }
+        }
+    }
+
+    private static class RemoveMetricFilter implements MetricFilter {
+        private Set<Metric> metrics = new HashSet<>();
+
+        RemoveMetricFilter(Set<Metric> toRemove) {
+            this.metrics.addAll(toRemove);
+            for (Metric metric : toRemove) {
+                // RateCounters are gauges, but also have internal Counters that should also be removed
+                if (metric instanceof RateCounter) {
+                    RateCounter rateCounter = (RateCounter) metric;
+                    this.metrics.add(rateCounter.getCounter());
+                }
+            }
+        }
+
+        /**
+         * Returns {@code true} if the metric matches the filter; {@code false} otherwise.
+         *
+         * @param name   the metric's name
+         * @param metric the metric
+         * @return {@code true} if the metric matches the filter
+         */
+        @Override
+        public boolean matches(String name, Metric metric) {
+            return this.metrics.contains(metric);
         }
     }
 }

@@ -15,6 +15,7 @@ package org.apache.storm.messaging;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import org.apache.storm.metrics2.StormMetricRegistry;
 
 /**
  * This interface needs to be implemented for messaging plugin.
@@ -30,7 +31,18 @@ public interface IContext {
      *
      * @param topoConf storm configuration
      */
+    @Deprecated
     void prepare(Map<String, Object> topoConf);
+
+    /**
+     * This method is invoked at the startup of messaging plugin.
+     *
+     * @param topoConf storm configuration
+     * @param metricRegistry storm metric registry
+     */
+    default void prepare(Map<String, Object> topoConf, StormMetricRegistry metricRegistry) {
+        prepare(topoConf);
+    }
 
     /**
      * This method is invoked when a worker is unloading a messaging plugin.

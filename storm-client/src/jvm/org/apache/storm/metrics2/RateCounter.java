@@ -59,4 +59,8 @@ public class RateCounter implements Gauge<Double> {
         values[time] = counter.getCount();
         currentRate =  ((double) (values[time] - values[(time + 1) % values.length]) / timeSpanInSeconds);
     }
+
+    Counter getCounter() {
+        return counter;
+    }
 }

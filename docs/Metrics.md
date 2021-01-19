@@ -268,25 +268,11 @@ Be aware that the `__system` bolt is an actual bolt so regular bolt metrics desc
 
 ##### Send (Netty Client)
 
-The `__send-iconnection` metric holds information about all of the clients for this worker.  It is of the form
+The `__send-iconnection` metrics report information about all of the clients for this worker.  They are named __send-iconnection-METRIC_TYPE-HOST:PORT for a given Client that is
+connected to a worker with the given host/port.
 
-```
-{
-    NodeInfo(node:7decee4b-c314-41f4-b362-fd1358c985b3-127.0.01, port:[6701]): {
-        "reconnects": 0,
-        "src": "/127.0.0.1:49951",
-        "pending": 0,
-        "dest": "localhost/127.0.0.1:6701",
-        "sent": 420779,
-        "lostOnSend": 0
-    }
-}
-```
+The metric types reported for each client are:
 
-The value is a map where the key is a NodeInfo class for the downstream worker it is sending messages to.  This is the SupervisorId + port.  The value is another map with the fields
-
- * `src`  What host/port this client has used to connect to the receiving worker.
- * `dest` What host/port this client has connected to.
  * `reconnects` the number of reconnections that have happened.
  * `pending` the number of messages that have not been sent.  (This corresponds to messages, not tuples)
  * `sent` the number of messages that have been sent.  (This is messages not tuples)
