@@ -268,7 +268,7 @@ Be aware that the `__system` bolt is an actual bolt so regular bolt metrics desc
 
 ##### Send (Netty Client)
 
-The `__send-iconnection` metrics report information about all of the clients for this worker.  They are named __send-connection-METRIC_TYPE-HOST:PORT for a given Client that is
+The `__send-iconnection` metrics report information about all of the clients for this worker.  They are named __send-iconnection-METRIC_TYPE-HOST:PORT for a given Client that is
 connected to a worker with the given host/port.
 
 The metric types reported for each client are:
