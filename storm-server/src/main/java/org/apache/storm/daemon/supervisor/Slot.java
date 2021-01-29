@@ -286,6 +286,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         assert (dynamicState.container.areAllProcessesDead());
 
         dynamicState.container.cleanUp();
+        dynamicState.cancelPendingBlobs();
         staticState.localizer.releaseSlotFor(dynamicState.currentAssignment, staticState.port);
         DynamicState ret = dynamicState.withCurrentAssignment(null, null);
         if (nextState != null) {
@@ -311,6 +312,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             dynamicState = dynamicState.withChangingBlobs(Collections.emptySet());
         }
 
+        dynamicState.cancelPendingBlobs();
         if (!dynamicState.pendingChangingBlobs.isEmpty()) {
             dynamicState = dynamicState.withPendingChangingBlobs(Collections.emptySet(), null);
         }
@@ -404,6 +406,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
             if (!EquivalenceUtils.areLocalAssignmentsEquivalent(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
                 //Scheduling changed
+                dynamicState.cancelPendingBlobs();
                 staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
                 // Switch to the new assignment even if localization hasn't completed, or go to empty state
                 // if no new assignment.
@@ -439,10 +442,13 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             } else {
                 LOG.error("{}", e.getCause().getMessage());
             }
-            // release the reference on all blobs associated with this topology.
+
+            // release the reference on all blobs associated with this worker.
+            dynamicState.cancelPendingBlobs();
             staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
             // we wait for 3 seconds
             Time.sleepSecs(3);
+
             //Try again, or go to empty if assignment has been nulled
             return prepareForNewAssignmentNoWorkersRunning(dynamicState
                 .withPendingLocalization(null, null),
@@ -475,10 +481,12 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             // but the container is already not running.
             LOG.info("SLOT {}: Assignment Changed from {} to {}", staticState.port,
                      dynamicState.currentAssignment, dynamicState.newAssignment);
+            dynamicState.cancelPendingBlobs();
             if (dynamicState.currentAssignment != null) {
                 staticState.localizer.releaseSlotFor(dynamicState.currentAssignment, staticState.port);
             }
-            staticState.localizer.releaseSlotFor(dynamicState.pendingChangingBlobsAssignment, staticState.port);
+            staticState.localizer.releaseSlotFor(dynamicState.pendingChangingBlobsAssignment,
+                    staticState.port);
             return prepareForNewAssignmentNoWorkersRunning(dynamicState.withCurrentAssignment(null, null),
                                                            staticState);
         }
@@ -1287,6 +1295,18 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                                     this.pendingStopProfileActions, this.changingBlobs,
                                     pendingChangingBlobs,
                                     pendingChangingBlobsAssignment, this.slotMetrics);
+        }
+
+        private void cancelPendingBlobs() {
+            // Make sure any downloading blobs in the background are stopped.
+            // This prevents a race condition where we could be adding references to a
+            // delayed downloading blob after the slot gets released, causing orphaned blobs.
+            for (Future future : pendingChangingBlobs) {
+                if (!future.isDone()) {
+                    LOG.info("Canceling download of {}", future);
+                    future.cancel(true);
+                }
+            }
         }
     }
 
