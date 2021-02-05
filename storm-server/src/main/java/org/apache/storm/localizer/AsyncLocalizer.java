@@ -207,7 +207,8 @@ public class AsyncLocalizer implements AutoCloseable {
     }
 
     /**
-     * Request that all of the blobs necessary for this topology be downloaded.
+     * Request that all of the blobs necessary for this topology be downloaded.  Note that this adds references to
+     * blobs asynchronously in background threads.
      *
      * @param assignment the assignment that needs the blobs
      * @param port       the port the assignment is a part of
@@ -443,6 +444,7 @@ public class AsyncLocalizer implements AutoCloseable {
      * @throws IOException on any error
      */
     public void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
+
         PortAndAssignment pna = new PortAndAssignmentImpl(port, assignment);
         final String topologyId = assignment.get_topology_id();
         LOG.info("Releasing slot for {} {}", topologyId, port);
@@ -466,11 +468,6 @@ public class AsyncLocalizer implements AutoCloseable {
             topoConfBlob.removeReference(pna);
         }
 
-
-        // ALERT: A possible race condition should have been resolved
-        // by separating the thread pools into downloadExecService and taskExecService
-        // https://github.com/apache/storm/pull/3153
-        // Will need further investigation if the race condition happens again
         List<LocalResource> localResources;
         try {
             // Precondition1: Base blob stormconf.ser and stormcode.ser are available
