@@ -146,8 +146,6 @@ public class KafkaOffsetLagUtil {
                 props.put("security.protocol", newKafkaSpoutOffsetQuery.getSecurityProtocol());
                 if (newKafkaSpoutOffsetQuery.getSecurityProtocol().contains("PLAIN")){
                     props.put("sasl.mechanism", "PLAIN");
-              } else if (newKafkaSpoutOffsetQuery.getSecurityProtocol().contains("GSSAPI")){
-                    props.put("sasl.mechanism", "GSSAPI");
               }
             }
             // Read property file for extra consumer properties
