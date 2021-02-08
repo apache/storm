@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.serialization.KryoTupleSerializer;
+import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
@@ -31,17 +32,18 @@ public class ExecutorTransfer {
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorTransfer.class);
 
     private final WorkerState workerData;
-    private final KryoTupleSerializer serializer;
+    // one serializer per thread to avoid data corruption
+    private final ThreadLocal<KryoTupleSerializer> threadLocalSerializer;
     private final boolean isDebug;
     private int indexingBase = 0;
     private ArrayList<JCQueue> localReceiveQueues; // [taskId-indexingBase] => queue : List of all recvQs local to this worker
     private AtomicReferenceArray<JCQueue> queuesToFlush;
-        // [taskId-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
-
+    // [taskId-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
 
     public ExecutorTransfer(WorkerState workerData, Map<String, Object> topoConf) {
         this.workerData = workerData;
-        this.serializer = new KryoTupleSerializer(topoConf, workerData.getWorkerTopologyContext());
+        WorkerTopologyContext workerTopologyContext = workerData.getWorkerTopologyContext();
+        this.threadLocalSerializer = ThreadLocal.withInitial(() -> new KryoTupleSerializer(topoConf, workerTopologyContext));
         this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
     }
 
@@ -63,7 +65,7 @@ public class ExecutorTransfer {
         if (localQueue != null) {
             return tryTransferLocal(addressedTuple, localQueue, pendingEmits);
         }
-        return workerData.tryTransferRemote(addressedTuple, pendingEmits, serializer);
+        return workerData.tryTransferRemote(addressedTuple, pendingEmits, threadLocalSerializer.get());
     }
 
 
@@ -96,7 +98,7 @@ public class ExecutorTransfer {
      * Returns false if unable to add to localQueue.
      */
     public boolean tryTransferLocal(AddressedTuple tuple, JCQueue localQueue, Queue<AddressedTuple> pendingEmits) {
-        workerData.checkSerialize(serializer, tuple);
+        workerData.checkSerialize(threadLocalSerializer.get(), tuple);
         if (pendingEmits != null) {
             if (pendingEmits.isEmpty() && localQueue.tryPublish(tuple)) {
                 queuesToFlush.set(tuple.dest - indexingBase, localQueue);

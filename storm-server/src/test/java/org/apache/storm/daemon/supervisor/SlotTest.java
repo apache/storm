@@ -108,25 +108,6 @@ public class SlotTest {
     }
 
     @Test
-    public void testEquivilant() {
-        LocalAssignment a = mkLocalAssignment("A", mkExecutorInfoList(1, 2, 3, 4, 5), mkWorkerResources(100.0, 100.0, 100.0));
-        LocalAssignment aResized = mkLocalAssignment("A", mkExecutorInfoList(1, 2, 3, 4, 5), mkWorkerResources(100.0, 200.0, 100.0));
-        LocalAssignment b = mkLocalAssignment("B", mkExecutorInfoList(1, 2, 3, 4, 5, 6), mkWorkerResources(100.0, 100.0, 100.0));
-        LocalAssignment bReordered = mkLocalAssignment("B", mkExecutorInfoList(6, 5, 4, 3, 2, 1), mkWorkerResources(100.0, 100.0, 100.0));
-
-        assertTrue(Slot.equivalent(null, null));
-        assertTrue(Slot.equivalent(a, a));
-        assertTrue(Slot.equivalent(b, bReordered));
-        assertTrue(Slot.equivalent(bReordered, b));
-
-        assertFalse(Slot.equivalent(a, aResized));
-        assertFalse(Slot.equivalent(aResized, a));
-        assertFalse(Slot.equivalent(a, null));
-        assertFalse(Slot.equivalent(null, b));
-        assertFalse(Slot.equivalent(a, b));
-    }
-
-    @Test
     public void testForSameTopology() {
         LocalAssignment a = mkLocalAssignment("A", mkExecutorInfoList(1, 2, 3, 4, 5), mkWorkerResources(100.0, 100.0, 100.0));
         LocalAssignment aResized = mkLocalAssignment("A", mkExecutorInfoList(1, 2, 3, 4, 5), mkWorkerResources(100.0, 200.0, 100.0));

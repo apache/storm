@@ -76,6 +76,11 @@
         </th>
         {{/schedulerDisplayResource}}
         <th>
+          <span data-toggle="tooltip" data-placement="top" title="Assigned Generic Rescources by Scheduler.">
+            Assigned Generic Resources
+          </span>
+        </th>
+        <th>
           <span data-toggle="tooltip" data-placement="left" title="This shows information from the scheduler about the latest attempt to schedule the Topology on the cluster.">
             Scheduler Info
           </span>
@@ -106,6 +111,7 @@
         <td>{{assignedTotalMem}}</td>
         {{#schedulerDisplayResource}}
         <td>{{assignedCpu}}</td>
+        <td>{{assignedGenericResources}}</td>
         {{/schedulerDisplayResource}}
         <td>{{schedulerInfo}}</td>
         <td>{{topologyVersion}}</td>
@@ -150,6 +156,11 @@
             Total CPU (%)
           </span>
         </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="Total Generic Resources.">
+            Total Generic Resources
+          </span>
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -161,6 +172,7 @@
         <td>{{requestedSharedOffHeapMem}}</td>
         <td>{{requestedTotalMem}}</td>
         <td>{{requestedCpu}}</td>
+        <td>{{requestedGenericResources}}</td>
       </tr>
       <tr>
         <td>Assigned</td>
@@ -170,6 +182,7 @@
         <td>{{assignedSharedOffHeapMem}}</td>
         <td>{{assignedTotalMem}}</td>
         <td>{{assignedCpu}}</td>
+        <td>{{assignedGenericResources}}</td>
       </tr>
     </tbody>
   </table>
@@ -375,6 +388,11 @@
             Req CPU
           </span>
         </th>
+        <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The generic resources requested to run a single executor of this component.">
+            Req Generic
+          </span>
+        </th>
         {{/schedulerDisplayResource}}
         <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
@@ -417,6 +435,7 @@
         <td>{{requestedMemOnHeap}}</td>
         <td>{{requestedMemOffHeap}}</td>
         <td>{{requestedCpu}}</td>
+        <td>{{requestedGenericResourcesComp}}</td>
         {{/schedulerDisplayResource}}
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
@@ -470,6 +489,11 @@
         <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resources requested to run a single executor of this component. Every 100 means 1 core.">
             Req CPU
+          </span>
+        </th>
+        <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The generic resources requested to run a single executor of this component.">
+            Req Generic
           </span>
         </th>
         {{/schedulerDisplayResource}}
@@ -528,6 +552,7 @@
         <td>{{requestedMemOnHeap}}</td>
         <td>{{requestedMemOffHeap}}</td>
         <td>{{requestedCpu}}</td>
+        <td>{{requestedGenericResourcesComp}}</td>
         {{/schedulerDisplayResource}}
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>

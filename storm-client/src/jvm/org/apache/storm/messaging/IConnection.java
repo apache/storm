@@ -22,20 +22,6 @@ import org.apache.storm.messaging.netty.BackPressureStatus;
 public interface IConnection extends AutoCloseable {
 
     /**
-     * Register a callback to be notified when data is ready to be processed.
-     *
-     * @param cb the callback to process the messages.
-     */
-    void registerRecv(IConnectionCallback cb);
-
-    /**
-     * Register a response generator to be used to send an initial response when a new client connects.
-     *
-     * @param cb the callback to process the connection.
-     */
-    void registerNewConnectionResponse(Supplier<Object> cb);
-
-    /**
      * Send load metrics to all downstream connections.
      *
      * @param taskToLoad a map from the task id to the load for that task.
@@ -48,15 +34,13 @@ public interface IConnection extends AutoCloseable {
     void sendBackPressureStatus(BackPressureStatus bpStatus);
 
     /**
-     * send batch messages
-     *
-     * @param msgs
+     * send batch messages.
      */
 
     void send(Iterator<TaskMessage> msgs);
 
     /**
-     * Get the current load for the given tasks
+     * Get the current load for the given tasks.
      *
      * @param tasks the tasks to look for.
      * @return a Load for each of the tasks it knows about.
@@ -64,14 +48,14 @@ public interface IConnection extends AutoCloseable {
     Map<Integer, Load> getLoad(Collection<Integer> tasks);
 
     /**
-     * Get the port for this connection
+     * Get the port for this connection.
      *
      * @return The port this connection is using
      */
     int getPort();
 
     /**
-     * close this connection
+     * close this connection.
      */
     @Override
     void close();

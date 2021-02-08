@@ -24,14 +24,15 @@ import org.apache.storm.tuple.Fields;
 
 public class WorkerTopologyContext extends GeneralTopologyContext {
     public static final String SHARED_EXECUTOR = "executor";
-    Map<String, Object> _userResources;
-    Map<String, Object> _defaultResources;
-    private Integer _workerPort;
-    private List<Integer> _workerTasks;
-    private String _codeDir;
-    private String _pidDir;
+    Map<String, Object> userResources;
+    Map<String, Object> defaultResources;
+    private Integer workerPort;
+    private List<Integer> workerTasks;
+    private String codeDir;
+    private String pidDir;
     private AtomicReference<Map<Integer, NodeInfo>> taskToNodePort;
     private String assignmentId;
+    private final AtomicReference<Map<String, String>> nodeToHost;
 
     public WorkerTopologyContext(
         StormTopology topology,
@@ -47,25 +48,27 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         Map<String, Object> defaultResources,
         Map<String, Object> userResources,
         AtomicReference<Map<Integer, NodeInfo>> taskToNodePort,
-        String assignmentId
+        String assignmentId,
+        AtomicReference<Map<String, String>> nodeToHost
     ) {
         super(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId);
-        _codeDir = codeDir;
-        _defaultResources = defaultResources;
-        _userResources = userResources;
+        this.codeDir = codeDir;
+        this.defaultResources = defaultResources;
+        this.userResources = userResources;
         try {
             if (pidDir != null) {
-                _pidDir = new File(pidDir).getCanonicalPath();
+                this.pidDir = new File(pidDir).getCanonicalPath();
             } else {
-                _pidDir = null;
+                this.pidDir = null;
             }
         } catch (IOException e) {
-            throw new RuntimeException("Could not get canonical path for " + _pidDir, e);
+            throw new RuntimeException("Could not get canonical path for " + this.pidDir, e);
         }
-        _workerPort = workerPort;
-        _workerTasks = workerTasks;
+        this.workerPort = workerPort;
+        this.workerTasks = workerTasks;
         this.taskToNodePort = taskToNodePort;
         this.assignmentId = assignmentId;
+        this.nodeToHost = nodeToHost;
 
     }
 
@@ -83,26 +86,26 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         Map<String, Object> defaultResources,
         Map<String, Object> userResources) {
         this(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId,
-             codeDir, pidDir, workerPort, workerTasks, defaultResources, userResources, null, null);
+             codeDir, pidDir, workerPort, workerTasks, defaultResources, userResources, null, null, null);
     }
 
     /**
      * Gets all the task ids that are running in this worker process (including the task for this task).
      */
     public List<Integer> getThisWorkerTasks() {
-        return _workerTasks;
+        return workerTasks;
     }
 
     public Integer getThisWorkerPort() {
-        return _workerPort;
+        return workerPort;
     }
 
-    public String getThisWorkerHost() {
+    public String getAssignmentId() {
         return assignmentId;
     }
 
     /**
-     * Get a map from task Id to NodePort
+     * Get a map from task Id to NodePort.
      *
      * @return a map from task To NodePort
      */
@@ -111,26 +114,35 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     }
 
     /**
+     * Get a map from nodeId to hostname.
+     * @return a map from nodeId to hostname
+     */
+    public AtomicReference<Map<String, String>> getNodeToHost() {
+        return nodeToHost;
+    }
+
+    /**
      * Gets the location of the external resources for this worker on the local filesystem. These external resources typically include bolts
      * implemented in other languages, such as Ruby or Python.
      */
     public String getCodeDir() {
-        return _codeDir;
+        return codeDir;
     }
 
     /**
      * If this task spawns any subprocesses, those subprocesses must immediately write their PID to this directory on the local filesystem
      * to ensure that Storm properly destroys that process when the worker is shutdown.
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public String getPIDDir() {
-        return _pidDir;
+        return pidDir;
     }
 
     public Object getResource(String name) {
-        return _userResources.get(name);
+        return userResources.get(name);
     }
 
     public ExecutorService getSharedExecutor() {
-        return (ExecutorService) _defaultResources.get(SHARED_EXECUTOR);
+        return (ExecutorService) defaultResources.get(SHARED_EXECUTOR);
     }
 }

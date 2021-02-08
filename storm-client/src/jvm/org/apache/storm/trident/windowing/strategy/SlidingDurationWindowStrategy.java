@@ -31,10 +31,6 @@ public final class SlidingDurationWindowStrategy<T> extends BaseWindowStrategy<T
 
     /**
      * Returns a {@code TriggerPolicy} which triggers for every configured sliding window duration.
-     *
-     * @param triggerHandler
-     * @param evictionPolicy
-     * @return
      */
     @Override
     public TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T, ?> evictionPolicy) {
@@ -43,8 +39,6 @@ public final class SlidingDurationWindowStrategy<T> extends BaseWindowStrategy<T
 
     /**
      * Returns an {@code EvictionPolicy} instance which evicts elements after window duration is reached.
-     *
-     * @return
      */
     @Override
     public EvictionPolicy<T, ?> getEvictionPolicy() {

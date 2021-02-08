@@ -129,15 +129,15 @@ public class HiveBolt extends BaseRichBolt {
                 HiveWriter w = entry.getValue();
                 w.flushAndClose();
             } catch (Exception ex) {
-                LOG.warn("Error while closing writer to " + entry.getKey() +
-                         ". Exception follows.", ex);
+                LOG.warn("Error while closing writer to " + entry.getKey() + ". Exception follows.",
+                        ex);
                 if (ex instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
             }
         }
 
-        ExecutorService toShutdown[] = { callTimeoutPool };
+        ExecutorService[] toShutdown = { callTimeoutPool };
         for (ExecutorService execService : toShutdown) {
             execService.shutdown();
             try {
@@ -214,7 +214,7 @@ public class HiveBolt extends BaseRichBolt {
     }
 
     /**
-     * Abort current Txn on all writers
+     * Abort current Txn on all writers.
      */
     private void abortAllWriters() throws InterruptedException, StreamingException, HiveWriter.TxnBatchFailure {
         for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
@@ -227,7 +227,7 @@ public class HiveBolt extends BaseRichBolt {
     }
 
     /**
-     * Closes all writers and remove them from cache
+     * Closes all writers and remove them from cache.
      */
     private void closeAllWriters() {
         //1) Retire writers
@@ -269,7 +269,7 @@ public class HiveBolt extends BaseRichBolt {
     }
 
     /**
-     * Locate writer that has not been used for longest time and retire it
+     * Locate writer that has not been used for longest time and retire it.
      */
     private void retireEldestWriter() {
         LOG.info("Attempting close eldest writers");
@@ -295,7 +295,7 @@ public class HiveBolt extends BaseRichBolt {
     }
 
     /**
-     * Locate all writers past idle timeout and retire them
+     * Locate all writers past idle timeout and retire them.
      * @return number of writers retired
      */
     private int retireIdleWriters() {

@@ -19,14 +19,14 @@ import java.util.Map;
 import org.apache.storm.utils.ListDelegate;
 
 public class KryoValuesSerializer {
-    Kryo _kryo;
-    ListDelegate _delegate;
-    Output _kryoOut;
+    Kryo kryo;
+    ListDelegate delegate;
+    Output kryoOut;
 
     public KryoValuesSerializer(Map<String, Object> conf) {
-        _kryo = SerializationFactory.getKryo(conf);
-        _delegate = new ListDelegate();
-        _kryoOut = new Output(2000, 2000000000);
+        kryo = SerializationFactory.getKryo(conf);
+        delegate = new ListDelegate();
+        kryoOut = new Output(2000, 2000000000);
     }
 
     public void serializeInto(List<Object> values, Output out) {
@@ -34,19 +34,19 @@ public class KryoValuesSerializer {
         // of whether it's a java collection or one of clojure's persistent collections 
         // (which have different serializers)
         // Doing this lets us deserialize as ArrayList and avoid writing the class here
-        _delegate.setDelegate(values);
-        _kryo.writeObject(out, _delegate);
+        delegate.setDelegate(values);
+        kryo.writeObject(out, delegate);
     }
 
     public byte[] serialize(List<Object> values) {
-        _kryoOut.clear();
-        serializeInto(values, _kryoOut);
-        return _kryoOut.toBytes();
+        kryoOut.clear();
+        serializeInto(values, kryoOut);
+        return kryoOut.toBytes();
     }
 
     public byte[] serializeObject(Object obj) {
-        _kryoOut.clear();
-        _kryo.writeClassAndObject(_kryoOut, obj);
-        return _kryoOut.toBytes();
+        kryoOut.clear();
+        kryo.writeClassAndObject(kryoOut, obj);
+        return kryoOut.toBytes();
     }
 }

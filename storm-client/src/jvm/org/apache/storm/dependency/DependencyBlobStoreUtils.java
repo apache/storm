@@ -30,6 +30,7 @@ public class DependencyBlobStoreUtils {
         return BLOB_DEPENDENCIES_PREFIX + key;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static String applyUUIDToFileName(String fileName) {
         String fileNameWithExt = Files.getNameWithoutExtension(fileName);
         String ext = Files.getFileExtension(fileName);

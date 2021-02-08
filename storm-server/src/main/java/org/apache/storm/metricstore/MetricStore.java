@@ -45,6 +45,7 @@ public interface MetricStore extends AutoCloseable {
     /**
      * Close the metric store.
      */
+    @Override
     void close();
 
     /**

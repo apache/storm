@@ -147,6 +147,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
         }
 
         @SuppressWarnings({"rawtypes", "unchecked"})
+        @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             IBackingMap state = new MongoMapState(conf, options);
 
@@ -181,7 +182,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
                 Bson filter = options.queryCreator.createFilterByKeys(keys);
                 Document doc = mongoClient.find(filter);
                 if (doc != null) {
-                    retval.add(this.serializer.deserialize((byte[])doc.get(options.serDocumentField)));
+                    retval.add(this.serializer.deserialize((byte[]) doc.get(options.serDocumentField)));
                 } else {
                     retval.add(null);
                 }

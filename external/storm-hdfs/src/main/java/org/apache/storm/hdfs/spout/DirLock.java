@@ -39,9 +39,8 @@ public class DirLock {
         this.lockFile = lockFile;
     }
 
-    /** Get a lock on file if not already locked
+    /** Get a lock on file if not already locked.
      *
-     * @param fs
      * @param dir  the dir on which to get a lock
      * @return The lock object if it the lock was acquired. Returns null if the dir is already locked.
      * @throws IOException if there were errors
@@ -74,7 +73,9 @@ public class DirLock {
                + Thread.currentThread().getName();
     }
 
-    /** if the lock on the directory is stale, take ownership */
+    /**
+     * if the lock on the directory is stale, take ownership.
+     */
     public static DirLock takeOwnershipIfStale(FileSystem fs, Path dirToLock, int lockTimeoutSec) {
         Path dirLockFile = getDirLockFile(dirToLock);
 
@@ -95,8 +96,8 @@ public class DirLock {
     private static DirLock takeOwnership(FileSystem fs, Path dirLockFile) throws IOException {
         if (fs instanceof DistributedFileSystem) {
             if (!((DistributedFileSystem) fs).recoverLease(dirLockFile)) {
-                LOG.warn("Unable to recover lease on dir lock file " + dirLockFile +
-                         " right now. Cannot transfer ownership. Will need to try later.");
+                LOG.warn("Unable to recover lease on dir lock file " + dirLockFile
+                        + " right now. Cannot transfer ownership. Will need to try later.");
                 return null;
             }
         }
@@ -112,7 +113,9 @@ public class DirLock {
         return null;
     }
 
-    /** Release lock on dir by deleting the lock file */
+    /**
+     * Release lock on dir by deleting the lock file.
+     */
     public void release() throws IOException {
         if (!fs.delete(lockFile, false)) {
             LOG.error("Thread {} could not delete dir lock {} ", threadInfo(), lockFile);

@@ -19,26 +19,26 @@ import java.util.Map;
 import org.apache.storm.utils.ListDelegate;
 
 public class KryoValuesDeserializer {
-    Kryo _kryo;
-    Input _kryoInput;
+    Kryo kryo;
+    Input kryoInput;
 
     public KryoValuesDeserializer(Map<String, Object> conf) {
-        _kryo = SerializationFactory.getKryo(conf);
-        _kryoInput = new Input(1);
+        kryo = SerializationFactory.getKryo(conf);
+        kryoInput = new Input(1);
     }
 
     public List<Object> deserializeFrom(Input input) {
-        ListDelegate delegate = _kryo.readObject(input, ListDelegate.class);
+        ListDelegate delegate = kryo.readObject(input, ListDelegate.class);
         return delegate.getDelegate();
     }
 
     public List<Object> deserialize(byte[] ser) {
-        _kryoInput.setBuffer(ser);
-        return deserializeFrom(_kryoInput);
+        kryoInput.setBuffer(ser);
+        return deserializeFrom(kryoInput);
     }
 
     public Object deserializeObject(byte[] ser) {
-        _kryoInput.setBuffer(ser);
-        return _kryo.readClassAndObject(_kryoInput);
+        kryoInput.setBuffer(ser);
+        return kryo.readClassAndObject(kryoInput);
     }
 }

@@ -18,23 +18,23 @@ import java.util.List;
 import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
 
 public class ComboList extends AbstractList<Object> {
-    Pointer[] _index;
-    List[] _delegates;
+    Pointer[] index;
+    List[] delegates;
 
     public ComboList(List[] delegates, Pointer[] index) {
-        _index = index;
-        _delegates = delegates;
+        this.index = index;
+        this.delegates = delegates;
     }
 
     @Override
     public Object get(int i) {
-        Pointer ptr = _index[i];
-        return _delegates[ptr.listIndex].get(ptr.subIndex);
+        Pointer ptr = index[i];
+        return delegates[ptr.listIndex].get(ptr.subIndex);
     }
 
     @Override
     public int size() {
-        return _index.length;
+        return index.length;
     }
 
     public static class Factory implements Serializable {
@@ -77,7 +77,7 @@ public class ComboList extends AbstractList<Object> {
         int listIndex;
         int subIndex;
 
-        public Pointer(int listIndex, int subIndex) {
+        Pointer(int listIndex, int subIndex) {
             this.listIndex = listIndex;
             this.subIndex = subIndex;
         }

@@ -28,10 +28,9 @@ import org.apache.storm.topology.FailedException;
 import org.apache.storm.tuple.Fields;
 
 /**
- *
  * Simple {@link org.apache.storm.grouping.CustomStreamGrouping} that uses Murmur3 algorithm to choose the target task of a tuple.
  *
- * This stream grouping may be used to optimise writes to Apache Cassandra.
+ * <p>This stream grouping may be used to optimise writes to Apache Cassandra.
  */
 public class Murmur3StreamGrouping implements CustomStreamGrouping {
 
@@ -66,9 +65,8 @@ public class Murmur3StreamGrouping implements CustomStreamGrouping {
      * http://stackoverflow.com/questions/27212797/cassandra-hashing-algorithm-with-composite-keys
      * https://github.com/apache/cassandra/blob/trunk/src/java/org/apache/cassandra/db/marshal/CompositeType.java
      *
-     * @param values the fields which are part of the (compose) partition key.
-     * @return the computed hash for input values.
-     * @throws java.io.IOException
+     * @param values the fields which are part of the (compose) partition key
+     * @return the computed hash for input values
      */
     @VisibleForTesting
     public static long hashes(List<Object> values) throws IOException {

@@ -27,48 +27,35 @@ public class Monitor {
     private static final String WATCH_TRANSFERRED = "transferred";
     private static final String WATCH_EMITTED = "emitted";
 
-    private int _interval = 4;
-    private String _topology;
-    private String _component;
-    private String _stream;
-    private String _watch;
+    private int interval = 4;
+    private String topology;
+    private String component;
+    private String stream;
+    private String watch;
 
     private HashSet<String> getComponents(Nimbus.Iface client, String topology) throws Exception {
         HashSet<String> components = new HashSet<>();
-        ClusterSummary clusterSummary = client.getClusterInfo();
-        TopologySummary topologySummary = null;
-        for (TopologySummary ts : clusterSummary.get_topologies()) {
-            if (topology.equals(ts.get_name())) {
-                topologySummary = ts;
-                break;
-            }
-        }
-        if (topologySummary == null) {
-            throw new IllegalArgumentException("topology: " + topology + " not found");
-        } else {
-            String id = topologySummary.get_id();
-            GetInfoOptions getInfoOpts = new GetInfoOptions();
-            getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
-            TopologyInfo info = client.getTopologyInfoWithOpts(id, getInfoOpts);
-            for (ExecutorSummary es : info.get_executors()) {
-                components.add(es.get_component_id());
-            }
+        GetInfoOptions getInfoOpts = new GetInfoOptions();
+        getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
+        TopologyInfo info = client.getTopologyInfoByNameWithOpts(topology, getInfoOpts);
+        for (ExecutorSummary es : info.get_executors()) {
+            components.add(es.get_component_id());
         }
         return components;
     }
 
     public void metrics(Nimbus.Iface client) throws Exception {
-        if (_interval <= 0) {
+        if (interval <= 0) {
             throw new IllegalArgumentException("poll interval must be positive");
         }
 
-        if (_topology == null || _topology.isEmpty()) {
+        if (topology == null || topology.isEmpty()) {
             throw new IllegalArgumentException("topology name must be something");
         }
 
-        if (_component == null || _component.isEmpty()) {
-            HashSet<String> components = getComponents(client, _topology);
-            System.out.println("Available components for " + _topology + " :");
+        if (component == null || component.isEmpty()) {
+            HashSet<String> components = getComponents(client, topology);
+            System.out.println("Available components for " + topology + " :");
             System.out.println("------------------");
             for (String comp : components) {
                 System.out.println(comp);
@@ -78,16 +65,16 @@ public class Monitor {
             return;
         }
 
-        if (_stream == null || _stream.isEmpty()) {
+        if (stream == null || stream.isEmpty()) {
             throw new IllegalArgumentException("stream name must be something");
         }
 
-        if (!WATCH_TRANSFERRED.equals(_watch) && !WATCH_EMITTED.equals(_watch)) {
+        if (!WATCH_TRANSFERRED.equals(watch) && !WATCH_EMITTED.equals(watch)) {
             throw new IllegalArgumentException("watch item must either be transferred or emitted");
         }
-        System.out.println("topology\tcomponent\tparallelism\tstream\ttime-diff ms\t" + _watch + "\tthroughput (Kt/s)");
+        System.out.println("topology\tcomponent\tparallelism\tstream\ttime-diff ms\t" + watch + "\tthroughput (Kt/s)");
 
-        long pollMs = _interval * 1000;
+        long pollMs = interval * 1000;
         long now = System.currentTimeMillis();
         MetricsState state = new MetricsState(now, 0);
         Poller poller = new Poller(now, pollMs);
@@ -105,39 +92,24 @@ public class Monitor {
 
     public void metrics(Nimbus.Iface client, long now, MetricsState state) throws Exception {
         long totalStatted = 0;
-
         int componentParallelism = 0;
         boolean streamFound = false;
-        ClusterSummary clusterSummary = client.getClusterInfo();
-        TopologySummary topologySummary = null;
-        for (TopologySummary ts : clusterSummary.get_topologies()) {
-            if (_topology.equals(ts.get_name())) {
-                topologySummary = ts;
-                break;
-            }
-        }
-        if (topologySummary == null) {
-            throw new IllegalArgumentException("topology: " + _topology + " not found");
-        } else {
-            String id = topologySummary.get_id();
-            GetInfoOptions getInfoOpts = new GetInfoOptions();
-            getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
-            TopologyInfo info = client.getTopologyInfoWithOpts(id, getInfoOpts);
-            for (ExecutorSummary es : info.get_executors()) {
-                if (_component.equals(es.get_component_id())) {
-                    componentParallelism++;
-                    ExecutorStats stats = es.get_stats();
-                    if (stats != null) {
-                        Map<String, Map<String, Long>> statted =
-                            WATCH_EMITTED.equals(_watch) ? stats.get_emitted() : stats.get_transferred();
-                        if (statted != null) {
-                            Map<String, Long> e2 = statted.get(":all-time");
-                            if (e2 != null) {
-                                Long stream = e2.get(_stream);
-                                if (stream != null) {
-                                    streamFound = true;
-                                    totalStatted += stream;
-                                }
+        GetInfoOptions getInfoOpts = new GetInfoOptions();
+        getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
+        TopologyInfo info = client.getTopologyInfoByNameWithOpts(topology, getInfoOpts);
+        for (ExecutorSummary es : info.get_executors()) {
+            if (component.equals(es.get_component_id())) {
+                componentParallelism++;
+                ExecutorStats stats = es.get_stats();
+                if (stats != null) {
+                    Map<String, Map<String, Long>> statted = WATCH_EMITTED.equals(watch) ? stats.get_emitted() : stats.get_transferred();
+                    if (statted != null) {
+                        Map<String, Long> e2 = statted.get(":all-time");
+                        if (e2 != null) {
+                            Long stream = e2.get(this.stream);
+                            if (stream != null) {
+                                streamFound = true;
+                                totalStatted += stream;
                             }
                         }
                     }
@@ -146,47 +118,51 @@ public class Monitor {
         }
 
         if (componentParallelism <= 0) {
-            HashSet<String> components = getComponents(client, _topology);
-            System.out.println("Available components for " + _topology + " :");
+            HashSet<String> components = getComponents(client, topology);
+            System.out.println("Available components for " + topology + " :");
             System.out.println("------------------");
             for (String comp : components) {
                 System.out.println(comp);
             }
             System.out.println("------------------");
-            throw new IllegalArgumentException("component: " + _component + " not found");
+            throw new IllegalArgumentException("component: " + component + " not found");
         }
 
         if (!streamFound) {
-            throw new IllegalArgumentException("stream: " + _stream + " not found");
+            throw new IllegalArgumentException("stream: " + stream + " not found");
         }
         long timeDelta = now - state.getLastTime();
         long stattedDelta = totalStatted - state.getLastStatted();
         state.setLastTime(now);
         state.setLastStatted(totalStatted);
         double throughput = (stattedDelta == 0 || timeDelta == 0) ? 0.0 : ((double) stattedDelta / (double) timeDelta);
-        System.out.println(
-            _topology + "\t" + _component + "\t" + componentParallelism + "\t" + _stream + "\t" + timeDelta + "\t" + stattedDelta + "\t" +
-            throughput);
+        System.out.println(topology + "\t"
+                    + component + "\t"
+                    + componentParallelism + "\t"
+                    + stream + "\t"
+                    + timeDelta + "\t"
+                    + stattedDelta + "\t"
+                    + throughput);
     }
 
-    public void set_interval(int _interval) {
-        this._interval = _interval;
+    public void setInterval(int interval) {
+        this.interval = interval;
     }
 
-    public void set_topology(String _topology) {
-        this._topology = _topology;
+    public void setTopology(String topology) {
+        this.topology = topology;
     }
 
-    public void set_component(String _component) {
-        this._component = _component;
+    public void setComponent(String component) {
+        this.component = component;
     }
 
-    public void set_stream(String _stream) {
-        this._stream = _stream;
+    public void setStream(String stream) {
+        this.stream = stream;
     }
 
-    public void set_watch(String _watch) {
-        this._watch = _watch;
+    public void setWatch(String watch) {
+        this.watch = watch;
     }
 
     private static class MetricsState {

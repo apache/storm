@@ -12,6 +12,8 @@
 
 package org.apache.storm.hbase.topology;
 
+import static org.apache.storm.utils.Utils.tuple;
+
 import java.util.Map;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
@@ -20,11 +22,10 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
-import static org.apache.storm.utils.Utils.tuple;
-
 public class WordCounter implements IBasicBolt {
 
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 
@@ -32,14 +33,17 @@ public class WordCounter implements IBasicBolt {
      * Just output the word value with a count of 1.
      * The HBaseBolt will handle incrementing the counter.
      */
+    @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         collector.emit(tuple(input.getValues().get(0), 1));
     }
 
+    @Override
     public void cleanup() {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("word", "count"));
     }

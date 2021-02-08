@@ -42,14 +42,16 @@ public class PythonShellMetricsSpout extends ShellSpout implements IRichSpout {
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         super.open(conf, context, collector);
 
-        CountShellMetric cMetric = new CountShellMetric();
-        context.registerMetric("my-custom-shellspout-metric", cMetric, 5);
+        CountShellMetric countShellMetric = new CountShellMetric();
+        context.registerMetric("my-custom-shellspout-metric", countShellMetric, 5);
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("field1"));
     }
 
+    @Override
     public Map<String, Object> getComponentConfiguration() {
         return null;
     }

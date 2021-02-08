@@ -29,14 +29,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Apply Blowfish encryption for tuple communication to bolts
+ * Apply Blowfish encryption for tuple communication to bolts.
  */
 public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     /**
      * The secret key (if any) for data encryption by blowfish payload serialization factory (BlowfishSerializationFactory). You should use
      * in via:
      *
-     * ```storm -c topology.tuple.serializer.blowfish.key=YOURKEY -c topology.tuple.serializer=org.apache.storm.security.serialization
+     * <p>```storm -c topology.tuple.serializer.blowfish.key=YOURKEY -c topology.tuple.serializer=org.apache.storm.security.serialization
      * .BlowfishTupleSerializer
      * jar ...```
      */
@@ -71,7 +71,7 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     }
 
     /**
-     * Produce a blowfish key to be used in "Storm jar" command
+     * Produce a blowfish key to be used in "Storm jar" command.
      */
     public static void main(String[] args) {
         try {
@@ -80,8 +80,9 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
             SecretKey skey = kgen.generateKey();
             byte[] raw = skey.getEncoded();
             String keyString = new String(Hex.encodeHex(raw));
-            System.out.println("storm -c " + SECRET_KEY + "=" + keyString + " -c " + Config.TOPOLOGY_TUPLE_SERIALIZER + "=" +
-                               BlowfishTupleSerializer.class.getName() + " ...");
+            System.out.println("storm -c " + SECRET_KEY
+                    + "=" + keyString + " -c " + Config.TOPOLOGY_TUPLE_SERIALIZER
+                    + "=" + BlowfishTupleSerializer.class.getName() + " ...");
         } catch (Exception ex) {
             LOG.error(ex.getMessage());
         }

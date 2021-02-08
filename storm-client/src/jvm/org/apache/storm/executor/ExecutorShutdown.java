@@ -60,18 +60,10 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
 
     @Override
     public void credentialsChanged(Credentials credentials) {
-        TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), new Values(credentials),
-                                        Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID,
-                                        Constants.CREDENTIALS_CHANGED_STREAM_ID);
-        AddressedTuple addressedTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-        try {
-            executor.getReceiveQueue().publish(addressedTuple);
-            executor.getReceiveQueue().flush();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        executor.setNeedToRefreshCreds();
     }
 
+    @Override
     public void loadChanged(LoadMapping loadMapping) {
         executor.reflectNewLoadMapping(loadMapping);
     }
@@ -96,7 +88,14 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
             }
             for (Utils.SmartThread t : threads) {
                 LOG.debug("Executor " + executor.getComponentId() + ":" + executor.getExecutorId() + " joining thread " + t.getName());
-                t.join();
+                //Don't wait forever.
+                //This is to avoid the deadlock between the executor thread (t) and the shutdown hook (which invokes Worker::shutdown)
+                //when it is the executor thread (t) who invokes the shutdown hook. See STORM-3658.
+                long waitMs = 100;
+                t.join(waitMs);
+                if (t.isAlive()) {
+                    LOG.warn("Thread {} is still alive ({} ms after interruption). Stop waiting for it.", t.getName(), waitMs);
+                }
             }
             executor.getStats().cleanupStats();
             for (Task task : taskDatas) {

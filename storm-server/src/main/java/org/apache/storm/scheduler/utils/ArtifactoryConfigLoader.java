@@ -44,6 +44,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * A dynamic loader that can load scheduler configurations for user resource guarantees from Artifactory (an artifact repository manager).
+ * This is not thread-safe.
  */
 public class ArtifactoryConfigLoader implements IConfigLoader {
     protected static final String LOCAL_ARTIFACT_DIR = "scheduler_artifacts";
@@ -64,7 +65,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     private int lastReturnedTime = 0;
     private int timeoutSeconds = DEFAULT_TIMEOUT_SECS;
     private Map<String, Object> lastReturnedValue;
-    private URI targetURI = null;
+    private URI targetUri = null;
     private JSONParser jsonParser;
     private String scheme;
 
@@ -87,8 +88,8 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             LOG.error("No URI defined in {} configuration.", DaemonConfig.SCHEDULER_CONFIG_LOADER_URI);
         } else {
             try {
-                targetURI = new URI(uriString);
-                scheme = targetURI.getScheme().substring(ARTIFACTORY_SCHEME_PREFIX.length());
+                targetUri = new URI(uriString);
+                scheme = targetUri.getScheme().substring(ARTIFACTORY_SCHEME_PREFIX.length());
             } catch (URISyntaxException e) {
                 LOG.error("Failed to parse uri={}", uriString);
             }
@@ -103,7 +104,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
      */
     @Override
     public Map<String, Object> load(String configKey) {
-        if (targetURI == null) {
+        if (targetUri == null) {
             return null;
         }
 
@@ -116,25 +117,25 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         }
 
         try {
-            Map<String, Object> raw = loadFromURI(targetURI);
+            Map<String, Object> raw = loadFromUri(targetUri);
             if (raw != null) {
                 return (Map<String, Object>) raw.get(configKey);
             }
         } catch (Exception e) {
-            LOG.error("Failed to load from uri {}", targetURI);
+            LOG.error("Failed to load from uri {}", targetUri);
         }
         return null;
     }
 
     /**
+     * Protected so we can override this in unit tests.
+     *
      * @param api null if we are trying to download artifact, otherwise a string to call REST api,
      *        e.g. "/api/storage"
      * @param artifact location of artifact
      * @param host Artifactory hostname
      * @param port Artifactory port
      * @return null on failure or the response string if return code is in 200 range
-     *
-     * <p>Protected so we can override this in unit tests
      */
     protected String doGet(String api, String artifact, String host, Integer port) {
         URIBuilder builder = new URIBuilder().setScheme(scheme).setHost(host).setPort(port);
@@ -158,7 +159,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             LOG.debug("About to issue a GET to {}", builder);
             HttpGet httpget = new HttpGet(builder.build());
             String responseBody;
-            responseBody = httpclient.execute(httpget, GETStringResponseHandler.getInstance());
+            responseBody = httpclient.execute(httpget, GetStringResponseHandler.getInstance());
             returnValue = responseBody;
         } catch (Exception e) {
             LOG.error("Received exception while connecting to Artifactory", e);
@@ -196,10 +197,10 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             LOG.error("got null metadata");
             return null;
         }
-        String downloadURI = (String) json.get("downloadUri");
+        String downloadUri = (String) json.get("downloadUri");
 
         // This means we are pointing at a file.
-        if (downloadURI != null) {
+        if (downloadUri != null) {
             // Then get it and return the file as string.
             String returnValue = doGet(null, location, host, port);
             saveInArtifactoryCache(returnValue);
@@ -298,7 +299,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         cacheInitialized = true;
     }
 
-    private Map<String, Object> loadFromURI(URI uri) throws IOException {
+    private Map<String, Object> loadFromUri(URI uri) throws IOException {
         String host = uri.getHost();
         Integer port = uri.getPort();
         String location = uri.getPath();
@@ -342,20 +343,22 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     /**
      * A private class used to check the response coming back from httpclient.
      */
-    private static class GETStringResponseHandler implements ResponseHandler<String> {
-        private static GETStringResponseHandler singleton = null;
+    private static class GetStringResponseHandler implements ResponseHandler<String> {
+        private static GetStringResponseHandler singleton = null;
 
         /**
+         * Get instance.
          * @return a singleton httpclient GET response handler
          */
-        public static GETStringResponseHandler getInstance() {
+        public static GetStringResponseHandler getInstance() {
             if (singleton == null) {
-                singleton = new GETStringResponseHandler();
+                singleton = new GetStringResponseHandler();
             }
             return singleton;
         }
 
         /**
+         * Handle response.
          * @param response The http response to verify.
          * @return null on failure or the response string if return code is in 200 range
          */
@@ -374,6 +377,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     }
 
     private class DirEntryCompare implements Comparator<JSONObject> {
+
         @Override
         public int compare(JSONObject o1, JSONObject o2) {
             return ((String) o1.get("uri")).compareTo((String) o2.get("uri"));

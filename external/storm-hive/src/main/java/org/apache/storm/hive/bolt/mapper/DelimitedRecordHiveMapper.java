@@ -12,7 +12,6 @@
 
 package org.apache.storm.hive.bolt.mapper;
 
-
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -94,18 +93,6 @@ public class DelimitedRecordHiveMapper implements HiveMapper {
     }
 
     @Override
-    public byte[] mapRecord(Tuple tuple) {
-        StringBuilder builder = new StringBuilder();
-        if (this.columnFields != null) {
-            for (String field : this.columnFields) {
-                builder.append(tuple.getValueByField(field));
-                builder.append(fieldDelimiter);
-            }
-        }
-        return builder.toString().getBytes();
-    }
-
-    @Override
     public List<String> mapPartitions(TridentTuple tuple) {
         List<String> partitionList = new ArrayList<String>();
         if (this.partitionFields != null) {
@@ -117,6 +104,18 @@ public class DelimitedRecordHiveMapper implements HiveMapper {
             partitionList.add(getPartitionsByTimeFormat());
         }
         return partitionList;
+    }
+
+    @Override
+    public byte[] mapRecord(Tuple tuple) {
+        StringBuilder builder = new StringBuilder();
+        if (this.columnFields != null) {
+            for (String field : this.columnFields) {
+                builder.append(tuple.getValueByField(field));
+                builder.append(fieldDelimiter);
+            }
+        }
+        return builder.toString().getBytes();
     }
 
     @Override

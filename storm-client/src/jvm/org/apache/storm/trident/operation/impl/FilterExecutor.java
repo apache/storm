@@ -22,27 +22,27 @@ import org.apache.storm.trident.tuple.TridentTuple;
 // works by emitting null to the collector. since the planner knows this is an ADD node with
 // no new output fields, it just passes the tuple forward
 public class FilterExecutor implements Function {
-    Filter _filter;
+    Filter filter;
 
     public FilterExecutor(Filter filter) {
-        _filter = filter;
+        this.filter = filter;
     }
 
     @Override
     public void execute(TridentTuple tuple, TridentCollector collector) {
-        if (_filter.isKeep(tuple)) {
+        if (filter.isKeep(tuple)) {
             collector.emit(null);
         }
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TridentOperationContext context) {
-        _filter.prepare(conf, context);
+        filter.prepare(conf, context);
     }
 
     @Override
     public void cleanup() {
-        _filter.cleanup();
+        filter.cleanup();
     }
 
 }

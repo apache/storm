@@ -23,7 +23,7 @@ import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 import org.apache.storm.trident.spout.ISpoutPartition;
 
 /**
- * Represents an EventHub partition
+ * Represents an EventHub partition.
  */
 public class Partition implements ISpoutPartition, Serializable {
     private static final long serialVersionUID = 1L;

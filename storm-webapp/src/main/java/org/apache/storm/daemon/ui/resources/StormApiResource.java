@@ -214,7 +214,7 @@ public class StormApiResource {
     }
 
     /**
-     * /api/v1/supervisor/summary -> topo history.
+     * /api/v1/supervisor/summary -> supervisor summary.
      */
     @GET
     @Path("/supervisor/summary")
@@ -270,7 +270,7 @@ public class StormApiResource {
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getAllTopologiesSummary(
-                            nimbusClient.getClient().getClusterInfo().get_topologies(),
+                            nimbusClient.getClient().getTopologySummaries(),
                             config
                     ),
                     callback
@@ -402,6 +402,9 @@ public class StormApiResource {
                     UIHelpers.getVisualizationData(nimbusClient.getClient(), window, id, sys),
                     callback
             );
+        } catch (RuntimeException e) {
+            LOG.error("Failure getting topology visualization", e);
+            throw e;
         }
     }
 

@@ -18,12 +18,12 @@
 
 package org.apache.storm.kinesis.spout;
 
+import java.util.Map;
+
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
-
-import java.util.Map;
 
 public class KinesisSpout extends BaseRichSpout {
 
@@ -31,7 +31,7 @@ public class KinesisSpout extends BaseRichSpout {
     private transient KinesisRecordsManager kinesisRecordsManager;
     private transient SpoutOutputCollector collector;
 
-    public KinesisSpout (KinesisConfig kinesisConfig) {
+    public KinesisSpout(KinesisConfig kinesisConfig) {
         this.kinesisConfig = kinesisConfig;
     }
 
@@ -41,7 +41,7 @@ public class KinesisSpout extends BaseRichSpout {
     }
 
     @Override
-    public Map<String, Object> getComponentConfiguration () {
+    public Map<String, Object> getComponentConfiguration() {
         return super.getComponentConfiguration();
     }
 

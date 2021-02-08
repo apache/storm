@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.task.TopologyContext;
 
 /**
- * Provides {@link InMemoryKeyValueState}
+ * Provides {@link InMemoryKeyValueState}.
  */
 public class InMemoryKeyValueStateProvider implements StateProvider {
     private final ConcurrentHashMap<String, State> states = new ConcurrentHashMap<>();

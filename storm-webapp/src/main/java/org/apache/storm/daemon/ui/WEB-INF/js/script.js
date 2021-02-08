@@ -406,6 +406,15 @@ var makeWorkerStatsTable = function (response, elId, parentId, type) {
                         row.topologyId;
                 }
             });
+            // the supervisor page has owner as the third column in the worker table
+            columns.splice(2, 0, {
+                data: 'owner',
+                render: function(data, type, row) {
+                    return type === 'display' ?
+                        ('<a href="/owner.html?id=' + data + '">' + data + '</a>') :
+                        data;
+                }
+            });
             break;
     }
 

@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.worker;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,17 +38,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // Transfers messages destined to other workers
-class WorkerTransfer implements JCQueue.Consumer {
+public class WorkerTransfer implements JCQueue.Consumer {
     static final Logger LOG = LoggerFactory.getLogger(WorkerTransfer.class);
 
     private final TransferDrainer drainer;
-    private WorkerState workerState;
+    private final WorkerState workerState;
 
-    private IWaitStrategy backPressureWaitStrategy;
+    private final IWaitStrategy backPressureWaitStrategy;
 
     private JCQueue transferQueue; // [remoteTaskId] -> JCQueue. Some entries maybe null (if no emits to those tasksIds from this worker)
 
-    private AtomicBoolean[] remoteBackPressureStatus; // [[remoteTaskId] -> true/false : indicates if remote task is under BP.
+    private final AtomicBoolean[] remoteBackPressureStatus; // [[remoteTaskId] -> true/false : indicates if remote task is under BP.
 
     public WorkerTransfer(WorkerState workerState, Map<String, Object> topologyConf, int maxTaskIdInTopo) {
         this.workerState = workerState;
@@ -65,8 +66,10 @@ class WorkerTransfer implements JCQueue.Consumer {
                                                + Config.TOPOLOGY_TRANSFER_BUFFER_SIZE + ":" + xferQueueSz);
         }
 
-        this.transferQueue = new JCQueue("worker-transfer-queue", xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy,
-                                         workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, workerState.getPort());
+        this.transferQueue = new JCQueue("worker-transfer-queue", "worker-transfer-queue",
+            xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy,
+            workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, Collections.singletonList(-1), workerState.getPort(),
+            workerState.getMetricRegistry());
     }
 
     public JCQueue getTransferQueue() {

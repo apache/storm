@@ -12,6 +12,8 @@
 
 package org.apache.storm.testing;
 
+import static org.apache.storm.Testing.whileTimeout;
+
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,8 +30,6 @@ import org.apache.storm.utils.RegisteredGlobalState;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.Testing.whileTimeout;
 
 /**
  * A tracked topology keeps metrics for every bolt and spout.
@@ -79,7 +79,7 @@ public class TrackedTopology {
     }
 
     /**
-     * Wait for 1 tuple to be fully processed
+     * Wait for 1 tuple to be fully processed.
      */
     public void trackedWait() {
         trackedWait(1, Testing.TEST_TIMEOUT_MS);
@@ -100,29 +100,30 @@ public class TrackedTopology {
         final String id = cluster.getTrackedId();
         Random rand = ThreadLocalRandom.current();
         whileTimeout(timeoutMs,
-                     () -> {
-                         int se = globalAmt(id, "spout-emitted");
-                         int transferred = globalAmt(id, "transferred");
-                         int processed = globalAmt(id, "processed");
-                         LOG.info("emitted {} target {} transferred {} processed {}", se, target, transferred, processed);
-                         return (target != se) || (transferred != processed);
-                     },
-                     () -> {
-                         Time.advanceTimeSecs(1);
-                         try {
-                             Thread.sleep(rand.nextInt(200));
-                         } catch (Exception e) {
-                             throw new RuntimeException(e);
-                         }
-                     });
+            () -> {
+                int se = globalAmt(id, "spout-emitted");
+                int transferred = globalAmt(id, "transferred");
+                int processed = globalAmt(id, "processed");
+                LOG.info("emitted {} target {} transferred {} processed {}", se, target, transferred, processed);
+                return (target != se) || (transferred != processed);
+            },
+            () -> {
+                Time.advanceTimeSecs(1);
+                try {
+                    Thread.sleep(rand.nextInt(200));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
         lastSpoutCommit.set(target);
     }
 
     /**
-     * Read a metric from the tracked cluster (NOT JUST THIS TOPOLOGY)
+     * Read a metric from the tracked cluster (NOT JUST THIS TOPOLOGY).
      * @param key one of "spout-emitted", "processed", or "transferred"
      * @return the amount of that metric
      */
+    @SuppressWarnings("checkstyle:OverloadMethodsDeclarationOrder")
     public int globalAmt(String key) {
         return globalAmt(cluster.getTrackedId(), key);
     }

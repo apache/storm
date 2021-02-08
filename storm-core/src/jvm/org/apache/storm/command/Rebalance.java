@@ -13,12 +13,14 @@
 package org.apache.storm.command;
 
 import static java.lang.String.format;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,27 +39,35 @@ public class Rebalance {
                                     .arg("topologyName", CLI.FIRST_WINS)
                                     .parse(args);
         final String name = (String) cl.get("topologyName");
+        Utils.validateTopologyName(name);
         final RebalanceOptions rebalanceOptions = new RebalanceOptions();
         Integer wait = (Integer) cl.get("w");
-        Integer numWorkers = (Integer) cl.get("n");
-        Map<String, Integer> numExecutors = (Map<String, Integer>) cl.get("e");
-        Map<String, Map<String, Double>> resourceOverrides = (Map<String, Map<String, Double>>) cl.get("r");
-
         if (null != wait) {
             rebalanceOptions.set_wait_secs(wait);
         }
+        Integer numWorkers = (Integer) cl.get("n");
         if (null != numWorkers) {
             rebalanceOptions.set_num_workers(numWorkers);
         }
+        Map<String, Integer> numExecutors = (Map<String, Integer>) cl.get("e");
         if (null != numExecutors) {
             rebalanceOptions.set_num_executors(numExecutors);
         }
-
+        Map<String, Map<String, Double>> resourceOverrides = (Map<String, Map<String, Double>>) cl.get("r");
         if (null != resourceOverrides) {
             rebalanceOptions.set_topology_resources_overrides(resourceOverrides);
         }
 
         Map<String, Object> confOverrides = (Map<String, Object>) cl.get("t");
+        Map<String, Object> jvmOpts = Utils.readCommandLineOpts(); // values in -Dstorm.options (originally -c in storm.py)
+        if (jvmOpts != null && !jvmOpts.isEmpty()) {
+            if (confOverrides == null) {
+                confOverrides = jvmOpts;
+            } else {
+                confOverrides.putAll(jvmOpts); // override with values obtained from -Dstorm.options
+            }
+            LOG.info("Rebalancing topology with overrides {}", JSONObject.toJSONString(confOverrides));
+        }
 
         if (null != confOverrides) {
             rebalanceOptions.set_topology_conf_overrides(JSONValue.toJSONString(confOverrides));

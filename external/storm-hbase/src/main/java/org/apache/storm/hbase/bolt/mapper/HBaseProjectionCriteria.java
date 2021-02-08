@@ -32,9 +32,6 @@ public class HBaseProjectionCriteria implements Serializable {
 
     /**
      * all columns from this family will be included as result of HBase lookup.
-     *
-     * @param columnFamily
-     * @return
      */
     public HBaseProjectionCriteria addColumnFamily(String columnFamily) {
         this.columnFamilies.add(columnFamily.getBytes());
@@ -43,9 +40,6 @@ public class HBaseProjectionCriteria implements Serializable {
 
     /**
      * all columns from this family will be included as result of HBase lookup.
-     *
-     * @param columnFamily
-     * @return
      */
     public HBaseProjectionCriteria addColumnFamily(byte[] columnFamily) {
         this.columnFamilies.add(Arrays.copyOf(columnFamily, columnFamily.length));
@@ -54,9 +48,6 @@ public class HBaseProjectionCriteria implements Serializable {
 
     /**
      * Only this column from the the columnFamily will be included as result of HBase lookup.
-     *
-     * @param column
-     * @return
      */
     public HBaseProjectionCriteria addColumn(ColumnMetaData column) {
         this.columns.add(column);

@@ -27,7 +27,7 @@ public class RedisState implements State {
     private JedisPool jedisPool;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param jedisPool JedisPool
      */
@@ -39,14 +39,14 @@ public class RedisState implements State {
      * {@inheritDoc}
      */
     @Override
-    public void beginCommit(Long aLong) {
+    public void beginCommit(Long someLong) {
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void commit(Long aLong) {
+    public void commit(Long someLong) {
     }
 
     /**
@@ -80,7 +80,7 @@ public class RedisState implements State {
         private JedisPoolConfig jedisPoolConfig;
 
         /**
-         * Constructor
+         * Constructor.
          *
          * @param config configuration of JedisPool
          */

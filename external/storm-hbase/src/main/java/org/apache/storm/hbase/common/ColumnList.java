@@ -18,15 +18,15 @@ import java.util.List;
 /**
  * Represents a list of HBase columns.
  *
- * There are two types of columns, <i>standard</i> and <i>counter</i>.
+ * <p>There are two types of columns, <i>standard</i> and <i>counter</i>.
  *
- * Standard columns have <i>column family</i> (required), <i>qualifier</i> (optional),
+ * <p>Standard columns have <i>column family</i> (required), <i>qualifier</i> (optional),
  * <i>timestamp</i> (optional), and a <i>value</i> (optional) values.
  *
- * Counter columns have <i>column family</i> (required), <i>qualifier</i> (optional), and an <i>increment</i> (optional, but recommended)
+ * <p>Counter columns have <i>column family</i> (required), <i>qualifier</i> (optional), and an <i>increment</i> (optional, but recommended)
  * values.
  *
- * Inserts/Updates can be added via the <code>addColumn()</code> and <code>addCounter()</code> methods.
+ * <p>Inserts/Updates can be added via the <code>addColumn()</code> and <code>addCounter()</code> methods.
  */
 public class ColumnList {
 
@@ -57,12 +57,6 @@ public class ColumnList {
 
     /**
      * Add a standard HBase column.
-     *
-     * @param family
-     * @param qualifier
-     * @param ts
-     * @param value
-     * @return
      */
     public ColumnList addColumn(byte[] family, byte[] qualifier, long ts, byte[] value) {
         columns().add(new Column(family, qualifier, ts, value));
@@ -70,12 +64,7 @@ public class ColumnList {
     }
 
     /**
-     * Add a standard HBase column
-     *
-     * @param family
-     * @param qualifier
-     * @param value
-     * @return
+     * Add a standard HBase column.
      */
     public ColumnList addColumn(byte[] family, byte[] qualifier, byte[] value) {
         columns().add(new Column(family, qualifier, -1, value));
@@ -84,9 +73,6 @@ public class ColumnList {
 
     /**
      * Add a standard HBase column given an instance of a class that implements the <code>IColumn</code> interface.
-     *
-     * @param column
-     * @return
      */
     public ColumnList addColumn(IColumn column) {
         return this.addColumn(column.family(), column.qualifier(), column.timestamp(), column.value());
@@ -94,11 +80,6 @@ public class ColumnList {
 
     /**
      * Add an HBase counter column.
-     *
-     * @param family
-     * @param qualifier
-     * @param incr
-     * @return
      */
     public ColumnList addCounter(byte[] family, byte[] qualifier, long incr) {
         counters().add(new Counter(family, qualifier, incr));
@@ -108,20 +89,13 @@ public class ColumnList {
     /**
      * Add an HBase counter column given an instance of a class that implements the
      * <code>ICounter</code> interface.
-     *
-     * @param counter
-     * @return
      */
     public ColumnList addCounter(ICounter counter) {
         return this.addCounter(counter.family(), counter.qualifier(), counter.increment());
     }
 
     /**
-     * Remove a standard HBase column
-     *
-     * @param family
-     * @param qualifier
-     * @return
+     * Remove a standard HBase column.
      */
     public ColumnList deleteColumn(byte[] family, byte[] qualifier) {
         columnsToDelete().add(new Column(family, qualifier, -1, null));
@@ -130,8 +104,6 @@ public class ColumnList {
 
     /**
      * Query to determine if we have column definitions.
-     *
-     * @return
      */
     public boolean hasColumns() {
         return this.columns != null;
@@ -139,8 +111,6 @@ public class ColumnList {
 
     /**
      * Query to determine if we have column delete definitions.
-     *
-     * @return
      */
     public boolean hasColumnsToDelete() {
         return this.columnsToDelete != null;
@@ -148,8 +118,6 @@ public class ColumnList {
 
     /**
      * Query to determine if we have counter definitions.
-     *
-     * @return
      */
     public boolean hasCounters() {
         return this.counters != null;
@@ -157,8 +125,6 @@ public class ColumnList {
 
     /**
      * Get the list of column definitions.
-     *
-     * @return
      */
     public List<Column> getColumns() {
         return this.columns;
@@ -166,8 +132,6 @@ public class ColumnList {
 
     /**
      * Get the list of 'column to delete' definitions.
-     *
-     * @return
      */
     public ArrayList<Column> getColumnsToDelete() {
         return this.columnsToDelete;
@@ -175,15 +139,14 @@ public class ColumnList {
 
     /**
      * Get the list of counter definitions.
-     *
-     * @return
      */
     public List<Counter> getCounters() {
         return this.counters;
     }
 
-    public static abstract class AbstractColumn {
-        byte[] family, qualifier;
+    public abstract static class AbstractColumn {
+        byte[] family;
+        byte[] qualifier;
 
         AbstractColumn(byte[] family, byte[] qualifier) {
             this.family = family;

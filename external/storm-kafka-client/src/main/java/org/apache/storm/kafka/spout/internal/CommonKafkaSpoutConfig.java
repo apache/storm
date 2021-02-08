@@ -45,7 +45,8 @@ import org.slf4j.LoggerFactory;
 public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
     public static final long DEFAULT_POLL_TIMEOUT_MS = 200;
     public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000;
-
+    // Earliest start
+    public static final long DEFAULT_START_TS = 0L;
     public static final FirstPollOffsetStrategy DEFAULT_FIRST_POLL_OFFSET_STRATEGY = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
 
     public static final Logger LOG = LoggerFactory.getLogger(CommonKafkaSpoutConfig.class);
@@ -60,7 +61,8 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
     private final RecordTranslator<K, V> translator;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final long partitionRefreshPeriodMs;
-    
+    private final long startTimeStamp;
+
     /**
      * Creates a new CommonKafkaSpoutConfig using a Builder.
      *
@@ -74,6 +76,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
         this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
         this.pollTimeoutMs = builder.pollTimeoutMs;
         this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
+        this.startTimeStamp = builder.startTimeStamp;
     }
 
     public abstract static class Builder<K, V, T extends Builder<K, V, T>> {
@@ -85,6 +88,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
         private long pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
         private FirstPollOffsetStrategy firstPollOffsetStrategy = DEFAULT_FIRST_POLL_OFFSET_STRATEGY;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
+        private long startTimeStamp = DEFAULT_START_TS;
 
         public Builder(String bootstrapServers, String... topics) {
             this(bootstrapServers, new NamedTopicFilter(topics), new RoundRobinManualPartitioner());
@@ -121,7 +125,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setProp(String key, Object value) {
             kafkaProps.put(key, value);
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -129,7 +133,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setProp(Map<String, Object> props) {
             kafkaProps.putAll(props);
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -143,7 +147,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
                     throw new IllegalArgumentException("Kafka Consumer property keys must be Strings");
                 }
             });
-            return (T)this;
+            return (T) this;
         }
 
         //Spout Settings
@@ -154,7 +158,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setPollTimeoutMs(long pollTimeoutMs) {
             this.pollTimeoutMs = pollTimeoutMs;
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -165,12 +169,12 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setFirstPollOffsetStrategy(FirstPollOffsetStrategy firstPollOffsetStrategy) {
             this.firstPollOffsetStrategy = firstPollOffsetStrategy;
-            return (T)this;
+            return (T) this;
         }
 
         public T setRecordTranslator(RecordTranslator<K, V> translator) {
             this.translator = translator;
-            return (T)this;
+            return (T) this;
         }
 
         /**
@@ -205,7 +209,16 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
          */
         public T setPartitionRefreshPeriodMs(long partitionRefreshPeriodMs) {
             this.partitionRefreshPeriodMs = partitionRefreshPeriodMs;
-            return (T)this;
+            return (T) this;
+        }
+
+        /**
+         * Specifies the startTimeStamp if the first poll strategy is TIMESTAMP or UNCOMMITTED_TIMESTAMP.
+         * @param startTimeStamp time in ms
+         */
+        public T setStartTimeStamp(long startTimeStamp) {
+            this.startTimeStamp = startTimeStamp;
+            return (T) this;
         }
         
         protected Map<String, Object> getKafkaProps() {
@@ -248,6 +261,10 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
         return partitionRefreshPeriodMs;
     }
 
+    public long getStartTimeStamp() {
+        return startTimeStamp;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
@@ -257,6 +274,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
             .append("topicFilter", topicFilter)
             .append("topicPartitioner", topicPartitioner)
             .append("translator", translator)
+            .append("startTimeStamp", startTimeStamp)
             .toString();
     }
 }

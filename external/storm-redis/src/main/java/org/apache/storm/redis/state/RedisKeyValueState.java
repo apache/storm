@@ -299,8 +299,8 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
         Long committedTxid = lastCommittedTxid();
         if (committedTxid != null) {
             if (txid <= committedTxid) {
-                throw new RuntimeException("Invalid txid '" + txid + "' for prepare. Txid '" + committedTxid +
-                                           "' is already committed");
+                throw new RuntimeException("Invalid txid '" + txid + "' for prepare. Txid '" + committedTxid
+                        + "' is already committed");
             }
         }
     }

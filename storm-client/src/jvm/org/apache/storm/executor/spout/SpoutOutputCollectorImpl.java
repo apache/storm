@@ -46,7 +46,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final RotatingMap<Long, TupleInfo> pending;
     private final long spoutExecutorThdId;
     private TupleInfo globalTupleInfo = new TupleInfo();
-        // thread safety: assumes Collector.emit*() calls are externally synchronized (if needed).
+    // thread safety: assumes Collector.emit*() calls are externally synchronized (if needed).
 
     @SuppressWarnings("unused")
     public SpoutOutputCollectorImpl(ISpout spout, SpoutExecutor executor, Task taskData,
@@ -144,14 +144,15 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
         }
 
         if (needAck) {
-            boolean sample = executor.samplerCheck();
             TupleInfo info = new TupleInfo();
             info.setTaskId(this.taskId);
             info.setStream(stream);
             info.setMessageId(messageId);
+            info.setRootId(rootId);
             if (isDebug) {
                 info.setValues(values);
             }
+            boolean sample = executor.samplerCheck();
             if (sample) {
                 info.setTimestamp(System.currentTimeMillis());
             }
@@ -163,8 +164,8 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             // Reusing TupleInfo object as we directly call executor.ackSpoutMsg() & are not sending msgs. perf critical
             if (isDebug) {
                 if (spoutExecutorThdId != Thread.currentThread().getId()) {
-                    throw new RuntimeException("Detected background thread emitting tuples for the spout. " +
-                                               "Spout Output Collector should only emit from the main spout executor thread.");
+                    throw new RuntimeException("Detected background thread emitting tuples for the spout. "
+                            + "Spout Output Collector should only emit from the main spout executor thread.");
                 }
             }
             globalTupleInfo.clear();
@@ -172,7 +173,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             globalTupleInfo.setValues(values);
             globalTupleInfo.setMessageId(messageId);
             globalTupleInfo.setTimestamp(0);
-            globalTupleInfo.setId("0:");
+            globalTupleInfo.setRootId(rootId);
             Long timeDelta = 0L;
             executor.ackSpoutMsg(executor, taskData, timeDelta, globalTupleInfo);
         }

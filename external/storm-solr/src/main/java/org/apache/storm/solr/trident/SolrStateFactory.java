@@ -29,7 +29,7 @@ public class SolrStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map<String, Object> map, IMetricsContext iMetricsContext, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> map, IMetricsContext metricsContext, int partitionIndex, int numPartitions) {
         SolrState state = new SolrState(solrConfig, solrMapper);
         state.prepare();
         return state;

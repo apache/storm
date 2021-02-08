@@ -25,8 +25,8 @@ import redis.clients.jedis.ScanResult;
 /**
  * This interface represents Jedis methods exhaustively which are used on storm-redis.
  *
- * This is a workaround since Jedis and JedisCluster doesn't implement same interface for binary type of methods, and unify binary methods
- * and string methods into one interface.
+ * <p>This is a workaround since Jedis and JedisCluster doesn't implement same interface for binary type of methods, and
+ * unify binary methods and string methods into one interface.
  */
 public interface RedisCommands {
     // common

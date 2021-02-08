@@ -20,26 +20,26 @@ import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.task.WorkerTopologyContext;
 
 public class NGrouping implements CustomStreamGrouping {
-    int _n;
-    List<Integer> _outTasks;
+    int number;
+    List<Integer> outTasks;
 
     public NGrouping(Integer n) {
-        _n = n;
+        number = n;
     }
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
         targetTasks = new ArrayList<Integer>(targetTasks);
         Collections.sort(targetTasks);
-        _outTasks = new ArrayList<Integer>();
-        for (int i = 0; i < _n; i++) {
-            _outTasks.add(targetTasks.get(i));
+        outTasks = new ArrayList<Integer>();
+        for (int i = 0; i < number; i++) {
+            outTasks.add(targetTasks.get(i));
         }
     }
 
     @Override
     public List<Integer> chooseTasks(int taskId, List<Object> values) {
-        return _outTasks;
+        return outTasks;
     }
 
 }

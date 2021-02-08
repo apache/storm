@@ -24,17 +24,26 @@ import java.util.List;
 
 public class ObjectReader {
 
+    /**
+     * Convert the input into a list of string; ignore null members.
+     * @param o the input object
+     * @return a list of string
+     */
     public static List<String> getStrings(final Object o) {
         if (o == null) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         } else if (o instanceof String) {
-            return new ArrayList<String>() {{
-                add((String) o);
-            }};
+            return new ArrayList<String>() {
+                {
+                    add((String) o);
+                }
+            };
         } else if (o instanceof Collection) {
-            List<String> answer = new ArrayList<String>();
+            List<String> answer = new ArrayList<>();
             for (Object v : (Collection) o) {
-                answer.add(v.toString());
+                if (v != null) {
+                    answer.add(v.toString());
+                }
             }
             return answer;
         } else {
@@ -47,6 +56,17 @@ public class ObjectReader {
             throw new IllegalArgumentException("Don't know how to convert null to String");
         }
         return o.toString();
+    }
+
+    public static String getString(Object o, String defaultValue) {
+        if (null == o) {
+            return defaultValue;
+        }
+        if (o instanceof String) {
+            return (String) o;
+        } else {
+            throw new IllegalArgumentException("Don't know how to convert " + o + " to String");
+        }
     }
 
     public static Integer getInt(Object o) {
@@ -62,9 +82,9 @@ public class ObjectReader {
             return defaultValue;
         }
 
-        if (o instanceof Integer ||
-            o instanceof Short ||
-            o instanceof Byte) {
+        if (o instanceof Integer
+                || o instanceof Short
+                || o instanceof Byte) {
             return ((Number) o).intValue();
         } else if (o instanceof Long) {
             final long l = (Long) o;
@@ -121,17 +141,6 @@ public class ObjectReader {
             return (Boolean) o;
         } else {
             throw new IllegalArgumentException("Don't know how to convert " + o + " to boolean");
-        }
-    }
-
-    public static String getString(Object o, String defaultValue) {
-        if (null == o) {
-            return defaultValue;
-        }
-        if (o instanceof String) {
-            return (String) o;
-        } else {
-            throw new IllegalArgumentException("Don't know how to convert " + o + " to String");
         }
     }
 }

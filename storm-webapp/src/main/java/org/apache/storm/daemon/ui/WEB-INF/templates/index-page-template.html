@@ -169,7 +169,16 @@
              CPU Utilization (%)
             </span>
         </th>
-      </tr>
+        <th>
+        <span data-toggle="tooltip" data-placement="top" title="Total Generic Resources in Cluster.">
+             Total Generic Resources
+            </span>
+        </th>
+        <th>
+        <span data-toggle="tooltip" data-placement="top" title="Available Generic Resources in Cluster.">
+             Available Generic Resources
+            </span>
+        </th>
       </thead>
       <tbody>
       <tr>
@@ -181,6 +190,8 @@
         <td>{{availCpu}}</td>
         <td>{{fragmentedCpu}}</td>
         <td>{{cpuAssignedPercentUtil}}</td>
+        <td>{{totalGenerics}}</td>
+        <td>{{availGenerics}}</td>
       </tr>
       </tbody>
     </table>
@@ -307,6 +318,11 @@
         </th>
         {{/schedulerDisplayResource}}
         <th>
+          <span data-toggle="tooltip" data-placement="top" title="Assigned Generic Rescources by Scheduler.">
+            Assigned Generic Resources
+          </span>
+        </th>
+        <th>
           <span data-toggle="tooltip" data-placement="left" title="This shows information from the scheduler about the latest attempt to schedule the Topology on the cluster.">
             Scheduler Info
           </span>
@@ -338,6 +354,7 @@
         {{#schedulerDisplayResource}}
         <td>{{assignedCpu}}</td>
         {{/schedulerDisplayResource}}
+        <td>{{assignedGenericResources}}</td>
         <td>{{schedulerInfo}}</td>
         <td>{{topologyVersion}}</td>
         <td>{{stormVersion}}</td>
@@ -413,10 +430,32 @@
           Avail CPU (%)
         </span>
       </th>
+
+      <th>
+        <span data-toggle="tooltip" data-placement="left" title="The generic resources capacity of a supervisor.">
+          Total Generic Resources
+        </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="left" title="The generic resources that have been allocated.">
+          Used Generic Resources
+        </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="left" title="The generic resources that are available.">
+          Avail Generic Resources
+        </span>
+      </th>
+
       {{/schedulerDisplayResource}}
       <th>
         <span data-toggle="tooltip" data-placement="left" title="Version">
           Version
+        </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="Whether this supervisor is blacklisted or not">
+          Blacklisted
         </span>
       </th>
     </tr>
@@ -439,8 +478,12 @@
       <td>{{totalCpu}}</td>
       <td>{{usedCpu}}</td>
       <td>{{availCpu}}</td>
+      <td>{{totalGenericResources}}</td>
+      <td>{{usedGenericResources}}</td>
+      <td>{{availGenericResources}}</td>
       {{/schedulerDisplayResource}}
       <td>{{version}}</td>
+      <td>{{blacklisted}}</td>
     </tr>
     {{/supervisors}}
   </tbody>

@@ -24,8 +24,8 @@ import redis.clients.jedis.JedisCommands;
 
 /**
  * Basic bolt for querying from Redis and emits response as tuple.
- * <p/>
- * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
+ *
+ * <p>Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
  */
 public class RedisLookupBolt extends AbstractRedisBolt {
     private final RedisLookupMapper lookupMapper;
@@ -33,7 +33,7 @@ public class RedisLookupBolt extends AbstractRedisBolt {
     private final String additionalKey;
 
     /**
-     * Constructor for single Redis environment (JedisPool)
+     * Constructor for single Redis environment (JedisPool).
      * @param config configuration for initializing JedisPool
      * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
      */
@@ -48,7 +48,7 @@ public class RedisLookupBolt extends AbstractRedisBolt {
     }
 
     /**
-     * Constructor for Redis Cluster environment (JedisCluster)
+     * Constructor for Redis Cluster environment (JedisCluster).
      * @param config configuration for initializing JedisCluster
      * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
      */

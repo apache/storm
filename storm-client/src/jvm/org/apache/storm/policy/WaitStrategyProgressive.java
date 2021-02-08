@@ -24,15 +24,14 @@ import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
 
 /**
- * A Progressive Wait Strategy
- * <p> Has three levels of idling. Stays in each level for a configured number of iterations before entering the next level.
+ * A Progressive Wait Strategy.
+ *
+ * <p>Has three levels of idling. Stays in each level for a configured number of iterations before entering the next level.
  * Level 1 - No idling. Returns immediately. Stays in this level for `level1Count` iterations. Level 2 - Calls LockSupport.parkNanos(1).
  * Stays in this level for `level2Count` iterations Level 3 - Calls Thread.sleep(). Stays in this level until wait situation changes.
  *
- * <p>
- * The initial spin can be useful to prevent downstream bolt from repeatedly sleeping/parking when the upstream component is a bit
+ * <p>The initial spin can be useful to prevent downstream bolt from repeatedly sleeping/parking when the upstream component is a bit
  * relatively slower. Allows downstream bolt can enter deeper wait states only if the traffic to it appears to have reduced.
- * <p>
  */
 public class WaitStrategyProgressive implements IWaitStrategy {
     private int level1Count;
@@ -40,16 +39,16 @@ public class WaitStrategyProgressive implements IWaitStrategy {
     private long level3SleepMs;
 
     @Override
-    public void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation) {
-        if (waitSituation == WAIT_SITUATION.SPOUT_WAIT) {
+    public void prepare(Map<String, Object> conf, WaitSituation waitSituation) {
+        if (waitSituation == WaitSituation.SPOUT_WAIT) {
             level1Count = ObjectReader.getInt(conf.get(Config.TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL1_COUNT));
             level2Count = ObjectReader.getInt(conf.get(Config.TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL2_COUNT));
             level3SleepMs = ObjectReader.getLong(conf.get(Config.TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS));
-        } else if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
+        } else if (waitSituation == WaitSituation.BOLT_WAIT) {
             level1Count = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL1_COUNT));
             level2Count = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL2_COUNT));
             level3SleepMs = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS));
-        } else if (waitSituation == WAIT_SITUATION.BACK_PRESSURE_WAIT) {
+        } else if (waitSituation == WaitSituation.BACK_PRESSURE_WAIT) {
             level1Count = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL1_COUNT));
             level2Count = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL2_COUNT));
             level3SleepMs = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS));

@@ -32,6 +32,7 @@ import java.util.ServiceLoader;
 import java.util.TreeMap;
 import org.apache.storm.Config;
 import org.apache.storm.generated.ComponentCommon;
+import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.serialization.types.ArrayListSerializer;
@@ -75,6 +76,7 @@ public class SerializationFactory {
         k.register(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo.class);
         k.register(ConsList.class);
         k.register(BackPressureStatus.class);
+        k.register(NodeInfo.class);
 
         synchronized (loader) {
             for (SerializationRegister sr : loader) {
@@ -224,9 +226,9 @@ public class SerializationFactory {
         }
 
         /**
-         * "{:a 1  :b 2} -> {1 :a  2 :b}"
+         * "{:a 1  :b 2} -> {1 :a  2 :b}".
          *
-         * Note: Only one key wins if there are duplicate values. Which key wins is indeterminate: "{:a 1  :b 1} -> {1 :a} *or* {1 :b}"
+         * <p>Note: Only one key wins if there are duplicate values. Which key wins is indeterminate: "{:a 1  :b 1} -> {1 :a} *or* {1 :b}"
          */
         private static <K, V> Map<V, K> simpleReverseMap(Map<K, V> map) {
             Map<V, K> ret = new HashMap<V, K>();

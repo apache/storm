@@ -24,7 +24,7 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory
         .getLogger(SaslStormClientHandler.class);
-    private final long start_time;
+    private final long startTime;
     private final ISaslClient client;
     /**
      * Used for client or server's token to send or receive from each other.
@@ -34,7 +34,7 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
 
     public SaslStormClientHandler(ISaslClient client) throws IOException {
         this.client = client;
-        start_time = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
         getSASLCredentials();
     }
 
@@ -64,7 +64,7 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object message) throws Exception {
         LOG.debug("send/recv time (ms): {}",
-                  (System.currentTimeMillis() - start_time));
+                  (System.currentTimeMillis() - startTime));
 
         // examine the response message from server
         if (message instanceof ControlMessage) {
@@ -145,6 +145,7 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
         channel.writeAndFlush(saslResponse, channel.voidPromise());
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private void getSASLCredentials() throws IOException {
         String secretKey;
         name = client.name();

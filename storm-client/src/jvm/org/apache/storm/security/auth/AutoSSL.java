@@ -31,8 +31,9 @@ import org.slf4j.LoggerFactory;
  * credentials map. The key in the credentials map is the name of the file. On the worker side it uses the filenames from the
  * ssl.credential.files config to lookup the keys in the credentials map and decodes it and writes it back out as a file.
  *
- * User is responsible for referencing them from the topology code as ./<filename>.
+ * <p>User is responsible for referencing them from the topology code as {@code filename}.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class AutoSSL implements IAutoCredentials {
     public static final String SSL_FILES_CONF = "ssl.credential.files";
     private static final Logger LOG = LoggerFactory.getLogger(AutoSSL.class);
@@ -41,6 +42,7 @@ public class AutoSSL implements IAutoCredentials {
 
     // Adds the serialized and base64 file to the credentials map as a string with the filename as
     // the key.
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static void serializeSSLFile(String readFile, Map<String, String> credentials) {
         try (FileInputStream in = new FileInputStream(readFile)) {
             LOG.debug("serializing ssl file: {}", readFile);
@@ -60,15 +62,16 @@ public class AutoSSL implements IAutoCredentials {
         }
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static void deserializeSSLFile(String credsKey, String directory,
                                           Map<String, String> credentials) {
         try {
             LOG.debug("deserializing ssl file with key: {}", credsKey);
             String resultStr = null;
 
-            if (credentials != null &&
-                credentials.containsKey(credsKey) &&
-                credentials.get(credsKey) != null) {
+            if (credentials != null
+                    && credentials.containsKey(credsKey)
+                    && credentials.get(credsKey) != null) {
                 resultStr = credentials.get(credsKey);
             }
             if (resultStr != null) {
@@ -83,22 +86,25 @@ public class AutoSSL implements IAutoCredentials {
         }
     }
 
+    @Override
     public void prepare(Map<String, Object> conf) {
         this.conf = conf;
         writeDir = getSSLWriteDirFromConf(this.conf);
     }
 
     @VisibleForTesting
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     protected String getSSLWriteDirFromConf(Map<String, Object> conf) {
         return "./";
     }
 
     @VisibleForTesting
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     Collection<String> getSSLFilesFromConf(Map<String, Object> conf) {
         Object sslConf = conf.get(SSL_FILES_CONF);
         if (sslConf == null) {
-            LOG.info("No ssl files requested, if you want to use SSL please set {} to the " +
-                     "list of files", SSL_FILES_CONF);
+            LOG.info("No ssl files requested, if you want to use SSL please set {} to the list of files",
+                    SSL_FILES_CONF);
             return null;
         }
         Collection<String> sslFiles = null;

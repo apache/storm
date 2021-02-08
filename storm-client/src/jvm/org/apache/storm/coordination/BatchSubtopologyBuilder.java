@@ -141,7 +141,7 @@ public class BatchSubtopologyBuilder {
         public final Map<String, Object> componentConf = new HashMap<>();
         public final Set<SharedMemory> sharedMemory = new HashSet<>();
 
-        public Component(IRichBolt bolt, Integer parallelism) {
+        Component(IRichBolt bolt, Integer parallelism) {
             this.bolt = bolt;
             this.parallelism = parallelism;
         }
@@ -150,7 +150,7 @@ public class BatchSubtopologyBuilder {
     private static class BoltDeclarerImpl extends BaseConfigurationDeclarer<BoltDeclarer> implements BoltDeclarer {
         Component component;
 
-        public BoltDeclarerImpl(Component component) {
+        BoltDeclarerImpl(Component component) {
             this.component = component;
         }
 

@@ -19,7 +19,7 @@ import java.util.Set;
 import org.apache.storm.streams.ProcessorNode;
 
 /**
- * A composite context that holds a chain of {@link ProcessorContext}
+ * A composite context that holds a chain of {@link ProcessorContext}.
  */
 public class ChainedProcessorContext implements ProcessorContext {
     private final ProcessorNode processorNode;

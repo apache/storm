@@ -41,9 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Trident implementation of the JmsSpout
- * <p>
- *
+ * Trident implementation of the JmsSpout.
  */
 public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
 
@@ -59,7 +57,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
     private String name;
 
     /**
-     * Create a TridentJmsSpout with a default name and acknowledge mode of AUTO_ACKNOWLEDGE
+     * Create a TridentJmsSpout with a default name and acknowledge mode of AUTO_ACKNOWLEDGE.
      */
     public TridentJmsSpout() {
         this.name = "JmsSpout_" + (nameIndex++);
@@ -80,7 +78,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
      * @return A friendly string describing the acknowledge mode
      * @throws IllegalArgumentException if the mode is not recognized
      */
-    private static final String toDeliveryModeString(int acknowledgeMode) {
+    private static String toDeliveryModeString(int acknowledgeMode) {
         switch (acknowledgeMode) {
             case Session.AUTO_ACKNOWLEDGE:
                 return "AUTO_ACKNOWLEDGE";
@@ -95,7 +93,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
     }
 
     /**
-     * Set the name for this spout, to improve log identification
+     * Set the name for this spout, to improve log identification.
      * @param name The name to be used in log messages
      * @return This spout
      */
@@ -105,11 +103,8 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
     }
 
     /**
-     * Set the <code>JmsProvider</code>
-     * implementation that this Spout will use to connect to
-     * a JMS <code>javax.jms.Desination</code>
-     *
-     * @param provider
+     * Set the <code>JmsProvider</code> implementation that this Spout will use to connect to a JMS
+     * <code>javax.jms.Desination</code>.
      */
     public TridentJmsSpout withJmsProvider(JmsProvider provider) {
         this.jmsProvider = provider;
@@ -117,12 +112,9 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
     }
 
     /**
-     * Set the <code>JmsTupleProducer</code>
-     * implementation that will convert <code>javax.jms.Message</code>
-     * object to <code>backtype.storm.tuple.Values</code> objects
-     * to be emitted.
+     * Set the <code>JmsTupleProducer</code> implementation that will convert <code>javax.jms.Message</code>
+     * object to <code>backtype.storm.tuple.Values</code> objects to be emitted.
      *
-     * @param tupleProducer
      * @return This spout
      */
     public TridentJmsSpout withTupleProducer(JmsTupleProducer tupleProducer) {
@@ -193,10 +185,10 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
         private final long rotateTimeMillis;
         private final int maxBatchSize;
         private final String name;
-        private final Logger LOG = LoggerFactory.getLogger(JmsEmitter.class);
+        private final Logger log = LoggerFactory.getLogger(JmsEmitter.class);
         private long lastRotate;
 
-        public JmsEmitter(String name, JmsProvider jmsProvider, JmsTupleProducer tupleProducer, int jmsAcknowledgeMode,
+        JmsEmitter(String name, JmsProvider jmsProvider, JmsTupleProducer tupleProducer, int jmsAcknowledgeMode,
                           Map<String, Object> conf) {
             if (jmsProvider == null) {
                 throw new IllegalStateException("JMS provider has not been set.");
@@ -224,12 +216,12 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
                 consumer.setMessageListener(this);
                 this.connection.start();
 
-                LOG.info(
-                    "Created JmsEmitter with max batch size " + maxBatchSize + " rotate time " + rotateTimeMillis + "ms and destination " +
-                    dest + " for " + name);
+                log.info(
+                    "Created JmsEmitter with max batch size " + maxBatchSize + " rotate time " + rotateTimeMillis
+                            + "ms and destination " + dest + " for " + name);
 
             } catch (Exception e) {
-                LOG.warn("Error creating JMS connection.", e);
+                log.warn("Error creating JMS connection.", e);
                 throw new IllegalStateException("Could not create JMS connection for spout ", e);
             }
 
@@ -243,7 +235,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
 
             if (messages != null) {
                 if (!messages.isEmpty()) {
-                    LOG.debug("Success for batch with transaction id " + tx.getTransactionId() + "/" + tx.getAttemptId() + " for " + name);
+                    log.debug("Success for batch with transaction id " + tx.getTransactionId() + "/" + tx.getAttemptId() + " for " + name);
                 }
 
                 for (Message msg : messages) {
@@ -252,13 +244,13 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
                     try {
                         messageId = msg.getJMSMessageID();
                         msg.acknowledge();
-                        LOG.trace("Acknowledged message " + messageId);
+                        log.trace("Acknowledged message " + messageId);
                     } catch (JMSException e) {
-                        LOG.warn("Failed to acknowledge message " + messageId, e);
+                        log.warn("Failed to acknowledge message " + messageId, e);
                     }
                 }
             } else {
-                LOG.warn("No messages found in batch with transaction id " + tx.getTransactionId() + "/" + tx.getAttemptId());
+                log.warn("No messages found in batch with transaction id " + tx.getTransactionId() + "/" + tx.getAttemptId());
             }
         }
 
@@ -270,28 +262,28 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
          * @param messages The list of messages to fail.
          */
         private void fail(Long transactionId, List<Message> messages) {
-            LOG.debug("Failure for batch with transaction id " + transactionId + " for " + name);
+            log.debug("Failure for batch with transaction id " + transactionId + " for " + name);
             if (messages != null) {
                 for (Message msg : messages) {
                     try {
-                        LOG.trace("Failed message " + msg.getJMSMessageID());
+                        log.trace("Failed message " + msg.getJMSMessageID());
                     } catch (JMSException e) {
-                        LOG.warn("Could not identify failed message ", e);
+                        log.warn("Could not identify failed message ", e);
                     }
                 }
             } else {
-                LOG.warn("Failed batch has no messages with transaction id " + transactionId);
+                log.warn("Failed batch has no messages with transaction id " + transactionId);
             }
         }
 
         @Override
         public void close() {
             try {
-                LOG.info("Closing JMS connection.");
+                log.info("Closing JMS connection.");
                 this.session.close();
                 this.connection.close();
             } catch (JMSException e) {
-                LOG.warn("Error closing JMS connection.", e);
+                log.warn("Error closing JMS connection.", e);
             }
         }
 
@@ -303,14 +295,14 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
             if (now - lastRotate > rotateTimeMillis) {
                 Map<Long, List<Message>> failed = batchMessageMap.rotate();
                 for (Long id : failed.keySet()) {
-                    LOG.warn("TIMED OUT batch with transaction id " + id + " for " + name);
+                    log.warn("TIMED OUT batch with transaction id " + id + " for " + name);
                     fail(id, failed.get(id));
                 }
                 lastRotate = now;
             }
 
             if (batchMessageMap.containsKey(tx.getTransactionId())) {
-                LOG.warn("FAILED duplicate batch with transaction id " + tx.getTransactionId() + "/" + tx.getAttemptId() + " for " + name);
+                log.warn("FAILED duplicate batch with transaction id " + tx.getTransactionId() + "/" + tx.getAttemptId() + " for " + name);
                 fail(tx.getTransactionId(), batchMessageMap.get(tx.getTransactionId()));
             }
 
@@ -330,17 +322,17 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
                     Values tuple = tupleProducer.toTuple(msg);
                     collector.emit(tuple);
                 } catch (JMSException e) {
-                    LOG.warn("Failed to emit message, could not retrieve data for " + name + ": " + e);
+                    log.warn("Failed to emit message, could not retrieve data for " + name + ": " + e);
                 }
             }
 
             if (!batchMessages.isEmpty()) {
-                LOG.debug("Emitting batch with transaction id " + tx.getTransactionId() + "/" + tx.getAttemptId() + " and size " +
-                          batchMessages.size() + " for " + name);
+                log.debug("Emitting batch with transaction id " + tx.getTransactionId()
+                        + "/" + tx.getAttemptId() + " and size " + batchMessages.size() + " for " + name);
             } else {
-                LOG.trace(
-                    "No items to acknowledge for batch with transaction id " + tx.getTransactionId() + "/" + tx.getAttemptId() + " for " +
-                    name);
+                log.trace(
+                    "No items to acknowledge for batch with transaction id " + tx.getTransactionId()
+                            + "/" + tx.getAttemptId() + " for " + name);
             }
             batchMessageMap.put(tx.getTransactionId(), batchMessages);
         }
@@ -348,7 +340,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
         @Override
         public void onMessage(Message msg) {
             try {
-                LOG.trace("Queuing msg [" + msg.getJMSMessageID() + "]");
+                log.trace("Queuing msg [" + msg.getJMSMessageID() + "]");
             } catch (JMSException e) {
                 // Nothing here, could not get message id
             }
@@ -358,23 +350,23 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
     }
 
     /**
-     * Bare implementation of a BatchCoordinator, returning a null JmsBatch object
+     * Bare implementation of a BatchCoordinator, returning a null JmsBatch object.
      *
      */
     private class JmsBatchCoordinator implements BatchCoordinator<JmsBatch> {
 
         private final String name;
 
-        private final Logger LOG = LoggerFactory.getLogger(JmsBatchCoordinator.class);
+        private final Logger log = LoggerFactory.getLogger(JmsBatchCoordinator.class);
 
-        public JmsBatchCoordinator(String name) {
+        JmsBatchCoordinator(String name) {
             this.name = name;
-            LOG.info("Created batch coordinator for " + name);
+            log.info("Created batch coordinator for " + name);
         }
 
         @Override
         public JmsBatch initializeTransaction(long txid, JmsBatch prevMetadata, JmsBatch curMetadata) {
-            LOG.debug("Initialise transaction " + txid + " for " + name);
+            log.debug("Initialise transaction " + txid + " for " + name);
             return null;
         }
 

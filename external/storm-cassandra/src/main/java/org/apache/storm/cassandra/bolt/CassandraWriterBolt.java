@@ -25,8 +25,6 @@ public class CassandraWriterBolt extends BaseCassandraBolt<Tuple> {
 
     /**
      * Creates a new {@link CassandraWriterBolt} instance.
-     *
-     * @param tupleMapper
      */
     public CassandraWriterBolt(CQLStatementTupleMapper tupleMapper) {
         super(tupleMapper);

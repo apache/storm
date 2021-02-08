@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,6 +47,7 @@ import javax.ws.rs.core.SecurityContext;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.daemon.common.ReloadableSslContextFactory;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.BoltAggregateStats;
 import org.apache.storm.generated.ClusterSummary;
@@ -85,6 +87,7 @@ import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.IVersionInfo;
@@ -111,6 +114,7 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class UIHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(UIHelpers.class);
     private static final Object[][] PRETTY_SEC_DIVIDERS = {
@@ -227,8 +231,8 @@ public class UIHelpers {
                                                   String keyPassword, String tsPath,
                                                   String tsPassword, String tsType,
                                                   Boolean needClientAuth, Boolean wantClientAuth,
-                                                  Integer headerBufferSize) {
-        SslContextFactory factory = new SslContextFactory();
+                                                  Integer headerBufferSize, boolean enableSslReload) {
+        SslContextFactory factory = new ReloadableSslContextFactory(enableSslReload);
         factory.setExcludeCipherSuites("SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA");
         factory.setExcludeProtocols("SSLv3");
         factory.setRenegotiationAllowed(false);
@@ -267,9 +271,9 @@ public class UIHelpers {
                                  String ksPassword, String ksType,
                                  String keyPassword, String tsPath,
                                  String tsPassword, String tsType,
-                                 Boolean needClientAuth, Boolean wantClientAuth) {
+                                 Boolean needClientAuth, Boolean wantClientAuth, boolean enableSslReload) {
         configSsl(server, port, ksPath, ksPassword, ksType, keyPassword,
-                  tsPath, tsPassword, tsType, needClientAuth, wantClientAuth, null);
+                  tsPath, tsPassword, tsType, needClientAuth, wantClientAuth, null, enableSslReload);
     }
 
     /**
@@ -286,19 +290,21 @@ public class UIHelpers {
      * @param needClientAuth needClientAuth
      * @param wantClientAuth wantClientAuth
      * @param headerBufferSize headerBufferSize
+     * @param enableSslReload enable ssl reload
      */
     public static void configSsl(Server server, Integer port, String ksPath,
                                  String ksPassword, String ksType,
                                  String keyPassword, String tsPath,
                                  String tsPassword, String tsType,
                                  Boolean needClientAuth,
-                                 Boolean wantClientAuth, Integer headerBufferSize) {
+                                 Boolean wantClientAuth, Integer headerBufferSize,
+                                 boolean enableSslReload) {
         if (port > 0) {
             server.addConnector(
                     mkSslConnector(
                             server, port, ksPath, ksPassword, ksType, keyPassword,
                             tsPath, tsPassword, tsType,
-                            needClientAuth, wantClientAuth, headerBufferSize
+                            needClientAuth, wantClientAuth, headerBufferSize, enableSslReload
                     )
             );
         }
@@ -525,7 +531,6 @@ public class UIHelpers {
     private static final AtomicReference<List<Map<String, String>>> MEMORIZED_VERSIONS = new AtomicReference<>();
     private static final AtomicReference<Map<String, String>> MEMORIZED_FULL_VERSION = new AtomicReference<>();
 
-
     private static Map<String, String> toJsonStruct(IVersionInfo info) {
         Map<String, String> ret = new HashMap<>();
         ret.put("version", info.getVersion());
@@ -548,36 +553,6 @@ public class UIHelpers {
     public static Map<String, Object> getClusterSummary(ClusterSummary clusterSummary, String user,
                                                         Map<String, Object> conf) {
         Map<String, Object> result = new HashMap();
-        List<SupervisorSummary> supervisorSummaries = clusterSummary.get_supervisors();
-        List<TopologySummary> topologySummaries = clusterSummary.get_topologies();
-
-        int usedSlots =
-            supervisorSummaries.stream().mapToInt(
-                SupervisorSummary::get_num_used_workers).sum();
-        int totalSlots =
-            supervisorSummaries.stream().mapToInt(
-                SupervisorSummary::get_num_workers).sum();
-
-        int totalTasks =
-            topologySummaries.stream().mapToInt(
-                TopologySummary::get_num_tasks).sum();
-        int totalExecutors =
-            topologySummaries.stream().mapToInt(
-                TopologySummary::get_num_executors).sum();
-
-        double supervisorTotalMemory =
-            supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
-                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
-                x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
-                )
-            ).sum();
-
-        double supervisorTotalCpu =
-            supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
-                Constants.COMMON_CPU_RESOURCE_NAME,
-                x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
-                )
-            ).sum();
 
         if (MEMORIZED_VERSIONS.get() == null) {
             //Races are okay this is just to avoid extra work for each page load.
@@ -602,15 +577,47 @@ public class UIHelpers {
         result.put("user", user);
         result.put("stormVersion", VersionInfo.getVersion());
         result.put("stormVersionInfo", MEMORIZED_FULL_VERSION.get());
+        List<SupervisorSummary> supervisorSummaries = clusterSummary.get_supervisors();
         result.put("supervisors", supervisorSummaries.size());
         result.put("topologies", clusterSummary.get_topologies_size());
+
+        int usedSlots =
+                supervisorSummaries.stream().mapToInt(
+                        SupervisorSummary::get_num_used_workers).sum();
         result.put("slotsUsed", usedSlots);
+
+        int totalSlots =
+                supervisorSummaries.stream().mapToInt(
+                        SupervisorSummary::get_num_workers).sum();
         result.put("slotsTotal", totalSlots);
         result.put("slotsFree", totalSlots - usedSlots);
+
+        List<TopologySummary> topologySummaries = clusterSummary.get_topologies();
+        int totalTasks =
+                topologySummaries.stream().mapToInt(
+                        TopologySummary::get_num_tasks).sum();
         result.put("tasksTotal", totalTasks);
+
+        int totalExecutors =
+                topologySummaries.stream().mapToInt(
+                        TopologySummary::get_num_executors).sum();
         result.put("executorsTotal", totalExecutors);
 
+
+        double supervisorTotalMemory =
+                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                        Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME,
+                        x.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)
+                        )
+                ).sum();
         result.put("totalMem", supervisorTotalMemory);
+
+        double supervisorTotalCpu =
+                supervisorSummaries.stream().mapToDouble(x -> x.get_total_resources().getOrDefault(
+                        Constants.COMMON_CPU_RESOURCE_NAME,
+                        x.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)
+                        )
+                ).sum();
         result.put("totalCpu", supervisorTotalCpu);
 
         double supervisorUsedMemory =
@@ -630,7 +637,30 @@ public class UIHelpers {
                 ? StatsUtil.floatStr((supervisorUsedCpu * 100.0) / supervisorTotalCpu) : "0.0");
         result.put("bugtracker-url", conf.get(DaemonConfig.UI_PROJECT_BUGTRACKER_URL));
         result.put("central-log-url", conf.get(DaemonConfig.UI_CENTRAL_LOGGING_URL));
+
+        Map<String, Double> usedGenericResources = new HashMap<>();
+        Map<String, Double> totalGenericResources = new HashMap<>();
+        for (SupervisorSummary ss : supervisorSummaries) {
+            usedGenericResources = NormalizedResourceRequest.addResourceMap(usedGenericResources, ss.get_used_generic_resources());
+            totalGenericResources = NormalizedResourceRequest.addResourceMap(totalGenericResources, ss.get_total_resources());
+        }
+        Map<String, Double> availGenericResources = NormalizedResourceRequest
+                .subtractResourceMap(totalGenericResources, usedGenericResources);
+        result.put("availGenerics", prettifyGenericResources(availGenericResources));
+        result.put("totalGenerics", prettifyGenericResources(totalGenericResources));
         return result;
+    }
+
+    private static String prettifyGenericResources(Map<String, Double> resourceMap) {
+        if (resourceMap == null) {
+            return null;
+        }
+        TreeMap<String, Double> treeGenericResources = new TreeMap<>(); // use TreeMap for deterministic ordering
+        treeGenericResources.putAll(resourceMap);
+        NormalizedResourceRequest.removeNonGenericResources(treeGenericResources);
+        return treeGenericResources.toString()
+                .replaceAll("[{}]", "")
+                .replace(",", "");
     }
 
     /**
@@ -743,12 +773,14 @@ public class UIHelpers {
                 topologySummary.get_requested_memoffheap()
                         + topologySummary.get_assigned_memonheap());
         result.put("requestedCpu", topologySummary.get_requested_cpu());
+        result.put("requestedGenericResources", prettifyGenericResources(topologySummary.get_requested_generic_resources()));
         result.put("assignedMemOnHeap", topologySummary.get_assigned_memonheap());
         result.put("assignedMemOffHeap", topologySummary.get_assigned_memoffheap());
         result.put("assignedTotalMem",
                 topologySummary.get_assigned_memoffheap()
                         + topologySummary.get_assigned_memonheap());
         result.put("assignedCpu", topologySummary.get_assigned_cpu());
+        result.put("assignedGenericResources", prettifyGenericResources(topologySummary.get_assigned_generic_resources()));
         result.put("topologyVersion", topologySummary.get_topology_version());
         result.put("stormVersion", topologySummary.get_storm_version());
         return result;
@@ -772,8 +804,7 @@ public class UIHelpers {
             return unpackOwnerResourceSummary(new OwnerResourceSummary(id));
         }
 
-        List<TopologySummary> topologies = null;
-        topologies = client.getClusterInfo().get_topologies();
+        List<TopologySummary> topologies = client.getTopologySummaries();
         List<Map> topologySummaries = getTopologiesMap(id, topologies);
 
         result.putAll(unpackOwnerResourceSummary(ownerResourceSummaries.get(0)));
@@ -877,6 +908,7 @@ public class UIHelpers {
         result.put("id", supervisorSummary.get_supervisor_id());
         result.put("host", supervisorSummary.get_host());
         result.put("uptime", UIHelpers.prettyUptimeSec(supervisorSummary.get_uptime_secs()));
+        result.put("blacklisted", supervisorSummary.is_blacklisted());
         result.put("uptimeSeconds", supervisorSummary.get_uptime_secs());
         result.put("slotsTotal", supervisorSummary.get_num_workers());
         result.put("slotsUsed", supervisorSummary.get_num_used_workers());
@@ -906,6 +938,15 @@ public class UIHelpers {
         result.put("availMem", totalMemory - supervisorSummary.get_used_mem());
         result.put("availCpu", totalCpu - supervisorSummary.get_used_cpu());
         result.put("version", supervisorSummary.get_version());
+
+        Map<String, Double> totalGenericResources = new HashMap<>(totalResources);
+        result.put("totalGenericResources", prettifyGenericResources(totalGenericResources));
+        Map<String, Double> usedGenericResources = supervisorSummary.get_used_generic_resources();
+        result.put("usedGenericResources", prettifyGenericResources(usedGenericResources));
+        Map<String, Double> availGenericResources = NormalizedResourceRequest
+                .subtractResourceMap(totalGenericResources, usedGenericResources);
+        result.put("availGenericResources", prettifyGenericResources(availGenericResources));
+
         return result;
     }
 
@@ -986,6 +1027,7 @@ public class UIHelpers {
         result.put("uptimeSeconds", workerSummary.get_uptime_secs());
         result.put("workerLogLink", getWorkerLogLink(workerSummary.get_host(),
                 workerSummary.get_port(), config, workerSummary.get_topology_id()));
+        result.put("owner", workerSummary.get_owner());
         return result;
     }
 
@@ -1018,7 +1060,7 @@ public class UIHelpers {
      */
     private static List<Map> getSupervisorsMap(List<SupervisorSummary> supervisors,
                                                Map<String, Object> config) {
-        List<Map> supervisorMaps = new ArrayList();
+        List<Map> supervisorMaps = new ArrayList<>();
         for (SupervisorSummary supervisorSummary : supervisors) {
             supervisorMaps.add(getPrettifiedSupervisorMap(supervisorSummary, config));
         }
@@ -1046,8 +1088,8 @@ public class UIHelpers {
      * @return getSupervisorPageInfo
      */
     public static Map<String, Object> getSupervisorPageInfo(
-            SupervisorPageInfo supervisorPageInfo, Map<String,Object> config) {
-        Map<String, Object> result = new HashMap();
+            SupervisorPageInfo supervisorPageInfo, Map<String, Object> config) {
+        Map<String, Object> result = new HashMap<>();
         result.put("workers", getWorkerSummaries(supervisorPageInfo, config));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
         List<Map> supervisorMaps = getSupervisorsMap(supervisorPageInfo.get_supervisor_summaries(), config);
@@ -1063,7 +1105,7 @@ public class UIHelpers {
      * @return getAllTopologiesSummary
      */
     public static Map<String, Object> getAllTopologiesSummary(
-            List<TopologySummary> topologies, Map<String,Object> config) {
+            List<TopologySummary> topologies, Map<String, Object> config) {
         Map<String, Object> result = new HashMap();
         result.put("topologies", getTopologiesMap(null, topologies));
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
@@ -1119,6 +1161,8 @@ public class UIHelpers {
         result.put("configuration", topologyConf);
         result.put("visualizationTable", new ArrayList());
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
+        result.put("bugtracker-url", config.get(DaemonConfig.UI_PROJECT_BUGTRACKER_URL));
+        result.put("central-log-url", config.get(DaemonConfig.UI_CENTRAL_LOGGING_URL));
         return result;
     }
 
@@ -1127,7 +1171,7 @@ public class UIHelpers {
      * @param windowToTransferred windowToTransferred
      * @return getStatDisplayMapLong
      */
-    private static Map<String, Long> getStatDisplayMapLong(Map<String,Long> windowToTransferred) {
+    private static Map<String, Long> getStatDisplayMapLong(Map<String, Long> windowToTransferred) {
         Map<String, Long> result = new HashMap();
         for (Map.Entry<String, Long> entry : windowToTransferred.entrySet()) {
             result.put(entry.getKey(), entry.getValue());
@@ -1159,6 +1203,9 @@ public class UIHelpers {
             result.put(
                     "requestedCpu",
                     commonAggregateStats.get_resources_map().get(Constants.COMMON_CPU_RESOURCE_NAME));
+            result.put(
+                    "requestedGenericResourcesComp",
+                    prettifyGenericResources(commonAggregateStats.get_resources_map()));
         }
         return result;
     }
@@ -1190,7 +1237,6 @@ public class UIHelpers {
         result.put("acked", commonStats.get_acked());
         result.put("failed", commonStats.get_failed());
         result.put("completeLatency", spoutAggregateStats.get_complete_latency_ms());
-
 
         ErrorInfo lastError = componentAggregateStats.get_last_error();
         result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
@@ -1374,14 +1420,45 @@ public class UIHelpers {
     }
 
     /**
+     * getComponentLastErrorInfo.
+     * Internal helper method that populates a hashmap with the component's most recently reported error.
+     * If the component has no such error reported, an empty "template" suitable for return over the
+     * REST api is returned.
+     *
+     * @param lastError errorInfo The components most recently reported error.
+     * @param config config Topology configuration map.
+     * @param topologyId topologyId.
+     * @return Map of values representing details about the most recently reported error.
+     */
+    private static Map<String, Object> getComponentLastErrorInfo(ErrorInfo lastError, Map config, String topologyId) {
+        Map<String, Object> result = new HashMap<>();
+
+        // Maintain backwards compatibility by defaulting these fields to empty string or null.
+        // If the lastError parameter is non-null, these keys will be populated with the appropriate values below.
+        result.put("lastError", "");
+        result.put("errorHost", "");
+        result.put("errorPort", (Integer) null);
+        result.put("errorWorkerLogLink", "");
+        result.put("errorTime", null);
+        result.put("errorLapsedSecs", null);
+
+        if (!Objects.isNull(lastError)) {
+            result.putAll(getComponentErrorInfo(lastError, config, topologyId, true));
+        }
+        return result;
+    }
+
+    /**
      * getComponentErrorInfo.
      * @param errorInfo errorInfo
      * @param config config
      * @param topologyId topologyId
+     * @param asLastError Pass a value of true if the result is to be used as part of a components 'lastError' response.
+     *                    Pass a value of false if the result is to be used as part of a components 'errors' response.
      * @return getComponentErrorInfo
      */
     private static Map<String, Object> getComponentErrorInfo(ErrorInfo errorInfo, Map config,
-                                                             String topologyId) {
+                                                             String topologyId, boolean asLastError) {
         Map<String, Object> result = new HashMap();
         result.put("errorTime",
                 errorInfo.get_error_time_secs());
@@ -1391,7 +1468,13 @@ public class UIHelpers {
         result.put("errorPort", port);
         result.put("errorWorkerLogLink", getWorkerLogLink(host, port, config, topologyId));
         result.put("errorLapsedSecs", Time.deltaSecs(errorInfo.get_error_time_secs()));
-        result.put("error", errorInfo.get_error());
+
+        if (asLastError) {
+            result.put("lastError", getTruncatedErrorString(errorInfo.get_error()));
+        } else {
+            result.put("error", errorInfo.get_error());
+        }
+
         return result;
     }
 
@@ -1408,7 +1491,7 @@ public class UIHelpers {
         errorInfoList.sort(Comparator.comparingInt(ErrorInfo::get_error_time_secs));
         result.put(
                 "componentErrors",
-                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId))
+                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId, false))
                         .collect(Collectors.toList())
         );
         return result;
@@ -1427,7 +1510,7 @@ public class UIHelpers {
         errorInfoList.sort(Comparator.comparingInt(ErrorInfo::get_error_time_secs));
         result.put(
                 "topologyErrors",
-                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId))
+                errorInfoList.stream().map(e -> getComponentErrorInfo(e, config, topologyId, false))
                         .collect(Collectors.toList())
         );
         return result;
@@ -1440,16 +1523,15 @@ public class UIHelpers {
      * @return getTopologySpoutAggStatsMap
      */
     private static Map<String, Object> getTopologySpoutAggStatsMap(ComponentAggregateStats componentAggregateStats,
-                                                                   String spoutId) {
+                                                                   String spoutId, Map<String, Object> config, String topologyId) {
         Map<String, Object> result = new HashMap();
         CommonAggregateStats commonStats = componentAggregateStats.get_common_stats();
         result.putAll(getCommonAggStatsMap(commonStats));
         result.put("spoutId", spoutId);
         result.put("encodedSpoutId", Utils.urlEncodeUtf8(spoutId));
         SpoutAggregateStats spoutAggregateStats = componentAggregateStats.get_specific_stats().get_spout();
-        result.put("completeLatency", spoutAggregateStats.get_complete_latency_ms());
-        ErrorInfo lastError = componentAggregateStats.get_last_error();
-        result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
+        result.put("completeLatency", StatsUtil.floatStr(spoutAggregateStats.get_complete_latency_ms()));
+        result.putAll(getComponentLastErrorInfo(componentAggregateStats.get_last_error(), config, topologyId));
         return result;
     }
 
@@ -1460,7 +1542,7 @@ public class UIHelpers {
      * @return getTopologyBoltAggStatsMap
      */
     private static Map<String, Object> getTopologyBoltAggStatsMap(ComponentAggregateStats componentAggregateStats,
-                                                                  String boltId) {
+                                                                  String boltId, Map<String, Object> config, String topologyId) {
         Map<String, Object> result = new HashMap();
         CommonAggregateStats commonStats = componentAggregateStats.get_common_stats();
         result.putAll(getCommonAggStatsMap(commonStats));
@@ -1471,8 +1553,7 @@ public class UIHelpers {
         result.put("executeLatency", StatsUtil.floatStr(boltAggregateStats.get_execute_latency_ms()));
         result.put("executed", boltAggregateStats.get_executed());
         result.put("processLatency", StatsUtil.floatStr(boltAggregateStats.get_process_latency_ms()));
-        ErrorInfo lastError = componentAggregateStats.get_last_error();
-        result.put("lastError", Objects.isNull(lastError) ?  "" : getTruncatedErrorString(lastError.get_error()));
+        result.putAll(getComponentLastErrorInfo(componentAggregateStats.get_last_error(), config, topologyId));
         return result;
     }
 
@@ -1512,7 +1593,7 @@ public class UIHelpers {
      * @param config config
      * @return unpackTopologyInfo
      */
-    private static Map<String,Object> unpackTopologyInfo(TopologyPageInfo topologyPageInfo, String window, Map<String,Object> config) {
+    private static Map<String, Object> unpackTopologyInfo(TopologyPageInfo topologyPageInfo, String window, Map<String, Object> config) {
         Map<String, Object> result = new HashMap();
         result.put("id", topologyPageInfo.get_id());
         result.put("encodedId", Utils.urlEncodeUtf8(topologyPageInfo.get_id()));
@@ -1540,10 +1621,12 @@ public class UIHelpers {
         result.put("requestedSharedOnHeapMem", topologyPageInfo.get_requested_shared_on_heap_memory());
         result.put("requestedRegularOffHeapMem", topologyPageInfo.get_requested_regular_off_heap_memory());
         result.put("requestedSharedOffHeapMem", topologyPageInfo.get_requested_shared_off_heap_memory());
+        result.put("requestedGenericResources", prettifyGenericResources(topologyPageInfo.get_requested_generic_resources()));
         result.put("assignedRegularOnHeapMem", topologyPageInfo.get_assigned_regular_on_heap_memory());
         result.put("assignedSharedOnHeapMem", topologyPageInfo.get_assigned_shared_on_heap_memory());
         result.put("assignedRegularOffHeapMem", topologyPageInfo.get_assigned_regular_off_heap_memory());
         result.put("assignedSharedOffHeapMem", topologyPageInfo.get_assigned_shared_off_heap_memory());
+        result.put("assignedGenericResources", prettifyGenericResources(topologyPageInfo.get_assigned_generic_resources()));
         result.put("topologyStats", getTopologyStatsMap(topologyPageInfo.get_topology_stats()));
         List<Map> workerSummaries = new ArrayList();
         if (topologyPageInfo.is_set_workers()) {
@@ -1557,7 +1640,7 @@ public class UIHelpers {
         List<Map> spoutStats = new ArrayList();
 
         for (Map.Entry<String, ComponentAggregateStats> spoutEntry : spouts.entrySet()) {
-            spoutStats.add(getTopologySpoutAggStatsMap(spoutEntry.getValue(), spoutEntry.getKey()));
+            spoutStats.add(getTopologySpoutAggStatsMap(spoutEntry.getValue(), spoutEntry.getKey(), config, topologyPageInfo.get_id()));
         }
         result.put("spouts", spoutStats);
 
@@ -1565,7 +1648,7 @@ public class UIHelpers {
         List<Map> boltStats = new ArrayList();
 
         for (Map.Entry<String, ComponentAggregateStats> boltEntry : bolts.entrySet()) {
-            boltStats.add(getTopologyBoltAggStatsMap(boltEntry.getValue(), boltEntry.getKey()));
+            boltStats.add(getTopologyBoltAggStatsMap(boltEntry.getValue(), boltEntry.getKey(), config, topologyPageInfo.get_id()));
         }
         result.put("bolts", boltStats);
 
@@ -1618,8 +1701,8 @@ public class UIHelpers {
      * @param config config
      * @return getTopologyLag.
      */
-    public static Map<String, Map<String, Object>> getTopologyLag(StormTopology userTopology, Map<String,Object> config) {
-        Boolean disableLagMonitoring = (Boolean)(config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING));
+    public static Map<String, Map<String, Object>> getTopologyLag(StormTopology userTopology, Map<String, Object> config) {
+        Boolean disableLagMonitoring = (Boolean) (config.get(DaemonConfig.UI_DISABLE_SPOUT_LAG_MONITORING));
         return disableLagMonitoring ? Collections.EMPTY_MAP : TopologySpoutLag.lag(userTopology, config);
     }
 
@@ -1684,11 +1767,11 @@ public class UIHelpers {
      * @param stats stats
      * @return sanitizeTransferredStats
      */
-    public static  Map<String, Map<String,Long>> sanitizeTransferredStats(Map<String, Map<String,Long>> stats) {
-        Map<String, Map<String,Long>> result = new HashMap();
-        for (Map.Entry<String, Map<String,Long>> entry : stats.entrySet()) {
-            Map<String,Long> temp = new HashMap();
-            for (Map.Entry<String,Long> innerEntry : entry.getValue().entrySet()) {
+    public static  Map<String, Map<String, Long>> sanitizeTransferredStats(Map<String, Map<String, Long>> stats) {
+        Map<String, Map<String, Long>> result = new HashMap();
+        for (Map.Entry<String, Map<String, Long>> entry : stats.entrySet()) {
+            Map<String, Long> temp = new HashMap();
+            for (Map.Entry<String, Long> innerEntry : entry.getValue().entrySet()) {
                 temp.put(sanitizeStreamName(innerEntry.getKey()), innerEntry.getValue());
             }
             result.put(entry.getKey(), temp);
@@ -1720,7 +1803,7 @@ public class UIHelpers {
      * @param entryInput entryInput
      * @return getInputMap
      */
-    public static Map<String, Object> getInputMap(Map.Entry<GlobalStreamId,Grouping> entryInput) {
+    public static Map<String, Object> getInputMap(Map.Entry<GlobalStreamId, Grouping> entryInput) {
         Map<String, Object> result = new HashMap();
         result.put(":component", entryInput.getKey().get_componentId());
         result.put(":stream", entryInput.getKey().get_streamId());
@@ -2019,6 +2102,8 @@ public class UIHelpers {
                 componentPageInfo.get_resources_map().get(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME));
         result.put("requestedCpu",
                 componentPageInfo.get_resources_map().get(Constants.COMMON_CPU_RESOURCE_NAME));
+        result.put("requestedGenericResources",
+                prettifyGenericResources(componentPageInfo.get_resources_map()));
 
         result.put("schedulerDisplayResource", config.get(DaemonConfig.SCHEDULER_DISPLAY_RESOURCE));
         result.put("topologyId", id);
@@ -2259,7 +2344,7 @@ public class UIHelpers {
      * @throws TException TException
      */
     public static Map<String, Object> getTopologyProfilingDump(Nimbus.Iface client, String id, String hostPort,
-                                                               Map<String,Object> config) throws TException {
+                                                               Map<String, Object> config) throws TException {
         setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(),
                 config, ProfileAction.JPROFILE_DUMP
@@ -2293,7 +2378,7 @@ public class UIHelpers {
      */
     public static Map<String, Object> getTopologyProfilingRestartWorker(Nimbus.Iface client,
                                                                         String id, String hostPort,
-                                                                        Map<String,Object> config) throws TException {
+                                                                        Map<String, Object> config) throws TException {
         setTopologyProfilingAction(
                 client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JVM_RESTART
         );
@@ -2313,7 +2398,7 @@ public class UIHelpers {
      * @throws TException TException
      */
     public static Map<String, Object> getTopologyProfilingDumpHeap(Nimbus.Iface client, String id, String hostPort,
-                                                                   Map<String,Object> config) throws TException {
+                                                                   Map<String, Object> config) throws TException {
         setTopologyProfilingAction(client, id , hostPort, System.currentTimeMillis(), config, ProfileAction.JMAP_DUMP);
         Map<String, Object> result = new HashMap();
         result.put("status", "ok");
@@ -2358,7 +2443,7 @@ public class UIHelpers {
      * @param config config
      * @return getNimbusSummary
      */
-    public static Map<String, Object> getNimbusSummary(ClusterSummary clusterInfo, Map<String,Object> config) {
+    public static Map<String, Object> getNimbusSummary(ClusterSummary clusterInfo, Map<String, Object> config) {
         List<NimbusSummary> nimbusSummaries = clusterInfo.get_nimbuses();
         List<String> nimbusSeeds = new ArrayList();
         for (String nimbusHost : (List<String>) config.get(Config.NIMBUS_SEEDS)) {

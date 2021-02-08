@@ -20,7 +20,7 @@ package org.apache.storm.kafka.bolt.mapper;
 
 import org.apache.storm.tuple.Tuple;
 
-public class FieldNameBasedTupleToKafkaMapper<K,V> implements TupleToKafkaMapper<K, V> {
+public class FieldNameBasedTupleToKafkaMapper<K, V> implements TupleToKafkaMapper<K, V> {
     private static final long serialVersionUID = -8794262989021702349L;
     public static final String BOLT_KEY = "key";
     public static final String BOLT_MESSAGE = "message";

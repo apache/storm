@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AsyncExecutor<T> implements Serializable {
 
-    private final static Logger LOG = LoggerFactory.getLogger(AsyncExecutor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncExecutor.class);
 
     protected Session session;
 
@@ -79,8 +79,9 @@ public class AsyncExecutor<T> implements Serializable {
 
         List<SettableFuture<T>> settableFutures = new ArrayList<>(statements.size());
 
-        for (Statement s : statements)
+        for (Statement s : statements) {
             settableFutures.add(execAsync(s, input, AsyncResultHandler.NO_OP_HANDLER));
+        }
 
         ListenableFuture<List<T>> allAsList = Futures.allAsList(settableFutures);
         Futures.addCallback(allAsList, new FutureCallback<List<T>>() {
@@ -221,7 +222,7 @@ public class AsyncExecutor<T> implements Serializable {
         private final List<Throwable> exceptions;
         private final Semaphore throttle;
 
-        public AsyncContext(List<T> inputs, Semaphore throttle, SettableFuture<List<T>> settableFuture) {
+        AsyncContext(List<T> inputs, Semaphore throttle, SettableFuture<List<T>> settableFuture) {
             this.inputs = inputs;
             this.latch = new AtomicInteger(inputs.size());
             this.throttle = throttle;
@@ -272,12 +273,12 @@ public class AsyncExecutor<T> implements Serializable {
             int top5 = Math.min(exceptions.size(), 5);
             StringBuilder sb = new StringBuilder();
             sb.append("First ")
-              .append(top5)
-              .append(" exceptions: ")
-              .append(System.lineSeparator());
+                    .append(top5)
+                    .append(" exceptions: ")
+                    .append(System.lineSeparator());
             for (int i = 0; i < top5; i++) {
                 sb.append(exceptions.get(i).getMessage())
-                  .append(System.lineSeparator());
+                        .append(System.lineSeparator());
             }
             return sb.toString();
         }
@@ -287,13 +288,13 @@ public class AsyncExecutor<T> implements Serializable {
             StringBuilder sb = new StringBuilder();
 
             sb.append(getMessage())
-              .append(System.lineSeparator())
-              .append("Multiple exceptions encountered: ")
-              .append(System.lineSeparator());
+                    .append(System.lineSeparator())
+                    .append("Multiple exceptions encountered: ")
+                    .append(System.lineSeparator());
 
             for (Throwable exception : exceptions) {
                 sb.append(exception.toString())
-                  .append(System.lineSeparator());
+                        .append(System.lineSeparator());
             }
 
             return super.toString();

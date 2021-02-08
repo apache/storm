@@ -20,11 +20,11 @@ import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.Utils;
 
 public class IndexHashGrouping implements CustomStreamGrouping {
-    int _index;
-    List<Integer> _targets;
+    int index;
+    List<Integer> targets;
 
     public IndexHashGrouping(int index) {
-        _index = index;
+        this.index = index;
     }
 
     public static int objectToIndex(Object val, int numPartitions) {
@@ -36,13 +36,13 @@ public class IndexHashGrouping implements CustomStreamGrouping {
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
-        _targets = targetTasks;
+        targets = targetTasks;
     }
 
     @Override
     public List<Integer> chooseTasks(int fromTask, List<Object> values) {
-        int i = objectToIndex(values.get(_index), _targets.size());
-        return Arrays.asList(_targets.get(i));
+        int i = objectToIndex(values.get(index), targets.size());
+        return Arrays.asList(targets.get(i));
     }
 
 }

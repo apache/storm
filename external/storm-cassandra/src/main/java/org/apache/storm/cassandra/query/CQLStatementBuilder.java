@@ -14,7 +14,7 @@ package org.apache.storm.cassandra.query;
 
 import java.io.Serializable;
 
-
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface CQLStatementBuilder<T extends CQLStatementTupleMapper> extends Serializable {
 
     /**

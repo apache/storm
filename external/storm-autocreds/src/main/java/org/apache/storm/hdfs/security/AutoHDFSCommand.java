@@ -15,49 +15,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.security;
+
+import static org.apache.storm.hdfs.security.HdfsSecurityUtil.STORM_KEYTAB_FILE_KEY;
+import static org.apache.storm.hdfs.security.HdfsSecurityUtil.STORM_USER_NAME_KEY;
+
+import java.util.HashMap;
+import java.util.Map;
+import javax.security.auth.Subject;
 
 import org.apache.storm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.apache.storm.hdfs.security.HdfsSecurityUtil.STORM_KEYTAB_FILE_KEY;
-import static org.apache.storm.hdfs.security.HdfsSecurityUtil.STORM_USER_NAME_KEY;
-
 /**
- * Command tool of HDFS credential renewer
+ * Command tool of HDFS credential renewer.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public final class AutoHDFSCommand {
-  private static final Logger LOG = LoggerFactory.getLogger(AutoHDFSCommand.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AutoHDFSCommand.class);
 
-  private AutoHDFSCommand() {
-  }
+    private AutoHDFSCommand() {
+    }
 
-  @SuppressWarnings("unchecked")
-  public static void main(String[] args) throws Exception {
-    Map<String, Object> conf = new HashMap<>();
-    conf.put(STORM_USER_NAME_KEY, args[1]); //with realm e.g. hdfs@WITZEND.COM
-    conf.put(STORM_KEYTAB_FILE_KEY, args[2]);// /etc/security/keytabs/storm.keytab
+    @SuppressWarnings("unchecked")
+    public static void main(String[] args) throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(STORM_USER_NAME_KEY, args[1]); //with realm e.g. hdfs@WITZEND.COM
+        conf.put(STORM_KEYTAB_FILE_KEY, args[2]); // /etc/security/keytabs/storm.keytab
 
-    AutoHDFS autoHDFS = new AutoHDFS();
-    autoHDFS.prepare(conf);
-    AutoHDFSNimbus autoHDFSNimbus = new AutoHDFSNimbus();
-    autoHDFSNimbus.prepare(conf);
+        AutoHDFS autoHdfs = new AutoHDFS();
+        autoHdfs.prepare(conf);
+        AutoHDFSNimbus autoHdfsNimbus = new AutoHDFSNimbus();
+        autoHdfsNimbus.prepare(conf);
 
-    Map<String,String> creds  = new HashMap<>();
-    autoHDFSNimbus.populateCredentials(creds, conf, args[0]);
-    LOG.info("Got HDFS credentials", autoHDFS.getCredentials(creds));
+        Map<String, String> creds  = new HashMap<>();
+        autoHdfsNimbus.populateCredentials(creds, conf, args[0]);
+        LOG.info("Got HDFS credentials", autoHdfs.getCredentials(creds));
 
-    Subject s = new Subject();
-    autoHDFS.populateSubject(s, creds);
-    LOG.info("Got a Subject "+ s);
+        Subject s = new Subject();
+        autoHdfs.populateSubject(s, creds);
+        LOG.info("Got a Subject " + s);
 
-    autoHDFSNimbus.renew(creds, conf, args[0]);
-    LOG.info("renewed credentials", autoHDFS.getCredentials(creds));
-  }
+        autoHdfsNimbus.renew(creds, conf, args[0]);
+        LOG.info("renewed credentials", autoHdfs.getCredentials(creds));
+    }
 
 }

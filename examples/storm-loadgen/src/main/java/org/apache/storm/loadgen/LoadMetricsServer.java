@@ -238,7 +238,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         }
 
         public double getCompletedPerSec() {
-            return getCompleted() / (double)timeWindow;
+            return getCompleted() / (double) timeWindow;
         }
 
         public long getAcked() {
@@ -246,7 +246,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         }
 
         public double getAckedPerSec() {
-            return acked / (double)timeWindow;
+            return acked / (double) timeWindow;
         }
 
         public long getFailed() {
@@ -313,7 +313,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     }
 
     private static class NoCloseOutputStream extends FilterOutputStream {
-        public NoCloseOutputStream(OutputStream out) {
+        NoCloseOutputStream(OutputStream out) {
             super(out);
         }
 
@@ -328,11 +328,11 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         protected final Map<String, MetricExtractor> allExtractors;
         public final boolean includesSysOutOrError;
 
-        public FileReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        FileReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
             this(null, Collections.emptyMap(), allExtractors);
         }
 
-        public FileReporter(String path, Map<String, String> query,  Map<String, MetricExtractor> allExtractors)
+        FileReporter(String path, Map<String, String> query,  Map<String, MetricExtractor> allExtractors)
             throws FileNotFoundException {
             boolean append = Boolean.parseBoolean(query.getOrDefault("append", "false"));
             boolean tee = Boolean.parseBoolean(query.getOrDefault("tee", "false"));
@@ -422,8 +422,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     static {
         //Perhaps there is a better way to do this???
         LinkedHashMap<String, MetricExtractor> tmp = new LinkedHashMap<>();
-        tmp.put("start_time",  new MetricExtractor((m, unit) -> m.startTime(),"s"));
-        tmp.put("end_time",  new MetricExtractor((m, unit) -> m.endTime(), "s"));
+        tmp.put("start_time",  new MetricExtractor((m, unit) -> m.startTime(), "s"));
+        tmp.put("end_time",  new MetricExtractor((m, unit) -> m.endTime(),  "s"));
         tmp.put("rate",  new MetricExtractor((m, unit) -> m.getCompletedPerSec(), "tuple/s"));
         tmp.put("mean", new MetricExtractor((m, unit) -> m.getMeanLatency(unit)));
         tmp.put("99%ile", new MetricExtractor((m, unit) -> m.getLatencyAtPercentile(99.0, unit)));
@@ -454,7 +454,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         String buildVersion = VersionInfo.getBuildVersion();
         tmp.put("storm_version", new MetricExtractor((m, unit) -> buildVersion, ""));
         tmp.put("java_version", new MetricExtractor((m, unit) -> System.getProperty("java.vendor")
-            + " " + System.getProperty("java.version"),""));
+            + " " + System.getProperty("java.version"), ""));
         tmp.put("os_arch", new MetricExtractor((m, unit) -> System.getProperty("os.arch"), ""));
         tmp.put("os_name", new MetricExtractor((m, unit) -> System.getProperty("os.name"), ""));
         tmp.put("os_version", new MetricExtractor((m, unit) -> System.getProperty("os.version"), ""));
@@ -467,12 +467,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         private final String unit;
         private final BiFunction<Measurements, TimeUnit, Object> func;
 
-        public MetricExtractor(BiFunction<Measurements, TimeUnit, Object> func) {
+        MetricExtractor(BiFunction<Measurements, TimeUnit, Object> func) {
             this.func = func;
             this.unit = null;
         }
 
-        public MetricExtractor(BiFunction<Measurements, TimeUnit, Object> func, String unit) {
+        MetricExtractor(BiFunction<Measurements, TimeUnit, Object> func, String unit) {
             this.func = func;
             this.unit = unit;
         }
@@ -504,12 +504,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         protected final int precision;
         protected String doubleFormat;
 
-        public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+        ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
             this(path, query, extractorsMap, null);
         }
 
-        public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap,
+        ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap,
                                    String defaultPreceision) throws FileNotFoundException {
             super(path, query, extractorsMap);
             targetUnit = UNIT_MAP.get(query.getOrDefault("time", "MILLISECONDS").toUpperCase());
@@ -590,16 +590,16 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         public final String longFormat;
         public final String stringFormat;
 
-        public FixedWidthReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+        FixedWidthReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
             super(path, query, extractorsMap, "3");
-            int columnWidth = Integer.parseInt(query.getOrDefault("columnWidth", "15")) - 1;//Always have a space in between
+            int columnWidth = Integer.parseInt(query.getOrDefault("columnWidth", "15")) - 1; //Always have a space in between
             doubleFormat = "%," + columnWidth + "." + precision + "f";
             longFormat = "%," + columnWidth + "d";
             stringFormat = "%" + columnWidth + "s";
         }
 
-        public FixedWidthReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        FixedWidthReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
             this(null, Collections.emptyMap(), allExtractors);
         }
 
@@ -652,7 +652,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     static class SepValReporter extends ColumnsFileReporter {
         private final String separator;
 
-        public SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+        SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
             super(path, query, extractorsMap);
             this.separator = separator;
@@ -702,12 +702,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     static class LegacyReporter extends FileReporter {
         private final TimeUnit targetUnitOverride;
 
-        public LegacyReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+        LegacyReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
             super(allExtractors);
             targetUnitOverride = null;
         }
 
-        public LegacyReporter(String path, Map<String, String> query, Map<String, MetricExtractor> allExtractors)
+        LegacyReporter(String path, Map<String, String> query, Map<String, MetricExtractor> allExtractors)
             throws FileNotFoundException {
             super(path, query, allExtractors);
             if (query.containsKey("time")) {
@@ -914,16 +914,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     }
 
     private void outputMetrics(Nimbus.Iface client, Collection<String> names) throws Exception {
-        ClusterSummary summary = client.getClusterInfo();
         Set<String> ids = new HashSet<>();
-        for (TopologySummary ts: summary.get_topologies()) {
-            if (names.contains(ts.get_name())) {
-                ids.add(ts.get_id());
-            }
-        }
-        if (ids.size() != names.size()) {
-            throw new Exception("Could not find all topologies: " + names);
-        }
         HashSet<String> workers = new HashSet<>();
         HashSet<String> hosts = new HashSet<>();
         int executors = 0;
@@ -932,10 +923,11 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         long failed = 0;
         double totalLatMs = 0;
         long totalLatCount = 0;
-        for (String id: ids) {
-            TopologyInfo info = client.getTopologyInfo(id);
+        for (String name: names) {
+            TopologyInfo info = client.getTopologyInfoByName(name);
+            ids.add(info.get_id());
             @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
-            TopologyPageInfo tpi = client.getTopologyPageInfo(id, ":all-time", false);
+            TopologyPageInfo tpi = client.getTopologyPageInfo(info.get_id(), ":all-time", false);
             uptime = Math.max(uptime, info.get_uptime_secs());
             for (ExecutorSummary exec : info.get_executors()) {
                 hosts.add(exec.get_host());
@@ -1004,30 +996,30 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         for (IMetricsConsumer.DataPoint dp: dataPoints) {
             if (dp.name.startsWith("comp-lat-histo") && dp.value instanceof Histogram) {
                 synchronized (histo) {
-                    histo.add((Histogram)dp.value);
+                    histo.add((Histogram) dp.value);
                 }
             } else if ("CPU".equals(dp.name) && dp.value instanceof Map) {
-                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Map<Object, Object> m = (Map<Object, Object>) dp.value;
                 Object sys = m.get("sys-ms");
                 if (sys instanceof Number) {
-                    systemCpu.getAndAdd(((Number)sys).longValue());
+                    systemCpu.getAndAdd(((Number) sys).longValue());
                 }
                 Object user = m.get("user-ms");
                 if (user instanceof Number) {
-                    userCpu.getAndAdd(((Number)user).longValue());
+                    userCpu.getAndAdd(((Number) user).longValue());
                 }
             } else if (dp.name.startsWith("GC/") && dp.value instanceof Map) {
-                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Map<Object, Object> m = (Map<Object, Object>) dp.value;
                 Object count = m.get("count");
                 if (count instanceof Number) {
-                    gcCount.getAndAdd(((Number)count).longValue());
+                    gcCount.getAndAdd(((Number) count).longValue());
                 }
                 Object time = m.get("timeMs");
                 if (time instanceof Number) {
-                    gcMs.getAndAdd(((Number)time).longValue());
+                    gcMs.getAndAdd(((Number) time).longValue());
                 }
             } else if (dp.name.startsWith("memory/") && dp.value instanceof Map) {
-                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Map<Object, Object> m = (Map<Object, Object>) dp.value;
                 Object val = m.get("usedBytes");
                 if (val instanceof Number) {
                     MemMeasure mm = memoryBytes.get(worker);
@@ -1036,10 +1028,10 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                         MemMeasure tmp = memoryBytes.putIfAbsent(worker, mm);
                         mm = tmp == null ? mm : tmp;
                     }
-                    mm.update(((Number)val).longValue());
+                    mm.update(((Number) val).longValue());
                 }
             } else if (dp.name.equals("__receive")) {
-                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Map<Object, Object> m = (Map<Object, Object>) dp.value;
                 Object pop = m.get("population");
                 Object cap = m.get("capacity");
                 if (pop instanceof Number && cap instanceof Number) {
@@ -1057,7 +1049,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                     if (full >= 0.8) {
                         congested.get().put(
                             topologyId + ":" + taskInfo.srcComponentId + ":" + taskInfo.srcTaskId,
-                            "max.spout.pending " + (int)(full * 100) + "%");
+                            "max.spout.pending " + (int) (full * 100) + "%");
                     }
                 }
             }

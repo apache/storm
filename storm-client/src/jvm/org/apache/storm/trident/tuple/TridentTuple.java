@@ -19,7 +19,7 @@ import org.apache.storm.tuple.ITuple;
 
 public interface TridentTuple extends ITuple, List<Object> {
 
-    public static interface Factory extends Serializable {
+    interface Factory extends Serializable {
         Map<String, ValuePointer> getFieldIndex();
 
         List<String> getOutputFields();

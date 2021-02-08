@@ -15,16 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.clojure;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.TupleImpl;
 
 import clojure.lang.AFn;
 import clojure.lang.ASeq;
@@ -45,9 +37,18 @@ import clojure.lang.PersistentArrayMap;
 import clojure.lang.Seqable;
 import clojure.lang.Symbol;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.TupleImpl;
+
 public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, ILookup, IPersistentMap, Map, IFn {
-    private IPersistentMap _meta;
-    private IPersistentMap _map;
+    private IPersistentMap meta;
+    private IPersistentMap map;
 
     public ClojureTuple(Tuple t) {
         super(t);
@@ -58,32 +59,33 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
     }
 
     private PersistentArrayMap toMap() {
-        Object array[] = new Object[size()*2];
+        Object[] array = new Object[size() * 2];
         List<String> fields = getFields().toList();
-        for(int i=0; i < size(); i++) {
-            array[i*2] = fields.get(i);
-            array[(i*2)+1] = getValue(i);
+        for (int i = 0; i < size(); i++) {
+            array[i * 2] = fields.get(i);
+            array[(i * 2) + 1] = getValue(i);
         }
         return new PersistentArrayMap(array);
     }
 
     public IPersistentMap getMap() {
-        if (_map == null) {
-            _map = toMap();
+        if (map == null) {
+            map = toMap();
         }
-        return _map;
+        return map;
     }
 
     /* ILookup */
     @Override
     public Object valAt(Object o) {
         try {
-            if(o instanceof Keyword) {
+            if (o instanceof Keyword) {
                 return getValueByField(((Keyword) o).getName());
-            } else if(o instanceof String) {
+            } else if (o instanceof String) {
                 return getValueByField((String) o);
             }
-        } catch(IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException ignored) {
+            //ignore
         }
         return null;
     }
@@ -91,14 +93,16 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
     @Override
     public Object valAt(Object o, Object def) {
         Object ret = valAt(o);
-        if (ret==null) ret = def;
+        if (ret == null) {
+            ret = def;
+        }
         return ret;
     }
 
     /* Seqable */
     @Override
     public ISeq seq() {
-        if(size() > 0) {
+        if (size() > 0) {
             return new Seq(getFields().toList(), getValues(), 0);
         }
         return null;
@@ -108,50 +112,51 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
         private static final long serialVersionUID = 1L;
         final List<String> fields;
         final List<Object> values;
-        final int i;
+        final int count;
 
-        Seq(List<String> fields, List<Object> values, int i) {
+        Seq(List<String> fields, List<Object> values, int count) {
             this.fields = fields;
             this.values = values;
-            assert i >= 0;
-            this.i = i;
+            assert count >= 0;
+            this.count = count;
         }
 
-        public Seq(IPersistentMap meta, List<String> fields, List<Object> values, int i) {
+        Seq(IPersistentMap meta, List<String> fields, List<Object> values, int count) {
             super(meta);
-            this.fields= fields;
+            this.fields = fields;
             this.values = values;
-            assert i >= 0;
-            this.i = i;
+            assert count >= 0;
+            this.count = count;
         }
 
         @Override
         public Object first() {
-            return new MapEntry(fields.get(i), values.get(i));
+            return new MapEntry(fields.get(count), values.get(count));
         }
 
         @Override
         public ISeq next() {
-            if(i+1 < fields.size()) {
-                return new Seq(fields, values, i+1);
+            if (count + 1 < fields.size()) {
+                return new Seq(fields, values, count + 1);
             }
             return null;
         }
 
         @Override
         public int count() {
-            assert fields.size() -i >= 0 : "index out of bounds";
+            assert fields.size() - count >= 0 : "index out of bounds";
             // i being the position in the fields of this seq, the remainder of the seq is the size
-            return fields.size() -i;
+            return fields.size() - count;
         }
 
         @Override
         public Obj withMeta(IPersistentMap meta) {
-            return new Seq(meta, fields, values, i);
+            return new Seq(meta, fields, values, count);
         }
     }
 
     /* Indexed */
+    @Override
     public Object nth(int i) {
         if (i < size()) {
             return getValue(i);
@@ -160,26 +165,31 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
         }
     }
 
+    @Override
     public Object nth(int i, Object notfound) {
         Object ret = nth(i);
-        if (ret==null) ret = notfound;
+        if (ret == null) {
+            ret = notfound;
+        }
         return ret;
     }
 
     /* Counted */
+    @Override
     public int count() {
         return size();
     }
 
     /* IMeta */
+    @Override
     public IPersistentMap meta() {
-        if(_meta==null) {
-            _meta = new PersistentArrayMap( new Object[] {
+        if (meta == null) {
+            meta = new PersistentArrayMap(new Object[] {
                     makeKeyword("stream"), getSourceStreamId(),
                     makeKeyword("component"), getSourceComponent(),
                     makeKeyword("task"), getSourceTask()});
         }
-        return _meta;
+        return meta;
     }
 
     /* IFn */
@@ -333,35 +343,41 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
     /* Naive implementation, but it might be good enough */
     @Override
     public IPersistentMap assoc(Object k, Object v) {
-        if(k instanceof Keyword) return assoc(((Keyword) k).getName(), v);
-        
+        if (k instanceof Keyword) {
+            return assoc(((Keyword) k).getName(), v);
+        }
         return new IndifferentAccessMap(getMap().assoc(k, v));
     }
 
     @Override
     public IPersistentMap assocEx(Object k, Object v) {
-        if(k instanceof Keyword) return assocEx(((Keyword) k).getName(), v);
-
+        if (k instanceof Keyword) {
+            return assocEx(((Keyword) k).getName(), v);
+        }
         return new IndifferentAccessMap(getMap().assocEx(k, v));
     }
 
     @Override
     public IPersistentMap without(Object k) {
-        if(k instanceof Keyword) return without(((Keyword) k).getName());
-
+        if (k instanceof Keyword) {
+            return without(((Keyword) k).getName());
+        }
         return new IndifferentAccessMap(getMap().without(k));
     }
 
     @Override
     public boolean containsKey(Object k) {
-        if(k instanceof Keyword) return containsKey(((Keyword) k).getName());
+        if (k instanceof Keyword) {
+            return containsKey(((Keyword) k).getName());
+        }
         return getMap().containsKey(k);
     }
 
     @Override
     public IMapEntry entryAt(Object k) {
-        if(k instanceof Keyword) return entryAt(((Keyword) k).getName());
-
+        if (k instanceof Keyword) {
+            return entryAt(((Keyword) k).getName());
+        }
         return getMap().entryAt(k);
     }
 

@@ -12,6 +12,8 @@
 
 package org.apache.storm.security.auth.workertoken;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -39,9 +41,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Allow for SASL authentication using worker tokens.
  */
-public class WorkerTokenAuthorizer implements PasswordProvider {
+public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(WorkerTokenAuthorizer.class);
     private final LoadingCache<WorkerTokenInfo, PrivateWorkerKey> keyCache;
+    private final IStormClusterState state;
 
     /**
      * Constructor.
@@ -72,6 +75,7 @@ public class WorkerTokenAuthorizer implements PasswordProvider {
                             });
         }
         keyCache = tmpKeyCache;
+        this.state = state;
     }
 
     private static IStormClusterState buildStateIfNeeded(Map<String, Object> conf, ThriftConnectionType connectionType) {
@@ -140,5 +144,12 @@ public class WorkerTokenAuthorizer implements PasswordProvider {
         byte[] user = Base64.getDecoder().decode(userName);
         WorkerTokenInfo deser = Utils.deserialize(user, WorkerTokenInfo.class);
         return deser.get_userName();
+    }
+
+    @Override
+    public void close() {
+        if (state != null) {
+            state.disconnect();
+        }
     }
 }

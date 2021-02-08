@@ -12,48 +12,17 @@
 
 package org.apache.storm.daemon.metrics;
 
-import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
-import org.apache.storm.generated.NodeInfo;
-import org.apache.storm.messaging.IConnection;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.api.StateMetric;
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.utils.JCQueue;
 
 public class BuiltinMetricsUtil {
     public static void registerIconnectionServerMetric(Object server, Map<String, Object> topoConf, TopologyContext context) {
         if (server instanceof IStatefulObject) {
             registerMetric("__recv-iconnection", new StateMetric((IStatefulObject) server), topoConf, context);
-        }
-    }
-
-    public static void registerIconnectionClientMetrics(final Map<NodeInfo, IConnection> nodePortToSocket, Map<String, Object> topoConf,
-                                                        TopologyContext context) {
-        IMetric metric = new IMetric() {
-            @Override
-            public Object getValueAndReset() {
-                Map<Object, Object> ret = new HashMap<>();
-                for (Map.Entry<NodeInfo, IConnection> entry : nodePortToSocket.entrySet()) {
-                    NodeInfo nodePort = entry.getKey();
-                    IConnection connection = entry.getValue();
-                    if (connection instanceof IStatefulObject) {
-                        ret.put(nodePort, ((IStatefulObject) connection).getState());
-                    }
-                }
-                return ret;
-            }
-        };
-        registerMetric("__send-iconnection", metric, topoConf, context);
-    }
-
-    public static void registerQueueMetrics(Map<String, JCQueue> queues, Map<String, Object> topoConf, TopologyContext context) {
-        for (Map.Entry<String, JCQueue> entry : queues.entrySet()) {
-            String name = "__" + entry.getKey();
-            IMetric metric = new StateMetric(entry.getValue());
-            registerMetric(name, metric, topoConf, context);
         }
     }
 

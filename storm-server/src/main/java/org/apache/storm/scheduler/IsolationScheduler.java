@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import org.apache.commons.lang.Validate;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,19 +41,19 @@ import org.slf4j.LoggerFactory;
 // blacklist the good hosts and remove those workers from the list of need to be assigned workers
 // otherwise unassign all other workers for isolated topologies if assigned
 public class IsolationScheduler implements IScheduler {
-    private final static Logger LOG = LoggerFactory.getLogger(IsolationScheduler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IsolationScheduler.class);
 
     private Map<String, Number> isoMachines;
 
     @Override
-    public void prepare(Map<String, Object> conf) {
+    public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         this.isoMachines = (Map<String, Number>) conf.get(DaemonConfig.ISOLATION_SCHEDULER_MACHINES);
         Validate.notEmpty(isoMachines);
     }
 
     @Override
     public Map<String, Map<String, Double>> config() {
-        return new HashMap<>();
+        return Collections.emptyMap();
     }
 
     // get host -> all assignable worker slots for non-blacklisted machines (assigned or not assigned)
@@ -65,7 +66,6 @@ public class IsolationScheduler implements IScheduler {
     // set blacklist to what it was initially
     @Override
     public void schedule(Topologies topologies, Cluster cluster) {
-        Set<String> origBlacklist = cluster.getBlacklistedHosts();
         List<TopologyDetails> isoTopologies = isolatedTopologies(topologies.getTopologies());
         Set<String> isoIds = extractTopologyIds(isoTopologies);
         Map<String, Set<Set<ExecutorDetails>>> topologyWorkerSpecs = topologyWorkerSpecs(isoTopologies);
@@ -139,6 +139,7 @@ public class IsolationScheduler implements IScheduler {
             Topologies leftOverTopologies = leftoverTopologies(topologies, allocatedTopologies);
             DefaultScheduler.defaultSchedule(leftOverTopologies, cluster);
         }
+        Set<String> origBlacklist = cluster.getBlacklistedHosts();
         cluster.setBlacklistedHosts(origBlacklist);
     }
 
@@ -218,8 +219,8 @@ public class IsolationScheduler implements IScheduler {
 
         List<ExecutorDetails> allExecutors = new ArrayList<ExecutorDetails>();
         Collection<List<ExecutorDetails>> values = compExecutors.values();
-        for (List<ExecutorDetails> eList : values) {
-            allExecutors.addAll(eList);
+        for (List<ExecutorDetails> value : values) {
+            allExecutors.addAll(value);
         }
 
         int numWorkers = topology.getNumWorkers();
@@ -377,7 +378,7 @@ public class IsolationScheduler implements IScheduler {
         private String topologyId;
         private Set<ExecutorDetails> executors;
 
-        public AssignmentInfo(WorkerSlot workerSlot, String topologyId, Set<ExecutorDetails> executors) {
+        AssignmentInfo(WorkerSlot workerSlot, String topologyId, Set<ExecutorDetails> executors) {
             this.workerSlot = workerSlot;
             this.topologyId = topologyId;
             this.executors = executors;
@@ -401,7 +402,7 @@ public class IsolationScheduler implements IScheduler {
         private String hostName;
         private List<WorkerSlot> workerSlots;
 
-        public HostAssignableSlots(String hostName, List<WorkerSlot> workerSlots) {
+        HostAssignableSlots(String hostName, List<WorkerSlot> workerSlots) {
             this.hostName = hostName;
             this.workerSlots = workerSlots;
         }

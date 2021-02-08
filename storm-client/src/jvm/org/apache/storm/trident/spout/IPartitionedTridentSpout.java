@@ -25,54 +25,54 @@ import org.apache.storm.tuple.Fields;
  * metadata for each partition to ensure that the same batch is always emitted for the same transaction id. The partition metadata is stored
  * in Zookeeper.
  */
-public interface IPartitionedTridentSpout<Partitions, Partition extends ISpoutPartition, T> extends ITridentDataSource {
-    Coordinator<Partitions> getCoordinator(Map<String, Object> conf, TopologyContext context);
+public interface IPartitionedTridentSpout<PartitionsT, PartitionT extends ISpoutPartition, T> extends ITridentDataSource {
+    Coordinator<PartitionsT> getCoordinator(Map<String, Object> conf, TopologyContext context);
 
-    Emitter<Partitions, Partition, T> getEmitter(Map<String, Object> conf, TopologyContext context);
+    Emitter<PartitionsT, PartitionT, T> getEmitter(Map<String, Object> conf, TopologyContext context);
 
     Map<String, Object> getComponentConfiguration();
 
     Fields getOutputFields();
 
-    interface Coordinator<Partitions> {
+    interface Coordinator<PartitionsT> {
         /**
          * Return the partitions currently in the source of data. The idea is is that if a new partition is added and a prior transaction is
          * replayed, it doesn't emit tuples for the new partition because it knows what partitions were in that transaction.
          */
-        Partitions getPartitionsForBatch();
+        PartitionsT getPartitionsForBatch();
 
         boolean isReady(long txid);
 
         void close();
     }
 
-    interface Emitter<Partitions, Partition extends ISpoutPartition, X> {
+    interface Emitter<PartitionsT, PartitionT extends ISpoutPartition, X> {
 
         /**
-         * Sorts given partition info to produce an ordered list of partitions
+         * Sorts given partition info to produce an ordered list of partitions.
          *
          * @param allPartitionInfo  The partition info for all partitions being processed by all spout tasks
          * @return sorted list of partitions being processed by all the tasks. The ordering must be consistent for all tasks.
          */
-        List<Partition> getOrderedPartitions(Partitions allPartitionInfo);
+        List<PartitionT> getOrderedPartitions(PartitionsT allPartitionInfo);
 
         /**
          * Emit a batch of tuples for a partition/transaction that's never been emitted before. Return the metadata that can be used to
          * reconstruct this partition/batch in the future.
          */
-        X emitPartitionBatchNew(TransactionAttempt tx, TridentCollector collector, Partition partition, X lastPartitionMeta);
+        X emitPartitionBatchNew(TransactionAttempt tx, TridentCollector collector, PartitionT partition, X lastPartitionMeta);
 
         /**
          * This method is called when this task is responsible for a new set of partitions. Should be used to manage things like connections
          * to brokers.
          */
-        void refreshPartitions(List<Partition> partitionResponsibilities);
+        void refreshPartitions(List<PartitionT> partitionResponsibilities);
 
         /**
          * Emit a batch of tuples for a partition/transaction that has been emitted before, using the metadata created when it was first
          * emitted.
          */
-        void emitPartitionBatch(TransactionAttempt tx, TridentCollector collector, Partition partition, X partitionMeta);
+        void emitPartitionBatch(TransactionAttempt tx, TridentCollector collector, PartitionT partition, X partitionMeta);
 
         /**
          * Get the partitions assigned to the given task.
@@ -83,8 +83,8 @@ public interface IPartitionedTridentSpout<Partitions, Partition extends ISpoutPa
          *                               {@link #getOrderedPartitions(java.lang.Object)}
          * @return The list of partitions that are to be processed by the task with {@code taskId}
          */
-        default List<Partition> getPartitionsForTask(int taskId, int numTasks, List<Partition> allPartitionInfoSorted) {
-            List<Partition> taskPartitions = new ArrayList<>(allPartitionInfoSorted == null ? 0 : allPartitionInfoSorted.size());
+        default List<PartitionT> getPartitionsForTask(int taskId, int numTasks, List<PartitionT> allPartitionInfoSorted) {
+            List<PartitionT> taskPartitions = new ArrayList<>(allPartitionInfoSorted == null ? 0 : allPartitionInfoSorted.size());
             if (allPartitionInfoSorted != null) {
                 for (int i = taskId; i < allPartitionInfoSorted.size(); i += numTasks) {
                     taskPartitions.add(allPartitionInfoSorted.get(i));

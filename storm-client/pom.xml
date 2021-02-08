@@ -22,8 +22,8 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.0.0</version>
-        <relativePath>..</relativePath>
+        <version>2.3.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>storm-client</artifactId>
@@ -69,14 +69,22 @@
         <!-- Java EE packages. On JDK8 and below this is a part of java,
         but JDK9+ it is not there by default. -->
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>com.sun.activation</groupId>
+            <artifactId>jakarta.activation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
-
+        
         <!-- kryo -->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
@@ -91,6 +99,10 @@
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-graphite</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-jvm</artifactId>
         </dependency>
 
         <!-- end of transitive dependency management -->
@@ -166,7 +178,6 @@
                 <!--Note - the version would be inherited-->
                 <configuration>
                     <excludes>**/generated/**</excludes>
-                    <maxAllowedViolations>3067</maxAllowedViolations>
                 </configuration>
             </plugin>
             <plugin>
@@ -240,6 +251,10 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -293,6 +308,28 @@
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.storm</groupId>
+                        <artifactId>storm-maven-plugins</artifactId>
+                        <version>${project.version}</version>
+                        <executions>
+                            <execution>
+                                <id>version-info</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>version-info</goal>
+                                </goals>
+                                <configuration>
+                                    <source>
+                                        <directory>${basedir}/src/</directory>
+                                        <includes>
+                                            <include>jvm/**/*.java</include>
+                                        </includes>
+                                    </source>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

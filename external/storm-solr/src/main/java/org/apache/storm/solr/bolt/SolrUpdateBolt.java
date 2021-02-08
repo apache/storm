@@ -60,9 +60,9 @@ public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
         this.solrConfig = solrConfig;
         this.solrMapper = solrMapper;
         this.commitStgy = commitStgy;
-        LOG.debug("Created {} with the following configuration: " +
-                  "[SolrConfig = {}], [SolrMapper = {}], [CommitStgy = {}]",
-                  this.getClass().getSimpleName(), solrConfig, solrMapper, commitStgy);
+        LOG.debug("Created {} with the following configuration: "
+                        + "[SolrConfig = {}], [SolrMapper = {}], [CommitStgy = {}]",
+                this.getClass().getSimpleName(), solrConfig, solrMapper, commitStgy);
     }
 
     @Override
@@ -78,9 +78,9 @@ public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
 
     private int capacity() {
         final int defArrListCpcty = 10;
-        return (commitStgy instanceof CountBasedCommit) ?
-            ((CountBasedCommit) commitStgy).getThreshold() :
-            defArrListCpcty;
+        return (commitStgy instanceof CountBasedCommit)
+                ? ((CountBasedCommit) commitStgy).getThreshold()
+                : defArrListCpcty;
     }
 
     @Override

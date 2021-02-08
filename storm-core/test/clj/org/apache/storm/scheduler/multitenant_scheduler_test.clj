@@ -104,14 +104,14 @@
           ns-count-3 (.getNodeAndSlotCountIfSlotsWereTaken free-pool 3)
           ns-count-4 (.getNodeAndSlotCountIfSlotsWereTaken free-pool 4)
           ns-count-5 (.getNodeAndSlotCountIfSlotsWereTaken free-pool 5)]
-      (is (= 1 (._nodes ns-count-1)))
-      (is (= 4 (._slots ns-count-1)))
-      (is (= 1 (._nodes ns-count-3)))
-      (is (= 4 (._slots ns-count-3)))
-      (is (= 1 (._nodes ns-count-4)))
-      (is (= 4 (._slots ns-count-4)))
-      (is (= 2 (._nodes ns-count-5)))
-      (is (= 8 (._slots ns-count-5)))
+      (is (= 1 (.nodes ns-count-1)))
+      (is (= 4 (.slots ns-count-1)))
+      (is (= 1 (.nodes ns-count-3)))
+      (is (= 4 (.slots ns-count-3)))
+      (is (= 1 (.nodes ns-count-4)))
+      (is (= 4 (.slots ns-count-4)))
+      (is (= 2 (.nodes ns-count-5)))
+      (is (= 8 (.slots ns-count-5)))
     )
     (let [nodes (.takeNodesBySlots free-pool 5)]
       (is (= 2 (.size nodes)))
@@ -347,14 +347,14 @@
           ns-count-3 (.getNodeAndSlotCountIfSlotsWereTaken default-pool 3)
           ns-count-4 (.getNodeAndSlotCountIfSlotsWereTaken default-pool 4)
           ns-count-5 (.getNodeAndSlotCountIfSlotsWereTaken default-pool 5)]
-      (is (= 1 (._nodes ns-count-1)))
-      (is (= 4 (._slots ns-count-1)))
-      (is (= 1 (._nodes ns-count-3)))
-      (is (= 4 (._slots ns-count-3)))
-      (is (= 1 (._nodes ns-count-4)))
-      (is (= 4 (._slots ns-count-4)))
-      (is (= 2 (._nodes ns-count-5)))
-      (is (= 8 (._slots ns-count-5)))
+      (is (= 1 (.nodes ns-count-1)))
+      (is (= 4 (.slots ns-count-1)))
+      (is (= 1 (.nodes ns-count-3)))
+      (is (= 4 (.slots ns-count-3)))
+      (is (= 1 (.nodes ns-count-4)))
+      (is (= 4 (.slots ns-count-4)))
+      (is (= 2 (.nodes ns-count-5)))
+      (is (= 8 (.slots ns-count-5)))
     )
     (let [nodes (.takeNodesBySlots default-pool 3)]
       (is (= 1 (.size nodes)))
@@ -532,14 +532,14 @@
           ns-count-3 (.getNodeAndSlotCountIfSlotsWereTaken isolated-pool 3)
           ns-count-4 (.getNodeAndSlotCountIfSlotsWereTaken isolated-pool 4)
           ns-count-5 (.getNodeAndSlotCountIfSlotsWereTaken isolated-pool 5)]
-      (is (= 1 (._nodes ns-count-1)))
-      (is (= 4 (._slots ns-count-1)))
-      (is (= 1 (._nodes ns-count-3)))
-      (is (= 4 (._slots ns-count-3)))
-      (is (= 1 (._nodes ns-count-4)))
-      (is (= 4 (._slots ns-count-4)))
-      (is (= 1 (._nodes ns-count-5))) ;;Only 1 node can be stolen right now
-      (is (= 4 (._slots ns-count-5)))
+      (is (= 1 (.nodes ns-count-1)))
+      (is (= 4 (.slots ns-count-1)))
+      (is (= 1 (.nodes ns-count-3)))
+      (is (= 4 (.slots ns-count-3)))
+      (is (= 1 (.nodes ns-count-4)))
+      (is (= 4 (.slots ns-count-4)))
+      (is (= 1 (.nodes ns-count-5))) ;;Only 1 node can be stolen right now
+      (is (= 4 (.slots ns-count-5)))
     )
     (let [nodes (.takeNodesBySlots isolated-pool 3)]
       (is (= 1 (.size nodes)))
@@ -674,7 +674,7 @@
        scheduler (MultitenantScheduler.)]
     (.assign (.get node-map "super0") "topology1" (list (ed 1)) cluster)
     (.assign (.get node-map "super1") "topology2" (list (ed 5)) cluster)
-    (.prepare scheduler conf)
+    (.prepare scheduler conf (StormMetricsRegistry.))
     (try
     (.schedule scheduler topologies cluster)
     (let [assignment (.getAssignmentById cluster "topology1")
@@ -713,7 +713,7 @@
         conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 5 "userB" 5}}
         scheduler (MultitenantScheduler.)]
     (.assign (.get node-map "super0") "topology1" (list (ed 1)) cluster)
-    (.prepare scheduler conf)
+    (.prepare scheduler conf (StormMetricsRegistry.))
     (try
     (.schedule scheduler topologies cluster)
     (let [assignment (.getAssignmentById cluster "topology1")
@@ -755,7 +755,7 @@
           cluster (Cluster. (Nimbus$StandaloneINimbus.) (ResourceMetrics. (StormMetricsRegistry.)) supers existing-assignments topologies {})
           conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2 "userB" 1}}
           scheduler (MultitenantScheduler.)]
-      (.prepare scheduler conf)
+      (.prepare scheduler conf (StormMetricsRegistry.))
       (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
@@ -784,7 +784,7 @@
           cluster (Cluster. (Nimbus$StandaloneINimbus.) (ResourceMetrics. (StormMetricsRegistry.)) supers existing-assignments topologies {})
           conf {}
           scheduler (MultitenantScheduler.)]
-      (.prepare scheduler conf)
+      (.prepare scheduler conf (StormMetricsRegistry.))
       (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
@@ -824,7 +824,7 @@
           cluster (Cluster. (Nimbus$StandaloneINimbus.) (ResourceMetrics. (StormMetricsRegistry.)) supers existing-assignments topologies {})
           conf {}
           scheduler (MultitenantScheduler.)]
-      (.prepare scheduler conf)
+      (.prepare scheduler conf (StormMetricsRegistry.))
       (try
       (.schedule scheduler topologies cluster)
       (let [assignment (.getAssignmentById cluster "topology1")
@@ -864,7 +864,7 @@
         cluster (Cluster. (Nimbus$StandaloneINimbus.) (ResourceMetrics. (StormMetricsRegistry.)) supers existing-assignments topologies {})
         conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2}}
         scheduler (MultitenantScheduler.)]
-    (.prepare scheduler conf)
+    (.prepare scheduler conf (StormMetricsRegistry.))
     (try
     (.schedule scheduler topologies cluster)
     (finally (.cleanup scheduler)))

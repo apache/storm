@@ -12,6 +12,12 @@
 
 package org.apache.storm.task;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.Timer;
 import org.apache.storm.metric.api.CombinedMetric;
 import org.apache.storm.metric.api.ICombiner;
 import org.apache.storm.metric.api.IMetric;
@@ -20,9 +26,36 @@ import org.apache.storm.metric.api.ReducedMetric;
 
 
 public interface IMetricsContext {
+    /**
+     * Register metric.
+     * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
+     */
+    @Deprecated
     <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs);
 
+    /**
+     * Register metric.
+     * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
+     */
+    @Deprecated
     ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs);
 
+    /**
+     * Register metric.
+     * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
+     */
+    @Deprecated
     CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs);
+    
+    Timer registerTimer(String name);
+
+    Histogram registerHistogram(String name);
+
+    Meter registerMeter(String name);
+
+    Counter registerCounter(String name);
+
+    <T> Gauge<T> registerGauge(String name, Gauge<T> gauge);
+
+    void registerMetricSet(String prefix, MetricSet set);
 }

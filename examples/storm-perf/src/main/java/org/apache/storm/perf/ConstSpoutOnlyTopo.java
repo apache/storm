@@ -25,12 +25,11 @@ import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
-
-/***
- * This topo helps measure how fast a spout can produce data (so no bolts are attached)
- *  Spout generates a stream of a fixed string.
+/**
+ * This topo helps measure how fast a spout can produce data (so no bolts are attached).
+ *
+ * <p>Spout generates a stream of a fixed string.
  */
-
 public class ConstSpoutOnlyTopo {
 
     public static final String TOPOLOGY_NAME = "ConstSpoutOnlyTopo";
@@ -49,7 +48,7 @@ public class ConstSpoutOnlyTopo {
     }
 
     /**
-     * ConstSpout only topology  (No bolts)
+     * ConstSpout only topology  (No bolts).
      */
     public static void main(String[] args) throws Exception {
         int runTime = -1;

@@ -52,7 +52,8 @@ public class ReqContextFilter implements Filter {
             httpCredsHandler.populateContext(ReqContext.context(), request);
         }
     }
-    
+
+    @Override
     public void init(FilterConfig config) throws ServletException {
         //NOOP
         //We could add in configs through the web.xml if we wanted something stand alone here...
@@ -64,8 +65,9 @@ public class ReqContextFilter implements Filter {
      * @param response the response to populate
      * @param chain the next chain of entities to pass the object to
      */
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        handle((HttpServletRequest)request, (HttpServletResponse)response, chain);
+        handle((HttpServletRequest) request, (HttpServletResponse) response, chain);
     }
 
     /**
@@ -81,6 +83,7 @@ public class ReqContextFilter implements Filter {
         chain.doFilter(request, response);
     }
 
+    @Override
     public void destroy() {
         //NOOP
     }

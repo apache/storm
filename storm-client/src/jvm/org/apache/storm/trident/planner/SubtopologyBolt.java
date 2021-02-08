@@ -45,35 +45,35 @@ import org.apache.storm.tuple.Tuple;
 public class SubtopologyBolt implements ITridentBatchBolt {
     private static final long serialVersionUID = 1475508603138688412L;
     @SuppressWarnings("rawtypes")
-    final DirectedGraph<Node, IndexedEdge> _graph;
-    final Set<Node> _nodes;
-    final Map<String, InitialReceiver> _roots = new HashMap<>();
-    final Map<Node, Factory> _outputFactories = new HashMap<>();
-    final Map<String, List<TridentProcessor>> _myTopologicallyOrdered = new HashMap<>();
-    final Map<Node, String> _batchGroups;
+    final DirectedGraph<Node, IndexedEdge> graph;
+    final Set<Node> nodes;
+    final Map<String, InitialReceiver> roots = new HashMap<>();
+    final Map<Node, Factory> outputFactories = new HashMap<>();
+    final Map<String, List<TridentProcessor>> myTopologicallyOrdered = new HashMap<>();
+    final Map<Node, String> batchGroups;
 
     //given processornodes and static state nodes
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public SubtopologyBolt(DefaultDirectedGraph<Node, IndexedEdge> graph, Set<Node> nodes, Map<Node, String> batchGroups) {
-        _nodes = nodes;
-        _graph = (DirectedGraph<Node, IndexedEdge>) graph.clone();
-        _batchGroups = copyAndOnlyKeep(batchGroups, nodes);
+        this.nodes = nodes;
+        this.graph = (DirectedGraph<Node, IndexedEdge>) graph.clone();
+        this.batchGroups = copyAndOnlyKeep(batchGroups, nodes);
 
         //Remove the unneeded entries from the graph
         //We want to keep all of our nodes, and the nodes that they are connected directly to (parents and children).
         Set<Node> nodesToKeep = new HashSet<>();
-        for (IndexedEdge edge : _graph.edgeSet()) {
-            Node s = _graph.getEdgeSource(edge);
-            Node t = _graph.getEdgeTarget(edge);
-            if (_nodes.contains(s) || _nodes.contains(t)) {
+        for (IndexedEdge edge : this.graph.edgeSet()) {
+            Node s = this.graph.getEdgeSource(edge);
+            Node t = this.graph.getEdgeTarget(edge);
+            if (this.nodes.contains(s) || this.nodes.contains(t)) {
                 nodesToKeep.add(s);
                 nodesToKeep.add(t);
             }
         }
 
-        Set<Node> nodesToRemove = new HashSet<>(_graph.vertexSet());
+        Set<Node> nodesToRemove = new HashSet<>(this.graph.vertexSet());
         nodesToRemove.removeAll(nodesToKeep);
-        _graph.removeAllVertices(nodesToRemove);
+        this.graph.removeAllVertices(nodesToRemove);
     }
 
     private static Map<Node, String> copyAndOnlyKeep(Map<Node, String> batchGroups, Set<Node> nodes) {
@@ -89,42 +89,42 @@ public class SubtopologyBolt implements ITridentBatchBolt {
     @Override
     public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector batchCollector) {
         int thisComponentNumTasks = context.getComponentTasks(context.getThisComponentId()).size();
-        for (Node n : _nodes) {
+        for (Node n : nodes) {
             if (n.stateInfo != null) {
                 State s = n.stateInfo.spec.stateFactory.makeState(conf, context, context.getThisTaskIndex(), thisComponentNumTasks);
                 context.setTaskData(n.stateInfo.id, s);
             }
         }
-        DirectedSubgraph<Node, ?> subgraph = new DirectedSubgraph<>(_graph, _nodes, null);
+        DirectedSubgraph<Node, ?> subgraph = new DirectedSubgraph<>(graph, nodes, null);
         TopologicalOrderIterator<Node, ?> it = new TopologicalOrderIterator<>(subgraph);
         int stateIndex = 0;
         while (it.hasNext()) {
             Node n = it.next();
             if (n instanceof ProcessorNode) {
                 ProcessorNode pn = (ProcessorNode) n;
-                String batchGroup = _batchGroups.get(n);
-                if (!_myTopologicallyOrdered.containsKey(batchGroup)) {
-                    _myTopologicallyOrdered.put(batchGroup, new ArrayList<>());
+                String batchGroup = batchGroups.get(n);
+                if (!myTopologicallyOrdered.containsKey(batchGroup)) {
+                    myTopologicallyOrdered.put(batchGroup, new ArrayList<>());
                 }
-                _myTopologicallyOrdered.get(batchGroup).add(pn.processor);
+                myTopologicallyOrdered.get(batchGroup).add(pn.processor);
                 List<String> parentStreams = new ArrayList<>();
                 List<Factory> parentFactories = new ArrayList<>();
-                for (Node p : TridentUtils.getParents(_graph, n)) {
+                for (Node p : TridentUtils.getParents(graph, n)) {
                     parentStreams.add(p.streamId);
-                    if (_nodes.contains(p)) {
-                        parentFactories.add(_outputFactories.get(p));
+                    if (nodes.contains(p)) {
+                        parentFactories.add(outputFactories.get(p));
                     } else {
-                        if (!_roots.containsKey(p.streamId)) {
-                            _roots.put(p.streamId, new InitialReceiver(p.streamId, getSourceOutputFields(context, p.streamId)));
+                        if (!roots.containsKey(p.streamId)) {
+                            roots.put(p.streamId, new InitialReceiver(p.streamId, getSourceOutputFields(context, p.streamId)));
                         }
-                        _roots.get(p.streamId).addReceiver(pn.processor);
-                        parentFactories.add(_roots.get(p.streamId).getOutputFactory());
+                        roots.get(p.streamId).addReceiver(pn.processor);
+                        parentFactories.add(roots.get(p.streamId).getOutputFactory());
                     }
                 }
                 List<TupleReceiver> targets = new ArrayList<>();
                 boolean outgoingNode = false;
-                for (Node cn : TridentUtils.getChildren(_graph, n)) {
-                    if (_nodes.contains(cn)) {
+                for (Node cn : TridentUtils.getChildren(graph, n)) {
+                    if (nodes.contains(cn)) {
                         targets.add(((ProcessorNode) cn).processor);
                     } else {
                         outgoingNode = true;
@@ -144,7 +144,7 @@ public class SubtopologyBolt implements ITridentBatchBolt {
                     batchCollector
                 );
                 pn.processor.prepare(conf, context, triContext);
-                _outputFactories.put(n, pn.processor.getOutputFactory());
+                outputFactories.put(n, pn.processor.getOutputFactory());
             }
             stateIndex++;
         }
@@ -162,7 +162,7 @@ public class SubtopologyBolt implements ITridentBatchBolt {
     @Override
     public void execute(BatchInfo batchInfo, Tuple tuple) {
         String sourceStream = tuple.getSourceStreamId();
-        InitialReceiver ir = _roots.get(sourceStream);
+        InitialReceiver ir = roots.get(sourceStream);
         if (ir == null) {
             throw new RuntimeException("Received unexpected tuple " + tuple.toString());
         }
@@ -171,15 +171,15 @@ public class SubtopologyBolt implements ITridentBatchBolt {
 
     @Override
     public void finishBatch(BatchInfo batchInfo) {
-        for (TridentProcessor p : _myTopologicallyOrdered.get(batchInfo.batchGroup)) {
+        for (TridentProcessor p : myTopologicallyOrdered.get(batchInfo.batchGroup)) {
             p.finishBatch((ProcessorContext) batchInfo.state);
         }
     }
 
     @Override
     public Object initBatchState(String batchGroup, Object batchId) {
-        ProcessorContext ret = new ProcessorContext(batchId, new Object[_nodes.size()]);
-        for (TridentProcessor p : _myTopologicallyOrdered.get(batchGroup)) {
+        ProcessorContext ret = new ProcessorContext(batchId, new Object[nodes.size()]);
+        for (TridentProcessor p : myTopologicallyOrdered.get(batchGroup)) {
             p.startBatch(ret);
         }
         return ret;
@@ -187,8 +187,8 @@ public class SubtopologyBolt implements ITridentBatchBolt {
 
     @Override
     public void cleanup() {
-        for (String bg : _myTopologicallyOrdered.keySet()) {
-            for (TridentProcessor p : _myTopologicallyOrdered.get(bg)) {
+        for (String bg : myTopologicallyOrdered.keySet()) {
+            for (TridentProcessor p : myTopologicallyOrdered.get(bg)) {
                 p.cleanup();
             }
         }
@@ -196,7 +196,7 @@ public class SubtopologyBolt implements ITridentBatchBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        for (Node n : _nodes) {
+        for (Node n : nodes) {
             declarer.declareStream(n.streamId, TridentUtils.fieldsConcat(new Fields("$batchId"), n.allOutputFields));
         }
     }
@@ -208,32 +208,32 @@ public class SubtopologyBolt implements ITridentBatchBolt {
 
 
     protected static class InitialReceiver {
-        List<TridentProcessor> _receivers = new ArrayList<>();
-        RootFactory _factory;
-        ProjectionFactory _project;
-        String _stream;
+        List<TridentProcessor> receivers = new ArrayList<>();
+        RootFactory factory;
+        ProjectionFactory project;
+        String stream;
 
         public InitialReceiver(String stream, Fields allFields) {
-            _stream = stream;
-            _factory = new RootFactory(allFields);
+            this.stream = stream;
+            factory = new RootFactory(allFields);
             List<String> projected = new ArrayList<>(allFields.toList());
             projected.remove(0);
-            _project = new ProjectionFactory(_factory, new Fields(projected));
+            project = new ProjectionFactory(factory, new Fields(projected));
         }
 
         public void receive(ProcessorContext context, Tuple tuple) {
-            TridentTuple t = _project.create(_factory.create(tuple));
-            for (TridentProcessor r : _receivers) {
-                r.execute(context, _stream, t);
+            TridentTuple t = project.create(factory.create(tuple));
+            for (TridentProcessor r : receivers) {
+                r.execute(context, stream, t);
             }
         }
 
         public void addReceiver(TridentProcessor p) {
-            _receivers.add(p);
+            receivers.add(p);
         }
 
         public Factory getOutputFactory() {
-            return _project;
+            return project;
         }
     }
 }

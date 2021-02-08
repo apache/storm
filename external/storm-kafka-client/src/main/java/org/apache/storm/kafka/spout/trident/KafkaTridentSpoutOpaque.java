@@ -29,7 +29,7 @@ import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSpout<List<Map<String, Object>>,
+public class KafkaTridentSpoutOpaque<K, V> implements IOpaquePartitionedTridentSpout<List<Map<String, Object>>,
         KafkaTridentSpoutTopicPartition, Map<String, Object>> {
     private static final long serialVersionUID = -8003272486566259640L;
 

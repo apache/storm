@@ -26,6 +26,7 @@ public interface IBlacklistStrategy {
      * Get blacklist by blacklist strategy.
      *
      * @param badSupervisorsToleranceSlidingWindow bad supervisors buffered in sliding window
+     * @param sendAssignmentFailureCount supervisors with failed assignment calls in sliding window
      * @param cluster the cluster these topologies are running in. `cluster` contains everything user
      *       need to develop a new scheduling logic. e.g. supervisors information, available slots, current
      *       assignments for all the topologies etc. User can set the new assignment for topologies using
@@ -35,7 +36,9 @@ public interface IBlacklistStrategy {
      *       the `cluster` object.
      * @return blacklisted supervisors' id set
      */
-    Set<String> getBlacklist(List<Map<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow, Cluster cluster, Topologies topologies);
+    Set<String> getBlacklist(List<Map<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow,
+                             List<Map<String, Integer>> sendAssignmentFailureCount,
+                             Cluster cluster, Topologies topologies);
 
     /**
      * resume supervisors form blacklist. Blacklist is just a temporary list for supervisors,

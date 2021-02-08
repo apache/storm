@@ -57,20 +57,20 @@ public class Task {
 
     private static final Logger LOG = LoggerFactory.getLogger(Task.class);
     private final TaskMetrics taskMetrics;
-    private Executor executor;
-    private WorkerState workerData;
-    private TopologyContext systemTopologyContext;
-    private TopologyContext userTopologyContext;
-    private WorkerTopologyContext workerTopologyContext;
-    private Integer taskId;
-    private String componentId;
-    private Object taskObject; // Spout/Bolt object
-    private Map<String, Object> topoConf;
-    private BooleanSupplier emitSampler;
-    private CommonStats executorStats;
-    private Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamComponentToGrouper;
-    private HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> streamToGroupers;
-    private boolean debug;
+    private final Executor executor;
+    private final WorkerState workerData;
+    private final TopologyContext systemTopologyContext;
+    private final TopologyContext userTopologyContext;
+    private final WorkerTopologyContext workerTopologyContext;
+    private final Integer taskId;
+    private final String componentId;
+    private final Object taskObject; // Spout/Bolt object
+    private final Map<String, Object> topoConf;
+    private final BooleanSupplier emitSampler;
+    private final CommonStats executorStats;
+    private final Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamComponentToGrouper;
+    private final HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> streamToGroupers;
+    private final boolean debug;
 
     public Task(Executor executor, Integer taskId) throws IOException {
         this.taskId = taskId;
@@ -88,7 +88,8 @@ public class Task {
         this.taskObject = mkTaskObject();
         this.debug = topoConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) topoConf.get(Config.TOPOLOGY_DEBUG);
         this.addTaskHooks();
-        this.taskMetrics = new TaskMetrics(this.workerTopologyContext, this.componentId, this.taskId);
+        this.taskMetrics = new TaskMetrics(this.workerTopologyContext, this.componentId, this.taskId,
+                workerData.getMetricRegistry(), topoConf);
     }
 
     private static HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> getGroupersPerStream(
@@ -128,9 +129,11 @@ public class Task {
 
         try {
             if (emitSampler.getAsBoolean()) {
-                executorStats.emittedTuple(stream, this.taskMetrics.getEmitted(stream));
+                executorStats.emittedTuple(stream);
+                this.taskMetrics.emittedTuple(stream);
                 if (null != outTaskId) {
-                    executorStats.transferredTuples(stream, 1, this.taskMetrics.getTransferred(stream));
+                    executorStats.transferredTuples(stream, 1);
+                    this.taskMetrics.transferredTuples(stream, 1);
                 }
             }
         } catch (Exception e) {
@@ -168,8 +171,10 @@ public class Task {
         }
         try {
             if (emitSampler.getAsBoolean()) {
-                executorStats.emittedTuple(stream, this.taskMetrics.getEmitted(stream));
-                executorStats.transferredTuples(stream, outTasks.size(), this.taskMetrics.getTransferred(stream));
+                executorStats.emittedTuple(stream);
+                this.taskMetrics.emittedTuple(stream);
+                executorStats.transferredTuples(stream, outTasks.size());
+                this.taskMetrics.transferredTuples(stream, outTasks.size());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -205,8 +210,8 @@ public class Task {
     public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> pendingEmits) {
         Tuple tuple = getTuple(stream, values);
         List<Integer> tasks = getOutgoingTasks(stream, values);
-        for (Integer t : tasks) {
-            AddressedTuple addressedTuple = new AddressedTuple(t, tuple);
+        for (int i = 0; i < tasks.size(); i++) {
+            AddressedTuple addressedTuple = new AddressedTuple(tasks.get(i), tuple);
             transfer.tryTransfer(addressedTuple, pendingEmits);
         }
     }
@@ -249,7 +254,8 @@ public class Task {
             workerData.getUserSharedResources(),
             executor.getSharedExecutorData(),
             executor.getIntervalToTaskToMetricToRegistry(),
-            executor.getOpenOrPrepareWasCalled());
+            executor.getOpenOrPrepareWasCalled(),
+            workerData.getMetricRegistry());
     }
 
     private Object mkTaskObject() {

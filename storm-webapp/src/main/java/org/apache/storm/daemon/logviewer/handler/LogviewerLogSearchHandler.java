@@ -67,6 +67,7 @@ import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.UrlBuilder;
@@ -212,7 +213,7 @@ public class LogviewerLogSearchHandler {
      * @param user username
      * @param search search string
      * @param numMatchesStr the count of maximum matches. Note that this number is with respect to each port, not to each log or each search
-     * request
+     *     request
      * @param portStr worker port, null or '*' if the request wants to search from all worker logs
      * @param fileOffsetStr index (offset) of the log files
      * @param offsetStr start offset for log file
@@ -259,8 +260,7 @@ public class LogviewerLogSearchHandler {
                 int port = Integer.parseInt(portStr);
                 // check just the one port
                 @SuppressWarnings("unchecked")
-                List<Integer> slotsPorts = (List<Integer>) stormConf.getOrDefault(DaemonConfig.SUPERVISOR_SLOTS_PORTS,
-                    new ArrayList<>());
+                List<Integer> slotsPorts = SupervisorUtils.getSlotsPorts(stormConf);
                 boolean containsPort = slotsPorts.stream()
                     .anyMatch(slotPort -> slotPort != null && (slotPort == port));
                 if (!containsPort) {
@@ -311,7 +311,10 @@ public class LogviewerLogSearchHandler {
     }
 
     @VisibleForTesting
-    Map<String, Object> substringSearch(Path file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
+    Map<String, Object> substringSearch(Path file,
+            String searchString,
+            int numMatches,
+            int startByteOffset) throws InvalidRequestException {
         return substringSearch(file, searchString, false, numMatches, startByteOffset);
     }
 
@@ -795,7 +798,7 @@ public class LogviewerLogSearchHandler {
         private Integer newByteOffset;
         private byte[] newBeforeBytes;
 
-        public SubstringSearchResult(List<Map<String, Object>> matches, Integer newByteOffset, byte[] newBeforeBytes) {
+        SubstringSearchResult(List<Map<String, Object>> matches, Integer newByteOffset, byte[] newBeforeBytes) {
             this.matches = matches;
             this.newByteOffset = newByteOffset;
             this.newBeforeBytes = newBeforeBytes;

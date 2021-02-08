@@ -17,40 +17,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConsList extends AbstractList<Object> {
-    List<Object> _elems;
-    Object _first;
+    List<Object> elems;
+    Object first;
 
     // for kryo
     private ConsList() {
-        _elems = new ArrayList<>();
+        elems = new ArrayList<>();
     }
 
     public ConsList(Object o, List<Object> elems) {
-        _elems = elems;
-        _first = o;
+        this.elems = elems;
+        first = o;
     }
 
     @Override
     public Object get(int i) {
         if (i == 0) {
-            return _first;
+            return first;
         } else {
-            return _elems.get(i - 1);
+            return elems.get(i - 1);
         }
     }
 
     @Override
     public int size() {
-        return _first == null ? _elems.size() : _elems.size() + 1;
+        return first == null ? elems.size() : elems.size() + 1;
     }
 
     // for kryo
     @Override
     public void add(int index, Object element) {
         if (index == 0) {
-            _first = element;
+            first = element;
         } else {
-            _elems.add(index - 1, element);
+            elems.add(index - 1, element);
         }
     }
 }

@@ -24,12 +24,14 @@ import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * An authorization implementation that simply checks if a user is allowed to perform specific operations.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class SimpleACLAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleACLAuthorizer.class);
 
@@ -38,6 +40,11 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         "fileUpload",
         "getNimbusConf",
         "getClusterInfo",
+        "getLeader",
+        "isTopologyNameAllowed",
+        "getTopologySummaries",
+        "getTopologySummaryByName",
+        "getTopologySummary",
         "getSupervisorPageInfo",
         "getOwnerResourceSummaries"));
     protected Set<String> supervisorCommands = new HashSet<>(Arrays.asList(
@@ -172,7 +179,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         Set<String> configuredUsers = new HashSet<>();
 
         if (topoConf.containsKey(userConfigKey)) {
-            configuredUsers.addAll((Collection<String>) topoConf.get(userConfigKey));
+            configuredUsers.addAll(ObjectReader.getStrings(topoConf.get(userConfigKey)));
         }
 
         if (configuredUsers.contains(principal) || configuredUsers.contains(user)) {
@@ -180,8 +187,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         }
 
         Set<String> configuredGroups = new HashSet<>();
-        if (topoConf.containsKey(groupConfigKey) && topoConf.get(groupConfigKey) != null) {
-            configuredGroups.addAll((Collection<String>) topoConf.get(groupConfigKey));
+        if (topoConf.containsKey(groupConfigKey)) {
+            configuredGroups.addAll(ObjectReader.getStrings(topoConf.get(groupConfigKey)));
         }
 
         return checkUserGroupAllowed(userGroups, configuredGroups);

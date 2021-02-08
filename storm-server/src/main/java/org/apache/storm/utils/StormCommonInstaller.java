@@ -21,17 +21,17 @@ import org.slf4j.LoggerFactory;
  */
 public class StormCommonInstaller implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(StormCommonInstaller.class);
-    private StormCommon _oldInstance;
-    private StormCommon _curInstance;
+    private StormCommon oldInstance;
+    private StormCommon curInstance;
 
     public StormCommonInstaller(StormCommon instance) {
-        _oldInstance = StormCommon.setInstance(instance);
-        _curInstance = instance;
+        oldInstance = StormCommon.setInstance(instance);
+        curInstance = instance;
     }
 
     @Override
     public void close() throws Exception {
-        if (StormCommon.setInstance(_oldInstance) != _curInstance) {
+        if (StormCommon.setInstance(oldInstance) != curInstance) {
             throw new IllegalStateException(
                 "Instances of this resource must be closed in reverse order of opening.");
         }

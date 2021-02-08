@@ -12,6 +12,7 @@
 
 package org.apache.storm.security.auth.sasl;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
@@ -45,17 +46,15 @@ import org.apache.storm.utils.ExtendedThreadPoolExecutor;
 /**
  * Base class for SASL authentication plugin.
  */
-public abstract class SaslTransportPlugin implements ITransportPlugin {
+public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable {
     protected ThriftConnectionType type;
     protected Map<String, Object> conf;
-    protected Configuration loginConf;
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map<String, Object> conf, Configuration loginConf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> conf) {
         this.type = type;
         this.conf = conf;
-        this.loginConf = loginConf;
     }
 
     @Override
@@ -82,14 +81,18 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         if (serverTransportFactory != null) {
             serverArgs.transportFactory(serverTransportFactory);
         }
-        BlockingQueue workQueue = new SynchronousQueue();
+        BlockingQueue<Runnable> workQueue = new SynchronousQueue<>();
         if (queueSize != null) {
-            workQueue = new ArrayBlockingQueue(queueSize);
+            workQueue = new ArrayBlockingQueue<>(queueSize);
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
                                                                             60, TimeUnit.SECONDS, workQueue);
         serverArgs.executorService(executorService);
         return new TThreadPoolServer(serverArgs);
+    }
+
+    @Override
+    public void close() {
     }
 
     /**
@@ -112,6 +115,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
      * Processor that pulls the SaslServer object out of the transport, and assumes the remote user's UGI before calling through to the
      * original processor. This is used on the server side to set the UGI for each specific call.
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private static class TUGIWrapProcessor implements TProcessor {
         final TProcessor wrapped;
 
@@ -119,7 +123,8 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             this.wrapped = wrapped;
         }
 
-        public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
+        @Override
+        public void process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context
             ReqContext reqContext = ReqContext.context();
 
@@ -128,7 +133,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             TSaslServerTransport saslTrans = (TSaslServerTransport) trans;
 
             if (trans instanceof NoOpTTrasport) {
-                return false;
+                return;
             }
 
             //remote address
@@ -144,7 +149,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             reqContext.setSubject(remoteUser);
 
             //invoke service handler
-            return wrapped.process(inProt, outProt);
+            wrapped.process(inProt, outProt);
         }
     }
 
@@ -158,6 +163,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         /**
          * Get the full name of the user.
          */
+        @Override
         public String getName() {
             return name;
         }

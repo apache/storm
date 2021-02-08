@@ -24,12 +24,12 @@ import org.apache.storm.utils.Utils;
 
 
 public class TestPlannerSpout extends BaseRichSpout {
-    boolean _isDistributed;
-    Fields _outFields;
+    boolean isDistributed;
+    Fields outFields;
 
     public TestPlannerSpout(Fields outFields, boolean isDistributed) {
-        _isDistributed = isDistributed;
-        _outFields = outFields;
+        this.isDistributed = isDistributed;
+        this.outFields = outFields;
     }
 
     public TestPlannerSpout(boolean isDistributed) {
@@ -41,30 +41,36 @@ public class TestPlannerSpout extends BaseRichSpout {
     }
 
     public Fields getOutputFields() {
-        return _outFields;
+        return outFields;
     }
 
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
 
     }
 
+    @Override
     public void close() {
 
     }
 
+    @Override
     public void nextTuple() {
         Utils.sleep(100);
     }
 
+    @Override
     public void ack(Object msgId) {
 
     }
 
+    @Override
     public void fail(Object msgId) {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(getOutputFields());
     }
@@ -72,7 +78,7 @@ public class TestPlannerSpout extends BaseRichSpout {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         Map<String, Object> ret = new HashMap<String, Object>();
-        if (!_isDistributed) {
+        if (!isDistributed) {
             ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 1);
         }
         return ret;

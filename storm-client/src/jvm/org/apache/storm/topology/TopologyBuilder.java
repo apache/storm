@@ -12,6 +12,10 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
+import static org.apache.storm.utils.Utils.parseJson;
+
 import java.io.NotSerializableException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -50,52 +54,48 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.windowing.TupleWindow;
 
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
-import static org.apache.storm.utils.Utils.parseJson;
-
 /**
  * TopologyBuilder exposes the Java API for specifying a topology for Storm to execute. Topologies are Thrift structures in the end, but
  * since the Thrift API is so verbose, TopologyBuilder greatly eases the process of creating topologies. The template for creating and
  * submitting a topology looks something like:
  *
- * ```java TopologyBuilder builder = new TopologyBuilder();
+ * <p>```java TopologyBuilder builder = new TopologyBuilder();
  *
- * builder.setSpout("1", new TestWordSpout(true), 5); builder.setSpout("2", new TestWordSpout(true), 3); builder.setBolt("3", new
+ * <p>builder.setSpout("1", new TestWordSpout(true), 5); builder.setSpout("2", new TestWordSpout(true), 3); builder.setBolt("3", new
  * TestWordCounter(), 3) .fieldsGrouping("1", new Fields("word")) .fieldsGrouping("2", new Fields("word")); builder.setBolt("4", new
  * TestGlobalCount()) .globalGrouping("1");
  *
- * Map<String, Object> conf = new HashMap(); conf.put(Config.TOPOLOGY_WORKERS, 4);
+ * <p>Map&lt;String, Object&gt; conf = new HashMap(); conf.put(Config.TOPOLOGY_WORKERS, 4);
  *
- * StormSubmitter.submitTopology("mytopology", conf, builder.createTopology()); ```
+ * <p>StormSubmitter.submitTopology("mytopology", conf, builder.createTopology()); ```
  *
- * Running the exact same topology in local mode (in process), and configuring it to log all tuples emitted, looks like the following. Note
- * that it lets the topology run for 10 seconds before shutting down the local cluster.
+ * <p>Running the exact same topology in local mode (in process), and configuring it to log all tuples emitted, looks
+ * like the following. Note that it lets the topology run for 10 seconds before shutting down the local cluster.
  *
- * ```java TopologyBuilder builder = new TopologyBuilder();
+ * <p>```java TopologyBuilder builder = new TopologyBuilder();
  *
- * builder.setSpout("1", new TestWordSpout(true), 5); builder.setSpout("2", new TestWordSpout(true), 3); builder.setBolt("3", new
+ * <p>builder.setSpout("1", new TestWordSpout(true), 5); builder.setSpout("2", new TestWordSpout(true), 3); builder.setBolt("3", new
  * TestWordCounter(), 3) .fieldsGrouping("1", new Fields("word")) .fieldsGrouping("2", new Fields("word")); builder.setBolt("4", new
  * TestGlobalCount()) .globalGrouping("1");
  *
- * Map<String, Object> conf = new HashMap(); conf.put(Config.TOPOLOGY_WORKERS, 4); conf.put(Config.TOPOLOGY_DEBUG, true);
+ * <p>Map&lt;String, Object&gt; conf = new HashMap(); conf.put(Config.TOPOLOGY_WORKERS, 4); conf.put(Config.TOPOLOGY_DEBUG, true);
  *
- * try (LocalCluster cluster = new LocalCluster(); LocalTopology topo = cluster.submitTopology("mytopology", conf,
+ * <p>try (LocalCluster cluster = new LocalCluster(); LocalTopology topo = cluster.submitTopology("mytopology", conf,
  * builder.createTopology());){ Utils.sleep(10000); } ```
  *
- * The pattern for `TopologyBuilder` is to map component ids to components using the setSpout and setBolt methods. Those methods return
+ * <p>The pattern for `TopologyBuilder` is to map component ids to components using the setSpout and setBolt methods. Those methods return
  * objects that are then used to declare the inputs for that component.
  */
 public class TopologyBuilder {
-    private final Map<String, IRichBolt> _bolts = new HashMap<>();
-    private final Map<String, IRichSpout> _spouts = new HashMap<>();
+    private final Map<String, IRichBolt> bolts = new HashMap<>();
+    private final Map<String, IRichSpout> spouts = new HashMap<>();
     private final Map<String, ComponentCommon> commons = new HashMap<>();
-    private final Map<String, Set<String>> _componentToSharedMemory = new HashMap<>();
-    private final Map<String, SharedMemory> _sharedMemory = new HashMap<>();
+    private final Map<String, Set<String>> componentToSharedMemory = new HashMap<>();
+    private final Map<String, SharedMemory> sharedMemory = new HashMap<>();
     private boolean hasStatefulBolt = false;
 
-    private Map<String, StateSpoutSpec> _stateSpouts = new HashMap<>();
-    private List<ByteBuffer> _workerHooks = new ArrayList<>();
+    private Map<String, StateSpoutSpec> stateSpouts = new HashMap<>();
+    private List<ByteBuffer> workerHooks = new ArrayList<>();
 
     private static String mergeIntoJson(Map<String, Object> into, Map<String, Object> newMap) {
         Map<String, Object> res = new HashMap<>(into);
@@ -107,8 +107,8 @@ public class TopologyBuilder {
         Map<String, Bolt> boltSpecs = new HashMap<>();
         Map<String, SpoutSpec> spoutSpecs = new HashMap<>();
         maybeAddCheckpointSpout();
-        for (String boltId : _bolts.keySet()) {
-            IRichBolt bolt = _bolts.get(boltId);
+        for (String boltId : bolts.keySet()) {
+            IRichBolt bolt = bolts.get(boltId);
             bolt = maybeAddCheckpointTupleForwarder(bolt);
             ComponentCommon common = getComponentCommon(boltId, bolt);
             try {
@@ -116,25 +116,35 @@ public class TopologyBuilder {
                 boltSpecs.put(boltId, new Bolt(ComponentObject.serialized_java(Utils.javaSerialize(bolt)), common));
             } catch (RuntimeException wrapperCause) {
                 if (wrapperCause.getCause() != null && NotSerializableException.class.equals(wrapperCause.getCause().getClass())) {
-                    throw new IllegalStateException(
-                        "Bolt '" + boltId + "' contains a non-serializable field of type " + wrapperCause.getCause().getMessage() + ", " +
-                        "which was instantiated prior to topology creation. " + wrapperCause.getCause().getMessage() + " " +
-                        "should be instantiated within the prepare method of '" + boltId + " at the earliest.", wrapperCause);
+                    throw new IllegalStateException("Bolt '" + boltId + "' contains a non-serializable field of type "
+                                    + wrapperCause.getCause().getMessage() + ", "
+                                    + "which was instantiated prior to topology creation. "
+                                    + wrapperCause.getCause().getMessage()
+                                    + " "
+                                    + "should be instantiated within the prepare method of '"
+                                    + boltId
+                                    + " at the earliest.",
+                            wrapperCause);
                 }
                 throw wrapperCause;
             }
         }
-        for (String spoutId : _spouts.keySet()) {
-            IRichSpout spout = _spouts.get(spoutId);
+        for (String spoutId : spouts.keySet()) {
+            IRichSpout spout = spouts.get(spoutId);
             ComponentCommon common = getComponentCommon(spoutId, spout);
             try {
                 spoutSpecs.put(spoutId, new SpoutSpec(ComponentObject.serialized_java(Utils.javaSerialize(spout)), common));
             } catch (RuntimeException wrapperCause) {
                 if (wrapperCause.getCause() != null && NotSerializableException.class.equals(wrapperCause.getCause().getClass())) {
                     throw new IllegalStateException(
-                        "Spout '" + spoutId + "' contains a non-serializable field of type " + wrapperCause.getCause().getMessage() + ", " +
-                        "which was instantiated prior to topology creation. " + wrapperCause.getCause().getMessage() + " " +
-                        "should be instantiated within the open method of '" + spoutId + " at the earliest.", wrapperCause);
+                            "Spout '" + spoutId + "' contains a non-serializable field of type "
+                                    + wrapperCause.getCause().getMessage()
+                                    + ", which was instantiated prior to topology creation. "
+                                    + wrapperCause.getCause().getMessage()
+                                    + " should be instantiated within the open method of '"
+                                    + spoutId
+                                    + " at the earliest.",
+                            wrapperCause);
                 }
                 throw wrapperCause;
             }
@@ -144,11 +154,11 @@ public class TopologyBuilder {
                                                         boltSpecs,
                                                         new HashMap<>());
 
-        stormTopology.set_worker_hooks(_workerHooks);
+        stormTopology.set_worker_hooks(workerHooks);
 
-        if (!_componentToSharedMemory.isEmpty()) {
-            stormTopology.set_component_to_shared_memory(_componentToSharedMemory);
-            stormTopology.set_shared_memory(_sharedMemory);
+        if (!componentToSharedMemory.isEmpty()) {
+            stormTopology.set_component_to_shared_memory(componentToSharedMemory);
+            stormTopology.set_shared_memory(sharedMemory);
         }
 
         return Utils.addVersions(stormTopology);
@@ -173,16 +183,16 @@ public class TopologyBuilder {
      * @param id               the id of this component. This id is referenced by other components that want to consume this bolt's
      *                         outputs.
      * @param bolt             the bolt
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
+     * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
      *                         somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
+    public BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelismHint) throws IllegalArgumentException {
         validateUnusedId(id);
-        initCommon(id, bolt, parallelism_hint);
-        _bolts.put(id, bolt);
+        initCommon(id, bolt, parallelismHint);
+        bolts.put(id, bolt);
         return new BoltGetter(id);
     }
 
@@ -209,14 +219,14 @@ public class TopologyBuilder {
      * @param id               the id of this component. This id is referenced by other components that want to consume this bolt's
      *                         outputs.
      * @param bolt             the basic bolt
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
+     * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
      *                         somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, IBasicBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
-        return setBolt(id, new BasicBoltExecutor(bolt), parallelism_hint);
+    public BoltDeclarer setBolt(String id, IBasicBolt bolt, Number parallelismHint) throws IllegalArgumentException {
+        return setBolt(id, new BasicBoltExecutor(bolt), parallelismHint);
     }
 
     /**
@@ -240,14 +250,14 @@ public class TopologyBuilder {
      * @param id               the id of this component. This id is referenced by other components that want to consume this bolt's
      *                         outputs.
      * @param bolt             the windowed bolt
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
+     * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
      *                         somwehere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, IWindowedBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
-        return setBolt(id, new WindowedBoltExecutor(bolt), parallelism_hint);
+    public BoltDeclarer setBolt(String id, IWindowedBolt bolt, Number parallelismHint) throws IllegalArgumentException {
+        return setBolt(id, new WindowedBoltExecutor(bolt), parallelismHint);
     }
 
     /**
@@ -281,16 +291,16 @@ public class TopologyBuilder {
      * @param id               the id of this component. This id is referenced by other components that want to consume this bolt's
      *                         outputs.
      * @param bolt             the stateful bolt
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
+     * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
      *                         somwehere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt, Number parallelism_hint) throws
+    public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt, Number parallelismHint) throws
         IllegalArgumentException {
         hasStatefulBolt = true;
-        return setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelism_hint);
+        return setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelismHint);
     }
 
     /**
@@ -319,14 +329,14 @@ public class TopologyBuilder {
      * @param id               the id of this component. This id is referenced by other components that want to consume this bolt's
      *                         outputs.
      * @param bolt             the stateful windowed bolt
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
+     * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
      *                         somwehere around the cluster.
      * @param <T>              the type of the state (e.g. {@link org.apache.storm.state.KeyValueState})
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt, Number parallelism_hint) throws
+    public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt, Number parallelismHint) throws
         IllegalArgumentException {
         hasStatefulBolt = true;
         IStatefulBolt<T> executor;
@@ -335,7 +345,7 @@ public class TopologyBuilder {
         } else {
             executor = new StatefulWindowedBoltExecutor<T>(bolt);
         }
-        return setBolt(id, new StatefulBoltExecutor<T>(executor), parallelism_hint);
+        return setBolt(id, new StatefulBoltExecutor<T>(executor), parallelismHint);
     }
 
     /**
@@ -364,15 +374,15 @@ public class TopologyBuilder {
      *                         outputs.
      * @param biConsumer       lambda expression that implements tuple processing for this bolt
      * @param fields           fields for tuple that should be emitted to downstream bolts
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
+     * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
      *                         somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, SerializableBiConsumer<Tuple, BasicOutputCollector> biConsumer, Number parallelism_hint,
+    public BoltDeclarer setBolt(String id, SerializableBiConsumer<Tuple, BasicOutputCollector> biConsumer, Number parallelismHint,
                                 String... fields) throws IllegalArgumentException {
-        return setBolt(id, new LambdaBiConsumerBolt(biConsumer, fields), parallelism_hint);
+        return setBolt(id, new LambdaBiConsumerBolt(biConsumer, fields), parallelismHint);
     }
 
     /**
@@ -398,14 +408,14 @@ public class TopologyBuilder {
      * @param id               the id of this component. This id is referenced by other components that want to consume this bolt's
      *                         outputs.
      * @param consumer         lambda expression that implements tuple processing for this bolt
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
+     * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
      *                         somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, SerializableConsumer<Tuple> consumer, Number parallelism_hint) throws IllegalArgumentException {
-        return setBolt(id, new LambdaConsumerBolt(consumer), parallelism_hint);
+    public BoltDeclarer setBolt(String id, SerializableConsumer<Tuple> consumer, Number parallelismHint) throws IllegalArgumentException {
+        return setBolt(id, new LambdaConsumerBolt(consumer), parallelismHint);
     }
 
     /**
@@ -425,25 +435,16 @@ public class TopologyBuilder {
      *
      * @param id               the id of this component. This id is referenced by other components that want to consume this spout's
      *                         outputs.
-     * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a
+     * @param parallelismHint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a
      *                         process somewhere around the cluster.
      * @param spout            the spout
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelism_hint) throws IllegalArgumentException {
+    public SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelismHint) throws IllegalArgumentException {
         validateUnusedId(id);
-        initCommon(id, spout, parallelism_hint);
-        _spouts.put(id, spout);
+        initCommon(id, spout, parallelismHint);
+        spouts.put(id, spout);
         return new SpoutGetter(id);
-    }
-
-    public void setStateSpout(String id, IRichStateSpout stateSpout) throws IllegalArgumentException {
-        setStateSpout(id, stateSpout, null);
-    }
-
-    public void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelism_hint) throws IllegalArgumentException {
-        validateUnusedId(id);
-        // TODO: finish
     }
 
     /**
@@ -463,17 +464,17 @@ public class TopologyBuilder {
      *
      * @param id               the id of this component. This id is referenced by other components that want to consume this spout's
      *                         outputs.
-     * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a
+     * @param parallelismHint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a
      *                         process somewhere around the cluster.
      * @param supplier         lambda expression that implements tuple generating for this spout
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public SpoutDeclarer setSpout(String id, SerializableSupplier<?> supplier, Number parallelism_hint) throws IllegalArgumentException {
-        return setSpout(id, new LambdaSpout(supplier), parallelism_hint);
+    public SpoutDeclarer setSpout(String id, SerializableSupplier<?> supplier, Number parallelismHint) throws IllegalArgumentException {
+        return setSpout(id, new LambdaSpout(supplier), parallelismHint);
     }
 
     /**
-     * Add a new worker lifecycle hook
+     * Add a new worker lifecycle hook.
      *
      * @param workerHook the lifecycle hook to add
      */
@@ -482,17 +483,17 @@ public class TopologyBuilder {
             throw new IllegalArgumentException("WorkerHook must not be null.");
         }
 
-        _workerHooks.add(ByteBuffer.wrap(Utils.javaSerialize(workerHook)));
+        workerHooks.add(ByteBuffer.wrap(Utils.javaSerialize(workerHook)));
     }
 
     private void validateUnusedId(String id) {
-        if (_bolts.containsKey(id)) {
+        if (bolts.containsKey(id)) {
             throw new IllegalArgumentException("Bolt has already been declared for id " + id);
         }
-        if (_spouts.containsKey(id)) {
+        if (spouts.containsKey(id)) {
             throw new IllegalArgumentException("Spout has already been declared for id " + id);
         }
-        if (_stateSpouts.containsKey(id)) {
+        if (stateSpouts.containsKey(id)) {
             throw new IllegalArgumentException("State spout has already been declared for id " + id);
         }
     }
@@ -531,7 +532,7 @@ public class TopologyBuilder {
         Set<GlobalStreamId> checkPointInputs = new HashSet<>();
         for (GlobalStreamId inputStream : component.get_inputs().keySet()) {
             String sourceId = inputStream.get_componentId();
-            if (_spouts.containsKey(sourceId)) {
+            if (spouts.containsKey(sourceId)) {
                 checkPointInputs.add(new GlobalStreamId(CHECKPOINT_COMPONENT_ID, CHECKPOINT_STREAM_ID));
             } else {
                 checkPointInputs.add(new GlobalStreamId(sourceId, CHECKPOINT_STREAM_ID));
@@ -627,12 +628,12 @@ public class TopologyBuilder {
         @SuppressWarnings("unchecked")
         @Override
         public T addSharedMemory(SharedMemory request) {
-            SharedMemory found = _sharedMemory.get(request.get_name());
+            SharedMemory found = sharedMemory.get(request.get_name());
             if (found != null && !found.equals(request)) {
                 throw new IllegalArgumentException("Cannot have multiple different shared memory regions with the same name");
             }
-            _sharedMemory.put(request.get_name(), request);
-            Set<String> mems = _componentToSharedMemory.computeIfAbsent(id, (k) -> new HashSet<>());
+            sharedMemory.put(request.get_name(), request);
+            Set<String> mems = componentToSharedMemory.computeIfAbsent(id, (k) -> new HashSet<>());
             mems.add(request.get_name());
             return (T) this;
         }
@@ -645,11 +646,11 @@ public class TopologyBuilder {
     }
 
     protected class BoltGetter extends ConfigGetter<BoltDeclarer> implements BoltDeclarer {
-        private String _boltId;
+        private String boltId;
 
         public BoltGetter(String boltId) {
             super(boltId);
-            _boltId = boltId;
+            this.boltId = boltId;
         }
 
         public BoltDeclarer fieldsGrouping(String componentId, Fields fields) {
@@ -709,8 +710,13 @@ public class TopologyBuilder {
         }
 
         private BoltDeclarer grouping(String componentId, String streamId, Grouping grouping) {
-            commons.get(_boltId).put_to_inputs(new GlobalStreamId(componentId, streamId), grouping);
+            commons.get(boltId).put_to_inputs(new GlobalStreamId(componentId, streamId), grouping);
             return this;
+        }
+
+        @Override
+        public BoltDeclarer grouping(GlobalStreamId id, Grouping grouping) {
+            return grouping(id.get_componentId(), id.get_streamId(), grouping);
         }
 
         @Override
@@ -731,11 +737,6 @@ public class TopologyBuilder {
         @Override
         public BoltDeclarer customGrouping(String componentId, String streamId, CustomStreamGrouping grouping) {
             return grouping(componentId, streamId, Grouping.custom_serialized(Utils.javaSerialize(grouping)));
-        }
-
-        @Override
-        public BoltDeclarer grouping(GlobalStreamId id, Grouping grouping) {
-            return grouping(id.get_componentId(), id.get_streamId(), grouping);
         }
     }
 }

@@ -43,22 +43,20 @@ import org.slf4j.LoggerFactory;
 /**
  * An IBackingState implementation for Cassandra.
  *
- * The implementation stores state as a binary blob in cassandra using a {@link Serializer}.
+ * <p>The implementation stores state as a binary blob in cassandra using a {@link Serializer}.
  * It supports Opaque, Transactional and NonTransactional states, given a matching serializer.
  *
- * Configuration is done with three separate constructs:
+ * <p>Configuration is done with three separate constructs:
  *  - One tuple mapper for multiGet, which should map keys to a select statement and return {@link Values}.
  *  - One state mapper, which maps the state to/from a {@link Values} representation, which is used for binding.
  *  - One tuple mapper for multiPut, which should map {@link Values} to an INSERT or UPDATE statement.
  *
- * {@link #multiPut(List, List)} updates Cassandra with parallel statements.
+ * <p>{@link #multiPut(List, List)} updates Cassandra with parallel statements.
  * {@link #multiGet(List)} queries Cassandra with parallel statements.
  *
- * Parallelism defaults to half the maximum requests per host, either local or remote whichever is
+ * <p>Parallelism defaults to half the maximum requests per host, either local or remote whichever is
  * lower. The driver defaults to 256 for remote hosts and 1024 for local hosts, so the default value is 128
  * unless the driver is configured otherwise.
- *
- * @param <T>
  */
 public class CassandraBackingMap<T> implements IBackingMap<T> {
 
@@ -173,6 +171,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
             return this;
         }
 
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         public Options<T> withNonTransactionalJSONBinaryState(String fieldName) {
             this.stateMapper = new SerializedStateMapper<>(fieldName, new JSONNonTransactionalSerializer());
             return this;
@@ -183,6 +182,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
             return this;
         }
 
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         public Options<T> withTransactionalJSONBinaryState(String fieldName) {
             this.stateMapper = new SerializedStateMapper<>(fieldName, new JSONTransactionalSerializer());
             return this;
@@ -193,6 +193,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
             return this;
         }
 
+        @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
         public Options<T> withOpaqueJSONBinaryState(String fieldName) {
             this.stateMapper = new SerializedStateMapper<>(fieldName, new JSONOpaqueSerializer());
             return this;

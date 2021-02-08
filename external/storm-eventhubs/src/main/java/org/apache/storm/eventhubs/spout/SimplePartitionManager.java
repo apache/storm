@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A simple partition manager that does not re-send failed messages
+ * A simple partition manager that does not re-send failed messages.
  */
 public class SimplePartitionManager implements IPartitionManager {
     private static final Logger logger = LoggerFactory.getLogger(SimplePartitionManager.class);

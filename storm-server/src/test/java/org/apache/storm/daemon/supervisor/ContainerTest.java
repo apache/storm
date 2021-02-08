@@ -13,6 +13,7 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.google.common.base.Joiner;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -23,13 +24,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.daemon.supervisor.BasicContainerTest.CommandRun;
 import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
+import org.apache.storm.utils.ObjectReader;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -72,26 +75,23 @@ public class ContainerTest {
         when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
+        MockResourceIsolationManager iso = new MockResourceIsolationManager();
+        String workerId = "worker-id";
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
-                                             "SUPERVISOR", 6628, 8080, la, null, "worker", new HashMap<>(), ops, new StormMetricsRegistry());
-        mc.kill();
-        assertEquals(Collections.EMPTY_LIST, mc.killedPids);
-        assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
-        mc.forceKill();
-        assertEquals(Collections.EMPTY_LIST, mc.killedPids);
-        assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
+            "SUPERVISOR", 6628, 8080, la, iso, workerId, new HashMap<>(), ops, new StormMetricsRegistry());
+        iso.allWorkerIds.add(workerId);
 
-        long pid = 987654321;
-        mc.allPids.add(pid);
+        assertEquals(Collections.EMPTY_LIST, iso.killedWorkerIds);
+        assertEquals(Collections.EMPTY_LIST, iso.forceKilledWorkerIds);
 
         mc.kill();
-        assertEquals(mc.allPids, new HashSet<>(mc.killedPids));
-        assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
-        mc.killedPids.clear();
+        assertEquals(iso.allWorkerIds, iso.killedWorkerIds);
+        assertEquals(Collections.EMPTY_LIST, iso.forceKilledWorkerIds);
+        iso.killedWorkerIds.clear();
 
         mc.forceKill();
-        assertEquals(Collections.EMPTY_LIST, mc.killedPids);
-        assertEquals(mc.allPids, new HashSet<>(mc.forceKilledPids));
+        assertEquals(Collections.EMPTY_LIST, iso.killedWorkerIds);
+        assertEquals(iso.allWorkerIds, iso.forceKilledWorkerIds);
     }
 
     @SuppressWarnings("unchecked")
@@ -135,8 +135,9 @@ public class ContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
         la.set_owner(user);
+        ResourceIsolationInterface iso = mock(ResourceIsolationInterface.class);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
-                                             "SUPERVISOR", 6628, 8080, la, null, workerId, topoConf, ops, new StormMetricsRegistry());
+                                             "SUPERVISOR", 6628, 8080, la, iso, workerId, topoConf, ops, new StormMetricsRegistry());
 
         mc.setup();
 
@@ -151,16 +152,16 @@ public class ContainerTest {
 
         String yamlResult = yamlDump.toString();
         Yaml yaml = new Yaml();
-        Map<String, Object> result = (Map<String, Object>) yaml.load(yamlResult);
+        Map<String, Object> result = yaml.load(yamlResult);
         assertEquals(workerId, result.get("worker-id"));
         assertEquals(user, result.get(Config.TOPOLOGY_SUBMITTER_USER));
         HashSet<String> allowedUsers = new HashSet<>(topoUsers);
         allowedUsers.addAll(logUsers);
-        assertEquals(allowedUsers, new HashSet<String>((List<String>) result.get(DaemonConfig.LOGS_USERS)));
+        assertEquals(allowedUsers, new HashSet<>(ObjectReader.getStrings(result.get(DaemonConfig.LOGS_USERS))));
 
         HashSet<String> allowedGroups = new HashSet<>(topoGroups);
         allowedGroups.addAll(logGroups);
-        assertEquals(allowedGroups, new HashSet<String>((List<String>) result.get(DaemonConfig.LOGS_GROUPS)));
+        assertEquals(allowedGroups, new HashSet<>(ObjectReader.getStrings(result.get(DaemonConfig.LOGS_GROUPS))));
 
         //Save the current user to help with recovery
         verify(ops).dump(workerUserFile, user);
@@ -176,7 +177,6 @@ public class ContainerTest {
     public void testCleanup() throws Exception {
         final int supervisorPort = 6628;
         final int port = 8080;
-        final long pid = 100;
         final String topoId = "test_topology";
         final String workerId = "worker_id";
         final String user = "me";
@@ -185,7 +185,6 @@ public class ContainerTest {
         final File logMetadataFile = new File(workerArtifacts, "worker.yaml");
         final File workerUserFile = asAbsFile(stormLocal, "workers-users", workerId);
         final File workerRoot = asAbsFile(stormLocal, "workers", workerId);
-        final File workerPidsRoot = new File(workerRoot, "pids");
 
         final Map<String, Object> topoConf = new HashMap<>();
 
@@ -202,16 +201,15 @@ public class ContainerTest {
         when(ops.getWriter(logMetadataFile)).thenReturn(yamlDump);
 
         ResourceIsolationInterface iso = mock(ResourceIsolationInterface.class);
+        when(iso.isResourceManaged()).thenReturn(true);
 
         LocalAssignment la = new LocalAssignment();
         la.set_owner(user);
         la.set_topology_id(topoId);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
                                              "SUPERVISOR", supervisorPort, port, la, iso, workerId, topoConf, ops, new StormMetricsRegistry());
-        mc.allPids.add(pid);
 
         mc.cleanUp();
-        verify(ops).deleteIfExists(eq(new File(workerPidsRoot, String.valueOf(pid))), eq(user), any(String.class));
         verify(iso).releaseResourcesForWorker(workerId);
 
         verify(ops).deleteIfExists(eq(new File(workerRoot, "pids")), eq(user), any(String.class));
@@ -223,29 +221,11 @@ public class ContainerTest {
 
     public static class MockContainer extends Container {
 
-        public final List<Long> killedPids = new ArrayList<>();
-        public final List<Long> forceKilledPids = new ArrayList<>();
-        public final Set<Long> allPids = new HashSet<>();
         protected MockContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
                                 int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
                                 String workerId, Map<String, Object> topoConf, AdvancedFSOps ops, StormMetricsRegistry metricsRegistry) throws IOException {
             super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, workerId,
                   topoConf, ops, metricsRegistry, new ContainerMemoryTracker(new StormMetricsRegistry()));
-        }
-
-        @Override
-        protected void kill(long pid) {
-            killedPids.add(pid);
-        }
-
-        @Override
-        protected void forceKill(long pid) {
-            forceKilledPids.add(pid);
-        }
-
-        @Override
-        protected Set<Long> getAllPids() throws IOException {
-            return allPids;
         }
 
         @Override
@@ -267,6 +247,81 @@ public class ContainerTest {
         @Override
         public boolean runProfiling(ProfileRequest request, boolean stop) throws IOException, InterruptedException {
             fail("THIS IS NOT UNDER TEST");
+            return false;
+        }
+    }
+
+    public static class MockResourceIsolationManager implements ResourceIsolationInterface {
+        public final List<String> killedWorkerIds = new ArrayList<>();
+        public final List<String> forceKilledWorkerIds = new ArrayList<>();
+        public final List<String> allWorkerIds = new ArrayList<>();
+
+        public final List<CommandRun> profileCmds = new ArrayList<>();
+        public final List<CommandRun> workerCmds = new ArrayList<>();
+
+        @Override
+        public void prepare(Map<String, Object> conf) throws IOException {
+            fail("THIS IS NOT UNDER TEST");
+        }
+
+        @Override
+        public void reserveResourcesForWorker(String workerId, Integer workerMemory, Integer workerCpu, String numaId) {
+            fail("THIS IS NOT UNDER TEST");
+        }
+
+        @Override
+        public void releaseResourcesForWorker(String workerId) {
+        }
+
+        @Override
+        public void launchWorkerProcess(String user, String topologyId, Map<String, Object> topoConf,
+                                        int port, String workerId, List<String> command,
+                                        Map<String, String> env, String logPrefix,
+                                        ExitCodeCallback processExitCallback, File targetDir) throws IOException {
+            workerCmds.add(new CommandRun(command, env, targetDir));
+        }
+
+        @Override
+        public long getMemoryUsage(String user, String workerId, int port) throws IOException {
+            fail("THIS IS NOT UNDER TEST");
+            return 0;
+        }
+
+        @Override
+        public long getSystemFreeMemoryMb() throws IOException {
+            fail("THIS IS NOT UNDER TEST");
+            return 0;
+        }
+
+        @Override
+        public void kill(String user, String workerId) throws IOException {
+            killedWorkerIds.add(workerId);
+        }
+
+        @Override
+        public void forceKill(String user, String workerId) throws IOException {
+            forceKilledWorkerIds.add(workerId);
+        }
+
+        @Override
+        public boolean areAllProcessesDead(String user, String workerId) throws IOException {
+            fail("THIS IS NOT UNDER TEST");
+            return false;
+        }
+
+        @Override
+        public boolean runProfilingCommand(String user, String workerId, List<String> command, Map<String, String> env, String logPrefix, File targetDir) throws IOException, InterruptedException {
+            profileCmds.add(new CommandRun(command, env, targetDir));
+            return true;
+        }
+
+        @Override
+        public void cleanup(String user, String workerId, int port) {
+            //NO OP
+        }
+
+        @Override
+        public boolean isResourceManaged() {
             return false;
         }
     }

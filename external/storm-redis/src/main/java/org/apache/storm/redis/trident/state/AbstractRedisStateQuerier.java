@@ -36,7 +36,7 @@ public abstract class AbstractRedisStateQuerier<T extends State> extends BaseQue
     private final RedisLookupMapper lookupMapper;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param lookupMapper mapper for querying
      */

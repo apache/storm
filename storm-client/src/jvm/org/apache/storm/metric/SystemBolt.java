@@ -12,15 +12,13 @@
 
 package org.apache.storm.metric;
 
-import java.lang.management.GarbageCollectorMXBean;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
-import java.lang.management.ThreadMXBean;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.task.IBolt;
@@ -30,31 +28,43 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
 
-
 // There is one task inside one executor for each worker of the topology.
 // TaskID is always -1, therefore you can only send-unanchored tuples to co-located SystemBolt.
 // This bolt was conceived to export worker stats via metrics api.
 public class SystemBolt implements IBolt {
-    private static boolean _prepareWasCalled = false;
+    private static boolean prepareWasCalled = false;
 
     @SuppressWarnings({ "unchecked" })
     @Override
     public void prepare(final Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        if (_prepareWasCalled && !"local".equals(topoConf.get(Config.STORM_CLUSTER_MODE))) {
+        if (prepareWasCalled && !"local".equals(topoConf.get(Config.STORM_CLUSTER_MODE))) {
             throw new RuntimeException("A single worker should have 1 SystemBolt instance.");
         }
-        _prepareWasCalled = true;
+        prepareWasCalled = true;
 
-        int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
+        context.registerMetricSet("GC", new GarbageCollectorMetricSet());
+        context.registerMetricSet("threads", new ThreadStatesGaugeSet());
+        context.registerMetricSet("memory", new MemoryUsageGaugeSet());
 
-        final RuntimeMXBean jvmRT = ManagementFactory.getRuntimeMXBean();
-        context.registerMetric("uptimeSecs", () -> jvmRT.getUptime() / 1000.0, bucketSize);
-        context.registerMetric("startTimeSecs", () -> jvmRT.getStartTime() / 1000.0, bucketSize);
+        final RuntimeMXBean jvmRt = ManagementFactory.getRuntimeMXBean();
 
-        final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        context.registerMetric("threadCount", threadBean::getThreadCount, bucketSize);
+        context.registerGauge("uptimeSecs", new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return jvmRt.getUptime() / 1000L;
+            }
+        });
 
-        context.registerMetric("newWorkerEvent", new IMetric() {
+        context.registerGauge("startTimeSecs", new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return jvmRt.getStartTime() / 1000L;
+            }
+        });
+
+        // newWorkerEvent: 1 when a worker is first started and 0 all other times.
+        // This can be used to tell when a worker has crashed and is restarted.
+        final IMetric newWorkerEvent = new IMetric() {
             boolean doEvent = true;
 
             @Override
@@ -66,17 +76,15 @@ public class SystemBolt implements IBolt {
                     return 0;
                 }
             }
-        }, bucketSize);
+        };
+        context.registerGauge("newWorkerEvent", new Gauge<Integer>() {
+            @Override
+            public Integer getValue() {
+                return (Integer) newWorkerEvent.getValueAndReset();
+            }
+        });
 
-        final MemoryMXBean jvmMemRT = ManagementFactory.getMemoryMXBean();
-
-        context.registerMetric("memory/heap", new MemoryUsageMetric(jvmMemRT::getHeapMemoryUsage), bucketSize);
-        context.registerMetric("memory/nonHeap", new MemoryUsageMetric(jvmMemRT::getNonHeapMemoryUsage), bucketSize);
-
-        for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
-            context.registerMetric("GC/" + b.getName().replaceAll("\\W", ""), new GarbageCollectorMetric(b), bucketSize);
-        }
-
+        int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.WORKER_METRICS), bucketSize, topoConf);
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize, topoConf);
     }
@@ -101,55 +109,5 @@ public class SystemBolt implements IBolt {
 
     @Override
     public void cleanup() {
-    }
-
-    private static class MemoryUsageMetric implements IMetric {
-        Supplier<MemoryUsage> _getUsage;
-
-        public MemoryUsageMetric(Supplier<MemoryUsage> getUsage) {
-            _getUsage = getUsage;
-        }
-
-        @Override
-        public Object getValueAndReset() {
-            MemoryUsage memUsage = _getUsage.get();
-            HashMap<String, Object> m = new HashMap<>();
-            m.put("maxBytes", memUsage.getMax());
-            m.put("committedBytes", memUsage.getCommitted());
-            m.put("initBytes", memUsage.getInit());
-            m.put("usedBytes", memUsage.getUsed());
-            m.put("virtualFreeBytes", memUsage.getMax() - memUsage.getUsed());
-            m.put("unusedBytes", memUsage.getCommitted() - memUsage.getUsed());
-            return m;
-        }
-    }
-
-    // canonically the metrics data exported is time bucketed when doing counts.
-    // convert the absolute values here into time buckets.
-    private static class GarbageCollectorMetric implements IMetric {
-        GarbageCollectorMXBean _gcBean;
-        Long _collectionCount;
-        Long _collectionTime;
-
-        public GarbageCollectorMetric(GarbageCollectorMXBean gcBean) {
-            _gcBean = gcBean;
-        }
-
-        @Override
-        public Object getValueAndReset() {
-            Long collectionCountP = _gcBean.getCollectionCount();
-            Long collectionTimeP = _gcBean.getCollectionTime();
-
-            Map<String, Object> ret = null;
-            if (_collectionCount != null && _collectionTime != null) {
-                ret = new HashMap<>();
-                ret.put("count", collectionCountP - _collectionCount);
-                ret.put("timeMs", collectionTimeP - _collectionTime);
-            }
-
-            _collectionCount = collectionCountP;
-            _collectionTime = collectionTimeP;
-            return ret;
-        }
     }
 }

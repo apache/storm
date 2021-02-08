@@ -19,9 +19,9 @@
 package org.apache.storm.jms.spout;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Collections;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -255,6 +255,7 @@ public class JmsSpout extends BaseRichSpout {
      * <p>When overridden, should always call {@code super}
      * to finalize the active connections.
      */
+    @Override
     public void close() {
         try {
             LOG.debug("Closing JMS connection.");
@@ -272,6 +273,7 @@ public class JmsSpout extends BaseRichSpout {
      * <p>This method polls the queue that's being filled asynchronously by the
      * jms connection, every {@link #POLL_INTERVAL_MS} seconds.
      */
+    @Override
     public void nextTuple() {
         try {
             Message msg = consumer.receive(POLL_INTERVAL_MS);

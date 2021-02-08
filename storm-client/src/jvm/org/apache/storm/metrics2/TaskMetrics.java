@@ -13,67 +13,140 @@
 package org.apache.storm.metrics2;
 
 import com.codahale.metrics.Counter;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.Utils;
 
 public class TaskMetrics {
-    private static final String METRIC_NAME_ACKED = "acked";
-    private static final String METRIC_NAME_FAILED = "failed";
-    private static final String METRIC_NAME_EMITTED = "emitted";
-    private static final String METRIC_NAME_TRANSFERRED = "transferred";
+    private static final String METRIC_NAME_ACKED = "__ack-count";
+    private static final String METRIC_NAME_FAILED = "__fail-count";
+    private static final String METRIC_NAME_EMITTED = "__emit-count";
+    private static final String METRIC_NAME_TRANSFERRED = "__transfer-count";
+    private static final String METRIC_NAME_EXECUTED = "__execute-count";
+    private static final String METRIC_NAME_PROCESS_LATENCY = "__process-latency";
+    private static final String METRIC_NAME_COMPLETE_LATENCY = "__complete-latency";
+    private static final String METRIC_NAME_EXECUTE_LATENCY = "__execute-latency";
+    private static final String METRIC_NAME_CAPACITY = "__capacity";
 
-    private ConcurrentMap<String, Counter> ackedByStream = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Counter> failedByStream = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Counter> emittedByStream = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Counter> transferredByStream = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RateCounter> rateCounters = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RollingAverageGauge> gauges = new ConcurrentHashMap<>();
 
-    private String topologyId;
-    private String componentId;
-    private Integer taskId;
-    private Integer workerPort;
+    private final String topologyId;
+    private final String componentId;
+    private final Integer taskId;
+    private final Integer workerPort;
+    private final StormMetricRegistry metricRegistry;
+    private final int samplingRate;
 
-    public TaskMetrics(WorkerTopologyContext context, String componentId, Integer taskid) {
+
+    public TaskMetrics(WorkerTopologyContext context, String componentId, Integer taskid,
+                       StormMetricRegistry metricRegistry, Map<String, Object> topoConf) {
+        this.metricRegistry = metricRegistry;
         this.topologyId = context.getStormId();
         this.componentId = componentId;
         this.taskId = taskid;
         this.workerPort = context.getThisWorkerPort();
+        this.samplingRate = ConfigUtils.samplingRate(topoConf);
     }
 
-    public Counter getAcked(String streamId) {
-        Counter c = this.ackedByStream.get(streamId);
-        if (c == null) {
-            c = StormMetricRegistry.counter(METRIC_NAME_ACKED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
-            this.ackedByStream.put(streamId, c);
-        }
-        return c;
+    public void setCapacity(double capacity) {
+        String metricName = METRIC_NAME_CAPACITY;
+        // capacity is over all streams, will report using the default streamId
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, Utils.DEFAULT_STREAM_ID);
+        gauge.addValue(capacity);
     }
 
-    public Counter getFailed(String streamId) {
-        Counter c = this.failedByStream.get(streamId);
-        if (c == null) {
-            c = StormMetricRegistry.counter(METRIC_NAME_FAILED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
-            this.failedByStream.put(streamId, c);
-        }
-        return c;
+    public void spoutAckedTuple(String streamId, long latencyMs) {
+        String metricName = METRIC_NAME_ACKED + "-" + streamId;
+        RateCounter rc = this.getRateCounter(metricName, streamId);
+        rc.inc(this.samplingRate);
+
+        metricName = METRIC_NAME_COMPLETE_LATENCY + "-" + streamId;
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, streamId);
+        gauge.addValue(latencyMs);
     }
 
-    public Counter getEmitted(String streamId) {
-        Counter c = this.emittedByStream.get(streamId);
-        if (c == null) {
-            c = StormMetricRegistry.counter(METRIC_NAME_EMITTED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
-            this.emittedByStream.put(streamId, c);
-        }
-        return c;
+    public void boltAckedTuple(String sourceComponentId, String sourceStreamId, long latencyMs) {
+        String key = sourceComponentId + ":" + sourceStreamId;
+        String metricName = METRIC_NAME_ACKED + "-" + key;
+        RateCounter rc = this.getRateCounter(metricName, sourceStreamId);
+        rc.inc(this.samplingRate);
+
+        metricName = METRIC_NAME_PROCESS_LATENCY + "-" + key;
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, sourceStreamId);
+        gauge.addValue(latencyMs);
     }
 
-    public Counter getTransferred(String streamId) {
-        Counter c = this.transferredByStream.get(streamId);
-        if (c == null) {
-            c = StormMetricRegistry.counter(
-                METRIC_NAME_TRANSFERRED, this.topologyId, this.componentId, this.taskId, this.workerPort, streamId);
-            this.transferredByStream.put(streamId, c);
+    public void spoutFailedTuple(String streamId) {
+        String key = streamId;
+        String metricName = METRIC_NAME_FAILED + "-" + key;
+        RateCounter rc = this.getRateCounter(metricName, streamId);
+        rc.inc(this.samplingRate);
+    }
+
+    public void boltFailedTuple(String sourceComponentId, String sourceStreamId) {
+        String key = sourceComponentId + ":" + sourceStreamId;
+        String metricName = METRIC_NAME_FAILED + "-" + key;
+        RateCounter rc = this.getRateCounter(metricName, sourceStreamId);
+        rc.inc(this.samplingRate);
+    }
+
+    public void emittedTuple(String streamId) {
+        String key = streamId;
+        String metricName = METRIC_NAME_EMITTED + "-" + key;
+        RateCounter rc = this.getRateCounter(metricName, streamId);
+        rc.inc(this.samplingRate);
+    }
+
+    public void transferredTuples(String streamId, int amount) {
+        String key = streamId;
+        String metricName = METRIC_NAME_TRANSFERRED + "-" + key;
+        RateCounter rc = this.getRateCounter(metricName, streamId);
+        rc.inc(amount * this.samplingRate);
+    }
+
+    public void boltExecuteTuple(String sourceComponentId, String sourceStreamId, long latencyMs) {
+        String key = sourceComponentId + ":" + sourceStreamId;
+        String metricName = METRIC_NAME_EXECUTED + "-" + key;
+        RateCounter rc = this.getRateCounter(metricName, sourceStreamId);
+        rc.inc(this.samplingRate);
+
+        metricName = METRIC_NAME_EXECUTE_LATENCY + "-" + key;
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, sourceStreamId);
+        gauge.addValue(latencyMs);
+    }
+
+    private RateCounter getRateCounter(String metricName, String streamId) {
+        RateCounter rc = this.rateCounters.get(metricName);
+        if (rc == null) {
+            synchronized (this) {
+                rc = this.rateCounters.get(metricName);
+                if (rc == null) {
+                    rc = metricRegistry.rateCounter(metricName, this.topologyId, this.componentId,
+                            this.taskId, this.workerPort, streamId);
+                    this.rateCounters.put(metricName, rc);
+                }
+            }
         }
-        return c;
+        return rc;
+    }
+
+    private RollingAverageGauge getRollingAverageGauge(String metricName, String streamId) {
+        RollingAverageGauge gauge = this.gauges.get(metricName);
+        if (gauge == null) {
+            synchronized (this) {
+                gauge = this.gauges.get(metricName);
+                if (gauge == null) {
+                    gauge = new RollingAverageGauge();
+                    metricRegistry.gauge(metricName, gauge, this.topologyId, this.componentId,
+                            streamId, this.taskId, this.workerPort);
+                    this.gauges.put(metricName, gauge);
+                }
+            }
+        }
+        return gauge;
     }
 }

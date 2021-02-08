@@ -58,7 +58,7 @@ class EsState implements State {
      * @param esConfig Elasticsearch configuration containing node addresses and cluster name {@link EsConfig}
      * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
      */
-    public EsState(EsConfig esConfig, EsTupleMapper tupleMapper) {
+    EsState(EsConfig esConfig, EsTupleMapper tupleMapper) {
         this.esConfig = esConfig;
         this.objectMapper = new ObjectMapper();
         this.tupleMapper = tupleMapper;

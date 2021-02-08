@@ -68,9 +68,7 @@ public class SimpleFileNameFormat implements FileNameFormat {
      * $HOST - local host name<br/>
      * $PARTITION - partition index<br/>
      *
-     * @param name
-     *            file name
-     * @return
+     * @param name file name
      */
     public SimpleFileNameFormat withName(String name) {
         this.name = name;

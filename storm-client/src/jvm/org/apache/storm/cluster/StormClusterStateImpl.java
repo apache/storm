@@ -56,7 +56,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     private static Logger LOG = LoggerFactory.getLogger(StormClusterStateImpl.class);
     private final List<ACL> defaultAcls;
     private final String stateId;
-    private final boolean solo;
+    private final boolean shouldCloseStateStorageOnDisconnect;
     private final ClusterStateContext context;
     private IStateStorage stateStorage;
     private ILocalAssignmentsBackend assignmentsBackend;
@@ -73,11 +73,11 @@ public class StormClusterStateImpl implements IStormClusterState {
     private ConcurrentHashMap<String, Runnable> credentialsCallback;
     private ConcurrentHashMap<String, Runnable> logConfigCallback;
 
-    public StormClusterStateImpl(IStateStorage StateStorage, ILocalAssignmentsBackend assignmentsassignmentsBackend,
-                                 ClusterStateContext context, boolean solo) throws Exception {
+    public StormClusterStateImpl(IStateStorage stateStorage, ILocalAssignmentsBackend assignmentsassignmentsBackend,
+                                 ClusterStateContext context, boolean shouldCloseStateStorageOnDisconnect) throws Exception {
 
-        this.stateStorage = StateStorage;
-        this.solo = solo;
+        this.stateStorage = stateStorage;
+        this.shouldCloseStateStorageOnDisconnect = shouldCloseStateStorageOnDisconnect;
         this.defaultAcls = context.getDefaultZkAcls();
         this.context = context;
         this.assignmentsBackend = assignmentsassignmentsBackend;
@@ -226,6 +226,14 @@ public class StormClusterStateImpl implements IStormClusterState {
     @Override
     public boolean isAssignmentsBackendSynchronized() {
         return this.assignmentsBackend.isSynchronized();
+    }
+
+    @Override
+    public boolean isPacemakerStateStore() {
+        if (stateStorage == null) {
+            return false;
+        }
+        return stateStorage instanceof PaceMakerStateStorage;
     }
 
     @Override
@@ -591,10 +599,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     /**
-     * To update this function due to APersistentMap/APersistentSet is clojure's structure
-     *
-     * @param stormId
-     * @param newElems
+     * To update this function due to APersistentMap/APersistentSet is clojure's structure.
      */
     @Override
     public void updateStorm(String stormId, StormBase newElems) {
@@ -617,7 +622,7 @@ public class StormClusterStateImpl implements IStormClusterState {
             }
         }
 
-        Map<String, DebugOptions> ComponentDebug = new HashMap<>();
+        Map<String, DebugOptions> componentDebug = new HashMap<>();
         Map<String, DebugOptions> oldComponentDebug = stormBase.get_component_debug();
 
         Map<String, DebugOptions> newComponentDebug = newElems.get_component_debug();
@@ -639,10 +644,10 @@ public class StormClusterStateImpl implements IStormClusterState {
             DebugOptions debugOptions = new DebugOptions();
             debugOptions.set_enable(enable);
             debugOptions.set_samplingpct(samplingpct);
-            ComponentDebug.put(key, debugOptions);
+            componentDebug.put(key, debugOptions);
         }
-        if (ComponentDebug.size() > 0) {
-            newElems.set_component_debug(ComponentDebug);
+        if (componentDebug.size() > 0) {
+            newElems.set_component_debug(componentDebug);
         }
 
         if (StringUtils.isBlank(newElems.get_name())) {
@@ -746,13 +751,13 @@ public class StormClusterStateImpl implements IStormClusterState {
     @Override
     public void reportError(String stormId, String componentId, String node, Long port, Throwable error) {
         String path = ClusterUtils.errorPath(stormId, componentId);
-        String lastErrorPath = ClusterUtils.lastErrorPath(stormId, componentId);
         ErrorInfo errorInfo = new ErrorInfo(ClusterUtils.stringifyError(error), Time.currentTimeSecs());
         errorInfo.set_host(node);
         errorInfo.set_port(port.intValue());
         byte[] serData = Utils.serialize(errorInfo);
         stateStorage.mkdirs(path, defaultAcls);
         stateStorage.create_sequential(path + ClusterUtils.ZK_SEPERATOR + "e", serData, defaultAcls);
+        String lastErrorPath = ClusterUtils.lastErrorPath(stormId, componentId);
         stateStorage.set_data(lastErrorPath, serData, defaultAcls);
         List<String> childrens = stateStorage.get_children(path, false);
 
@@ -831,7 +836,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     @Override
     public void disconnect() {
         stateStorage.unregister(stateId);
-        if (solo) {
+        if (shouldCloseStateStorageOnDisconnect) {
             stateStorage.close();
             this.assignmentsBackend.close();
         }

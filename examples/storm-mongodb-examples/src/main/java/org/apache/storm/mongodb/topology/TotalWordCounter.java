@@ -15,7 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.topology;
+
+import static org.apache.storm.utils.Utils.tuple;
+
+import java.math.BigInteger;
+import java.util.Map;
+import java.util.Random;
 
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
@@ -26,36 +33,35 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.Map;
-import java.util.Random;
-
-import static org.apache.storm.utils.Utils.tuple;
-
 public class TotalWordCounter implements IBasicBolt {
 
     private BigInteger total = BigInteger.ZERO;
     private static final Logger LOG = LoggerFactory.getLogger(TotalWordCounter.class);
     private static final Random RANDOM = new Random();
+
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 
     /*
      * Just output the word value with a count of 1.
      */
+    @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         total = total.add(new BigInteger(input.getValues().get(1).toString()));
         collector.emit(tuple(total.toString()));
         //prints the total with low probability.
-        if(RANDOM.nextInt(1000) > 995) {
+        if (RANDOM.nextInt(1000) > 995) {
             LOG.info("Running total = " + total);
         }
     }
 
+    @Override
     public void cleanup() {
         LOG.info("Final total = " + total);
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("total"));
     }

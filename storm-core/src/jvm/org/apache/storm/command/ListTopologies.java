@@ -27,11 +27,18 @@ public class ListTopologies {
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
             @Override
             public void run(Nimbus.Iface nimbus) throws Exception {
-                List<TopologySummary> topologies = nimbus.getClusterInfo().get_topologies();
+                List<TopologySummary> topologies = nimbus.getTopologySummaries();
                 if (topologies == null || topologies.isEmpty()) {
                     System.out.println("No topologies running.");
                 } else {
-                    System.out.printf(MSG_FORMAT, "Topology_name", "Status", "Num_tasks", "Num_workers", "Uptime_secs", "Topology_Id", "Owner");
+                    System.out.printf(MSG_FORMAT,
+                            "Topology_name",
+                            "Status",
+                            "Num_tasks",
+                            "Num_workers",
+                            "Uptime_secs",
+                            "Topology_Id",
+                            "Owner");
                     System.out.println("----------------------------------------------------------------------------------------");
                     for (TopologySummary topology : topologies) {
                         System.out.printf(MSG_FORMAT, topology.get_name(), topology.get_status(),

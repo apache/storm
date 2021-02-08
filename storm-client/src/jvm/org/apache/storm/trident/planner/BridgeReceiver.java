@@ -19,19 +19,19 @@ import org.apache.storm.trident.tuple.TridentTuple;
 
 public class BridgeReceiver implements TupleReceiver {
 
-    BatchOutputCollector _collector;
+    BatchOutputCollector collector;
 
     public BridgeReceiver(BatchOutputCollector collector) {
-        _collector = collector;
+        this.collector = collector;
     }
 
     @Override
     public void execute(ProcessorContext context, String streamId, TridentTuple tuple) {
-        _collector.emit(streamId, new ConsList(context.batchId, tuple));
+        collector.emit(streamId, new ConsList(context.batchId, tuple));
     }
 
     @Override
     public void flush() {
-        _collector.flush();
+        collector.flush();
     }
 }

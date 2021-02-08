@@ -27,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.storm.Config;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidationAnnotations.ValidatorParams;
@@ -51,16 +53,6 @@ public class ConfigValidation {
     private static final int ACC_FINAL = 0x0010;
     private static final int DESIRED_FIELD_ACC = ACC_PUBLIC | ACC_STATIC | ACC_FINAL;
     private static List<Class<?>> configClasses = null;
-
-    /**
-     * Validates a field given field name as string uses Config.java as the default config class
-     *
-     * @param fieldName provided as a string
-     * @param conf      map of confs
-     */
-    public static void validateField(String fieldName, Map<String, Object> conf) {
-        validateField(fieldName, conf, getConfigClasses());
-    }
 
     public static synchronized List<Class<?>> getConfigClasses() {
         if (configClasses == null) {
@@ -89,10 +81,20 @@ public class ConfigValidation {
                     throw new RuntimeException(e);
                 }
             }
-            LOG.debug("Will use {} for validation", ret);
+            LOG.info("Will use {} for validation", ret);
             configClasses = ret;
         }
         return configClasses;
+    }
+
+    /**
+     * Validates a field given field name as string uses Config.java as the default config class
+     *
+     * @param fieldName provided as a string
+     * @param conf      map of confs
+     */
+    public static void validateField(String fieldName, Map<String, Object> conf) {
+        validateField(fieldName, conf, getConfigClasses());
     }
 
     /**
@@ -187,12 +189,6 @@ public class ConfigValidation {
         validateFields(conf, getConfigClasses());
     }
 
-    public static boolean isFieldAllowed(Field field) {
-        return field.getAnnotation(NotConf.class) == null
-               && String.class.equals(field.getType())
-               && ((field.getModifiers() & DESIRED_FIELD_ACC) == DESIRED_FIELD_ACC) && !field.isSynthetic();
-    }
-
     /**
      * Validate all confs in map.
      *
@@ -221,6 +217,12 @@ public class ConfigValidation {
                 }
             }
         }
+    }
+
+    public static boolean isFieldAllowed(Field field) {
+        return field.getAnnotation(NotConf.class) == null
+               && String.class.equals(field.getType())
+               && ((field.getModifiers() & DESIRED_FIELD_ACC) == DESIRED_FIELD_ACC) && !field.isSynthetic();
     }
 
     private static Map<String, Object> getParamsFromAnnotation(Class<?> validatorClass, Object v)
@@ -304,7 +306,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Checks if the named type derives from the specified Class
+     * Checks if the named type derives from the specified Class.
      */
     public static class DerivedTypeValidator extends Validator {
 
@@ -586,8 +588,8 @@ public class ConfigValidation {
                         ((Validator) v).validateField(name + " list entry", entry);
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in ListEntryCustomValidator.  Individual entry validators must a instance of " +
-                            "Validator class",
+                            "validator: {} cannot be used in ListEntryCustomValidator. "
+                                    + "Individual entry validators must be an instance of Validator class",
                             validator.getName());
                     }
                 }
@@ -656,8 +658,8 @@ public class ConfigValidation {
                         ((Validator) keyValidator).validateField(name + " Map key", entry.getKey());
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in MapEntryCustomValidator to validate keys.  Individual entry validators must " +
-                            "a instance of Validator class",
+                            "validator: {} cannot be used in MapEntryCustomValidator to validate keys. "
+                                    + "Individual entry validators must be an instance of Validator class",
                             kv.getName());
                     }
                 }
@@ -667,8 +669,8 @@ public class ConfigValidation {
                         ((Validator) valueValidator).validateField(name + " Map value", entry.getValue());
                     } else {
                         LOG.warn(
-                            "validator: {} cannot be used in MapEntryCustomValidator to validate values.  Individual entry validators " +
-                            "must a instance of Validator class",
+                            "validator: {} cannot be used in MapEntryCustomValidator to validate values. "
+                                    + "Individual entry validators must be an instance of Validator class",
                             vv.getName());
                     }
                 }
@@ -761,12 +763,8 @@ public class ConfigValidation {
     }
 
     public static class MetricReportersValidator extends Validator {
-        private static final String NIMBUS = "nimbus";
-        private static final String SUPERVISOR = "supervisor";
-        private static final String WORKER = "worker";
         private static final String CLASS = "class";
         private static final String FILTER = "filter";
-        private static final String DAEMONS = "daemons";
 
         @Override
         public void validateField(String name, Object o) {
@@ -776,25 +774,6 @@ public class ConfigValidation {
             SimpleTypeValidator.validateField(name, Map.class, o);
             if (!((Map) o).containsKey(CLASS)) {
                 throw new IllegalArgumentException("Field " + name + " must have map entry with key: class");
-            }
-            if (!((Map) o).containsKey(DAEMONS)) {
-                throw new IllegalArgumentException("Field " + name + " must have map entry with key: daemons");
-            } else {
-                // daemons can only be 'nimbus', 'supervisor', or 'worker'
-                Object list = ((Map) o).get(DAEMONS);
-                if (!(list instanceof List)) {
-                    throw new IllegalArgumentException("Field 'daemons' must be a non-null list.");
-                }
-                List daemonList = (List) list;
-                for (Object string : daemonList) {
-                    if (string instanceof String
-                        && (string.equals(NIMBUS) || string.equals(SUPERVISOR) || string.equals(WORKER))) {
-                        continue;
-                    }
-                    throw new IllegalArgumentException("Field 'daemons' must contain at least one of the following:"
-                                                       + " \"nimbus\", \"supervisor\", or \"worker\"");
-                }
-
             }
             if (((Map) o).containsKey(FILTER)) {
                 Map filterMap = (Map) ((Map) o).get(FILTER);
@@ -850,6 +829,125 @@ public class ConfigValidation {
         }
     }
 
+    public static class CustomIsExactlyOneOfValidators extends Validator {
+        private Class<?>[] subValidators;
+        private List<String> validatorClassNames;
+
+        public CustomIsExactlyOneOfValidators(Map<String, Object> params) {
+            this.subValidators = (Class<?>[]) params.get(ConfigValidationAnnotations.ValidatorParams.VALUE_VALIDATOR_CLASSES);
+            this.validatorClassNames = Arrays.asList(subValidators).stream().map(x -> x.getName()).collect(Collectors.toList());
+        }
+
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+
+            HashMap<String, Exception> validatorExceptions = new HashMap<>();
+            Set<String> selectedValidators = new HashSet<>();
+            for (Class<?> vv : subValidators) {
+                Object valueValidator;
+                try {
+                    valueValidator = vv.getConstructor().newInstance();
+                } catch (Exception ex) {
+                    throw new IllegalArgumentException(vv.getName() + " instantiation failure", ex);
+                }
+                if (valueValidator instanceof Validator) {
+                    try {
+                        ((Validator) valueValidator).validateField(name + " " + vv.getSimpleName() + " value", o);
+                        selectedValidators.add(vv.getName());
+                    } catch (Exception ex) {
+                        // only one will pass, so ignore all validation errors - stored for future use
+                        validatorExceptions.put(vv.getName(), ex);
+                    }
+                } else {
+                    String err = String.format("validator: %s cannot be used in CustomExactlyOneOfValidators to validate values. "
+                            + "Individual entry validators must a instance of Validator class", vv.getName());
+                    LOG.warn(err);
+                }
+            }
+            // check if one and only one validation succeeded
+            if (selectedValidators.isEmpty()) {
+                String parseErrs = String.join(";\n\t", validatorExceptions.entrySet().stream()
+                        .map(e -> String.format("%s:%s", e.getKey(), e.getValue())).collect(Collectors.toList()));
+                String err = String.format("Field %s must be one of %s; parse errors are \n\t%s", name,
+                        String.join(", ", validatorClassNames), parseErrs);
+                throw new IllegalArgumentException(err);
+            }
+            if (selectedValidators.size() > 1) {
+                throw new IllegalArgumentException("Field " + name + " must match exactly one of " + String.join(", ", selectedValidators));
+            }
+        }
+    }
+
+    public static class RasConstraintsTypeValidator extends Validator {
+        public static final String CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT = "maxNodeCoLocationCnt";
+        public static final String CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS = "incompatibleComponents";
+
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            if (!(o instanceof Map)) {
+                throw new IllegalArgumentException(
+                        "Field " + name + " must be an Iterable containing only Map of Maps");
+            }
+            Map<String, Object> map1 = (Map<String, Object>) o;
+            for (Map.Entry<String, Object> entry1: map1.entrySet()) {
+                String comp1 = entry1.getKey();
+                Object o2 = entry1.getValue();
+                if (!(o2 instanceof Map)) {
+                    String err = String.format("Field %s, component %s, expecting constraints Map with keys [\"%s\", \"%s\"], in \"%s\"",
+                            name, comp1, CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, o);
+                    throw new IllegalArgumentException(err);
+                }
+                Map<String, Object> map2 = (Map<String, Object>) o2;
+                for (Map.Entry<String, Object> entry2: map2.entrySet()) {
+                    String constraintType = entry2.getKey();
+                    Object o3 = entry2.getValue();
+                    switch (constraintType) {
+                        case CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT:
+                            try {
+                                Integer.parseInt("" + o3);
+                            } catch (Exception ex) {
+                                String err = String.format("Field %s, component %s, constraint %s should be a number, not \"%s\"",
+                                        name, comp1, constraintType, o3);
+                                throw new IllegalArgumentException(err);
+                            }
+                            break;
+
+                        case CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS:
+                            if (o3 instanceof String) {
+                                break;
+                            } else if (o3 instanceof List) {
+                                for (Object otherComp : (List) o3) {
+                                    if (otherComp instanceof String) {
+                                        continue;
+                                    }
+                                    String err = String.format(
+                                            "Field %s, component %s, constraintType \"%s\", expecting incompatible component-name, "
+                                                    + "found instance of class \"%s\" value \"%s\"",
+                                            name, comp1, constraintType, o3.getClass().getName(), otherComp);
+                                    throw new IllegalArgumentException(err);
+                                }
+                            }
+                            break;
+
+                        default:
+                            String err = String.format(
+                                    "Field %s, component %s, has unsupported constraintType \"%s\", expecting one of [\"%s\", \"%s\"], "
+                                            + "in \"%s\"",
+                                    name, comp1, constraintType, CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
+                                    CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, o);
+                            throw new IllegalArgumentException(err);
+                    }
+                }
+            }
+        }
+    }
+
     public static class UserResourcePoolEntryValidator extends Validator {
 
         @Override
@@ -896,12 +994,12 @@ public class ConfigValidation {
                 //To support topologies of older version to run, we might have to loose the constraints so that
                 //the configs of older version can pass the validation.
                 if (className.startsWith("backtype.storm")) {
-                    LOG.error("ClassNotFoundException: {}", className);
+                    LOG.warn("ClassNotFoundException: {}", className);
                     LOG.warn("Replace backtype.storm with org.apache.storm and try to validate again");
                     LOG.warn("We loosen some constraints here to support topologies of older version running on the current version");
                     validateField(name, className.replace("backtype.storm", "org.apache.storm"));
                 } else {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Failed to validate config " + name + " with value " + className, e);
                 }
             }
         }

@@ -51,7 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A builder for constructing a {@link StormTopology} via storm streams api (DSL)
+ * A builder for constructing a {@link StormTopology} via storm streams api (DSL).
  */
 @InterfaceStability.Unstable
 public class StreamBuilder {
@@ -65,14 +65,14 @@ public class StreamBuilder {
     private String timestampFieldName = null;
 
     /**
-     * Creates a new {@link StreamBuilder}
+     * Creates a new {@link StreamBuilder}.
      */
     public StreamBuilder() {
         graph = new DefaultDirectedGraph<>(new StreamsEdgeFactory());
     }
 
     /**
-     * Creates a new {@link Stream} of tuples from the given {@link IRichSpout}
+     * Creates a new {@link Stream} of tuples from the given {@link IRichSpout}.
      *
      * @param spout the spout
      * @return the new stream
@@ -196,18 +196,6 @@ public class StreamBuilder {
         return addNode(parent, child, parent.getOutputStreams().iterator().next(), parallelism);
     }
 
-    // insert child in-between parent and its current child nodes
-    Node insert(Node parent, Node child) {
-        Node newChild = addNode(parent, child);
-        for (Edge edge : graph.outgoingEdgesOf(parent)) {
-            Node oldChild = edge.getTarget();
-            graph.removeEdge(parent, oldChild);
-            oldChild.removeParentStreams(parent);
-            addNode(newChild, oldChild);
-        }
-        return newChild;
-    }
-
     Node addNode(Node parent, Node child, String parentStreamId) {
         return addNode(parent, child, parentStreamId, parent.getParallelism());
     }
@@ -224,9 +212,13 @@ public class StreamBuilder {
         if (!(child instanceof PartitionNode)) {
             if (child.getGroupingInfo() != null) {
                 if (!child.getGroupingInfo().equals(parent.getGroupingInfo())) {
-                    throw new IllegalStateException("Trying to assign grouping info for node" +
-                                                    " with current grouping info: " + child.getGroupingInfo() +
-                                                    " to: " + parent.getGroupingInfo() + " Node: " + child);
+                    throw new IllegalStateException("Trying to assign grouping info for node"
+                            + " with current grouping info: "
+                            + child.getGroupingInfo()
+                            + " to: "
+                            + parent.getGroupingInfo()
+                            + " Node: "
+                            + child);
                 }
             } else {
                 child.setGroupingInfo(parent.getGroupingInfo());
@@ -236,6 +228,18 @@ public class StreamBuilder {
             child.setWindowed(parent.isWindowed());
         }
         return child;
+    }
+
+    // insert child in-between parent and its current child nodes
+    Node insert(Node parent, Node child) {
+        Node newChild = addNode(parent, child);
+        for (Edge edge : graph.outgoingEdgesOf(parent)) {
+            Node oldChild = edge.getTarget();
+            graph.removeEdge(parent, oldChild);
+            oldChild.removeParentStreams(parent);
+            addNode(newChild, oldChild);
+        }
+        return newChild;
     }
 
     private PriorityQueue<Node> queue() {
@@ -248,16 +252,16 @@ public class StreamBuilder {
              * UpdateStateByKeyProcessor has a higher priority than StateQueryProcessor so that StateQueryProcessor
              * can be mapped to the same StatefulBolt that UpdateStateByKeyProcessor is part of.
              */
-            Map<Class<?>, Integer> p = new HashMap<>();
+            Map<Class<?>, Integer> map = new HashMap<>();
 
             {
-                p.put(SpoutNode.class, 0);
-                p.put(UpdateStateByKeyProcessor.class, 1);
-                p.put(ProcessorNode.class, 2);
-                p.put(PartitionNode.class, 3);
-                p.put(WindowNode.class, 4);
-                p.put(StateQueryProcessor.class, 5);
-                p.put(SinkNode.class, 6);
+                map.put(SpoutNode.class, 0);
+                map.put(UpdateStateByKeyProcessor.class, 1);
+                map.put(ProcessorNode.class, 2);
+                map.put(PartitionNode.class, 3);
+                map.put(WindowNode.class, 4);
+                map.put(StateQueryProcessor.class, 5);
+                map.put(SinkNode.class, 6);
             }
 
             @Override
@@ -270,12 +274,12 @@ public class StreamBuilder {
                 // check if processor has specific priority first
                 if (node instanceof ProcessorNode) {
                     Processor processor = ((ProcessorNode) node).getProcessor();
-                    priority = p.get(processor.getClass());
+                    priority = map.get(processor.getClass());
                     if (priority != null) {
                         return priority;
                     }
                 }
-                priority = p.get(node.getClass());
+                priority = map.get(node.getClass());
                 if (priority != null) {
                     return priority;
                 }

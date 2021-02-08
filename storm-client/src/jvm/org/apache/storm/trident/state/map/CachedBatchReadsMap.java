@@ -19,25 +19,25 @@ import java.util.Map;
 
 
 public class CachedBatchReadsMap<T> {
-    public IBackingMap<T> _delegate;
-    Map<List<Object>, T> _cached = new HashMap<List<Object>, T>();
+    public IBackingMap<T> delegate;
+    Map<List<Object>, T> cached = new HashMap<List<Object>, T>();
 
     public CachedBatchReadsMap(IBackingMap<T> delegate) {
-        _delegate = delegate;
+        this.delegate = delegate;
     }
 
     public void reset() {
-        _cached.clear();
+        cached.clear();
     }
 
     public List<RetVal<T>> multiGet(List<List<Object>> keys) {
         // TODO: can optimize further by only querying backing map for keys not in the cache
-        List<T> vals = _delegate.multiGet(keys);
+        List<T> vals = delegate.multiGet(keys);
         List<RetVal<T>> ret = new ArrayList(vals.size());
         for (int i = 0; i < keys.size(); i++) {
             List<Object> key = keys.get(i);
-            if (_cached.containsKey(key)) {
-                ret.add(new RetVal(_cached.get(key), true));
+            if (cached.containsKey(key)) {
+                ret.add(new RetVal(cached.get(key), true));
             } else {
                 ret.add(new RetVal(vals.get(i), false));
             }
@@ -46,7 +46,7 @@ public class CachedBatchReadsMap<T> {
     }
 
     public void multiPut(List<List<Object>> keys, List<T> vals) {
-        _delegate.multiPut(keys, vals);
+        delegate.multiPut(keys, vals);
         cache(keys, vals);
     }
 
@@ -54,7 +54,7 @@ public class CachedBatchReadsMap<T> {
         for (int i = 0; i < keys.size(); i++) {
             List<Object> key = keys.get(i);
             T val = vals.get(i);
-            _cached.put(key, val);
+            cached.put(key, val);
         }
     }
 

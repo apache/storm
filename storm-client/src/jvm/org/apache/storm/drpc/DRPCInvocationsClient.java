@@ -25,6 +25,7 @@ import org.apache.storm.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCInvocationsClient extends ThriftClient implements DistributedRPCInvocations.Iface {
     public static final Logger LOG = LoggerFactory.getLogger(DRPCInvocationsClient.class);
     private final AtomicReference<DistributedRPCInvocations.Client> client = new AtomicReference<>();
@@ -35,7 +36,7 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
         super(conf, ThriftConnectionType.DRPC_INVOCATIONS, host, port, null);
         this.host = host;
         this.port = port;
-        client.set(new DistributedRPCInvocations.Client(_protocol));
+        client.set(new DistributedRPCInvocations.Client(protocol));
     }
 
     public String getHost() {
@@ -49,7 +50,7 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
     public void reconnectClient() throws TException {
         if (client.get() == null) {
             reconnect();
-            client.set(new DistributedRPCInvocations.Client(_protocol));
+            client.set(new DistributedRPCInvocations.Client(protocol));
         }
     }
 
@@ -57,6 +58,7 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
         return client.get() != null;
     }
 
+    @Override
     public void result(String id, String result) throws TException, AuthorizationException {
         DistributedRPCInvocations.Client c = client.get();
         try {
@@ -72,6 +74,7 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
         }
     }
 
+    @Override
     public DRPCRequest fetchRequest(String func) throws TException, AuthorizationException {
         DistributedRPCInvocations.Client c = client.get();
         try {
@@ -87,6 +90,7 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
         }
     }
 
+    @Override
     public void failRequest(String id) throws TException, AuthorizationException {
         DistributedRPCInvocations.Client c = client.get();
         try {

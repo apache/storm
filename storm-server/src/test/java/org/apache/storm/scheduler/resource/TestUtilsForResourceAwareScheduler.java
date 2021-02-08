@@ -31,6 +31,7 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.ConstraintSolverStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -81,7 +82,7 @@ public class TestUtilsForResourceAwareScheduler {
             }
         }
     }
-
+    
     public static TestUserResources userRes(String name, double cpu, double mem) {
         return new TestUserResources(name, cpu, mem);
     }
@@ -100,6 +101,13 @@ public class TestUtilsForResourceAwareScheduler {
             res.addSelfTo(ret);
         }
         return ret;
+    }
+
+    public static Config createCSSClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                                Map<String, Map<String, Number>> pools) {
+        Config config = createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, ConstraintSolverStrategy.class.getName());
+        return config;
     }
 
     public static Config createGrasClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
@@ -316,13 +324,16 @@ public class TestUtilsForResourceAwareScheduler {
             _isDistributed = isDistributed;
         }
 
+        @Override
         public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
             _collector = collector;
         }
 
+        @Override
         public void close() {
         }
 
+        @Override
         public void nextTuple() {
             Utils.sleep(100);
             final String[] words = new String[]{ "nathan", "mike", "jackson", "golda", "bertels" };
@@ -331,12 +342,15 @@ public class TestUtilsForResourceAwareScheduler {
             _collector.emit(new Values(word));
         }
 
+        @Override
         public void ack(Object msgId) {
         }
 
+        @Override
         public void fail(Object msgId) {
         }
 
+        @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
             declarer.declare(new Fields("word"));
         }
@@ -434,6 +448,30 @@ public class TestUtilsForResourceAwareScheduler {
             assertStatusSuccess(cluster, topoId);
             assert (cluster.getAssignmentById(topoId) != null) : topoName;
             assert (cluster.needsSchedulingRas(td) == false) : topoName;
+        }
+    }
+
+    public static void assertTopologiesBeenEvicted(Cluster cluster, Set<String> evictedTopologies, String... topoNames) {
+        Topologies topologies = cluster.getTopologies();
+        LOG.info("Evicted topos: {}", evictedTopologies);
+        assert (evictedTopologies != null);
+        for (String topoName : topoNames) {
+            TopologyDetails td = topologies.getByName(topoName);
+            assert (td != null) : topoName;
+            String topoId = td.getId();
+            assert (evictedTopologies.contains(topoId)) : topoName;
+        }
+    }
+
+    public static void assertTopologiesNotBeenEvicted(Cluster cluster, Set<String> evictedTopologies, String... topoNames) {
+        Topologies topologies = cluster.getTopologies();
+        LOG.info("Evicted topos: {}", evictedTopologies);
+        assert (evictedTopologies != null);
+        for (String topoName : topoNames) {
+            TopologyDetails td = topologies.getByName(topoName);
+            assert (td != null) : topoName;
+            String topoId = td.getId();
+            assert (!evictedTopologies.contains(topoId)) : topoName;
         }
     }
 

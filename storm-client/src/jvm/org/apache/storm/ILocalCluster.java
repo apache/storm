@@ -12,15 +12,19 @@
 
 package org.apache.storm;
 
+import java.util.List;
 import java.util.Map;
 import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.Credentials;
+import org.apache.storm.generated.GetInfoOptions;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.thrift.TException;
 
 /**
@@ -28,26 +32,24 @@ import org.apache.storm.thrift.TException;
  */
 public interface ILocalCluster extends AutoCloseable {
     /**
-     * Submit a topology to be run in local mode
+     * Submit a topology to be run in local mode.
      *
      * @param topologyName the name of the topology to use
      * @param conf         the config for the topology
      * @param topology     the topology itself.
      * @return an AutoCloseable that will kill the topology.
-     *
      * @throws TException on any error from nimbus
      */
     ILocalTopology submitTopology(String topologyName, Map<String, Object> conf, StormTopology topology) throws TException;
 
     /**
-     * Submit a topology to be run in local mode
+     * Submit a topology to be run in local mode.
      *
      * @param topologyName the name of the topology to use
      * @param conf         the config for the topology
      * @param topology     the topology itself.
      * @param submitOpts   options for topology
      * @return an AutoCloseable that will kill the topology.
-     *
      * @throws TException on any error from nimbus
      */
     ILocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf, StormTopology topology,
@@ -63,7 +65,7 @@ public interface ILocalCluster extends AutoCloseable {
     void uploadNewCredentials(String topologyName, Credentials creds) throws TException;
 
     /**
-     * Kill a topology (if you are not using ILocalTopology)
+     * Kill a topology (if you are not using ILocalTopology).
      *
      * @param topologyName the name of the topology
      * @throws TException on any error from nimbus
@@ -71,7 +73,7 @@ public interface ILocalCluster extends AutoCloseable {
     void killTopology(String topologyName) throws TException;
 
     /**
-     * Kill a topology (if you are not using ILocalTopology)
+     * Kill a topology (if you are not using ILocalTopology).
      *
      * @param topologyName the name of the topology
      * @param options      for how to kill the topology
@@ -80,7 +82,7 @@ public interface ILocalCluster extends AutoCloseable {
     void killTopologyWithOpts(String name, KillOptions options) throws TException;
 
     /**
-     * Activate a topology
+     * Activate a topology.
      *
      * @param topologyName the name of the topology to activate
      * @throws TException on any error from nimbus
@@ -88,7 +90,7 @@ public interface ILocalCluster extends AutoCloseable {
     void activate(String topologyName) throws TException;
 
     /**
-     * Deactivate a topology
+     * Deactivate a topology.
      *
      * @param topologyName the name of the topology to deactivate
      * @throws TException on any error from nimbus
@@ -96,7 +98,7 @@ public interface ILocalCluster extends AutoCloseable {
     void deactivate(String topologyName) throws TException;
 
     /**
-     * Rebalance a topology
+     * Rebalance a topology.
      *
      * @param name    the name of the topology
      * @param options options for rebalanceing the topology.
@@ -113,41 +115,73 @@ public interface ILocalCluster extends AutoCloseable {
     void shutdown();
 
     /**
-     * The config of a topology as a JSON string
+     * The config of a topology as a JSON string.
      *
      * @param id the id of the topology (not the name)
      * @return The config of a topology as a JSON string
-     *
      * @throws TException on any error from nimbus
      */
     String getTopologyConf(String id) throws TException;
 
     /**
-     * Get the compiled storm topology
+     * Get the compiled storm topology.
      *
      * @param id the id of the topology (not the name)
      * @return the compiled storm topology
-     *
      * @throws TException on any error from nimbus
      */
     StormTopology getTopology(String id) throws TException;
 
     /**
+     * Get cluster information.
      * @return a summary of the current state of the cluster
-     *
      * @throws TException on any error from nimbus
      */
     ClusterSummary getClusterInfo() throws TException;
 
+    List<TopologySummary> getTopologySummaries() throws TException;
+
+    TopologySummary getTopologySummaryByName(String name) throws TException;
+
+    TopologySummary getTopologySummary(String id) throws TException;
+
     /**
-     * Get the state of a topology
+     * Get the state of a topology.
      *
      * @param id the id of the topology (not the name)
      * @return the state of a topology
-     *
      * @throws TException on any error from nimbus
      */
     TopologyInfo getTopologyInfo(String id) throws TException;
+
+    /**
+     * Get the state of a topology.
+     *
+     * @param name the name of the topology (not the id)
+     * @return the state of a topology
+     * @throws TException on any error from nimbus
+     */
+    TopologyInfo getTopologyInfoByName(String name) throws TException;
+
+    /**
+     * Get the state of a topology.
+     *
+     * @param id the id of the topology (not the name)
+     * @param options This is to choose number of Error(s) in TopologyInfo.
+     * @return the state of a topology
+     * @throws TException on any error from nimbus
+     */
+    TopologyInfo getTopologyInfoWithOpts(String id, GetInfoOptions options) throws TException;
+
+    /**
+     * Get the state of a topology.
+     *
+     * @param name the name of the topology (not the id)
+     * @param options This is GetInfoOptions to choose Error(s) in on TopologyInfo.
+     * @return the state of a topology
+     * @throws TException on any error from nimbus
+     */
+    TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws TException;
 
     /**
      * This is intended for internal testing only.
@@ -160,7 +194,6 @@ public interface ILocalCluster extends AutoCloseable {
      * Advance the cluster time when the cluster is using SimulatedTime. This is intended for internal testing only.
      *
      * @param secs the number of seconds to advance time
-     * @throws InterruptedException
      */
     void advanceClusterTime(int secs) throws InterruptedException;
 
@@ -169,7 +202,6 @@ public interface ILocalCluster extends AutoCloseable {
      *
      * @param secs  the number of seconds to advance time
      * @param steps the number of steps we should take when advancing simulated time
-     * @throws InterruptedException
      */
     void advanceClusterTime(int secs, int step) throws InterruptedException;
 

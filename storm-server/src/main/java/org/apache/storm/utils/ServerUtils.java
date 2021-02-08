@@ -20,22 +20,28 @@ package org.apache.storm.utils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -43,7 +49,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -60,9 +70,9 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
-import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.blobstore.LocalModeClientBlobStore;
+import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.generated.AccessControl;
 import org.apache.storm.generated.AccessControlType;
@@ -77,7 +87,7 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.security.auth.SingleUserPrincipal;
-import org.apache.storm.thrift.TException;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,12 +136,17 @@ public class ServerUtils {
         return null;
     }
 
-    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf,
+            NimbusInfo nimbusInfo,
+            ILeaderElector leaderElector) {
         return getNimbusBlobStore(conf, null, nimbusInfo, leaderElector);
     }
 
-    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo, ILeaderElector leaderElector) {
-        String type = (String)conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf,
+            String baseDir,
+            NimbusInfo nimbusInfo,
+            ILeaderElector leaderElector) {
+        String type = (String) conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
         if (type == null) {
             type = LocalFsBlobStore.class.getName();
         }
@@ -174,7 +189,7 @@ public class ServerUtils {
      * @param dir The input dir to get the disk space of this local dir
      * @return The total disk space of the input local directory
      */
-    public static long getDU(File dir) {
+    public static long getDiskUsage(File dir) {
         long size = 0;
         if (!dir.exists()) {
             return 0;
@@ -192,7 +207,7 @@ public class ServerUtils {
                         isSymLink = true;
                     }
                     if (!isSymLink) {
-                        size += getDU(allFiles[i]);
+                        size += getDiskUsage(allFiles[i]);
                     }
                 }
             }
@@ -213,27 +228,20 @@ public class ServerUtils {
     }
 
     /**
-     * Meant to be called only by the supervisor for stormjar/stormconf/stormcode files.
-     *
-     * @param key
-     * @param localFile
-     * @param cb
-     * @throws AuthorizationException
-     * @throws KeyNotFoundException
-     * @throws IOException
-     */
-    public static void downloadResourcesAsSupervisor(String key, String localFile,
-                                                     ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
-        _instance.downloadResourcesAsSupervisorImpl(key, localFile, cb);
-    }
-
-    /**
      * Returns the value of java.class.path System property. Kept separate for testing.
      *
      * @return the classpath
      */
     public static String currentClasspath() {
         return _instance.currentClasspathImpl();
+    }
+
+
+    /**
+     *  Returns the current thread classloader.
+     */
+    public static URL getResourceFromClassloader(String name) {
+        return _instance.getResourceFromClassloaderImpl(name);
     }
 
     /**
@@ -279,6 +287,20 @@ public class ServerUtils {
      */
     public static String writeScript(String dir, List<String> command,
                                      Map<String, String> environment) throws IOException {
+        return writeScript(dir, command, environment, null);
+    }
+
+    /**
+     * Writes a posix shell script file to be executed in its own process.
+     *
+     * @param dir         the directory under which the script is to be written
+     * @param command     the command the script is to execute
+     * @param environment optional environment variables to set before running the script's command. May be  null.
+     * @param umask umask to be set. It can be null.
+     * @return the path to the script that has been written
+     */
+    public static String writeScript(String dir, List<String> command,
+                                     Map<String, String> environment, String umask) throws IOException {
         String path = scriptFilePath(dir);
         try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
             out.write("#!/bin/bash");
@@ -297,6 +319,10 @@ public class ServerUtils {
                 }
             }
             out.newLine();
+            if (umask != null) {
+                out.write("umask " + umask);
+                out.newLine();
+            }
             out.write("exec " + shellCmd(command) + ";");
         }
         return path;
@@ -384,8 +410,7 @@ public class ServerUtils {
      */
     private static void ensureDirectory(File dir) throws IOException {
         if (!dir.mkdirs() && !dir.isDirectory()) {
-            throw new IOException("Mkdirs failed to create " +
-                                  dir.toString());
+            throw new IOException("Mkdirs failed to create " + dir.toString());
         }
     }
 
@@ -394,10 +419,9 @@ public class ServerUtils {
      * <p/>
      * This utility will untar ".tar" files and ".tar.gz","tgz" files.
      *
-     * @param inFile   The tar file as input.
-     * @param untarDir The untar directory where to untar the tar file.
-     * @param symlinksDisabled true if symlinks should be disabled, else false.
-     * @throws IOException
+     * @param inFile   The tar file as input
+     * @param untarDir The untar directory where to untar the tar file
+     * @param symlinksDisabled true if symlinks should be disabled, else false
      */
     public static void unTar(File inFile, File untarDir, boolean symlinksDisabled) throws IOException {
         ensureDirectory(untarDir);
@@ -437,8 +461,10 @@ public class ServerUtils {
         shexec.execute();
         int exitcode = shexec.getExitCode();
         if (exitcode != 0) {
-            throw new IOException("Error untarring file " + inFile +
-                                  ". Tar process exited with exit code " + exitcode);
+            throw new IOException("Error untarring file "
+                    + inFile
+                    + ". Tar process exited with exit code "
+                    + exitcode);
         }
     }
 
@@ -548,18 +574,18 @@ public class ServerUtils {
 
     public static void unpack(File localrsrc, File dst, boolean symLinksDisabled) throws IOException {
         String lowerDst = localrsrc.getName().toLowerCase();
-        if (lowerDst.endsWith(".jar") ||
-            lowerDst.endsWith("_jar")) {
+        if (lowerDst.endsWith(".jar")
+                || lowerDst.endsWith("_jar")) {
             unJar(localrsrc, dst);
-        } else if (lowerDst.endsWith(".zip") ||
-            lowerDst.endsWith("_zip")) {
+        } else if (lowerDst.endsWith(".zip")
+                || lowerDst.endsWith("_zip")) {
             unZip(localrsrc, dst);
-        } else if (lowerDst.endsWith(".tar.gz") ||
-            lowerDst.endsWith("_tar_gz") ||
-            lowerDst.endsWith(".tgz") ||
-            lowerDst.endsWith("_tgz") ||
-            lowerDst.endsWith(".tar") ||
-            lowerDst.endsWith("_tar")) {
+        } else if (lowerDst.endsWith(".tar.gz")
+                || lowerDst.endsWith("_tar_gz")
+                || lowerDst.endsWith(".tgz")
+                || lowerDst.endsWith("_tgz")
+                || lowerDst.endsWith(".tar")
+                || lowerDst.endsWith("_tar")) {
             unTar(localrsrc, dst, symLinksDisabled);
         } else {
             LOG.warn("Cannot unpack " + localrsrc);
@@ -577,10 +603,10 @@ public class ServerUtils {
      * Extracts the given file to the given directory. Only zip entries starting with the given prefix are extracted.
      * The prefix is stripped off entry names before extraction.
      *
-     * @param zipFile The zip file to extract.
-     * @param toDir The directory to extract to.
+     * @param zipFile The zip file to extract
+     * @param toDir The directory to extract to
      * @param prefix The prefix to look for in the zip file. If not null only paths starting with the prefix will be
-     * extracted.
+     *     extracted
      */
     public static void extractZipFile(ZipFile zipFile, File toDir, String prefix) throws IOException {
         ensureDirectory(toDir);
@@ -622,8 +648,7 @@ public class ServerUtils {
      * Given a File input it will unzip the file in a the unzip directory passed as the second parameter.
      *
      * @param inFile   The zip file as input
-     * @param toDir The unzip directory where to unzip the zip file.
-     * @throws IOException
+     * @param toDir The unzip directory where to unzip the zip file
      */
     public static void unZip(File inFile, File toDir) throws IOException {
         try (ZipFile zipFile = new ZipFile(inFile)) {
@@ -633,12 +658,10 @@ public class ServerUtils {
 
     /**
      * Given a zip File input it will return its size Only works for zip files whose uncompressed size is less than 4 GB, otherwise returns
-     * the size module 2^32, per gzip specifications
+     * the size module 2^32, per gzip specifications.
      *
      * @param myFile The zip file as input
      * @return zip file size as a long
-     *
-     * @throws IOException
      */
     public static long zipFileSize(File myFile) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(myFile, "r")) {
@@ -651,41 +674,13 @@ public class ServerUtils {
         }
     }
 
-    private static boolean downloadResourcesAsSupervisorAttempt(ClientBlobStore cb, String key, String localFile) {
-        boolean isSuccess = false;
-        try (FileOutputStream out = new FileOutputStream(localFile);
-             InputStreamWithMeta in = cb.getBlob(key);) {
-            long fileSize = in.getFileLength();
-
-            byte[] buffer = new byte[1024];
-            int len;
-            int downloadFileSize = 0;
-            while ((len = in.read(buffer)) >= 0) {
-                out.write(buffer, 0, len);
-                downloadFileSize += len;
-            }
-
-            isSuccess = (fileSize == downloadFileSize);
-        } catch (TException | IOException e) {
-            LOG.error("An exception happened while downloading {} from blob store.", localFile, e);
-        }
-        if (!isSuccess) {
-            try {
-                Files.deleteIfExists(Paths.get(localFile));
-            } catch (IOException ex) {
-                LOG.error("Failed trying to delete the partially downloaded {}", localFile, ex);
-            }
-        }
-        return isSuccess;
-    }
-
     /**
      * Check if the scheduler is resource aware or not.
      *
      * @param conf The configuration
      * @return True if it's resource aware; false otherwise
      */
-    public static boolean isRAS(Map<String, Object> conf) {
+    public static boolean isRas(Map<String, Object> conf) {
         if (conf.containsKey(DaemonConfig.STORM_SCHEDULER)) {
             if (conf.get(DaemonConfig.STORM_SCHEDULER).equals("org.apache.storm.scheduler.resource.ResourceAwareScheduler")) {
                 return true;
@@ -694,7 +689,7 @@ public class ServerUtils {
         return false;
     }
 
-    public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology)
+    public static int getEstimatedWorkerCountForRasTopo(Map<String, Object> topoConf, StormTopology topology)
         throws InvalidTopologyException {
         Double defaultWorkerMaxHeap = ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB), 768d);
         Double topologyWorkerMaxHeap = ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeap);
@@ -753,15 +748,684 @@ public class ServerUtils {
         return System.getProperty("java.class.path");
     }
 
-    public void downloadResourcesAsSupervisorImpl(String key, String localFile,
-                                                  ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
-        final int MAX_RETRY_ATTEMPTS = 2;
-        final int ATTEMPTS_INTERVAL_TIME = 100;
-        for (int retryAttempts = 0; retryAttempts < MAX_RETRY_ATTEMPTS; retryAttempts++) {
-            if (downloadResourcesAsSupervisorAttempt(cb, key, localFile)) {
-                break;
+
+    public URL getResourceFromClassloaderImpl(String name) {
+        return Thread.currentThread().getContextClassLoader().getResource(name);
+    }
+
+    private static final Pattern MEMINFO_PATTERN = Pattern.compile("^([^:\\s]+):\\s*([0-9]+)\\s*kB$");
+
+    /**
+     * Get system free memory in megabytes.
+     * @return system free memory in megabytes
+     * @throws IOException on I/O exception
+     */
+    public static long getMemInfoFreeMb() throws IOException {
+        //MemFree:        14367072 kB
+        //Buffers:          536512 kB
+        //Cached:          1192096 kB
+        // MemFree + Buffers + Cached
+        long memFree = 0;
+        long buffers = 0;
+        long cached = 0;
+        try (BufferedReader in = new BufferedReader(new FileReader("/proc/meminfo"))) {
+            String line = null;
+            while ((line = in.readLine()) != null) {
+                Matcher match = MEMINFO_PATTERN.matcher(line);
+                if (match.matches()) {
+                    String tag = match.group(1);
+                    if (tag.equalsIgnoreCase("MemFree")) {
+                        memFree = Long.parseLong(match.group(2));
+                    } else if (tag.equalsIgnoreCase("Buffers")) {
+                        buffers = Long.parseLong(match.group(2));
+                    } else if (tag.equalsIgnoreCase("Cached")) {
+                        cached = Long.parseLong(match.group(2));
+                    }
+                }
             }
-            Utils.sleep(ATTEMPTS_INTERVAL_TIME);
         }
+        return (memFree + buffers + cached) / 1024;
+    }
+
+    /**
+     * Is a process alive and running?.
+     *
+     * @param pid the PID of the running process
+     * @param user the user that is expected to own that process
+     * @return true if it is, else false
+     *
+     * @throws IOException on any error
+     */
+    public static boolean isProcessAlive(long pid, String user) throws IOException {
+        if (ServerUtils.IS_ON_WINDOWS) {
+            return isWindowsProcessAlive(pid, user);
+        }
+        return isPosixProcessAlive(pid, user);
+    }
+
+    private static boolean isWindowsProcessAlive(long pid, String user) throws IOException {
+        boolean ret = false;
+        LOG.debug("CMD: tasklist /fo list /fi \"pid eq {}\" /v", pid);
+        ProcessBuilder pb = new ProcessBuilder("tasklist", "/fo", "list", "/fi", "pid eq " + pid, "/v");
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD=LINE#{}: {}", lineNo, line);
+                if (line.contains("User Name:")) { //Check for : in case someone called their user "User Name"
+                    //This line contains the user name for the pid we're looking up
+                    //Example line: "User Name:    exampleDomain\exampleUser"
+                    List<String> userNameLineSplitOnWhitespace = Arrays.asList(line.split(":"));
+                    if (userNameLineSplitOnWhitespace.size() == 2) {
+                        List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
+                        String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
+                        processUser = processUser.trim();
+                        if (user.equals(processUser)) {
+                            ret = true;
+                        } else {
+                            LOG.info("Found {} running as {}, but expected it to be {}", pid, processUser, user);
+                        }
+                    } else {
+                        LOG.error("Received unexpected output from tasklist command. Expected one colon in user name line. Line was {}",
+                            line);
+                    }
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
+
+    private static boolean isPosixProcessAlive(long pid, String user) throws IOException {
+        LOG.debug("CMD: ps -o user -p {}", pid);
+        ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", String.valueOf(pid));
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 1;
+            String line = in.readLine();
+            LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+            if (!"USER".equals(line.trim())) {
+                LOG.error("Expecting first line to contain USER, found \"{}\"", line);
+                return false;
+            }
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                line = line.trim();
+                if (user.equals(line)) {
+                    return true;
+                }
+                LOG.info("Found {} running as {}, but expected it to be {}", pid, line, user);
+            }
+        } catch (IOException ex) {
+            String err = String.format("Cannot read output of command \"ps -o user -p %d\"", pid);
+            throw new IOException(err, ex);
+        }
+        return false;
+    }
+
+    /**
+     * Are any of the processes alive and running for the specified user. If collection is empty or null
+     * then the return value is trivially false.
+     *
+     * @param pids the PIDs of the running processes
+     * @param user the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    public static boolean isAnyProcessAlive(Collection<Long> pids, String user) throws IOException {
+        if (pids == null || pids.isEmpty()) {
+            return false;
+        }
+
+        if (ServerUtils.IS_ON_WINDOWS) {
+            return isAnyWindowsProcessAlive(pids, user);
+        }
+        return isAnyPosixProcessAlive(pids, user);
+    }
+
+    /**
+     * Are any of the processes alive and running for the specified userId. If collection is empty or null
+     * then the return value is trivially false.
+     *
+     * @param pids the PIDs of the running processes
+     * @param uid the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    public static boolean isAnyProcessAlive(Collection<Long> pids, int uid) throws IOException {
+        if (pids == null || pids.isEmpty()) {
+            return false;
+        }
+        if (ServerUtils.IS_ON_WINDOWS) {
+            return isAnyWindowsProcessAlive(pids, uid);
+        }
+        return isAnyPosixProcessAlive(pids, uid);
+    }
+
+    /**
+     * Find if any of the Windows processes are alive and owned by the specified user.
+     * Command reference https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/tasklist.
+     *
+     * @param pids the PIDs of the running processes
+     * @param user the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    private static boolean isAnyWindowsProcessAlive(Collection<Long> pids, String user) throws IOException {
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.add("tasklist");
+        cmdArgs.add("/fo");
+        cmdArgs.add("list");
+        pids.forEach(pid -> {
+            cmdArgs.add("/fi");
+            cmdArgs.add("pid eq " + pid);
+        });
+        cmdArgs.add("/v");
+        LOG.debug("CMD: {}", String.join(" ", cmdArgs));
+        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        List<String> unexpectedUsers = new ArrayList<>();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                if (line.contains("User Name:")) { //Check for : in case someone called their user "User Name"
+                    //This line contains the user name for the pid we're looking up
+                    //Example line: "User Name:    exampleDomain\exampleUser"
+                    List<String> userNameLineSplitOnWhitespace = Arrays.asList(line.split(":"));
+                    if (userNameLineSplitOnWhitespace.size() == 2) {
+                        List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
+                        String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
+                        processUser = processUser.trim();
+                        if (user.equals(processUser)) {
+                            return true;
+                        }
+                        unexpectedUsers.add(processUser);
+                    } else {
+                        LOG.error("Received unexpected output from tasklist command. Expected one colon in user name line. Line was {}",
+                            line);
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            String err = String.format("Cannot read output of command \"%s\"", String.join(" ", cmdArgs));
+            throw new IOException(err, ex);
+        }
+        String pidsAsStr = StringUtils.join(pids, ",");
+        if (unexpectedUsers.isEmpty()) {
+            LOG.info("None of the processes {} are alive", pidsAsStr);
+        } else {
+            LOG.info("{} of the Processes {} are running as user(s) {}: but expected user is {}",
+                unexpectedUsers.size(), pidsAsStr, String.join(",", new TreeSet<>(unexpectedUsers)), user);
+        }
+        return false;
+    }
+
+    /**
+     * Find if any of the Windows processes are alive and owned by the specified userId.
+     * This overridden method is provided for symmetry, but is not implemented.
+     *
+     * @param pids the PIDs of the running processes
+     * @param uid the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    private static boolean isAnyWindowsProcessAlive(Collection<Long> pids, int uid) throws IOException {
+        throw new IllegalArgumentException("UID is not supported on Windows");
+    }
+
+    /**
+     * Are any of the processes alive and running for the specified user.
+     *
+     * @param pids the PIDs of the running processes
+     * @param user the user that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    private static boolean isAnyPosixProcessAlive(Collection<Long> pids, String user) throws IOException {
+        String pidParams = StringUtils.join(pids, ",");
+        LOG.debug("CMD: ps -o user -p {}", pidParams);
+        ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", pidParams);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        List<String> unexpectedUsers = new ArrayList<>();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 1;
+            String line = in.readLine();
+            LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+            if (!"USER".equals(line.trim())) {
+                LOG.error("Expecting first line to contain USER, found \"{}\"", line);
+                return false;
+            }
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                line = line.trim();
+                if (user.equals(line)) {
+                    return true;
+                }
+                unexpectedUsers.add(line);
+            }
+        } catch (IOException ex) {
+            String err = String.format("Cannot read output of command \"ps -o user -p %s\"", pidParams);
+            throw new IOException(err, ex);
+        }
+        if (unexpectedUsers.isEmpty()) {
+            LOG.info("None of the processes {} are alive", pidParams);
+        } else {
+            LOG.info("{} of {} Processes {} are running as user(s) {}: but expected user is {}",
+                unexpectedUsers.size(), pids.size(), pidParams, String.join(",", new TreeSet<>(unexpectedUsers)), user);
+        }
+        return false;
+    }
+
+    /**
+     * Are any of the processes alive and running for the specified UID.
+     *
+     * @param pids the PIDs of the running processes
+     * @param uid the userId that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    private static boolean isAnyPosixProcessAlive(Collection<Long> pids, int uid) throws IOException {
+        String pidParams = StringUtils.join(pids, ",");
+        LOG.debug("CMD: ps -o uid -p {}", pidParams);
+        ProcessBuilder pb = new ProcessBuilder("ps", "-o", "uid", "-p", pidParams);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        List<String> unexpectedUsers = new ArrayList<>();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            int lineNo = 1;
+            String line = in.readLine();
+            LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+            if (!"UID".equals(line.trim())) {
+                LOG.error("Expecting first line to contain UID, found \"{}\"", line);
+                return false;
+            }
+            while ((line = in.readLine()) != null) {
+                lineNo++;
+                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                line = line.trim();
+                try {
+                    if (uid == Integer.parseInt(line)) {
+                        return true;
+                    }
+                } catch (Exception ex) {
+                    LOG.warn("Expecting UID integer but got {} in output of ps command", line);
+                }
+                unexpectedUsers.add(line);
+            }
+        } catch (IOException ex) {
+            String err = String.format("Cannot read output of command \"ps -o uid -p %s\"", pidParams);
+            throw new IOException(err, ex);
+        }
+        if (unexpectedUsers.isEmpty()) {
+            LOG.info("None of the processes {} are alive", pidParams);
+        } else {
+            LOG.info("{} of {} Processes {} are running as UIDs {}: but expected userId is {}",
+                unexpectedUsers.size(), pids.size(), pidParams, String.join(",", new TreeSet<>(unexpectedUsers)), uid);
+        }
+        return false;
+    }
+
+    /**
+     * Get the userId for a user name. This works on Posix systems by using "id -u" command.
+     * Throw IllegalArgumentException on Windows.
+     *
+     * @param user username to be converted to UID. This is optional, in which case current user is returned.
+     * @return UID for the specified user (if supplied), else UID of current user, -1 upon Exception.
+     */
+    public static int getUserId(String user) {
+        if (ServerUtils.IS_ON_WINDOWS) {
+            throw new IllegalArgumentException("Not supported in Windows platform");
+        }
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.add("id");
+        cmdArgs.add("-u");
+        if (user != null && !user.isEmpty()) {
+            cmdArgs.add(user);
+        }
+        LOG.debug("CMD: {}", String.join(" ", cmdArgs));
+        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            String line = in.readLine();
+            LOG.debug("CMD-LINE#1: {}", line);
+            try {
+                return Integer.parseInt(line.trim());
+            } catch (NumberFormatException ex) {
+                LOG.error("Expecting UID integer but got {} in output of \"id -u {}\" command", line, user);
+                return -1;
+            }
+        } catch (IOException ex) {
+            LOG.error(String.format("Cannot read output of command \"%s\"", String.join(" ", cmdArgs)), ex);
+            return -1;
+        }
+    }
+
+    /**
+     * Get the userId of the onwer of the path by running "ls -dn path" command.
+     * This command works on Posix systems only.
+     *
+     * @param fpath full path to the file or directory.
+     * @return UID for the specified if successful, -1 upon failure.
+     */
+    public static int getPathOwnerUid(String fpath) {
+        if (ServerUtils.IS_ON_WINDOWS) {
+            throw new IllegalArgumentException("Not supported in Windows platform");
+        }
+        File f = new File(fpath);
+        if (!f.exists()) {
+            LOG.error("Cannot determine owner of non-existent file {}", fpath);
+            return -1;
+        }
+        LOG.debug("CMD: ls -dn {}", fpath);
+        ProcessBuilder pb = new ProcessBuilder("ls", "-dn", fpath);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+            String line = in.readLine();
+            LOG.debug("CMD-OUTLINE: {}", line);
+            line = line.trim();
+            String[] parts = line.split("\\s+");
+            if (parts.length < 3) {
+                LOG.error("Expecting at least 3 space separated fields in \"ls -dn {}\" output, got {}", fpath, line);
+                return -1;
+            }
+            try {
+                return Integer.parseInt(parts[2]);
+            } catch (NumberFormatException ex) {
+                LOG.error("Expecting at third field {} to be numeric UID \"ls -dn {}\" output, got {}", parts[2], fpath, line);
+                return -1;
+            }
+        } catch (IOException ex) {
+            LOG.error(String.format("Cannot read output of command \"ls -dn %s\"", fpath), ex);
+            return -1;
+        }
+    }
+
+    /**
+     * Get UID of the owner to the workerId Root directory.
+     *
+     * @return User ID (UID) of owner of the workerId root directory, -1 if directory is missing.
+     */
+    private static int getWorkerPathOwnerUid(Map<String, Object> conf, String workerId) {
+        return getPathOwnerUid(ConfigUtils.workerRoot(conf, workerId));
+    }
+
+    private static final Map<String, Integer> cachedUserToUidMap = new ConcurrentHashMap<>();
+
+    /**
+     * Find if all processes for the user on workId are dead.
+     * This method attempts to optimize the calls by:
+     * <p>
+     *     <li>checking a collection of ProcessIds at once</li>
+     *     <li>using userId one Posix systems instead of user</li>
+     * </p>
+     *
+     * @return true if all processes for the user are dead on the worker
+     * @throws IOException if external commands have exception.
+     */
+    public static boolean areAllProcessesDead(Map<String, Object> conf, String user, String workerId, Set<Long> pids) throws IOException {
+        if (pids == null || pids.isEmpty()) {
+            return true;
+        }
+
+        if (ServerUtils.IS_ON_WINDOWS) {
+            return !isAnyProcessAlive(pids, user);
+        }
+        // optimized for Posix - first examine /proc and then use optimized version of "ps" with uid
+        try {
+            return !isAnyPosixProcessPidDirAlive(pids, user);
+        } catch (IOException ex) {
+            LOG.warn("Failed to determine if processes {} for user {} are dead using filesystem, will try \"ps\" command: {}",
+                    pids, user, ex);
+        }
+        if (!cachedUserToUidMap.containsKey(user)) {
+            int uid = ServerUtils.getWorkerPathOwnerUid(conf, workerId);
+            if (uid < 0) {
+                uid = ServerUtils.getUserId(user);
+            }
+            if (uid >= 0) {
+                cachedUserToUidMap.put(user, uid);
+            }
+        }
+        if (cachedUserToUidMap.containsKey(user)) {
+            return !ServerUtils.isAnyProcessAlive(pids, cachedUserToUidMap.get(user));
+        } else {
+            return !ServerUtils.isAnyProcessAlive(pids, user);
+        }
+    }
+
+    /**
+     * Find if the process is alive using the existence of /proc/&lt;pid&gt; directory
+     * owned by the supplied user. This is an alternative to "ps -p pid -u uid" command
+     * used in {@link #isAnyPosixProcessAlive(Collection, int)}
+     *
+     * <p>
+     * Processes are tracked using the existence of the directory "/proc/&lt;pid&gt;
+     * For each of the supplied PIDs, their PID directory is checked for existence and ownership
+     * by the specified uid.
+     * </p>
+     *
+     * @param pids Process IDs that need to be monitored for liveness
+     * @param user the userId that is expected to own that process
+     * @return true if any one of the processes is owned by user and alive, else false
+     * @throws IOException on I/O exception
+     */
+    public static boolean isAnyPosixProcessPidDirAlive(Collection<Long> pids, String user) throws IOException {
+        return isAnyPosixProcessPidDirAlive(pids, user, false);
+    }
+
+    /**
+     * Find if the process is alive using the existence of /proc/&lt;pid&gt; directory
+     * owned by the supplied expectedUser. This is an alternative to "ps -p pid -u uid" command
+     * used in {@link #isAnyPosixProcessAlive(Collection, int)}
+     *
+     * <p>
+     * Processes are tracked using the existence of the directory "/proc/&lt;pid&gt;
+     * For each of the supplied PIDs, their PID directory is checked for existence and ownership
+     * by the specified uid.
+     * </p>
+     *
+     * @param pids Process IDs that need to be monitored for liveness
+     * @param expectedUser the userId that is expected to own that process
+     * @param mockFileOwnerToUid if true (used for testing), then convert File.owner to UID
+     * @return true if any one of the processes is owned by expectedUser and alive, else false
+     * @throws IOException on I/O exception
+     */
+    @VisibleForTesting
+    public static boolean isAnyPosixProcessPidDirAlive(Collection<Long> pids, String expectedUser, boolean mockFileOwnerToUid)
+            throws IOException {
+        File procDir = new File("/proc");
+        if (!procDir.exists()) {
+            throw new IOException("Missing process directory " + procDir.getAbsolutePath() + ": method not supported on "
+                    + "os.name=" + System.getProperty("os.name"));
+        }
+        for (long pid: pids) {
+            File pidDir = new File(procDir, String.valueOf(pid));
+            if (!pidDir.exists()) {
+                continue;
+            }
+            // check if existing process is owned by the specified expectedUser, if not, the process is dead
+            String actualUser;
+            try {
+                actualUser = Files.getOwner(pidDir.toPath()).getName();
+            } catch (NoSuchFileException ex) {
+                continue; // process died before the expectedUser can be checked
+            }
+            if (mockFileOwnerToUid) {
+                // code activated in testing to simulate Files.getOwner returning UID (which sometimes happens in runtime)
+                if (StringUtils.isNumeric(actualUser)) {
+                    LOG.info("Skip mocking, since owner {} of pidDir {} is already numeric", actualUser, pidDir);
+                } else {
+                    Integer actualUid = cachedUserToUidMap.get(actualUser);
+                    if (actualUid == null) {
+                        actualUid = ServerUtils.getUserId(actualUser);
+                        if (actualUid < 0) {
+                            String err = String.format("Cannot get UID for %s, while mocking the owner of pidDir %s",
+                                    actualUser, pidDir.getAbsolutePath());
+                            throw new IOException(err);
+                        }
+                        cachedUserToUidMap.put(actualUser, actualUid);
+                        LOG.info("Found UID {} for {}, while mocking the owner of pidDir {}", actualUid, actualUser, pidDir);
+                    } else {
+                        LOG.info("Found cached UID {} for {}, while mocking the owner of pidDir {}", actualUid, actualUser, pidDir);
+                    }
+                    actualUser = String.valueOf(actualUid);
+                }
+            }
+            //sometimes uid is returned instead of username - if so, try to convert and compare with uid
+            if (StringUtils.isNumeric(actualUser)) {
+                // numeric actualUser - this is UID not user
+                LOG.debug("Process directory {} owner is uid={}", pidDir, actualUser);
+                int actualUid = Integer.parseInt(actualUser);
+                Integer expectedUid = cachedUserToUidMap.get(expectedUser);
+                if (expectedUid == null) {
+                    expectedUid = ServerUtils.getUserId(expectedUser);
+                    if (expectedUid < 0) {
+                        String err = String.format("Cannot get uid for %s to compare with owner id=%d of process directory %s",
+                                expectedUser, actualUid, pidDir.getAbsolutePath());
+                        throw new IOException(err);
+                    }
+                    cachedUserToUidMap.put(expectedUser, expectedUid);
+                }
+                if (expectedUid == actualUid) {
+                    LOG.debug("Process {} is alive and owned by expectedUser {}/{}", pid, expectedUser, expectedUid);
+                    return true;
+                }
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expectedUser {}/{}, "
+                        + "likely pid {} was reused for a new process for uid {}, {}",
+                        pidDir, actualUser, expectedUser, expectedUid, pid, actualUid, getProcessDesc(pidDir));
+            } else {
+                // actualUser is a string
+                LOG.debug("Process directory {} owner is {}", pidDir, actualUser);
+                if (expectedUser.equals(actualUser)) {
+                    LOG.debug("Process {} is alive and owned by expectedUser {}", pid, expectedUser);
+                    return true;
+                }
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expectedUser {}, "
+                        + "likely pid {} was reused for a new process for actualUser {}, {}}",
+                        pidDir, actualUser, expectedUser, pid, actualUser, getProcessDesc(pidDir));
+            }
+        }
+        LOG.info("None of the processes {} are alive AND owned by expectedUser {}", pids, expectedUser);
+        return false;
+    }
+
+    @VisibleForTesting
+    public static void validateTopologyWorkerMaxHeapSizeConfigs(
+        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMb)
+        throws InvalidTopologyException {
+
+        double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
+        double topologyWorkerMaxHeapSize =
+            ObjectReader.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeapSizeMb);
+        if (topologyWorkerMaxHeapSize < largestMemReq) {
+            throw new InvalidTopologyException(
+                "Topology will not be able to be successfully scheduled: Config "
+                    + "TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB="
+                    + topologyWorkerMaxHeapSize
+                    + " < " + largestMemReq + " (Largest memory requirement of a component in the topology)."
+                    + " Perhaps set TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB to a larger amount");
+        }
+    }
+
+    /**
+     * RAS scheduler will try to distribute ackers evenly over workers by adding some ackers to each newly launched worker.
+     * Validations are performed here:
+     * ({@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} * memory for an acker
+     *      + memory for the biggest topo executor) < max worker heap memory.
+     *    When RAS tries to schedule an executor to a new worker,
+     *    it will put {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} ackers into the worker first.
+     *    So {@link Config#TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB} need to be able to accommodate this.
+     * @param topoConf Topology conf
+     * @param topology Topology (not system topology)
+     * @param topoName The name of the topology
+     */
+    public static void validateTopologyAckerBundleResource(Map<String, Object> topoConf,
+                                                           StormTopology topology, String topoName)
+        throws InvalidTopologyException {
+
+        boolean oneExecutorPerWorker = (Boolean) topoConf.getOrDefault(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, false);
+        boolean oneComponentPerWorker = (Boolean) topoConf.getOrDefault(Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER, false);
+
+        double topologyWorkerMaxHeapSize =
+            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB));
+
+        int numOfAckerExecutorsPerWorker = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER));
+        double maxTopoExecMem = getMaxExecutorMemoryUsageForTopo(topology, topoConf);
+        double ackerExecMem = getAckerExecutorMemoryUsageForTopo(topology, topoConf);
+        double minMemReqForWorker = maxTopoExecMem + ackerExecMem * numOfAckerExecutorsPerWorker;
+
+        // A worker need to have enough resources for a bigest topo executor + topology.acker.executors.per.worker ackers
+        if (!oneExecutorPerWorker
+            && !oneComponentPerWorker
+            && topologyWorkerMaxHeapSize < minMemReqForWorker) {
+            String warnMsg
+                = String.format("For topology %s. Worker max on-heap limit %s is %s. "
+                    + "The biggest topo executor requires %s MB on-heap memory, "
+                    + "there might not be enough space for %s ackers. "
+                    + "Real acker-per-worker will be determined by scheduler.",
+                    topoName, Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, topologyWorkerMaxHeapSize,
+                    maxTopoExecMem, numOfAckerExecutorsPerWorker);
+            LOG.warn(warnMsg);
+        }
+    }
+
+    private static double getMaxExecutorMemoryUsageForTopo(
+        StormTopology topology, Map<String, Object> topologyConf) {
+        double largestMemoryOperator = 0.0;
+        for (NormalizedResourceRequest entry :
+            ResourceUtils.getBoltsResources(topology, topologyConf).values()) {
+            double memoryRequirement = entry.getTotalMemoryMb();
+            if (memoryRequirement > largestMemoryOperator) {
+                largestMemoryOperator = memoryRequirement;
+            }
+        }
+        for (NormalizedResourceRequest entry :
+            ResourceUtils.getSpoutsResources(topology, topologyConf).values()) {
+            double memoryRequirement = entry.getTotalMemoryMb();
+            if (memoryRequirement > largestMemoryOperator) {
+                largestMemoryOperator = memoryRequirement;
+            }
+        }
+        return largestMemoryOperator;
+    }
+
+    private static double getAckerExecutorMemoryUsageForTopo(
+        StormTopology topology, Map<String, Object> topologyConf)
+        throws InvalidTopologyException {
+        topology = StormCommon.systemTopology(topologyConf, topology);
+        Map<String, NormalizedResourceRequest> boltResources = ResourceUtils.getBoltsResources(topology, topologyConf);
+        NormalizedResourceRequest entry = boltResources.get(Acker.ACKER_COMPONENT_ID);
+        return entry.getTotalMemoryMb();
+    }
+
+    /**
+     * Support method to obtain additional log info for the process. Use the contents of comm and cmdline
+     * in the process directory. Note that this method works properly only on posix systems with /proc directory.
+     *
+     * @param pidDir PID directory (/proc/&lt;pid&gt;)
+     * @return process description string
+     */
+    private static String getProcessDesc(File pidDir) {
+        String comm = "";
+        Path p = pidDir.toPath().resolve("comm");
+        try {
+            comm = String.join(", ", Files.readAllLines(p));
+        } catch (IOException ex) {
+            LOG.warn("Cannot get contents of " + p, ex);
+        }
+        String cmdline = "";
+        p = pidDir.toPath().resolve("cmdline");
+        try {
+            cmdline = String.join(", ", Files.readAllLines(p)).replace('\0', ' ');
+        } catch (IOException ex) {
+            LOG.warn("Cannot get contents of " + p, ex);
+        }
+        return String.format("process(comm=\"%s\", cmdline=\"%s\")", comm, cmdline);
     }
 }

@@ -49,37 +49,37 @@ public class MultipleLoggerTopology {
     }
 
     public static class ExclamationLoggingBolt extends BaseRichBolt {
-        OutputCollector _collector;
-        Logger _rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        OutputCollector collector;
+        Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         // ensure the loggers are configured in the worker.xml before
         // trying to use them here
-        Logger _logger = LoggerFactory.getLogger("com.myapp");
-        Logger _subLogger = LoggerFactory.getLogger("com.myapp.sub");
+        Logger logger = LoggerFactory.getLogger("com.myapp");
+        Logger subLogger = LoggerFactory.getLogger("com.myapp.sub");
 
         @Override
         public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
-            _collector = collector;
+            this.collector = collector;
         }
 
         @Override
         public void execute(Tuple tuple) {
-            _rootLogger.debug("root: This is a DEBUG message");
-            _rootLogger.info("root: This is an INFO message");
-            _rootLogger.warn("root: This is a WARN message");
-            _rootLogger.error("root: This is an ERROR message");
+            rootLogger.debug("root: This is a DEBUG message");
+            rootLogger.info("root: This is an INFO message");
+            rootLogger.warn("root: This is a WARN message");
+            rootLogger.error("root: This is an ERROR message");
 
-            _logger.debug("myapp: This is a DEBUG message");
-            _logger.info("myapp: This is an INFO message");
-            _logger.warn("myapp: This is a WARN message");
-            _logger.error("myapp: This is an ERROR message");
+            logger.debug("myapp: This is a DEBUG message");
+            logger.info("myapp: This is an INFO message");
+            logger.warn("myapp: This is a WARN message");
+            logger.error("myapp: This is an ERROR message");
 
-            _subLogger.debug("myapp.sub: This is a DEBUG message");
-            _subLogger.info("myapp.sub: This is an INFO message");
-            _subLogger.warn("myapp.sub: This is a WARN message");
-            _subLogger.error("myapp.sub: This is an ERROR message");
+            subLogger.debug("myapp.sub: This is a DEBUG message");
+            subLogger.info("myapp.sub: This is an INFO message");
+            subLogger.warn("myapp.sub: This is a WARN message");
+            subLogger.error("myapp.sub: This is an ERROR message");
 
-            _collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
-            _collector.ack(tuple);
+            collector.emit(tuple, new Values(tuple.getString(0) + "!!!"));
+            collector.ack(tuple);
         }
 
         @Override

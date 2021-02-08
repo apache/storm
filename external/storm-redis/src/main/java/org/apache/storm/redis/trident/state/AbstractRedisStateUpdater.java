@@ -24,8 +24,8 @@ import org.apache.storm.trident.tuple.TridentTuple;
 
 /**
  * AbstractRedisStateUpdater is base class of any RedisStateUpdater, which implements BaseStateUpdater.
- * <p/>
- * Derived classes should provide how to update (key, value) pairs to Redis,
+ *
+ * <p>Derived classes should provide how to update (key, value) pairs to Redis,
  * and AbstractRedisStateUpdater takes care of rest things.
  *
  * @param <T> type of State
@@ -37,7 +37,7 @@ public abstract class AbstractRedisStateUpdater<T extends State> extends BaseSta
     protected int expireIntervalSec = 0;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param storeMapper mapper for storing
      */
@@ -49,7 +49,7 @@ public abstract class AbstractRedisStateUpdater<T extends State> extends BaseSta
     }
 
     /**
-     * Sets expire (time to live) if needed
+     * Sets expire (time to live) if needed.
      *
      * @param expireIntervalSec time to live in seconds
      */

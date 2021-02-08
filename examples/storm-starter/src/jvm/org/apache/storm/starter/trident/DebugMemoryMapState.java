@@ -40,6 +40,7 @@ public class DebugMemoryMapState<T> extends MemoryMapState<T> {
         super(id);
     }
 
+    @Override
     public List<T> multiUpdate(List<List<Object>> keys, List<ValueUpdater> updaters) {
         print(keys, updaters);
         if ((updateCount++ % 5) == 0) {
@@ -58,15 +59,15 @@ public class DebugMemoryMapState<T> extends MemoryMapState<T> {
     }
 
     public static class Factory implements StateFactory {
-        String _id;
+        String id;
 
         public Factory() {
-            _id = UUID.randomUUID().toString();
+            id = UUID.randomUUID().toString();
         }
 
         @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-            return new DebugMemoryMapState(_id + partitionIndex);
+            return new DebugMemoryMapState(id + partitionIndex);
         }
     }
 }

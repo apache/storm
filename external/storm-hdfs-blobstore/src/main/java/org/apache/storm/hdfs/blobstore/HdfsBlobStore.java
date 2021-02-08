@@ -18,19 +18,22 @@
 
 package org.apache.storm.hdfs.blobstore;
 
+import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
+import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
+import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStore;
@@ -44,26 +47,25 @@ import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.HadoopLoginUtil;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyAlreadyExistsException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
-
 /**
  * Provides a HDFS file system backed blob store implementation.
  * Note that this provides an api for having HDFS be the backing store for the blobstore,
  * it is not a service/daemon.
  *
- * We currently have NIMBUS_ADMINS and SUPERVISOR_ADMINS configuration. NIMBUS_ADMINS are given READ, WRITE and ADMIN
+ * <p>We currently have NIMBUS_ADMINS and SUPERVISOR_ADMINS configuration. NIMBUS_ADMINS are given READ, WRITE and ADMIN
  * access whereas the SUPERVISOR_ADMINS are given READ access in order to read and download the blobs form the nimbus.
  *
- * The ACLs for the blob store are validated against whether the subject is a NIMBUS_ADMIN, SUPERVISOR_ADMIN or USER
+ * <p>The ACLs for the blob store are validated against whether the subject is a NIMBUS_ADMIN, SUPERVISOR_ADMIN or USER
  * who has read, write or admin privileges in order to perform respective operations on the blob.
  *
- * For hdfs blob store
+ * <p>For hdfs blob store
  * 1. The USER interacts with nimbus to upload and access blobs through NimbusBlobStore Client API. Here, unlike
  * local blob store which stores the blobs locally, the nimbus talks to HDFS to upload the blobs.
  * 2. The USER sets the ACLs, and the blob access is validated against these ACLs.
@@ -72,36 +74,16 @@ import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
  * subject. The blobstore gets the hadoop user and validates permissions for the supervisor.
  */
 public class HdfsBlobStore extends BlobStore {
-    public static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStore.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStore.class);
     private static final String DATA_PREFIX = "data_";
     private static final String META_PREFIX = "meta_";
-    private static final HashMap<String, Subject> alreadyLoggedInUsers = new HashMap<>();
 
     private BlobStoreAclHandler aclHandler;
     private HdfsBlobStoreImpl hbs;
     private Subject localSubject;
     private Map<String, Object> conf;
-
-    /**
-     * Get the subject from Hadoop so we can use it to validate the acls. There is no direct
-     * interface from UserGroupInformation to get the subject, so do a doAs and get the context.
-     * We could probably run everything in the doAs but for now just grab the subject.
-     */
-    private Subject getHadoopUser() {
-        Subject subj;
-        try {
-            subj = UserGroupInformation.getCurrentUser().doAs(
-                    new PrivilegedAction<Subject>() {
-                        @Override
-                        public Subject run() {
-                            return Subject.getSubject(AccessController.getContext());
-                        }
-                    });
-        } catch (IOException e) {
-            throw new RuntimeException("Error creating subject and logging user in!", e);
-        }
-        return subj;
-    }
+    private Cache<String, SettableBlobMeta> cacheMetas = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
+    private Cache<String, Integer> cachedReplicationCount = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
     /**
      * If who is null then we want to use the user hadoop says we are.
@@ -128,42 +110,16 @@ public class HdfsBlobStore extends BlobStore {
     protected void prepareInternal(Map<String, Object> conf, String overrideBase, Configuration hadoopConf) {
         this.conf = conf;
         if (overrideBase == null) {
-            overrideBase = (String)conf.get(Config.BLOBSTORE_DIR);
+            overrideBase = (String) conf.get(Config.BLOBSTORE_DIR);
         }
         if (overrideBase == null) {
             throw new RuntimeException("You must specify a blobstore directory for HDFS to use!");
         }
         LOG.debug("directory is: {}", overrideBase);
-        try {
-            // if a HDFS keytab/principal have been supplied login, otherwise assume they are
-            // logged in already or running insecure HDFS.
-            String principal = Config.getBlobstoreHDFSPrincipal(conf);
-            String keyTab = (String) conf.get(Config.BLOBSTORE_HDFS_KEYTAB);
 
-            if (principal != null && keyTab != null) {
-                String combinedKey = principal + " from " + keyTab;
-                synchronized (alreadyLoggedInUsers) {
-                    localSubject = alreadyLoggedInUsers.get(combinedKey);
-                    if (localSubject == null) {
-                        UserGroupInformation.loginUserFromKeytab(principal, keyTab);
-                        localSubject = getHadoopUser();
-                        alreadyLoggedInUsers.put(combinedKey, localSubject);
-                    }
-                }
-            } else {
-                if (principal == null && keyTab != null) {
-                    throw new RuntimeException("You must specify an HDFS principal to go with the keytab!");
+        //Login to hdfs
+        localSubject = HadoopLoginUtil.loginHadoop(conf);
 
-                } else {
-                    if (principal != null && keyTab == null) {
-                        throw new RuntimeException("You must specify HDFS keytab go with the principal!");
-                    }
-                }
-                localSubject = getHadoopUser();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error logging in from keytab: " + e.getMessage(), e);
-        }
         aclHandler = new BlobStoreAclHandler(conf);
         Path baseDir = new Path(overrideBase, BASE_BLOBS_DIR_NAME);
         try {
@@ -181,7 +137,7 @@ public class HdfsBlobStore extends BlobStore {
     public AtomicOutputStream createBlob(String key, SettableBlobMeta meta, Subject who)
             throws AuthorizationException, KeyAlreadyExistsException {
         if (meta.get_replication_factor() <= 0) {
-            meta.set_replication_factor((int)conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
+            meta.set_replication_factor((int) conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
         }
         who = checkAndGetSubject(who);
         validateKey(key);
@@ -191,23 +147,24 @@ public class HdfsBlobStore extends BlobStore {
         if (hbs.exists(DATA_PREFIX + key)) {
             throw new WrappedKeyAlreadyExistsException(key);
         }
-        BlobStoreFileOutputStream mOut = null;
+        BlobStoreFileOutputStream outputStream = null;
         try {
             BlobStoreFile metaFile = hbs.write(META_PREFIX + key, true);
             metaFile.setMetadata(meta);
-            mOut = new BlobStoreFileOutputStream(metaFile);
-            mOut.write(Utils.thriftSerialize(meta));
-            mOut.close();
-            mOut = null;
+            outputStream = new BlobStoreFileOutputStream(metaFile);
+            outputStream.write(Utils.thriftSerialize(meta));
+            outputStream.close();
+            outputStream = null;
             BlobStoreFile dataFile = hbs.write(DATA_PREFIX + key, true);
             dataFile.setMetadata(meta);
+            cacheMetas.put(key, meta);
             return new BlobStoreFileOutputStream(dataFile);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            if (mOut != null) {
+            if (outputStream != null) {
                 try {
-                    mOut.cancel();
+                    outputStream.cancel();
                 } catch (IOException e) {
                     //Ignored
                 }
@@ -219,7 +176,7 @@ public class HdfsBlobStore extends BlobStore {
     public AtomicOutputStream updateBlob(String key, Subject who)
             throws AuthorizationException, KeyNotFoundException {
         who = checkAndGetSubject(who);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
+        SettableBlobMeta meta = extractBlobMeta(key);
         validateKey(key);
         aclHandler.hasPermissions(meta.get_acl(), WRITE, who, key);
         try {
@@ -248,7 +205,8 @@ public class HdfsBlobStore extends BlobStore {
             }
             in.close();
             in = null;
-            return Utils.thriftDeserialize(SettableBlobMeta.class, out.toByteArray());
+            SettableBlobMeta blobMeta = Utils.thriftDeserialize(SettableBlobMeta.class, out.toByteArray());
+            return blobMeta;
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -267,7 +225,7 @@ public class HdfsBlobStore extends BlobStore {
             throws AuthorizationException, KeyNotFoundException {
         who = checkAndGetSubject(who);
         validateKey(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
+        SettableBlobMeta meta = extractBlobMeta(key);
         aclHandler.validateUserCanReadMeta(meta.get_acl(), who, key);
         ReadableBlobMeta rbm = new ReadableBlobMeta();
         rbm.set_settable(meta);
@@ -281,9 +239,9 @@ public class HdfsBlobStore extends BlobStore {
     }
 
     /**
-     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi.
      *
-     * @param leaderElector
+     * @param leaderElector the leader elector
      */
     @Override
     public void setLeaderElector(ILeaderElector leaderElector) {
@@ -294,15 +252,14 @@ public class HdfsBlobStore extends BlobStore {
     public void setBlobMeta(String key, SettableBlobMeta meta, Subject who)
             throws AuthorizationException, KeyNotFoundException {
         if (meta.get_replication_factor() <= 0) {
-            meta.set_replication_factor((int)conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
+            meta.set_replication_factor((int) conf.get(Config.STORM_BLOBSTORE_REPLICATION_FACTOR));
         }
         who = checkAndGetSubject(who);
         validateKey(key);
         aclHandler.normalizeSettableBlobMeta(key,  meta, who, ADMIN);
         BlobStoreAclHandler.validateSettableACLs(key, meta.get_acl());
-        SettableBlobMeta orig = getStoredBlobMeta(key);
+        SettableBlobMeta orig = extractBlobMeta(key);
         aclHandler.hasPermissions(orig.get_acl(), ADMIN, who, key);
-        BlobStoreFileOutputStream mOut = null;
         writeMetadata(key, meta);
     }
 
@@ -311,7 +268,7 @@ public class HdfsBlobStore extends BlobStore {
             throws AuthorizationException, KeyNotFoundException {
         who = checkAndGetSubject(who);
         validateKey(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
+        SettableBlobMeta meta = extractBlobMeta(key);
         aclHandler.hasPermissions(meta.get_acl(), WRITE, who, key);
         try {
             hbs.deleteKey(DATA_PREFIX + key);
@@ -319,6 +276,8 @@ public class HdfsBlobStore extends BlobStore {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        cacheMetas.invalidate(key);
+        cachedReplicationCount.invalidate(key);
     }
 
     @Override
@@ -326,13 +285,32 @@ public class HdfsBlobStore extends BlobStore {
             throws AuthorizationException, KeyNotFoundException {
         who = checkAndGetSubject(who);
         validateKey(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
+        SettableBlobMeta meta = extractBlobMeta(key);
         aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
         try {
             return new BlobStoreFileInputStream(hbs.read(DATA_PREFIX + key));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Checks if a blob exists.
+     *
+     * @param key blobstore key
+     * @param who subject
+     * @throws AuthorizationException if authorization is failed
+     */
+    public boolean blobExists(String key, Subject who) throws AuthorizationException {
+        try {
+            who = checkAndGetSubject(who);
+            validateKey(key);
+            SettableBlobMeta meta = extractBlobMeta(key);
+            aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
+        } catch (KeyNotFoundException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -353,25 +331,47 @@ public class HdfsBlobStore extends BlobStore {
     public int getBlobReplication(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         who = checkAndGetSubject(who);
         validateKey(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
+        SettableBlobMeta meta = extractBlobMeta(key);
         aclHandler.hasAnyPermissions(meta.get_acl(), READ | WRITE | ADMIN, who, key);
         try {
-            return hbs.getBlobReplication(DATA_PREFIX + key);
+            Integer cachedCount = cachedReplicationCount.getIfPresent(key);
+            int blobReplication = 0;
+            if (cachedCount != null) {
+                blobReplication = cachedCount.intValue();
+            } else {
+                blobReplication = hbs.getBlobReplication(DATA_PREFIX + key);
+                cachedReplicationCount.put(key, blobReplication);
+            }
+            return blobReplication;
         } catch (IOException exp) {
             throw new RuntimeException(exp);
         }
+    }
+
+    private SettableBlobMeta extractBlobMeta(String key) throws KeyNotFoundException {
+        if (key == null) {
+            throw new WrappedKeyNotFoundException("null can not be blob key");
+        }
+        SettableBlobMeta meta = cacheMetas.getIfPresent(key);
+        if (meta == null) {
+            meta = getStoredBlobMeta(key);
+            cacheMetas.put(key, meta);
+        }
+        return meta;
     }
 
     @Override
     public int updateBlobReplication(String key, int replication, Subject who) throws AuthorizationException, KeyNotFoundException {
         who = checkAndGetSubject(who);
         validateKey(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
+        SettableBlobMeta meta = extractBlobMeta(key);
         meta.set_replication_factor(replication);
         aclHandler.hasAnyPermissions(meta.get_acl(), WRITE | ADMIN, who, key);
         try {
             writeMetadata(key, meta);
-            return hbs.updateBlobReplication(DATA_PREFIX + key, replication);
+            int updatedReplCount = hbs.updateBlobReplication(DATA_PREFIX + key, replication);
+            cachedReplicationCount.put(key, updatedReplCount);
+            return updatedReplCount;
         } catch (IOException exp) {
             throw new RuntimeException(exp);
         }
@@ -379,20 +379,21 @@ public class HdfsBlobStore extends BlobStore {
 
     public void writeMetadata(String key, SettableBlobMeta meta)
             throws AuthorizationException, KeyNotFoundException {
-        BlobStoreFileOutputStream mOut = null;
+        BlobStoreFileOutputStream outputStream = null;
         try {
             BlobStoreFile hdfsFile = hbs.write(META_PREFIX + key, false);
             hdfsFile.setMetadata(meta);
-            mOut = new BlobStoreFileOutputStream(hdfsFile);
-            mOut.write(Utils.thriftSerialize(meta));
-            mOut.close();
-            mOut = null;
+            outputStream = new BlobStoreFileOutputStream(hdfsFile);
+            outputStream.write(Utils.thriftSerialize(meta));
+            outputStream.close();
+            outputStream = null;
+            cacheMetas.put(key, meta);
         } catch (IOException exp) {
             throw new RuntimeException(exp);
         } finally {
-            if (mOut != null) {
+            if (outputStream != null) {
                 try {
-                    mOut.cancel();
+                    outputStream.cancel();
                 } catch (IOException e) {
                     //Ignored
                 }
@@ -402,5 +403,19 @@ public class HdfsBlobStore extends BlobStore {
 
     public void fullCleanup(long age) throws IOException {
         hbs.fullCleanup(age);
+    }
+
+    public long getLastBlobUpdateTime() throws IOException {
+        return hbs.getLastBlobUpdateTime();
+    }
+
+    @Override
+    public void updateLastBlobUpdateTime() throws IOException {
+        hbs.updateLastBlobUpdateTime();
+    }
+
+    @Override
+    public void validateBlobUpdateTime() throws IOException {
+        hbs.validateBlobUpdateTime();
     }
 }

@@ -18,12 +18,14 @@
 
 package org.apache.storm.scheduler;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Utils;
 
 public class DefaultScheduler implements IScheduler {
@@ -97,7 +99,7 @@ public class DefaultScheduler implements IScheduler {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf) {
+    public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
         //noop
     }
 
@@ -108,6 +110,6 @@ public class DefaultScheduler implements IScheduler {
 
     @Override
     public Map<String, Map<String, Double>> config() {
-        return new HashMap<>();
+        return Collections.emptyMap();
     }
 }

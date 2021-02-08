@@ -25,7 +25,6 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.Sasl;
@@ -47,30 +46,19 @@ class KerberosSaslNettyServer {
     private Subject subject;
     private List<String> authorizedUsers;
 
-    KerberosSaslNettyServer(Map<String, Object> topoConf, String jaas_section, List<String> authorizedUsers) {
+    KerberosSaslNettyServer(Map<String, Object> topoConf, String jaasSection, List<String> authorizedUsers) {
         this.authorizedUsers = authorizedUsers;
-        LOG.debug("Getting Configuration.");
-        Configuration login_conf;
-        try {
-            login_conf = ClientAuthUtils.getConfiguration(topoConf);
-        } catch (Throwable t) {
-            LOG.error("Failed to get login_conf: ", t);
-            throw t;
-        }
 
         LOG.debug("KerberosSaslNettyServer: authmethod {}", SaslUtils.KERBEROS);
 
         KerberosSaslCallbackHandler ch = new KerberosSaslNettyServer.KerberosSaslCallbackHandler(authorizedUsers);
+        String jaasConfFile = ClientAuthUtils.getJaasConf(topoConf);
 
         //login our principal
         subject = null;
         try {
-            LOG.debug("Setting Configuration to login_config: {}", login_conf);
-            //specify a configuration object to be used
-            Configuration.setConfiguration(login_conf);
-            //now login
-            LOG.debug("Trying to login.");
-            Login login = new Login(jaas_section, ch);
+            LOG.debug("Trying to login using {}.", jaasConfFile);
+            Login login = new Login(jaasSection, ch, jaasConfFile);
             subject = login.getSubject();
             LOG.debug("Got Subject: {}", subject.toString());
         } catch (LoginException ex) {
@@ -82,29 +70,30 @@ class KerberosSaslNettyServer {
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) {
             LOG.error("Failed to verifyuser principal.");
             throw new RuntimeException("Fail to verify user principal with section \""
-                                       + jaas_section
+                                       + jaasSection
                                        + "\" in login configuration file "
-                                       + login_conf);
+                                       + jaasConfFile);
         }
 
         try {
             LOG.info("Creating Kerberos Server.");
             final CallbackHandler fch = ch;
             Principal p = (Principal) subject.getPrincipals().toArray()[0];
-            KerberosName kName = new KerberosName(p.getName());
-            final String fHost = kName.getHostName();
-            final String fServiceName = kName.getServiceName();
-            LOG.debug("Server with host: {}", fHost);
+            KerberosName kerberosName = new KerberosName(p.getName());
+            final String hostName = kerberosName.getHostName();
+            final String serviceName = kerberosName.getServiceName();
+            LOG.debug("Server with host: {}", hostName);
             saslServer =
                 Subject.doAs(subject, new PrivilegedExceptionAction<SaslServer>() {
+                    @Override
                     public SaslServer run() {
                         try {
                             Map<String, String> props = new TreeMap<String, String>();
                             props.put(Sasl.QOP, "auth");
                             props.put(Sasl.SERVER_AUTH, "false");
                             return Sasl.createSaslServer(SaslUtils.KERBEROS,
-                                                         fServiceName,
-                                                         fHost, props, fch);
+                                                         serviceName,
+                                                         hostName, props, fch);
                         } catch (Exception e) {
                             LOG.error("Subject failed to create sasl server.", e);
                             return null;
@@ -136,6 +125,7 @@ class KerberosSaslNettyServer {
     public byte[] response(final byte[] token) {
         try {
             byte[] retval = Subject.doAs(subject, new PrivilegedExceptionAction<byte[]>() {
+                @Override
                 public byte[] run() {
                     try {
                         LOG.debug("response: Responding to input token of length: {}",
@@ -157,16 +147,16 @@ class KerberosSaslNettyServer {
     }
 
     /**
-     * CallbackHandler for SASL DIGEST-MD5 mechanism
+     * CallbackHandler for SASL DIGEST-MD5 mechanism.
      */
     public static class KerberosSaslCallbackHandler implements CallbackHandler {
 
         /**
-         * Used to authenticate the clients
+         * Used to authenticate the clients.
          */
         private List<String> authorizedUsers;
 
-        public KerberosSaslCallbackHandler(List<String> authorizedUsers) {
+        KerberosSaslCallbackHandler(List<String> authorizedUsers) {
             LOG.debug("KerberosSaslCallback: Creating KerberosSaslCallback handler.");
             this.authorizedUsers = authorizedUsers;
         }

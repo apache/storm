@@ -16,7 +16,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * MQTT Configuration Options
+ * MQTT Configuration Options.
  */
 public class MqttOptions implements Serializable {
     private String url = "tcp://localhost:1883";
@@ -44,10 +44,7 @@ public class MqttOptions implements Serializable {
     }
 
     /**
-     * Sets the url for connecting to the MQTT broker.
-     *
-     * Default: `tcp://localhost:1883'
-     * @param url
+     * Sets the url for connecting to the MQTT broker, e.g. {@code tcp://localhost:1883}.
      */
     public void setUrl(String url) {
         this.url = url;
@@ -59,8 +56,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * A list of MQTT topics to subscribe to.
-     *
-     * @param topics
      */
     public void setTopics(List<String> topics) {
         this.topics = topics;
@@ -73,8 +68,6 @@ public class MqttOptions implements Serializable {
     /**
      * Set to false if you want the MQTT server to persist topic subscriptions and ack positions across client sessions.
      * Defaults to false.
-     *
-     * @param cleanConnection
      */
     public void setCleanConnection(boolean cleanConnection) {
         this.cleanConnection = cleanConnection;
@@ -87,8 +80,6 @@ public class MqttOptions implements Serializable {
     /**
      * If set the server will publish the client's Will message to the specified topics if the client has an unexpected
      * disconnection.
-     *
-     * @param willTopic
      */
     public void setWillTopic(String willTopic) {
         this.willTopic = willTopic;
@@ -100,8 +91,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * The Will message to send. Defaults to a zero length message.
-     *
-     * @param willPayload
      */
     public void setWillPayload(String willPayload) {
         this.willPayload = willPayload;
@@ -113,8 +102,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * How long to wait in ms before the first reconnect attempt. Defaults to 10.
-     *
-     * @param reconnectDelay
      */
     public void setReconnectDelay(long reconnectDelay) {
         this.reconnectDelay = reconnectDelay;
@@ -126,8 +113,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * The maximum amount of time in ms to wait between reconnect attempts. Defaults to 30,000.
-     *
-     * @param reconnectDelayMax
      */
     public void setReconnectDelayMax(long reconnectDelayMax) {
         this.reconnectDelayMax = reconnectDelayMax;
@@ -140,8 +125,6 @@ public class MqttOptions implements Serializable {
     /**
      * The Exponential backoff be used between reconnect attempts. Set to 1 to disable exponential backoff. Defaults to
      * 2.
-     *
-     * @param reconnectBackOffMultiplier
      */
     public void setReconnectBackOffMultiplier(double reconnectBackOffMultiplier) {
         this.reconnectBackOffMultiplier = reconnectBackOffMultiplier;
@@ -154,8 +137,6 @@ public class MqttOptions implements Serializable {
     /**
      * The maximum number of reconnect attempts before an error is reported back to the client after a server
      * connection had previously been established. Set to -1 to use unlimited attempts. Defaults to -1.
-     *
-     * @param reconnectAttemptsMax
      */
     public void setReconnectAttemptsMax(long reconnectAttemptsMax) {
         this.reconnectAttemptsMax = reconnectAttemptsMax;
@@ -168,8 +149,6 @@ public class MqttOptions implements Serializable {
     /**
      * The maximum number of reconnect attempts before an error is reported back to the client on the first attempt by
      * the client to connect to a server. Set to -1 to use unlimited attempts. Defaults to -1.
-     *
-     * @param connectAttemptsMax
      */
     public void setConnectAttemptsMax(long connectAttemptsMax) {
         this.connectAttemptsMax = connectAttemptsMax;
@@ -181,8 +160,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * The username for authenticated sessions.
-     *
-     * @param userName
      */
     public void setUserName(String userName) {
         this.userName = userName;
@@ -194,7 +171,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * The password for authenticated sessions.
-     * @param password
      */
     public void setPassword(String password) {
         this.password = password;
@@ -206,7 +182,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * Sets the quality of service to use for MQTT messages. Defaults to 1 (at least once).
-     * @param qos
      */
     public void setQos(int qos) {
         if (qos < 0 || qos > 2) {
@@ -221,8 +196,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * Sets the quality of service to use for the MQTT Will message. Defaults to 1 (at least once).
-     *
-     * @param qos
      */
     public void setWillQos(int qos) {
         if (qos < 0 || qos > 2) {
@@ -237,7 +210,6 @@ public class MqttOptions implements Serializable {
 
     /**
      * Set to true if you want the Will message to be published with the retain option.
-     * @param retain
      */
     public void setWillRetain(boolean retain) {
         this.willRetain = retain;

@@ -67,11 +67,12 @@ public class ProcessorNode extends Node {
 
     @Override
     public String toString() {
-        return "ProcessorNode{" +
-               "processor=" + processor +
-               ", isBatch=" + isBatch +
-               ", preservesKey=" + preservesKey +
-               ", windowedParentStreams=" + windowedParentStreams +
-               "} " + super.toString();
+        return "ProcessorNode{"
+                + "processor=" + processor
+                + ", isBatch=" + isBatch
+                + ", preservesKey=" + preservesKey
+                + ", windowedParentStreams=" + windowedParentStreams
+                + "} "
+                + super.toString();
     }
 }

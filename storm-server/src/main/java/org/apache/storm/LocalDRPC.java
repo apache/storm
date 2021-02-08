@@ -30,10 +30,11 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServiceRegistry;
 
 /**
- * A Local way to test DRPC
+ * A Local way to test DRPC.
  *
- * try (LocalDRPC drpc = new LocalDRPC()) { // Do tests }
+ * <p>try <code>(LocalDRPC drpc = new LocalDRPC()) { // Do tests }</code>
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class LocalDRPC implements ILocalDRPC {
 
     private final DRPC drpc;

@@ -266,7 +266,7 @@ public class LogviewerLogPageHandler {
                 return LogviewerResponseBuilder.buildResponsePageNotFound();
             }
         } else {
-            if (resourceAuthorizer.getLogUserGroupWhitelist(fileName) != null) {
+            if (resourceAuthorizer.getLogUserGroupWhitelist(fileName) == null) {
                 return LogviewerResponseBuilder.buildResponsePageNotFound();
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);

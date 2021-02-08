@@ -192,7 +192,7 @@ Sample response:
             "host":"192.168.202.1",
             "port":6627,
             "nimbusLogLink":"http:\/\/192.168.202.1:8000\/log?file=nimbus.log",
-            "status":Leader,
+            "status":"Leader",
             "version":"0.10.0-SNAPSHOT",
             "nimbusUpTime":"3m 33s",
             "nimbusUpTimeSeconds":"213"
@@ -555,6 +555,9 @@ Response fields:
 |spouts.transferred| Long |Total number of messages  transferred in given window|
 |spouts.tasks| Integer |Total number of tasks for the spout|
 |spouts.lastError| String |Shows the last error happened in a spout|
+|spouts.errorHost| String | Worker hostname the last error was reported on|
+|spouts.errorPort| String | Worker port the last error was reported on|
+|spouts.errorTime| Integer | Unix timestamp the last error was reported (seconds since epoch) |
 |spouts.errorLapsedSecs| Integer | Number of seconds elapsed since that last error happened in a spout|
 |spouts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |spouts.acked| Long |Number of messages acked|
@@ -572,6 +575,9 @@ Response fields:
 |bolts.acked| Long |Number of tuples acked by the bolt|
 |bolts.failed| Long |Number of tuples failed by the bolt|
 |bolts.lastError| String |Shows the last error occurred in the bolt|
+|bolts.errorHost| String | Worker hostname the last error was reported on|
+|bolts.errorPort| String | Worker port the last error was reported on|
+|bolts.errorTime| Integer | Unix timestamp the last error was reported (seconds since epoch) |
 |bolts.errorLapsedSecs| Integer |Number of seconds elapsed since that last error happened in a bolt|
 |bolts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |bolts.emitted| Long |Number of tuples emitted|
@@ -687,6 +693,10 @@ Sample response:
             "spoutId": "spout",
             "tasks": 5,
             "lastError": "",
+            "errorHost": "",
+            "errorPort": null,
+            "errorWorkerLogLink": "",
+            "errorTime": null,
             "errorLapsedSecs": null,
             "failed": 0
         }
@@ -703,6 +713,10 @@ Sample response:
             "processLatency": "0.043",
             "boltId": "count",
             "lastError": "",
+            "errorHost": "",
+            "errorPort": null,
+            "errorWorkerLogLink": "",
+            "errorTime": null,
             "errorLapsedSecs": null,
             "capacity": "0.003",
             "failed": 0
@@ -717,8 +731,12 @@ Sample response:
             "executed": 28780,
             "processLatency": "2.112",
             "boltId": "split",
-            "lastError": "",
-            "errorLapsedSecs": null,
+            "lastError": "java.lang.RuntimeException: Error here! at org.apache.storm.starter.bolt.WordCountBolt.nextTuple(WordCountBolt.java:50) at org.apache.storm.executor.bolt.BoltExecutor$2.call",
+            "errorHost": "192.168.10.237",
+            "errorPort": 6707,
+            "errorWorkerLogLink": "http://192.168.10.237:8000/api/v1/log?file=WordCount3-1-1402960825%2F6707%2Fworker.log",
+            "errorTime": 1597626060,
+            "errorLapsedSecs": 65,
             "capacity": "0.000",
             "failed": 0
         }

@@ -46,14 +46,13 @@ import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.utils.Utils;
 import org.junit.Test;
-import org.mockito.internal.matchers.LessThan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class NettyTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyTest.class);
-
+    
     private final AtomicBoolean[] remoteBpStatus = new AtomicBoolean[]{new AtomicBoolean(), new AtomicBoolean()};
     private final int taskId = 1;
 
@@ -111,12 +110,11 @@ public class NettyTest {
     private void doTestBasic(Map<String, Object> stormConf) throws Exception {
         LOG.info("1. Should send and receive a basic message");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, null);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
-            try (IConnection server = context.bind(null, 0);
+            try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
                 IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback(response::set));
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
@@ -173,12 +171,11 @@ public class NettyTest {
     private void doTestLoad(Map<String, Object> stormConf) throws Exception {
         LOG.info("2 test load");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, null);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
-            try (IConnection server = context.bind(null, 0);
+            try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
                 IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback(response::set));
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
@@ -228,12 +225,11 @@ public class NettyTest {
     private void doTestLargeMessage(Map<String, Object> stormConf) throws Exception {
         LOG.info("3 Should send and receive a large message");
         String reqMessage = StringUtils.repeat("c", 2_048_000);
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, null);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
-            try (IConnection server = context.bind(null, 0);
+            try (IConnection server = context.bind(null, 0, mkConnectionCallback(response::set), null);
                 IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback(response::set));
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 
@@ -268,7 +264,7 @@ public class NettyTest {
     private void doTestServerDelayed(Map<String, Object> stormConf) throws Exception {
         LOG.info("4. test server delayed");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, null);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
             int port = Utils.getAvailablePort(6700);
@@ -278,8 +274,7 @@ public class NettyTest {
                     CompletableFuture<?> serverStart = CompletableFuture.runAsync(() -> {
                         try {
                             Thread.sleep(100);
-                            server.set(context.bind(null, port));
-                            server.get().registerRecv(mkConnectionCallback(response::set));
+                            server.set(context.bind(null, port, mkConnectionCallback(response::set), null));
                             waitUntilReady(client, server.get());
                         } catch (Exception e) {
                             throw Utils.wrapInRuntime(e);
@@ -320,14 +315,13 @@ public class NettyTest {
         LOG.info("Should send and receive many messages (testing with " + numMessages + " messages)");
         ArrayList<TaskMessage> responses = new ArrayList<>();
         AtomicInteger received = new AtomicInteger();
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, null);
         try {
-            try (IConnection server = context.bind(null, 0);
-                IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback((message) -> {
+            try (IConnection server = context.bind(null, 0, mkConnectionCallback((message) -> {
                     responses.add(message);
                     received.incrementAndGet();
-                }));
+                }), null);
+                IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
                 waitUntilReady(client, server);
 
                 IntStream.range(1, numMessages)
@@ -368,15 +362,14 @@ public class NettyTest {
     private void doTestServerAlwaysReconnects(Map<String, Object> stormConf) throws Exception {
         LOG.info("6. test server always reconnects");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, null);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
             int port = Utils.getAvailablePort(6700);
             try (IConnection client = context.connect(null, "localhost", port, remoteBpStatus)) {
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
                 send(client, taskId, messageBytes);
-                try (IConnection server = context.bind(null, port)) {
-                    server.registerRecv(mkConnectionCallback(response::set));
+                try (IConnection server = context.bind(null, port, mkConnectionCallback(response::set), null)) {
                     waitUntilReady(client, server);
                     send(client, taskId, messageBytes);
                     waitForNotNull(response);
@@ -403,12 +396,11 @@ public class NettyTest {
     private void connectToFixedPort(Map<String, Object> stormConf, int port) throws Exception {
         LOG.info("7. Should be able to rebind to a port quickly");
         String reqMessage = "0123456789abcdefghijklmnopqrstuvwxyz";
-        IContext context = TransportFactory.makeContext(stormConf);
+        IContext context = TransportFactory.makeContext(stormConf, null);
         try {
             AtomicReference<TaskMessage> response = new AtomicReference<>();
-            try (IConnection server = context.bind(null, port);
+            try (IConnection server = context.bind(null, port, mkConnectionCallback(response::set), null);
                  IConnection client = context.connect(null, "localhost", server.getPort(), remoteBpStatus)) {
-                server.registerRecv(mkConnectionCallback(response::set));
                 waitUntilReady(client, server);
                 byte[] messageBytes = reqMessage.getBytes(StandardCharsets.UTF_8);
 

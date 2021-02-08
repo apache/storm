@@ -25,60 +25,56 @@ import org.apache.storm.generated.SettableBlobMeta;
 
 public class LocalFsBlobStoreFile extends BlobStoreFile {
 
-    private final String _key;
-    private final boolean _isTmp;
-    private final File _path;
-    private final boolean _mustBeNew;
-    private Long _modTime = null;
+    private final String key;
+    private final boolean isTmp;
+    private final File path;
+    private final boolean mustBeNew;
     private SettableBlobMeta meta;
 
     public LocalFsBlobStoreFile(File base, String name) {
         if (BlobStoreFile.BLOBSTORE_DATA_FILE.equals(name)) {
-            _isTmp = false;
+            isTmp = false;
         } else {
             Matcher m = TMP_NAME_PATTERN.matcher(name);
             if (!m.matches()) {
                 throw new IllegalArgumentException("File name does not match '" + name + "' !~ " + TMP_NAME_PATTERN);
             }
-            _isTmp = true;
+            isTmp = true;
         }
-        _key = base.getName();
-        _path = new File(base, name);
-        _mustBeNew = false;
+        key = base.getName();
+        path = new File(base, name);
+        mustBeNew = false;
     }
 
     public LocalFsBlobStoreFile(File base, boolean isTmp, boolean mustBeNew) {
-        _key = base.getName();
-        _isTmp = isTmp;
-        _mustBeNew = mustBeNew;
-        if (_isTmp) {
-            _path = new File(base, System.currentTimeMillis() + TMP_EXT);
+        key = base.getName();
+        this.isTmp = isTmp;
+        this.mustBeNew = mustBeNew;
+        if (this.isTmp) {
+            path = new File(base, System.currentTimeMillis() + TMP_EXT);
         } else {
-            _path = new File(base, BlobStoreFile.BLOBSTORE_DATA_FILE);
+            path = new File(base, BlobStoreFile.BLOBSTORE_DATA_FILE);
         }
     }
 
     @Override
     public void delete() throws IOException {
-        _path.delete();
+        path.delete();
     }
 
     @Override
     public boolean isTmp() {
-        return _isTmp;
+        return isTmp;
     }
 
     @Override
     public String getKey() {
-        return _key;
+        return key;
     }
 
     @Override
     public long getModTime() throws IOException {
-        if (_modTime == null) {
-            _modTime = _path.lastModified();
-        }
-        return _modTime;
+        return path.lastModified();
     }
 
     @Override
@@ -86,7 +82,7 @@ public class LocalFsBlobStoreFile extends BlobStoreFile {
         if (isTmp()) {
             throw new IllegalStateException("Cannot read from a temporary part file.");
         }
-        return new FileInputStream(_path);
+        return new FileInputStream(path);
     }
 
     @Override
@@ -96,16 +92,16 @@ public class LocalFsBlobStoreFile extends BlobStoreFile {
         }
         boolean success = false;
         try {
-            success = _path.createNewFile();
+            success = path.createNewFile();
         } catch (IOException e) {
             //Try to create the parent directory, may not work
-            _path.getParentFile().mkdirs();
-            success = _path.createNewFile();
+            path.getParentFile().mkdirs();
+            success = path.createNewFile();
         }
         if (!success) {
-            throw new IOException(_path + " already exists");
+            throw new IOException(path + " already exists");
         }
-        return new FileOutputStream(_path);
+        return new FileOutputStream(path);
     }
 
     @Override
@@ -114,11 +110,11 @@ public class LocalFsBlobStoreFile extends BlobStoreFile {
             throw new IllegalStateException("Can only write to a temporary part file.");
         }
 
-        File dest = new File(_path.getParentFile(), BlobStoreFile.BLOBSTORE_DATA_FILE);
-        if (_mustBeNew) {
-            Files.move(_path.toPath(), dest.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        File dest = new File(path.getParentFile(), BlobStoreFile.BLOBSTORE_DATA_FILE);
+        if (mustBeNew) {
+            Files.move(path.toPath(), dest.toPath(), StandardCopyOption.ATOMIC_MOVE);
         } else {
-            Files.move(_path.toPath(), dest.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(path.toPath(), dest.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
@@ -142,12 +138,12 @@ public class LocalFsBlobStoreFile extends BlobStoreFile {
 
     @Override
     public String toString() {
-        return _path + ":" + (_isTmp ? "tmp" : BlobStoreFile.BLOBSTORE_DATA_FILE) + ":" + _key;
+        return path + ":" + (isTmp ? "tmp" : BlobStoreFile.BLOBSTORE_DATA_FILE) + ":" + key;
     }
 
     @Override
     public long getFileLength() {
-        return _path.length();
+        return path.length();
     }
 }
 

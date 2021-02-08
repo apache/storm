@@ -60,36 +60,39 @@ public class ClientAuthUtils {
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
 
+    public static String getJaasConf(Map<String, Object> topoConf) {
+        return (String) topoConf.get("java.security.auth.login.config");
+    }
+
     /**
-     * Construct a JAAS configuration object per storm configuration file
+     * Construct a JAAS configuration object per storm configuration file.
      *
      * @param topoConf Storm configuration
      * @return JAAS configuration object
      */
     public static Configuration getConfiguration(Map<String, Object> topoConf) {
-        Configuration login_conf = null;
+        Configuration loginConf = null;
 
         //find login file configuration from Storm configuration
-        String loginConfigurationFile = (String) topoConf.get("java.security.auth.login.config");
+        String loginConfigurationFile = getJaasConf(topoConf);
         if ((loginConfigurationFile != null) && (loginConfigurationFile.length() > 0)) {
-            File config_file = new File(loginConfigurationFile);
-            if (!config_file.canRead()) {
-                throw new RuntimeException("File " + loginConfigurationFile +
-                                           " cannot be read.");
+            File configFile = new File(loginConfigurationFile);
+            if (!configFile.canRead()) {
+                throw new RuntimeException("File " + loginConfigurationFile + " cannot be read.");
             }
             try {
-                URI config_uri = config_file.toURI();
-                login_conf = Configuration.getInstance("JavaLoginConfig", new URIParameter(config_uri));
+                URI configUri = configFile.toURI();
+                loginConf = Configuration.getInstance("JavaLoginConfig", new URIParameter(configUri));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
         }
 
-        return login_conf;
+        return loginConf;
     }
 
     /**
-     * Get configurations for a section
+     * Get configurations for a section.
      *
      * @param configuration The config to pull the key/value pairs out of.
      * @param section       The app configuration entry name to get stuff from.
@@ -101,7 +104,7 @@ public class ClientAuthUtils {
             return null;
         }
 
-        AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(section);
+        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(section);
         if (configurationEntries == null) {
             String errorMessage = "Could not find a '" + section + "' entry in this configuration.";
             throw new IOException(errorMessage);
@@ -112,12 +115,13 @@ public class ClientAuthUtils {
     /**
      * Pull a set of keys out of a Configuration.
      *
-     * @param configuration The config to pull the key/value pairs out of.
+     * @param topoConf  The config containing the jaas conf file.
      * @param section       The app configuration entry name to get stuff from.
      * @return Return a map of the configs in conf.
      */
-    public static SortedMap<String, ?> pullConfig(Configuration configuration,
+    public static SortedMap<String, ?> pullConfig(Map<String, Object> topoConf,
                                                   String section) throws IOException {
+        Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
         AppConfigurationEntry[] configurationEntries = ClientAuthUtils.getEntries(configuration, section);
 
         if (configurationEntries == null) {
@@ -137,14 +141,19 @@ public class ClientAuthUtils {
     }
 
     /**
-     * Pull a the value given section and key from Configuration
+     * Pull a the value given section and key from Configuration.
      *
-     * @param configuration The config to pull the key/value pairs out of.
+     * @param topoConf   The config containing the jaas conf file.
      * @param section       The app configuration entry name to get stuff from.
      * @param key           The key to look up inside of the section
      * @return Return a the String value of the configuration value
      */
-    public static String get(Configuration configuration, String section, String key) throws IOException {
+    public static String get(Map<String, Object> topoConf, String section, String key) throws IOException {
+        Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
+        return get(configuration, section, key);
+    }
+
+    static String get(Configuration configuration, String section, String key) throws IOException {
         AppConfigurationEntry[] configurationEntries = ClientAuthUtils.getEntries(configuration, section);
 
         if (configurationEntries == null) {
@@ -161,7 +170,7 @@ public class ClientAuthUtils {
     }
 
     /**
-     * Construct a principal to local plugin
+     * Construct a principal to local plugin.
      *
      * @param topoConf storm configuration
      * @return the plugin
@@ -169,11 +178,11 @@ public class ClientAuthUtils {
     public static IPrincipalToLocal getPrincipalToLocalPlugin(Map<String, Object> topoConf) {
         IPrincipalToLocal ptol = null;
         try {
-            String ptol_klassName = (String) topoConf.get(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
-            if (ptol_klassName == null) {
+            String ptolClassname = (String) topoConf.get(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
+            if (ptolClassname == null) {
                 LOG.warn("No principal to local given {}", Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
             } else {
-                ptol = ReflectionUtils.newInstance(ptol_klassName);
+                ptol = ReflectionUtils.newInstance(ptolClassname);
                 //TODO this can only ever be null if someone is doing something odd with mocking
                 // We should really fix the mocking and remove this
                 if (ptol != null) {
@@ -187,7 +196,7 @@ public class ClientAuthUtils {
     }
 
     /**
-     * Construct a group mapping service provider plugin
+     * Construct a group mapping service provider plugin.
      *
      * @param conf daemon configuration
      * @return the plugin
@@ -195,11 +204,11 @@ public class ClientAuthUtils {
     public static IGroupMappingServiceProvider getGroupMappingServiceProviderPlugin(Map<String, Object> conf) {
         IGroupMappingServiceProvider gmsp = null;
         try {
-            String gmsp_klassName = (String) conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
-            if (gmsp_klassName == null) {
+            String gmspClassName = (String) conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
+            if (gmspClassName == null) {
                 LOG.warn("No group mapper given {}", Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
             } else {
-                gmsp = ReflectionUtils.newInstance(gmsp_klassName);
+                gmsp = ReflectionUtils.newInstance(gmspClassName);
                 if (gmsp != null) {
                     gmsp.prepare(conf);
                 }
@@ -281,7 +290,7 @@ public class ClientAuthUtils {
     }
 
     /**
-     * Get the key used to store a WorkerToken in the credentials map
+     * Get the key used to store a WorkerToken in the credentials map.
      *
      * @param type the type of service to get.
      * @return the key as a String.
@@ -400,9 +409,17 @@ public class ClientAuthUtils {
                 Set<Object> creds = subject.getPrivateCredentials();
                 synchronized (creds) {
                     WorkerToken previous = findWorkerToken(subject, type);
-                    creds.add(token);
-                    if (previous != null) {
-                        creds.remove(previous);
+                    boolean notAlreadyContained = creds.add(token);
+                    if (notAlreadyContained) {
+                        if (previous != null) {
+                            //this means token is not equal to previous so we should remove previous
+                            creds.remove(previous);
+                            LOG.info("Replaced WorkerToken for service type {}", type);
+                        } else {
+                            LOG.info("Added new WorkerToken for service type {}", type);
+                        }
+                    } else {
+                        LOG.info("The new WorkerToken for service type {} is the same as the previous token", type);
                     }
                 }
             }
@@ -455,24 +472,24 @@ public class ClientAuthUtils {
     }
 
     /**
-     * Construct a transport plugin per storm configuration
+     * Construct a transport plugin per storm configuration.
      */
-    public static ITransportPlugin getTransportPlugin(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf) {
+    public static ITransportPlugin getTransportPlugin(ThriftConnectionType type, Map<String, Object> topoConf) {
         try {
-            String transport_plugin_klassName = type.getTransportPlugin(topoConf);
-            ITransportPlugin transportPlugin = ReflectionUtils.newInstance(transport_plugin_klassName);
-            transportPlugin.prepare(type, topoConf, login_conf);
+            String transportPluginClassName = type.getTransportPlugin(topoConf);
+            ITransportPlugin transportPlugin = ReflectionUtils.newInstance(transportPluginClassName);
+            transportPlugin.prepare(type, topoConf);
             return transportPlugin;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static String makeDigestPayload(Configuration login_config, String config_section) {
+    public static String makeDigestPayload(Map<String, Object> topoConf, String configSection) {
         String username = null;
         String password = null;
         try {
-            Map<String, ?> results = ClientAuthUtils.pullConfig(login_config, config_section);
+            Map<String, ?> results = ClientAuthUtils.pullConfig(topoConf, configSection);
             username = (String) results.get(USERNAME);
             password = (String) results.get(PASSWORD);
         } catch (Exception e) {
@@ -492,6 +509,8 @@ public class ClientAuthUtils {
             throw new RuntimeException(e);
         }
     }
+
+
 
     public static byte[] serializeKerberosTicket(KerberosTicket tgt) throws Exception {
         ByteArrayOutputStream bao = new ByteArrayOutputStream();

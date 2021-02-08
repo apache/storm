@@ -26,16 +26,19 @@ import org.apache.storm.tuple.Tuple;
  */
 public interface IStatefulBolt<T extends State> extends IStatefulComponent<T> {
     /**
+     * Analogue to bolt function.
      * @see org.apache.storm.task.IBolt#prepare(Map, TopologyContext, OutputCollector)
      */
     void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector);
 
     /**
+     * Analogue to bolt function.
      * @see org.apache.storm.task.IBolt#execute(Tuple)
      */
     void execute(Tuple input);
 
     /**
+     * Analogue to bolt function.
      * @see org.apache.storm.task.IBolt#cleanup()
      */
     void cleanup();

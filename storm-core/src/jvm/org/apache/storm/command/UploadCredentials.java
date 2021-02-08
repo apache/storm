@@ -42,6 +42,7 @@ public class UploadCredentials {
     public static void main(String[] args) throws Exception {
         Map<String, Object> cl = CLI.opt("f", "file", null)
                                     .opt("u", "user", null)
+                                    .boolOpt("e", "exception-when-empty")
                                     .arg("topologyName", CLI.FIRST_WINS)
                                     .optionalArg("rawCredentials", CLI.INTO_LIST)
                                     .parse(args);
@@ -49,6 +50,7 @@ public class UploadCredentials {
         String credentialFile = (String) cl.get("f");
         List<String> rawCredentials = (List<String>) cl.get("rawCredentials");
         String topologyName = (String) cl.get("topologyName");
+        Utils.validateTopologyName(topologyName);
 
         if (null != rawCredentials && ((rawCredentials.size() % 2) != 0)) {
             throw new RuntimeException("Need an even number of arguments to make a map");
@@ -72,38 +74,33 @@ public class UploadCredentials {
         //Try to get the topology conf from nimbus, so we can reuse it.
         try (NimbusClient nc = NimbusClient.getConfiguredClient(new HashMap<>())) {
             Nimbus.Iface client = nc.getClient();
-            ClusterSummary summary = client.getClusterInfo();
-            for (TopologySummary topo : summary.get_topologies()) {
-                if (topologyName.equals(topo.get_name())) {
-                    //We found the topology, lets get the conf
-                    String topologyId = topo.get_id();
-                    topologyConf = (Map<String, Object>) JSONValue.parse(client.getTopologyConf(topologyId));
-                    LOG.info("Using topology conf from {} as basis for getting new creds", topologyId);
+            TopologySummary topo = client.getTopologySummaryByName(topologyName);
+            //We found the topology, lets get the conf
+            String topologyId = topo.get_id();
+            topologyConf = (Map<String, Object>) JSONValue.parse(client.getTopologyConf(topologyId));
+            LOG.info("Using topology conf from {} as basis for getting new creds", topologyId);
 
-                    Map<String, Object> commandLine = Utils.readCommandLineOpts();
-                    List<String> clCreds = (List<String>)commandLine.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
-                    List<String> topoCreds = (List<String>)topologyConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
-                    
-                    if (clCreds != null) {
-                        Set<String> extra = new HashSet<>(clCreds);
-                        if (topoCreds != null) {
-                            extra.removeAll(topoCreds);
-                        }
-                        if (!extra.isEmpty()) {
-                            LOG.warn("The topology {} is not using {} but they were included here.", topologyId, extra);
-                        }
+            Map<String, Object> commandLine = Utils.readCommandLineOpts();
+            List<String> clCreds = (List<String>) commandLine.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+            List<String> topoCreds = (List<String>) topologyConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
 
-                        //Now check for autoCreds that are missing from the command line, but only if the
-                        // command line is used.
-                        if (topoCreds != null) {
-                            Set<String> missing = new HashSet<>(topoCreds);
-                            missing.removeAll(clCreds);
-                            if (!missing.isEmpty()) {
-                                LOG.warn("The topology {} is using {} but they were not included here.", topologyId, missing);
-                            }
-                        }
+            if (clCreds != null) {
+                Set<String> extra = new HashSet<>(clCreds);
+                if (topoCreds != null) {
+                    extra.removeAll(topoCreds);
+                }
+                if (!extra.isEmpty()) {
+                    LOG.warn("The topology {} is not using {} but they were included here.", topologyId, extra);
+                }
+
+                //Now check for autoCreds that are missing from the command line, but only if the
+                // command line is used.
+                if (topoCreds != null) {
+                    Set<String> missing = new HashSet<>(topoCreds);
+                    missing.removeAll(clCreds);
+                    if (!missing.isEmpty()) {
+                        LOG.warn("The topology {} is using {} but they were not included here.", topologyId, missing);
                     }
-                    break;
                 }
             }
         }
@@ -111,7 +108,13 @@ public class UploadCredentials {
         // use the local setting for the login config rather than the topology's
         topologyConf.remove("java.security.auth.login.config");
 
-        StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap, (String) cl.get("u"));
+        boolean throwExceptionForEmptyCreds = (boolean) cl.get("e");
+        boolean hasCreds = StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap, (String) cl.get("u"));
+        if (!hasCreds && throwExceptionForEmptyCreds) {
+            String message = "No credentials were uploaded for " + topologyName;
+            LOG.error(message);
+            throw new RuntimeException(message);
+        }
         LOG.info("Uploaded new creds to topology: {}", topologyName);
     }
 }

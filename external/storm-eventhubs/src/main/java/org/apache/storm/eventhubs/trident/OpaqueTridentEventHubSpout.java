@@ -26,7 +26,7 @@ import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.tuple.Fields;
 
 /**
- * Opaque Trident EventHubs Spout
+ * Opaque Trident EventHubs Spout.
  */
 public class OpaqueTridentEventHubSpout implements IOpaquePartitionedTridentSpout<Partitions, Partition, Map> {
     private static final long serialVersionUID = 1L;

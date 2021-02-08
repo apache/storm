@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@code StateUpdater<WindowState>} instance which removes successfully emitted triggers from store
+ * {@code StateUpdater<WindowState>} instance which removes successfully emitted triggers from store.
  */
 public class WindowsStateUpdater implements StateUpdater<WindowsState> {
 

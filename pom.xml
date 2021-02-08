@@ -26,7 +26,7 @@
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>2.0.0</version>
+    <version>2.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -236,14 +236,40 @@
             </roles>
             <timezone>-6</timezone>
         </developer>
+        <developer>
+            <id>agresch</id>
+            <name>Aaron Gresch</name>
+            <email>agresch@gmail.com</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <id>ruili</id>
+            <name>Rui Li</name>
+            <email>ruili@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <id>bipinprasad</id>
+            <name>Bipin Prasad</name>
+            <email>bipinprasad@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
 
     </developers>
 
     <scm>
-        <connection>scm:git:https://git-wip-us.apache.org/repos/asf/storm.git</connection>
-        <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/storm.git</developerConnection>
-        <tag>v2.0.0</tag>
-        <url>https://git-wip-us.apache.org/repos/asf/storm</url>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</developerConnection>
+        <url>https://gitbox.apache.org/repos/asf/storm</url>
     </scm>
 
     <issueManagement>
@@ -254,8 +280,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <test.extra.args>-Djava.net.preferIPv4Stack=true</test.extra.args>
+        <!-- license-maven-plugin that needs to be overridable from command line -->
         <license.skipAggregateAddThirdParty>true</license.skipAggregateAddThirdParty>
         <license.skipAggregateDownloadLicenses>true</license.skipAggregateDownloadLicenses>
+        <license.thirdPartyFilename>DEPENDENCY-LICENSES</license.thirdPartyFilename>
+        <license.outputDirectory>${project.basedir}</license.outputDirectory>
 
         <!-- dependency versions -->
         <clojure.version>1.10.0</clojure.version>
@@ -273,7 +302,7 @@
         <jetty.version>9.4.14.v20181114</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.5.0</carbonite.version>
-        <snakeyaml.version>1.11</snakeyaml.version>
+        <snakeyaml.version>1.26</snakeyaml.version>
         <httpclient.version>4.5.6</httpclient.version>
         <jctools.version>2.0.1</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
@@ -281,11 +310,10 @@
         <auto-service.version>1.0-rc4</auto-service.version>
         <netty.version>4.1.30.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
-        <log4j.version>2.11.1</log4j.version>
-        <slf4j.version>1.7.21</slf4j.version>
+        <log4j.version>2.11.2</log4j.version>
+        <slf4j.version>1.7.26</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
-        <mockito.version>2.19.0</mockito.version>
+        <mockito.version>3.0.0</mockito.version>
         <zookeeper.version>3.4.14</zookeeper.version>
         <jline.version>0.9.94</jline.version>
         <hive.version>2.3.4</hive.version>
@@ -295,8 +323,8 @@
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>
-        <thrift.version>0.12.0</thrift.version>
-        <junit.jupiter.version>5.3.2</junit.jupiter.version>
+        <thrift.version>0.13.0</thrift.version>
+        <junit.jupiter.version>5.5.1</junit.jupiter.version>
         <surefire.version>2.22.1</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
@@ -324,19 +352,23 @@
         <maven-resolver.version>1.3.3</maven-resolver.version>
         <maven.version>3.6.0</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
-        <jersey.version>2.27</jersey.version>
-        <dropwizard.version>1.3.5</dropwizard.version>
+        <jersey.version>2.29</jersey.version>
+        <dropwizard.version>1.3.19</dropwizard.version>
         <j2html.version>1.0.0</j2html.version>
         <jool.version>0.9.12</jool.version>
         <caffeine.version>2.3.5</caffeine.version>
+        <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
+        <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jaxb-version>2.3.0</jaxb-version>
-        <rocksdb-version>5.8.6</rocksdb-version>
+        <activation-version>1.1.1</activation-version>
+        <rocksdb-version>5.18.4</rocksdb-version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
     </properties>
 
     <modules>
+        <module>storm-shaded-deps</module>
         <module>storm-checkstyle</module>
         <module>storm-multilang/javascript</module>
         <module>storm-multilang/python</module>
@@ -380,22 +412,12 @@
             </properties>
         </profile>
         <profile>
-            <id>include-shaded-deps</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <modules>
-                <module>storm-shaded-deps</module>
-            </modules>
-        </profile>
-        <profile>
             <id>rat</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.rat</groupId>
                         <artifactId>apache-rat-plugin</artifactId>
-                        <version>0.12</version>
                         <executions>
                             <execution>
                                 <phase>test</phase>
@@ -429,6 +451,7 @@
                                 <exclude>**/README.md</exclude>
                                 <exclude>**/README.markdown</exclude>
                                 <exclude>**/DEVELOPER.md</exclude>
+                                <exclude>**/RELEASING.md</exclude>
                                 <exclude>**/BYLAWS.md</exclude>
                                 <exclude>**/STORM-UI-REST-API.md</exclude>
                                 <exclude>SECURITY.md</exclude>
@@ -455,7 +478,7 @@
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/dataTables.bootstrap.css</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jsonFormatter.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jsonFormatter.min.css</exclude>
-                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery-1.11.1.min.js</exclude>
+                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery-3.5.1.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.cookies.2.2.0.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/moment.min.js</exclude>
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.blockUI.min.js</exclude>
@@ -477,6 +500,7 @@
 
                                 <exclude>**/docs/**</exclude>
                                 <exclude>**/.git/**</exclude>
+                                <exclude>**/.github/**</exclude>
                                 <exclude>**/derby.log</exclude>
                                 <exclude>**/src/dev/**</exclude>
 
@@ -693,20 +717,37 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-server</artifactId>
+                <groupId>org.glassfish.jersey</groupId>
+                <artifactId>jersey-bom</artifactId>
                 <version>${jersey.version}</version>
-            </dependency> 
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId> 
-                <artifactId>jersey-container-servlet-core</artifactId>
-                <version>${jersey.version}</version>
-            </dependency> 
+                <groupId>com.sun.activation</groupId>
+                <artifactId>jakarta.activation</artifactId>
+                <version>${jakarta-activation-version}</version>
+            </dependency>
             <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId> 
-                <artifactId>jersey-container-jetty-http</artifactId>
-                <version>${jersey.version}</version>
-            </dependency> 
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>${jakarta-activation-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta-jaxb-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>${activation-version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
                 <artifactId>HdrHistogram</artifactId>
@@ -874,25 +915,11 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlet</artifactId>
+                <artifactId>jetty-bom</artifactId>
                 <version>${jetty.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlets</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-server</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-util</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>org.clojure</groupId>
                 <artifactId>tools.logging</artifactId>
@@ -936,28 +963,20 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
+                <artifactId>log4j-bom</artifactId>
                 <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-slf4j-impl</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-                <version>${log4j-over-slf4j.version}</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>log4j-over-slf4j</artifactId>
-                <version>${log4j-over-slf4j.version}</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
@@ -974,6 +993,11 @@
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-graphite</artifactId>
+                <version>${metrics.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-jvm</artifactId>
                 <version>${metrics.version}</version>
             </dependency>
             <dependency>
@@ -1034,16 +1058,6 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${jaxb-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>1.1.1</version>
             </dependency>
             <dependency>
                 <groupId>javax.annotation</groupId>
@@ -1249,7 +1263,8 @@
                                 <configLocation>storm/storm_checkstyle.xml</configLocation>
                                 <encoding>UTF-8</encoding>
                                 <failOnViolation>true</failOnViolation>
-                                <logViolationsToConsole>false</logViolationsToConsole>
+                                <logViolationsToConsole>true</logViolationsToConsole>
+                                <consoleOutput>true</consoleOutput>
                                 <outputFile>target/checkstyle-violation.xml</outputFile>
                                 <violationSeverity>warning</violationSeverity>
                             </configuration>
@@ -1258,6 +1273,37 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>3.12.0</version>
+                    <configuration>
+                        <rulesets>
+                            <ruleset>storm/pmd-ruleset.xml</ruleset>
+                        </rulesets>
+                        <includeTests>true</includeTests>
+                        <printFailingErrors>true</printFailingErrors>
+                        <excludes>
+                            <exclude>org/apache/storm/generated/**</exclude>
+                            <exclude>org/apache/storm/sql/parser/impl/**</exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>pmd-check</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.storm</groupId>
+                            <artifactId>storm-checkstyle</artifactId>
+                            <version>${project.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
@@ -1294,13 +1340,14 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>license-maven-plugin</artifactId>
-                    <version>1.19</version>
+                    <version>2.0.0</version>
                     <configuration>
                         <useMissingFile>true</useMissingFile>
                         <failOnMissing>true</failOnMissing>
                         <includeTransitiveDependencies>true</includeTransitiveDependencies>
                         <fileTemplate>/org/codehaus/mojo/license/third-party-file-groupByMultiLicense.ftl</fileTemplate>
                         <excludedScopes>system,test</excludedScopes>
+                        <excludedGroups>${project.groupId}</excludedGroups>
                         <licenseMerges>
                             <licenseMerge>
                                 Apache License, Version 2.0 |
@@ -1360,6 +1407,16 @@
                                 Eclipse Public License, Version 1.0 |
                                 Eclipse Public License 1.0 |
                                 Eclipse Public License - v 1.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                Eclipse Public License, Version 2.0 |
+                                EPL-2.0 |
+                                EPL 2.0
+                            </licenseMerge>
+                            <licenseMerge>
+                                Eclipse Distribution License, Version 1.0 |
+                                Eclipse Distribution License - v 1.0 |
+                                EDL 1.0
                             </licenseMerge>
                             <licenseMerge>
                                 MIT License |
@@ -1436,7 +1493,7 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <version>3.0</version>
+                                    <version>3.5</version>
                                 </requireMavenVersion>
                                 <bannedDependencies>
                                     <excludes>
@@ -1454,8 +1511,6 @@
                 <artifactId>license-maven-plugin</artifactId>
                 <inherited>false</inherited>
                 <configuration>
-                    <thirdPartyFilename>DEPENDENCY-LICENSES</thirdPartyFilename>
-                    <outputDirectory>${project.basedir}</outputDirectory>
                     <missingFile>${project.basedir}/THIRD-PARTY.properties</missingFile>
                     <aggregateMissingLicensesFile>${project.basedir}/THIRD-PARTY.properties</aggregateMissingLicensesFile>
                 </configuration>
@@ -1479,23 +1534,6 @@
 
     <reporting>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>checkstyle</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.0.1</version>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>

@@ -114,7 +114,9 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
     @Override
     public void doPrepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) throws IOException {
         LOG.info("Preparing Sequence File Bolt...");
-        if (this.format == null) throw new IllegalStateException("SequenceFormat must be specified.");
+        if (this.format == null) {
+            throw new IllegalStateException("SequenceFormat must be specified.");
+        }
 
         this.fs = FileSystem.get(URI.create(this.fsUrl), hdfsConfig);
         this.codecFactory = new CompressionCodecFactory(hdfsConfig);

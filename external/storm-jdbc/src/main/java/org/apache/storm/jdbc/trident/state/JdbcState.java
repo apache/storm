@@ -48,10 +48,11 @@ public class JdbcState implements State {
     protected void prepare() {
         options.connectionProvider.prepare();
 
-        if (StringUtils.isBlank(options.insertQuery) && StringUtils.isBlank(options.tableName) &&
-            StringUtils.isBlank(options.selectQuery)) {
-            throw new IllegalArgumentException("If you are trying to insert into DB you must supply either insertQuery or tableName." +
-                                               "If you are attempting to user a query state you must supply a select query.");
+        if (StringUtils.isBlank(options.insertQuery)
+                && StringUtils.isBlank(options.tableName)
+                && StringUtils.isBlank(options.selectQuery)) {
+            throw new IllegalArgumentException("If you are trying to insert into DB you must supply either insertQuery "
+                    + "or tableName. If you are attempting to user a query state you must supply a select query.");
         }
 
         if (options.queryTimeoutSecs == null) {
@@ -62,12 +63,12 @@ public class JdbcState implements State {
     }
 
     @Override
-    public void beginCommit(Long aLong) {
+    public void beginCommit(Long someLong) {
         LOG.debug("beginCommit is noop.");
     }
 
     @Override
-    public void commit(Long aLong) {
+    public void commit(Long someLong) {
         LOG.debug("commit is noop.");
     }
 

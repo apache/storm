@@ -25,8 +25,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SequenceFileReader<Key extends Writable, Value extends Writable>
-    extends AbstractFileReader {
+public class SequenceFileReader<KeyT extends Writable, ValueT extends Writable> extends AbstractFileReader {
     public static final String[] defaultFields = { "key", "value" };
     public static final String BUFFER_SIZE = "hdfsspout.reader.buffer.bytes";
     private static final Logger LOG = LoggerFactory
@@ -37,8 +36,8 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
     private final SequenceFileReader.Offset offset;
 
 
-    private final Key key;
-    private final Value value;
+    private final KeyT key;
+    private final ValueT value;
 
 
     public SequenceFileReader(FileSystem fs, Path file, Map<String, Object> conf)
@@ -46,8 +45,8 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
         super(fs, file);
         int bufferSize = !conf.containsKey(BUFFER_SIZE) ? DEFAULT_BUFF_SIZE : Integer.parseInt(conf.get(BUFFER_SIZE).toString());
         this.reader = new SequenceFile.Reader(fs.getConf(), SequenceFile.Reader.file(file), SequenceFile.Reader.bufferSize(bufferSize));
-        this.key = (Key) ReflectionUtils.newInstance(reader.getKeyClass(), fs.getConf());
-        this.value = (Value) ReflectionUtils.newInstance(reader.getValueClass(), fs.getConf());
+        this.key = (KeyT) ReflectionUtils.newInstance(reader.getKeyClass(), fs.getConf());
+        this.value = (ValueT) ReflectionUtils.newInstance(reader.getValueClass(), fs.getConf());
         this.offset = new SequenceFileReader.Offset(0, 0, 0);
     }
 
@@ -57,8 +56,8 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
         int bufferSize = !conf.containsKey(BUFFER_SIZE) ? DEFAULT_BUFF_SIZE : Integer.parseInt(conf.get(BUFFER_SIZE).toString());
         this.offset = new SequenceFileReader.Offset(offset);
         this.reader = new SequenceFile.Reader(fs.getConf(), SequenceFile.Reader.file(file), SequenceFile.Reader.bufferSize(bufferSize));
-        this.key = (Key) ReflectionUtils.newInstance(reader.getKeyClass(), fs.getConf());
-        this.value = (Value) ReflectionUtils.newInstance(reader.getValueClass(), fs.getConf());
+        this.key = (KeyT) ReflectionUtils.newInstance(reader.getKeyClass(), fs.getConf());
+        this.value = (ValueT) ReflectionUtils.newInstance(reader.getValueClass(), fs.getConf());
         skipToOffset(this.reader, this.offset, this.key);
     }
 
@@ -69,6 +68,7 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
         }
     }
 
+    @Override
     public List<Object> next() throws IOException, ParseException {
         if (reader.next(key, value)) {
             ArrayList<Object> result = new ArrayList<Object>(2);
@@ -88,6 +88,7 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
         }
     }
 
+    @Override
     public Offset getFileOffset() {
         return offset;
     }
@@ -104,8 +105,11 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
             this(lastSyncPoint, recordsSinceLastSync, currentRecord, 0, 0);
         }
 
-        public Offset(long lastSyncPoint, long recordsSinceLastSync, long currentRecord
-            , long currRecordEndOffset, long prevRecordEndOffset) {
+        public Offset(long lastSyncPoint,
+                long recordsSinceLastSync,
+                long currentRecord,
+                long currRecordEndOffset,
+                long prevRecordEndOffset) {
             this.lastSyncPoint = lastSyncPoint;
             this.recordsSinceLastSync = recordsSinceLastSync;
             this.currentRecord = currentRecord;
@@ -133,19 +137,19 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
                     this.currRecordEndOffset = 0;
                 }
             } catch (Exception e) {
-                throw new IllegalArgumentException("'" + offset +
-                                                   "' cannot be interpreted. It is not in expected format for SequenceFileReader." +
-                                                   " Format e.g. {sync=123:afterSync=345:record=67}");
+                throw new IllegalArgumentException("'" + offset
+                        + "' cannot be interpreted. It is not in expected format for SequenceFileReader."
+                        + " Format e.g. {sync=123:afterSync=345:record=67}");
             }
         }
 
         @Override
         public String toString() {
-            return '{' +
-                   "sync=" + lastSyncPoint +
-                   ":afterSync=" + recordsSinceLastSync +
-                   ":record=" + currentRecord +
-                   ":}";
+            return '{'
+                    + "sync=" + lastSyncPoint
+                    + ":afterSync=" + recordsSinceLastSync
+                    + ":record=" + currentRecord
+                    + ":}";
         }
 
         @Override

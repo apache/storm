@@ -116,5 +116,6 @@ public interface ILocalAssignmentsBackend extends AutoCloseable {
     /**
      * Function to release resource.
      */
+    @Override
     void close();
 }

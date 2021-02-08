@@ -12,6 +12,12 @@
 
 package org.apache.storm.trident.operation;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.Timer;
 import org.apache.storm.metric.api.CombinedMetric;
 import org.apache.storm.metric.api.ICombiner;
 import org.apache.storm.metric.api.IMetric;
@@ -24,39 +30,72 @@ import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
 public class TridentOperationContext implements IMetricsContext {
-    TridentTuple.Factory _factory;
-    TopologyContext _topoContext;
+    TridentTuple.Factory factory;
+    TopologyContext topoContext;
 
     public TridentOperationContext(TopologyContext topoContext, TridentTuple.Factory factory) {
-        _factory = factory;
-        _topoContext = topoContext;
+        this.factory = factory;
+        this.topoContext = topoContext;
     }
 
     public TridentOperationContext(TridentOperationContext parent, TridentTuple.Factory factory) {
-        this(parent._topoContext, factory);
+        this(parent.topoContext, factory);
     }
 
     public ProjectionFactory makeProjectionFactory(Fields fields) {
-        return new ProjectionFactory(_factory, fields);
+        return new ProjectionFactory(factory, fields);
     }
 
     public int numPartitions() {
-        return _topoContext.getComponentTasks(_topoContext.getThisComponentId()).size();
+        return topoContext.getComponentTasks(topoContext.getThisComponentId()).size();
     }
 
     public int getPartitionIndex() {
-        return _topoContext.getThisTaskIndex();
+        return topoContext.getThisTaskIndex();
     }
 
+    @Override
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
-        return _topoContext.registerMetric(name, metric, timeBucketSizeInSecs);
+        return topoContext.registerMetric(name, metric, timeBucketSizeInSecs);
     }
 
+    @Override
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
-        return _topoContext.registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
+        return topoContext.registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
 
+    @Override
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
-        return _topoContext.registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
+        return topoContext.registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
+    }
+    
+    @Override
+    public Timer registerTimer(String name) {
+        return topoContext.registerTimer(name);
+    }
+
+    @Override
+    public Histogram registerHistogram(String name) {
+        return topoContext.registerHistogram(name);
+    }
+
+    @Override
+    public Meter registerMeter(String name) {
+        return topoContext.registerMeter(name);
+    }
+
+    @Override
+    public Counter registerCounter(String name) {
+        return topoContext.registerCounter(name);
+    }
+
+    @Override
+    public <T> Gauge<T> registerGauge(String name, Gauge<T> gauge) {
+        return topoContext.registerGauge(name, gauge);
+    }
+
+    @Override
+    public void registerMetricSet(String prefix, MetricSet set) {
+        topoContext.registerMetricSet(prefix, set);
     }
 }

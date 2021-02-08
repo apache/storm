@@ -24,7 +24,7 @@ public class MapUtil {
      * Get value for key. Error if value is null or not the expected type.
      */
     public static <T> T getOrError(Map<String, Object> conf, String key) {
-        T ret = (T)conf.get(key);
+        T ret = (T) conf.get(key);
         if (ret == null) {
             throw new RuntimeException(key + " cannot be null");
         }

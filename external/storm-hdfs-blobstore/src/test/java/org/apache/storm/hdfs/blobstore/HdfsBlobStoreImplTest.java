@@ -64,6 +64,7 @@ public class HdfsBlobStoreImplTest {
             super(path, conf, hconf);
         }
 
+        @Override
         protected Path getKeyDir(String key) {
             return new Path(new Path(blobDir, KEYDIR), key);
         }
@@ -102,6 +103,14 @@ public class HdfsBlobStoreImplTest {
             try (OutputStream ios = pfile.getOutputStream()) {
                 ios.write(testString.getBytes(StandardCharsets.UTF_8));
             }
+
+            // test modTime can change
+            Long initialModTime = pfile.getModTime();
+            try (OutputStream ios = pfile.getOutputStream()) {
+                ios.write(testString.getBytes(StandardCharsets.UTF_8));
+            }
+            Long nextModTime = pfile.getModTime();
+            assertTrue(nextModTime > initialModTime);
 
             // test commit creates properly
             assertTrue("BlobStore key dir wasn't created", fs.exists(fullKeyDir));

@@ -25,84 +25,92 @@ import org.apache.storm.utils.RegisteredGlobalState;
 
 
 public class SpoutTracker extends BaseRichSpout {
-    IRichSpout _delegate;
-    SpoutTrackOutputCollector _tracker;
-    String _trackId;
+    IRichSpout delegate;
+    SpoutTrackOutputCollector tracker;
+    String trackId;
 
 
     public SpoutTracker(IRichSpout delegate, String trackId) {
-        _delegate = delegate;
-        _trackId = trackId;
+        this.delegate = delegate;
+        this.trackId = trackId;
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        _tracker = new SpoutTrackOutputCollector(collector);
-        _delegate.open(conf, context, new SpoutOutputCollector(_tracker));
+        tracker = new SpoutTrackOutputCollector(collector);
+        delegate.open(conf, context, new SpoutOutputCollector(tracker));
     }
 
+    @Override
     public void close() {
-        _delegate.close();
+        delegate.close();
     }
 
+    @Override
     public void nextTuple() {
-        _delegate.nextTuple();
+        delegate.nextTuple();
     }
 
+    @Override
     public void ack(Object msgId) {
-        _delegate.ack(msgId);
-        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
+        delegate.ack(msgId);
+        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(trackId);
         ((AtomicInteger) stats.get("processed")).incrementAndGet();
     }
 
+    @Override
     public void fail(Object msgId) {
-        _delegate.fail(msgId);
-        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
+        delegate.fail(msgId);
+        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(trackId);
         ((AtomicInteger) stats.get("processed")).incrementAndGet();
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        _delegate.declareOutputFields(declarer);
+        delegate.declareOutputFields(declarer);
     }
 
     private class SpoutTrackOutputCollector implements ISpoutOutputCollector {
         public int transferred = 0;
         public int emitted = 0;
-        public SpoutOutputCollector _collector;
+        public SpoutOutputCollector collector;
 
-        public SpoutTrackOutputCollector(SpoutOutputCollector collector) {
-            _collector = collector;
+        SpoutTrackOutputCollector(SpoutOutputCollector collector) {
+            this.collector = collector;
         }
 
         private void recordSpoutEmit() {
-            Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
+            Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(trackId);
             ((AtomicInteger) stats.get("spout-emitted")).incrementAndGet();
 
         }
 
+        @Override
         public List<Integer> emit(String streamId, List<Object> tuple, Object messageId) {
-            List<Integer> ret = _collector.emit(streamId, tuple, messageId);
+            List<Integer> ret = collector.emit(streamId, tuple, messageId);
             recordSpoutEmit();
             return ret;
         }
 
+        @Override
         public void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId) {
-            _collector.emitDirect(taskId, streamId, tuple, messageId);
+            collector.emitDirect(taskId, streamId, tuple, messageId);
             recordSpoutEmit();
         }
 
         @Override
         public void flush() {
-            _collector.flush();
+            collector.flush();
         }
 
         @Override
         public void reportError(Throwable error) {
-            _collector.reportError(error);
+            collector.reportError(error);
         }
 
         @Override
         public long getPendingCount() {
-            return _collector.getPendingCount();
+            return collector.getPendingCount();
         }
 
     }

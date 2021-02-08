@@ -26,7 +26,7 @@ public class TupleInfo implements Serializable {
     private String stream;
     private List<Object> values;
     private long timestamp;
-    private String id;
+    private long rootId;
 
     public Object getMessageId() {
         return messageId;
@@ -66,12 +66,12 @@ public class TupleInfo implements Serializable {
                                                   ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
-    public String getId() {
-        return id;
+    public long getRootId() {
+        return rootId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setRootId(long rootId) {
+        this.rootId = rootId;
     }
 
     public int getTaskId() {
@@ -87,6 +87,6 @@ public class TupleInfo implements Serializable {
         stream = null;
         values = null;
         timestamp = 0;
-        id = null;
+        rootId = 0;
     }
 }

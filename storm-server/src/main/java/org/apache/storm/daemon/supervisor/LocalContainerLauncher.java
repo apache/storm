@@ -23,28 +23,31 @@ import org.apache.storm.utils.LocalState;
  * Launch Containers in local mode.
  */
 public class LocalContainerLauncher extends ContainerLauncher {
-    private final Map<String, Object> _conf;
-    private final String _supervisorId;
-    private final int _supervisorPort;
-    private final IContext _sharedContext;
+    private final Map<String, Object> conf;
+    private final String supervisorId;
+    private final int supervisorPort;
+    private final IContext sharedContext;
     private final StormMetricsRegistry metricsRegistry;
     private final ContainerMemoryTracker containerMemoryTracker;
+    private final org.apache.storm.generated.Supervisor.Iface localSupervisor;
 
     public LocalContainerLauncher(Map<String, Object> conf, String supervisorId, int supervisorPort,
                                   IContext sharedContext, StormMetricsRegistry metricsRegistry, 
-                                  ContainerMemoryTracker containerMemoryTracker) {
-        _conf = conf;
-        _supervisorId = supervisorId;
-        _supervisorPort = supervisorPort;
-        _sharedContext = sharedContext;
+                                  ContainerMemoryTracker containerMemoryTracker,
+                                  org.apache.storm.generated.Supervisor.Iface localSupervisor) {
+        this.conf = conf;
+        this.supervisorId = supervisorId;
+        this.supervisorPort = supervisorPort;
+        this.sharedContext = sharedContext;
         this.metricsRegistry = metricsRegistry;
         this.containerMemoryTracker = containerMemoryTracker;
+        this.localSupervisor = localSupervisor;
     }
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        LocalContainer ret = new LocalContainer(_conf, _supervisorId, _supervisorPort,
-            port, assignment, _sharedContext, metricsRegistry, containerMemoryTracker);
+        LocalContainer ret = new LocalContainer(conf, supervisorId, supervisorPort,
+            port, assignment, sharedContext, metricsRegistry, containerMemoryTracker, localSupervisor);
         ret.setup();
         ret.launch();
         return ret;

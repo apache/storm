@@ -35,6 +35,8 @@ public class SetLogLevel {
                                     .arg("topologyName", CLI.FIRST_WINS)
                                     .parse(args);
         final String topologyName = (String) cl.get("topologyName");
+        Utils.validateTopologyName(topologyName);
+
         final LogConfig logConfig = new LogConfig();
         Map<String, LogLevel> logLevelMap = new HashMap<>();
         Map<String, LogLevel> updateLogLevel = (Map<String, LogLevel>) cl.get("l");
@@ -74,7 +76,7 @@ public class SetLogLevel {
 
         private LogLevelAction action;
 
-        public LogLevelsParser(LogLevelAction action) {
+        LogLevelsParser(LogLevelAction action) {
             this.action = action;
         }
 
@@ -92,7 +94,7 @@ public class SetLogLevel {
                 splits = splits[1].split(":");
                 Integer timeout = 0;
                 Level level = Level.valueOf(splits[0]);
-                logLevel.set_reset_log_level(level.toString());
+                logLevel.set_target_log_level(level.toString());
                 if (splits.length > 1) {
                     timeout = Integer.parseInt(splits[1]);
                 }

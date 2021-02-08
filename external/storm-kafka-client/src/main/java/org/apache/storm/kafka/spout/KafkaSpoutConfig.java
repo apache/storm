@@ -293,6 +293,7 @@ public class KafkaSpoutConfig<K, V> extends CommonKafkaSpoutConfig<K, V> {
             return this;
         }
 
+        @Override
         public KafkaSpoutConfig<K, V> build() {
             return new KafkaSpoutConfig<>(this);
         }

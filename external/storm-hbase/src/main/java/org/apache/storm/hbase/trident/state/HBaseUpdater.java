@@ -20,6 +20,7 @@ import org.apache.storm.trident.tuple.TridentTuple;
 public class HBaseUpdater extends BaseStateUpdater<HBaseState> {
 
     @Override
+    @SuppressWarnings("checkstyle:ParameterName")
     public void updateState(HBaseState hBaseState, List<TridentTuple> tuples, TridentCollector collector) {
         hBaseState.updateState(tuples, collector);
     }

@@ -58,7 +58,7 @@ public class CpuacctCore implements CgroupCore {
         return result;
     }
 
-    public static enum StatType {
+    public enum StatType {
         user, system;
     }
 

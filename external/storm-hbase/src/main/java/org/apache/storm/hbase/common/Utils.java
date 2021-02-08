@@ -64,8 +64,8 @@ public class Utils {
 
                             foundHBaseAuthToken = true;
                         } else {
-                            LOG.warn("Found multiple HBASE_AUTH_TOKEN - will use already found token. " +
-                                     "Please enable DEBUG log level to track delegation tokens.");
+                            LOG.warn("Found multiple HBASE_AUTH_TOKEN - will use already found token. "
+                                    + "Please enable DEBUG log level to track delegation tokens.");
                         }
                     }
                 }

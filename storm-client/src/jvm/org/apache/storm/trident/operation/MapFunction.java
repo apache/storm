@@ -17,7 +17,7 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
 
 /**
- * A one-one transformation function
+ * A one-one transformation function.
  */
 public interface MapFunction extends Serializable {
     /**

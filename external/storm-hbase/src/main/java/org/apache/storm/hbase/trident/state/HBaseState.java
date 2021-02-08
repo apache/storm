@@ -43,6 +43,7 @@ public class HBaseState implements State {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseState.class);
 
     private Options options;
+    @SuppressWarnings("checkstyle:MemberName")
     private HBaseClient hBaseClient;
     private Map<String, Object> map;
     private int numPartitions;
@@ -80,12 +81,12 @@ public class HBaseState implements State {
     }
 
     @Override
-    public void beginCommit(Long aLong) {
+    public void beginCommit(Long someLong) {
         LOG.debug("beginCommit is noop.");
     }
 
     @Override
-    public void commit(Long aLong) {
+    public void commit(Long someLong) {
         LOG.debug("commit is noop.");
     }
 

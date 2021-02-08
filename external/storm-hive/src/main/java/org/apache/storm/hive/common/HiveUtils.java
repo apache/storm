@@ -12,6 +12,8 @@
 
 package org.apache.storm.hive.common;
 
+import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -24,8 +26,6 @@ import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.apache.storm.hive.security.AutoHive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
 
 public class HiveUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveUtils.class);
@@ -94,8 +94,8 @@ public class HiveUtils {
     }
 
     public static boolean isTokenAuthEnabled(Map<String, Object> conf) {
-        return conf.get(TOPOLOGY_AUTO_CREDENTIALS) != null &&
-               (((List) conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHive.class.getName()));
+        return conf.get(TOPOLOGY_AUTO_CREDENTIALS) != null
+                && (((List) conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHive.class.getName()));
     }
 
     private static UserGroupInformation getCurrentUser(String principal) throws AuthenticationFailed {

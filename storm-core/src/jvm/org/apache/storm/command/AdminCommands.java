@@ -72,7 +72,8 @@ public class AdminCommands {
         @Override
         public void run(String[] args, Map<String, Object> conf, String command) throws Exception {
             try (BlobStore nimbusBlobStore = ServerUtils.getNimbusBlobStore(conf, NimbusInfo.fromConf(conf), null)) {
-                IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
+                IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf,
+                        new ClusterStateContext(DaemonType.NIMBUS, conf));
 
                 Set<String> blobStoreTopologyIds = nimbusBlobStore.filterAndListKeys(key -> ConfigUtils.getIdFromBlobKey(key));
                 Set<String> activeTopologyIds = new HashSet<>(stormClusterState.activeStorms());
@@ -126,22 +127,22 @@ public class AdminCommands {
         return builder.toString();
     }
 
+    private static void prettyPrint(TBase value, int depth, StringBuilder out) {
+        if (value == null) {
+            println(out, depth, "null");
+            return;
+        }
+        println(out, depth, "{");
+        prettyPrintFields(value, depth + 1, out);
+        println(out, depth, "}");
+    }
+
     private static void println(StringBuilder out, int depth, Object value) {
         for (int i = 0; i < depth; i++) {
             out.append("\t");
         }
         out.append(value);
         out.append("\n");
-    }
-
-    private static void prettyPrint(TBase value, int depth, StringBuilder out) {
-        if (value == null) {
-            println(out, depth,"null");
-            return;
-        }
-        println(out, depth, "{");
-        prettyPrintFields(value, depth + 1, out);
-        println(out, depth, "}");
     }
 
     private static void prettyPrintFields(TBase value, int depth, StringBuilder out) {
@@ -164,7 +165,7 @@ public class AdminCommands {
         //Special cases for storm...
         if ("json_conf".equals(key) && o instanceof String) {
             try {
-                o = Utils.parseJson((String)o);
+                o = Utils.parseJson((String) o);
             } catch (Exception e) {
                 LOG.error("Could not parse json_conf as JSON", e);
             }
@@ -181,7 +182,7 @@ public class AdminCommands {
             println(out, depth, "}");
         } else if (o instanceof Collection) {
             println(out, depth, keyStr(key) + "[");
-            for (Object sub: (Collection)o) {
+            for (Object sub: (Collection) o) {
                 prettyPrintKeyValue(null, sub, depth + 1, out);
             }
             println(out, depth, "]");

@@ -22,10 +22,12 @@ import org.apache.storm.tuple.Tuple;
 
 
 public class TestPlannerBolt extends BaseRichBolt {
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
 
     }
 
+    @Override
     public void execute(Tuple input) {
 
     }
@@ -34,6 +36,7 @@ public class TestPlannerBolt extends BaseRichBolt {
         return new Fields("field1", "field2");
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(getOutputFields());
     }

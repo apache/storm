@@ -28,7 +28,6 @@ public class Constants {
     public static final String METRICS_COMPONENT_ID_PREFIX = "__metrics_";
     public static final String METRICS_STREAM_ID = "__metrics";
     public static final String METRICS_TICK_STREAM_ID = "__metrics_tick";
-    public static final String CREDENTIALS_CHANGED_STREAM_ID = "__credentials";
 
     public static final Object TOPOLOGY = "topology";
     public static final String SYSTEM_TOPOLOGY = "system-topology";
@@ -55,5 +54,8 @@ public class Constants {
     public static final String COMMON_ONHEAP_MEMORY_RESOURCE_NAME = "onheap.memory.mb";
     public static final String COMMON_OFFHEAP_MEMORY_RESOURCE_NAME = "offheap.memory.mb";
     public static final String COMMON_TOTAL_MEMORY_RESOURCE_NAME = "memory.mb";
+
+    public static final String NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS = "nimbus:num-send-assignment-exceptions";
+    public static final String SUPERVISOR_HEALTH_CHECK_TIMEOUTS = "supervisor:health-check-timeouts";
 }
     

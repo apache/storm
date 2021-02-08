@@ -25,7 +25,7 @@ import redis.clients.jedis.Pipeline;
  */
 public class RedisStateUpdater extends AbstractRedisStateUpdater<RedisState> {
     /**
-     * Constructor
+     * Constructor.
      *
      * @param storeMapper mapper for storing
      */
@@ -76,8 +76,8 @@ public class RedisStateUpdater extends AbstractRedisStateUpdater<RedisState> {
 
             // send expire command for hash only once
             // it expires key itself entirely, so use it with caution
-            if (dataType == RedisDataTypeDescription.RedisDataType.HASH &&
-                this.expireIntervalSec > 0) {
+            if (dataType == RedisDataTypeDescription.RedisDataType.HASH
+                    && this.expireIntervalSec > 0) {
                 pipeline.expire(additionalKey, expireIntervalSec);
             }
 

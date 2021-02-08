@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.storm.Config;
@@ -43,9 +42,10 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResources;
 import org.apache.storm.scheduler.resource.strategies.scheduling.BaseResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.ConstraintSolverStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
-import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.testing.PerformanceTest;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
@@ -67,20 +67,41 @@ import java.time.Duration;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class TestResourceAwareScheduler {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestResourceAwareScheduler.class);
-    private static final Config defaultTopologyConf = createClusterConfig(10, 128, 0, null);
-    private static int currentTime = 1450418597;
-    private static IScheduler scheduler = null;
+    private final Config defaultTopologyConf;
+    private int currentTime = 1450418597;
+    private IScheduler scheduler = null;
 
-    @BeforeAll
-    public static void initConf() {
+    public TestResourceAwareScheduler() {
+        defaultTopologyConf = createClusterConfig(10, 128, 0, null);
         defaultTopologyConf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 8192.0);
         defaultTopologyConf.put(Config.TOPOLOGY_PRIORITY, 0);
+    }
+
+    protected Class getDefaultResourceAwareStrategyClass() {
+        return DefaultResourceAwareStrategy.class;
+    }
+
+    protected Class getGenericResourceAwareStrategyClass() {
+        return GenericResourceAwareStrategy.class;
+    }
+
+    private Config createGrasClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                           Map<String, Map<String, Number>> pools, Map<String, Double> genericResourceMap) {
+        Config config = TestUtilsForResourceAwareScheduler.createGrasClusterConfig(compPcore, compOnHeap, compOffHeap, pools, genericResourceMap);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getGenericResourceAwareStrategyClass().getName());
+        return config;
+    }
+
+    private Config createClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                       Map<String, Map<String, Number>> pools) {
+        Config config = TestUtilsForResourceAwareScheduler.createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
+        return config;
     }
 
     @After
@@ -102,9 +123,9 @@ public class TestResourceAwareScheduler {
         TopologyDetails topology2 = genTopology("topology2", config, 1, 0, 2, 0, 0, 0, "user");
         Topologies topologies = new Topologies(topology1, topology2);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
-        Map<String, RAS_Node> nodes = RAS_Nodes.getAllNodesFrom(cluster);
+        Map<String, RasNode> nodes = RasNodes.getAllNodesFrom(cluster);
         assertEquals(5, nodes.size());
-        RAS_Node node = nodes.get("r000s000");
+        RasNode node = nodes.get("r000s000");
 
         assertEquals("r000s000", node.getId());
         assertTrue(node.isAlive());
@@ -173,7 +194,7 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topology1);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         SchedulerAssignment assignment = cluster.getAssignmentById(topology1.getId());
@@ -187,7 +208,8 @@ public class TestResourceAwareScheduler {
         assertEquals(1, assignedSlots.size());
         assertEquals(1, nodesIDs.size());
         assertEquals(2, executors.size());
-        assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology1.getId()));
+        assertFalse(cluster.needsSchedulingRas(topology1));
+        assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
     }
 
     @Test
@@ -222,7 +244,7 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topology1, topology2);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         SchedulerAssignment assignment1 = cluster.getAssignmentById(topology1.getId());
@@ -236,7 +258,8 @@ public class TestResourceAwareScheduler {
         assertEquals(1, assignedSlots1.size());
         assertEquals(1, nodesIDs1.size());
         assertEquals(7, executors1.size());
-        assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology1.getId()));
+        assertFalse(cluster.needsSchedulingRas(topology1));
+        assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
 
         SchedulerAssignment assignment2 = cluster.getAssignmentById(topology2.getId());
         Set<WorkerSlot> assignedSlots2 = assignment2.getSlots();
@@ -249,7 +272,8 @@ public class TestResourceAwareScheduler {
         assertEquals(1, assignedSlots2.size());
         assertEquals(1, nodesIDs2.size());
         assertEquals(2, executors2.size());
-        assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology2.getId()));
+        assertFalse(cluster.needsSchedulingRas(topology2));
+        assertTrue(cluster.getStatusMap().get(topology2.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
     }
 
     @Test
@@ -272,7 +296,7 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topology1);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
-        rs.prepare(config);
+        rs.prepare(config, new StormMetricsRegistry());
         rs.schedule(topologies, cluster);
 
         SchedulerAssignment assignment1 = cluster.getAssignmentById(topology1.getId());
@@ -293,7 +317,9 @@ public class TestResourceAwareScheduler {
         assertEquals(2, executors1.size());
         assertEquals(400.0, assignedMemory, 0.001);
         assertEquals(40.0, assignedCpu, 0.001);
-        assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology1.getId()));
+        assertFalse(cluster.needsSchedulingRas(topology1));
+        String expectedStatusPrefix = "Running - Fully Scheduled by DefaultResourceAwareStrategy";
+        assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith(expectedStatusPrefix));
     }
 
     @Test
@@ -317,7 +343,7 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topology1);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
-        rs.prepare(config);
+        rs.prepare(config, new StormMetricsRegistry());
         rs.schedule(topologies, cluster);
 
         SchedulerAssignment assignment1 = cluster.getAssignmentById(topology1.getId());
@@ -345,12 +371,9 @@ public class TestResourceAwareScheduler {
             executorToSupervisor.put(entry.getKey(), cluster.getSupervisorById(entry.getValue().getNodeId()));
         }
         for (Map.Entry<ExecutorDetails, SupervisorDetails> entry : executorToSupervisor.entrySet()) {
-            List<ExecutorDetails> executorsOnSupervisor = supervisorToExecutors.get(entry.getValue());
-            if (executorsOnSupervisor == null) {
-                executorsOnSupervisor = new ArrayList<>();
-                supervisorToExecutors.put(entry.getValue(), executorsOnSupervisor);
-            }
-            executorsOnSupervisor.add(entry.getKey());
+            supervisorToExecutors
+                    .computeIfAbsent(entry.getValue(), k -> new ArrayList<>())
+                    .add(entry.getKey());
         }
         for (Map.Entry<SupervisorDetails, List<ExecutorDetails>> entry : supervisorToExecutors.entrySet()) {
             Double supervisorTotalCpu = entry.getKey().getTotalCpu();
@@ -382,7 +405,8 @@ public class TestResourceAwareScheduler {
         for (Map.Entry<Double, Double> entry : cpuAvailableToUsed.entrySet()) {
             assertTrue(entry.getKey() - entry.getValue() >= 0);
         }
-        assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology1.getId()));
+        assertFalse(cluster.needsSchedulingRas(topology1));
+        assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
     }
 
     @Test
@@ -413,7 +437,7 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topology2);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config1);
 
-        scheduler.prepare(config1);
+        scheduler.prepare(config1, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         SchedulerAssignment assignment = cluster.getAssignmentById(topology2.getId());
@@ -439,7 +463,8 @@ public class TestResourceAwareScheduler {
         for (ExecutorDetails executor : healthyExecutors) {
             assertEquals(copyOfOldMapping.get(executor), newExecutorToSlot.get(executor));
         }
-        assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology2.getId()));
+        assertFalse(cluster.needsSchedulingRas(topology2));
+        assertTrue(cluster.getStatusMap().get(topology2.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
         // end of Test1
 
         // Test2: When a supervisor fails, RAS does not alter existing assignments
@@ -494,6 +519,7 @@ public class TestResourceAwareScheduler {
         for (ExecutorDetails executor : existingExecutors) {
             assertEquals(copyOfOldMapping.get(executor), newExecutorToSlot.get(executor));
         }
+        assertFalse(cluster1.needsSchedulingRas(topology1));
         assertEquals("Fully Scheduled", cluster1.getStatusMap().get(topology1.getId()));
         // end of Test3
 
@@ -515,8 +541,11 @@ public class TestResourceAwareScheduler {
         for (ExecutorDetails executor : copyOfOldMapping.keySet()) {
             assertEquals(copyOfOldMapping.get(executor), newExecutorToSlot.get(executor));
         }
-        assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster1.getStatusMap().get(topology1.getId()));
-        assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster1.getStatusMap().get(topology2.getId()));
+        assertFalse(cluster1.needsSchedulingRas(topology1));
+        assertFalse(cluster1.needsSchedulingRas(topology2));
+        String expectedStatusPrefix = "Running - Fully Scheduled by DefaultResourceAwareStrategy";
+        assertTrue(cluster1.getStatusMap().get(topology1.getId()).startsWith(expectedStatusPrefix));
+        assertTrue(cluster1.getStatusMap().get(topology2.getId()).startsWith(expectedStatusPrefix));
     }
 
     public void testHeterogeneousCluster(Config topologyConf, String strategyName) {
@@ -568,7 +597,7 @@ public class TestResourceAwareScheduler {
         Config config3 = new Config();
         config3.putAll(topologyConf);
         Map<ExecutorDetails, String> executorMap3 = genExecsAndComps(stormTopology3);
-        TopologyDetails topology3 = new TopologyDetails("topology3", config2, stormTopology3, 1, executorMap3, 0, "user");
+        TopologyDetails topology3 = new TopologyDetails("topology3", config3, stormTopology3, 1, executorMap3, 0, "user");
 
         // topo4 has 12 small tasks, whose mem usage does not exactly divide a node's mem capacity
         TopologyBuilder builder4 = new TopologyBuilder();
@@ -593,7 +622,7 @@ public class TestResourceAwareScheduler {
         LOG.info("\n\n\t\tScheduling topologies 1, 2 and 3");
         Topologies topologies = new Topologies(topology1, topology2, topology3);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config1);
-        rs.prepare(config1);
+        rs.prepare(config1, new StormMetricsRegistry());
 
         Map<SupervisorDetails, Double> superToCpu = null;
         Map<SupervisorDetails, Double> superToMem = null;
@@ -601,9 +630,14 @@ public class TestResourceAwareScheduler {
         try {
             rs.schedule(topologies, cluster);
 
-            assertEquals("Running - Fully Scheduled by " + strategyName, cluster.getStatusMap().get(topology1.getId()));
-            assertEquals("Running - Fully Scheduled by " + strategyName, cluster.getStatusMap().get(topology2.getId()));
-            assertEquals("Running - Fully Scheduled by " + strategyName, cluster.getStatusMap().get(topology3.getId()));
+            assertFalse(cluster.needsSchedulingRas(topology1));
+            assertFalse(cluster.needsSchedulingRas(topology2));
+            assertFalse(cluster.needsSchedulingRas(topology3));
+
+            String expectedMsgPrefix = "Running - Fully Scheduled by " + strategyName;
+            assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith(expectedMsgPrefix));
+            assertTrue(cluster.getStatusMap().get(topology2.getId()).startsWith(expectedMsgPrefix));
+            assertTrue(cluster.getStatusMap().get(topology3.getId()).startsWith(expectedMsgPrefix));
 
             superToCpu = getSupervisorToCpuUsage(cluster, topologies);
             superToMem = getSupervisorToMemoryUsage(cluster, topologies);
@@ -629,19 +663,19 @@ public class TestResourceAwareScheduler {
         // scheduled
         topologies = new Topologies(topology1, topology2, topology4);
         cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config1);
-        rs.prepare(config1);
+        rs.prepare(config1, new StormMetricsRegistry());
         try {
             rs.schedule(topologies, cluster);
             int numTopologiesAssigned = 0;
-            if (cluster.getStatusMap().get(topology1.getId()).equals("Running - Fully Scheduled by " + strategyName)) {
+            if (cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by " + strategyName)) {
                 LOG.info("TOPO 1 scheduled");
                 numTopologiesAssigned++;
             }
-            if (cluster.getStatusMap().get(topology2.getId()).equals("Running - Fully Scheduled by " + strategyName)) {
+            if (cluster.getStatusMap().get(topology2.getId()).startsWith("Running - Fully Scheduled by " + strategyName)) {
                 LOG.info("TOPO 2 scheduled");
                 numTopologiesAssigned++;
             }
-            if (cluster.getStatusMap().get(topology4.getId()).equals("Running - Fully Scheduled by " + strategyName)) {
+            if (cluster.getStatusMap().get(topology4.getId()).startsWith("Running - Fully Scheduled by " + strategyName)) {
                 LOG.info("TOPO 3 scheduled");
                 numTopologiesAssigned++;
             }
@@ -655,7 +689,7 @@ public class TestResourceAwareScheduler {
         //Test3: "Launch topo5 only, both mem and cpu should be exactly used up"
         topologies = new Topologies(topology5);
         cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config1);
-        rs.prepare(config1);
+        rs.prepare(config1, new StormMetricsRegistry());
         try {
             rs.schedule(topologies, cluster);
             superToCpu = getSupervisorToCpuUsage(cluster, topologies);
@@ -676,14 +710,14 @@ public class TestResourceAwareScheduler {
 
     @Test
     public void testHeterogeneousClusterwithDefaultRas() {
-        testHeterogeneousCluster(defaultTopologyConf, DefaultResourceAwareStrategy.class.getSimpleName());
+        testHeterogeneousCluster(defaultTopologyConf, getDefaultResourceAwareStrategyClass().getSimpleName());
     }
 
     @Test
     public void testHeterogeneousClusterwithGras() {
         Config grasClusterConfig = (Config) defaultTopologyConf.clone();
-        grasClusterConfig.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, GenericResourceAwareStrategy.class.getName());
-        testHeterogeneousCluster(grasClusterConfig, GenericResourceAwareStrategy.class.getSimpleName());
+        grasClusterConfig.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getGenericResourceAwareStrategyClass().getName());
+        testHeterogeneousCluster(grasClusterConfig, getGenericResourceAwareStrategyClass().getSimpleName());
     }
 
     @Test
@@ -703,10 +737,11 @@ public class TestResourceAwareScheduler {
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
         Topologies topologies = new Topologies(topology1);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config1);
-        rs.prepare(config1);
+        rs.prepare(config1, new StormMetricsRegistry());
         try {
             rs.schedule(topologies, cluster);
-            assertEquals("Running - Fully Scheduled by DefaultResourceAwareStrategy", cluster.getStatusMap().get(topology1.getId()));
+            assertFalse(cluster.needsSchedulingRas(topology1));
+            assertTrue(cluster.getStatusMap().get(topology1.getId()).startsWith("Running - Fully Scheduled by DefaultResourceAwareStrategy"));
             assertEquals(4, cluster.getAssignedNumWorkers(topology1));
         } finally {
             rs.cleanup();
@@ -727,12 +762,13 @@ public class TestResourceAwareScheduler {
         TopologyDetails topology2 = new TopologyDetails("topology2", config2, stormTopology2, 1, executorMap2, 0, "user");
         topologies = new Topologies(topology2);
         cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config2);
-        rs.prepare(config2);
+        rs.prepare(config2, new StormMetricsRegistry());
         try {
             rs.schedule(topologies, cluster);
+            assertTrue(cluster.needsSchedulingRas(topology2));
             String status = cluster.getStatusMap().get(topology2.getId());
             assert status.startsWith("Not enough resources to schedule") : status;
-            assert status.endsWith("5 executors not scheduled") : status;
+            //assert status.endsWith("5 executors not scheduled") : status;
             assertEquals(5, cluster.getUnassignedExecutors(topology2).size());
         } finally {
             rs.cleanup();
@@ -764,7 +800,7 @@ public class TestResourceAwareScheduler {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         assertTopologiesFullyScheduled(cluster, "topo-1", "topo-2", "topo-3", "topo-4");
         assertTopologiesNotScheduled(cluster, "topo-5");
@@ -799,7 +835,7 @@ public class TestResourceAwareScheduler {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         for (TopologyDetails td : topologies) {
             assertTopologiesFullyScheduled(cluster, td.getName());
@@ -821,7 +857,7 @@ public class TestResourceAwareScheduler {
             genTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8, 29, "jerry"));
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         assertTopologiesFullyScheduled(cluster, "topo-1");
@@ -852,7 +888,7 @@ public class TestResourceAwareScheduler {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
 
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         assertTopologiesFullyScheduled(cluster, "topo-1", "topo-2", "topo-3", "topo-4", "topo-5", "topo-6");
@@ -865,7 +901,7 @@ public class TestResourceAwareScheduler {
         for (Map.Entry<String, SchedulerAssignment> topoToAssignment : cluster.getAssignments().entrySet()) {
             String topoId = topoToAssignment.getKey();
             SchedulerAssignment assignment = topoToAssignment.getValue();
-            Map<ExecutorDetails, WorkerSlot> executorToSlots = new HashMap<ExecutorDetails, WorkerSlot>();
+            Map<ExecutorDetails, WorkerSlot> executorToSlots = new HashMap<>();
             for (Map.Entry<ExecutorDetails, WorkerSlot> execToWorker : assignment.getExecutorToSlot().entrySet()) {
                 ExecutorDetails exec = execToWorker.getKey();
                 WorkerSlot ws = execToWorker.getValue();
@@ -900,10 +936,10 @@ public class TestResourceAwareScheduler {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
 
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
-        Map<String, RAS_Node> nodes = RAS_Nodes.getAllNodesFrom(cluster);
+        Map<String, RasNode> nodes = RasNodes.getAllNodesFrom(cluster);
 
         for (SchedulerAssignment assignment : cluster.getAssignments().values()) {
             for (Entry<WorkerSlot, WorkerResources> entry : new HashMap<>(assignment.getScheduledResources()).entrySet()) {
@@ -942,7 +978,7 @@ public class TestResourceAwareScheduler {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
 
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         assertFalse("Topo-1 unscheduled?", cluster.getAssignmentById(topo1.getId()) != null);
@@ -966,8 +1002,9 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topo1);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+        assertFalse(cluster.needsSchedulingRas(topo1));
         assertTrue("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
     }
 
@@ -987,8 +1024,11 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topo1, topo2, topo3);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+        assertFalse(cluster.needsSchedulingRas(topo1));
+        assertFalse(cluster.needsSchedulingRas(topo2));
+        assertTrue(cluster.needsSchedulingRas(topo3));
         assertTrue("topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
         assertTrue("topo-2 scheduled?", cluster.getAssignmentById(topo2.getId()) != null);
         assertFalse("topo-3 unscheduled?", cluster.getAssignmentById(topo3.getId()) != null);
@@ -1033,8 +1073,20 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topo0, topo1, topo2, topo3, topo4, topo5, topo6, topo7, topo8, topo9);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+
+        assertFalse(cluster.needsSchedulingRas(topo0));
+        assertFalse(cluster.needsSchedulingRas(topo1));
+        assertFalse(cluster.needsSchedulingRas(topo2));
+        assertFalse(cluster.needsSchedulingRas(topo3));
+        assertFalse(cluster.needsSchedulingRas(topo4));
+        assertFalse(cluster.needsSchedulingRas(topo5));
+        assertFalse(cluster.needsSchedulingRas(topo6));
+        assertFalse(cluster.needsSchedulingRas(topo7));
+        assertFalse(cluster.needsSchedulingRas(topo8));
+        assertTrue(cluster.needsSchedulingRas(topo9));
+
         assertTrue("topo-0 scheduled?", cluster.getAssignmentById(topo0.getId()) != null);
         assertTrue("topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
         assertTrue("topo-2 scheduled?", cluster.getAssignmentById(topo2.getId()) != null);
@@ -1062,9 +1114,222 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topo1);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+        assertTrue(cluster.needsSchedulingRas(topo1));
         assertFalse("Topo-1 unscheduled?", cluster.getAssignmentById(topo1.getId()) != null);
+    }
+
+    protected static class TimeBlockResult {
+        List<Long> firstBlockTime;
+        List<Long> lastBlockTime;
+
+        TimeBlockResult() {
+            firstBlockTime = new ArrayList<>();
+            lastBlockTime = new ArrayList<>();
+        }
+
+        void append(TimeBlockResult other) {
+            this.firstBlockTime.addAll(other.firstBlockTime);
+            this.lastBlockTime.addAll(other.lastBlockTime);
+        }
+    }
+
+    private long getMedianValue(List<Long> values) {
+        final int numValues = values.size();
+        assert(numValues % 2 == 1);     // number of values must be odd to compute median as below
+        List<Long> sortedValues = new ArrayList<>();
+        sortedValues.addAll(values);
+        Collections.sort(sortedValues);
+
+        final int medianIndex = (int) Math.floor(numValues / 2);
+        return sortedValues.get(medianIndex);
+    }
+
+    /**
+     * Check time to schedule a fragmented cluster using different strategies
+     *
+     * Simulate scheduling on a large production cluster. Find the ratio of time to schedule a set of topologies when
+     * the cluster is empty and when the cluster is nearly full. While the cluster has sufficient resources to schedule
+     * all topologies, when nearly full the cluster becomes fragmented and some topologies fail to schedule.
+     */
+    @Test
+    public void TestLargeFragmentedClusterScheduling() {
+        /*
+        Without fragmentation, the cluster would be able to schedule both topologies on each node. Let's call each node
+        with both topologies scheduled as 100% scheduled.
+
+        We schedule the cluster in 3 blocks of topologies, measuring the time to schedule the blocks. The first, middle
+        and last blocks attempt to schedule the following 0-10%, 10%-90%, 90%-100%. The last block has a number of
+        scheduling failures due to cluster fragmentation and its time is dominated by attempting to evict topologies.
+
+        Timing results for scheduling are noisy. As a result, we do multiple runs and use median values for FirstBlock
+        and LastBlock times. (somewhere a statistician is crying). The ratio of LastBlock / FirstBlock remains fairly constant.
+
+
+        TestLargeFragmentedClusterScheduling took 91118 ms
+        DefaultResourceAwareStrategy, FirstBlock 249.0, LastBlock 1734.0 ratio 6.963855421686747
+        GenericResourceAwareStrategy, FirstBlock 215.0, LastBlock 1673.0 ratio 7.78139534883721
+        ConstraintSolverStrategy, FirstBlock 279.0, LastBlock 2200.0 ratio 7.885304659498208
+
+        TestLargeFragmentedClusterScheduling took 98455 ms
+        DefaultResourceAwareStrategy, FirstBlock 266.0, LastBlock 1812.0 ratio 6.81203007518797
+        GenericResourceAwareStrategy, FirstBlock 235.0, LastBlock 1802.0 ratio 7.6680851063829785
+        ConstraintSolverStrategy, FirstBlock 304.0, LastBlock 2320.0 ratio 7.631578947368421
+
+        TestLargeFragmentedClusterScheduling took 97268 ms
+        DefaultResourceAwareStrategy, FirstBlock 251.0, LastBlock 1826.0 ratio 7.274900398406374
+        GenericResourceAwareStrategy, FirstBlock 220.0, LastBlock 1719.0 ratio 7.8136363636363635
+        ConstraintSolverStrategy, FirstBlock 296.0, LastBlock 2469.0 ratio 8.341216216216216
+
+        TestLargeFragmentedClusterScheduling took 97963 ms
+        DefaultResourceAwareStrategy, FirstBlock 249.0, LastBlock 1788.0 ratio 7.180722891566265
+        GenericResourceAwareStrategy, FirstBlock 240.0, LastBlock 1796.0 ratio 7.483333333333333
+        ConstraintSolverStrategy, FirstBlock 328.0, LastBlock 2544.0 ratio 7.7560975609756095
+
+        TestLargeFragmentedClusterScheduling took 93106 ms
+        DefaultResourceAwareStrategy, FirstBlock 258.0, LastBlock 1714.0 ratio 6.6434108527131785
+        GenericResourceAwareStrategy, FirstBlock 215.0, LastBlock 1692.0 ratio 7.869767441860465
+        ConstraintSolverStrategy, FirstBlock 309.0, LastBlock 2342.0 ratio 7.5792880258899675
+
+        Choose the median value of the values above
+        DefaultResourceAwareStrategy    6.96
+        GenericResourceAwareStrategy    7.78
+        ConstraintSolverStrategy        7.75
+        */
+
+        final int numNodes = 500;
+        final int numRuns = 5;
+
+        Map<String, Config> strategyToConfigs = new HashMap<>();
+        strategyToConfigs.put(getDefaultResourceAwareStrategyClass().getName(), createClusterConfig(10, 10, 0, null));
+        strategyToConfigs.put(getGenericResourceAwareStrategyClass().getName(), createGrasClusterConfig(10, 10, 0, null, null));
+        strategyToConfigs.put(ConstraintSolverStrategy.class.getName(), createCSSClusterConfig(10, 10, 0, null));
+
+        Map<String, TimeBlockResult> strategyToTimeBlockResults = new HashMap<>();
+
+        // AcceptedBlockTimeRatios obtained by empirical testing (see comment block above)
+        Map<String, Double> strategyToAcceptedBlockTimeRatios = new HashMap<>();
+        strategyToAcceptedBlockTimeRatios.put(getDefaultResourceAwareStrategyClass().getName(), 6.96);
+        strategyToAcceptedBlockTimeRatios.put(getGenericResourceAwareStrategyClass().getName(), 7.78);
+        strategyToAcceptedBlockTimeRatios.put(ConstraintSolverStrategy.class.getName(), 7.75);
+
+        // Get first and last block times for multiple runs and strategies
+        long startTime = Time.currentTimeMillis();
+        for (Entry<String, Config> strategyConfig : strategyToConfigs.entrySet()) {
+            TimeBlockResult strategyTimeBlockResult = strategyToTimeBlockResults.computeIfAbsent(strategyConfig.getKey(), (k) -> new TimeBlockResult());
+            for (int run = 0; run < numRuns; ++run) {
+                TimeBlockResult result = testLargeClusterSchedulingTiming(numNodes, strategyConfig.getValue());
+                strategyTimeBlockResult.append(result);
+            }
+        }
+
+        // Log median ratios for different strategies
+        LOG.info("TestLargeFragmentedClusterScheduling took {} ms", Time.currentTimeMillis() - startTime);
+        for (Entry<String, TimeBlockResult> strategyResult : strategyToTimeBlockResults.entrySet()) {
+            TimeBlockResult strategyTimeBlockResult = strategyResult.getValue();
+            double medianFirstBlockTime = getMedianValue(strategyTimeBlockResult.firstBlockTime);
+            double medianLastBlockTime = getMedianValue(strategyTimeBlockResult.lastBlockTime);
+            double ratio = medianLastBlockTime / medianFirstBlockTime;
+            LOG.info("{}, FirstBlock {}, LastBlock {} ratio {}", strategyResult.getKey(), medianFirstBlockTime, medianLastBlockTime, ratio);
+        }
+
+        // Check last block scheduling time does not get significantly slower
+        for (Entry<String, TimeBlockResult> strategyResult : strategyToTimeBlockResults.entrySet()) {
+            TimeBlockResult strategyTimeBlockResult = strategyResult.getValue();
+            double medianFirstBlockTime = getMedianValue(strategyTimeBlockResult.firstBlockTime);
+            double medianLastBlockTime = getMedianValue(strategyTimeBlockResult.lastBlockTime);
+            double ratio = medianLastBlockTime / medianFirstBlockTime;
+
+            double slowSchedulingThreshold = 1.5;
+            String msg = "Strategy " + strategyResult.getKey() + " scheduling is significantly slower for mostly full fragmented cluster\n";
+            double ratioAccepted = strategyToAcceptedBlockTimeRatios.get(strategyResult.getKey());
+            msg += String.format("Ratio was %.2f (high/low=%.2f/%.2f), max allowed is %.2f (%.2f * %.2f)",
+                    ratio, medianLastBlockTime, medianFirstBlockTime,
+                    ratioAccepted * slowSchedulingThreshold, ratioAccepted, slowSchedulingThreshold);
+            assertTrue(msg, ratio < slowSchedulingThreshold * ratioAccepted);
+        }
+    }
+
+    // Create multiple copies of a test topology
+    private void addTopologyBlockToMap(Map<String, TopologyDetails> topologyMap, String baseName, Config config,
+                                       double spoutMemoryLoad, int[] blockIndices) {
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("testSpout", new TestSpout(), 1).setMemoryLoad(spoutMemoryLoad);
+        StormTopology stormTopology = builder.createTopology();
+        Map<ExecutorDetails, String> executorMap = genExecsAndComps(stormTopology);
+
+        for (int i = blockIndices[0]; i <= blockIndices[1]; ++i) {
+            TopologyDetails topo = new TopologyDetails(baseName + i, config, stormTopology, 0, executorMap, 0, "user");
+            topologyMap.put(topo.getId(), topo);
+        }
+    }
+
+    /*
+     * Test time to schedule large cluster scheduling with fragmentation
+     */
+    private TimeBlockResult testLargeClusterSchedulingTiming(int numNodes, Config config) {
+        // Attempt to schedule multiple copies of 2 different topologies (topo-t0 and topo-t1) in 3 blocks.
+        // Without fragmentation it is possible to schedule all topologies, but fragmentation causes topologies to not
+        // schedule for the last block.
+
+        // Get start/end indices for blocks
+        int numTopologyPairs = numNodes;
+        int increment = (int) Math.floor(numTopologyPairs * 0.1);
+        int firstBlockIndices[] = {0, increment - 1};
+        int midBlockIndices[] = {increment, numTopologyPairs - increment - 1};
+        int lastBlockIndices[] = {numTopologyPairs - increment, numTopologyPairs - 1};
+
+        // Memory is the constraining resource.
+        double t0Mem = 70;   // memory required by topo-t0
+        double t1Mem = 20;   // memory required by topo-t1
+        double nodeMem = 100;
+
+        // first block (0% - 10%)
+        Map<String, TopologyDetails> topologyMap = new HashMap<>();
+        addTopologyBlockToMap(topologyMap, "topo_t0-", config, t0Mem, firstBlockIndices);
+        addTopologyBlockToMap(topologyMap, "topo_t1-", config, t1Mem, firstBlockIndices);
+        Topologies topologies = new Topologies(topologyMap);
+
+        Map<String, SupervisorDetails> supMap = genSupervisors(numNodes, 7, 3500, nodeMem);
+        Cluster cluster = new Cluster(new INimbusTest(), new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
+        TimeBlockResult timeBlockResult = new TimeBlockResult();
+
+        // schedule first block (0% - 10%)
+        {
+            scheduler = new ResourceAwareScheduler();
+            scheduler.prepare(config, new StormMetricsRegistry());
+
+            long time = Time.currentTimeMillis();
+            scheduler.schedule(topologies, cluster);
+            timeBlockResult.firstBlockTime.add(Time.currentTimeMillis() - time);
+        }
+
+        // schedule mid block (10% - 90%)
+        {
+            addTopologyBlockToMap(topologyMap, "topo_t0-", config, t0Mem, midBlockIndices);
+            addTopologyBlockToMap(topologyMap, "topo_t1-", config, t1Mem, midBlockIndices);
+
+            topologies = new Topologies(topologyMap);
+            cluster = new Cluster(cluster, topologies);
+
+            scheduler.schedule(topologies, cluster);
+        }
+
+        // schedule last block (90% to 100%)
+        {
+            addTopologyBlockToMap(topologyMap, "topo_t0-", config, t0Mem, lastBlockIndices);
+            addTopologyBlockToMap(topologyMap, "topo_t1-", config, t1Mem, lastBlockIndices);
+
+            topologies = new Topologies(topologyMap);
+            cluster = new Cluster(cluster, topologies);
+
+            long time = Time.currentTimeMillis();
+            scheduler.schedule(topologies, cluster);
+            timeBlockResult.lastBlockTime.add(Time.currentTimeMillis() - time);
+        }
+
+        return timeBlockResult;
     }
 
     /**
@@ -1098,7 +1363,7 @@ public class TestResourceAwareScheduler {
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
         assertTrue("Topo scheduled?", cluster.getAssignmentById(topo.getId()) != null);
@@ -1108,7 +1373,7 @@ public class TestResourceAwareScheduler {
     @Test
     public void testSchedulerStrategyWhitelist() {
         Map<String, Object> config = ConfigUtils.readStormConfig();
-        String allowed = DefaultResourceAwareStrategy.class.getName();
+        String allowed = getDefaultResourceAwareStrategyClass().getName();
         config.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, Arrays.asList(allowed));
 
         Object sched = ReflectionUtils.newSchedulerStrategyInstance(allowed, config);
@@ -1119,7 +1384,7 @@ public class TestResourceAwareScheduler {
     public void testSchedulerStrategyWhitelistException() {
         Map<String, Object> config = ConfigUtils.readStormConfig();
         String allowed = "org.apache.storm.scheduler.resource.strategies.scheduling.SomeNonExistantStrategy";
-        String notAllowed = DefaultResourceAwareStrategy.class.getName();
+        String notAllowed = getDefaultResourceAwareStrategyClass().getName();
         config.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, Arrays.asList(allowed));
 
         Assertions.assertThrows(DisallowedStrategyException.class, () -> ReflectionUtils.newSchedulerStrategyInstance(notAllowed, config));        
@@ -1128,7 +1393,7 @@ public class TestResourceAwareScheduler {
     @Test
     public void testSchedulerStrategyEmptyWhitelist() {
         Map<String, Object> config = ConfigUtils.readStormConfig();
-        String allowed = DefaultResourceAwareStrategy.class.getName();
+        String allowed = getDefaultResourceAwareStrategyClass().getName();
 
         Object sched = ReflectionUtils.newSchedulerStrategyInstance(allowed, config);
         assertEquals(sched.getClass().getName(), allowed);
@@ -1138,7 +1403,7 @@ public class TestResourceAwareScheduler {
     @Test
     public void testLargeTopologiesOnLargeClusters() {
         Assertions.assertTimeoutPreemptively(Duration.ofSeconds(30), 
-            () -> testLargeTopologiesCommon(DefaultResourceAwareStrategy.class.getName(), false, 1));
+            () -> testLargeTopologiesCommon(getDefaultResourceAwareStrategyClass().getName(), false, 1));
         
     }
     
@@ -1146,25 +1411,17 @@ public class TestResourceAwareScheduler {
     @Test
     public void testLargeTopologiesOnLargeClustersGras() {
         Assertions.assertTimeoutPreemptively(Duration.ofSeconds(75),
-            () -> testLargeTopologiesCommon(GenericResourceAwareStrategy.class.getName(), true, 1));
+            () -> testLargeTopologiesCommon(getGenericResourceAwareStrategyClass().getName(), true, 1));
     }
 
-    public static class NeverEndingSchedulingStrategy extends BaseResourceAwareStrategy implements IStrategy {
+    public static class NeverEndingSchedulingStrategy extends BaseResourceAwareStrategy {
 
         @Override
         public void prepare(Map<String, Object> config) {
         }
 
         @Override
-        protected TreeSet<ObjectResources> sortObjectResources(
-                BaseResourceAwareStrategy.AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails, ExistingScheduleFunc existingScheduleFunc) {
-            // NO-OP
-            return null;
-        }
-
-        @Override
         public SchedulingResult schedule(Cluster schedulingState, TopologyDetails td) {
-            this.cluster = schedulingState;
             while (true) {
                 if (Thread.currentThread().isInterrupted()) {
                     LOG.info("scheduling interrupted");
@@ -1179,8 +1436,9 @@ public class TestResourceAwareScheduler {
         INimbus iNimbus = new INimbusTest();
         Map<String, SupervisorDetails> supMap = genSupervisors(8, 4, 100, 1000);
         Config config = createClusterConfig(100, 500, 500, null);
-        List<String> allowedSchedulerStrategies = new ArrayList();
-        allowedSchedulerStrategies.add(DefaultResourceAwareStrategy.class.getName());
+        List<String> allowedSchedulerStrategies = new ArrayList<>();
+        allowedSchedulerStrategies.add(getDefaultResourceAwareStrategyClass().getName());
+        allowedSchedulerStrategies.add(DefaultResourceAwareStrategyOld.class.getName());
         allowedSchedulerStrategies.add(NeverEndingSchedulingStrategy.class.getName());
         config.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, allowedSchedulerStrategies);
         config.put(DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY, 30);
@@ -1195,8 +1453,12 @@ public class TestResourceAwareScheduler {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
 
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
+
+        assertFalse(cluster.needsSchedulingRas(topo1));
+        assertTrue(cluster.needsSchedulingRas(topo2));
+        assertFalse(cluster.needsSchedulingRas(topo3));
 
         assertTrue("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
         assertEquals("Topo-1 all executors scheduled?", 2, cluster.getAssignmentById(topo1.getId()).getExecutorToSlot().size());
@@ -1244,7 +1506,7 @@ public class TestResourceAwareScheduler {
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
         long startTime = Time.currentTimeMillis();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         long schedulingDuration = Time.currentTimeMillis() - startTime;
         LOG.info("Scheduling took " + schedulingDuration + " ms");

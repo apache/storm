@@ -82,14 +82,10 @@
 #     arguments:
 #       endpoint: "event-logger.mycompany.org"
 
-# Metrics v2 configuration (optional)
-#storm.metrics.reporters:
+# Topology metrics v2 configuration (optional)
+#topology.metrics.reporters:
 #  # Graphite Reporter
 #  - class: "org.apache.storm.metrics2.reporters.GraphiteStormReporter"
-#    daemons:
-#        - "supervisor"
-#        - "nimbus"
-#        - "worker"
 #    report.period: 60
 #    report.period.units: "SECONDS"
 #    graphite.host: "localhost"
@@ -97,8 +93,6 @@
 #
 #  # Console Reporter
 #  - class: "org.apache.storm.metrics2.reporters.ConsoleStormReporter"
-#    daemons:
-#        - "worker"
 #    report.period: 10
 #    report.period.units: "SECONDS"
 #    filter:

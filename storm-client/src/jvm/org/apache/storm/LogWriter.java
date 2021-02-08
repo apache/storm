@@ -56,6 +56,7 @@ public class LogWriter extends Thread {
         System.exit(ret);
     }
 
+    @Override
     public void run() {
         Logger logger = this.logger;
         BufferedReader in = this.in;

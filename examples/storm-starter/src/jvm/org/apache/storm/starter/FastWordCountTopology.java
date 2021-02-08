@@ -43,18 +43,9 @@ import org.apache.storm.utils.Utils;
  * java.  This can show how fast the word count can run.
  */
 public class FastWordCountTopology {
+
     public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
-        ClusterSummary summary = client.getClusterInfo();
-        String id = null;
-        for (TopologySummary ts : summary.get_topologies()) {
-            if (name.equals(ts.get_name())) {
-                id = ts.get_id();
-            }
-        }
-        if (id == null) {
-            throw new Exception("Could not find a topology named " + name);
-        }
-        TopologyInfo info = client.getTopologyInfo(id);
+        TopologyInfo info = client.getTopologyInfoByName(name);
         int uptime = info.get_uptime_secs();
         long acked = 0;
         long failed = 0;
@@ -80,8 +71,10 @@ public class FastWordCountTopology {
             }
         }
         double avgLatency = weightedAvgTotal / acked;
-        System.out.println("uptime: " + uptime + " acked: " + acked + " avgLatency: " + avgLatency + " acked/sec: " +
-                           (((double) acked) / uptime + " failed: " + failed));
+        System.out.println("uptime: " + uptime
+                + " acked: " + acked
+                + " avgLatency: " + avgLatency
+                + " acked/sec: " + (((double) acked) / uptime + " failed: " + failed));
     }
 
     public static void kill(Nimbus.Iface client, String name) throws Exception {
@@ -130,19 +123,19 @@ public class FastWordCountTopology {
             "this is a test of the emergency broadcast system this is only a test",
             "peter piper picked a peck of pickeled peppers"
         };
-        SpoutOutputCollector _collector;
-        Random _rand;
+        SpoutOutputCollector collector;
+        Random rand;
 
         @Override
         public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-            _collector = collector;
-            _rand = ThreadLocalRandom.current();
+            this.collector = collector;
+            rand = ThreadLocalRandom.current();
         }
 
         @Override
         public void nextTuple() {
-            String sentence = CHOICES[_rand.nextInt(CHOICES.length)];
-            _collector.emit(new Values(sentence), sentence);
+            String sentence = CHOICES[rand.nextInt(CHOICES.length)];
+            collector.emit(new Values(sentence), sentence);
         }
 
         @Override
@@ -152,7 +145,7 @@ public class FastWordCountTopology {
 
         @Override
         public void fail(Object id) {
-            _collector.emit(new Values(id), id);
+            collector.emit(new Values(id), id);
         }
 
         @Override

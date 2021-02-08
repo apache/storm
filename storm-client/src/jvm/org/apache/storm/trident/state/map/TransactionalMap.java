@@ -19,11 +19,11 @@ import org.apache.storm.trident.state.ValueUpdater;
 
 
 public class TransactionalMap<T> implements MapState<T> {
-    CachedBatchReadsMap<TransactionalValue> _backing;
-    Long _currTx;
+    CachedBatchReadsMap<TransactionalValue> backing;
+    Long currTx;
 
     protected TransactionalMap(IBackingMap<TransactionalValue> backing) {
-        _backing = new CachedBatchReadsMap(backing);
+        this.backing = new CachedBatchReadsMap(backing);
     }
 
     public static <T> MapState<T> build(IBackingMap<TransactionalValue> backing) {
@@ -32,7 +32,7 @@ public class TransactionalMap<T> implements MapState<T> {
 
     @Override
     public List<T> multiGet(List<List<Object>> keys) {
-        List<CachedBatchReadsMap.RetVal<TransactionalValue>> vals = _backing.multiGet(keys);
+        List<CachedBatchReadsMap.RetVal<TransactionalValue>> vals = backing.multiGet(keys);
         List<T> ret = new ArrayList<T>(vals.size());
         for (CachedBatchReadsMap.RetVal<TransactionalValue> retval : vals) {
             TransactionalValue v = retval.val;
@@ -47,7 +47,7 @@ public class TransactionalMap<T> implements MapState<T> {
 
     @Override
     public List<T> multiUpdate(List<List<Object>> keys, List<ValueUpdater> updaters) {
-        List<CachedBatchReadsMap.RetVal<TransactionalValue>> curr = _backing.multiGet(keys);
+        List<CachedBatchReadsMap.RetVal<TransactionalValue>> curr = backing.multiGet(keys);
         List<TransactionalValue> newVals = new ArrayList<TransactionalValue>(curr.size());
         List<List<Object>> newKeys = new ArrayList();
         List<T> ret = new ArrayList<T>();
@@ -58,13 +58,13 @@ public class TransactionalMap<T> implements MapState<T> {
             TransactionalValue<T> newVal;
             boolean changed = false;
             if (val == null) {
-                newVal = new TransactionalValue<T>(_currTx, updater.update(null));
+                newVal = new TransactionalValue<T>(currTx, updater.update(null));
                 changed = true;
             } else {
-                if (_currTx != null && _currTx.equals(val.getTxid()) && !retval.cached) {
+                if (currTx != null && currTx.equals(val.getTxid()) && !retval.cached) {
                     newVal = val;
                 } else {
-                    newVal = new TransactionalValue<T>(_currTx, updater.update(val.getVal()));
+                    newVal = new TransactionalValue<T>(currTx, updater.update(val.getVal()));
                     changed = true;
                 }
             }
@@ -75,7 +75,7 @@ public class TransactionalMap<T> implements MapState<T> {
             }
         }
         if (!newKeys.isEmpty()) {
-            _backing.multiPut(newKeys, newVals);
+            backing.multiPut(newKeys, newVals);
         }
         return ret;
     }
@@ -84,20 +84,20 @@ public class TransactionalMap<T> implements MapState<T> {
     public void multiPut(List<List<Object>> keys, List<T> vals) {
         List<TransactionalValue> newVals = new ArrayList<TransactionalValue>(vals.size());
         for (T val : vals) {
-            newVals.add(new TransactionalValue<T>(_currTx, val));
+            newVals.add(new TransactionalValue<T>(currTx, val));
         }
-        _backing.multiPut(keys, newVals);
+        backing.multiPut(keys, newVals);
     }
 
     @Override
     public void beginCommit(Long txid) {
-        _currTx = txid;
-        _backing.reset();
+        currTx = txid;
+        backing.reset();
     }
 
     @Override
     public void commit(Long txid) {
-        _currTx = null;
-        _backing.reset();
+        currTx = null;
+        backing.reset();
     }
 }

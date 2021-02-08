@@ -76,10 +76,32 @@
               Avail CPU (%)
             </span>
           </th>
+
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The generic resources capacity of a supervisor.">
+              Total Generic Resources
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The generic resources that have been allocated.">
+              Used Generic Resources
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The generic resources that are available.">
+              Avail Generic Resources
+            </span>
+          </th>
+
           {{/schedulerDisplayResource}}
           <th>
             <span data-toggle="tooltip" data-placement="top" title="Version">
               Version
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="Whether this supervisor is blacklisted or not">
+              Blacklisted
             </span>
           </th>
         </tr>
@@ -87,8 +109,8 @@
       <tbody>
       {{#supervisors}}
           <tr>
-            <td><a href="/supervisor.html?host={{host}}">{{host}} (<a href="{{logLink}}" title="View log">log</a>)</a></td>
-            <td><a href="/supervisor.html?id={{id}}">{{id}}</td>
+            <td><a href="/supervisor.html?host={{host}}">{{host}}</a> (<a href="{{logLink}}" title="View log">log</a>)</td>
+            <td><a href="/supervisor.html?id={{id}}">{{id}}</a></td>
             <td>{{uptime}}</td>
             <td>{{slotsTotal}}</td>
             <td>{{slotsUsed}}</td>
@@ -101,8 +123,12 @@
             <td>{{totalCpu}}</td>
             <td>{{usedCpu}}</td>
             <td>{{availCpu}}</td>
+            <td>{{totalGenericResources}}</td>
+            <td>{{usedGenericResources}}</td>
+            <td>{{availGenericResources}}</td>
             {{/schedulerDisplayResource}}
             <td>{{version}}</td>
+            <td>{{blacklisted}}</td>
           </tr>
       {{/supervisors}}
       </tbody>
@@ -120,6 +146,11 @@
         <th class="header">
           <span data-original-title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)" data-toggle="tooltip" data-placement="top">
             Host
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="The user that submitted the Topology, if authentication is enabled.">
+            Owner
           </span>
         </th>
         <th class="header">

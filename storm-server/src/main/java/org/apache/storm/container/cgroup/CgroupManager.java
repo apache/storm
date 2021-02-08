@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -12,10 +12,9 @@
 
 package org.apache.storm.container.cgroup;
 
-import java.io.BufferedReader;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,57 +25,33 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.lang.SystemUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.container.DefaultResourceIsolationManager;
 import org.apache.storm.container.cgroup.core.CpuCore;
 import org.apache.storm.container.cgroup.core.CpusetCore;
 import org.apache.storm.container.cgroup.core.MemoryCore;
+import org.apache.storm.daemon.supervisor.ClientSupervisorUtils;
+import org.apache.storm.daemon.supervisor.ExitCodeCallback;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Class that implements ResourceIsolationInterface that manages cgroups.
  */
-public class CgroupManager implements ResourceIsolationInterface {
+public class CgroupManager extends DefaultResourceIsolationManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(CgroupManager.class);
-    private static final Pattern MEMINFO_PATTERN = Pattern.compile("^([^:\\s]+):\\s*([0-9]+)\\s*kB$");
     private CgroupCenter center;
     private Hierarchy hierarchy;
     private CgroupCommon rootCgroup;
     private String rootDir;
-    private Map<String, Object> conf;
-
-    static long getMemInfoFreeMb() throws IOException {
-        //MemFree:        14367072 kB
-        //Buffers:          536512 kB
-        //Cached:          1192096 kB
-        // MemFree + Buffers + Cached
-        long memFree = 0;
-        long buffers = 0;
-        long cached = 0;
-        try (BufferedReader in = new BufferedReader(new FileReader("/proc/meminfo"))) {
-            String line = null;
-            while ((line = in.readLine()) != null) {
-                Matcher match = MEMINFO_PATTERN.matcher(line);
-                if (match.matches()) {
-                    String tag = match.group(1);
-                    if (tag.equalsIgnoreCase("MemFree")) {
-                        memFree = Long.parseLong(match.group(2));
-                    } else if (tag.equalsIgnoreCase("Buffers")) {
-                        buffers = Long.parseLong(match.group(2));
-                    } else if (tag.equalsIgnoreCase("Cached")) {
-                        cached = Long.parseLong(match.group(2));
-                    }
-                }
-            }
-        }
-        return (memFree + buffers + cached) / 1024;
-    }
+    private Map<String, String> workerToNumaId;
 
     /**
      * initialize data structures.
@@ -85,7 +60,7 @@ public class CgroupManager implements ResourceIsolationInterface {
      */
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {
-        this.conf = conf;
+        super.prepare(conf);
         this.rootDir = DaemonConfig.getCgroupRootDir(this.conf);
         if (this.rootDir == null) {
             throw new RuntimeException("Check configuration file. The storm.supervisor.cgroup.rootdir is missing.");
@@ -102,6 +77,7 @@ public class CgroupManager implements ResourceIsolationInterface {
             throw new RuntimeException("Cgroup error, please check /proc/cgroups");
         }
         this.prepareSubSystem(this.conf);
+        workerToNumaId = new ConcurrentHashMap();
     }
 
     /**
@@ -147,7 +123,7 @@ public class CgroupManager implements ResourceIsolationInterface {
     }
 
     @Override
-    public void reserveResourcesForWorker(String workerId, Integer totalMem, Integer cpuNum) throws SecurityException {
+    public void reserveResourcesForWorker(String workerId, Integer totalMem, Integer cpuNum, String numaId) throws SecurityException {
         LOG.info("Creating cgroup for worker {} with resources {} MB {} % CPU", workerId, totalMem, cpuNum);
         // The manually set STORM_WORKER_CGROUP_CPU_LIMIT config on supervisor will overwrite resources assigned by
         // RAS (Resource Aware Scheduler)
@@ -202,7 +178,7 @@ public class CgroupManager implements ResourceIsolationInterface {
                 }
             }
         }
-
+        
         if ((boolean) this.conf.get(DaemonConfig.STORM_CGROUP_INHERIT_CPUSET_CONFIGS)) {
             if (workerGroup.getParent().getCores().containsKey(SubSystemType.cpuset)) {
                 CpusetCore parentCpusetCore = (CpusetCore) workerGroup.getParent().getCores().get(SubSystemType.cpuset);
@@ -218,6 +194,10 @@ public class CgroupManager implements ResourceIsolationInterface {
                     throw new RuntimeException("Cannot set cpuset.mems! Exception: ", e);
                 }
             }
+        }
+
+        if (numaId != null) {
+            workerToNumaId.put(workerId, numaId);
         }
     }
 
@@ -236,15 +216,66 @@ public class CgroupManager implements ResourceIsolationInterface {
         }
     }
 
+    /**
+     * Extracting out to mock it for tests.
+     * @return true if on Linux.
+     */
+    protected static boolean isOnLinux() {
+        return SystemUtils.IS_OS_LINUX;
+    }
+
+    private void prefixNumaPinning(List<String> command, String numaId) {
+        if (isOnLinux()) {
+            command.add(0, "numactl");
+            command.add(1, "--cpunodebind=" + numaId);
+            command.add(2, "--membind=" + numaId);
+            return;
+        } else {
+            // TODO : Add support for pinning on Windows host
+            throw new RuntimeException("numactl pinning currently not supported on non-Linux hosts");
+        }
+    }
+
     @Override
+    public void launchWorkerProcess(String user, String topologyId, Map<String, Object> topoConf,
+                                    int port, String workerId,
+                                    List<String> command, Map<String, String> env, String logPrefix,
+                                    ExitCodeCallback processExitCallback, File targetDir) throws IOException {
+        if (workerToNumaId.containsKey(workerId)) {
+            prefixNumaPinning(command, workerToNumaId.get(workerId));
+        }
+
+        if (runAsUser) {
+            String workerDir = targetDir.getAbsolutePath();
+            List<String> args = Arrays.asList("worker", workerDir, ServerUtils.writeScript(workerDir, command, env));
+            List<String> commandPrefix = getLaunchCommandPrefix(workerId);
+            ClientSupervisorUtils.processLauncher(conf, user, commandPrefix, args, null,
+                logPrefix, processExitCallback, targetDir);
+        } else {
+            command = getLaunchCommand(workerId, command);
+            ClientSupervisorUtils.launchProcess(command, env, logPrefix, processExitCallback, targetDir);
+        }
+    }
+
+    /**
+     * To compose launch command based on workerId and existing command.
+     * @param workerId the worker id
+     * @param existingCommand the current command to run that may need to be modified
+     * @return new commandline with necessary additions to launch worker
+     */
+    @VisibleForTesting
     public List<String> getLaunchCommand(String workerId, List<String> existingCommand) {
         List<String> newCommand = getLaunchCommandPrefix(workerId);
+
+        if (workerToNumaId.containsKey(workerId)) {
+            prefixNumaPinning(newCommand, workerToNumaId.get(workerId));
+        }
+
         newCommand.addAll(existingCommand);
         return newCommand;
     }
 
-    @Override
-    public List<String> getLaunchCommandPrefix(String workerId) {
+    private List<String> getLaunchCommandPrefix(String workerId) {
         CgroupCommon workerGroup = new CgroupCommon(workerId, this.hierarchy, this.rootCgroup);
 
         if (!this.rootCgroup.getChildren().contains(workerGroup)) {
@@ -271,8 +302,7 @@ public class CgroupManager implements ResourceIsolationInterface {
         return newCommand;
     }
 
-    @Override
-    public Set<Long> getRunningPids(String workerId) throws IOException {
+    private Set<Long> getRunningPids(String workerId) throws IOException {
         CgroupCommon workerGroup = new CgroupCommon(workerId, this.hierarchy, this.rootCgroup);
         if (!this.rootCgroup.getChildren().contains(workerGroup)) {
             LOG.warn("cgroup {} doesn't exist!", workerGroup);
@@ -281,8 +311,22 @@ public class CgroupManager implements ResourceIsolationInterface {
         return workerGroup.getPids();
     }
 
+    /**
+     * Get all of the pids that are a part of this container.
+     * @param workerId the worker id
+     * @return all of the pids that are a part of this container
+     */
     @Override
-    public long getMemoryUsage(String workerId) throws IOException {
+    protected Set<Long> getAllPids(String workerId) throws IOException {
+        Set<Long> ret = super.getAllPids(workerId);
+        Set<Long> morePids = getRunningPids(workerId);
+        assert (morePids != null);
+        ret.addAll(morePids);
+        return ret;
+    }
+
+    @Override
+    public long getMemoryUsage(String user, String workerId, int port) throws IOException {
         CgroupCommon workerGroup = new CgroupCommon(workerId, this.hierarchy, this.rootCgroup);
         MemoryCore memCore = (MemoryCore) workerGroup.getCores().get(SubSystemType.memory);
         return memCore.getPhysicalUsage();
@@ -303,6 +347,11 @@ public class CgroupManager implements ResourceIsolationInterface {
             //Ignored if cgroups is not setup don't do anything with it
         }
 
-        return Long.min(rootCgroupLimitFree, getMemInfoFreeMb());
+        return Long.min(rootCgroupLimitFree, ServerUtils.getMemInfoFreeMb());
+    }
+
+    @Override
+    public boolean isResourceManaged() {
+        return true;
     }
 }

@@ -17,26 +17,28 @@ import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
 
 /**
- * An authorization implementation that denies everything, for testing purposes
+ * An authorization implementation that denies everything, for testing purposes.
  */
 public class DenyAuthorizer implements IAuthorizer {
 
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param conf Storm configuration
      */
+    @Override
     public void prepare(Map<String, Object> conf) {
     }
 
     /**
-     * permit() method is invoked for each incoming Thrift request
+     * permit() method is invoked for each incoming Thrift request.
      *
      * @param context   request context
      * @param operation operation name
      * @param topoConf  configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
+    @Override
     public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
         return false;
     }

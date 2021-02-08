@@ -25,6 +25,8 @@ import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
+import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -40,8 +42,19 @@ import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class TestDefaultEvictionStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestDefaultEvictionStrategy.class);
-    private static int currentTime = 1450418597;
-    private static IScheduler scheduler = null;
+    private int currentTime = 1450418597;
+    private IScheduler scheduler = null;
+
+    protected Class getDefaultResourceAwareStrategyClass() {
+        return DefaultResourceAwareStrategy.class;
+    }
+
+    private Config createClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                       Map<String, Map<String, Number>> pools) {
+        Config config = TestUtilsForResourceAwareScheduler.createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
+        return config;
+    }
 
     @After
     public void cleanup() {
@@ -73,7 +86,7 @@ public class TestDefaultEvictionStrategy {
 
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         
         assertTopologiesFullyScheduled(cluster, "topo-1", "topo-2", "topo-3", "topo-4");
@@ -105,7 +118,7 @@ public class TestDefaultEvictionStrategy {
             genTopology("topo-5", config, 1, 0, 1, 0, currentTime - 2, 29, "derek"));
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         LOG.info("\n\n\t\tScheduling topos 2 to 5...");
         scheduler.schedule(topologies, cluster);
         LOG.info("\n\n\t\tDone scheduling...");
@@ -139,7 +152,7 @@ public class TestDefaultEvictionStrategy {
             genTopology("topo-5", config, 1, 0, 1, 0, currentTime - 15, 29, "derek"));
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         
         assertTopologiesFullyScheduled(cluster, "topo-2", "topo-3", "topo-4", "topo-5");
@@ -195,7 +208,7 @@ public class TestDefaultEvictionStrategy {
             genTopology("topo-6", config, 1, 0, 1, 0, currentTime - 2, 29, "derek"));
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         LOG.info("\n\n\t\tScheduling topos 1,2,5,6");
         scheduler.schedule(topologies, cluster);
         LOG.info("\n\n\t\tDone Scheduling...");
@@ -247,7 +260,7 @@ public class TestDefaultEvictionStrategy {
             genTopology("topo-5", config, 1, 0, 1, 0, currentTime - 2, 29, "derek"));
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
         scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config);
+        scheduler.prepare(config, new StormMetricsRegistry());
         LOG.info("\n\n\t\tScheduling topos 1,3,4,5");
         scheduler.schedule(topologies, cluster);
         LOG.info("\n\n\t\tDone scheduling...");

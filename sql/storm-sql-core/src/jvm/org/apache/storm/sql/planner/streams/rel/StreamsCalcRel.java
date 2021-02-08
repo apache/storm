@@ -19,10 +19,9 @@
 
 package org.apache.storm.sql.planner.streams.rel;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.common.collect.Lists;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -54,12 +53,8 @@ public class StreamsCalcRel extends StormCalcRelBase implements StreamsRel {
         // SingleRel
         RelNode input = getInput();
         StormRelUtils.getStormRelInput(input).streamsPlan(planCreator);
-        Stream<Values> inputStream = planCreator.pop();
 
         RelDataType inputRowType = getInput(0).getRowType();
-
-        List<String> outputFieldNames = getRowType().getFieldNames();
-        int outputCount = outputFieldNames.size();
 
         // filter
         ExecutableExpression filterInstance = null;
@@ -88,7 +83,10 @@ public class StreamsCalcRel extends StormCalcRelBase implements StreamsRel {
             throw new IllegalStateException("Either projection or condition, or both should be provided.");
         }
 
+        List<String> outputFieldNames = getRowType().getFieldNames();
+        int outputCount = outputFieldNames.size();
         EvaluationCalc evalCalc = new EvaluationCalc(filterInstance, projectionInstance, outputCount, planCreator.getDataContext());
+        final Stream<Values> inputStream = planCreator.pop();
         final Stream finalStream = inputStream.flatMap(evalCalc);
 
         planCreator.addStream(finalStream);

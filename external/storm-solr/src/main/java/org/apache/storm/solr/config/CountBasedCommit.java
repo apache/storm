@@ -21,7 +21,7 @@ public class CountBasedCommit implements SolrCommitStrategy {
     private int count;
 
     /**
-     * Initializes a count based commit strategy with the specified threshold
+     * Initializes a count based commit strategy with the specified threshold.
      *
      * @param threshold  The commit threshold, defining when SolrInputDocuments should be committed to Solr
      * */

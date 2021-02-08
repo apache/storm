@@ -32,6 +32,7 @@ import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.metric.StormMetricsRegistry;
 
 @Path("/drpc/")
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCResource {
     private final Meter meterHttpRequests;
     private final Timer responseDuration;

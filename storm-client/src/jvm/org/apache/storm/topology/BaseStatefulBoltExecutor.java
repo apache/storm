@@ -12,6 +12,11 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_ACTION;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_TXID;
+import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,11 +30,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_ACTION;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_FIELD_TXID;
-import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
 
 /**
  * Base class that abstracts the common logic for executing bolts in a stateful topology.
@@ -98,14 +98,14 @@ public abstract class BaseStatefulBoltExecutor implements IRichBolt {
                 collector.reportError(th);
             }
         } else {
-            LOG.debug("Waiting for action {}, txid {} from all input tasks. checkPointInputTaskCount {}, " +
-                      "transactionRequestCount {}", action, txid, checkPointInputTaskCount, transactionRequestCount);
+            LOG.debug("Waiting for action {}, txid {} from all input tasks. checkPointInputTaskCount {}, "
+                    + "transactionRequestCount {}", action, txid, checkPointInputTaskCount, transactionRequestCount);
             collector.ack(input);
         }
     }
 
     /**
-     * Checks if check points have been received from all tasks across all input streams to this component
+     * Checks if check points have been received from all tasks across all input streams to this component.
      */
     private boolean shouldProcessTransaction(CheckPointState.Action action, long txid) {
         TransactionRequest request = new TransactionRequest(action, txid);
@@ -196,10 +196,10 @@ public abstract class BaseStatefulBoltExecutor implements IRichBolt {
 
         @Override
         public String toString() {
-            return "TransactionRequest{" +
-                   "action='" + action + '\'' +
-                   ", txid=" + txid +
-                   '}';
+            return "TransactionRequest{"
+                    + "action='" + action + '\''
+                    + ", txid=" + txid
+                    + '}';
         }
 
     }

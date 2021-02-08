@@ -182,7 +182,11 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
         }
 
         // attempt to find the string in the database
-        stringMetadata = store.rocksDbGetStringMetadata(type, s);
+        try {
+            stringMetadata = store.rocksDbGetStringMetadata(type, s);
+        } catch (RocksDBException e) {
+            throw new MetricException("Error reading metrics data", e);
+        }
         if (stringMetadata != null) {
             // update to the latest timestamp and add to the string cache
             stringMetadata.update(metricTimestamp, type);
@@ -234,10 +238,14 @@ public class RocksDbMetricsWriter implements Runnable, AutoCloseable {
             // now scan all metadata and remove any matching string Ids from this list
             RocksDbKey firstPrefix = RocksDbKey.getPrefix(KeyType.METADATA_STRING_START);
             RocksDbKey lastPrefix = RocksDbKey.getPrefix(KeyType.METADATA_STRING_END);
-            store.scanRange(firstPrefix, lastPrefix, (key, value) -> {
-                unusedIds.remove(key.getMetadataStringId());
-                return true; // process all metadata
-            });
+            try {
+                store.scanRange(firstPrefix, lastPrefix, (key, value) -> {
+                    unusedIds.remove(key.getMetadataStringId());
+                    return true; // process all metadata
+                });
+            } catch (RocksDBException e) {
+                throw new MetricException("Error reading metrics data", e);
+            }
         }
     }
 

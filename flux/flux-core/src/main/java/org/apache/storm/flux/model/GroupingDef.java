@@ -28,7 +28,7 @@ public class GroupingDef {
     /**
      * Types of stream groupings Storm allows.
      */
-    public static enum Type {
+    public enum Type {
         ALL,
         CUSTOM,
         DIRECT,

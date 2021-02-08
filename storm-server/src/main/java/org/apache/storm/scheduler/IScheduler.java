@@ -13,10 +13,11 @@
 package org.apache.storm.scheduler;
 
 import java.util.Map;
+import org.apache.storm.metric.StormMetricsRegistry;
 
-public interface IScheduler {
+public interface IScheduler extends INodeAssignmentSentCallBack {
 
-    void prepare(Map<String, Object> conf);
+    void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry);
 
     /**
      * Set assignments for the topologies which needs scheduling. The new assignments is available 

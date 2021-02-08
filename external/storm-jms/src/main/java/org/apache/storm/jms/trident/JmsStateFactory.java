@@ -26,7 +26,7 @@ public class JmsStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map<String, Object> map, IMetricsContext iMetricsContext, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> map, IMetricsContext metricsContext, int partitionIndex, int numPartitions) {
         JmsState state = new JmsState(options);
         state.prepare();
         return state;

@@ -26,9 +26,9 @@ import com.esotericsoftware.kryo.Kryo;
  */
 public interface SerializationRegister {
     /**
-     * Register any serializers needed with the kryo instance
+     * Register any serializers needed with the kryo instance.
      *
      * @param kryo what to register the serializers with.
      */
-    public void register(Kryo kryo) throws Exception;
+    void register(Kryo kryo) throws Exception;
 }

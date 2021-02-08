@@ -42,10 +42,11 @@ class TestStormCli(TestCase):
         )
 
     def base_test(self, command_invocation, mock_shell_interface, expected_output):
+        print(command_invocation)
         with mock.patch.object(sys, "argv", command_invocation):
             self.cli_main()
         if expected_output not in mock_shell_interface.call_args_list:
-            print("Expected:"  + str(expected_output))
+            print("Expected:" + str(expected_output))
             print("Got:" + str(mock_shell_interface.call_args_list[-1]))
         assert expected_output in mock_shell_interface.call_args_list
 
@@ -58,11 +59,33 @@ class TestStormCli(TestCase):
             './external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"', '--artifacts', '"redis.clients:jedis:2.9.0,org.apache.kafka:kafka-clients:1.0.0^org.slf4j:slf4j-api"', '--artifactRepositories', '"jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/'
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
-                self.java_cmd, '-client','-Ddaemon.name=', '-Dstorm.options=+topology.blobstore.map%3D%27%7B%22key1%22%3A%7B%22localname%22%3A%22blob_file%22%2C+%22uncompress%22%3Afalse%7D%2C%22key2%22%3A%7B%7D%7D%27',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=+topology.blobstore.map%3D%27%7B%22key1%22%3A%7B%22localname%22%3A%22blob_file%22%2C+%22uncompress%22%3Afalse%7D%2C%22key2%22%3A%7B%7D%7D%27',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:example/storm-starter/storm-starter-topologies-*.jar:' + self.storm_dir + '/conf:' + self.storm_dir + '/bin:./external/storm-redis/storm-redis-1.1.0.jar:./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"', '-Dstorm.jar=example/storm-starter/storm-starter-topologies-*.jar', '-Dstorm.dependency.jars=./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"', '-Dstorm.dependency.artifacts={}',
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-worker:' + self.storm_dir
+                + '/extlib:example/storm-starter/storm-starter-topologies-*.jar:' + self.storm_dir + '/conf:'
+                + self.storm_dir + '/bin:./external/storm-redis/storm-redis-1.1.0.jar:./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"', '-Dstorm.jar=example/storm-starter/storm-starter-topologies-*.jar', '-Dstorm.dependency.jars=./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"', '-Dstorm.dependency.artifacts={}',
                 'org.apache.storm.starter.RollingTopWords', 'blobstore-remote2', 'remote'
+            ])
+        )
+
+        self.mock_execvp.reset_mock()
+
+        self.base_test([
+            'storm', 'jar', '/path/to/jar.jar', 'some.Topology.Class',
+            '-name', 'run-topology', 'randomArgument', '-randomFlag', 'randomFlagValue', '-rotateSize', '0.0001',
+            '--hdfsConf', 'someOtherHdfsConf', 'dfs.namenode.kerberos.principal.pattern=hdfs/*.EV..COM'
+        ], self.mock_execvp, mock.call(
+            self.java_cmd, [
+                self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
+                '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-worker:' + self.storm_dir
+                + '/extlib:/path/to/jar.jar:' + self.storm_dir + '/conf:' + self.storm_dir + '/bin:',
+                '-Dstorm.jar=/path/to/jar.jar', '-Dstorm.dependency.jars=', '-Dstorm.dependency.artifacts={}',
+                'some.Topology.Class', '-name', 'run-topology', 'randomArgument', '-randomFlag', 'randomFlagValue',
+                '-rotateSize', '0.0001', '--hdfsConf', 'someOtherHdfsConf',
+                'dfs.namenode.kerberos.principal.pattern=hdfs/*.EV..COM'
             ])
         )
 
@@ -70,7 +93,7 @@ class TestStormCli(TestCase):
         self.base_test(
             ["storm", "localconfvalue", "conf_name"], self.mock_popen, mock.call([
              self.java_cmd, '-client', '-Dstorm.options=',
-             '-Dstorm.conf.file=', '-cp', '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +'/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
+             '-Dstorm.conf.file=', '-cp',  self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +'/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
              'org.apache.storm.command.ConfigValue', 'conf_name'
              ], stdout=-1
             )
@@ -80,7 +103,7 @@ class TestStormCli(TestCase):
         self.base_test(
             ["storm", "remoteconfvalue", "conf_name"], self.mock_popen, mock.call([
              self.java_cmd, '-client', '-Dstorm.options=',
-             '-Dstorm.conf.file=', '-cp', '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
+             '-Dstorm.conf.file=', '-cp',  self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
              'org.apache.storm.command.ConfigValue', 'conf_name'
              ], stdout=-1
             )
@@ -99,9 +122,9 @@ class TestStormCli(TestCase):
             ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client','-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:example/storm-starter/storm-starter-topologies-*.jar:' + self.storm_dir +
                 '/conf:' + self.storm_dir +
                 '/bin:./external/storm-redis/storm-redis-1.1.0.jar:./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"',
@@ -120,9 +143,9 @@ class TestStormCli(TestCase):
             ], self.mock_execvp, mock.call(
                 self.java_cmd,
                 [self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                 '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                  '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                 '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' +
+                 self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' +
                  self.storm_dir +
                  '/conf:' + self.storm_dir + '/bin:' + self.storm_dir + '/lib-tools/sql/core',\
                  '-Dstorm.dependency.jars=', '-Dstorm.dependency.artifacts={}',
@@ -137,26 +160,27 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir + '/bin', 'org.apache.storm.command.KillTopology', 'doomed_topology'
             ])
         )
 
     def test_upload_credentials_command(self):
         self.base_test([
-            'storm', 'upload-credentials', 'my-topology-name', 'appids role.name1,role.name2"'
+            'storm', 'upload-credentials', '--config', '/some/other/storm.yaml', '-c', 'test=test', 'my-topology-name', 'appids', 'role.name1,role.name2'
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
-                self.java_cmd,  '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=', '-Djava.library.path=',
-                '-Dstorm.conf.file=', '-cp', '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' +
+                self.java_cmd,  '-client', '-Ddaemon.name=', '-Dstorm.options=test%3Dtest',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
+                '-Djava.library.path=', '-Dstorm.conf.file=/some/other/storm.yaml',
+                '-cp', self.storm_dir + '/*:' + self.storm_dir + '/lib:' +
                                              self.storm_dir +
                                              '/extlib:' + self.storm_dir + '/extlib-daemon:' +
                                              self.storm_dir + '/conf:' + self.storm_dir +
                                              '/bin', 'org.apache.storm.command.UploadCredentials',
-                'my-topology-name', 'appids role.name1,role.name2"'])
+                'my-topology-name', 'appids', 'role.name1,role.name2'])
         )
 
     def test_blobstore_command(self):
@@ -165,12 +189,26 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'create',
                 'mytopo:data.tgz', '-f', 'data.tgz', '-a', 'u:alice:rwa,u:bob:rw,o::r'])
+        )
+        self.mock_execvp.reset_mock()
+
+        self.base_test([
+            'storm', 'blobstore', 'list'
+        ], self.mock_execvp, mock.call(
+            self.java_cmd, [
+                self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
+                '-Dstorm.home=' + self.storm_dir,
+                '-Dstorm.log.dir=' + self.storm_dir + "/logs", '-Djava.library.path=',
+                '-Dstorm.conf.file=', '-cp',
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
+                self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'list'])
         )
         self.mock_execvp.reset_mock()
 
@@ -179,10 +217,10 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '',
-                '-Dstorm.log.dir=', '-Djava.library.path=',
+                '-Dstorm.home=' + self.storm_dir,
+                '-Dstorm.log.dir=' + self.storm_dir + "/logs", '-Djava.library.path=',
                 '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'list', 'wordstotrack'])
         )
@@ -193,9 +231,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'update', '-f',
                 '/wordsToTrack.list', 'wordstotrack'])
@@ -207,9 +245,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'cat', 'wordstotrack'])
         )
@@ -220,9 +258,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir + '/bin',
                 'org.apache.storm.command.Activate', 'doomed_topology'
             ])
@@ -234,9 +272,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
                 '/bin', 'org.apache.storm.command.Deactivate', 'doomed_topology'
             ])
@@ -248,9 +286,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
                 '/bin', 'org.apache.storm.command.Rebalance', 'doomed_topology'
             ])
@@ -262,9 +300,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
                 '/bin', 'org.apache.storm.command.ListTopologies'
             ])
@@ -276,9 +314,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-server', '-Ddaemon.name=nimbus', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=nimbus.log',
                 '-Dlog4j.configurationFile=' + self.storm_dir + '/log4j2/cluster.xml',
@@ -292,9 +330,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-server', '-Ddaemon.name=supervisor', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=supervisor.log',
                 '-Dlog4j.configurationFile=' + self.storm_dir + '/log4j2/cluster.xml',
@@ -308,9 +346,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-server', '-Ddaemon.name=pacemaker', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=pacemaker.log',
                 '-Dlog4j.configurationFile=' + self.storm_dir + '/log4j2/cluster.xml',
@@ -324,9 +362,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-server', '-Ddaemon.name=ui', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir +
                 '/lib-webapp:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=ui.log',
@@ -341,9 +379,9 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-server', '-Ddaemon.name=logviewer', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir +
                 '/lib-webapp:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=logviewer.log',
@@ -358,14 +396,40 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-server', '-Ddaemon.name=drpc', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir +
                 '/lib-webapp:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=drpc.log',
                 '-Dlog4j.configurationFile=' + self.storm_dir + '/log4j2/cluster.xml',
                 'org.apache.storm.daemon.drpc.DRPCServer'
+            ])
+        )
+
+    def test_drpc_client_command(self):
+        self.base_test([
+            'storm', 'drpc-client', 'exclaim', 'a', 'exclaim', 'b', 'test', 'bar'
+        ], self.mock_execvp, mock.call(
+            self.java_cmd, [
+                self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
+                '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
+                '/bin', 'org.apache.storm.command.BasicDrpcClient', 'exclaim', 'a', 'exclaim', 'b', 'test', 'bar'
+            ])
+        )
+        self.base_test([
+            'storm', 'drpc-client', '-f', 'exclaim', 'a', 'b'
+        ], self.mock_execvp, mock.call(
+            self.java_cmd, [
+                self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
+                '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
+                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
+                '/bin', 'org.apache.storm.command.BasicDrpcClient', '-f', 'exclaim', 'a', 'b'
             ])
         )
 
@@ -375,8 +439,8 @@ class TestStormCli(TestCase):
         ], self.mock_execvp, mock.call(
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                '-Dstorm.home=' + self.storm_dir + '', '-Dstorm.log.dir=', '-Djava.library.path=',
-                '-Dstorm.conf.file=', '-cp', '' + self.storm_dir + '/*:' + self.storm_dir + '/lib:' +
+                '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs", '-Djava.library.path=',
+                '-Dstorm.conf.file=', '-cp', self.storm_dir + '/*:' + self.storm_dir + '/lib:' +
                 self.storm_dir + '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.HealthCheck'
             ])

@@ -36,24 +36,24 @@ public class TridentSpoutExecutor implements ITridentBatchBolt {
 
     public static final Logger LOG = LoggerFactory.getLogger(TridentSpoutExecutor.class);
 
-    AddIdCollector _collector;
-    ITridentSpout<Object> _spout;
-    ITridentSpout.Emitter<Object> _emitter;
-    String _streamName;
-    String _txStateId;
+    AddIdCollector collector;
+    ITridentSpout<Object> spout;
+    ITridentSpout.Emitter<Object> emitter;
+    String streamName;
+    String txStateId;
 
-    TreeMap<Long, TransactionAttempt> _activeBatches = new TreeMap<>();
+    TreeMap<Long, TransactionAttempt> activeBatches = new TreeMap<>();
 
     public TridentSpoutExecutor(String txStateId, String streamName, ITridentSpout<Object> spout) {
-        _txStateId = txStateId;
-        _spout = spout;
-        _streamName = streamName;
+        this.txStateId = txStateId;
+        this.spout = spout;
+        this.streamName = streamName;
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector) {
-        _emitter = _spout.getEmitter(_txStateId, conf, context);
-        _collector = new AddIdCollector(_streamName, collector);
+        emitter = spout.getEmitter(txStateId, conf, context);
+        this.collector = new AddIdCollector(streamName, collector);
     }
 
     @Override
@@ -61,39 +61,39 @@ public class TridentSpoutExecutor implements ITridentBatchBolt {
         // there won't be a BatchInfo for the success stream
         TransactionAttempt attempt = (TransactionAttempt) input.getValue(0);
         if (input.getSourceStreamId().equals(MasterBatchCoordinator.COMMIT_STREAM_ID)) {
-            if (attempt.equals(_activeBatches.get(attempt.getTransactionId()))) {
-                ((ICommitterTridentSpout.Emitter) _emitter).commit(attempt);
-                _activeBatches.remove(attempt.getTransactionId());
+            if (attempt.equals(activeBatches.get(attempt.getTransactionId()))) {
+                ((ICommitterTridentSpout.Emitter) emitter).commit(attempt);
+                activeBatches.remove(attempt.getTransactionId());
             } else {
                 throw new FailedException("Received commit for different transaction attempt");
             }
         } else if (input.getSourceStreamId().equals(MasterBatchCoordinator.SUCCESS_STREAM_ID)) {
             // valid to delete before what's been committed since 
             // those batches will never be accessed again
-            _activeBatches.headMap(attempt.getTransactionId()).clear();
-            _emitter.success(attempt);
+            activeBatches.headMap(attempt.getTransactionId()).clear();
+            emitter.success(attempt);
         } else {
-            _collector.setBatch(info.batchId);
-            _emitter.emitBatch(attempt, input.getValue(1), _collector);
-            _activeBatches.put(attempt.getTransactionId(), attempt);
+            collector.setBatch(info.batchId);
+            emitter.emitBatch(attempt, input.getValue(1), collector);
+            activeBatches.put(attempt.getTransactionId(), attempt);
         }
     }
 
     @Override
     public void cleanup() {
-        _emitter.close();
+        emitter.close();
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        List<String> fields = new ArrayList<>(_spout.getOutputFields().toList());
+        List<String> fields = new ArrayList<>(spout.getOutputFields().toList());
         fields.add(0, ID_FIELD);
-        declarer.declareStream(_streamName, new Fields(fields));
+        declarer.declareStream(streamName, new Fields(fields));
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return _spout.getComponentConfiguration();
+        return spout.getComponentConfiguration();
     }
 
     @Override
@@ -106,33 +106,33 @@ public class TridentSpoutExecutor implements ITridentBatchBolt {
     }
 
     private static class AddIdCollector implements TridentCollector {
-        BatchOutputCollector _delegate;
-        Object _id;
-        String _stream;
+        BatchOutputCollector delegate;
+        Object id;
+        String stream;
 
-        public AddIdCollector(String stream, BatchOutputCollector c) {
-            _delegate = c;
-            _stream = stream;
+        AddIdCollector(String stream, BatchOutputCollector c) {
+            delegate = c;
+            this.stream = stream;
         }
 
 
         public void setBatch(Object id) {
-            _id = id;
+            this.id = id;
         }
 
         @Override
         public void emit(List<Object> values) {
-            _delegate.emit(_stream, new ConsList(_id, values));
+            delegate.emit(stream, new ConsList(id, values));
         }
 
         @Override
         public void flush() {
-            _delegate.flush();
+            delegate.flush();
         }
 
         @Override
         public void reportError(Throwable t) {
-            _delegate.reportError(t);
+            delegate.reportError(t);
         }
     }
 }

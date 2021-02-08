@@ -85,12 +85,14 @@ public class LogviewerServer implements AutoCloseable {
             final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_WANT_CLIENT_AUTH));
             final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_NEED_CLIENT_AUTH));
             final Boolean disableHttpBinding = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_DISABLE_HTTP_BINDING));
+            final boolean enableSslReload = ObjectReader.getBoolean(conf.get(DaemonConfig.LOGVIEWER_HTTPS_ENABLE_SSL_RELOAD), false);
+
 
             LogviewerApplication.setup(conf, metricsRegistry);
             ret = UIHelpers.jettyCreateServer(logviewerHttpPort, null, httpsPort, disableHttpBinding);
 
             UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
-                    httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
+                    httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth, enableSslReload);
 
             ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
             try {
@@ -105,7 +107,7 @@ public class LogviewerServer implements AutoCloseable {
 
             ServletHolder holderPwd = new ServletHolder("default", DefaultServlet.class);
             holderPwd.setInitOrder(1);
-            context.addServlet(holderPwd,"/");
+            context.addServlet(holderPwd, "/");
 
             ServletHolder jerseyServlet = context.addServlet(ServletContainer.class, "/api/v1/*");
             jerseyServlet.setInitOrder(2);

@@ -15,49 +15,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hbase.security;
+
+import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_KEYTAB_FILE_KEY;
+import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_PRINCIPAL_KEY;
+
+import java.util.HashMap;
+import java.util.Map;
+import javax.security.auth.Subject;
 
 import org.apache.storm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_KEYTAB_FILE_KEY;
-import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_PRINCIPAL_KEY;
-
 /**
- * Command tool of Hive credential renewer
+ * Command tool of Hive credential renewer.
  */
 public final class AutoHBaseCommand {
-  private static final Logger LOG = LoggerFactory.getLogger(AutoHBaseCommand.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AutoHBaseCommand.class);
 
-  private AutoHBaseCommand() {
-  }
+    private AutoHBaseCommand() {
+    }
 
-  @SuppressWarnings("unchecked")
-  public static void main(String[] args) throws Exception {
-    Map<String, Object> conf = new HashMap<>();
-    conf.put(HBASE_PRINCIPAL_KEY, args[1]); // hbase principal storm-hbase@WITZEN.COM
-    conf.put(HBASE_KEYTAB_FILE_KEY,
-        args[2]); // storm hbase keytab /etc/security/keytabs/storm-hbase.keytab
+    @SuppressWarnings("unchecked")
+    public static void main(String[] args) throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(HBASE_PRINCIPAL_KEY, args[1]); // hbase principal storm-hbase@WITZEN.COM
+        conf.put(HBASE_KEYTAB_FILE_KEY,
+            args[2]); // storm hbase keytab /etc/security/keytabs/storm-hbase.keytab
 
-    AutoHBase autoHBase = new AutoHBase();
-    autoHBase.prepare(conf);
-    AutoHBaseNimbus autoHBaseNimbus = new AutoHBaseNimbus();
-    autoHBaseNimbus.prepare(conf);
+        AutoHBase autoHBase = new AutoHBase();
+        autoHBase.prepare(conf);
+        AutoHBaseNimbus autoHBaseNimbus = new AutoHBaseNimbus();
+        autoHBaseNimbus.prepare(conf);
 
-    Map<String, String> creds = new HashMap<>();
-    autoHBaseNimbus.populateCredentials(creds, conf, args[0]); //with realm e.g. storm@WITZEND.COM
-    LOG.info("Got HBase credentials" + autoHBase.getCredentials(creds));
+        Map<String, String> creds = new HashMap<>();
+        autoHBaseNimbus.populateCredentials(creds, conf, args[0]); //with realm e.g. storm@WITZEND.COM
+        LOG.info("Got HBase credentials" + autoHBase.getCredentials(creds));
 
-    Subject s = new Subject();
-    autoHBase.populateSubject(s, creds);
-    LOG.info("Got a Subject " + s);
+        Subject s = new Subject();
+        autoHBase.populateSubject(s, creds);
+        LOG.info("Got a Subject " + s);
 
-    autoHBaseNimbus.renew(creds, conf, args[0]);
-    LOG.info("renewed credentials" + autoHBase.getCredentials(creds));
-  }
+        autoHBaseNimbus.renew(creds, conf, args[0]);
+        LOG.info("renewed credentials" + autoHBase.getCredentials(creds));
+    }
 }

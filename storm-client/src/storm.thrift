@@ -180,6 +180,8 @@ struct TopologySummary {
 524: optional double assigned_memonheap;
 525: optional double assigned_memoffheap;
 526: optional double assigned_cpu;
+527: optional map<string, double> requested_generic_resources;
+528: optional map<string, double> assigned_generic_resources;
 }
 
 struct SupervisorSummary {
@@ -194,6 +196,8 @@ struct SupervisorSummary {
   9: optional double used_cpu;
   10: optional double fragmented_mem;
   11: optional double fragmented_cpu;
+  12: optional bool blacklisted;
+  13: optional map<string, double> used_generic_resources;
 }
 
 struct NimbusSummary {
@@ -347,6 +351,7 @@ struct WorkerSummary {
 524: optional double assigned_memonheap;
 525: optional double assigned_memoffheap;
 526: optional double assigned_cpu;
+527: optional string owner;
 }
 
 struct SupervisorPageInfo {
@@ -387,6 +392,8 @@ struct TopologyPageInfo {
 532: optional double assigned_shared_on_heap_memory;
 533: optional double assigned_regular_off_heap_memory;
 534: optional double assigned_shared_off_heap_memory;
+535: optional map<string, double> requested_generic_resources;
+536: optional map<string, double> assigned_generic_resources;
 }
 
 struct ExecutorAggregateStats {
@@ -770,9 +777,14 @@ service Nimbus {
   string getNimbusConf() throws (1: AuthorizationException aze);
   // stats functions
   ClusterSummary getClusterInfo() throws (1: AuthorizationException aze);
+  list<TopologySummary> getTopologySummaries() throws (1: AuthorizationException aze);
+  TopologySummary getTopologySummaryByName(1: string name) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  TopologySummary getTopologySummary(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   NimbusSummary getLeader() throws (1: AuthorizationException aze);
   bool isTopologyNameAllowed(1: string name) throws (1: AuthorizationException aze);
+  TopologyInfo getTopologyInfoByName(1: string name) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  TopologyInfo getTopologyInfoByNameWithOpts(1: string name, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfoWithOpts(1: string id, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyPageInfo getTopologyPageInfo(1: string id, 2: string window, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   SupervisorPageInfo getSupervisorPageInfo(1: string id, 2: string host, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);

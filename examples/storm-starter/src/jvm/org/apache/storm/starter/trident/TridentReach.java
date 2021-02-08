@@ -38,21 +38,25 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.DRPCClient;
 
 public class TridentReach {
-    public static Map<String, List<String>> TWEETERS_DB = new HashMap<String, List<String>>() {{
-        put("foo.com/blog/1", Arrays.asList("sally", "bob", "tim", "george", "nathan"));
-        put("engineering.twitter.com/blog/5", Arrays.asList("adam", "david", "sally", "nathan"));
-        put("tech.backtype.com/blog/123", Arrays.asList("tim", "mike", "john"));
-    }};
+    public static Map<String, List<String>> TWEETERS_DB = new HashMap<String, List<String>>() {
+        {
+            put("foo.com/blog/1", Arrays.asList("sally", "bob", "tim", "george", "nathan"));
+            put("engineering.twitter.com/blog/5", Arrays.asList("adam", "david", "sally", "nathan"));
+            put("tech.backtype.com/blog/123", Arrays.asList("tim", "mike", "john"));
+        }
+    };
 
-    public static Map<String, List<String>> FOLLOWERS_DB = new HashMap<String, List<String>>() {{
-        put("sally", Arrays.asList("bob", "tim", "alice", "adam", "jim", "chris", "jai"));
-        put("bob", Arrays.asList("sally", "nathan", "jim", "mary", "david", "vivian"));
-        put("tim", Arrays.asList("alex"));
-        put("nathan", Arrays.asList("sally", "bob", "adam", "harry", "chris", "vivian", "emily", "jordan"));
-        put("adam", Arrays.asList("david", "carissa"));
-        put("mike", Arrays.asList("john", "bob"));
-        put("john", Arrays.asList("alice", "nathan", "jim", "mike", "bob"));
-    }};
+    public static Map<String, List<String>> FOLLOWERS_DB = new HashMap<String, List<String>>() {
+        {
+            put("sally", Arrays.asList("bob", "tim", "alice", "adam", "jim", "chris", "jai"));
+            put("bob", Arrays.asList("sally", "nathan", "jim", "mary", "david", "vivian"));
+            put("tim", Arrays.asList("alex"));
+            put("nathan", Arrays.asList("sally", "bob", "adam", "harry", "chris", "vivian", "emily", "jordan"));
+            put("adam", Arrays.asList("david", "carissa"));
+            put("mike", Arrays.asList("john", "bob"));
+            put("john", Arrays.asList("alice", "nathan", "jim", "mike", "bob"));
+        }
+    };
 
     public static StormTopology buildTopology() {
         TridentTopology topology = new TridentTopology();
@@ -83,10 +87,10 @@ public class TridentReach {
     }
 
     public static class StaticSingleKeyMapState extends ReadOnlyState implements ReadOnlyMapState<Object> {
-        Map _map;
+        Map map;
 
         public StaticSingleKeyMapState(Map map) {
-            _map = map;
+            this.map = map;
         }
 
         @Override
@@ -94,21 +98,21 @@ public class TridentReach {
             List<Object> ret = new ArrayList();
             for (List<Object> key : keys) {
                 Object singleKey = key.get(0);
-                ret.add(_map.get(singleKey));
+                ret.add(map.get(singleKey));
             }
             return ret;
         }
 
         public static class Factory implements StateFactory {
-            Map _map;
+            Map map;
 
             public Factory(Map map) {
-                _map = map;
+                this.map = map;
             }
 
             @Override
             public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-                return new StaticSingleKeyMapState(_map);
+                return new StaticSingleKeyMapState(map);
             }
 
         }

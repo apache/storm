@@ -20,7 +20,7 @@ import org.apache.storm.task.OutputCollector;
  */
 public interface AsyncResultHandler<T> extends Serializable {
 
-    public static final AsyncResultHandler NO_OP_HANDLER = new AsyncResultHandler() {
+    AsyncResultHandler NO_OP_HANDLER = new AsyncResultHandler() {
         @Override
         public void failure(Throwable t, Object inputs) {
             /** no-operation **/

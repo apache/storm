@@ -22,7 +22,7 @@ import org.apache.storm.task.WorkerTopologyContext;
  */
 public interface IWorkerHook extends Serializable {
     /**
-     * This method is called when a worker is started
+     * This method is called when a worker is started.
      *
      * @param topoConf The Storm configuration for this worker
      * @param context  This object can be used to get information about this worker's place within the topology
@@ -30,7 +30,7 @@ public interface IWorkerHook extends Serializable {
     void start(Map<String, Object> topoConf, WorkerTopologyContext context);
 
     /**
-     * This method is called right before a worker shuts down
+     * This method is called right before a worker shuts down.
      */
     void shutdown();
 }

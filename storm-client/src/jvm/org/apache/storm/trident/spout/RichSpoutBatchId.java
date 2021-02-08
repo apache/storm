@@ -13,10 +13,10 @@
 package org.apache.storm.trident.spout;
 
 public class RichSpoutBatchId implements IBatchID {
-    long _id;
+    long id;
 
     public RichSpoutBatchId(long id) {
-        _id = id;
+        this.id = id;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class RichSpoutBatchId implements IBatchID {
 
     @Override
     public int hashCode() {
-        return ((Long) _id).hashCode();
+        return ((Long) id).hashCode();
     }
 
     @Override
@@ -41,6 +41,6 @@ public class RichSpoutBatchId implements IBatchID {
             return false;
         }
         RichSpoutBatchId other = (RichSpoutBatchId) o;
-        return _id == other._id;
+        return id == other.id;
     }
 }

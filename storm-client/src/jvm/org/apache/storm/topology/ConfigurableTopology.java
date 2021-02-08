@@ -62,7 +62,7 @@ public abstract class ConfigurableTopology {
 
     protected Config conf = new Config();
 
-    public static void start(ConfigurableTopology topology, String args[]) {
+    public static void start(ConfigurableTopology topology, String[] args) {
         String[] remainingArgs = topology.parse(args);
         try {
             topology.run(remainingArgs);
@@ -78,11 +78,10 @@ public abstract class ConfigurableTopology {
             new FileInputStream(resource), Charset.defaultCharset()));
         if (ret == null) {
             ret = new HashMap<>();
-        }
-        // If the config consists of a single key 'config', its values are used
-        // instead. This means that the same config files can be used with Flux
-        // and the ConfigurableTopology.
-        else {
+        } else {
+            // If the config consists of a single key 'config', its values are used
+            // instead. This means that the same config files can be used with Flux
+            // and the ConfigurableTopology.
             if (ret.size() == 1) {
                 Object confNode = ret.get("config");
                 if (confNode != null && confNode instanceof Map) {
@@ -98,10 +97,10 @@ public abstract class ConfigurableTopology {
         return conf;
     }
 
-    protected abstract int run(String args[]) throws Exception;
+    protected abstract int run(String[] args) throws Exception;
 
     /**
-     * Submits the topology with the name taken from the configuration
+     * Submits the topology with the name taken from the configuration.
      **/
     protected int submit(Config conf, TopologyBuilder builder) {
         String name = (String) Utils.get(conf, Config.TOPOLOGY_NAME, null);
@@ -113,7 +112,7 @@ public abstract class ConfigurableTopology {
     }
 
     /**
-     * Submits the topology under a specific name
+     * Submits the topology under a specific name.
      **/
     protected int submit(String name, Config conf, TopologyBuilder builder) {
         try {
@@ -126,7 +125,7 @@ public abstract class ConfigurableTopology {
         return 0;
     }
 
-    private String[] parse(String args[]) {
+    private String[] parse(String[] args) {
 
         List<String> newArgs = new ArrayList<>();
         Collections.addAll(newArgs, args);

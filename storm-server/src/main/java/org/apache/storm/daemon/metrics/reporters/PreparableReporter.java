@@ -15,9 +15,8 @@ package org.apache.storm.daemon.metrics.reporters;
 import com.codahale.metrics.MetricRegistry;
 import java.util.Map;
 
-
 public interface PreparableReporter {
-    void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf);
+    void prepare(MetricRegistry metricsRegistry, Map<String, Object> daemonConf);
 
     void start();
 

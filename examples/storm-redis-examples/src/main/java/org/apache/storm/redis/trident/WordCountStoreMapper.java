@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.trident;
 
-import org.apache.storm.tuple.ITuple;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisStoreMapper;
+import org.apache.storm.tuple.ITuple;
 
 public class WordCountStoreMapper implements RedisStoreMapper {
     @Override

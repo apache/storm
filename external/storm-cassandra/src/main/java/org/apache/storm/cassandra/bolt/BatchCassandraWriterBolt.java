@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
 
     public static final int DEFAULT_EMIT_FREQUENCY = 2;
-    private final static Logger LOG = LoggerFactory.getLogger(BatchCassandraWriterBolt.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BatchCassandraWriterBolt.class);
     private LinkedBlockingQueue<Tuple> queue;
 
     private int tickFrequencyInSeconds;
@@ -41,14 +41,12 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
 
     private int batchMaxSize = 1000;
 
-    private String componentID;
+    private String componentId;
 
     private AsyncResultHandler<List<Tuple>> asyncResultHandler;
 
     /**
      * Creates a new {@link CassandraWriterBolt} instance.
-     *
-     * @param tupleMapper
      */
     public BatchCassandraWriterBolt(CQLStatementTupleMapper tupleMapper) {
         this(tupleMapper, DEFAULT_EMIT_FREQUENCY);
@@ -56,8 +54,6 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
 
     /**
      * Creates a new {@link CassandraWriterBolt} instance.
-     *
-     * @param tupleMapper
      */
     public BatchCassandraWriterBolt(CQLStatementTupleMapper tupleMapper, int tickFrequencyInSeconds) {
         super(tupleMapper);
@@ -70,7 +66,7 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
     @Override
     public void prepare(Map<String, Object> topoConfig, TopologyContext topologyContext, OutputCollector outputCollector) {
         super.prepare(topoConfig, topologyContext, outputCollector);
-        this.componentID = topologyContext.getThisComponentId();
+        this.componentId = topologyContext.getThisComponentId();
         this.queue = new LinkedBlockingQueue<>(batchMaxSize);
         this.lastModifiedTimesMillis = now();
     }
@@ -144,8 +140,9 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
 
         for (Tuple t : inputs) {
             List<Statement> sl = getMapper().map(topoConfig, session, t);
-            for (Statement s : sl)
+            for (Statement s : sl) {
                 stmts.add(new PairStatementTuple(t, s));
+            }
         }
         return stmts;
     }
@@ -158,7 +155,7 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
     }
 
     private String logPrefix() {
-        return componentID + " - ";
+        return componentId + " - ";
     }
 
     public BatchCassandraWriterBolt withTickFrequency(long time, TimeUnit unit) {

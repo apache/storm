@@ -85,18 +85,18 @@ public class SaslNettyClient {
      */
     private static class SaslClientCallbackHandler implements CallbackHandler {
         /**
-         * Generated username contained in TopologyToken
+         * Generated username contained in TopologyToken.
          */
         private final String userName;
         /**
-         * Generated password contained in TopologyToken
+         * Generated password contained in TopologyToken.
          */
         private final char[] userPassword;
 
         /**
          * Set private members using topology token.
          */
-        public SaslClientCallbackHandler(String topologyToken, byte[] token) {
+        SaslClientCallbackHandler(String topologyToken, byte[] token) {
             this.userName = SaslUtils
                 .encodeIdentifier(topologyToken.getBytes());
             this.userPassword = SaslUtils.encodePassword(token);
@@ -106,8 +106,8 @@ public class SaslNettyClient {
          * Implementation used to respond to SASL tokens from server.
          *
          * @param callbacks objects that indicate what credential information the server's SaslServer requires from the client.
-         * @throws UnsupportedCallbackException
          */
+        @Override
         public void handle(Callback[] callbacks)
             throws UnsupportedCallbackException {
             NameCallback nc = null;

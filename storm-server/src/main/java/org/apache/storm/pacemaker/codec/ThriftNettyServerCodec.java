@@ -53,32 +53,32 @@ public class ThriftNettyServerCodec extends ChannelInitializer<Channel> {
     @Override
     protected void initChannel(Channel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-                pipeline.addLast("encoder", new ThriftEncoder());
+        pipeline.addLast("encoder", new ThriftEncoder());
         pipeline.addLast("decoder", new ThriftDecoder(thriftMessageMaxSizeBytes));
-                if (authMethod == AuthMethod.DIGEST) {
-                    try {
-                        LOG.debug("Adding SaslStormServerHandler to pacemaker server pipeline.");
-                        pipeline.addLast(SASL_HANDLER, new SaslStormServerHandler((ISaslServer) server));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else if (authMethod == AuthMethod.KERBEROS) {
-                    try {
-                        LOG.debug("Adding KerberosSaslServerHandler to pacemaker server pipeline.");
+        if (authMethod == AuthMethod.DIGEST) {
+            try {
+                LOG.debug("Adding SaslStormServerHandler to pacemaker server pipeline.");
+                pipeline.addLast(SASL_HANDLER, new SaslStormServerHandler((ISaslServer) server));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else if (authMethod == AuthMethod.KERBEROS) {
+            try {
+                LOG.debug("Adding KerberosSaslServerHandler to pacemaker server pipeline.");
                 ArrayList<String> authorizedUsers = new ArrayList<>(1);
-                        authorizedUsers.add((String) topoConf.get(DaemonConfig.NIMBUS_DAEMON_USER));
-                        pipeline.addLast(KERBEROS_HANDLER, new KerberosSaslServerHandler((ISaslServer) server,
-                                                                                         topoConf,
-                                                                                         ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_SERVER,
-                                                                                         authorizedUsers));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else if (authMethod == AuthMethod.NONE) {
-                    LOG.debug("Not authenticating any clients. AuthMethod is NONE");
-                }
+                authorizedUsers.add((String) topoConf.get(DaemonConfig.NIMBUS_DAEMON_USER));
+                pipeline.addLast(KERBEROS_HANDLER, new KerberosSaslServerHandler((ISaslServer) server,
+                                                                                 topoConf,
+                                                                                 ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_SERVER,
+                                                                                 authorizedUsers));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else if (authMethod == AuthMethod.NONE) {
+            LOG.debug("Not authenticating any clients. AuthMethod is NONE");
+        }
 
-                pipeline.addLast("handler", new StormServerHandler(server));
+        pipeline.addLast("handler", new StormServerHandler(server));
     }
 
     public enum AuthMethod {

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.trident;
 
 import org.apache.storm.Config;
@@ -37,7 +38,7 @@ import org.apache.storm.tuple.Values;
 
 public class WordCountTridentMap {
 
-    public static StormTopology buildTopology(String url, String collectionName){
+    public static StormTopology buildTopology(String url, String collectionName) {
         Fields fields = new Fields("word", "count");
         FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
                 new Values("storm", 1),
@@ -50,13 +51,12 @@ public class WordCountTridentMap {
         MongoMapper mapper = new SimpleMongoMapper()
                 .withFields("word", "count");
 
-        QueryFilterCreator filterCreator = new SimpleQueryFilterCreator()
-                .withField("word");
-
         MongoMapState.Options options = new MongoMapState.Options();
         options.url = url;
         options.collectionName = collectionName;
         options.mapper = mapper;
+        QueryFilterCreator filterCreator = new SimpleQueryFilterCreator()
+                .withField("word");
         options.queryCreator = filterCreator;
 
         StateFactory factory = MongoMapState.transactional(options);

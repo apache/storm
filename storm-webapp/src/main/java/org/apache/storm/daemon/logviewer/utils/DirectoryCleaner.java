@@ -49,9 +49,9 @@ public class DirectoryCleaner {
     // used to recognize the pattern of active log files, we may remove the "current" from this list
     private static final Pattern ACTIVE_LOG_PATTERN = Pattern.compile(".*\\.(log|err|out|current|yaml|pid|metrics)$");
     // used to recognize the pattern of some meta files in a worker log directory
-    private static final Pattern META_LOG_PATTERN = Pattern.compile(".*\\.(yaml|pid)$");// max number of files to delete for every round
+    private static final Pattern META_LOG_PATTERN = Pattern.compile(".*\\.(yaml|pid)$");
 
-    private static final int PQ_SIZE = 1024;
+    private static final int PQ_SIZE = 1024; // max number of files to delete for every round
     private static final int MAX_ROUNDS = 512; // max rounds of scanning the dirs
     public static final int MAX_NUMBER_OF_FILES_FOR_DIR = 1024;
 
@@ -170,6 +170,9 @@ public class DirectoryCleaner {
             } else {
                 LOG.warn("No more files able to delete this round, but {} is over quota by {} MB",
                     forPerDir ? "this directory" : "root directory", toDeleteSize * 1e-6);
+                LOG.warn("No more files eligible to be deleted this round, but {} is over {} quota by {} MB",
+                        forPerDir ? "worker directory: " + dirs.get(0).toAbsolutePath().normalize() : "log root directory",
+                        forPerDir ? "per-worker" : "global", toDeleteSize * 1e-6);
             }
         }
         return new DeletionMeta(deletedSize, deletedFiles);

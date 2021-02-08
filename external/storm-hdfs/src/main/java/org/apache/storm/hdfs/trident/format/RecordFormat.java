@@ -12,14 +12,11 @@
 
 package org.apache.storm.hdfs.trident.format;
 
-
 import java.io.Serializable;
 import org.apache.storm.trident.tuple.TridentTuple;
 
 /**
- * Formats a Tuple object into a byte array
- * that will be written to HDFS.
- *
+ * Formats a Tuple object into a byte array that will be written to HDFS.
  */
 public interface RecordFormat extends Serializable {
     byte[] format(TridentTuple tuple);

@@ -18,7 +18,7 @@ import org.apache.storm.generated.StormTopology;
 
 public interface ITopologyValidator {
 
-    void prepare(Map<String, Object> StormConf);
+    void prepare(Map<String, Object> stormConf);
 
     void validate(String topologyName, Map<String, Object> topologyConf, StormTopology topology)
         throws InvalidTopologyException;

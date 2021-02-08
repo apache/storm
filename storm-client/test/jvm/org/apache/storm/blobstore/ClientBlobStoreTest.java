@@ -12,6 +12,7 @@
 
 package org.apache.storm.blobstore;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -111,7 +112,6 @@ public class ClientBlobStoreTest {
 
         @Override
         public void prepare(Map<String, Object> conf) {
-            this.conf = conf;
             allBlobs = new HashMap<String, SettableBlobMeta>();
         }
 
@@ -185,6 +185,11 @@ public class ClientBlobStoreTest {
 
         @Override
         public void createStateInZookeeper(String key) {
+        }
+
+        @Override
+        public long getRemoteBlobstoreUpdateTime() throws IOException {
+            return -1L; // not supported
         }
     }
 }

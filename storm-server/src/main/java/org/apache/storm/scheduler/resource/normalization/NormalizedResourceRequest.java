@@ -124,7 +124,6 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
     private static Map<String, Double> parseResources(String input) {
         Map<String, Double> topologyResources = new HashMap<>();
         JSONParser parser = new JSONParser();
-        LOG.debug("Input to parseResources {}", input);
         try {
             if (input != null) {
                 Object obj = parser.parse(input);
@@ -176,6 +175,45 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
         ret.put(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, offHeap);
         ret.put(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, onHeap);
         return ret;
+    }
+
+    /*
+     * return map with non generic resources removed
+     */
+    public static void removeNonGenericResources(Map<String, Double> map) {
+        map.remove(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME);
+        map.remove(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME);
+        map.remove(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME);
+        map.remove(Constants.COMMON_CPU_RESOURCE_NAME);
+    }
+
+    /*
+     * return a map that is the sum of resources1 + resources2
+     */
+    public static Map<String, Double> addResourceMap(Map<String, Double> resources1, Map<String, Double> resources2) {
+        Map<String, Double> sum = new HashMap<>(resources1);
+        if (resources2 != null) {
+            for (Map.Entry<String, Double> me : resources2.entrySet()) {
+                Double cur = sum.getOrDefault(me.getKey(), 0.0) + me.getValue();
+                sum.put(me.getKey(), cur);
+            }
+        }
+        return sum;
+    }
+
+    /*
+     * return a map that is the difference of resources1 - resources2
+     */
+    public static Map<String, Double> subtractResourceMap(Map<String, Double> resource1, Map<String, Double> resource2) {
+        if (resource1 == null || resource2 == null) {
+            return new HashMap<>();
+        }
+        Map<String, Double> difference = new HashMap<>(resource1);
+        for (Map.Entry<String, Double> me : resource2.entrySet()) {
+            Double sub = difference.getOrDefault(me.getKey(), 0.0) - me.getValue();
+            difference.put(me.getKey(), sub);
+        }
+        return difference;
     }
 
     public double getOnHeapMemoryMb() {

@@ -290,7 +290,10 @@ appropriate runtime values for this worker. The distributed cache target size in
 of the distributed cache contents. It is set to 10240 MB.
 
 supervisor.localizer.cleanup.interval.ms: The distributed cache cleanup interval. Controls how often it scans to attempt to 
-cleanup anything over the cache target size. By default it is set to 600000 milliseconds.
+cleanup anything over the cache target size. By default it is set to 300000 milliseconds.
+
+supervisor.localizer.update.blob.interval.secs: The distributed cache interval for checking for blobs to update. By
+default it is set to 30 seconds.
 
 nimbus.blobstore.class:  Sets the blobstore implementation nimbus uses. It is set to "org.apache.storm.blobstore.LocalFsBlobStore"
 
@@ -314,6 +317,19 @@ Once this time is elapsed nimbus will go ahead and perform topology activation t
 The default is 60 seconds, a value of -1 indicates to wait for ever.
 * nimbus.code.sync.freq.secs: Frequency at which the background thread on nimbus which syncs code for locally missing blobs. Default is 2 minutes.
 ```
+
+Additionally, if you want to access to secure hdfs blobstore, you also need to set the following configs.  
+```
+storm.hdfs.login.keytab or blobstore.hdfs.keytab (deprecated)
+storm.hdfs.login.principal or blobstore.hdfs.principal (deprecated)
+```
+
+For example,
+```
+storm.hdfs.login.keytab: /etc/keytab
+storm.hdfs.login.principal: primary/instance@REALM
+```
+
 
 ## Using the Distributed Cache API, Command Line Interface (CLI)
 

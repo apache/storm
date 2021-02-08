@@ -78,17 +78,17 @@ class SaslNettyServer {
     }
 
     /**
-     * CallbackHandler for SASL DIGEST-MD5 mechanism
+     * CallbackHandler for SASL DIGEST-MD5 mechanism.
      */
     public static class SaslDigestCallbackHandler implements CallbackHandler {
 
         /**
-         * Used to authenticate the clients
+         * Used to authenticate the clients.
          */
         private byte[] userPassword;
         private String userName;
 
-        public SaslDigestCallbackHandler(String topologyName, byte[] token) {
+        SaslDigestCallbackHandler(String topologyName, byte[] token) {
             LOG.debug("SaslDigestCallback: Creating SaslDigestCallback handler with topology token: {}", topologyName);
             this.userName = topologyName;
             this.userPassword = token;

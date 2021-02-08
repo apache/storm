@@ -14,7 +14,7 @@ package org.apache.storm.security.auth;
 
 import java.io.IOException;
 import java.util.Map;
-import javax.security.auth.login.Configuration;
+import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.thrift.TProcessor;
 import org.apache.storm.thrift.server.TServer;
 import org.apache.storm.thrift.transport.TTransportException;
@@ -27,9 +27,9 @@ public class ThriftServer {
     private final Map<String, Object> conf; //storm configuration
     private final ThriftConnectionType type;
     private TServer server;
-    private Configuration loginConf;
     private int port;
     private boolean areWorkerTokensSupported;
+    private ITransportPlugin transportPlugin;
 
     public ThriftServer(Map<String, Object> conf, TProcessor processor, ThriftConnectionType type) {
         this.conf = conf;
@@ -37,14 +37,8 @@ public class ThriftServer {
         this.type = type;
 
         try {
-            //retrieve authentication configuration 
-            loginConf = ClientAuthUtils.getConfiguration(this.conf);
-        } catch (Exception x) {
-            LOG.error(x.getMessage(), x);
-        }
-        try {
             //locate our thrift transport plugin
-            ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(this.type, this.conf, loginConf);
+            transportPlugin = ClientAuthUtils.getTransportPlugin(this.type, this.conf);
             //server
             server = transportPlugin.getServer(this.processor);
             port = transportPlugin.getPort();
@@ -57,9 +51,13 @@ public class ThriftServer {
 
     public void stop() {
         server.stop();
+        if (transportPlugin instanceof SaslTransportPlugin) {
+            ((SaslTransportPlugin) transportPlugin).close();
+        }
     }
 
     /**
+     * Check whether serving.
      * @return true if ThriftServer is listening to requests?
      */
     public boolean isServing() {
@@ -84,6 +82,7 @@ public class ThriftServer {
     }
 
     /**
+     * Get port.
      * @return The port this server is/will be listening on
      */
     public int getPort() {

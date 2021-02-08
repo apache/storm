@@ -176,7 +176,7 @@ public class NimbusHeartbeatsPressureTest {
         private int tryTimes;
         private NimbusClient client;
 
-        public HeartbeatSendTask(int taskId, int tryTimes) {
+        HeartbeatSendTask(int taskId, int tryTimes) {
             this.taskId = taskId;
             this.tryTimes = tryTimes;
             this.runtimesBook = new double[tryTimes];

@@ -18,6 +18,7 @@ import java.util.Map;
 import org.apache.storm.generated.ErrorInfo;
 import org.apache.storm.generated.GetInfoOptions;
 import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.NotAliveException;
 import org.apache.storm.generated.NumErrorsChoice;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.utils.NimbusClient;
@@ -42,21 +43,15 @@ public class GetErrors {
             public void run(Nimbus.Iface client) throws Exception {
                 GetInfoOptions opts = new GetInfoOptions();
                 opts.set_num_err_choice(NumErrorsChoice.ONE);
-                String topologyId = Utils.getTopologyId(name, client);
-
-                TopologyInfo topologyInfo = null;
-                if (topologyId != null) {
-                    topologyInfo = client.getTopologyInfoWithOpts(topologyId, opts);
-                }
-
                 Map<String, Object> outputMap = new HashMap<>();
-                if (topologyId == null || topologyInfo == null) {
-                    outputMap.put("Failure", "No topologies running with name " + name);
-                } else {
+                try {
+                    TopologyInfo topologyInfo = client.getTopologyInfoByNameWithOpts(name, opts);
                     String topologyName = topologyInfo.get_name();
                     Map<String, List<ErrorInfo>> topologyErrors = topologyInfo.get_errors();
                     outputMap.put("Topology Name", topologyName);
                     outputMap.put("Comp-Errors", getComponentErrors(topologyErrors));
+                } catch (NotAliveException notAliveException) {
+                    outputMap.put("Failure", "No topologies running with name " + name);
                 }
                 System.out.println(JSONValue.toJSONString(outputMap));
             }

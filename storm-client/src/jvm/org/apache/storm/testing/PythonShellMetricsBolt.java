@@ -37,16 +37,19 @@ public class PythonShellMetricsBolt extends ShellBolt implements IRichBolt {
         super(command, file);
     }
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         super.prepare(topoConf, context, collector);
 
-        CountShellMetric cMetric = new CountShellMetric();
-        context.registerMetric("my-custom-shell-metric", cMetric, 5);
+        CountShellMetric countShellMetric = new CountShellMetric();
+        context.registerMetric("my-custom-shell-metric", countShellMetric, 5);
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
     }
 
+    @Override
     public Map<String, Object> getComponentConfiguration() {
         return null;
     }

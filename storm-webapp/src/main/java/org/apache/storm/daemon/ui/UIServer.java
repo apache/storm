@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
  * Main class.
  *
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class UIServer {
 
     public static final Logger LOG = LoggerFactory.getLogger(UIServer.class);
@@ -95,16 +96,14 @@ public class UIServer {
         final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.UI_HTTPS_WANT_CLIENT_AUTH));
         final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.UI_HTTPS_NEED_CLIENT_AUTH));
         final Boolean disableHttpBinding = (Boolean) (conf.get(DaemonConfig.UI_DISABLE_HTTP_BINDING));
+        final boolean enableSslReload = ObjectReader.getBoolean(conf.get(DaemonConfig.UI_HTTPS_ENABLE_SSL_RELOAD), false);
 
         Server jettyServer =
                 UIHelpers.jettyCreateServer(
                         (int) conf.get(DaemonConfig.UI_PORT), null, httpsPort, headerBufferSize, disableHttpBinding);
 
         UIHelpers.configSsl(jettyServer, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
-                httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
-
-
-        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+                httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth, enableSslReload);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
@@ -119,6 +118,7 @@ public class UIServer {
 
         UIHelpers.configFilters(context, filterConfigurationList);
 
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         ResourceConfig resourceConfig =
             new ResourceConfig()
                 .packages("org.apache.storm.daemon.ui.resources")
@@ -162,16 +162,16 @@ public class UIServer {
             }
         }
 
-        holderHome.setInitParameter("dirAllowed","true");
-        holderHome.setInitParameter("pathInfoOnly","true");
+        holderHome.setInitParameter("dirAllowed", "true");
+        holderHome.setInitParameter("pathInfoOnly", "true");
         context.addFilter(new FilterHolder(new HeaderResponseServletFilter(metricsRegistry)), "/*", EnumSet.allOf(DispatcherType.class));
-        context.addServlet(holderHome,"/*");
+        context.addServlet(holderHome, "/*");
 
 
         // Lastly, the default servlet for root content (always needed, to satisfy servlet spec)
         ServletHolder holderPwd = new ServletHolder("default", DefaultServlet.class);
-        holderPwd.setInitParameter("dirAllowed","true");
-        context.addServlet(holderPwd,"/");
+        holderPwd.setInitParameter("dirAllowed", "true");
+        context.addServlet(holderPwd, "/");
 
         metricsRegistry.startMetricsReporters(conf);
         Utils.addShutdownHookWithForceKillIn1Sec(metricsRegistry::stopMetricsReporters);

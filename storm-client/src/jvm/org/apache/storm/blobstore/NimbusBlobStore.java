@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * NimbusBlobStore is a USER facing client API to perform basic operations such as create, update, delete and read for local and hdfs blob
  * store.
  *
- * For local blob store it is also the client facing API for supervisor in order to download blobs from nimbus.
+ * <p>For local blob store it is also the client facing API for supervisor in order to download blobs from nimbus.
  */
 public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(NimbusBlobStore.class);
@@ -199,6 +199,7 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:NoFinalizer")
     protected void finalize() {
         shutdown();
     }
@@ -214,6 +215,11 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     @Override
     public void close() {
         shutdown();
+    }
+
+    @Override
+    public long getRemoteBlobstoreUpdateTime() throws IOException {
+        return -1L; // not supported
     }
 
     public class NimbusKeyIterator implements Iterator<String> {
@@ -325,6 +331,11 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
             }
         }
 
+        @Override
+        public synchronized int read(byte[] b) throws IOException {
+            return read(b, 0, b.length);
+        }
+
         private boolean isEmpty() {
             return buffer == null || offset >= end;
         }
@@ -343,11 +354,6 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
                     eof = true;
                 }
             }
-        }
-
-        @Override
-        public synchronized int read(byte[] b) throws IOException {
-            return read(b, 0, b.length);
         }
 
         @Override

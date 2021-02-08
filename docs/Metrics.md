@@ -139,23 +139,18 @@ There are several different metrics related to counting what a bolt or spout doe
 
 In general all of these tuple count metrics are randomly sub-sampled unless otherwise stated.  This means that the counts you see both on the UI and from the built in metrics are not necessarily exact.  In fact by default we sample only 5% of the events and estimate the total number of events from that.  The sampling percentage is configurable per topology through the `topology.stats.sample.rate` config.  Setting it to 1.0 will make the counts exact, but be aware that the more events we sample the slower your topology will run (as the metrics are counted in the same code path as tuples are processed).  This is why we have a 5% sample rate as the default.
 
-The tuple counting metrics are generally reported to the metrics consumers as maps unless explicitly stated otherwise.  They break down each count for finer grained reporting.
-The keys to these maps fall into two categories `"${stream_name}"` or `"${upstream_component}:${stream_name}"`.  The former is used for all spout metrics and for outgoing bolt metrics (`__emit-count` and `__transfer-count`).  The latter is used for bolt metrics that deal with incoming tuples.
+The tuple counting metric names contain `"${stream_name}"` or `"${upstream_component}:${stream_name}"`.  The former is used for all spout metrics and for outgoing bolt metrics (`__emit-count` and `__transfer-count`).  The latter is used for bolt metrics that deal with incoming tuples.
 
 So for a word count topology the count bolt might show something like the following for the `__ack-count` metric
 
 ```
-{
-    "split:default": 80080
-}
+    "__ack-count-split:default": 80080
 ```
 
 But the spout instead would show something like the following for the `__ack-count` metric.
 
 ```
-{
-    "default": 12500
-}
+    "__ack-count-default": 12500
 ```
 
 
@@ -273,25 +268,11 @@ Be aware that the `__system` bolt is an actual bolt so regular bolt metrics desc
 
 ##### Send (Netty Client)
 
-The `__send-iconnection` metric holds information about all of the clients for this worker.  It is of the form
+The `__send-iconnection` metrics report information about all of the clients for this worker.  They are named __send-iconnection-METRIC_TYPE-HOST:PORT for a given Client that is
+connected to a worker with the given host/port.
 
-```
-{
-    NodeInfo(node:7decee4b-c314-41f4-b362-fd1358c985b3-127.0.01, port:[6701]): {
-        "reconnects": 0,
-        "src": "/127.0.0.1:49951",
-        "pending": 0,
-        "dest": "localhost/127.0.0.1:6701",
-        "sent": 420779,
-        "lostOnSend": 0
-    }
-}
-```
+The metric types reported for each client are:
 
-The value is a map where the key is a NodeInfo class for the downstream worker it is sending messages to.  This is the SupervisorId + port.  The value is another map with the fields
-
- * `src`  What host/port this client has used to connect to the receiving worker.
- * `dest` What host/port this client has connected to.
  * `reconnects` the number of reconnections that have happened.
  * `pending` the number of messages that have not been sent.  (This corresponds to messages, not tuples)
  * `sent` the number of messages that have been sent.  (This is messages not tuples)
@@ -299,32 +280,36 @@ The value is a map where the key is a NodeInfo class for the downstream worker i
 
 ##### JVM Memory
 
-JVM memory usage is reported through `memory/nonHeap` for off heap memory and `memory/heap` for on heap memory.  These values come from the [MemoryUsage](https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/management/MemoryUsage.html) mxbean.  Each of the metrics are reported as a map with the following keys, and values returned by the corresponding java code.
+JVM memory usage is reported through `memory.non-heap` for off heap memory, `memory.heap` for on heap memory and `memory.total` for combined values.  These values come from the [MemoryUsage](https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/management/MemoryUsage.html) mxbean.  Each of the metrics are reported as a map with the following keys, and values returned by the corresponding java code.
 
 | Key | Corresponding Code |
 |--------|--------------------|
-| `maxBytes` | `memUsage.getMax()` |
-| `committedBytes` | `memUsage.getCommitted()` |
-| `initBytes` | `memUsage.getInit()` |
-| `usedBytes` | `memUsage.getUsed()` |
-| `virtualFreeBytes` | `memUsage.getMax() - memUsage.getUsed()` |
-| `unusedBytes` | `memUsage.getCommitted() - memUsage.getUsed()` |
+| `max` | `memUsage.getMax()` |
+| `committed` | `memUsage.getCommitted()` |
+| `init` | `memUsage.getInit()` |
+| `used` | `memUsage.getUsed()` |
+| `usage` | `Ratio.of(memUsage.getUsed(), memUsage.getMax())` |
 
 ##### JVM Garbage Collection
 
-The exact GC metric name depends on the garbage collector that your worker uses.  The data is all collected from `ManagementFactory.getGarbageCollectorMXBeans()` and the name of the metrics is `"GC/"` followed by the name of the returned bean with white space removed.  The reported metrics are just
+The exact GC metric name depends on the garbage collector that your worker uses.  The data is all collected from `ManagementFactory.getGarbageCollectorMXBeans()` and the name of the metrics is `"GC"` followed by the name of the returned bean with white space removed.  The reported metrics are just
 
 * `count` the number of gc events that happened and
-* `timeMs` the total number of milliseconds that were spent doing gc.  
+* `time` the total number of milliseconds that were spent doing gc.  
 
 Please refer to the [JVM documentation](https://docs.oracle.com/javase/8/docs/api/java/lang/management/ManagementFactory.html#getGarbageCollectorMXBeans--) for more details.
 
 ##### JVM Misc
 
-* `threadCount` is the number of threads currently in the JVM.
+* There are metrics prefixed with `threads` providing the number of threads, daemon threads, blocked and deadlocked threads.
 
 ##### Uptime
 
 * `uptimeSecs` reports the number of seconds the worker has been up for
 * `newWorkerEvent` is 1 when a worker is first started and 0 all other times.  This can be used to tell when a worker has crashed and is restarted.
 * `startTimeSecs` is when the worker started in seconds since the epoch
+
+##### doHeartbeat-calls
+
+* `doHeartbeat-calls` is a meter that indicates the rate the worker is performing heartbeats.
+

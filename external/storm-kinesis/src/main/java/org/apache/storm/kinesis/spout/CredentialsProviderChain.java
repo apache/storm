@@ -26,10 +26,11 @@ import com.amazonaws.auth.SystemPropertiesCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 
 /**
- * Class representing chain of mechanisms that will be used in order to connect to kinesis
+ * Class representing chain of mechanisms that will be used in order to connect to kinesis.
  */
 public class CredentialsProviderChain extends AWSCredentialsProviderChain {
-    public CredentialsProviderChain () {
+
+    public CredentialsProviderChain() {
         super(new EnvironmentVariableCredentialsProvider(),
                 new SystemPropertiesCredentialsProvider(),
                 new ClasspathPropertiesFileCredentialsProvider(),

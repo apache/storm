@@ -13,5 +13,5 @@
 package org.apache.storm.daemon;
 
 public interface Shutdownable {
-    public void shutdown();
+    void shutdown();
 }

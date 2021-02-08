@@ -18,24 +18,25 @@
 
 package org.apache.storm.solr.topology;
 
+import java.io.IOException;
+
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.solr.config.SolrConfig;
-import org.apache.storm.solr.schema.builder.RestJsonSchemaBuilderV2;
-import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.solr.bolt.SolrUpdateBolt;
 import org.apache.storm.solr.config.CountBasedCommit;
 import org.apache.storm.solr.config.SolrCommitStrategy;
+import org.apache.storm.solr.config.SolrConfig;
 import org.apache.storm.solr.mapper.SolrFieldsMapper;
 import org.apache.storm.solr.mapper.SolrMapper;
+import org.apache.storm.solr.schema.builder.RestJsonSchemaBuilderV2;
 import org.apache.storm.solr.spout.SolrFieldsSpout;
-
-import java.io.IOException;
+import org.apache.storm.topology.TopologyBuilder;
 
 public class SolrFieldsTopology extends SolrTopology {
-        public static void main(String[] args) throws Exception {
-            SolrFieldsTopology solrFieldsTopology = new SolrFieldsTopology();
-            solrFieldsTopology.run(args);
-        }
+
+    public static void main(String[] args) throws Exception {
+        SolrFieldsTopology solrFieldsTopology = new SolrFieldsTopology();
+        solrFieldsTopology.run(args);
+    }
 
     protected SolrMapper getSolrMapper(SolrConfig solrConfig) throws IOException {
         return new SolrFieldsMapper.Builder(
@@ -43,10 +44,12 @@ public class SolrFieldsTopology extends SolrTopology {
                     .setMultiValueFieldToken("%").build();
     }
 
+    @Override
     protected SolrCommitStrategy getSolrCommitStgy() {
         return new CountBasedCommit(2);         // To Commit to Solr and Ack according to the commit strategy
     }
 
+    @Override
     protected StormTopology getTopology() throws IOException {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("SolrFieldsSpout", new SolrFieldsSpout());

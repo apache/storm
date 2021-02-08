@@ -16,16 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.opentsdb.bolt;
+
+import java.io.Serializable;
 
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
 import org.apache.storm.tuple.ITuple;
 
-import java.io.Serializable;
-
 /**
- * This class gives a mapping of a {@link ITuple} with {@link OpenTsdbMetricDatapoint}
- *
+ * This class gives a mapping of a {@link ITuple} with {@link OpenTsdbMetricDatapoint}.
  */
 public interface ITupleOpenTsdbDatapointMapper extends Serializable {
 
@@ -34,6 +34,6 @@ public interface ITupleOpenTsdbDatapointMapper extends Serializable {
      *
      * @param tuple tuple instance
      */
-    public OpenTsdbMetricDatapoint getMetricPoint(ITuple tuple);
+    OpenTsdbMetricDatapoint getMetricPoint(ITuple tuple);
 
 }

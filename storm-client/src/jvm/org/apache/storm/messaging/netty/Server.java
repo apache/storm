@@ -62,18 +62,26 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private final int port;
     private final ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
     private final KryoValuesSerializer ser;
+    private final IConnectionCallback cb;
+    private final Supplier<Object> newConnectionResponse;
     private volatile boolean closing = false;
-    private IConnectionCallback cb = null;
-    private Supplier<Object> newConnectionResponse;
 
-    Server(Map<String, Object> topoConf, int port) {
+    /**
+     * Starts Netty at the given port.
+     * @param topoConf The topology config
+     * @param port The port to start Netty at
+     * @param cb The callback to deliver incoming messages to
+     * @param newConnectionResponse The response to send to clients when they connect. Can be null.
+     */
+    Server(Map<String, Object> topoConf, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
         this.topoConf = topoConf;
         this.port = port;
         ser = new KryoValuesSerializer(topoConf);
+        this.cb = cb;
+        this.newConnectionResponse = newConnectionResponse;
 
         // Configure the server.
-        int buffer_size = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
-        int backlog = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
+        int bufferSize = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         int maxWorkers = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
         ThreadFactory bossFactory = new NettyRenameThreadFactory(netty_name() + "-boss");
@@ -84,15 +92,16 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
 
-        LOG.info("Create Netty Server " + netty_name() + ", buffer_size: " + buffer_size + ", maxWorkers: " + maxWorkers);
+        LOG.info("Create Netty Server " + netty_name() + ", buffer_size: " + bufferSize + ", maxWorkers: " + maxWorkers);
 
+        int backlog = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
         bootstrap = new ServerBootstrap()
             .group(bossEventLoopGroup, workerEventLoopGroup)
             .channel(NioServerSocketChannel.class)
             .option(ChannelOption.SO_REUSEADDR, true)
             .option(ChannelOption.SO_BACKLOG, backlog)
             .childOption(ChannelOption.TCP_NODELAY, true)
-            .childOption(ChannelOption.SO_RCVBUF, buffer_size)
+            .childOption(ChannelOption.SO_RCVBUF, bufferSize)
             .childOption(ChannelOption.SO_KEEPALIVE, true)
             .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             .childHandler(new StormServerPipelineFactory(topoConf, this));
@@ -127,28 +136,14 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     /**
-     * enqueue a received message
-     *
-     * @throws InterruptedException
+     * enqueue a received message.
      */
     protected void enqueue(List<TaskMessage> msgs, String from) throws InterruptedException {
         if (null == msgs || msgs.isEmpty() || closing) {
             return;
         }
         addReceiveCount(from, msgs.size());
-        if (cb != null) {
-            cb.recv(msgs);
-        }
-    }
-
-    @Override
-    public void registerRecv(IConnectionCallback cb) {
-        this.cb = cb;
-    }
-
-    @Override
-    public void registerNewConnectionResponse(Supplier<Object> newConnectionResponse) {
-        this.newConnectionResponse = newConnectionResponse;
+        cb.recv(msgs);
     }
 
     @Override
@@ -157,7 +152,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     /**
-     * close all channels, and release resources
+     * close all channels, and release resources.
      */
     @Override
     public void close() {
@@ -265,7 +260,16 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     @Override
     public void received(Object message, String remote, Channel channel) throws InterruptedException {
-        List<TaskMessage> msgs = (List<TaskMessage>) message;
+        List<TaskMessage> msgs;
+
+        try {
+            msgs = (List<TaskMessage>) message;
+        } catch (ClassCastException e) {
+            LOG.error("Worker netty server received message other than the expected class List<TaskMessage> from remote: {}. Ignored.",
+                remote, e);
+            return;
+        }
+
         enqueue(msgs, remote);
     }
 

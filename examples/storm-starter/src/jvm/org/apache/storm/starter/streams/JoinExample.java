@@ -70,7 +70,7 @@ public class JoinExample {
     private static class NumberSpout extends BaseRichSpout {
         private final Function<Integer, Integer> function;
         private SpoutOutputCollector collector;
-        private int i = 1;
+        private int count = 1;
 
         NumberSpout(Function<Integer, Integer> function) {
             this.function = function;
@@ -84,8 +84,8 @@ public class JoinExample {
         @Override
         public void nextTuple() {
             Utils.sleep(990);
-            collector.emit(new Values(i, function.apply(i)));
-            i++;
+            collector.emit(new Values(count, function.apply(count)));
+            count++;
         }
 
         @Override

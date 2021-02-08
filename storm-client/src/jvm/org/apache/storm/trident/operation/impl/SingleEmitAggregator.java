@@ -22,14 +22,14 @@ import org.apache.storm.trident.tuple.TridentTuple;
 
 
 public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
-    Aggregator _agg;
-    BatchToPartition _batchToPartition;
+    Aggregator agg;
+    BatchToPartition batchToPartition;
     int myPartitionIndex;
     int totalPartitions;
 
     public SingleEmitAggregator(Aggregator agg, BatchToPartition batchToPartition) {
-        _agg = agg;
-        _batchToPartition = batchToPartition;
+        this.agg = agg;
+        this.batchToPartition = batchToPartition;
     }
 
 
@@ -41,37 +41,37 @@ public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
     @Override
     public void aggregate(SingleEmitState val, TridentTuple tuple, TridentCollector collector) {
         if (!val.received) {
-            val.state = _agg.init(val.batchId, collector);
+            val.state = agg.init(val.batchId, collector);
             val.received = true;
         }
-        _agg.aggregate(val.state, tuple, collector);
+        agg.aggregate(val.state, tuple, collector);
     }
 
     @Override
     public void complete(SingleEmitState val, TridentCollector collector) {
         if (!val.received) {
-            if (this.myPartitionIndex == _batchToPartition.partitionIndex(val.batchId, this.totalPartitions)) {
-                val.state = _agg.init(val.batchId, collector);
-                _agg.complete(val.state, collector);
+            if (this.myPartitionIndex == batchToPartition.partitionIndex(val.batchId, this.totalPartitions)) {
+                val.state = agg.init(val.batchId, collector);
+                agg.complete(val.state, collector);
             }
         } else {
-            _agg.complete(val.state, collector);
+            agg.complete(val.state, collector);
         }
     }
 
     @Override
     public void prepare(Map<String, Object> conf, TridentOperationContext context) {
-        _agg.prepare(conf, context);
+        agg.prepare(conf, context);
         this.myPartitionIndex = context.getPartitionIndex();
         this.totalPartitions = context.numPartitions();
     }
 
     @Override
     public void cleanup() {
-        _agg.cleanup();
+        agg.cleanup();
     }
 
-    public static interface BatchToPartition extends Serializable {
+    public interface BatchToPartition extends Serializable {
         int partitionIndex(Object batchId, int numPartitions);
     }
 
@@ -80,7 +80,7 @@ public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
         Object state;
         Object batchId;
 
-        public SingleEmitState(Object batchId) {
+        SingleEmitState(Object batchId) {
             this.batchId = batchId;
         }
     }

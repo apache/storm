@@ -24,19 +24,15 @@ import javax.jms.Destination;
  */
 public interface JmsProvider extends Serializable {
     /**
-     * Provides the JMS <code>ConnectionFactory</code>
+     * Provides the JMS <code>ConnectionFactory</code>.
      *
      * @return the connection factory
-     * @throws Exception
      */
-    public ConnectionFactory connectionFactory() throws Exception;
+    ConnectionFactory connectionFactory() throws Exception;
 
     /**
      * Provides the <code>Destination</code> (topic or queue) from which the
      * <code>JmsSpout</code> will receive messages.
-     *
-     * @return
-     * @throws Exception
      */
-    public Destination destination() throws Exception;
+    Destination destination() throws Exception;
 }

@@ -27,7 +27,7 @@ public interface KeyFactory extends Serializable {
     String build(List<Object> key);
 
     /**
-     * Default Key Factory
+     * Default Key Factory.
      */
     class DefaultKeyFactory implements KeyFactory {
         /**

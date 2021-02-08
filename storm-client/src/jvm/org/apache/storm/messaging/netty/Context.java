@@ -17,9 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.messaging.IConnection;
+import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.IContext;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.shade.io.netty.channel.EventLoopGroup;
 import org.apache.storm.shade.io.netty.channel.nio.NioEventLoopGroup;
 import org.apache.storm.shade.io.netty.util.HashedWheelTimer;
@@ -30,12 +33,18 @@ public class Context implements IContext {
     private List<Server> serverConnections;
     private EventLoopGroup workerEventLoopGroup;
     private HashedWheelTimer clientScheduleService;
+    private StormMetricRegistry metricRegistry = null;
 
     /**
-     * initialization per Storm configuration
+     * initialization per Storm configuration.
      */
     @Override
     public void prepare(Map<String, Object> topoConf) {
+        prepare(topoConf, null);
+    }
+
+    @Override
+    public void prepare(Map<String, Object> topoConf, StormMetricRegistry metricRegistry) {
         this.topoConf = topoConf;
         serverConnections = new ArrayList<>();
 
@@ -47,29 +56,30 @@ public class Context implements IContext {
         this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
 
         clientScheduleService = new HashedWheelTimer(new NettyRenameThreadFactory("client-schedule-service"));
+        this.metricRegistry = metricRegistry;
     }
 
     /**
-     * establish a server with a binding port
+     * establish a server with a binding port.
      */
     @Override
-    public synchronized IConnection bind(String storm_id, int port) {
-        Server server = new Server(topoConf, port);
+    public synchronized IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
+        Server server = new Server(topoConf, port, cb, newConnectionResponse);
         serverConnections.add(server);
         return server;
     }
 
     /**
-     * establish a connection to a remote server
+     * establish a connection to a remote server.
      */
     @Override
-    public IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus) {
+    public IConnection connect(String stormId, String host, int port, AtomicBoolean[] remoteBpStatus) {
         return new Client(topoConf, remoteBpStatus, workerEventLoopGroup,
-                                        clientScheduleService, host, port);
+                                        clientScheduleService, host, port, metricRegistry);
     }
 
     /**
-     * terminate this context
+     * terminate this context.
      */
     @Override
     public synchronized void term() {

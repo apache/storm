@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hive.security;
 
 /**
@@ -22,11 +23,11 @@ package org.apache.storm.hive.security;
  * with secured Hive.
  */
 public final class HiveSecurityUtil {
-  public static final String HIVE_KEYTAB_FILE_KEY = "hive.keytab.file";
-  public static final String HIVE_PRINCIPAL_KEY = "hive.kerberos.principal";
-  public static final String HIVE_CREDENTIALS_CONFIG_KEYS = "hiveCredentialsConfigKeys";
-  public static final String HIVE_CREDENTIALS = "HIVE_CREDENTIALS";
+    public static final String HIVE_KEYTAB_FILE_KEY = "hive.keytab.file";
+    public static final String HIVE_PRINCIPAL_KEY = "hive.kerberos.principal";
+    public static final String HIVE_CREDENTIALS_CONFIG_KEYS = "hiveCredentialsConfigKeys";
+    public static final String HIVE_CREDENTIALS = "HIVE_CREDENTIALS";
 
-  private HiveSecurityUtil() {
-  }
+    private HiveSecurityUtil() {
+    }
 }

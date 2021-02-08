@@ -12,7 +12,9 @@
 
 package org.apache.storm.security.auth.kerberos;
 
+import com.codahale.metrics.Gauge;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +27,6 @@ import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.xml.bind.DatatypeConverter;
-import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetricsRegistrant;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Automatically take a user's TGT, and push it, and renew it in Nimbus.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsRegistrant {
     protected static final AtomicReference<KerberosTicket> kerbTicket = new AtomicReference<>();
     private static final Logger LOG = LoggerFactory.getLogger(AutoTGT.class);
@@ -44,6 +46,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
     private Map<String, Object> conf;
     private Map<String, String> credentials;
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private static KerberosTicket getTGT(Subject subject) {
         Set<KerberosTicket> tickets = subject.getPrivateCredentials(KerberosTicket.class);
         for (KerberosTicket ticket : tickets) {
@@ -55,6 +58,16 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         return null;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+    public static KerberosTicket getTGT(Map<String, String> credentials) {
+        KerberosTicket ret = null;
+        if (credentials != null && credentials.containsKey("TGT") && credentials.get("TGT") != null) {
+            ret = ClientAuthUtils.deserializeKerberosTicket(DatatypeConverter.parseBase64Binary(credentials.get("TGT")));
+        }
+        return ret;
+    }
+
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static void saveTGT(KerberosTicket tgt, Map<String, String> credentials) {
         try {
 
@@ -63,14 +76,6 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static KerberosTicket getTGT(Map<String, String> credentials) {
-        KerberosTicket ret = null;
-        if (credentials != null && credentials.containsKey("TGT") && credentials.get("TGT") != null) {
-            ret = ClientAuthUtils.deserializeKerberosTicket(DatatypeConverter.parseBase64Binary(credentials.get("TGT")));
-        }
-        return ret;
     }
 
     public static void clearCredentials(Subject subject, KerberosTicket tgt) {
@@ -97,16 +102,17 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
     public static void main(String[] args) throws Exception {
         AutoTGT at = new AutoTGT();
-        Map<String, Object> conf = new java.util.HashMap();
+        Map<String, Object> conf = new HashMap();
         conf.put("java.security.auth.login.config", args[0]);
         at.prepare(conf);
-        Map<String, String> creds = new java.util.HashMap<String, String>();
+        Map<String, String> creds = new HashMap<>();
         at.populateCredentials(creds);
         Subject s = new Subject();
         at.populateSubject(s, creds);
         LOG.info("Got a Subject " + s);
     }
 
+    @Override
     public void prepare(Map<String, Object> conf) {
         this.conf = conf;
     }
@@ -116,12 +122,11 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         this.credentials = credentials;
         //Log the user in and get the TGT
         try {
-            Configuration login_conf = ClientAuthUtils.getConfiguration(conf);
-            ClientCallbackHandler client_callback_handler = new ClientCallbackHandler(login_conf);
+            Configuration loginConf = ClientAuthUtils.getConfiguration(conf);
+            ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(conf);
 
             //login our user
-            Configuration.setConfiguration(login_conf);
-            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, client_callback_handler);
+            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, null, clientCallbackHandler, loginConf);
             try {
                 lc.login();
                 final Subject subject = lc.getSubject();
@@ -129,19 +134,19 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
                 if (tgt == null) { //error
                     throw new RuntimeException("Fail to verify user principal with section \""
-                                               + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + login_conf);
+                                               + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + loginConf);
                 }
 
                 if (!tgt.isForwardable()) {
-                    throw new RuntimeException("The TGT found is not forwardable. Please use -f option.");
+                    throw new RuntimeException("The TGT found is not forwardable. Please use -f option with 'kinit'.");
                 }
 
                 if (!tgt.isRenewable()) {
-                    throw new RuntimeException("The TGT found is not renewable. Please use -r option.");
+                    throw new RuntimeException("The TGT found is not renewable. Please use -r option with 'kinit'.");
                 }
 
                 if (tgt.getClientAddresses() != null) {
-                    throw new RuntimeException("The TGT found is not address-less. Please use -A option.");
+                    throw new RuntimeException("The TGT found is not address-less. Please use -A option with 'kinit'.");
                 }
 
                 LOG.info("Pushing TGT for " + tgt.getClient() + " to topology.");
@@ -167,7 +172,9 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
         loginHadoopUser(subject);
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private void populateSubjectWithTGT(Subject subject, Map<String, String> credentials) {
+        LOG.info("Populating TGT from credentials");
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {
             clearCredentials(subject, tgt);
@@ -200,10 +207,19 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
                          + "in your jar");
                 return;
             }
+
+            LOG.info("Invoking Hadoop UserGroupInformation.loginUserFromSubject.");
             Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
             login.invoke(null, subject);
+
+            //Refer to STORM-3606 for details
+            LOG.warn("UserGroupInformation.loginUserFromSubject will spawn a TGT renewal thread (\"TGT Renewer for <username>\") "
+                    + "to execute \"kinit -R\" command some time before the current TGT expires. "
+                    + "It will fail because TGT is not in the local TGT cache and the thread will eventually abort. "
+                    + "Exceptions from this TGT renewal thread can be ignored. Note: TGT for the Worker is kept in memory. "
+                    + "Please refer to STORM-3606 for detailed explanations");
         } catch (Exception e) {
-            LOG.warn("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop "
+            LOG.error("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop "
                      + "may not be compatible.", e);
         }
     }
@@ -244,7 +260,11 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
 
     @Override
     public void registerMetrics(TopologyContext topoContext, Map<String, Object> topoConf) {
-        int bucketSize = ((Number) topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)).intValue();
-        topoContext.registerMetric("TGT-TimeToExpiryMsecs", () -> getMsecsUntilExpiration(), bucketSize);
+        topoContext.registerGauge("TGT-TimeToExpiryMsecs", new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                return getMsecsUntilExpiration();
+            }
+        });
     }
 }

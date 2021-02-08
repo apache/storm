@@ -157,9 +157,9 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         Iterator it = this.outputFields.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry entryTuple = (Map.Entry)it.next();
-            String key = (String)entryTuple.getKey();
-            String[] value = (String[])entryTuple.getValue();
+            Map.Entry entryTuple = (Map.Entry) it.next();
+            String key = (String) entryTuple.getKey();
+            String[] value = (String[]) entryTuple.getValue();
             if (key.equals("default")) {
                 declarer.declare(new Fields(value));
             } else {

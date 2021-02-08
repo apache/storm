@@ -23,5 +23,5 @@ public interface ICredentialsListener {
      *
      * @param credentials the new credentials, could be null.
      */
-    public void setCredentials(Map<String, String> credentials);
+    void setCredentials(Map<String, String> credentials);
 }

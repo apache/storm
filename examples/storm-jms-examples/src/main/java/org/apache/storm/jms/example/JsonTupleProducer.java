@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.jms.example;
 
 import javax.jms.JMSException;
@@ -42,17 +43,19 @@ import org.apache.storm.tuple.Values;
 @SuppressWarnings("serial")
 public class JsonTupleProducer implements JmsTupleProducer {
 
-	public Values toTuple(Message msg) throws JMSException {
-		if(msg instanceof TextMessage){
-			String json = ((TextMessage) msg).getText();
-			return new Values(json);
-		} else {
-			return null;
-		}
-	}
+    @Override
+    public Values toTuple(Message msg) throws JMSException {
+        if (msg instanceof TextMessage) {
+            String json = ((TextMessage) msg).getText();
+            return new Values(json);
+        } else {
+            return null;
+        }
+    }
 
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("json"));
-	}
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields("json"));
+    }
 
 }

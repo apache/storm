@@ -27,13 +27,13 @@ import org.slf4j.LoggerFactory;
 public class StormClientHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormClientHandler.class);
     private final Client client;
-    private final KryoValuesDeserializer _des;
+    private final KryoValuesDeserializer des;
     private final AtomicBoolean[] remoteBpStatus;
 
     StormClientHandler(Client client, AtomicBoolean[] remoteBpStatus, Map<String, Object> conf) {
         this.client = client;
         this.remoteBpStatus = remoteBpStatus;
-        _des = new KryoValuesDeserializer(conf);
+        des = new KryoValuesDeserializer(conf);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
             if (tm.task() != Server.LOAD_METRICS_TASK_ID) {
                 throw new RuntimeException("Metrics messages are sent to the system task (" + client.getDstAddress() + ") " + tm);
             }
-            List<Object> metrics = _des.deserialize(tm.message());
+            List<Object> metrics = des.deserialize(tm.message());
             if (metrics.size() < 1) {
                 throw new RuntimeException("No metrics data in the metrics message (" + client.getDstAddress() + ") " + metrics);
             }

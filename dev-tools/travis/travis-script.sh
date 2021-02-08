@@ -27,6 +27,9 @@ cd ${STORM_SRC_ROOT_DIR}
 if [ "$2" == "Integration-Test" ]
   then
   exec ./integration-test/run-it.sh
+elif [ "$2" == "Check-Updated-License-Files" ]
+  then
+  exec python3.6 dev-tools/validate-license-files.py --skip-build-storm
 elif [ "$2" == "Client" ]
 then
   TEST_MODULES=storm-client
@@ -40,9 +43,9 @@ elif [ "$2" == "External" ]
 then
   if [ "$TRAVIS_JDK_VERSION" == "openjdk11" ]
   then 
-    TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp,!external/storm-cassandra,!external/storm-hive,!external/storm-hdfs,!external/storm-hbase,!sql/storm-sql-external/storm-sql-hdfs,!external/storm-hdfs-blobstore'
+    TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp,!storm-shaded-deps,!external/storm-cassandra,!external/storm-hive,!external/storm-hdfs,!external/storm-hbase,!sql/storm-sql-external/storm-sql-hdfs,!external/storm-hdfs-blobstore'
   else
-    TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp'
+    TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp,!storm-shaded-deps'
   fi
 fi
 # We should be concerned that Travis CI could be very slow because it uses VM
@@ -50,7 +53,7 @@ export STORM_TEST_TIMEOUT_MS=150000
 # Travis only has 3GB of memory, lets use 1GB for build, and 1.5GB for forked JVMs
 export MAVEN_OPTS="-Xmx1024m"
 
-mvn --batch-mode test -fae -Pnative,all-tests,examples,externals '-P!include-shaded-deps' -Prat -pl "$TEST_MODULES"
+mvn --batch-mode test -fae -Pnative,all-tests,examples,externals -Prat -pl "$TEST_MODULES"
 BUILD_RET_VAL=$?
 
 for dir in `find . -type d -and -wholename \*/target/\*-reports`;

@@ -59,7 +59,7 @@ When you pass jars and/or artifacts options, StormSubmitter will upload them whe
 
 ### local
 
-Syntax: `storm jar topology-jar-path class ...`
+Syntax: `storm local topology-jar-path class ...`
 
 The local command acts just like `storm jar` except instead of submitting a topology to a cluster it will run the cluster in local mode.  This means an embedded version of the storm daemons will be run within the same process as your topology for 30 seconds before it shuts down automatically.  As such the classpath of your topology will be extended to include everything needed to run those daemons.
 
@@ -319,7 +319,9 @@ eg: `storm shell resources/ python topology.py arg1 arg2`
 
 Syntax: `storm upload_credentials topology-name [credkey credvalue]*`
 
-Uploads a new set of credentials to a running topology
+Uploads a new set of credentials to a running topology  
+   * `-e --exception-when-empty`: optional flag. If set, command will fail and throw exception if no credentials were uploaded.
+   
 
 ### version
 

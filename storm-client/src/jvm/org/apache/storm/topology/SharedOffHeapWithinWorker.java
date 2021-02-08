@@ -20,7 +20,7 @@ import org.apache.storm.utils.Utils;
  */
 public class SharedOffHeapWithinWorker extends SharedMemory {
     /**
-     * Create a new request for a shared memory region off heap within a worker
+     * Create a new request for a shared memory region off heap within a worker.
      *
      * @param amount the number of MB to share
      * @param name   the name of the shared region (for tracking purposes)

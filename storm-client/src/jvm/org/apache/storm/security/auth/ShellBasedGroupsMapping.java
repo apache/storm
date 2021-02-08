@@ -49,7 +49,7 @@ public class ShellBasedGroupsMapping implements
     }
 
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param topoConf Storm configuration
      */
@@ -61,7 +61,7 @@ public class ShellBasedGroupsMapping implements
     }
 
     /**
-     * Returns list of groups for a user
+     * Returns list of groups for a user.
      *
      * @param user get groups for this user
      * @return list of groups for a given user

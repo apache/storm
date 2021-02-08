@@ -24,8 +24,8 @@ class SpoutNode extends Node {
     SpoutNode(IRichSpout spout) {
         super(Utils.DEFAULT_STREAM_ID, getOutputFields(spout, Utils.DEFAULT_STREAM_ID));
         if (outputFields.size() == 0) {
-            throw new IllegalArgumentException("Spout " + spout + " does not declare any fields" +
-                                               "for the stream '" + Utils.DEFAULT_STREAM_ID + "'");
+            throw new IllegalArgumentException("Spout " + spout + " does not declare any fields"
+                    + "for the stream '" + Utils.DEFAULT_STREAM_ID + "'");
         }
         this.spout = spout;
     }

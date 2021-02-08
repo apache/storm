@@ -63,8 +63,8 @@ public class DefaultSchedulingPriorityStrategy implements ISchedulingPriorityStr
         public final double guaranteedCpu;
         public final double guaranteedMemory;
         protected final LinkedList<TopologyDetails> tds = new LinkedList<>();
-        private double assignedCpu = 0.0;
-        private double assignedMemory = 0.0;
+        protected double assignedCpu = 0.0;
+        protected double assignedMemory = 0.0;
 
         public SimulatedUser(User other, ISchedulingState cluster) {
             tds.addAll(cluster.getTopologies().getTopologiesOwnedBy(other.getId()));
@@ -137,8 +137,8 @@ public class DefaultSchedulingPriorityStrategy implements ISchedulingPriorityStr
     }
 
     /**
-     * Comparator that sorts topologies by priority and then by submission time
-     * First sort by Topology Priority, if there is a tie for topology priority, topology uptime is used to sort
+     * Comparator that sorts topologies by priority and then by submission time.
+     * First sort by Topology Priority, if there is a tie for topology priority, topology uptime is used to sort.
      */
     private static class TopologyByPriorityAndSubmissionTimeComparator implements Comparator<TopologyDetails> {
 

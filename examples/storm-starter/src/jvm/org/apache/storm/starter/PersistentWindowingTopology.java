@@ -18,6 +18,8 @@
 
 package org.apache.storm.starter;
 
+import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -37,8 +39,6 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.windowing.TupleWindow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
 /**
  * An example that demonstrates the usage of {@link org.apache.storm.topology.IStatefulWindowedBolt} with window persistence.

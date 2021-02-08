@@ -13,6 +13,7 @@
 package org.apache.storm.security.auth.kerberos;
 
 import java.io.IOException;
+import java.util.Map;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -35,13 +36,15 @@ public class ServerCallbackHandler implements CallbackHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ServerCallbackHandler.class);
     private final boolean impersonationAllowed;
 
-    public ServerCallbackHandler(Configuration configuration, boolean impersonationAllowed) throws IOException {
+    public ServerCallbackHandler(Map<String, Object> topoConf, boolean impersonationAllowed) throws IOException {
         this.impersonationAllowed = impersonationAllowed;
+
+        Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
         if (configuration == null) {
             return;
         }
 
-        AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
+        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
             String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_SERVER
                                   + "' entry in this configuration: Server cannot start.";
@@ -50,6 +53,7 @@ public class ServerCallbackHandler implements CallbackHandler {
         }
     }
 
+    @Override
     public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
         NameCallback nc = null;
         PasswordCallback pc = null;
@@ -81,13 +85,13 @@ public class ServerCallbackHandler implements CallbackHandler {
         }
 
         if (ac != null) {
-            String authenticationID = ac.getAuthenticationID();
-            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationID,
+            String authenticationId = ac.getAuthenticationID();
+            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationId,
                       ac.getAuthorizationID());
 
             //if authorizationId is not set, set it to authenticationId.
             if (ac.getAuthorizationID() == null) {
-                ac.setAuthorizedID(authenticationID);
+                ac.setAuthorizedID(authenticationId);
             }
 
             //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We

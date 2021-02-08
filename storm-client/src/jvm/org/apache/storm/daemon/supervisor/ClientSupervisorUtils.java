@@ -42,7 +42,6 @@ public class ClientSupervisorUtils {
 
     static boolean doRequiredTopoFilesExist(Map<String, Object> conf, String stormId) throws IOException {
         String stormroot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
-        String stormjarpath = ConfigUtils.supervisorStormJarPath(stormroot);
         String stormcodepath = ConfigUtils.supervisorStormCodePath(stormroot);
         String stormconfpath = ConfigUtils.supervisorStormConfPath(stormroot);
         if (!Utils.checkFileExists(stormroot)) {
@@ -54,6 +53,7 @@ public class ClientSupervisorUtils {
         if (!Utils.checkFileExists(stormconfpath)) {
             return false;
         }
+        String stormjarpath = ConfigUtils.supervisorStormJarPath(stormroot);
         if (ConfigUtils.isLocalMode(conf) || Utils.checkFileExists(stormjarpath)) {
             return true;
         }
@@ -64,20 +64,23 @@ public class ClientSupervisorUtils {
                                              final Map<String, String> environment, final String logPreFix)
         throws IOException {
         int ret = 0;
-        Process process = processLauncher(conf, user, null, args, environment, logPreFix, null, null);
+        Process process = processLauncher(conf, user, null, args, environment, null, null, null);
         if (StringUtils.isNotBlank(logPreFix)) {
             Utils.readAndLogStream(logPreFix, process.getInputStream());
         }
         try {
             process.waitFor();
         } catch (InterruptedException e) {
-            LOG.info("{} interrupted.", logPreFix);
+            LOG.warn("{} interrupted.", logPreFix);
+            Thread.currentThread().interrupt();
+            process.destroy();
+            throw new IOException(logPreFix + " interrupted", e);
         }
         ret = process.exitValue();
         return ret;
     }
 
-    static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args,
+    public static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args,
                                    Map<String, String> environment, final String logPreFix,
                                    final ExitCodeCallback exitCodeCallback, File dir) throws IOException {
         if (StringUtils.isBlank(user)) {
@@ -111,9 +114,6 @@ public class ClientSupervisorUtils {
      * @param exitCodeCallback code to be called passing the exit code value when the process completes
      * @param dir              the working directory of the new process
      * @return the new process
-     *
-     * @throws IOException
-     * @see ProcessBuilder
      */
     public static Process launchProcess(List<String> command,
                                         Map<String, String> environment,
@@ -139,6 +139,7 @@ public class ClientSupervisorUtils {
         }
         if (logPrefix != null || exitCodeCallback != null) {
             Utils.asyncLoop(new Callable<Long>() {
+                @Override
                 public Long call() {
                     if (logPrefix != null) {
                         Utils.readAndLogStream(logPrefix,

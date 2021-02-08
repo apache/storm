@@ -27,11 +27,11 @@ public interface ITridentPartitionManager {
     void close();
 
     /**
-     * receive a batch of messages from EvenHub up to "count" messages
+     * receive a batch of messages from EvenHub up to "count" messages.
      *
      * @param offset the starting offset
      * @param count  max number of messages in this batch
      * @return list of EventData, if failed to receive, return empty list
      */
-    public List<EventDataWrap> receiveBatch(String offset, int count);
+    List<EventDataWrap> receiveBatch(String offset, int count);
 }

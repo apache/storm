@@ -17,14 +17,14 @@ import java.util.Map;
 import org.apache.storm.task.WorkerTopologyContext;
 
 /**
- * A BaseWorkerHook is a noop implementation of IWorkerHook. You may extends this class and implement any and/or all methods you need for
- * your workers.
+ * A BaseWorkerHook is a noop implementation of IWorkerHook. You may extends this class and implement any and/or all
+ * methods you need for your workers.
  */
 public class BaseWorkerHook implements IWorkerHook, Serializable {
     private static final long serialVersionUID = 2589466485198339529L;
 
     /**
-     * This method is called when a worker is started
+     * This method is called when a worker is started.
      *
      * @param topoConf The Storm configuration for this worker
      * @param context  This object can be used to get information about this worker's place within the topology
@@ -35,7 +35,7 @@ public class BaseWorkerHook implements IWorkerHook, Serializable {
     }
 
     /**
-     * This method is called right before a worker shuts down
+     * This method is called right before a worker shuts down.
      */
     @Override
     public void shutdown() {

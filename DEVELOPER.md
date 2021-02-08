@@ -90,7 +90,7 @@ _If you are interested in contributing code to Storm but do not know where to be
 In this case you should
 [browse our issue tracker for open issues and tasks](https://issues.apache.org/jira/browse/STORM/?selectedTab=com.atlassian.jira.jira-projects-plugin:issues-panel).
 You may want to start with beginner-friendly, easier issues
-([newbie issues](https://issues.apache.org/jira/browse/STORM-58?jql=project%20%3D%20STORM%20AND%20labels%20%3D%20newbie%20AND%20status%20%3D%20Open)
+([newbie issues](https://issues.apache.org/jira/issues/?jql=project%20%3D%20STORM%20AND%20status%20%3D%20Open%20AND%20labels%20%3D%20newbie)
 and
 [trivial issues](https://issues.apache.org/jira/secure/IssueNavigator.jspa?reset=true&jqlQuery=project+%3D+STORM+AND+resolution+%3D+Unresolved+AND+priority+%3D+Trivial+ORDER+BY+key+DESC&mode=hide))
 because they require learning about only an isolated portion of the codebase and are a relatively small amount of work.
@@ -145,8 +145,9 @@ Please refer to section <a href="#building">Build the code and run the tests</a>
 
 Documentation contributions are very welcome!
 
-You can contribute documentation by pull request, as same as code contribution.
-Main directory is ```docs/```, and you can refer to docs/README.md for how to build / test website.
+You can contribute documentation by pull request, using the same process as code contribution.
+Release specific documentation can be found in `docs/` in this repository.
+Documentation not specific to a release, e.g. announcements, is found in the [storm-site](https://github.com/apache/storm-site) repository. If you'd like to build or test the website, refer to the README.md in the storm-site repository.
 
 <a name="pull-requests"></a>
 
@@ -193,11 +194,17 @@ _This section applies to committers only._
 **Important: A pull request must first be properly approved before you are allowed to merge it.**
 
 Committers that are integrating patches or pull requests should use the official Apache repository at
-[https://git-wip-us.apache.org/repos/asf/storm.git](https://git-wip-us.apache.org/repos/asf/storm.git).
+[https://gitbox.apache.org/repos/asf/storm.git](https://gitbox.apache.org/repos/asf/storm.git).
+
+#### Via Github
+
+You can use the [Gitbox account linking utility](https://gitbox.apache.org/setup/) to link your Apache and Github accounts. This will allow you to merge pull requests using Github's UI. 
+
+#### Via your terminal
 
 To pull in a merge request you should generally follow the command line instructions sent out by GitHub.
 
-1. Go to your local copy of the [Apache git repo](https://git-wip-us.apache.org/repos/asf/storm.git), switch
+1. Go to your local copy of the [Apache git repo](https://gitbox.apache.org/repos/asf/storm.git), switch
    to the `master` branch, and make sure it is up to date.
 
         $ git checkout master
@@ -310,7 +317,7 @@ By default integration tests are not run in the test phase. To run Java and Cloj
  
 ## Listing dependency licenses
 
-You can generate a list of dependencies and their licenses by running `mvn generate-resources -Dlicense.skipAggregateAddThirdParty=false` in the project root.
+You can generate a list of dependencies and their licenses by running `mvn license:aggregate-add-third-party@generate-and-check-licenses -Dlicense.skipAggregateAddThirdParty=false` in the project root.
 The list will be put in DEPENDENCY_LICENSES.
 
 The license aggregation plugin will use the license listed in a dependency's POM. If the license is missing, or incomplete (e.g. due to multiple licenses), you can override the license by describing the dependency in the THIRD-PARTY.properties file in the project root.
@@ -320,11 +327,7 @@ The LICENSE and NOTICE files contain licenses and notices for source distributio
 
 When auditing the binary LICENSE-binary and NOTICE-binary, there are a couple of helper scripts available in dev-tools. `collect_license_files` can create an aggregate NOTICE from the libraries in an extracted distribution. The aggregate NOTICE should be adjusted to remove Storm notices and duplicates, and added to the NOTICE-binary.
 
-`list_jars` can list the jars in an extracted binary distribution. Note that while listing all the jars in the binary distribution is helpful, special attention must be paid to shaded jars, as they may contain shaded dependencies that must be listed in LICENSE-binary separately.
-
-The license plugin can generate a list of dependencies with licenses for the binary distribution with the following command: `mvn generate-resources -Dlicense.skipAggregateAddThirdParty=false` in the storm-dist/binary directory. 
-
-The generated list in target/generated-sources/license/THIRD-PARTY.txt is mostly complete, and a good input to the LICENSE-binary file. The major omission in it is the storm-shaded-deps dependencies, as they are shaded. These dependencies can be manually listed with `mvn dependency:list` in the storm-shaded-deps project, and then manually added. 
+The `dev-tools/validate-license-files.py` script will check that LICENSE-binary and DEPENDENCY_LICENSES are up to date. Regenerating DEPENDENCY_LICENSES simply requires rerunning the license plugin (see above). LICENSE-binary must be updated manually. The script will check that the dependencies included in a storm-dist/binary build are present in LICENSE-binary, and that no other dependencies are listed. Any additional or missing dependencies are printed to console, and can be added to LICENSE-binary manually. There will likely be an entry for them in `DEPENDENCY_LICENSES` that can be copy-pasted to LICENSE-binary.
 
 You can download the dependency licenses by running `mvn package -Dlicense.skipAggregateDownloadLicenses=false -DskipTests` in the project root. This will put the licenses in target/generated-resources. Keep an eye on the Maven output, as some dependencies may not have licenses configured correctly. These will have to be downloaded manually.
 
@@ -405,7 +408,7 @@ The source code of Storm is managed via [git](http://git-scm.com/).  For a numbe
 repository associated with Storm.
 
 * **Committers only:**
-  [https://git-wip-us.apache.org/repos/asf/storm.git](https://git-wip-us.apache.org/repos/asf/storm.git)
+  [https://gitbox.apache.org/repos/asf/storm.git](https://gitbox.apache.org/repos/asf/storm.git)
   is the official and authoritative git repository for Storm, managed under the umbrella of the Apache Software
   Foundation.  Only official Storm committers will interact with this repository.
   When you push the first time to this repository git will prompt you for your username and password.  Use your Apache
@@ -418,7 +421,7 @@ repository associated with Storm.
 
 An automated bot (called _[ASF GitHub Bot](https://issues.apache.org/jira/secure/ViewProfile.jspa?name=githubbot)_ in
 [Storm JIRA](https://issues.apache.org/jira/browse/STORM)) runs periodically to merge changes in the
-[official Apache repo](https://git-wip-us.apache.org/repos/asf/storm.git) to the read-only
+[official Apache repo](https://gitbox.apache.org/repos/asf/storm.git) to the read-only
 [GitHub mirror repository](https://github.com/apache/storm/), and to merge comments in GitHub pull requests to
 the [Storm JIRA](https://issues.apache.org/jira/browse/STORM).
 

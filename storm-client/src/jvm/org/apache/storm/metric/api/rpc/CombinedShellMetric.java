@@ -20,6 +20,7 @@ public class CombinedShellMetric extends CombinedMetric implements IShellMetric 
         super(combiner);
     }
 
+    @Override
     public void updateMetricFromRPC(Object value) {
         update(value);
     }

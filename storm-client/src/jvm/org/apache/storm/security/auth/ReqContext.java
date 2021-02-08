@@ -28,9 +28,12 @@ import javax.security.auth.Subject;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 
 /**
- * context request context includes info about:
- *
- * 1. remote address, 2. remote subject and primary principal 3. request ID
+ * Request context. Context request context includes info about:
+ * <ol>
+ * <li>remote address</li>
+ * <li>remote subject and primary principal
+ * <li>request ID</li>
+ * </ol>
  */
 public class ReqContext {
     private static final AtomicInteger uniqueId = new AtomicInteger(0);
@@ -39,21 +42,21 @@ public class ReqContext {
         ThreadLocal.withInitial(() -> new ReqContext(AccessController.getContext()));
     private Subject subject;
     private InetAddress remoteAddr;
-    private final int reqID;
+    private final int reqId;
     private Principal realPrincipal;
 
     //private constructor
     @VisibleForTesting
-    public ReqContext(AccessControlContext acl_ctxt) {
-        subject = Subject.getSubject(acl_ctxt);
-        reqID = uniqueId.incrementAndGet();
+    public ReqContext(AccessControlContext aclCtxt) {
+        subject = Subject.getSubject(aclCtxt);
+        reqId = uniqueId.incrementAndGet();
     }
 
     //private constructor
     @VisibleForTesting
     public ReqContext(Subject sub) {
         subject = sub;
-        reqID = uniqueId.incrementAndGet();
+        reqId = uniqueId.incrementAndGet();
     }
 
     /**
@@ -63,11 +66,12 @@ public class ReqContext {
     public ReqContext(ReqContext other) {
         subject = other.subject;
         remoteAddr = other.remoteAddr;
-        reqID = other.reqID;
+        reqId = other.reqId;
         realPrincipal = other.realPrincipal;
     }
 
     /**
+     * Get context.
      * @return a request context associated with current thread
      */
     public static ReqContext context() {
@@ -83,17 +87,17 @@ public class ReqContext {
 
     @Override
     public String toString() {
-        return "ReqContext{" +
-               "realPrincipal=" + ((realPrincipal != null) ? realPrincipal.getName() : "null") +
-               ", reqID=" + reqID +
-               ", remoteAddr=" + remoteAddr +
-               ", authZPrincipal=" + ((principal() != null) ? principal().getName() : "null") +
-               ", ThreadId=" + Thread.currentThread().toString() +
-               '}';
+        return "ReqContext{"
+                + "realPrincipal=" + ((realPrincipal != null) ? realPrincipal.getName() : "null")
+                + ", reqId=" + reqId
+                + ", remoteAddr=" + remoteAddr
+                + ", authZPrincipal=" + ((principal() != null) ? principal().getName() : "null")
+                + ", ThreadId=" + Thread.currentThread().toString()
+                + '}';
     }
 
     /**
-     * client address
+     * client address.
      */
     public void setRemoteAddress(InetAddress addr) {
         remoteAddr = addr;
@@ -104,21 +108,21 @@ public class ReqContext {
     }
 
     /**
-     * Set remote subject explicitly
+     * Set remote subject explicitly.
      */
     public void setSubject(Subject subject) {
         this.subject = subject;
     }
 
     /**
-     * Retrieve client subject associated with this request context
+     * Retrieve client subject associated with this request context.
      */
     public Subject subject() {
         return subject;
     }
 
     /**
-     * The primary principal associated current subject
+     * The primary principal associated current subject.
      */
     public Principal principal() {
         if (subject == null) {
@@ -143,6 +147,7 @@ public class ReqContext {
     }
 
     /**
+     * Check whether context is impersonating.
      * @return true if this request is an impersonation request.
      */
     public boolean isImpersonating() {
@@ -150,9 +155,10 @@ public class ReqContext {
     }
 
     /**
-     * request ID of this request
+     * request ID of this request.
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public int requestID() {
-        return reqID;
+        return reqId;
     }
 }

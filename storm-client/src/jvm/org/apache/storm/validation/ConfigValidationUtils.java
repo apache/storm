@@ -84,9 +84,10 @@ public class ConfigValidationUtils {
                     }
                     return;
                 }
-                throw new IllegalArgumentException(
-                    "Field " + name + " must be an Iterable but was " +
-                    ((field == null) ? "null" : ("a " + field.getClass())));
+                throw new IllegalArgumentException("Field "
+                        + name
+                        + " must be an Iterable but was "
+                        + ((field == null) ? "null" : ("a " + field.getClass())));
             }
         };
     }
@@ -142,7 +143,7 @@ public class ConfigValidationUtils {
     /**
      * Declares methods for validating configuration values.
      */
-    public static interface FieldValidator {
+    public interface FieldValidator {
         /**
          * Validates the given field.
          *
@@ -150,13 +151,13 @@ public class ConfigValidationUtils {
          * @param field The field to be validated.
          * @throws IllegalArgumentException if the field fails validation.
          */
-        public void validateField(String name, Object field) throws IllegalArgumentException;
+        void validateField(String name, Object field) throws IllegalArgumentException;
     }
 
     /**
      * Declares a method for validating configuration values that is nestable.
      */
-    public static abstract class NestableFieldValidator implements FieldValidator {
+    public abstract static class NestableFieldValidator implements FieldValidator {
         @Override
         public void validateField(String name, Object field) throws IllegalArgumentException {
             validateField(null, name, field);

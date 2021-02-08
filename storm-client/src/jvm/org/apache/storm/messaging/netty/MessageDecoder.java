@@ -61,13 +61,13 @@ public class MessageDecoder extends ByteToMessageDecoder {
             available -= 2;
 
             // case 1: Control message
-            ControlMessage ctrl_msg = ControlMessage.mkMessage(code);
-            if (ctrl_msg != null) {
+            ControlMessage controlMessage = ControlMessage.mkMessage(code);
+            if (controlMessage != null) {
 
-                if (ctrl_msg == ControlMessage.EOB_MESSAGE) {
+                if (controlMessage == ControlMessage.EOB_MESSAGE) {
                     continue;
                 } else {
-                    out.add(ctrl_msg);
+                    out.add(controlMessage);
                     return;
                 }
             }

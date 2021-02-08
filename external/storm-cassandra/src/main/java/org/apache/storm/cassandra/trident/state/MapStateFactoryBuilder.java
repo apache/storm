@@ -12,6 +12,13 @@
 
 package org.apache.storm.cassandra.trident.state;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static org.apache.storm.cassandra.DynamicStatementBuilder.all;
+import static org.apache.storm.cassandra.DynamicStatementBuilder.boundQuery;
+
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.Select;
 import java.util.ArrayList;
@@ -33,36 +40,29 @@ import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static org.apache.storm.cassandra.DynamicStatementBuilder.all;
-import static org.apache.storm.cassandra.DynamicStatementBuilder.boundQuery;
-
 /**
  * A helper for building a MapState backed by Cassandra. It internalizes some common
  * implementation choices to simplify usage.
  *
- * In the simplest use case, a map state can be constructed with:
+ * <p>In the simplest use case, a map state can be constructed with:
  *
- * StateFactory mapState = MapStateFactoryBuilder.opaque()
+ * <p>StateFactory mapState = MapStateFactoryBuilder.opaque()
  *     .withTable("mykeyspace", "year_month_state")
  *     .withKeys("year", "month")
  *     .withJSONBinaryState("state")
  *     .build();
  *
- * for a cassandra table with:
+ * <p>for a cassandra table with:
  * mykeyspace.year_month_state {
  *     year: int,
  *     month: int,
  *     state: blob
  * }
  *
- * This will use the storm JSON serializers to convert the state to and from binary format.
+ * <p>This will use the storm JSON serializers to convert the state to and from binary format.
  * Other binary serializers can be used with the {@link #withBinaryState(String, Serializer)} method.
  *
- * Storing state in explicit fields (e.g. in a field "sum" of type int) is possible by instead calling
+ * <p>Storing state in explicit fields (e.g. in a field "sum" of type int) is possible by instead calling
  * {@link #withStateMapper(StateMapper)}. For instance, you can use {@link NonTransactionalTupleStateMapper},
  * {@link TransactionalTupleStateMapper} or {@link OpaqueTupleStateMapper} if your state values are tuples.
  *
@@ -114,7 +114,7 @@ public class MapStateFactoryBuilder<T> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public MapStateFactoryBuilder<T> withJSONBinaryState(String stateField) {
         switch (stateType) {
             case OPAQUE:
@@ -215,9 +215,10 @@ public class MapStateFactoryBuilder<T> {
             case OPAQUE:
                 return CassandraMapStateFactory.opaque(options, cassandraConfig)
                                                .withCache(cacheSize);
+            default:
+                throw new IllegalArgumentException(String.format("stateType %s not supported",
+                        stateType));
         }
-
-        return null;
     }
 
 }

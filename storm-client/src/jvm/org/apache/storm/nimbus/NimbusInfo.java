@@ -119,10 +119,10 @@ public class NimbusInfo implements Serializable {
 
     @Override
     public String toString() {
-        return "NimbusInfo{" +
-               "host='" + host + '\'' +
-               ", port=" + port +
-               ", isLeader=" + isLeader +
-               '}';
+        return "NimbusInfo{"
+                + "host='" + host + '\''
+                + ", port=" + port
+                + ", isLeader=" + isLeader
+                + '}';
     }
 }

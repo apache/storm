@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.blobstore;
 
 import java.io.IOException;
@@ -26,31 +27,36 @@ import javax.security.auth.login.LoginContext;
 
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
-import org.apache.storm.hdfs.blobstore.HdfsBlobStore;
-import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.hdfs.blobstore.HdfsBlobStore;
+import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.Utils;
 
 public class MigrateBlobs {
     
     protected static void deleteAllBlobStoreKeys(BlobStore bs, Subject who) throws AuthorizationException, KeyNotFoundException {
         Iterable<String> hdfsKeys = () -> bs.listKeys();
-        for(String key : hdfsKeys) {
+        for (String key : hdfsKeys) {
             System.out.println(key);
             bs.deleteBlob(key, who);
         }
     }
     
-    protected static void copyBlobStoreKeys(BlobStore bsFrom, Subject whoFrom, BlobStore bsTo, Subject whoTo) throws AuthorizationException, KeyAlreadyExistsException, IOException, KeyNotFoundException {
+    protected static void copyBlobStoreKeys(BlobStore bsFrom,
+            Subject whoFrom,
+            BlobStore bsTo, Subject whoTo) throws AuthorizationException,
+            KeyAlreadyExistsException,
+            IOException,
+            KeyNotFoundException {
         Iterable<String> lfsKeys = () -> bsFrom.listKeys();
-        for(String key : lfsKeys) {
-            ReadableBlobMeta readable_meta = bsFrom.getBlobMeta(key, whoFrom);
-            SettableBlobMeta meta = readable_meta.get_settable();
+        for (String key : lfsKeys) {
+            ReadableBlobMeta readableMeta = bsFrom.getBlobMeta(key, whoFrom);
+            SettableBlobMeta meta = readableMeta.get_settable();
             InputStream in = bsFrom.getBlob(key, whoFrom);
             System.out.println("COPYING BLOB " + key + " FROM " + bsFrom + " TO " + bsTo);
             bsTo.createBlob(key, in, meta, whoTo);
@@ -66,30 +72,32 @@ public class MigrateBlobs {
             System.out.println("Need at least 2 arguments, but have " + Integer.toString(args.length));
             System.out.println("migrate <local_blobstore_dir> <hdfs_blobstore_path> <hdfs_principal> <keytab>");
             System.out.println("Migrates blobs from LocalFsBlobStore to HdfsBlobStore");
-            System.out.println("Example: migrate '/srv/storm' 'hdfs://some-hdfs-namenode:8080/srv/storm/my-storm-blobstore' 'stormUser/my-nimbus-host.example.com@STORM.EXAMPLE.COM' '/srv/my-keytab/stormUser.kt'");
+            System.out.println("Example: migrate '/srv/storm' "
+                    + "'hdfs://some-hdfs-namenode:8080/srv/storm/my-storm-blobstore' "
+                    + "'stormUser/my-nimbus-host.example.com@STORM.EXAMPLE.COM' '/srv/my-keytab/stormUser.kt'");
             System.exit(1);
         }
-        
-        String localBlobstoreDir = args[0];
+
         String hdfsBlobstorePath = args[1];
         
         hdfsConf.put(Config.BLOBSTORE_DIR, hdfsBlobstorePath);
         hdfsConf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "org.apache.storm.security.auth.DefaultPrincipalToLocal");
-        if(args.length >= 3) {
-        	System.out.println("SETTING HDFS PRINCIPAL!");
-        	hdfsConf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, args[2]);
+        if (args.length >= 3) {
+            System.out.println("SETTING HDFS PRINCIPAL!");
+            hdfsConf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, args[2]);
         }
-        if(args.length >= 4) {
-        	System.out.println("SETTING HDFS KEYTAB!");
-        	hdfsConf.put(Config.BLOBSTORE_HDFS_KEYTAB, args[3]);
+        if (args.length >= 4) {
+            System.out.println("SETTING HDFS KEYTAB!");
+            hdfsConf.put(Config.STORM_HDFS_LOGIN_KEYTAB, args[3]);
         }
         hdfsConf.put(Config.STORM_BLOBSTORE_REPLICATION_FACTOR, 7);
         
         Map<String, Object> lfsConf = Utils.readStormConfig();
+        String localBlobstoreDir = args[0];
         lfsConf.put(Config.BLOBSTORE_DIR, localBlobstoreDir);
         lfsConf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "org.apache.storm.security.auth.DefaultPrincipalToLocal");
         
-        
+
         /* CREATE THE BLOBSTORES */
         LocalFsBlobStore lfsBlobStore = new LocalFsBlobStore();
         lfsBlobStore.prepare(lfsConf, null, NimbusInfo.fromConf(lfsConf), null);

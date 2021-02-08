@@ -16,6 +16,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Timer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,18 +45,19 @@ import org.apache.storm.utils.Utils;
  * A `TopologyContext` is given to bolts and spouts in their `prepare()` and `open()` methods, respectively. This object provides
  * information about the component's place within the topology, such as task ids, inputs and outputs, etc.
  *
- * The `TopologyContext` is also used to declare `ISubscribedState` objects to synchronize state with StateSpouts this object is subscribed
- * to.
+ * <p>The `TopologyContext` is also used to declare `ISubscribedState` objects to synchronize state with StateSpouts
+ * this object is subscribed to.
  */
 public class TopologyContext extends WorkerTopologyContext implements IMetricsContext {
-    private Integer _taskId;
-    private Map<String, Object> _taskData = new HashMap<>();
-    private List<ITaskHook> _hooks = new ArrayList<>();
-    private Map<String, Object> _executorData;
-    private Map<Integer, Map<Integer, Map<String, IMetric>>> _registeredMetrics;
-    private AtomicBoolean _openOrPrepareWasCalled;
+    private final Integer taskId;
+    private final Map<String, Object> taskData = new HashMap<>();
+    private final List<ITaskHook> hooks = new ArrayList<>();
+    private final Map<String, Object> executorData;
+    private final Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics;
+    private final AtomicBoolean openOrPrepareWasCalled;
+    private final StormMetricRegistry metricRegistry;
     // This is updated by the Worker and the topology has shared access to it
-    private Map<String, Long> blobToLastKnownVersion;
+    private final Map<String, Long> blobToLastKnownVersion;
 
     public TopologyContext(StormTopology topology,
                            Map<String, Object> topoConf,
@@ -73,17 +75,20 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
                            Map<String, Object> userResources,
                            Map<String, Object> executorData,
                            Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics,
-                           AtomicBoolean openOrPrepareWasCalled) {
+                           AtomicBoolean openOrPrepareWasCalled,
+                           StormMetricRegistry metricRegistry) {
         super(topology, topoConf, taskToComponent, componentToSortedTasks,
               componentToStreamToFields, stormId, codeDir, pidDir,
               workerPort, workerTasks, defaultResources, userResources);
-        _taskId = taskId;
-        _executorData = executorData;
-        _registeredMetrics = registeredMetrics;
-        _openOrPrepareWasCalled = openOrPrepareWasCalled;
+        this.metricRegistry = metricRegistry;
+        this.taskId = taskId;
+        this.executorData = executorData;
+        this.registeredMetrics = registeredMetrics;
+        this.openOrPrepareWasCalled = openOrPrepareWasCalled;
         blobToLastKnownVersion = blobToLastKnownVersionShared;
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private static Map<String, Object> groupingToJSONableMap(Grouping grouping) {
         Map<String, Object> groupingMap = new HashMap<>();
         groupingMap.put("type", grouping.getSetField().toString());
@@ -96,10 +101,10 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /**
      * All state from all subscribed state spouts streams will be synced with the provided object.
      *
-     * It is recommended that your ISubscribedState object is kept as an instance variable of this object. The recommended usage of this
+     * <p>It is recommended that your ISubscribedState object is kept as an instance variable of this object. The recommended usage of this
      * method is as follows:
      *
-     * ```java _myState = context.setAllSubscribedState(new MyState()); ```
+     * <p>```java _myState = context.setAllSubscribedState(new MyState()); ```
      *
      * @param obj Provided ISubscribedState implementation
      * @return Returns the ISubscribedState object provided
@@ -113,9 +118,9 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /**
      * Synchronizes the default stream from the specified state spout component id with the provided ISubscribedState object.
      *
-     * The recommended usage of this method is as follows:
+     * <p>The recommended usage of this method is as follows:
      *
-     * ```java _myState = context.setSubscribedState(componentId, new MyState()); ```
+     * <p>```java _myState = context.setSubscribedState(componentId, new MyState()); ```
      *
      * @param componentId the id of the StateSpout component to subscribe to
      * @param obj         Provided ISubscribedState implementation
@@ -128,9 +133,9 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /**
      * Synchronizes the specified stream from the specified state spout component id with the provided ISubscribedState object.
      *
-     * The recommended usage of this method is as follows:
+     * <p>The recommended usage of this method is as follows:
      *
-     * ```java _myState = context.setSubscribedState(componentId, streamId, new MyState()); ```
+     * <p>```java _myState = context.setSubscribedState(componentId, streamId, new MyState()); ```
      *
      * @param componentId the id of the StateSpout component to subscribe to
      * @param streamId    the stream to subscribe to
@@ -151,15 +156,16 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @return the task id
      */
     public int getThisTaskId() {
-        return _taskId;
+        return taskId;
     }
 
     /**
+     * Get component id.
      * @return the component id for this task. The component id maps to a component id specified for a Spout or Bolt in the topology
      *     definition.
      */
     public String getThisComponentId() {
-        return getComponentId(_taskId);
+        return getComponentId(taskId);
     }
 
     /**
@@ -243,28 +249,28 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     public void setTaskData(String name, Object data) {
-        _taskData.put(name, data);
+        taskData.put(name, data);
     }
 
     public Object getTaskData(String name) {
-        return _taskData.get(name);
+        return taskData.get(name);
     }
 
     public void setExecutorData(String name, Object data) {
-        _executorData.put(name, data);
+        executorData.put(name, data);
     }
 
     public Object getExecutorData(String name) {
-        return _executorData.get(name);
+        return executorData.get(name);
     }
 
     public void addTaskHook(ITaskHook hook) {
-        hook.prepare(_topoConf, this);
-        _hooks.add(hook);
+        hook.prepare(topoConf, this);
+        hooks.add(hook);
     }
 
     public List<ITaskHook> getHooks() {
-        return _hooks;
+        return hooks;
     }
 
     @Override
@@ -313,10 +319,11 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @return The IMetric argument unchanged.
      */
     @Deprecated
+    @Override
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
-        if (_openOrPrepareWasCalled.get()) {
-            throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden " +
-                                       "IBolt::prepare() or ISpout::open() method.");
+        if (openOrPrepareWasCalled.get()) {
+            throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden "
+                    + "IBolt::prepare() or ISpout::open() method.");
         }
 
         if (metric == null) {
@@ -324,25 +331,25 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         }
 
         if (timeBucketSizeInSecs <= 0) {
-            throw new IllegalArgumentException("TopologyContext.registerMetric can only be called with timeBucketSizeInSecs " +
-                                               "greater than or equal to 1 second.");
+            throw new IllegalArgumentException("TopologyContext.registerMetric can only be called with "
+                    + "timeBucketSizeInSecs greater than or equal to 1 second.");
         }
 
         if (getRegisteredMetricByName(name) != null) {
             throw new RuntimeException("The same metric name `" + name + "` was registered twice.");
         }
 
-        Map<Integer, Map<Integer, Map<String, IMetric>>> m1 = _registeredMetrics;
+        Map<Integer, Map<Integer, Map<String, IMetric>>> m1 = registeredMetrics;
         if (!m1.containsKey(timeBucketSizeInSecs)) {
             m1.put(timeBucketSizeInSecs, new HashMap<Integer, Map<String, IMetric>>());
         }
 
         Map<Integer, Map<String, IMetric>> m2 = m1.get(timeBucketSizeInSecs);
-        if (!m2.containsKey(_taskId)) {
-            m2.put(_taskId, new HashMap<String, IMetric>());
+        if (!m2.containsKey(taskId)) {
+            m2.put(taskId, new HashMap<String, IMetric>());
         }
 
-        Map<String, IMetric> m3 = m2.get(_taskId);
+        Map<String, IMetric> m3 = m2.get(taskId);
         if (m3.containsKey(name)) {
             throw new RuntimeException("The same metric name `" + name + "` was registered twice.");
         } else {
@@ -350,6 +357,24 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         }
 
         return metric;
+    }
+
+    /*
+     * Convenience method for registering ReducedMetric.
+     */
+    @Deprecated
+    @Override
+    public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
+        return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
+    }
+
+    /*
+     * Convenience method for registering CombinedMetric.
+     */
+    @Deprecated
+    @Override
+    public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
+        return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }
 
     /**
@@ -361,8 +386,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     public IMetric getRegisteredMetricByName(String name) {
         IMetric metric = null;
 
-        for (Map<Integer, Map<String, IMetric>> taskIdToNameToMetric : _registeredMetrics.values()) {
-            Map<String, IMetric> nameToMetric = taskIdToNameToMetric.get(_taskId);
+        for (Map<Integer, Map<String, IMetric>> taskIdToNameToMetric : registeredMetrics.values()) {
+            Map<String, IMetric> nameToMetric = taskIdToNameToMetric.get(taskId);
             if (nameToMetric != null) {
                 metric = nameToMetric.get(name);
                 if (metric != null) {
@@ -375,43 +400,33 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         return metric;
     }
 
-    /*
-     * Convenience method for registering ReducedMetric.
-     */
-    @Deprecated
-    public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
-        return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
-    }
-
-    /*
-     * Convenience method for registering CombinedMetric.
-     */
-    @Deprecated
-    public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
-        return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
-    }
-
+    @Override
     public Timer registerTimer(String name) {
-        return StormMetricRegistry.registry().timer(metricName(name));
+        return metricRegistry.timer(name, this);
     }
 
+    @Override
     public Histogram registerHistogram(String name) {
-        return StormMetricRegistry.registry().histogram(metricName(name));
+        return metricRegistry.histogram(name, this);
     }
 
+    @Override
     public Meter registerMeter(String name) {
-        return StormMetricRegistry.registry().meter(metricName(name));
+        return metricRegistry.meter(name, this);
     }
 
+    @Override
     public Counter registerCounter(String name) {
-        return StormMetricRegistry.registry().counter(metricName(name));
+        return metricRegistry.counter(name, this);
     }
 
-    public Gauge registerGauge(String name, Gauge gauge) {
-        return StormMetricRegistry.registry().register(metricName(name), gauge);
+    @Override
+    public <T> Gauge<T> registerGauge(String name, Gauge<T> gauge) {
+        return metricRegistry.gauge(name, gauge, this);
     }
 
-    private String metricName(String name) {
-        return StormMetricRegistry.metricName(name, this);
+    @Override
+    public void registerMetricSet(String prefix, MetricSet set) {
+        metricRegistry.metricSet(prefix, set, this);
     }
 }

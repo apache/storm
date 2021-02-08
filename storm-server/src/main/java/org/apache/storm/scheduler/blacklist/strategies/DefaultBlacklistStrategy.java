@@ -61,7 +61,9 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
     }
 
     @Override
-    public Set<String> getBlacklist(List<Map<String, Set<Integer>>> supervisorsWithFailures, Cluster cluster, Topologies topologies) {
+    public Set<String> getBlacklist(List<Map<String, Set<Integer>>> supervisorsWithFailures,
+                                    List<Map<String, Integer>> sendAssignmentFailureCount,
+                                    Cluster cluster, Topologies topologies) {
         Map<String, Integer> countMap = new HashMap<>();
 
         for (Map<String, Set<Integer>> item : supervisorsWithFailures) {
@@ -72,6 +74,15 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
             }
         }
 
+        // update countMap failures for sendAssignments failing
+        for (Map<String, Integer> item : sendAssignmentFailureCount) {
+            for (Map.Entry<String, Integer> entry : item.entrySet()) {
+                String supervisorNode = entry.getKey();
+                int sendAssignmentFailures = entry.getValue() + countMap.getOrDefault(supervisorNode, 0);
+                countMap.put(supervisorNode, sendAssignmentFailures);
+            }
+        }
+
         for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
             String supervisor = entry.getKey();
             int count = entry.getValue();
@@ -79,15 +90,19 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
                 if (!blacklist.containsKey(supervisor)) { // if not in blacklist then add it and set the resume time according to config
                     LOG.debug("Added supervisor {} to blacklist", supervisor);
                     LOG.debug("supervisorsWithFailures : {}", supervisorsWithFailures);
+                    LOG.debug("sendAssignmentFailureCount: {}", sendAssignmentFailureCount);
                     reporter.reportBlacklist(supervisor, supervisorsWithFailures);
                     blacklist.put(supervisor, resumeTime / nimbusMonitorFreqSecs);
                 }
             }
         }
         Set<String> toRelease = releaseBlacklistWhenNeeded(cluster, new ArrayList<>(blacklist.keySet()));
+        // After having computed the final blacklist,
+        // the nodes which are released due to resource shortage will be put to the "greylist".
         if (toRelease != null) {
             LOG.debug("Releasing {} nodes because of low resources", toRelease.size());
-            for (String key: toRelease) {
+            cluster.setGreyListedSupervisors(toRelease);
+            for (String key : toRelease) {
                 blacklist.remove(key);
             }
         }

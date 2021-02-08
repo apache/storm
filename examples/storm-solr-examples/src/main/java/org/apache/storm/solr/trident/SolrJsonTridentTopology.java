@@ -18,15 +18,15 @@
 
 package org.apache.storm.solr.trident;
 
+import java.io.IOException;
+
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.solr.spout.SolrJsonSpout;
 import org.apache.storm.solr.topology.SolrJsonTopology;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.state.StateFactory;
-
-import java.io.IOException;
+import org.apache.storm.tuple.Fields;
 
 public class SolrJsonTridentTopology extends SolrJsonTopology {
     public static void main(String[] args) throws Exception {
@@ -34,6 +34,7 @@ public class SolrJsonTridentTopology extends SolrJsonTopology {
         solrJsonTridentTopology.run(args);
     }
 
+    @Override
     protected StormTopology getTopology() throws IOException {
         final TridentTopology topology = new TridentTopology();
         final SolrJsonSpout spout = new SolrJsonSpout();

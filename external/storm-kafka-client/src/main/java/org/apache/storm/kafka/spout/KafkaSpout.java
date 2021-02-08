@@ -728,7 +728,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         //The subset of earliest retriable offsets that are on pollable partitions
         private final Map<TopicPartition, Long> pollableEarliestRetriableOffsets;
 
-        public PollablePartitionsInfo(Set<TopicPartition> pollablePartitions, Map<TopicPartition, Long> earliestRetriableOffsets) {
+        PollablePartitionsInfo(Set<TopicPartition> pollablePartitions, Map<TopicPartition, Long> earliestRetriableOffsets) {
             this.pollablePartitions = pollablePartitions;
             this.pollableEarliestRetriableOffsets = earliestRetriableOffsets.entrySet().stream()
                 .filter(entry -> pollablePartitions.contains(entry.getKey()))

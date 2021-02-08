@@ -21,40 +21,41 @@ import org.apache.storm.thrift.transport.TTransport;
 import org.apache.storm.thrift.transport.TTransportException;
 
 /**
- * Interface for Thrift Transport plugin
+ * Interface for Thrift Transport plugin.
  */
 public interface ITransportPlugin {
     /**
-     * Invoked once immediately after construction
+     * Invoked once immediately after construction.
      *
      * @param type      the type of connection this will process.
      * @param topoConf  Storm configuration
-     * @param loginConf login configuration
      */
-    void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration loginConf);
+    void prepare(ThriftConnectionType type, Map<String, Object> topoConf);
 
     /**
-     * Create a server associated with a given port, service handler, and purpose
+     * Create a server associated with a given port, service handler, and purpose.
      *
      * @param processor service handler
      * @return server
      */
-    public TServer getServer(TProcessor processor) throws IOException, TTransportException;
+    TServer getServer(TProcessor processor) throws IOException, TTransportException;
 
     /**
-     * Connect to the specified server via framed transport
+     * Connect to the specified server via framed transport.
      *
      * @param transport  The underlying Thrift transport.
      * @param serverHost server host
      * @param asUser     the user as which the connection should be established, and all the subsequent actions should be executed. Only
      *                   applicable when using secure storm cluster. A null/blank value here will just indicate to use the logged in user.
      */
-    public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException;
+    TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException;
 
     /**
-     * @return The port this transport is using. This is not known until {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called.
+     * Get port.
+     * @return The port this transport is using. This is not known until
+     * {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called
      */
-    public int getPort();
+    int getPort();
 
     /**
      * Check if worker tokens are supported by this transport.

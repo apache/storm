@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -14,8 +14,8 @@ package org.apache.storm.daemon.supervisor;
 
 import java.io.IOException;
 import java.util.Map;
-import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.container.DefaultResourceIsolationManager;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.messaging.IContext;
@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Launches containers
+ * Launches containers.
  */
 public abstract class ContainerLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(ContainerLauncher.class);
@@ -46,34 +46,38 @@ public abstract class ContainerLauncher {
      * @param sharedContext Used in local mode to let workers talk together without netty
      * @param metricsRegistry The metrics registry.
      * @param containerMemoryTracker The shared memory tracker for the supervisor's containers
+     * @param localSupervisor The local supervisor Thrift interface. Only used for local clusters, distributed clusters use Thrift directly.
      * @return the proper container launcher
      * @throws IOException on any error
      */
     public static ContainerLauncher make(Map<String, Object> conf, String supervisorId, int supervisorPort,
                                          IContext sharedContext, StormMetricsRegistry metricsRegistry, 
-                                         ContainerMemoryTracker containerMemoryTracker) throws IOException {
+                                         ContainerMemoryTracker containerMemoryTracker,
+                                         org.apache.storm.generated.Supervisor.Iface localSupervisor) throws IOException {
         if (ConfigUtils.isLocalMode(conf)) {
-            return new LocalContainerLauncher(conf, supervisorId, supervisorPort, sharedContext, metricsRegistry, containerMemoryTracker);
+            return new LocalContainerLauncher(conf, supervisorId, supervisorPort, sharedContext, metricsRegistry, containerMemoryTracker,
+                localSupervisor);
         }
 
-        ResourceIsolationInterface resourceIsolationManager = null;
+        ResourceIsolationInterface resourceIsolationManager;
         if (ObjectReader.getBoolean(conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN_ENABLE), false)) {
             resourceIsolationManager = ReflectionUtils.newInstance((String) conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN));
-            resourceIsolationManager.prepare(conf);
-            LOG.info("Using resource isolation plugin {} {}", conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN),
-                     resourceIsolationManager);
+            LOG.info("Using resource isolation plugin {}: {}", conf.get(DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN),
+                resourceIsolationManager);
+        } else {
+            resourceIsolationManager = new DefaultResourceIsolationManager();
+            LOG.info("{} is false. Using default resource isolation plugin: {}", DaemonConfig.STORM_RESOURCE_ISOLATION_PLUGIN_ENABLE,
+                resourceIsolationManager);
         }
 
-        if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
-            return new RunAsUserContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager, metricsRegistry, 
-                containerMemoryTracker);
-        }
+        resourceIsolationManager.prepare(conf);
+
         return new BasicContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager, metricsRegistry, 
             containerMemoryTracker);
     }
 
     /**
-     * Launch a container in a given slot
+     * Launch a container in a given slot.
      * @param port the port to run this on
      * @param assignment what to launch
      * @param state the current state of the supervisor
@@ -83,7 +87,7 @@ public abstract class ContainerLauncher {
     public abstract Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException;
 
     /**
-     * Recover a container for a running process
+     * Recover a container for a running process.
      * @param port the port the assignment is running on
      * @param assignment the assignment that was launched
      * @param state the current state of the supervisor

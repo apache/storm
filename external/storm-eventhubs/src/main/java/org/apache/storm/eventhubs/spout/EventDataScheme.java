@@ -30,10 +30,10 @@ import org.slf4j.LoggerFactory;
  * An Event Data Scheme which deserializes message payload into the Strings. No encoding is assumed. The receiver will need to handle
  * parsing of the string data in appropriate encoding.
  *
- * The resulting tuple would contain two items: the the message string, and a map of properties that include metadata, which can be used to
- * determine who processes the message, and how it is processed.
+ * <p>The resulting tuple would contain two items: the the message string, and a map of properties that include
+ * metadata, which can be used to determine who processes the message, and how it is processed.
  *
- * For passing the raw bytes of a messsage to Bolts, refer to {@link BinaryEventDataScheme}.
+ * <p>For passing the raw bytes of a messsage to Bolts, refer to {@link BinaryEventDataScheme}.
  */
 public class EventDataScheme implements IEventDataScheme {
 
@@ -46,9 +46,8 @@ public class EventDataScheme implements IEventDataScheme {
         String messageData = "";
         if (eventData.getBytes() != null) {
             messageData = new String(eventData.getBytes());
-        }
-        /*Will only serialize AMQPValue type*/
-        else if (eventData.getObject() != null) {
+        } else if (eventData.getObject() != null) {
+            /*Will only serialize AMQPValue type*/
             try {
                 if (!(eventData.getObject() instanceof List)) {
                     messageData = eventData.getObject().toString();

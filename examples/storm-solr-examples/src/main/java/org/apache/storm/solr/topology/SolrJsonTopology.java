@@ -18,14 +18,14 @@
 
 package org.apache.storm.solr.topology;
 
+import java.io.IOException;
+
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.solr.bolt.SolrUpdateBolt;
 import org.apache.storm.solr.mapper.SolrJsonMapper;
 import org.apache.storm.solr.mapper.SolrMapper;
 import org.apache.storm.solr.spout.SolrJsonSpout;
-
-import java.io.IOException;
+import org.apache.storm.topology.TopologyBuilder;
 
 public class SolrJsonTopology extends SolrTopology {
     public static void main(String[] args) throws Exception {
@@ -38,6 +38,7 @@ public class SolrJsonTopology extends SolrTopology {
         return new SolrJsonMapper.Builder(COLLECTION, jsonTupleField).build();
     }
 
+    @Override
     protected StormTopology getTopology() throws IOException {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("SolrJsonSpout", new SolrJsonSpout());

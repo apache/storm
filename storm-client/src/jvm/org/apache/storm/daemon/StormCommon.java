@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
@@ -40,6 +41,7 @@ import org.apache.storm.metric.SystemBolt;
 import org.apache.storm.metric.filter.FilterByMetricName;
 import org.apache.storm.metric.util.DataPointExpander;
 import org.apache.storm.security.auth.IAuthorizer;
+import org.apache.storm.serialization.SerializationFactory;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.task.IBolt;
@@ -90,7 +92,7 @@ public class StormCommon {
         }
     }
 
-    private static Set<String> validateIds(Map<String, ? extends Object> componentMap) throws InvalidTopologyException {
+    private static Set<String> validateIds(Map<String, ?> componentMap) throws InvalidTopologyException {
         Set<String> keys = componentMap.keySet();
         for (String id : keys) {
             if (Utils.isSystemId(id)) {
@@ -252,9 +254,6 @@ public class StormCommon {
 
     @SuppressWarnings("unchecked")
     public static void addAcker(Map<String, Object> conf, StormTopology topology) {
-        int ackerNum =
-            ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
-        Map<GlobalStreamId, Grouping> inputs = ackerInputs(topology);
 
         Map<String, StreamInfo> outputStreams = new HashMap<String, StreamInfo>();
         outputStreams.put(Acker.ACKER_ACK_STREAM_ID, Thrift.directOutputFields(Arrays.asList("id", "time-delta-ms")));
@@ -262,9 +261,12 @@ public class StormCommon {
         outputStreams.put(Acker.ACKER_RESET_TIMEOUT_STREAM_ID, Thrift.directOutputFields(Arrays.asList("id", "time-delta-ms")));
 
         Map<String, Object> ackerConf = new HashMap<>();
+        int ackerNum =
+                ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
         ackerConf.put(Config.TOPOLOGY_TASKS, ackerNum);
         ackerConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, ObjectReader.getInt(conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)));
 
+        Map<GlobalStreamId, Grouping> inputs = ackerInputs(topology);
         Bolt acker = Thrift.prepareSerializedBoltDetails(inputs, makeAckerBolt(), outputStreams, ackerNum, ackerConf);
 
         for (Bolt bolt : topology.get_bolts().values()) {
@@ -328,7 +330,7 @@ public class StormCommon {
 
     public static Map<GlobalStreamId, Grouping> eventLoggerInputs(StormTopology topology) {
         Map<GlobalStreamId, Grouping> inputs = new HashMap<GlobalStreamId, Grouping>();
-        Set<String> allIds = new HashSet<String>();
+        Set<String> allIds = new HashSet<>();
         allIds.addAll(topology.get_bolts().keySet());
         allIds.addAll(topology.get_spouts().keySet());
 
@@ -373,14 +375,14 @@ public class StormCommon {
 
         List<Map<String, Object>> registerInfo = (List<Map<String, Object>>) conf.get(Config.TOPOLOGY_METRICS_CONSUMER_REGISTER);
         if (registerInfo != null) {
-            Map<String, Integer> classOccurrencesMap = new HashMap<String, Integer>();
+            Map<String, Integer> classOccurrencesMap = new HashMap<>();
             for (Map<String, Object> info : registerInfo) {
                 String className = (String) info.get(TOPOLOGY_METRICS_CONSUMER_CLASS);
                 Object argument = info.get(TOPOLOGY_METRICS_CONSUMER_ARGUMENT);
                 Integer maxRetainMetricTuples = ObjectReader.getInt(info.get(
                     TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES), 100);
                 Integer phintNum = ObjectReader.getInt(info.get(TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT), 1);
-                Map<String, Object> metricsConsumerConf = new HashMap<String, Object>();
+                Map<String, Object> metricsConsumerConf = new HashMap<>();
                 metricsConsumerConf.put(Config.TOPOLOGY_TASKS, phintNum);
                 List<String> whitelist = (List<String>) info.get(
                     TOPOLOGY_METRICS_CONSUMER_WHITELIST);
@@ -397,7 +399,7 @@ public class StormCommon {
                 Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
                                                                                boltInstance, null, phintNum, metricsConsumerConf);
 
-                String id = className;
+                String id;
                 if (classOccurrencesMap.containsKey(className)) {
                     // e.g. [\"a\", \"b\", \"a\"]) => [\"a\", \"b\", \"a#2\"]"
                     int occurrenceNum = classOccurrencesMap.get(className);
@@ -427,7 +429,6 @@ public class StormCommon {
         outputStreams.put(Constants.SYSTEM_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("rate_secs")));
         outputStreams.put(Constants.SYSTEM_FLUSH_STREAM_ID, Thrift.outputFields(Arrays.asList()));
         outputStreams.put(Constants.METRICS_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("interval")));
-        outputStreams.put(Constants.CREDENTIALS_CHANGED_STREAM_ID, Thrift.outputFields(Arrays.asList("creds")));
 
         Map<String, Object> boltConf = new HashMap<>();
         boltConf.put(Config.TOPOLOGY_TASKS, 0);
@@ -436,6 +437,19 @@ public class StormCommon {
         topology.put_to_bolts(Constants.SYSTEM_COMPONENT_ID, systemBoltSpec);
     }
 
+    /**
+     * Construct a new topology structure after adding system components and streams.
+     * WARNING: while changing the existing code to add or remove streams for a component is allowed, please be aware that
+     *          it might cause issues during cluster rolling upgrade
+     *          because {@link SerializationFactory.IdDictionary} depends on having a consistent map of component to streams
+     *          to work properly (see STORM-3687 for an example).
+     *          It will not impact a cluster running on a single version or running an older topology on a newer cluster.
+     *          But a mixed cluster (with different versions of daemons running) is not guaranteed to work.
+     * @param topoConf the topology configuration
+     * @param topology the original topology structure
+     * @return the newly constructed topology
+     * @throws InvalidTopologyException if the topology is invalid
+     */
     public static StormTopology systemTopology(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
         return _instance.systemTopologyImpl(topoConf, topology);
     }

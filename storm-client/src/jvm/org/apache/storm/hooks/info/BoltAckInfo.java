@@ -12,6 +12,8 @@
 
 package org.apache.storm.hooks.info;
 
+import java.util.List;
+
 import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
@@ -28,8 +30,9 @@ public class BoltAckInfo {
     }
 
     public void applyOn(TopologyContext topologyContext) {
-        for (ITaskHook hook : topologyContext.getHooks()) {
-            hook.boltAck(this);
+        List<ITaskHook> hooks = topologyContext.getHooks();
+        for (int i = 0; i < hooks.size(); i++) {
+            hooks.get(i).boltAck(this);
         }
     }
 }

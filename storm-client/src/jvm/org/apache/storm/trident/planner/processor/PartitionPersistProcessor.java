@@ -29,18 +29,18 @@ import org.apache.storm.tuple.Fields;
 
 
 public class PartitionPersistProcessor implements TridentProcessor {
-    StateUpdater _updater;
-    State _state;
-    String _stateId;
-    TridentContext _context;
-    Fields _inputFields;
-    ProjectionFactory _projection;
-    FreshCollector _collector;
+    StateUpdater updater;
+    State state;
+    String stateId;
+    TridentContext context;
+    Fields inputFields;
+    ProjectionFactory projection;
+    FreshCollector collector;
 
     public PartitionPersistProcessor(String stateId, Fields inputFields, StateUpdater updater) {
-        _updater = updater;
-        _stateId = stateId;
-        _inputFields = inputFields;
+        this.updater = updater;
+        this.stateId = stateId;
+        this.inputFields = inputFields;
     }
 
     @Override
@@ -49,26 +49,26 @@ public class PartitionPersistProcessor implements TridentProcessor {
         if (parents.size() != 1) {
             throw new RuntimeException("Partition persist operation can only have one parent");
         }
-        _context = tridentContext;
-        _state = (State) context.getTaskData(_stateId);
-        _projection = new ProjectionFactory(parents.get(0), _inputFields);
-        _collector = new FreshCollector(tridentContext);
-        _updater.prepare(conf, new TridentOperationContext(context, _projection));
+        this.context = tridentContext;
+        state = (State) context.getTaskData(stateId);
+        projection = new ProjectionFactory(parents.get(0), inputFields);
+        collector = new FreshCollector(tridentContext);
+        updater.prepare(conf, new TridentOperationContext(context, projection));
     }
 
     @Override
     public void cleanup() {
-        _updater.cleanup();
+        updater.cleanup();
     }
 
     @Override
     public void startBatch(ProcessorContext processorContext) {
-        processorContext.state[_context.getStateIndex()] = new ArrayList<TridentTuple>();
+        processorContext.state[context.getStateIndex()] = new ArrayList<TridentTuple>();
     }
 
     @Override
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
-        ((List) processorContext.state[_context.getStateIndex()]).add(_projection.create(tuple));
+        ((List) processorContext.state[context.getStateIndex()]).add(projection.create(tuple));
     }
 
     @Override
@@ -78,10 +78,10 @@ public class PartitionPersistProcessor implements TridentProcessor {
 
     @Override
     public void finishBatch(ProcessorContext processorContext) {
-        _collector.setContext(processorContext);
+        collector.setContext(processorContext);
         Object batchId = processorContext.batchId;
         // since this processor type is a committer, this occurs in the commit phase
-        List<TridentTuple> buffer = (List) processorContext.state[_context.getStateIndex()];
+        List<TridentTuple> buffer = (List) processorContext.state[context.getStateIndex()];
 
         // don't update unless there are tuples
         // this helps out with things like global partition persist, where multiple tasks may still
@@ -94,14 +94,14 @@ public class PartitionPersistProcessor implements TridentProcessor {
             if (batchId instanceof TransactionAttempt) {
                 txid = ((TransactionAttempt) batchId).getTransactionId();
             }
-            _state.beginCommit(txid);
-            _updater.updateState(_state, buffer, _collector);
-            _state.commit(txid);
+            state.beginCommit(txid);
+            updater.updateState(state, buffer, collector);
+            state.commit(txid);
         }
     }
 
     @Override
     public Factory getOutputFactory() {
-        return _collector.getOutputFactory();
+        return collector.getOutputFactory();
     }
 }
