@@ -144,6 +144,9 @@ public class KafkaOffsetLagUtil {
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             if (newKafkaSpoutOffsetQuery.getSecurityProtocol() != null) {
                 props.put("security.protocol", newKafkaSpoutOffsetQuery.getSecurityProtocol());
+                if (newKafkaSpoutOffsetQuery.getSecurityProtocol().contains("PLAIN")){
+                    props.put("sasl.mechanism", "PLAIN");
+              }
             }
             // Read property file for extra consumer properties
             if (newKafkaSpoutOffsetQuery.getConsumerPropertiesFileName() != null) {
