@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -44,6 +44,7 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.INodeSorter;
 import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.NodeSorter;
+import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.NodeSorterHostProximity;
 import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
@@ -74,7 +75,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeSet;
+import java.util.stream.Collectors;
+
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
@@ -373,6 +375,15 @@ public class TestDefaultResourceAwareStrategy {
         SchedulerAssignment assignment = cluster.getAssignmentById(topo.getId());
         TopologyResources topologyResources = cluster.getTopologyResourcesMap().get(topo.getId());
         long numNodes = assignment.getSlotToExecutors().keySet().stream().map(WorkerSlot::getNodeId).distinct().count();
+        String assignmentString = "Assignments:\n\t" + assignment.getSlotToExecutors().entrySet().stream()
+                .map(x -> String.format("Node=%s, components=%s",
+                        x.getKey().getNodeId(),
+                        x.getValue().stream()
+                                .map(y -> topo.getComponentFromExecutor(y))
+                                .collect(Collectors.joining(","))
+                        )
+                )
+                .collect(Collectors.joining("\n\t"));
 
         if (schedulingLimitation == WorkerRestrictionType.WORKER_RESTRICTION_NONE) {
             // Everything should fit in a single slot
@@ -411,7 +422,7 @@ public class TestDefaultResourceAwareStrategy {
             int numAssignedWorkers = cluster.getAssignedNumWorkers(topo);
             assertThat(numAssignedWorkers, is(8));
             assertThat(assignment.getSlots().size(), is(8));
-            assertThat(numNodes, is(2L));
+            assertThat(assignmentString, numNodes, is(2L));
         } else if (schedulingLimitation == WorkerRestrictionType.WORKER_RESTRICTION_ONE_COMPONENT) {
             double expectedMemOnHeap = (totalNumberOfTasks * memoryOnHeap) + sharedOnHeapWithinWorker;
             double expectedMemOffHeap = (totalNumberOfTasks * memoryOffHeap) + sharedOffHeapWithinWorker + sharedOffHeapWithinNode;
@@ -766,22 +777,17 @@ public class TestDefaultResourceAwareStrategy {
         for (Map.Entry<String, String> entry : resolvedSuperVisors.entrySet()) {
             String hostName = entry.getKey();
             String rack = entry.getValue();
-            List<String> nodesForRack = rackToNodes.get(rack);
-            if (nodesForRack == null) {
-                nodesForRack = new ArrayList<>();
-                rackToNodes.put(rack, nodesForRack);
-            }
-            nodesForRack.add(hostName);
+            rackToNodes.computeIfAbsent(rack, rid -> new ArrayList<>()).add(hostName);
         }
         cluster.setNetworkTopography(rackToNodes);
 
         DefaultResourceAwareStrategyOld rs = new DefaultResourceAwareStrategyOld();
         
         rs.prepareForScheduling(cluster, topo1);
-        INodeSorter nodeSorter = new NodeSorter(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
-        TreeSet<ObjectResourcesItem> sortedRacks = nodeSorter.sortRacks(null);
+        INodeSorter nodeSorter = new NodeSorterHostProximity(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
+        nodeSorter.prepare(null);
+        Iterable<ObjectResourcesItem> sortedRacks = nodeSorter.getSortedRacks();
 
-        Assert.assertEquals("# of racks sorted", 6, sortedRacks.size());
         Iterator<ObjectResourcesItem> it = sortedRacks.iterator();
         // Ranked first since rack-0 has the most balanced set of resources
         Assert.assertEquals("rack-0 should be ordered first", "rack-0", it.next().id);
@@ -905,9 +911,9 @@ public class TestDefaultResourceAwareStrategy {
 
         rs.prepareForScheduling(cluster, topo1);
         INodeSorter nodeSorter = new NodeSorter(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
-        TreeSet<ObjectResourcesItem> sortedRacks= nodeSorter.sortRacks(null);
+        nodeSorter.prepare(null);
+        Iterable<ObjectResourcesItem> sortedRacks= nodeSorter.getSortedRacks();
 
-        Assert.assertEquals("# of racks sorted", 5, sortedRacks.size());
         Iterator<ObjectResourcesItem> it = sortedRacks.iterator();
         // Ranked first since rack-0 has the most balanced set of resources
         Assert.assertEquals("rack-0 should be ordered first", "rack-0", it.next().id);

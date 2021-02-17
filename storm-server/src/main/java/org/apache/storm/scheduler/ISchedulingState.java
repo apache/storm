@@ -19,12 +19,15 @@
 package org.apache.storm.scheduler;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 
@@ -283,6 +286,18 @@ public interface ISchedulingState {
     Map<String, List<String>> getNetworkTopography();
 
     /**
+     * Get host -> rack map - the inverse of networkTopography..
+     */
+    default Map<String, String> getHostToRack() {
+        Map<String, String> ret = new HashMap<>();
+        Map<String, List<String>> networkTopography = getNetworkTopography();
+        if (networkTopography != null) {
+            networkTopography.forEach((rack, hosts) -> hosts.forEach(host -> ret.put(host, rack)));
+        }
+        return ret;
+    }
+
+    /**
      * Get all topology scheduler statuses.
      */
     Map<String, String> getStatusMap();
@@ -339,4 +354,31 @@ public interface ISchedulingState {
      * Get the nimbus configuration.
      */
     Map<String, Object> getConf();
+
+    /**
+     * Determine the list of racks on which topologyIds have been assigned. Note that the returned set
+     * may contain {@link DNSToSwitchMapping#DEFAULT_RACK} if {@link #getHostToRack()} is null or
+     * does not contain the assigned host.
+     *
+     * @param topologyIds for which assignments are examined.
+     * @return set of racks on which assignments have been made.
+     */
+    default Set<String> getAssignedRacks(String... topologyIds) {
+        Set<String> ret = new HashSet<>();
+        Map<String, String> networkTopographyInverted = getHostToRack();
+        for (String topologyId: topologyIds) {
+            SchedulerAssignment assignment = getAssignmentById(topologyId);
+            if (assignment == null) {
+                continue;
+            }
+            for (WorkerSlot slot : assignment.getSlots()) {
+                String nodeId = slot.getNodeId();
+                SupervisorDetails supervisorDetails = getSupervisorById(nodeId);
+                String hostId = supervisorDetails.getHost();
+                String rackId = networkTopographyInverted.getOrDefault(hostId, DNSToSwitchMapping.DEFAULT_RACK);
+                ret.add(rackId);
+            }
+        }
+        return ret;
+    }
 }

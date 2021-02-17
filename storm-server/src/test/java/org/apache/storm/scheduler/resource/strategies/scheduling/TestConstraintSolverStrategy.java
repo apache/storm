@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
@@ -36,6 +39,7 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.ExecSorterByConstraintSeverity;
 import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.IExecSorter;
+import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.NodeSorterHostProximity;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
@@ -77,6 +81,12 @@ public class TestConstraintSolverStrategy {
 
     public TestConstraintSolverStrategy(boolean consolidatedConfigFlag) {
         this.consolidatedConfigFlag = consolidatedConfigFlag;
+        List<Class> classesToDebug = Arrays.asList(TestConstraintSolverStrategy.class,
+                BaseResourceAwareStrategy.class, ResourceAwareScheduler.class,
+                NodeSorterHostProximity.class, Cluster.class
+        );
+        Level logLevel = Level.INFO ; // switch to Level.DEBUG for verbose otherwise Level.INFO
+        classesToDebug.forEach(x -> Configurator.setLevel(x.getName(), logLevel));
         LOG.info("Running tests with consolidatedConfigFlag={}", consolidatedConfigFlag);
     }
 
@@ -180,15 +190,15 @@ public class TestConstraintSolverStrategy {
         return makeTestTopoConf(1);
     }
 
-    public TopologyDetails makeTopology(Map<String, Object> config, int boltParallel) {
+    public static TopologyDetails makeTopology(Map<String, Object> config, int boltParallel) {
         return genTopology("testTopo", config, 1, 4, 4, boltParallel, 0, 0, "user");
     }
 
-    public Cluster makeCluster(Topologies topologies) {
+    public static Cluster makeCluster(Topologies topologies) {
         return makeCluster(topologies, null);
     }
 
-    public Cluster makeCluster(Topologies topologies, Map<String, SupervisorDetails> supMap) {
+    public static Cluster makeCluster(Topologies topologies, Map<String, SupervisorDetails> supMap) {
         if (supMap == null) {
             supMap = genSupervisors(4, 2, 120, 1200);
         }

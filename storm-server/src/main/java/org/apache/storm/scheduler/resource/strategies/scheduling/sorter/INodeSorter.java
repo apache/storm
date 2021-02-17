@@ -18,14 +18,20 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling.sorter;
 
-import java.util.TreeSet;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.resource.strategies.scheduling.ObjectResourcesItem;
 
 
 public interface INodeSorter {
 
-    TreeSet<ObjectResourcesItem> sortRacks(ExecutorDetails exec);
+    /**
+     * Prepare for node sorting. This method must be called before {@link #getSortedRacks()} and {@link #sortAllNodes()}.
+     *
+     * @param exec optional, may be null.
+     */
+    void prepare(ExecutorDetails exec);
 
-    Iterable<String> sortAllNodes(ExecutorDetails exec);
+    Iterable<ObjectResourcesItem> getSortedRacks();
+
+    Iterable<String> sortAllNodes();
 }
