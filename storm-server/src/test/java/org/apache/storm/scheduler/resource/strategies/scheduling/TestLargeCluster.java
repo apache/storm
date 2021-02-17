@@ -62,12 +62,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @ExtendWith({NormalizedResourcesExtension.class})
 public class TestLargeCluster {
     private static final Logger LOG = LoggerFactory.getLogger(TestLargeCluster.class);
 
-    public static final String TEST_CLUSTER_NAME = "largeCluster01";
+    public static final String TEST_CLUSTER_01 = "largeCluster01";
+    public static final String TEST_CLUSTER_02 = "largeCluster02";
+
+    public static final String TEST_CLUSTER_NAME = TEST_CLUSTER_02;
     public static final String TEST_RESOURCE_PATH = "clusterconf/" + TEST_CLUSTER_NAME;
     public static final String COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING = "code.ser";
     public static final String COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING = "conf.ser";
@@ -148,7 +152,7 @@ public class TestLargeCluster {
 
     /**
      * Create an array of TopologyDetails by reading serialized files for topology and configuration in the
-     * resource path.
+     * resource path. Skip topologies with no executors/components.
      *
      * @param failOnParseError throw exception if there are unmatched files, otherwise ignore unmatched and read errors.
      * @return An array of TopologyDetails representing resource files.
@@ -255,6 +259,10 @@ public class TestLargeCluster {
             Map<ExecutorDetails, String> execToComp = TestUtilsForResourceAwareScheduler.genExecsAndComps(stormTopology);
             LOG.info("Topology \"{}\" spouts={}, bolts={}, execToComp size is {}", topoName,
                     stormTopology.get_spouts_size(), stormTopology.get_bolts_size(), execToComp.size());
+            if (execToComp.isEmpty()) {
+                LOG.error("Topology \"{}\" Ignoring BAD topology with zero executors", topoName);
+                continue;
+            }
             int numWorkers = Integer.parseInt("" + conf.getOrDefault(Config.TOPOLOGY_WORKERS, "0"));
             TopologyDetails topo = new TopologyDetails(topoId, conf, stormTopology,  numWorkers,
                     execToComp, Time.currentTimeSecs(), "user");
@@ -312,57 +320,87 @@ public class TestLargeCluster {
     }
 
     /**
-     * Create supervisors.
+     * Create supervisors for a larger cluster configuration.
      *
-     * @param uniformSupervisors true if all supervisors are of the same size, false otherwise.
+     * @param reducedSupervisorsPerRack number of supervisors to reduce in rack.
+     * @return created supervisors.
+     */
+    private static Map<String, SupervisorDetails> createSupervisors(int reducedSupervisorsPerRack) {
+        if (TEST_CLUSTER_NAME.equals(TEST_CLUSTER_02)) {
+            return createSupervisorsForCluster02(reducedSupervisorsPerRack);
+        } else {
+            return createSupervisorsForCluster01(reducedSupervisorsPerRack);
+        }
+    }
+
+    /**
+     * Create supervisors for a newer {@link #TEST_CLUSTER_02} cluster configuration to mimic a large cluster in use.
+     *
+     * @param reducedSupervisorsPerRack number of supervisors to reduce per rack.
+     * @return created supervisors.
+     */
+    private static Map<String, SupervisorDetails> createSupervisorsForCluster02(int reducedSupervisorsPerRack) {
+        Collection<SupervisorDistribution> supervisorDistributions = SupervisorDistribution.getSupervisorDistribution02();
+        Map<String, Collection<SupervisorDistribution>> byRackId = SupervisorDistribution.mapByRackId(supervisorDistributions);
+        LOG.info("Cluster={}, Designed capacity: {}", TEST_CLUSTER_NAME, SupervisorDistribution.clusterCapacity(supervisorDistributions));
+
+        Map<String, SupervisorDetails> retList = new HashMap<>();
+        Map<String, AtomicInteger> seenRacks = new HashMap<>();
+        byRackId.forEach((rackId, list) -> {
+            int tmpRackSupervisorCnt = list.stream().mapToInt(x -> x.supervisorCnt).sum() - Math.abs(reducedSupervisorsPerRack);
+            if (tmpRackSupervisorCnt > Math.abs(reducedSupervisorsPerRack)) {
+                tmpRackSupervisorCnt -= Math.abs(reducedSupervisorsPerRack);
+            }
+            final int adjustedRackSupervisorCnt = tmpRackSupervisorCnt;
+            list.forEach(x -> {
+                int supervisorCnt = x.supervisorCnt;
+                for (int i = 0; i < supervisorCnt ; i++) {
+                    int superInRack = seenRacks.computeIfAbsent(rackId, z -> new AtomicInteger(-1)).incrementAndGet();
+                    int rackNum = seenRacks.size() - 1;
+                    if (superInRack >= adjustedRackSupervisorCnt) {
+                        continue;
+                    }
+                    createAndAddOneSupervisor(rackNum, superInRack, x.cpuPercent, x.memoryMb, x.slotCnt, retList);
+                }
+            });
+        });
+        return retList;
+    }
+
+    /**
+     * Create supervisors for a non-uniform supervisor distribution closely (but not exactly) mimics a large cluster in use.
+     *
+     * @param reducedSupervisorsPerRack is the reduction in supervisors per rack to constrain capacity (15 is tight)
      * @return supervisor details indexed by id
      */
-    private static Map<String, SupervisorDetails> createSupervisors(boolean uniformSupervisors) {
-        Map<String, SupervisorDetails> retVal;
-        if (uniformSupervisors) {
-            int numRacks = 16;
-            int numSupersPerRack = 82;
-            int numPorts = 50; // note: scheduling is slower when components with large cpu/mem leave large percent of workerslots unused
-            int rackStart = 0;
-            int superInRackStart = 1;
-            double cpu = 7200; // %percent
-            double mem = 356_000; // MB
-            Map<String, Double> miscResources = new HashMap<>();
-            miscResources.put("network.resource.units", 100.0);
+    private static Map<String, SupervisorDetails> createSupervisorsForCluster01(int reducedSupervisorsPerRack) {
+        int numSupersPerRack = 82 - Math.abs(reducedSupervisorsPerRack);
+        int numPorts = 50;
 
-            return TestUtilsForResourceAwareScheduler.genSupervisorsWithRacks(
-                    numRacks, numSupersPerRack, numPorts, rackStart, superInRackStart, cpu, mem, miscResources);
+        Map<String, SupervisorDetails> retList = new HashMap<>();
 
-        } else {
-            // this non-uniform supervisor distribution closely (but not exactly) mimics a large cluster in use
-            int numSupersPerRack = 82;
-            int numPorts = 50;
-
-            Map<String, SupervisorDetails> retList = new HashMap<>();
-
-            for (int rack = 0 ; rack < 12 ; rack++) {
-                double cpu = 3600; // %percent
-                double mem = 178_000; // MB
-                for (int superInRack = 0; superInRack < numSupersPerRack ; superInRack++) {
-                    createAndAddOneSupervisor(rack, superInRack, cpu - 100 * (superInRack % 2), mem, numPorts, retList);
-                }
+        for (int rack = 0 ; rack < 12 ; rack++) {
+            double cpu = 3600; // %percent
+            double mem = 178_000; // MB
+            for (int superInRack = 0; superInRack < numSupersPerRack ; superInRack++) {
+                createAndAddOneSupervisor(rack, superInRack, cpu - 100 * (superInRack % 2), mem, numPorts, retList);
             }
-            for (int rack = 12 ; rack < 14 ; rack++) {
-                double cpu = 2400; // %percent
-                double mem = 118_100; // MB
-                for (int superInRack = 0; superInRack < numSupersPerRack ; superInRack++) {
-                    createAndAddOneSupervisor(rack, superInRack, cpu - 100 * (superInRack % 2), mem, numPorts, retList);
-                }
-            }
-            for (int rack = 14 ; rack < 16 ; rack++) {
-                double cpu = 1200; // %percent
-                double mem = 42_480; // MB
-                for (int superInRack = 0; superInRack < numSupersPerRack ; superInRack++) {
-                    createAndAddOneSupervisor(rack, superInRack, cpu - 100 * (superInRack % 2), mem, numPorts, retList);
-                }
-            }
-            return retList;
         }
+        for (int rack = 12 ; rack < 14 ; rack++) {
+            double cpu = 2400; // %percent
+            double mem = 118_100; // MB
+            for (int superInRack = 0; superInRack < numSupersPerRack ; superInRack++) {
+                createAndAddOneSupervisor(rack, superInRack, cpu - 100 * (superInRack % 2), mem, numPorts, retList);
+            }
+        }
+        for (int rack = 14 ; rack < 16 ; rack++) {
+            double cpu = 1200; // %percent
+            double mem = 42_480; // MB
+            for (int superInRack = 0; superInRack < numSupersPerRack ; superInRack++) {
+                createAndAddOneSupervisor(rack, superInRack, cpu - 100 * (superInRack % 2), mem, numPorts, retList);
+            }
+        }
+        return retList;
     }
 
     /**
@@ -372,9 +410,7 @@ public class TestLargeCluster {
      */
     @Test
     public void testLargeCluster() throws Exception {
-        boolean uniformSupervisors = false; // false means non-uniform supervisor distribution
-
-        Map<String, SupervisorDetails> supervisors = createSupervisors(uniformSupervisors);
+        Map<String, SupervisorDetails> supervisors = createSupervisors(0);
 
         TopologyDetails[] topoDetailsArray = createTopoDetailsArray(false);
         Assert.assertTrue("No topologies found", topoDetailsArray.length > 0);
@@ -383,6 +419,9 @@ public class TestLargeCluster {
         Config confWithDefaultStrategy = new Config();
         confWithDefaultStrategy.putAll(topoDetailsArray[0].getConf());
         confWithDefaultStrategy.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, DefaultResourceAwareStrategy.class.getName());
+        confWithDefaultStrategy.put(
+                Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN,
+                TestUtilsForResourceAwareScheduler.GenSupervisorsDnsToSwitchMapping.class.getName());
 
         INimbus iNimbus = new INimbusTest();
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supervisors, new HashMap<>(),
@@ -420,6 +459,74 @@ public class TestLargeCluster {
             LOG.info("({}) Scheduling Time: Removed topology {} and rescheduled in {} seconds", i, topoDetails.getName(), (endTime - startTime) / 1000.0);
         }
         classesToDebug.forEach(x -> Configurator.setLevel(x.getName(), Level.INFO));
+    }
+
+    public static class SupervisorDistribution {
+        final String rackId;
+        final int supervisorCnt;
+        final int slotCnt;
+        final int memoryMb;
+        final int cpuPercent;
+
+        public SupervisorDistribution(int supervisorCnt, String rackId, int slotCnt, int memoryMb, int cpuPercent) {
+            this.rackId = rackId;
+            this.supervisorCnt = supervisorCnt;
+            this.slotCnt = slotCnt;
+            this.memoryMb = memoryMb;
+            this.cpuPercent = cpuPercent;
+        }
+
+        public static Map<String, Collection<SupervisorDistribution>> mapByRackId(Collection<SupervisorDistribution> supervisors) {
+            Map<String, Collection<SupervisorDistribution>> retVal = new HashMap<>();
+            supervisors.forEach(x -> retVal.computeIfAbsent(x.rackId, rackId -> new ArrayList<>()).add(x));
+            return retVal;
+        }
+
+        public static Collection<SupervisorDistribution> getSupervisorDistribution02() {
+            return Arrays.asList(
+                // Cnt, Rack,    Slot, Mem, CPU
+                new SupervisorDistribution(78, "r001", 12, 42461, 1100),
+                new SupervisorDistribution(146, "r002", 36, 181362, 3500),
+                new SupervisorDistribution(18, "r003", 36, 181362, 3500),
+                new SupervisorDistribution(120, "r004", 36, 181362, 3500),
+                new SupervisorDistribution(24, "r005", 36, 181362, 3500),
+                new SupervisorDistribution(16, "r005", 48, 177748, 4700),
+                new SupervisorDistribution(12, "r006", 18, 88305, 1800),
+                new SupervisorDistribution(368, "r006", 36, 181205, 3500),
+                new SupervisorDistribution(62, "r007", 48, 177748, 4700),
+                new SupervisorDistribution(50, "r008", 36, 181348, 3500),
+                new SupervisorDistribution(64, "r008", 48, 177748, 4700),
+                new SupervisorDistribution(74, "r009", 48, 177748, 4700),
+                new SupervisorDistribution(74, "r010", 48, 177748, 4700),
+                new SupervisorDistribution(10, "r011", 48, 177748, 4700),
+                new SupervisorDistribution(78, "r012", 24, 120688, 2300),
+                new SupervisorDistribution(150, "r013", 48, 177748, 4700),
+                new SupervisorDistribution(76, "r014", 36, 181362, 3500),
+                new SupervisorDistribution(38, "r015", 48, 174431, 4700),
+                new SupervisorDistribution(78, "r016", 36, 181375, 3500),
+                new SupervisorDistribution(72, "r017", 36, 181362, 3500),
+                new SupervisorDistribution(80, "r018", 36, 181362, 3500),
+                new SupervisorDistribution(76, "r019", 36, 181362, 3500),
+                new SupervisorDistribution(78, "r020", 24, 120696, 2300),
+                new SupervisorDistribution(80, "r021", 24, 120696, 2300)
+            );
+        }
+
+        public static String clusterCapacity(Collection<SupervisorDistribution> supervisorDistributions) {
+            long cpuPercent = 0;
+            long memoryMb = 0;
+            int supervisorCnt = 0;
+            Set<String> racks = new HashSet<>();
+
+            for (SupervisorDistribution x: supervisorDistributions) {
+                memoryMb += (x.supervisorCnt * x.memoryMb);
+                cpuPercent += (x.supervisorCnt * x.cpuPercent);
+                supervisorCnt += x.supervisorCnt;
+                racks.add(x.rackId);
+            };
+            return String.format("Cluster summary: Racks=%d, Supervisors=%d, memoryMb=%d, cpuPercent=%d",
+                racks.size(), supervisorCnt, memoryMb, cpuPercent);
+        }
     }
 
     public static class INimbusTest implements INimbus {
