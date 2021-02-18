@@ -70,6 +70,7 @@ public class TestLargeCluster {
 
     public static final String TEST_CLUSTER_01 = "largeCluster01";
     public static final String TEST_CLUSTER_02 = "largeCluster02";
+    public static final String TEST_CLUSTER_03 = "largeCluster03";
 
     public static final String TEST_CLUSTER_NAME = TEST_CLUSTER_02;
     public static final String TEST_RESOURCE_PATH = "clusterconf/" + TEST_CLUSTER_NAME;
@@ -327,20 +328,26 @@ public class TestLargeCluster {
      */
     private static Map<String, SupervisorDetails> createSupervisors(int reducedSupervisorsPerRack) {
         if (TEST_CLUSTER_NAME.equals(TEST_CLUSTER_02)) {
-            return createSupervisorsForCluster02(reducedSupervisorsPerRack);
+            Collection<SupervisorDistribution> supervisorDistributions = SupervisorDistribution.getSupervisorDistribution02();
+            return createSupervisors(supervisorDistributions, reducedSupervisorsPerRack);
+        } else if (TEST_CLUSTER_NAME.equals(TEST_CLUSTER_03)) {
+            Collection<SupervisorDistribution> supervisorDistributions = SupervisorDistribution.getSupervisorDistribution03();
+            return createSupervisors(supervisorDistributions, reducedSupervisorsPerRack);
         } else {
             return createSupervisorsForCluster01(reducedSupervisorsPerRack);
         }
     }
 
     /**
-     * Create supervisors for a newer {@link #TEST_CLUSTER_02} cluster configuration to mimic a large cluster in use.
+     * Create supervisors based on a predefined supervisor distribution modeled after an existing
+     * large cluster in use.
      *
+     * @param supervisorDistributions supervisor distribution to use.
      * @param reducedSupervisorsPerRack number of supervisors to reduce per rack.
      * @return created supervisors.
      */
-    private static Map<String, SupervisorDetails> createSupervisorsForCluster02(int reducedSupervisorsPerRack) {
-        Collection<SupervisorDistribution> supervisorDistributions = SupervisorDistribution.getSupervisorDistribution02();
+    private static Map<String, SupervisorDetails> createSupervisors(
+        Collection<SupervisorDistribution> supervisorDistributions, int reducedSupervisorsPerRack) {
         Map<String, Collection<SupervisorDistribution>> byRackId = SupervisorDistribution.mapByRackId(supervisorDistributions);
         LOG.info("Cluster={}, Designed capacity: {}", TEST_CLUSTER_NAME, SupervisorDistribution.clusterCapacity(supervisorDistributions));
 
@@ -509,6 +516,14 @@ public class TestLargeCluster {
                 new SupervisorDistribution(76, "r019", 36, 181362, 3500),
                 new SupervisorDistribution(78, "r020", 24, 120696, 2300),
                 new SupervisorDistribution(80, "r021", 24, 120696, 2300)
+            );
+        }
+
+        public static Collection<SupervisorDistribution> getSupervisorDistribution03() {
+            return Arrays.asList(
+                // Cnt, Rack,    Slot, Mem, CPU
+                new SupervisorDistribution(40, "r001", 12, 58829, 1100),
+                new SupervisorDistribution(40, "r002", 12, 58829, 1100)
             );
         }
 
