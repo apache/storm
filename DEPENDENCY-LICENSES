@@ -596,11 +596,9 @@ List of third-party dependencies grouped by their license type.
     Common Development and Distribution License
 
         * Expression Language 3.0 (org.glassfish:javax.el:3.0.0 - http://el-spec.java.net)
-        * Expression Language 3.0 (org.glassfish:javax.el:3.0.1-b12 - http://uel.java.net)
         * JavaServer Pages(TM) API (javax.servlet.jsp:javax.servlet.jsp-api:2.3.1 - http://jsp.java.net)
         * Java Servlet API (javax.servlet:javax.servlet-api:3.1.0 - http://servlet-spec.java.net)
         * javax.annotation API (javax.annotation:javax.annotation-api:1.3.2 - http://jcp.org/en/jsr/detail?id=250)
-        * JSP implementation (org.glassfish.web:javax.servlet.jsp:2.3.2 - http://jsp.java.net)
 
     Common Development and Distribution License (CDDL) v1.0
 
