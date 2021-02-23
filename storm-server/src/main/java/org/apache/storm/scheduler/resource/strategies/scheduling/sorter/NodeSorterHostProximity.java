@@ -39,6 +39,7 @@ import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SchedulerAssignment;
+import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.RasNode;
@@ -48,6 +49,7 @@ import org.apache.storm.scheduler.resource.normalization.NormalizedResourceReque
 import org.apache.storm.scheduler.resource.strategies.scheduling.BaseResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.ObjectResourcesItem;
 import org.apache.storm.scheduler.resource.strategies.scheduling.ObjectResourcesSummary;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,8 +67,7 @@ public class NodeSorterHostProximity implements INodeSorter {
     private final Map<String, String> superIdToRack = new HashMap<>();
     private final Map<String, List<RasNode>> hostnameToNodes = new HashMap<>();
     private final Map<String, String> nodeIdToHostname = new HashMap<>();
-    //private final Map<String, List<RasNode>> rackIdToNodes = new HashMap<>();
-    private final Map<String, List<String>> rackIdToHosts = new HashMap<>();
+    private final Map<String, Set<String>> rackIdToHosts;
     protected List<String> greyListedSupervisorIds;
 
     // Instance variables from Cluster and TopologyDetails.
@@ -103,18 +104,22 @@ public class NodeSorterHostProximity implements INodeSorter {
 
         // from Cluster
         networkTopography = cluster.getNetworkTopography();
+        greyListedSupervisorIds = cluster.getGreyListedSupervisors();
         Map<String, String> hostToRack = cluster.getHostToRack();
         RasNodes nodes = new RasNodes(cluster);
         for (RasNode node: nodes.getNodes()) {
             String superId = node.getId();
             String hostName = node.getHostname();
+            if (hostName == null) {
+                // ignore supervisors on blacklistedHosts
+                continue;
+            }
             String rackId = hostToRack.getOrDefault(hostName, DNSToSwitchMapping.DEFAULT_RACK);
             superIdToRack.put(superId, rackId);
             hostnameToNodes.computeIfAbsent(hostName, (hn) -> new ArrayList<>()).add(node);
             nodeIdToHostname.put(superId, hostName);
-            rackIdToHosts.computeIfAbsent(rackId, id -> new ArrayList<>()).add(hostName);
         }
-        this.greyListedSupervisorIds = cluster.getGreyListedSupervisors();
+        rackIdToHosts = computeRackToHosts(cluster, superIdToRack);
 
         // from TopologyDetails
         Map<String, Object> topoConf = topologyDetails.getConf();
@@ -125,6 +130,11 @@ public class NodeSorterHostProximity implements INodeSorter {
         favoredNodeIds.removeAll(greyListedSupervisorIds);
         unFavoredNodeIds.removeAll(greyListedSupervisorIds);
         unFavoredNodeIds.removeAll(favoredNodeIds);
+    }
+
+    @VisibleForTesting
+    public Map<String, Set<String>> getRackIdToHosts() {
+        return rackIdToHosts;
     }
 
     @Override
@@ -392,12 +402,12 @@ public class NodeSorterHostProximity implements INodeSorter {
      * calculation, nodes nodes that have more balanced resource availability. So we will be less likely to pick a node that have a lot of
      * one resource but a low amount of another.
      *
-     * @param availHosts a list of all the hosts we want to sort
+     * @param availHosts a collection of all the hosts we want to sort
      * @param rackId     the rack id availNodes are a part of
      * @return an iterable of sorted hosts.
      */
     private Iterable<ObjectResourcesItem> sortHosts(
-            List<String> availHosts, ExecutorDetails exec, String rackId,
+            Collection<String> availHosts, ExecutorDetails exec, String rackId,
             Map<String, AtomicInteger> scheduledCount) {
         ObjectResourcesSummary rackResourcesSummary = new ObjectResourcesSummary("RACK");
         availHosts.forEach(h -> {
@@ -604,7 +614,7 @@ public class NodeSorterHostProximity implements INodeSorter {
 
         private Iterable<ObjectResourcesItem> getSortedHostsForRack(String rackId) {
             return cachedHosts.computeIfAbsent(rackId,
-                id -> sortHosts(rackIdToHosts.getOrDefault(id, Collections.emptyList()), exec, id, perHostScheduledCount));
+                id -> sortHosts(rackIdToHosts.getOrDefault(id, Collections.emptySet()), exec, id, perHostScheduledCount));
         }
 
         private Iterable<ObjectResourcesItem> getSortedNodesForHost(String hostId) {
@@ -620,39 +630,80 @@ public class NodeSorterHostProximity implements INodeSorter {
 
     @Override
     public Iterable<String> sortAllNodes() {
-        //LOG.info("sortAllNodes():cachedLazyNodeIterators.size={}, execRequestResourceKey={}",
-        //            cachedLazyNodeIterators.size(), execRequestResourcesKey);
-        //return cachedLazyNodeIterators.computeIfAbsent(execRequestResourcesKey, k -> new LazyNodeSorting(exec));
         return new LazyNodeSorting(exec);
     }
 
-    private ObjectResourcesSummary createClusterSummarizedResources() {
-        ObjectResourcesSummary clusterResourcesSummary = new ObjectResourcesSummary("Cluster");
+    /**
+     * Create rack to hosts mapping based on networkTopography, but also add information
+     * from supervisors. The latter action is necessary when networkTopography is not reliably complete.
+     *
+     * @return host list for each rack.
+     */
+    private static Map<String, Set<String>> computeRackToHosts(Cluster cluster, Map<String, String> superIdToRack) {
 
-        //This is the first time so initialize the resources.
-        for (Map.Entry<String, List<String>> entry : networkTopography.entrySet()) {
-            String rackId = entry.getKey();
-            List<String> nodeHosts = entry.getValue();
-            ObjectResourcesItem rack = new ObjectResourcesItem(rackId);
-            for (String nodeHost : nodeHosts) {
-                for (RasNode node : hostnameToNodes(nodeHost)) {
-                    rack.availableResources.add(node.getTotalAvailableResources());
-                    rack.totalResources.add(node.getTotalAvailableResources());
+        Set<String> seenHosts = new HashSet<>();
+
+        Map<String, Set<String>> rackToHosts = new HashMap<>();
+        cluster.getNetworkTopography().forEach((rackId, hosts) -> {
+            for (String host: hosts) {
+                if (cluster.isBlacklistedHost(host)) {
+                    continue;
                 }
+                rackToHosts.computeIfAbsent(rackId, r -> new HashSet<>()).add(host);
+                seenHosts.add(host);
             }
-            clusterResourcesSummary.addObjectResourcesItem(rack);
+        });
+
+        // Add rack->hosts for alive supervisor hosts if not accouted for above.
+        // If supervisors and networkTopography are in sync, then the following code is can be removed
+        // ref TestNodeSorterHostProximity.testWithImpairedClusterNetworkTopography
+        for (Map.Entry<String, SupervisorDetails> entry : cluster.getSupervisors().entrySet()) {
+            SupervisorDetails supervisorDetails = entry.getValue();
+            String nodeId = supervisorDetails.getId();
+            String hostId = supervisorDetails.getHost();
+            if (seenHosts.contains(hostId) || cluster.isBlacklistedHost(hostId)) {
+                continue;
+            }
+            seenHosts.add(hostId);
+            String rackId = superIdToRack.getOrDefault(nodeId, DNSToSwitchMapping.DEFAULT_RACK);
+            Set<String> hosts = rackToHosts.computeIfAbsent(rackId, r -> new HashSet<>());
+            if (!hosts.contains(hostId)) {
+                hosts.add(hostId);
+                LOG.warn("cluster.networkTopography is missing host={}, added in rack={}", hostId, rackId);
+            }
         }
+        return rackToHosts;
+    }
+
+    private ObjectResourcesSummary createClusterSummarizedResources() {
+        // create ObjectResourcesSummary for the cluster - with details for each rack
+        ObjectResourcesSummary clusterResourcesSummary = new ObjectResourcesSummary("Cluster");
+        rackIdToHosts.forEach((rackId, hostIds) -> {
+            if (hostIds == null || hostIds.isEmpty()) {
+                LOG.info("Ignoring Rack {} since it has no hosts", rackId);
+            } else {
+                ObjectResourcesItem rack = new ObjectResourcesItem(rackId);
+                for (String hostId : hostIds) {
+                    for (RasNode node : hostnameToNodes(hostId)) {
+                        rack.availableResources.add(node.getTotalAvailableResources());
+                        rack.totalResources.add(node.getTotalAvailableResources());
+                    }
+                }
+                clusterResourcesSummary.addObjectResourcesItem(rack);
+            }
+        });
 
         LOG.debug(
-            "Cluster Overall Avail [ {} ] Total [ {} ]",
+            "Cluster Overall Avail [ {} ] Total [ {} ], rackCnt={}, hostCnt={}",
             clusterResourcesSummary.getAvailableResourcesOverall(),
-            clusterResourcesSummary.getTotalResourcesOverall());
+            clusterResourcesSummary.getTotalResourcesOverall(),
+            clusterResourcesSummary.getObjectResources().size(),
+            rackIdToHosts.values().stream().mapToInt(x -> x.size()).sum());
         return clusterResourcesSummary;
     }
 
     public Map<String, AtomicInteger> getScheduledExecCntByRackId() {
-        String topoId = topologyDetails.getId();
-        SchedulerAssignment assignment = cluster.getAssignmentById(topoId);
+        SchedulerAssignment assignment = cluster.getAssignmentById(topologyDetails.getId());
         Map<String, AtomicInteger> scheduledCount = new HashMap<>();
         if (assignment != null) {
             for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> entry :

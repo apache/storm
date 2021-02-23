@@ -69,6 +69,7 @@ import java.util.stream.StreamSupport;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -839,4 +840,215 @@ public class TestNodeSorterHostProximity {
                 1, assignedRacks.size());
     }
 
+    /**
+     * Assign and then clear out a rack to host list mapping in cluster.networkTopography.
+     * Expected behavior is that:
+     *  <li>the rack without hosts does not show up in {@link NodeSorterHostProximity#getSortedRacks()}</li>
+     *  <li>all the supervisor nodes still get returned in {@link NodeSorterHostProximity#sortAllNodes()} ()}</li>
+     *  <li>supervisors on cleared rack show up show up under {@link DNSToSwitchMapping#DEFAULT_RACK}</li>
+     *
+     *  <p>
+     *      Force an usual condition, where one of the racks is still passed to LazyNodeSortingIterator with
+     *      an empty list and then ensure that code is resilient.
+     *  </p>
+     */
+    @Test
+    void testWithImpairedClusterNetworkTopography() {
+        INimbus iNimbus = new INimbusTest();
+        double compPcore = 100;
+        double compOnHeap = 775;
+        double compOffHeap = 25;
+        int topo1NumSpouts = 1;
+        int topo1NumBolts = 5;
+        int topo1SpoutParallelism = 100;
+        int topo1BoltParallelism = 200;
+        final int numSupersPerRack = 10;
+        final int numPortsPerSuper = 66;
+        long compPerRack = (topo1NumSpouts * topo1SpoutParallelism + topo1NumBolts * topo1BoltParallelism + 10);
+        long compPerSuper =  compPerRack / numSupersPerRack;
+        double cpuPerSuper = compPcore * compPerSuper;
+        double memPerSuper = (compOnHeap + compOffHeap) * compPerSuper;
+        double topo1MaxHeapSize = memPerSuper;
+        final String topoName1 = "topology1";
+        int numRacks = 3;
+
+        Map<String, SupervisorDetails> supMap = genSupervisorsWithRacks(numRacks, numSupersPerRack,  numPortsPerSuper,
+            0, 0, cpuPerSuper, memPerSuper, new HashMap<>());
+        TestDNSToSwitchMapping testDNSToSwitchMapping = new TestDNSToSwitchMapping(supMap.values());
+
+        Config config = new Config();
+        config.putAll(createGrasClusterConfig(compPcore, compOnHeap, compOffHeap, null, null));
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, GenericResourceAwareStrategy.class.getName());
+
+        IScheduler scheduler = new ResourceAwareScheduler();
+        scheduler.prepare(config, new StormMetricsRegistry());
+
+        TopologyDetails td1 = genTopology(topoName1, config, topo1NumSpouts,
+            topo1NumBolts, topo1SpoutParallelism, topo1BoltParallelism, 0, 0, "user", topo1MaxHeapSize);
+
+        Topologies topologies = new Topologies(td1);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+        cluster.setNetworkTopography(testDNSToSwitchMapping.getRackToHosts());
+
+        Map<String, List<String>> networkTopography = cluster.getNetworkTopography();
+        assertEquals("Expecting " + numRacks + " racks found " + networkTopography.size(), numRacks, networkTopography.size());
+        assertTrue("Expecting racks count to be >= 3, found " + networkTopography.size(), networkTopography.size() >= 3);
+
+        // Impair cluster.networkTopography and set one rack to have zero hosts, getSortedRacks should exclude this rack.
+        // Keep, the supervisorDetails unchanged - confirm that these nodes are not lost even with incomplete networkTopography
+        String rackIdToZero = networkTopography.keySet().stream().findFirst().get();
+        impairClusterRack(cluster, rackIdToZero, true, false);
+
+        NodeSorterHostProximity nodeSorterHostProximity = new NodeSorterHostProximity(cluster, td1);
+        nodeSorterHostProximity.getSortedRacks().forEach(x -> assertNotEquals(x.id, rackIdToZero));
+
+        // confirm that the above action has not lost the hosts and that they appear under the DEFAULT rack
+        {
+            Set<String> seenRacks = new HashSet<>();
+            nodeSorterHostProximity.getSortedRacks().forEach(x -> seenRacks.add(x.id));
+            assertEquals("Expecting rack cnt to be still " + numRacks, numRacks, seenRacks.size());
+            assertTrue("Expecting to see default-rack=" + DNSToSwitchMapping.DEFAULT_RACK + " in sortedRacks",
+                seenRacks.contains(DNSToSwitchMapping.DEFAULT_RACK));
+        }
+
+        // now check if node/supervisor is missing when sorting all nodes
+        Set<String> expectedNodes = supMap.keySet();
+        Set<String> seenNodes = new HashSet<>();
+        nodeSorterHostProximity.prepare(null);
+        nodeSorterHostProximity.sortAllNodes().forEach( n -> seenNodes.add(n));
+        assertEquals("Expecting see all supervisors ", expectedNodes, seenNodes);
+
+        // Now fully impair the cluster - confirm no default rack
+        {
+            cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+            cluster.setNetworkTopography(new TestDNSToSwitchMapping(supMap.values()).getRackToHosts());
+            impairClusterRack(cluster, rackIdToZero, true, true);
+            Set<String> seenRacks = new HashSet<>();
+            NodeSorterHostProximity nodeSorterHostProximity2 = new NodeSorterHostProximity(cluster, td1);
+            nodeSorterHostProximity2.getSortedRacks().forEach(x -> seenRacks.add(x.id));
+            Map<String, Set<String>> rackIdToHosts = nodeSorterHostProximity2.getRackIdToHosts();
+            String dumpOfRacks = rackIdToHosts.entrySet().stream()
+                .map(x -> String.format("rack %s -> hosts [%s]", x.getKey(), String.join(",", x.getValue())))
+                .collect(Collectors.joining("\n\t"));
+            assertEquals("Expecting rack cnt to be " + (numRacks - 1) + " but found " + seenRacks.size() + "\n\t" + dumpOfRacks,
+                numRacks - 1, seenRacks.size());
+            assertFalse("Found default-rack=" + DNSToSwitchMapping.DEFAULT_RACK + " in \n\t" + dumpOfRacks,
+                seenRacks.contains(DNSToSwitchMapping.DEFAULT_RACK));
+        }
+    }
+
+    /**
+     * Black list all nodes for a rack before sorting nodes.
+     * Confirm that {@link NodeSorterHostProximity#sortAllNodes()} still works.
+     *
+     */
+    @Test
+    void testWithBlackListedHosts() {
+        INimbus iNimbus = new INimbusTest();
+        double compPcore = 100;
+        double compOnHeap = 775;
+        double compOffHeap = 25;
+        int topo1NumSpouts = 1;
+        int topo1NumBolts = 5;
+        int topo1SpoutParallelism = 100;
+        int topo1BoltParallelism = 200;
+        final int numSupersPerRack = 10;
+        final int numPortsPerSuper = 66;
+        long compPerRack = (topo1NumSpouts * topo1SpoutParallelism + topo1NumBolts * topo1BoltParallelism + 10);
+        long compPerSuper =  compPerRack / numSupersPerRack;
+        double cpuPerSuper = compPcore * compPerSuper;
+        double memPerSuper = (compOnHeap + compOffHeap) * compPerSuper;
+        double topo1MaxHeapSize = memPerSuper;
+        final String topoName1 = "topology1";
+        int numRacks = 3;
+
+        Map<String, SupervisorDetails> supMap = genSupervisorsWithRacks(numRacks, numSupersPerRack,  numPortsPerSuper,
+            0, 0, cpuPerSuper, memPerSuper, new HashMap<>());
+        TestDNSToSwitchMapping testDNSToSwitchMapping = new TestDNSToSwitchMapping(supMap.values());
+
+        Config config = new Config();
+        config.putAll(createGrasClusterConfig(compPcore, compOnHeap, compOffHeap, null, null));
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, GenericResourceAwareStrategy.class.getName());
+
+        IScheduler scheduler = new ResourceAwareScheduler();
+        scheduler.prepare(config, new StormMetricsRegistry());
+
+        TopologyDetails td1 = genTopology(topoName1, config, topo1NumSpouts,
+            topo1NumBolts, topo1SpoutParallelism, topo1BoltParallelism, 0, 0, "user", topo1MaxHeapSize);
+
+        Topologies topologies = new Topologies(td1);
+        Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+        cluster.setNetworkTopography(testDNSToSwitchMapping.getRackToHosts());
+
+        Map<String, List<String>> networkTopography = cluster.getNetworkTopography();
+        assertEquals("Expecting " + numRacks + " racks found " + networkTopography.size(), numRacks, networkTopography.size());
+        assertTrue("Expecting racks count to be >= 3, found " + networkTopography.size(), networkTopography.size() >= 3);
+
+        Set<String> blackListedHosts = new HashSet<>();
+        List<SupervisorDetails> supArray = new ArrayList<>(supMap.values());
+        for (int i = 0 ; i < numSupersPerRack ; i++) {
+            blackListedHosts.add(supArray.get(i).getHost());
+        }
+        blacklistHostsAndSortNodes(blackListedHosts, supMap.values(), cluster, td1);
+
+        String rackToClear = cluster.getNetworkTopography().keySet().stream().findFirst().get();
+        blackListedHosts = new HashSet<>(cluster.getNetworkTopography().get(rackToClear));
+        blacklistHostsAndSortNodes(blackListedHosts, supMap.values(), cluster, td1);
+    }
+
+    // Impair cluster by blacklisting some hosts
+    private void blacklistHostsAndSortNodes(
+        Set<String> blackListedHosts, Collection<SupervisorDetails> sups, Cluster cluster, TopologyDetails td1) {
+        LOG.info("blackListedHosts={}", blackListedHosts);
+        cluster.setBlacklistedHosts(blackListedHosts);
+
+        NodeSorterHostProximity nodeSorterHostProximity = new NodeSorterHostProximity(cluster, td1);
+        // confirm that the above action loses hosts
+        {
+            Set<String> allHosts = sups.stream().map(x -> x.getHost()).collect(Collectors.toSet());
+            Set<String> seenRacks = new HashSet<>();
+            nodeSorterHostProximity.getSortedRacks().forEach(x -> seenRacks.add(x.id));
+            Set<String> seenHosts = new HashSet<>();
+            nodeSorterHostProximity.getRackIdToHosts().forEach((k,v) -> seenHosts.addAll(v));
+            allHosts.removeAll(seenHosts);
+            assertEquals("Expecting only blacklisted hosts removed", allHosts, blackListedHosts);
+        }
+
+        // now check if sortAllNodes still works
+        Set<String> expectedNodes = sups.stream()
+            .filter(x -> !blackListedHosts.contains(x.getHost()))
+            .map(x ->x.getId())
+            .collect(Collectors.toSet());
+        Set<String> seenNodes = new HashSet<>();
+            nodeSorterHostProximity.prepare(null);
+            nodeSorterHostProximity.sortAllNodes().forEach( n -> seenNodes.add(n));
+        assertEquals("Expecting see all supervisors ", expectedNodes, seenNodes);
+    }
+
+    /**
+     * Impair the cluster for a specified rackId.
+     *  <li>making the host list a zero length</li>
+     *  <li>removing supervisors for the hosts on the rack</li>
+     *
+     * @param cluster cluster to impair
+     * @param rackId rackId to clear
+     * @param clearNetworkTopography if true, then clear (but not remove) the hosts in list for the rack.
+     * @param clearSupervisorMap if true, then remove supervisors for the rack.
+     */
+    private void impairClusterRack(Cluster cluster, String rackId, boolean clearNetworkTopography, boolean clearSupervisorMap) {
+        Set<String> hostIds = new HashSet<>(cluster.getNetworkTopography().computeIfAbsent(rackId, k -> new ArrayList<>()));
+        if (clearNetworkTopography) {
+            cluster.getNetworkTopography().computeIfAbsent(rackId, k -> new ArrayList<>()).clear();
+        }
+        if (clearSupervisorMap) {
+            Set<String> supToRemove = new HashSet<>();
+            for (String hostId: hostIds) {
+                cluster.getSupervisorsByHost(hostId).forEach(s -> supToRemove.add(s.getId()));
+            }
+            Map<String, SupervisorDetails> supervisorDetailsMap = cluster.getSupervisors();
+            for (String supId: supToRemove) {
+                supervisorDetailsMap.remove(supId);
+            }
+        }
+    }
 }
