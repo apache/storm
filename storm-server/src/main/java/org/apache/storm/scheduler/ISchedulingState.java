@@ -286,7 +286,7 @@ public interface ISchedulingState {
     Map<String, List<String>> getNetworkTopography();
 
     /**
-     * Get host -> rack map - the inverse of networkTopography..
+     * Get host -> rack map - the inverse of networkTopography.
      */
     default Map<String, String> getHostToRack() {
         Map<String, String> ret = new HashMap<>();
