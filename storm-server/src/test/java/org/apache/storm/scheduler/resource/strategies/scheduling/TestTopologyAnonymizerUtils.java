@@ -66,8 +66,6 @@ import java.util.Map;
 public class TestTopologyAnonymizerUtils {
     private static final Logger LOG = LoggerFactory.getLogger(TestTopologyAnonymizerUtils.class);
 
-    // iridiumblue -> largeCluster02 (prior largeCluster01)
-    // ebonyred -> largeCluster03
     private static final String DEFAULT_ORIGINAL_RESOURCES_PATH = "clusterconf/ebonyred";
     private static final String DEFAULT_ANONYMIZED_RESOURCES_OUTDIR = "src/test/resources/clusterconf/largeCluster03";
     public static final String COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING = "stormcode.ser";
