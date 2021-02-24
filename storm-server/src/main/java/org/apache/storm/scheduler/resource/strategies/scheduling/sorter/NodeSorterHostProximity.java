@@ -33,13 +33,11 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 import org.apache.storm.Config;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SchedulerAssignment;
-import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.RasNode;
@@ -67,7 +65,7 @@ public class NodeSorterHostProximity implements INodeSorter {
     private final Map<String, String> superIdToRack = new HashMap<>();
     private final Map<String, List<RasNode>> hostnameToNodes = new HashMap<>();
     private final Map<String, String> nodeIdToHostname = new HashMap<>();
-    private final Map<String, Set<String>> rackIdToHosts;
+    private final Map<String, Set<String>> rackIdToHosts = new HashMap<>();
     protected List<String> greyListedSupervisorIds;
 
     // Instance variables from Cluster and TopologyDetails.
@@ -110,16 +108,15 @@ public class NodeSorterHostProximity implements INodeSorter {
         for (RasNode node: nodes.getNodes()) {
             String superId = node.getId();
             String hostName = node.getHostname();
-            if (hostName == null) {
-                // ignore supervisors on blacklistedHosts
+            if (!node.isAlive() || hostName == null) {
                 continue;
             }
             String rackId = hostToRack.getOrDefault(hostName, DNSToSwitchMapping.DEFAULT_RACK);
             superIdToRack.put(superId, rackId);
             hostnameToNodes.computeIfAbsent(hostName, (hn) -> new ArrayList<>()).add(node);
             nodeIdToHostname.put(superId, hostName);
+            rackIdToHosts.computeIfAbsent(rackId, r -> new HashSet<>()).add(hostName);
         }
-        rackIdToHosts = computeRackToHosts(cluster, superIdToRack);
 
         // from TopologyDetails
         Map<String, Object> topoConf = topologyDetails.getConf();
@@ -140,28 +137,6 @@ public class NodeSorterHostProximity implements INodeSorter {
     @Override
     public void prepare(ExecutorDetails exec) {
         this.exec = exec;
-    }
-
-    /**
-     * Get a key corresponding to this executor resource request. The key contains all non-zero resources requested by
-     * the executor.
-     *
-     * <p>This key can be used to retrieve pre-sorted list of racks/hosts/nodes. So executors with similar set of
-     * rare resource request will be reuse the same cached list instead of creating a new sorted list of nodes.</p>
-     *
-     * @param exec executor whose requested resources are being examined.
-     * @return a set of resource names that have values greater that zero.
-     */
-    public Set<String> getExecRequestKey(@Nonnull ExecutorDetails exec) {
-        NormalizedResourceRequest requestedResources = topologyDetails.getTotalResources(exec);
-        Set<String> retVal = new HashSet<>();
-        requestedResources.toNormalizedMap().entrySet().forEach(
-            e -> {
-                if (e.getValue() > 0.0) {
-                    retVal.add(e.getKey());
-                }
-            });
-        return retVal;
     }
 
     /**
@@ -633,50 +608,7 @@ public class NodeSorterHostProximity implements INodeSorter {
         return new LazyNodeSorting(exec);
     }
 
-    /**
-     * Create rack to hosts mapping based on networkTopography, but also add information
-     * from supervisors. The latter action is necessary when networkTopography is not reliably complete.
-     *
-     * @return host list for each rack.
-     */
-    private static Map<String, Set<String>> computeRackToHosts(Cluster cluster, Map<String, String> superIdToRack) {
-
-        Set<String> seenHosts = new HashSet<>();
-
-        Map<String, Set<String>> rackToHosts = new HashMap<>();
-        cluster.getNetworkTopography().forEach((rackId, hosts) -> {
-            for (String host: hosts) {
-                if (cluster.isBlacklistedHost(host)) {
-                    continue;
-                }
-                rackToHosts.computeIfAbsent(rackId, r -> new HashSet<>()).add(host);
-                seenHosts.add(host);
-            }
-        });
-
-        // Add rack->hosts for alive supervisor hosts if not accouted for above.
-        // If supervisors and networkTopography are in sync, then the following code is can be removed
-        // ref TestNodeSorterHostProximity.testWithImpairedClusterNetworkTopography
-        for (Map.Entry<String, SupervisorDetails> entry : cluster.getSupervisors().entrySet()) {
-            SupervisorDetails supervisorDetails = entry.getValue();
-            String nodeId = supervisorDetails.getId();
-            String hostId = supervisorDetails.getHost();
-            if (seenHosts.contains(hostId) || cluster.isBlacklistedHost(hostId)) {
-                continue;
-            }
-            seenHosts.add(hostId);
-            String rackId = superIdToRack.getOrDefault(nodeId, DNSToSwitchMapping.DEFAULT_RACK);
-            Set<String> hosts = rackToHosts.computeIfAbsent(rackId, r -> new HashSet<>());
-            if (!hosts.contains(hostId)) {
-                hosts.add(hostId);
-                LOG.warn("cluster.networkTopography is missing host={}, added in rack={}", hostId, rackId);
-            }
-        }
-        return rackToHosts;
-    }
-
     private ObjectResourcesSummary createClusterSummarizedResources() {
-        // create ObjectResourcesSummary for the cluster - with details for each rack
         ObjectResourcesSummary clusterResourcesSummary = new ObjectResourcesSummary("Cluster");
         rackIdToHosts.forEach((rackId, hostIds) -> {
             if (hostIds == null || hostIds.isEmpty()) {
@@ -686,7 +618,7 @@ public class NodeSorterHostProximity implements INodeSorter {
                 for (String hostId : hostIds) {
                     for (RasNode node : hostnameToNodes(hostId)) {
                         rack.availableResources.add(node.getTotalAvailableResources());
-                        rack.totalResources.add(node.getTotalAvailableResources());
+                        rack.totalResources.add(node.getTotalResources());
                     }
                 }
                 clusterResourcesSummary.addObjectResourcesItem(rack);
