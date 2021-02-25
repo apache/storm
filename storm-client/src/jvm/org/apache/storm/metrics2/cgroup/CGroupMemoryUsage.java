@@ -10,25 +10,38 @@
  * and limitations under the License.
  */
 
-package org.apache.storm.metric.cgroup;
+package org.apache.storm.metrics2.cgroup;
 
+import com.codahale.metrics.Gauge;
+import java.io.IOException;
 import java.util.Map;
 import org.apache.storm.container.cgroup.SubSystemType;
-import org.apache.storm.container.cgroup.core.CgroupCore;
 import org.apache.storm.container.cgroup.core.MemoryCore;
+import org.apache.storm.metrics2.WorkerMetricRegistrant;
+import org.apache.storm.task.TopologyContext;
 
 /**
  * Reports the current memory usage of the cgroup for this worker.
  */
-@Deprecated
-public class CGroupMemoryUsage extends CGroupMetricsBase<Long> {
+public class CGroupMemoryUsage extends CGroupMetricsBase implements WorkerMetricRegistrant {
 
     public CGroupMemoryUsage(Map<String, Object> conf) {
         super(conf, SubSystemType.memory);
     }
 
     @Override
-    public Long getDataFrom(CgroupCore core) throws Exception {
-        return ((MemoryCore) core).getPhysicalUsage();
+    public void registerMetrics(TopologyContext topologyContext) {
+        if (enabled) {
+            topologyContext.registerGauge("CGroupMemoryUsage", new Gauge<Long>() {
+                @Override
+                public Long getValue() {
+                    try {
+                        return ((MemoryCore) core).getPhysicalUsage();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        }
     }
 }

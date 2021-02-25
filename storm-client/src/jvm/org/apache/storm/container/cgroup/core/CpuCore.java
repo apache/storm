@@ -82,23 +82,23 @@ public class CpuCore implements CgroupCore {
     }
 
     public static class Stat {
-        public final int nrPeriods;
-        public final int nrThrottled;
-        public final int throttledTime;
+        public final long nrPeriods;
+        public final long nrThrottled;
+        public final long throttledTime;
 
         public Stat(List<String> statStr) {
-            this.nrPeriods = Integer.parseInt(statStr.get(0).split(" ")[1]);
-            this.nrThrottled = Integer.parseInt(statStr.get(1).split(" ")[1]);
-            this.throttledTime = Integer.parseInt(statStr.get(2).split(" ")[1]);
+            this.nrPeriods = Long.parseLong(statStr.get(0).split(" ")[1]);
+            this.nrThrottled = Long.parseLong(statStr.get(1).split(" ")[1]);
+            this.throttledTime = Long.parseLong(statStr.get(2).split(" ")[1]);
         }
 
         @Override
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result + nrPeriods;
-            result = prime * result + nrThrottled;
-            result = prime * result + throttledTime;
+            result = prime * result + Long.hashCode(nrPeriods);
+            result = prime * result + Long.hashCode(nrThrottled);
+            result = prime * result + Long.hashCode(throttledTime);
             return result;
         }
 

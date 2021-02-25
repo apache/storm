@@ -10,20 +10,22 @@
  * and limitations under the License.
  */
 
-package org.apache.storm.metric.cgroup;
+package org.apache.storm.metrics2.cgroup;
 
+import com.codahale.metrics.Gauge;
+import java.io.IOException;
 import java.util.Map;
 import org.apache.storm.container.cgroup.SubSystemType;
-import org.apache.storm.container.cgroup.core.CgroupCore;
 import org.apache.storm.container.cgroup.core.MemoryCore;
+import org.apache.storm.metrics2.WorkerMetricRegistrant;
+import org.apache.storm.task.TopologyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Reports the current memory limit of the cgroup for this worker.
  */
-@Deprecated
-public class CGroupMemoryLimit extends CGroupMetricsBase<Long> {
+public class CGroupMemoryLimit extends CGroupMetricsBase implements WorkerMetricRegistrant {
     private static final Logger LOG = LoggerFactory.getLogger(CGroupMemoryLimit.class);
     private static final long BYTES_PER_MB = 1024 * 1024;
     private final long workerLimitBytes;
@@ -41,10 +43,22 @@ public class CGroupMemoryLimit extends CGroupMetricsBase<Long> {
     }
 
     @Override
-    public Long getDataFrom(CgroupCore core) throws Exception {
-        if (workerLimitBytes > 0) {
-            return workerLimitBytes;
+    public void registerMetrics(TopologyContext topologyContext) {
+        if (enabled) {
+            topologyContext.registerGauge("CGroupMemoryLimit", new Gauge<Long>() {
+                @Override
+                public Long getValue() {
+                    if (workerLimitBytes > 0) {
+                        return workerLimitBytes;
+                    }
+                    try {
+                        return ((MemoryCore) core).getPhysicalUsageLimit();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
         }
-        return ((MemoryCore) core).getPhysicalUsageLimit();
     }
+
 }

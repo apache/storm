@@ -407,11 +407,12 @@ storm.worker.min.cpu.pcore.percent: 0.0
 
 storm.topology.classpath.beginning.enabled: false
 worker.metrics:
-    "CGroupMemory": "org.apache.storm.metric.cgroup.CGroupMemoryUsage"
-    "CGroupMemoryLimit": "org.apache.storm.metric.cgroup.CGroupMemoryLimit"
-    "CGroupCpu": "org.apache.storm.metric.cgroup.CGroupCpu"
-    "CGroupCpuGuarantee": "org.apache.storm.metric.cgroup.CGroupCpuGuarantee"
-    "CGroupCpuGuaranteeByCfsQuota": "org.apache.storm.metric.cgroup.CGroupCpuGuaranteeByCfsQuota"
+    "CGroupMemory": "org.apache.storm.metrics2.cgroup.CGroupMemoryUsage"
+    "CGroupMemoryLimit": "org.apache.storm.metrics2.cgroup.CGroupMemoryLimit"
+    "CGroupCpu": "org.apache.storm.metrics2.cgroup.CGroupCpu"
+    "CGroupCpuGuarantee": "org.apache.storm.metrics2.cgroup.CGroupCpuGuarantee"
+    "CGroupCpuGuaranteeByCfsQuota": "org.apache.storm.metrics2.cgroup.CGroupCpuGuaranteeByCfsQuota"
+    "CGroupCpuStat": "org.apache.storm.metrics2.cgroup.CGroupCpuStat"
 
 # The number of buckets for running statistics
 num.stat.buckets: 20

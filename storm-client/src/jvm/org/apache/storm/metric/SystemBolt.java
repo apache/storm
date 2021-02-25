@@ -21,6 +21,7 @@ import java.lang.management.RuntimeMXBean;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metrics2.WorkerMetricRegistrant;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -95,7 +96,14 @@ public class SystemBolt implements IBolt {
         }
         for (Map.Entry<String, String> metric : metrics.entrySet()) {
             try {
-                context.registerMetric(metric.getKey(), (IMetric) ReflectionUtils.newInstance(metric.getValue(), conf), bucketSize);
+                Object workerMetric = ReflectionUtils.newInstance(metric.getValue(), conf);
+                if (workerMetric instanceof IMetric) {
+                    context.registerMetric(metric.getKey(), (IMetric) workerMetric, bucketSize);
+                } else if (workerMetric instanceof WorkerMetricRegistrant) {
+                    ((WorkerMetricRegistrant) workerMetric).registerMetrics(context);
+                } else {
+                    throw new RuntimeException("Invalid worker metric " + workerMetric);
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
