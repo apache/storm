@@ -406,19 +406,6 @@ public class NormalizedResources {
     }
 
     /**
-     * If the resource is negative, then make that resource positive.
-     * This will undo effects of {@link #updateForRareResourceAffinity(NormalizedResources)}.
-     */
-    public void revertUpdatesForRareResourceAffinity() {
-        int length = this.otherResources.length;
-        for (int i = 0; i < length; i++) {
-            if (this.otherResources[i] < 0.0) {
-                this.otherResources[i] = -this.otherResources[i];
-            }
-        }
-    }
-
-    /**
      * Set all resources to 0.
      */
     public void clear() {

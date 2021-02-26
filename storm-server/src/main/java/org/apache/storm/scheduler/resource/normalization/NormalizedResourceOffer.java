@@ -178,14 +178,6 @@ public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
         normalizedResources.updateForRareResourceAffinity(requestedResources.getNormalizedResources());
     }
 
-    /**
-     * If the resource is negative, then make that resource positive.
-     * This will undo effects of {@link #updateForRareResourceAffinity(NormalizedResourceRequest)}.
-     */
-    public void revertUpdatesForRareResourceAffinity() {
-        normalizedResources.revertUpdatesForRareResourceAffinity();
-    }
-
     @Override
     public void clear() {
         this.totalMemoryMb = 0.0;
