@@ -354,7 +354,7 @@ public class TestLargeCluster {
         Map<String, SupervisorDetails> retList = new HashMap<>();
         Map<String, AtomicInteger> seenRacks = new HashMap<>();
         byRackId.forEach((rackId, list) -> {
-            int tmpRackSupervisorCnt = list.stream().mapToInt(x -> x.supervisorCnt).sum() - Math.abs(reducedSupervisorsPerRack);
+            int tmpRackSupervisorCnt = list.stream().mapToInt(x -> x.supervisorCnt).sum();
             if (tmpRackSupervisorCnt > Math.abs(reducedSupervisorsPerRack)) {
                 tmpRackSupervisorCnt -= Math.abs(reducedSupervisorsPerRack);
             }
