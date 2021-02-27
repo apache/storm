@@ -228,16 +228,16 @@ public class NodeSorterHostProximity implements INodeSorter {
             } else if (execsScheduled1 < execsScheduled2) {
                 return 1;
             }
-            if (o1.minResourcePercent > o2.minResourcePercent) {
-                return -1;
-            } else if (o1.minResourcePercent < o2.minResourcePercent) {
-                return 1;
-            }
             double o1Avg = o1.avgResourcePercent;
             double o2Avg = o2.avgResourcePercent;
             if (o1Avg > o2Avg) {
                 return -1;
             } else if (o1Avg < o2Avg) {
+                return 1;
+            }
+            if (o1.minResourcePercent > o2.minResourcePercent) {
+                return -1;
+            } else if (o1.minResourcePercent < o2.minResourcePercent) {
                 return 1;
             }
             return o1.id.compareTo(o2.id);
