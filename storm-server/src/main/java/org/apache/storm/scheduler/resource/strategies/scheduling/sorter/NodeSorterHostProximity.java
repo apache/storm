@@ -275,10 +275,22 @@ public class NodeSorterHostProximity implements INodeSorter {
             final ObjectResourcesSummary allResources, ExecutorDetails exec,
             final ExistingScheduleFunc existingScheduleFunc) {
         ObjectResourcesSummary affinityBasedAllResources = new ObjectResourcesSummary(allResources);
-        NormalizedResourceRequest requestedResources = topologyDetails.getTotalResources(exec);
-        affinityBasedAllResources.getObjectResources()
-                .forEach(x -> x.availableResources.updateForRareResourceAffinity(requestedResources));
         final NormalizedResourceOffer availableResourcesOverall = allResources.getAvailableResourcesOverall();
+        final NormalizedResourceRequest requestedResources = (exec != null) ? topologyDetails.getTotalResources(exec) : null;
+        affinityBasedAllResources.getObjectResources().forEach(
+            x -> {
+                if (requestedResources != null) {
+                    // negate unrequested resources
+                    x.availableResources.updateForRareResourceAffinity(requestedResources);
+                }
+                x.minResourcePercent = availableResourcesOverall.calculateMinPercentageUsedBy(x.availableResources);
+                x.avgResourcePercent = availableResourcesOverall.calculateAveragePercentageUsedBy(x.availableResources);
+
+                LOG.trace("for {}: minResourcePercent={}, avgResourcePercent={}, numExistingSchedule={}",
+                    x.id, x.minResourcePercent, x.avgResourcePercent,
+                    existingScheduleFunc.getNumExistingSchedule(x.id));
+            }
+        );
 
         Comparator<ObjectResourcesItem> comparator = (o1, o2) -> {
             int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
@@ -288,8 +300,8 @@ public class NodeSorterHostProximity implements INodeSorter {
             } else if (execsScheduled1 < execsScheduled2) {
                 return 1;
             }
-            double o1Avg = availableResourcesOverall.calculateAveragePercentageUsedBy(o1.availableResources);
-            double o2Avg = availableResourcesOverall.calculateAveragePercentageUsedBy(o2.availableResources);
+            double o1Avg = o1.avgResourcePercent;
+            double o2Avg = o2.avgResourcePercent;
             if (o1Avg > o2Avg) {
                 return -1;
             } else if (o1Avg < o2Avg) {

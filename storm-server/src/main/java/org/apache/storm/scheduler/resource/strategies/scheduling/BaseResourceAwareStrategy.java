@@ -207,7 +207,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         LOG.debug("The max state search that will be used by topology {} is {}", topologyDetails.getId(), maxStateSearch);
 
         searcherState = createSearcherState();
-        setNodeSorter(new NodeSorterHostProximity(cluster, topologyDetails));
+        setNodeSorter(new NodeSorterHostProximity(cluster, topologyDetails, nodeSortType));
         setExecSorter(orderExecutorsByProximity
                 ? new ExecSorterByProximity(topologyDetails)
                 : new ExecSorterByConnectionCount(topologyDetails));

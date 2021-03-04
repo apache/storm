@@ -225,7 +225,7 @@ public class TestNodeSorterHostProximity {
         cluster.setNetworkTopography(rackToHosts);
         System.out.println("DEBUG: rackToHosts: " + rackToHosts.toString());
 
-        NodeSorterHostProximity nodeSorter = new NodeSorterHostProximity(cluster, topo1);
+        NodeSorterHostProximity nodeSorter = new NodeSorterHostProximity(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
         nodeSorter.prepare(null);
         List<ObjectResourcesItem> sortedRacks = StreamSupport.stream(nodeSorter.getSortedRacks().spliterator(), false)
                 .collect(Collectors.toList());
@@ -326,7 +326,7 @@ public class TestNodeSorterHostProximity {
         Map<String, List<String>> rackToHosts = testDNSToSwitchMapping.getRackToHosts();
         cluster.setNetworkTopography(rackToHosts);
 
-        NodeSorterHostProximity nodeSorter = new NodeSorterHostProximity(cluster, topo1);
+        NodeSorterHostProximity nodeSorter = new NodeSorterHostProximity(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
         nodeSorter.prepare(null);
         List<ObjectResourcesItem> sortedRacks = StreamSupport.stream(nodeSorter.getSortedRacks().spliterator(), false)
                 .collect(Collectors.toList());
@@ -845,7 +845,7 @@ public class TestNodeSorterHostProximity {
      * Expected behavior is that:
      *  <li>the rack without hosts does not show up in {@link NodeSorterHostProximity#getSortedRacks()}</li>
      *  <li>all the supervisor nodes still get returned in {@link NodeSorterHostProximity#sortAllNodes()} ()}</li>
-     *  <li>supervisors on cleared rack show up show up under {@link DNSToSwitchMapping#DEFAULT_RACK}</li>
+     *  <li>supervisors on cleared rack show up under {@link DNSToSwitchMapping#DEFAULT_RACK}</li>
      *
      *  <p>
      *      Force an usual condition, where one of the racks is still passed to LazyNodeSortingIterator with
