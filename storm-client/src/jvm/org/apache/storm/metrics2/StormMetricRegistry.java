@@ -198,7 +198,7 @@ public class StormMetricRegistry implements MetricRegistryProvider {
 
     private static <T extends Metric> void saveMetricTaskIdMapping(Integer taskId, MetricNames names, T metric, Map<Integer,
             Map<String, T>> taskIdMetrics) {
-        Map<String, T> metrics = taskIdMetrics.computeIfAbsent(taskId, (tid) -> new HashMap<>());
+        Map<String, T> metrics = taskIdMetrics.computeIfAbsent(taskId, (tid) -> new ConcurrentHashMap<>());
         metrics.put(names.getShortName(), metric);
     }
 
