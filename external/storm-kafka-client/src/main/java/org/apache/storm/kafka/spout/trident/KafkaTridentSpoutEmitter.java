@@ -115,7 +115,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
     }
 
     /**
-     * Acquires metric instances through registration with the TopologyContext
+     * Acquires metric instances through registration with the TopologyContext.
      */
     private void registerMetric() {
         LOG.info("Registering Spout Metrics");
@@ -193,10 +193,12 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
                     break;
                 }
                 if (record.offset() > currBatchMeta.getLastOffset()) {
-                    throw new RuntimeException(String.format("Error when re-emitting batch. Overshot the end of the batch."
-                                                             + " The batch end offset was [{%d}], but received [{%d}]."
-                                                             + " Ensure log compaction is disabled in Kafka, since it is incompatible with non-opaque transactional spouts.",
-                                                             currBatchMeta.getLastOffset(), record.offset()));
+                    throw new RuntimeException(String.format(
+                        "Error when re-emitting batch. Overshot the end of the batch."
+                        + " The batch end offset was [{%d}], but received [{%d}]."
+                        + " Ensure log compaction is disabled in Kafka, since it is"
+                        + " incompatible with non-opaque transactional spouts.",
+                        currBatchMeta.getLastOffset(), record.offset()));
                 }
                 emitTuple(collector, record);
             }
@@ -269,9 +271,10 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
     private void throwIfEmittingForUnassignedPartition(TopicPartition currBatchTp) {
         final Set<TopicPartition> assignments = consumer.assignment();
         if (!assignments.contains(currBatchTp)) {
-            throw new IllegalStateException("The spout is asked to emit tuples on a partition it is not assigned."
-                                            + " This indicates a bug in the TopicFilter or ManualPartitioner implementations."
-                                            + " The current partition is [" + currBatchTp + "], the assigned partitions are [" + assignments + "].");
+            throw new IllegalStateException(
+                "The spout is asked to emit tuples on a partition it is not assigned."
+                + " This indicates a bug in the TopicFilter or ManualPartitioner implementations."
+                + " The current partition is [" + currBatchTp + "], the assigned partitions are [" + assignments + "].");
         }
     }
 
