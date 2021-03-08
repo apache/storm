@@ -17,6 +17,7 @@
 package org.apache.storm.kafka.spout.trident;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
@@ -30,6 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -82,6 +85,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
     @BeforeEach
     public void setUp() {
         when(topologyContextMock.getStormId()).thenReturn(topologyId);
+        when(topologyContextMock.registerMeter(KafkaTridentSpoutEmitter.EVENT_COUNT_METRIC_NAME))
+            .thenReturn(new Meter());
         consumer.assign(Collections.singleton(partition));
         consumer.updateBeginningOffsets(Collections.singletonMap(partition, firstOffsetInKafka));
         consumer.updateEndOffsets(Collections.singletonMap(partition, firstOffsetInKafka + recordsInKafka));
@@ -185,6 +190,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(lastBatchMeta);
         assertThat("The batch should start at the first offset of the polled records", deserializedMeta.getFirstOffset(), is(firstNewRecordOffset));
         assertThat("The batch should end at the last offset of the polled messages", deserializedMeta.getLastOffset(), is(firstNewRecordOffset + numNewRecords - 1));
+
+        assertEquals(numNewRecords, emitter.eventEmitRate.getCount());
     }
 
     @Test
@@ -202,6 +209,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         List<List<Object>> emits = emitCaptor.getAllValues();
         assertThat(emits.get(0).get(0), is(firstEmittedOffset));
         assertThat(emits.get(emits.size() - 1).get(0), is(firstEmittedOffset + numEmittedRecords - 1));
+
+        assertEquals(10, emitter.eventEmitRate.getCount());
     }
 
     @Test
@@ -216,6 +225,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         emitter.reEmitPartitionBatch(txid, collectorMock, kttp, batchMeta.toMap());
 
         verify(collectorMock, never()).emit(anyList());
+
+        assertEquals(0, emitter.eventEmitRate.getCount());
     }
 
     @Test
@@ -249,6 +260,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(meta);
         assertThat("The batch should start at the first offset of the polled records", deserializedMeta.getFirstOffset(), is(firstNewRecordOffset));
         assertThat("The batch should end at the last offset of the polled messages", deserializedMeta.getLastOffset(), is(firstNewRecordOffset + numNewRecords - 1));
+
+        assertEquals(numNewRecords, emitter.eventEmitRate.getCount());
     }
 
     @ParameterizedTest
@@ -276,6 +289,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(meta);
         assertThat("The batch should start at the first offset of the polled records", deserializedMeta.getFirstOffset(), is(firstEmittedOffset));
         assertThat("The batch should end at the last offset of the polled messages", deserializedMeta.getLastOffset(), is(lastOffsetInKafka));
+
+        assertEquals(emittedRecords, emitter.eventEmitRate.getCount());
     }
 
     @Test
@@ -298,6 +313,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(meta);
         assertThat("The batch should start at the first offset of the polled records", deserializedMeta.getFirstOffset(), is(firstOffsetInKafka));
         assertThat("The batch should end at the last offset of the polled messages", deserializedMeta.getLastOffset(), is(lastOffsetInKafka));
+
+        assertEquals(recordsInKafka, emitter.eventEmitRate.getCount());
     }
 
     @Test
@@ -314,6 +331,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());
 
         verify(collectorMock, never()).emit(anyList());
+
+        assertEquals(0, emitter.eventEmitRate.getCount());
     }
 
     @Test
@@ -327,7 +346,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         long timeStampStartOffset = 2L;
         long pollTimeout = 1L;
         KafkaTridentSpoutBatchMetadata preExecutorRestartLastMeta = new KafkaTridentSpoutBatchMetadata(preRestartEmittedOffset, preRestartEmittedOffset + preRestartEmittedRecords - 1, "Some older topology");
-        
+
         KafkaConsumer<String, String> kafkaConsumer = Mockito.mock(KafkaConsumer.class);
         when(kafkaConsumer.assignment()).thenReturn(Collections.singleton(partition));
         OffsetAndTimestamp offsetAndTimestamp = new OffsetAndTimestamp(timeStampStartOffset, startTimeStamp);
@@ -350,6 +369,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         assertThat(emits.get(0).get(0), is(timeStampStartOffset));
         KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(meta);
         assertThat("The batch should start at the first offset for startTimestamp", deserializedMeta.getFirstOffset(), is(timeStampStartOffset));
+
+        assertEquals(recordsInKafka, emitter.eventEmitRate.getCount());
     }
 
 }
