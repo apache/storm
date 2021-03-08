@@ -85,7 +85,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
     @BeforeEach
     public void setUp() {
         when(topologyContextMock.getStormId()).thenReturn(topologyId);
-        when(topologyContextMock.registerMeter(KafkaTridentSpoutEmitter.EVENT_COUNT_METRIC_NAME))
+        when(topologyContextMock.registerMeter(KafkaTridentSpoutEmitter.EVENT_EMIT_METRIC_NAME))
             .thenReturn(new Meter());
         consumer.assign(Collections.singleton(partition));
         consumer.updateBeginningOffsets(Collections.singletonMap(partition, firstOffsetInKafka));
