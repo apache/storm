@@ -61,7 +61,6 @@ public class NodeSorterHostProximity implements INodeSorter {
     protected TopologyDetails topologyDetails;
 
     // Instance variables derived from Cluster.
-    private final Map<String, List<String>> networkTopography;
     private final Map<String, String> superIdToRack = new HashMap<>();
     private final Map<String, List<RasNode>> hostnameToNodes = new HashMap<>();
     private final Map<String, String> nodeIdToHostname = new HashMap<>();
@@ -101,7 +100,6 @@ public class NodeSorterHostProximity implements INodeSorter {
         this.nodeSortType = nodeSortType;
 
         // from Cluster
-        networkTopography = cluster.getNetworkTopography();
         greyListedSupervisorIds = cluster.getGreyListedSupervisors();
         Map<String, String> hostToRack = cluster.getHostToRack();
         RasNodes nodes = new RasNodes(cluster);
@@ -141,7 +139,7 @@ public class NodeSorterHostProximity implements INodeSorter {
 
     /**
      * Scheduling uses {@link #sortAllNodes()} which eventually
-     * calls this method whose behavior can altered by setting {@link #nodeSortType}.
+     * calls this method whose behavior can be altered by setting {@link #nodeSortType}.
      *
      * @param resourcesSummary     contains all individual {@link ObjectResourcesItem} as well as cumulative stats
      * @param exec                 executor for which the sorting is done

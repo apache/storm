@@ -129,7 +129,7 @@ public class NodeSorter implements INodeSorter {
 
     /**
      * Scheduling uses {@link #sortAllNodes()} which eventually
-     * calls this method whose behavior can altered by setting {@link #nodeSortType}.
+     * calls this method whose behavior can be altered by setting {@link #nodeSortType}.
      *
      * @param resourcesSummary     contains all individual {@link ObjectResourcesItem} as well as cumulative stats
      * @param exec                 executor for which the sorting is done

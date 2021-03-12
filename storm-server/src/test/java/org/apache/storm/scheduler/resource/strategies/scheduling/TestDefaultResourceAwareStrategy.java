@@ -910,7 +910,7 @@ public class TestDefaultResourceAwareStrategy {
         DefaultResourceAwareStrategyOld rs = new DefaultResourceAwareStrategyOld();
 
         rs.prepareForScheduling(cluster, topo1);
-        INodeSorter nodeSorter = new NodeSorter(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
+        INodeSorter nodeSorter = new NodeSorterHostProximity(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
         nodeSorter.prepare(null);
         Iterable<ObjectResourcesItem> sortedRacks= nodeSorter.getSortedRacks();
 

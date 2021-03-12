@@ -18,8 +18,6 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling.sorter;
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.storm.Config;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
@@ -223,7 +221,6 @@ public class TestNodeSorterHostProximity {
         }
         Map<String, List<String>> rackToHosts = testDNSToSwitchMapping.getRackToHosts();
         cluster.setNetworkTopography(rackToHosts);
-        System.out.println("DEBUG: rackToHosts: " + rackToHosts.toString());
 
         NodeSorterHostProximity nodeSorter = new NodeSorterHostProximity(cluster, topo1, BaseResourceAwareStrategy.NodeSortType.DEFAULT_RAS);
         nodeSorter.prepare(null);
@@ -447,7 +444,6 @@ public class TestNodeSorterHostProximity {
             seenHosts.add(host);
             prevHost = host;
         }
-        System.out.printf("DEBUG: Test Success: Hosts are listed together:\n\t%s\n", String.join("\n\t", errLines));
     }
 
     /**
@@ -532,7 +528,6 @@ public class TestNodeSorterHostProximity {
                 .collect(Collectors.joining("\n\t"));
         NormalizedResourceRequest topoResourceRequest = topo1.getApproximateTotalResources();
         String topoRequest = String.format("Topo %s, approx-requested-resources %s", topo1.getId(), topoResourceRequest.toString());
-        //Assert.assertEquals(rackSummaries + "\n# of racks sorted", 6, sortedRacks.size());
         Iterator<ObjectResourcesItem> it = sortedRacks.iterator();
         Assert.assertEquals(topoRequest + "\n\t" + rackSummaries + "\nRack-000 should be ordered first since it has the largest capacity", "rack-000", it.next().id);
         Assert.assertEquals(topoRequest + "\n\t" + rackSummaries + "\nrack-001 should be ordered second since it smaller than rack-000", "rack-001", it.next().id);
@@ -557,7 +552,6 @@ public class TestNodeSorterHostProximity {
 
         Config config = new Config();
         config.putAll(createGrasClusterConfig(88, 775, 25, null, null));
-        //config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, GenericResourceAwareStrategy.class.getName());
 
         IScheduler scheduler = new ResourceAwareScheduler();
         scheduler.prepare(config, new StormMetricsRegistry());
@@ -677,21 +671,11 @@ public class TestNodeSorterHostProximity {
         }
     }
 
-    private void activateTrace() {
-        List<Class> classesToDebug = Arrays.asList(this.getClass(),
-                BaseResourceAwareStrategy.class, ResourceAwareScheduler.class,
-                NodeSorterHostProximity.class, Cluster.class
-        );
-        Level logLevel = Level.TRACE ; // switch to Level.DEBUG for verbose otherwise Level.INFO
-        classesToDebug.forEach(x -> Configurator.setLevel(x.getName(), logLevel));
-    }
-
     /**
      * If the topology is too large for one rack, it should be partially scheduled onto the next rack (and next rack only).
      */
     @Test
     public void testFillUpRackAndSpilloverToNextRack() {
-        //activateTrace();
         INimbus iNimbus = new INimbusTest();
         double compPcore = 100;
         double compOnHeap = 775;
@@ -749,8 +733,6 @@ public class TestNodeSorterHostProximity {
      */
     @Test
     public void testPreferRackWithTopoExecutors() {
-        //activateTrace();
-
         INimbus iNimbus = new INimbusTest();
         double compPcore = 100;
         double compOnHeap = 775;
