@@ -303,7 +303,7 @@
                 <executions>
                     <execution>
                         <id>compile</id>
-                        <phase>package</phase>
+                        <phase>none</phase>
                         <goals>
                             <goal>attach-artifact</goal>
                         </goals>
