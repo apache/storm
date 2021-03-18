@@ -22,6 +22,7 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
+import org.apache.hadoop.hdfs.DFSUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +61,7 @@ public class ZookeeperStateStore implements IStateStore {
     @Override
     public void saveData(String statePath, String data) {
         data = data == null ? "" : data;
-        byte[] bytes = data.getBytes();
+        byte[] bytes = DFSUtil.string2Bytes(data);
 
         try {
             if (curatorFramework.checkExists().forPath(statePath) == null) {
