@@ -317,7 +317,7 @@
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>compile</id>
+                        <id>workaround-makeItVisibleOnIntellij</id>
                         <phase>none</phase>
                         <goals>
                             <goal>attach-artifact</goal>
@@ -325,7 +325,7 @@
                         <configuration>
                             <artifacts>
                                 <artifact>
-                                    <file>${basedir}/target/storm-shaded-deps-${project.version}.jar</file>
+                                    <file>${project.build.directory}/${project.build.finalName}.jar</file>
                                     <type>jar</type>
                                     <classifier>optional</classifier>
                                 </artifact>
