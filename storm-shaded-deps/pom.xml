@@ -297,6 +297,43 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
             </plugin>
+            <plugin>
+                <!--
+                Purpose of build-helper-maven-plugin is to ensure that IntelliJ sees shaded classes.
+                When navigating over to java classes in storm-client module, the shaded imported classes will
+                show as resolved instead of unknown.
+                The artifact specified below is created when this module (storm-shaded-deps) is built.
+                But is also used to resolve classes in IntelliJ.
+                "phase" is set to "none" - with this setting, the artifact jar will not be uploaded to repo
+                when running standalone "mvn install" command.
+
+                (DO NOT DO THIS) If "phase" is changed to "package"  then standalone "mvn install" command will upload
+                this very same artifact as storm-shaded-deps-${project.version}-optional.jar - which is not desired.
+
+                build-helper-maven-plugin can be removed completely with no effect on the "mvn clean" and "mvn install",
+                which is handled by maven-shade-plugin.
+                -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>workaround-makeItVisibleOnIntellij</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>${project.build.directory}/${project.build.finalName}.jar</file>
+                                    <type>jar</type>
+                                    <classifier>optional</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
