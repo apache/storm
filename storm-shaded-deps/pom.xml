@@ -311,7 +311,7 @@
                 this very same artifact as storm-shaded-deps-${project.version}-optional.jar - which is not desired.
 
                 build-helper-maven-plugin can be removed completely with no effect on the "mvn clean" and "mvn install",
-                which is handled by mvn-shade-plugin.
+                which is handled by maven-shade-plugin.
                 -->
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
