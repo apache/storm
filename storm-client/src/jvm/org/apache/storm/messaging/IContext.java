@@ -43,7 +43,8 @@ public interface IContext {
      * @param stormId topology ID
      * @param port     port #
      * @param cb The callback to deliver received messages to
-     * @param newConnectionResponse Supplier of the initial message to send to new client connections
+     * @param newConnectionResponse Supplier of the initial message to send to new client connections. If authentication
+     *                              is required, the message will be sent after authentication is complete.
      * @return server side connection
      */
     IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse);

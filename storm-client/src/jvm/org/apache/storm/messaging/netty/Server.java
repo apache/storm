@@ -65,16 +65,19 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private final IConnectionCallback cb;
     private final Supplier<Object> newConnectionResponse;
     private volatile boolean closing = false;
+    private final boolean isNettyAuthRequired;
 
     /**
      * Starts Netty at the given port.
      * @param topoConf The topology config
      * @param port The port to start Netty at
      * @param cb The callback to deliver incoming messages to
-     * @param newConnectionResponse The response to send to clients when they connect. Can be null.
+     * @param newConnectionResponse The response to send to clients when they connect. Can be null. If authentication
+     *                              is required, the message will be sent after authentication is complete.
      */
     Server(Map<String, Object> topoConf, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
         this.topoConf = topoConf;
+        this.isNettyAuthRequired = (Boolean) topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
         this.port = port;
         ser = new KryoValuesSerializer(topoConf);
         this.cb = cb;
@@ -252,8 +255,9 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
      **/
     @Override
     public void channelActive(Channel c) {
-        if (newConnectionResponse != null) {
-            c.writeAndFlush(newConnectionResponse.get(), c.voidPromise());
+        if (!isNettyAuthRequired) {
+            //if authentication is not required, treat it as authenticated.
+            authenticated(c);
         }
         allChannels.add(c);
     }
@@ -276,6 +280,14 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     @Override
     public void authenticated(Channel c) {
+        if (isNettyAuthRequired) {
+            LOG.debug("The channel {} is active and authenticated", c);
+        } else {
+            LOG.debug("The channel {} is active", c);
+        }
+        if (newConnectionResponse != null) {
+            c.writeAndFlush(newConnectionResponse.get(), c.voidPromise());
+        }
     }
 
     @Override
