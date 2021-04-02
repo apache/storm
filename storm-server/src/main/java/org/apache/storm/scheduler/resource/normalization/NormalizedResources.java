@@ -247,10 +247,16 @@ public class NormalizedResources {
         return null;
     }
 
+    private void throwBecauseUsedIsNotSubsetOfTotal(NormalizedResources used, double totalMemoryMb, double usedMemoryMb, String info) {
+        throw new IllegalArgumentException(String.format("The used resources must be a subset of the total resources."
+                        + " Used: '%s', Total: '%s', Used Mem: '%f', Total Mem: '%f', additionalInfo: '%s'",
+                used.toNormalizedMap(), this.toNormalizedMap(), usedMemoryMb, totalMemoryMb, info));
+    }
+
     private void throwBecauseUsedIsNotSubsetOfTotal(NormalizedResources used, double totalMemoryMb, double usedMemoryMb) {
         throw new IllegalArgumentException(String.format("The used resources must be a subset of the total resources."
-                                                         + " Used: '%s', Total: '%s', Used Mem: '%f', Total Mem: '%f'",
-                                                         used.toNormalizedMap(), this.toNormalizedMap(), usedMemoryMb, totalMemoryMb));
+                        + " Used: '%s', Total: '%s', Used Mem: '%f', Total Mem: '%f'",
+                used.toNormalizedMap(), this.toNormalizedMap(), usedMemoryMb, totalMemoryMb));
     }
 
     /**
@@ -375,7 +381,8 @@ public class NormalizedResources {
                 return 0;
             }
             if (used.otherResources[i] > otherResources[i]) {
-                throwBecauseUsedIsNotSubsetOfTotal(used, totalMemoryMb, usedMemoryMb);
+                String info = String.format("%s, %f > %f", getResourceNameForResourceIndex(i), used.otherResources[i], otherResources[i]);
+                throwBecauseUsedIsNotSubsetOfTotal(used, totalMemoryMb, usedMemoryMb, info);
             }
             min = Math.min(min, used.otherResources[i] / otherResources[i]);
         }
@@ -384,14 +391,16 @@ public class NormalizedResources {
 
     /**
      * If a node or rack has a kind of resource not in a request, make that resource negative so when sorting that node or rack will
-     * be less likely to be selected.
+     * be less likely to be selected. If the resource is in the request, make that resource positive.
      * @param request the requested resources.
      */
     public void updateForRareResourceAffinity(NormalizedResources request) {
         int length = Math.min(this.otherResources.length, request.otherResources.length);
         for (int i = 0; i < length; i++) {
-            if (request.getResourceAt(i) == 0.0) {
-                this.otherResources[i] = -1 * this.otherResources[i];
+            if (request.getResourceAt(i) == 0.0 && this.otherResources[i] > 0.0) {
+                this.otherResources[i] = -this.otherResources[i]; // make negative
+            } else if (request.getResourceAt(i) > 0.0 && this.otherResources[i] < 0.0) {
+                this.otherResources[i] = -this.otherResources[i]; // make positive
             }
         }
     }

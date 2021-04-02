@@ -30,7 +30,7 @@ public class ObjectResourcesItem {
 
     /**
      * Amongst all {@link #availableResources}, this is the minimum ratio of resource to the total available in group.
-     * Note that nodes are grouped into racks. And racks are grouped under the cluster.
+     * Note that nodes are grouped into hosts. Hosts into racks. And racks are grouped under the cluster.
      *
      * <p>
      * An example of this calculation is in
@@ -43,7 +43,7 @@ public class ObjectResourcesItem {
 
     /**
      * Amongst all {@link #availableResources}, this is the average ratio of resource to the total available in group.
-     * Note that nodes are grouped into racks. And racks are grouped under the cluster.
+     * Note that nodes are grouped into hosts, hosts into racks, and racks are grouped under the cluster.
      *
      * <p>
      * An example of this calculation is in
@@ -71,6 +71,11 @@ public class ObjectResourcesItem {
         this.totalResources = totalResources;
         this.minResourcePercent = minResourcePercent;
         this.avgResourcePercent = avgResourcePercent;
+    }
+
+    public void add(ObjectResourcesItem other) {
+        this.availableResources.add(other.availableResources);
+        this.totalResources.add(other.totalResources);
     }
 
     @Override

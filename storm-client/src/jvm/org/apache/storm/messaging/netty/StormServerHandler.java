@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.storm.shade.io.netty.channel.Channel;
 import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
 import org.apache.storm.shade.io.netty.channel.ChannelInboundHandlerAdapter;
@@ -28,11 +27,9 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
     private static final Set<Class<?>> ALLOWED_EXCEPTIONS = new HashSet<>(Arrays.asList(new Class<?>[]{ IOException.class }));
     private final IServer server;
-    private final AtomicInteger failureCount;
 
     public StormServerHandler(IServer server) {
         this.server = server;
-        failureCount = new AtomicInteger(0);
     }
 
     @Override
@@ -51,14 +48,13 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
             server.received(msg, channel.remoteAddress().toString(), channel);
         } catch (InterruptedException e) {
             LOG.info("failed to enqueue a request message", e);
-            failureCount.incrementAndGet();
         }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         try {
-            LOG.error("server errors in handling the request", cause);
+            LOG.error("server errors in handling the request from {}", ctx.channel().remoteAddress().toString(), cause);
         } catch (Throwable err) {
             // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException will handle it
         }

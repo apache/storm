@@ -325,7 +325,7 @@
         <joda-time.version>2.3</joda-time.version>
         <thrift.version>0.13.0</thrift.version>
         <junit.jupiter.version>5.5.1</junit.jupiter.version>
-        <surefire.version>2.22.1</surefire.version>
+        <surefire.version>2.22.2</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
         <hamcrest.version>2.0.0.0</hamcrest.version>
@@ -339,7 +339,7 @@
         <activemq.version>5.15.8</activemq.version>
         <rocketmq.version>4.2.0</rocketmq.version>
 
-        <jackson.version>2.9.8</jackson.version>
+        <jackson.version>2.10.0</jackson.version>
         
         <storm.kafka.client.version>0.11.0.3</storm.kafka.client.version>
 

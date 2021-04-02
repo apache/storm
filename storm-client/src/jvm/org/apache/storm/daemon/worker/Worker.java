@@ -277,9 +277,25 @@ public class Worker implements Shutdownable, DaemonCommon {
 
         establishLogSettingCallback();
 
+        final int credCheckMaxAllowed = 10;
+        final int[] credCheckErrCnt = new int[1]; // consecutive-error-count
+
         workerState.refreshCredentialsTimer.scheduleRecurring(0,
                                                               (Integer) conf.get(Config.TASK_CREDENTIALS_POLL_SECS), () -> {
-                checkCredentialsChanged();
+                try {
+                    checkCredentialsChanged();
+                    credCheckErrCnt[0] = 0;
+                } catch (Exception ex) {
+                    credCheckErrCnt[0]++;
+                    if (credCheckErrCnt[0] <= credCheckMaxAllowed) {
+                        LOG.warn("Ignoring {} of {} consecutive exceptions when checking for credential change",
+                            credCheckErrCnt[0], credCheckMaxAllowed, ex);
+                    } else {
+                        LOG.error("Received {} consecutive exceptions, {} tolerated, when checking for credential change",
+                            credCheckErrCnt[0], credCheckMaxAllowed, ex);
+                        throw ex;
+                    }
+                }
             });
 
         workerState.checkForUpdatedBlobsTimer.scheduleRecurring(0,
