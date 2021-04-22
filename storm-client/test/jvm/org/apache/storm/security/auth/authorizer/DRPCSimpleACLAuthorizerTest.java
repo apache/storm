@@ -12,6 +12,10 @@
 
 package org.apache.storm.security.auth.authorizer;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -24,6 +28,10 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DRPCSimpleACLAuthorizerTest {
 
@@ -157,5 +165,46 @@ public class DRPCSimpleACLAuthorizerTest {
         Map<String, Object> config = new HashMap();
         config.put(DRPCSimpleACLAuthorizer.FUNCTION_KEY, function);
         return authorizer.permit(context, operation, config);
+    }
+
+    /**
+     * {@link DRPCSimpleACLAuthorizer} should still work even if {@link Config#DRPC_AUTHORIZER_ACL} has no values.
+     * @throws IOException if there is any issue with creating or writing the temp file.
+     */
+    @Test
+    public void test_read_acl_no_values() throws IOException {
+        DRPCSimpleACLAuthorizer authorizer = new DRPCSimpleACLAuthorizer();
+
+        File tempFile = File.createTempFile("drpcacl", ".yaml");
+        tempFile.deleteOnExit();
+        BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+        writer.write("drpc.authorizer.acl:");
+        writer.close();
+
+        authorizer.prepare(ImmutableMap
+                .of(Config.DRPC_AUTHORIZER_ACL_STRICT, true, Config.DRPC_AUTHORIZER_ACL_FILENAME, tempFile.toString(),
+                        Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class.getName()));
+
+        Map<String, DRPCSimpleACLAuthorizer.AclFunctionEntry> acl = authorizer.readAclFromConfig();
+        assertEquals(0, acl.size());
+    }
+
+    /**
+     * The file of {@link Config#DRPC_AUTHORIZER_ACL_FILENAME} can not be empty.
+     * @throws IOException if there is any issue with creating the temp file.
+     */
+    @Test
+    public void test_read_acl_empty_file() throws IOException {
+        DRPCSimpleACLAuthorizer authorizer = new DRPCSimpleACLAuthorizer();
+
+        File tempFile = File.createTempFile("drpcacl", ".yaml");
+        tempFile.deleteOnExit();
+
+        authorizer.prepare(ImmutableMap
+                .of(Config.DRPC_AUTHORIZER_ACL_STRICT, true, Config.DRPC_AUTHORIZER_ACL_FILENAME, tempFile.toString(),
+                        Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class.getName()));
+
+        Exception exception = assertThrows(RuntimeException.class, authorizer::readAclFromConfig);
+        assertTrue(exception.getMessage().contains("doesn't have any valid storm configs"));
     }
 }
