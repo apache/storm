@@ -630,14 +630,23 @@ public class AsyncLocalizer implements AutoCloseable {
             }
 
             toClean.addResources(topologyBlobs);
+            Set<String> topologiesWithDeletes = new HashSet<>();
             try (ClientBlobStore store = getClientBlobStore()) {
-                toClean.cleanup(store);
+                Set<LocallyCachedBlob> deletedBlobs = toClean.cleanup(store);
+                for (LocallyCachedBlob deletedBlob : deletedBlobs) {
+                    String topologyId = ConfigUtils.getIdFromBlobKey(deletedBlob.getKey());
+                    if (topologyId != null) {
+                        topologiesWithDeletes.add(topologyId);
+                    }
+                }
             }
 
             HashSet<String> safeTopologyIds = new HashSet<>();
             for (String blobKey : topologyBlobs.keySet()) {
                 safeTopologyIds.add(ConfigUtils.getIdFromBlobKey(blobKey));
             }
+            LOG.debug("Topologies {} can no longer be considered fully downloaded", topologiesWithDeletes);
+            safeTopologyIds.removeAll(topologiesWithDeletes);
 
             //Deleting this early does not hurt anything
             topologyBasicDownloaded.keySet().removeIf(topoId -> !safeTopologyIds.contains(topoId));
