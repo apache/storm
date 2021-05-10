@@ -156,6 +156,18 @@ public class RasNodes {
         return hostnameToNodes;
     }
 
+    /**
+     * Get a map from RasNodeId to HostName.
+     *
+     * @return map of nodeId to hostname
+     */
+    public Map<String, String> getNodeIdToHostname() {
+        Map<String, String> nodeIdToHostname = new HashMap<>();
+        nodeMap.values()
+                .forEach(node -> nodeIdToHostname.put(node.getId(), node.getHostname()));
+        return nodeIdToHostname;
+    }
+
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();

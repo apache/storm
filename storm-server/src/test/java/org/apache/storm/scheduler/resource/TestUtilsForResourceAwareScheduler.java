@@ -189,13 +189,34 @@ public class TestUtilsForResourceAwareScheduler {
         }
     }
 
-    public static Map<String, SupervisorDetails> genSupervisorsWithRacks(int numRacks, int numSupersPerRack, int numPorts, int rackStart,
-                                                                         int superInRackStart, double cpu, double mem,
-                                                                         Map<String, Double> miscResources) {
-        Map<String, Double> resourceMap = new HashMap<>();
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, cpu);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, mem);
-        resourceMap.putAll(miscResources);
+    public static Map<String, SupervisorDetails> genSupervisorsWithRacks(
+            int numRacks, int numSupersPerRack, int numPorts, int rackStart, int superInRackStart,
+            double cpu, double mem, Map<String, Double> miscResources) {
+
+        return genSupervisorsWithRacksAndNuma(numRacks, numSupersPerRack, 1, numPorts, rackStart,
+                superInRackStart, cpu, mem, miscResources, 1.0);
+    }
+
+    /**
+     * Takes one additional parameter numaZonesPerHost. This parameter determines how many supervisors
+     * will be created on the same host. If numaResourceMultiplier is set to a factor below 1.0, then
+     * each subsequent numa zone will have corresponding lower cpu/mem than previous numa zone.
+     *
+     * @param numRacks
+     * @param numSupersPerRack
+     * @param numaZonesPerHost
+     * @param numPorts
+     * @param rackStart
+     * @param superInRackStart
+     * @param cpu
+     * @param mem
+     * @param miscResources
+     * @param numaResourceMultiplier - cpu/mem resource for each numaZone is multiplied by this factor to obtain uneven resources
+     * @return
+     */
+    public static Map<String, SupervisorDetails> genSupervisorsWithRacksAndNuma(
+            int numRacks, int numSupersPerRack, int numaZonesPerHost, int numPorts, int rackStart, int superInRackStart,
+            double cpu, double mem, Map<String, Double> miscResources, double numaResourceMultiplier) {
         Map<String, SupervisorDetails> retList = new HashMap<>();
         for (int rack = rackStart; rack < numRacks + rackStart; rack++) {
             for (int superInRack = superInRackStart; superInRack < (numSupersPerRack + superInRackStart); superInRack++) {
@@ -203,8 +224,23 @@ public class TestUtilsForResourceAwareScheduler {
                 for (int p = 0; p < numPorts; p++) {
                     ports.add(p);
                 }
-                SupervisorDetails sup = new SupervisorDetails(String.format("r%03ds%03d", rack, superInRack),
-                    String.format("host-%03d-rack-%03d", superInRack, rack), null, ports,
+                String superId;
+                String host;
+                int numaZone = superInRack % numaZonesPerHost;
+                if (numaZonesPerHost > 1) {
+                    // multiple supervisors per host
+                    int hostInRack = superInRack / numaZonesPerHost;
+                    superId = String.format("r%03ds%03dn%d", rack, superInRack, numaZone);
+                    host = String.format("host-%03d-rack-%03d", hostInRack, rack);
+                } else {
+                    superId = String.format("r%03ds%03d", rack, superInRack);
+                    host = String.format("host-%03d-rack-%03d", superInRack, rack);
+                }
+                Map<String, Double> resourceMap = new HashMap<>();
+                resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, cpu * Math.pow(numaResourceMultiplier, numaZone));
+                resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, mem * Math.pow(numaResourceMultiplier, numaZone));
+                resourceMap.putAll(miscResources);
+                SupervisorDetails sup = new SupervisorDetails(superId, host, null, ports,
                     NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resourceMap));
                 retList.put(sup.getId(), sup);
 

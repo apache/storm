@@ -337,6 +337,12 @@ public class ConfigUtils {
         return (topologyId + "-stormconf.ser");
     }
 
+    /**
+     * Returns the topology ID belonging to a blob key if it exists.
+     *
+     * @param key the blob key
+     * @return the topology id belonging to the key if it can be inferred.  Returns null otherwise.
+     */
     public static String getIdFromBlobKey(String key) {
         if (key == null) {
             return null;

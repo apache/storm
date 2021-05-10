@@ -2281,10 +2281,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         scheduler.schedule(topologies, cluster);
         //Get and set the start time before getting current time in order to avoid potential race with the longest-scheduling-time-ms gauge
         final Long startTime = schedulingStartTimeNs.getAndSet(null);
-        long elapsed = Time.nanoTime() - startTime;
-        longestSchedulingTime.accumulateAndGet(elapsed, Math::max);
-        schedulingDuration.update(elapsed, TimeUnit.NANOSECONDS);
-        LOG.debug("Scheduling took {} ms for {} topologies", elapsed, topologies.getTopologies().size());
+        long elapsedNs = Time.nanoTime() - startTime;
+        longestSchedulingTime.accumulateAndGet(elapsedNs, Math::max);
+        schedulingDuration.update(elapsedNs, TimeUnit.NANOSECONDS);
+        LOG.debug("Scheduling took {} ms for {} topologies", TimeUnit.NANOSECONDS.toMillis(elapsedNs), topologies.getTopologies().size());
 
         //merge with existing statuses
         idToSchedStatus.set(Utils.merge(idToSchedStatus.get(), cluster.getStatusMap()));
