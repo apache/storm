@@ -77,7 +77,6 @@ import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.GlobalStreamId;
@@ -1233,9 +1232,18 @@ public class Utils {
      */
     public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, NimbusBlobStore client)
         throws InvalidTopologyException, AuthorizationException {
-        Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        Map<String, Map<String, Object>> blobStoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
             for (String key : blobStoreMap.keySet()) {
+
+                Map<String, Object> blobConf = blobStoreMap.get(key);
+                try {
+                    ObjectReader.getBoolean(blobConf.get("uncompress"), false);
+                    ObjectReader.getBoolean(blobConf.get("workerRestart"), false);
+                } catch (IllegalArgumentException e) {
+                    throw new WrappedInvalidTopologyException("Invalid blob conf option: " + e.getMessage());
+                }
+
                 // try to get BlobMeta
                 // This will check if the key exists and if the subject has authorization
                 try {
