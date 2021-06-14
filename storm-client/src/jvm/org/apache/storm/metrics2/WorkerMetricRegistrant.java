@@ -10,25 +10,10 @@
  * and limitations under the License.
  */
 
-package org.apache.storm.metric.cgroup;
+package org.apache.storm.metrics2;
 
-import java.util.Map;
-import org.apache.storm.container.cgroup.SubSystemType;
-import org.apache.storm.container.cgroup.core.CgroupCore;
-import org.apache.storm.container.cgroup.core.MemoryCore;
+import org.apache.storm.task.TopologyContext;
 
-/**
- * Reports the current memory usage of the cgroup for this worker.
- */
-@Deprecated
-public class CGroupMemoryUsage extends CGroupMetricsBase<Long> {
-
-    public CGroupMemoryUsage(Map<String, Object> conf) {
-        super(conf, SubSystemType.memory);
-    }
-
-    @Override
-    public Long getDataFrom(CgroupCore core) throws Exception {
-        return ((MemoryCore) core).getPhysicalUsage();
-    }
+public interface WorkerMetricRegistrant {
+    void registerMetrics(TopologyContext topologyContext);
 }

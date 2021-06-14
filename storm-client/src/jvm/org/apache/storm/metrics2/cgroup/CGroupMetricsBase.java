@@ -10,11 +10,10 @@
  * and limitations under the License.
  */
 
-package org.apache.storm.metric.cgroup;
+package org.apache.storm.metrics2.cgroup;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -22,7 +21,6 @@ import org.apache.storm.container.cgroup.CgroupCenter;
 import org.apache.storm.container.cgroup.CgroupCoreFactory;
 import org.apache.storm.container.cgroup.SubSystemType;
 import org.apache.storm.container.cgroup.core.CgroupCore;
-import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,11 +28,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Base class for checking if CGroups are enabled, etc.
  */
-@Deprecated
-public abstract class CGroupMetricsBase<T> implements IMetric {
+public abstract class CGroupMetricsBase {
     private static final Logger LOG = LoggerFactory.getLogger(CGroupMetricsBase.class);
-    private boolean enabled;
-    private CgroupCore core = null;
+    protected boolean enabled;
+    protected CgroupCore core = null;
 
     public CGroupMetricsBase(Map<String, Object> conf, SubSystemType type) {
         final String simpleName = getClass().getSimpleName();
@@ -85,7 +82,7 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
         String hierarchyDir = (String) conf.get(Config.STORM_CGROUP_HIERARCHY_DIR);
         if (StringUtils.isEmpty(hierarchyDir) || !new File(hierarchyDir, cgroupPath).exists()) {
             LOG.info("{} is not set or does not exist. checking {}", Config.STORM_CGROUP_HIERARCHY_DIR,
-                Config.STORM_OCI_CGROUP_ROOT);
+                    Config.STORM_OCI_CGROUP_ROOT);
 
             String ociCgroupRoot = (String) conf.get(Config.STORM_OCI_CGROUP_ROOT);
             hierarchyDir = ociCgroupRoot + File.separator + type;
@@ -97,26 +94,7 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
         }
 
         core = CgroupCoreFactory.getInstance(type, new File(hierarchyDir, cgroupPath).getAbsolutePath());
-
         enabled = true;
-        LOG.info("{} is ENABLED {} exists...", simpleName, hierarchyDir);
+        LOG.info("Metric {} is ENABLED and directory {} exists...", simpleName, hierarchyDir);
     }
-
-    @Override
-    public Object getValueAndReset() {
-        if (!enabled) {
-            return null;
-        }
-        try {
-            return getDataFrom(core);
-        } catch (FileNotFoundException e) {
-            LOG.warn("Exception trying to read a file {}", e);
-            //Something happened and we couldn't find the file, so ignore it for now.
-            return null;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public abstract T getDataFrom(CgroupCore core) throws Exception;
 }

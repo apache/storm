@@ -23,6 +23,7 @@ import org.apache.storm.container.cgroup.core.CpuCore;
  * It gets the result from cpu.cfs_period_us and cpu.cfs_quota_us.
  * Use this when org.apache.storm.container.docker.DockerManager is used as the storm.resource.isolation.plugin.
  */
+@Deprecated
 public class CGroupCpuGuaranteeByCfsQuota extends CGroupMetricsBase<Long> {
     long previousTime = 0;
 
