@@ -120,7 +120,7 @@ public class SupervisorUtils {
     }
 
     /**
-     * Given the blob information returns the value of the uncompress field, handling it either being a string or a boolean value, or if
+     * Given the blob information returns the value of the uncompress field, handling it being a boolean value, or if
      * it's not specified then returns false.
      */
     public static boolean shouldUncompressBlob(Map<String, Object> blobInfo) {
@@ -128,7 +128,7 @@ public class SupervisorUtils {
     }
 
     /**
-     * Given the blob information returns the value of the workerRestart field, handling it either being a string or a boolean value, or if
+     * Given the blob information returns the value of the workerRestart field, handling it being a boolean value, or if
      * it's not specified then returns false.
      *
      * @param blobInfo the info for the blob.

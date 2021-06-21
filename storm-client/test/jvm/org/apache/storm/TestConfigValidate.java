@@ -136,7 +136,7 @@ public class TestConfigValidate {
     }
 
     @Test(expected = InvalidTopologyException.class)
-    public void testValidateTopologyBlobStoreMapWithNimbusBlobStore() throws InvalidTopologyException, AuthorizationException,
+    public void testValidateTopologyBlobStoreMissingKey() throws InvalidTopologyException, AuthorizationException,
         KeyNotFoundException {
         Map<String, Object> topoConf = new HashMap<>();
         Map<String, Map> topologyMap = new HashMap<>();
@@ -147,6 +147,40 @@ public class TestConfigValidate {
         NimbusBlobStore nimbusBlobStoreMock = mock(NimbusBlobStore.class);
         when(nimbusBlobStoreMock.getBlobMeta("key1")).thenReturn(null);
         when(nimbusBlobStoreMock.getBlobMeta("key2")).thenThrow(new KeyNotFoundException());
+
+        Utils.validateTopologyBlobStoreMap(topoConf, nimbusBlobStoreMock);
+    }
+
+    @Test
+    public void testValidateTopologyBlobStoreMap() throws InvalidTopologyException, AuthorizationException,
+            KeyNotFoundException {
+        Map<String, Object> topoConf = new HashMap<>();
+        Map<String, Map> topologyMap = new HashMap<>();
+        Map<String, Object> blobConf = new HashMap<>();
+        blobConf.put("uncompress", false);
+        topologyMap.put("key1", blobConf);
+        topologyMap.put("key2", blobConf);
+        topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topologyMap);
+
+        NimbusBlobStore nimbusBlobStoreMock = mock(NimbusBlobStore.class);
+        when(nimbusBlobStoreMock.getBlobMeta("key1")).thenReturn(null);
+        when(nimbusBlobStoreMock.getBlobMeta("key2")).thenReturn(null);
+
+        Utils.validateTopologyBlobStoreMap(topoConf, nimbusBlobStoreMock);
+    }
+
+    @Test(expected = InvalidTopologyException.class)
+    public void testValidateTopologyBlobStoreMapInvalidOption() throws InvalidTopologyException, AuthorizationException,
+            KeyNotFoundException {
+        Map<String, Object> topoConf = new HashMap<>();
+        Map<String, Map> topologyMap = new HashMap<>();
+        Map<String, Object> blobConf = new HashMap<>();
+        blobConf.put("uncompress", "false");
+        topologyMap.put("key1", blobConf);
+        topologyMap.put("key2", blobConf);
+        topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topologyMap);
+
+        NimbusBlobStore nimbusBlobStoreMock = mock(NimbusBlobStore.class);
 
         Utils.validateTopologyBlobStoreMap(topoConf, nimbusBlobStoreMock);
     }
