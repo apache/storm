@@ -70,6 +70,13 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         return rateCounter;
     }
 
+    public RateCounter rateCounter(String metricName, String componentId, int taskId) {
+        RateCounter rateCounter = new RateCounter(this, metricName, topologyId, componentId, taskId,
+                port);
+        rateCounters.add(rateCounter);
+        return rateCounter;
+    }
+
     public <T> SimpleGauge<T> gauge(
         T initialValue, String name, String topologyId, String componentId, Integer taskId, Integer port) {
         Gauge gauge = new SimpleGauge<>(initialValue);
@@ -148,6 +155,13 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         MetricNames metricNames = topologyMetricName(name, context);
         Counter counter = registerCounter(metricNames, new Counter(), context.getThisTaskId(), context.getThisComponentId(), null);
         saveMetricTaskIdMapping(context.getThisTaskId(), metricNames, counter, taskIdCounters);
+        return counter;
+    }
+
+    public Counter counter(String name, String componentId, Integer taskId) {
+        MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
+        Counter counter = registerCounter(metricNames, new Counter(), taskId, componentId, null);
+        saveMetricTaskIdMapping(taskId, metricNames, counter, taskIdCounters);
         return counter;
     }
 

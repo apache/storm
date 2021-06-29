@@ -28,14 +28,25 @@ public class RateCounter implements Gauge<Double> {
 
     RateCounter(StormMetricRegistry metricRegistry, String metricName, String topologyId,
                 String componentId, int taskId, int workerPort, String streamId) {
-        counter = metricRegistry.counter(metricName, topologyId, componentId,
-                taskId, workerPort, streamId);
-        metricRegistry.gauge(metricName + ".m1_rate", this, topologyId, componentId, streamId,
-                taskId, workerPort);
+        if (streamId != null) {
+            counter = metricRegistry.counter(metricName, topologyId, componentId,
+                    taskId, workerPort, streamId);
+            metricRegistry.gauge(metricName + ".m1_rate", this, topologyId, componentId, streamId,
+                    taskId, workerPort);
+        } else {
+            counter = metricRegistry.counter(metricName, componentId, taskId);
+            metricRegistry.gauge(metricName + ".m1_rate", this, componentId, taskId);
+        }
+
         this.timeSpanInSeconds = Math.max(60 - (60 % metricRegistry.getRateCounterUpdateIntervalSeconds()),
                 metricRegistry.getRateCounterUpdateIntervalSeconds());
         this.values = new long[this.timeSpanInSeconds / metricRegistry.getRateCounterUpdateIntervalSeconds() + 1];
 
+    }
+
+    RateCounter(StormMetricRegistry metricRegistry, String metricName, String topologyId,
+                String componentId, int taskId, int workerPort) {
+        this(metricRegistry, metricName, topologyId, componentId, taskId, workerPort, null);
     }
 
     /**
