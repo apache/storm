@@ -49,7 +49,6 @@ import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.GrouperFactory;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
-import org.apache.storm.daemon.metrics.ErrorReportingMetrics;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.bolt.BoltExecutor;
 import org.apache.storm.executor.error.IReportError;
@@ -66,6 +65,7 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.metrics2.RateCounter;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.org.jctools.queues.MpscChunkedArrayQueue;
@@ -119,7 +119,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final Boolean isDebug;
     protected final Boolean hasEventLoggers;
     protected final boolean ackingEnabled;
-    protected final ErrorReportingMetrics errorReportingMetrics;
     protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits = new MpscChunkedArrayQueue<>(1024, (int) Math.pow(2, 30));
     private final AddressedTuple flushTuple;
     protected ExecutorTransfer executorTransfer;
@@ -128,6 +127,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected String hostname;
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
     private AtomicBoolean needToRefreshCreds = new AtomicBoolean(false);
+    private final RateCounter reportedErrorCount;
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -180,8 +180,9 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         } catch (UnknownHostException ignored) {
             this.hostname = "";
         }
-        this.errorReportingMetrics = new ErrorReportingMetrics();
         flushTuple = AddressedTuple.createFlushTuple(workerTopologyContext);
+        this.reportedErrorCount = workerData.getMetricRegistry().rateCounter("__reported-error-count", componentId,
+                taskIds.get(0));
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -636,10 +637,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         return reportError;
     }
 
-    public ErrorReportingMetrics getErrorReportingMetrics() {
-        return errorReportingMetrics;
-    }
-
     public WorkerTopologyContext getWorkerTopologyContext() {
         return workerTopologyContext;
     }
@@ -679,5 +676,9 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     @VisibleForTesting
     public void setLocalExecutorTransfer(ExecutorTransfer executorTransfer) {
         this.executorTransfer = executorTransfer;
+    }
+
+    public void incrementErrorCount() {
+        reportedErrorCount.inc(1L);
     }
 }

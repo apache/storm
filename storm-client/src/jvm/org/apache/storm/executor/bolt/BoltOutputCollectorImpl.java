@@ -187,7 +187,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
 
     @Override
     public void reportError(Throwable error) {
-        executor.getErrorReportingMetrics().incrReportedErrorCount();
+        executor.incrementErrorCount();
         executor.getReportError().report(error);
     }
 
