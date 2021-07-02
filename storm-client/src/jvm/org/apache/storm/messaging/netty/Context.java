@@ -64,7 +64,7 @@ public class Context implements IContext {
      */
     @Override
     public synchronized IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
-        Server server = new Server(topoConf, port, cb, newConnectionResponse);
+        Server server = new Server(topoConf, port, cb, newConnectionResponse, metricRegistry);
         serverConnections.add(server);
         return server;
     }

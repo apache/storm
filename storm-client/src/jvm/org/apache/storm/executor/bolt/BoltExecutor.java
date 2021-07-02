@@ -114,8 +114,6 @@ public class BoltExecutor extends Executor {
                 ((ICredentialsListener) boltObject).setCredentials(credentials);
             }
             if (Constants.SYSTEM_COMPONENT_ID.equals(componentId)) {
-                BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), topoConf, userContext);
-
                 // add any autocredential expiry metrics from the worker
                 if (workerData.getAutoCredentials() != null) {
                     for (IAutoCredentials autoCredential : workerData.getAutoCredentials()) {

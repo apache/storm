@@ -12,6 +12,7 @@
 
 package org.apache.storm.messaging;
 
+import com.codahale.metrics.Gauge;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,8 +20,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.daemon.worker.WorkerState;
-import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.serialization.KryoTupleDeserializer;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
@@ -31,7 +33,8 @@ import org.apache.storm.utils.ObjectReader;
 /**
  * A class that is called when a TaskMessage arrives.
  */
-public class DeserializingConnectionCallback implements IConnectionCallback, IMetric {
+
+public class DeserializingConnectionCallback implements IConnectionCallback {
     private final WorkerState.ILocalTransferCallback cb;
     private final Map<String, Object> conf;
     private final GeneralTopologyContext context;
@@ -71,24 +74,26 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
         cb.transfer(ret);
     }
 
-    /**
-     * Returns serialized byte count traffic metrics.
-     *
-     * @return Map of metric counts, or null if disabled
-     */
     @Override
-    public Object getValueAndReset() {
+    public void registerMetrics(StormMetricRegistry metricRegistry) {
         if (!sizeMetricsEnabled) {
-            return null;
+            return;
         }
-        HashMap<String, Long> outMap = new HashMap<>();
-        for (Map.Entry<String, AtomicLong> ent : byteCounts.entrySet()) {
-            AtomicLong count = ent.getValue();
-            if (count.get() > 0) {
-                outMap.put(ent.getKey(), count.getAndSet(0L));
+
+        Gauge<Map<String, Long>> sizes = new Gauge<Map<String, Long>>() {
+            @Override
+            public Map<String, Long> getValue() {
+                HashMap<String, Long> counts = new HashMap<>();
+                for (Map.Entry<String, AtomicLong> ent : byteCounts.entrySet()) {
+                    AtomicLong count = ent.getValue();
+                    if (count.get() > 0) {
+                        counts.put(ent.getKey(), count.getAndSet(0L));
+                    }
+                }
+                return counts;
             }
-        }
-        return outMap;
+        };
+        metricRegistry.gauge("messageBytes", sizes, Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
     }
 
     /**
