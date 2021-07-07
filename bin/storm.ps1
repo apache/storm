@@ -23,7 +23,7 @@ while((Get-Item $PRG).LinkType -eq "SymbolicLink") {
 }
 
 # Check for Python version
-$PythonVersion = (& python -V 2>&1)[0].ToString().Split(" ")[1];
+$PythonVersion = (& python -V 2>&1).Split(" ")[1];
 $PythonMajor = [int]$PythonVersion.Split(".")[0];
 $PythonMinor = [int]$PythonVersion.Split(".")[1];
 $PythonNumVersion = $PythonMajor * 10 + $PythonMinor;
