@@ -53,6 +53,7 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error,
         stderr_val = None
 
     process = None
+    timer = None
     try:
         process = subprocess.Popen(command, stdout=stdout_val,
                                    stderr=stderr_val)
@@ -65,9 +66,9 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error,
             exception_string = ("Commmand: " + str(command)
                                 + " failed with returncode: "
                                 + str(process.returncode))
-            if out != None:
+            if out is not None:
                 exception_string = exception_string + "\nstdout: " + str(out)
-            if err != None:
+            if err is not None:
                 exception_string = exception_string + "\nstderr: " + str(err)
             raise Exception(exception_string)
 
@@ -273,7 +274,7 @@ def check_total_layer_size(manifest, size):
 
 def get_layer_hashes_from_manifest(manifest, error_on_size_check=True):
     layers = []
-    size = 0;
+    size = 0
 
     for layer in manifest['layers']:
         layers.append(layer['digest'].split(":", 1)[1])
@@ -561,6 +562,7 @@ def atomic_upload_mv_to_hdfs(file_path, file_name, hdfs_dir, replication, image_
         hdfs_chmod("444", hdfs_tmp_path)
 
         jar_path = HADOOP_PREFIX + "/share/hadoop/tools/lib/hadoop-extras-*.jar"
+        jar_file = None
         for file in glob.glob(jar_path):
             jar_file = file
 
@@ -1025,9 +1027,6 @@ def add_remove_tag(args):
 
             elif sub_command == "remove-tag":
                 tags = image_and_tag_arg.split(",")
-                image = None
-                manifest = None
-                manifest_hash = 0
                 remove_from_dicts(hash_to_tags, tag_to_hash, tags)
             else:
                 raise Exception("Invalid sub_command: %s" % (sub_command))
@@ -1059,7 +1058,7 @@ def copy_update(args):
 
     if bootstrap:
         hdfs_dirs = [dest_root, dest_layers_dir, dest_config_dir, dest_manifest_dir]
-        image_tag_to_hash_path = hdfs_root + "/" + image_tag_to_hash
+        image_tag_to_hash_path = dest_root + "/" + image_tag_to_hash
         setup_squashfs_hdfs_dirs(hdfs_dirs, image_tag_to_hash_path)
     working_dir = None
 
@@ -1095,6 +1094,7 @@ def copy_update(args):
             dest_config_path = dest_config_dir + "/" + src_config_hash
 
             src_layers = get_layer_hashes_from_manifest(src_manifest)
+            src_layers_paths = [src_layers_dir + "/" + layer + ".sqsh" for layer in src_layers]
             dest_layers_paths = [dest_layers_dir + "/" + layer + ".sqsh" for layer in src_layers]
 
             logging.debug("Copying Manifest: %s", str(src_manifest_path))
@@ -1115,6 +1115,7 @@ def copy_update(args):
 
             for tag in tags:
                 new_tags_and_comments = src_hash_to_tags.get(src_manifest_hash, None)
+                comment = None
                 if new_tags_and_comments:
                     comment = ', '.join(map(str, new_tags_and_comments[1]))
                 if comment is None:
