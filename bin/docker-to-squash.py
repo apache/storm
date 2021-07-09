@@ -63,7 +63,7 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error,
         out, err = process.communicate()
 
         if raise_on_error and process.returncode is not 0:
-            exception_string = ("Commmand: " + str(command)
+            exception_string = ("Command: " + str(command)
                                 + " failed with returncode: "
                                 + str(process.returncode))
             if out is not None:
