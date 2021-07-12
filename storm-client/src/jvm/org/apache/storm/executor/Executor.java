@@ -678,7 +678,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.executorTransfer = executorTransfer;
     }
 
-    public void incrementErrorCount() {
+    public void incrementReportedErrorCount() {
         reportedErrorCount.inc(1L);
     }
 }
