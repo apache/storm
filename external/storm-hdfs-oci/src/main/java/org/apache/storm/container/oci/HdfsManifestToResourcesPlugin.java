@@ -43,19 +43,19 @@ public class HdfsManifestToResourcesPlugin implements OciManifestToResourcesPlug
     private FileSystem fs;
     private LoadingCache<Path, FileStatus> statCache;
 
-    private static String CONFIG_MEDIA_TYPE = "application/vnd.docker.container.image.v1+json";
+    private static final String CONFIG_MEDIA_TYPE = "application/vnd.docker.container.image.v1+json";
 
-    private static String LAYER_TAR_GZIP_MEDIA_TYPE = "application/vnd.docker.image.rootfs.diff.tar.gzip";
+    private static final String LAYER_TAR_GZIP_MEDIA_TYPE = "application/vnd.docker.image.rootfs.diff.tar.gzip";
 
-    private static String SHA_256 = "sha256";
+    private static final String SHA_256 = "sha256";
 
-    private static String CONFIG_HASH_ALGORITHM = SHA_256;
+    private static final String CONFIG_HASH_ALGORITHM = SHA_256;
 
-    private static String LAYER_HASH_ALGORITHM = SHA_256;
+    private static final String LAYER_HASH_ALGORITHM = SHA_256;
 
-    private static int SHA256_HASH_LENGTH = 64;
+    private static final int SHA256_HASH_LENGTH = 64;
 
-    private static String ALPHA_NUMERIC = "[a-zA-Z0-9]+";
+    private static final String ALPHA_NUMERIC = "[a-zA-Z0-9]+";
 
     @Override
     public void init(Map<String, Object> conf) throws IOException {

@@ -55,34 +55,34 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
     private int ociCacheRefreshIntervalSecs;
     private long lastRefreshTime;
 
-    private static String LOCAL_OR_HDFS_IMAGE_TAG_TO_MANIFEST_PLUGIN_PREFIX = "storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.";
+    private static final String LOCAL_OR_HDFS_IMAGE_TAG_TO_MANIFEST_PLUGIN_PREFIX = "storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.";
 
     /**
      * The HDFS location where the oci image-tag-to-hash file exists.
      */
-    private static String HDFS_OCI_IMAGE_TAG_TO_HASH_FILE =
+    private static final String HDFS_OCI_IMAGE_TAG_TO_HASH_FILE =
         LOCAL_OR_HDFS_IMAGE_TAG_TO_MANIFEST_PLUGIN_PREFIX + "hdfs.hash.file";
 
     /**
      * The local file system location where the oci image-tag-to-hash file exists.
      */
-    private static String LOCAL_OCI_IMAGE_TAG_TO_HASH_FILE =
+    private static final String LOCAL_OCI_IMAGE_TAG_TO_HASH_FILE =
         LOCAL_OR_HDFS_IMAGE_TAG_TO_MANIFEST_PLUGIN_PREFIX + "local.hash.file";
 
     /**
      * The interval in seconds between refreshing the oci image-Tag-to-hash cache.
      */
-    private static String OCI_CACHE_REFRESH_INTERVAL =
+    private static final String OCI_CACHE_REFRESH_INTERVAL =
         LOCAL_OR_HDFS_IMAGE_TAG_TO_MANIFEST_PLUGIN_PREFIX + "cache.refresh.interval.secs";
 
     /**
      * The number of manifests to cache.
      */
-    private static String OCI_NUM_MANIFESTS_TO_CACHE = LOCAL_OR_HDFS_IMAGE_TAG_TO_MANIFEST_PLUGIN_PREFIX + "num.manifests.to.cache";
+    private static final String OCI_NUM_MANIFESTS_TO_CACHE = LOCAL_OR_HDFS_IMAGE_TAG_TO_MANIFEST_PLUGIN_PREFIX + "num.manifests.to.cache";
 
-    private static int SHA256_HASH_LENGTH = 64;
+    private static final int SHA256_HASH_LENGTH = 64;
 
-    private static String ALPHA_NUMERIC = "[a-zA-Z0-9]+";
+    private static final String ALPHA_NUMERIC = "[a-zA-Z0-9]+";
 
     @Override
     public void init(Map<String, Object> conf) throws IOException {
@@ -177,14 +177,17 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
         return new BufferedReader(new InputStreamReader(fs.open(imageToHash)));
     }
 
-    // You may specify multiple tags per hash all on the same line.
-    // Comments are allowed using #. Anything after this character will not
-    // be read
-    // Example file:
-    // foo/bar:current,fizz/gig:latest:123456789
-    // #this/line:wont,be:parsed:2378590895
-    //
-    // This will map both foo/bar:current and fizz/gig:latest to 123456789
+    /**
+     * Read the image-tag-to-hash file and parse as a Map.
+     *
+     * <p>You may specify multiple tags per hash all on the same line.
+     * Comments are allowed using #. Anything after this character will not be read
+     * Example file:
+     *    foo/bar:current,fizz/gig:latest:123456789
+     *    #this/line:wont,be:parsed:2378590895
+     *
+     * <p>This will map both foo/bar:current and fizz/gig:latest to 123456789
+     */
     private static Map<String, String> readImageToHashFile(BufferedReader br) throws IOException {
         if (br == null) {
             return null;
@@ -278,7 +281,7 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
         }
     }
 
-    private class LruCache extends LinkedHashMap<String, ImageManifest> {
+    private static class LruCache extends LinkedHashMap<String, ImageManifest> {
         private int cacheSize;
 
         LruCache(int initialCapacity, float loadFactor) {
