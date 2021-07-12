@@ -88,19 +88,29 @@ public class HdfsOciResourcesLocalizer implements OciResourcesLocalizerInterface
             // create working dir, copy file here, and set readable, then move to final location.
             // this allows the operation to be atomic in case the supervisor dies.
             File workingDir = new File(dst.getParent() + "/working");
-            workingDir.mkdir();
+            if (!workingDir.exists()) {
+                boolean dirCreated = workingDir.mkdir();
+                if (!dirCreated) {
+                    throw new IOException("Couldn't create the directory: " + workingDir);
+                }
+            }
+
             File workingDst = new File(workingDir.getPath() + "/" + dst.getName());
 
-            LOG.info("Starting to copy {} from hdfs to {}", ociResource.getPath(), workingDst.toString());
+            LOG.info("Starting to copy {} from hdfs to {}", ociResource.getPath(), workingDst);
             copyFileLocallyWithRetry(ociResource, workingDst);
-            LOG.info("Successfully finished copying {} from hdfs to {}", ociResource.getPath(), workingDst.toString());
+            LOG.info("Successfully finished copying {} from hdfs to {}", ociResource.getPath(), workingDst);
 
             //set to readable by anyone
             boolean setReadable = workingDst.setReadable(true, false);
             if (!setReadable) {
                 throw new IOException("Couldn't set " + workingDst + " to be world-readable");
             }
-            workingDst.renameTo(dst);
+
+            boolean fileRenamed = workingDst.renameTo(dst);
+            if (!fileRenamed) {
+                throw new IOException("Couldn't move " + workingDst + " to " + dst);
+            }
         }
         return dst.toString();
     }
