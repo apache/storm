@@ -79,10 +79,6 @@ char* read_file_to_string(const char* filename) {
       }
     }
   }
-  if (bytes_left < 0) {
-    fprintf(ERRORFILE, "Error reading %s : %s\n", filename, strerror(errno));
-    goto cleanup;
-  }
 
   *cp = '\0';
   rc = 0;
