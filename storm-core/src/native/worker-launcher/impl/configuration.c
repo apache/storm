@@ -73,16 +73,16 @@ void free_configurations() {
  */
 static int is_only_root_writable(const char *file) {
   struct stat file_stat;
-  if (stat(file, &file_stat) != 0) {
+  if (stat(file, &file_stat)) {
     fprintf(ERRORFILE, "ERROR: Can't stat file %s - %s\n", file, strerror(errno));
     return 0;
   }
-  if (file_stat.st_uid != 0) {
+  if (file_stat.st_uid) {
     fprintf(ERRORFILE, "ERROR: File %s must be owned by root, but is owned by %d\n",
-            file, file_stat.st_uid);
+      file, file_stat.st_uid);
     return 0;
   }
-  if ((file_stat.st_mode & (S_IWGRP | S_IWOTH)) != 0) {
+  if (file_stat.st_mode & (S_IWGRP | S_IWOTH)) {
     fprintf(ERRORFILE, 
 	    "ERROR: File %s must not be world or group writable, but is %03o\n",
 	    file, file_stat.st_mode & (~S_IFMT));
