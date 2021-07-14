@@ -99,9 +99,6 @@ public class BoltExecutor extends Executor {
             Utils.sleepNoSimulation(100);
         }
 
-        if (!componentId.equals(StormCommon.SYSTEM_STREAM_ID)) { // System bolt doesn't call reportError()
-            this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0) - idToTaskBase).getUserContext());
-        }
         LOG.info("Preparing bolt {}:{}", componentId, getTaskIds());
         for (Task taskData : idToTask) {
             if (taskData == null) {
