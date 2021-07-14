@@ -1288,7 +1288,7 @@ public class DaemonConfig implements Validated {
     public static String STORM_OCI_ALLOWED_IMAGES = "storm.oci.allowed.images";
 
     /**
-     * White listed syscalls seccomp Json file to be used as a seccomp filter.
+     * Specify the seccomp Json file to be used as a seccomp filter.
      */
     @IsString
     public static String STORM_OCI_SECCOMP_PROFILE = "storm.oci.seccomp.profile";

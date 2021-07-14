@@ -4,7 +4,7 @@ layout: documentation
 documentation: true
 ---
 
-# OCI/Squashfs Runtime
+# OCI/Squashfs Runtime for Workers Running in Containers
 
 OCI/Squashfs is a container runtime that allows topologies to run inside docker containers. However, unlike the existing
 Docker runtime, the images are fetched from HDFS rather than from the Docker registry or requiring images to be pre-loaded
@@ -70,10 +70,13 @@ python docker-to-squash.py pull-build-push-update --hdfs-root hdfs://hostname:po
                       docker.xxx.com:4443/hadoop-user-images/storm/rhel7:20201202-232133,storm/rhel7:dev_current --log DEBUG --bootstrap
 ```
 
-With this command, all the layers belong to this image will be converted to squashfs file and be placed under `./layers` directory; 
+With this command, all the layers belonging to this image will be converted to squashfs files and be placed under `./layers` directory
+under the directory specified by `--hdfs-root`; 
 the manifest of this image will be placed under `./manifests` directory with the name as the sha256 value of the manifest content;
 the config of this image will be placed under `./config` directory with the name as the sha256 value of the config content;
 the mapping from the image tag to the sha256 value of the manifest  will be written to the "./image-tag-to-manifest-file".
+
+Note that `--hdfs-root` can be any directory on HDFS, as long as it matches with the`storm.oci.image.hdfs.toplevel.dir` config. 
 
 ##### Example
 
@@ -300,11 +303,14 @@ Then you need to set up storm with the following configs:
 | `storm.oci.readonly.bindmounts`        | A list of read only bind mounted directories.
 | `storm.oci.readwrite.bindmounts`       | A list of read-write bind mounted directories.
 | `storm.oci.nscd.dir`                   | The directory of nscd (name service cache daemon), e.g. "/var/run/nscd/". nscd must be running so that profiling can work properly.
-| `storm.oci.seccomp.profile`            | White listed syscalls seccomp Json file to be used as a seccomp filter
+| `storm.oci.seccomp.profile`            | Specify the seccomp Json file to be used as a seccomp filter
 | `supervisor.worker.launcher`              | Full path to the worker-launcher executable.
 | `storm.oci.image.hdfs.toplevel.dir`      |  The HDFS location under which the oci image manifests, layers and configs directories exist.
 | `storm.oci.image.tag.to.manifest.plugin` |  The plugin to be used to get the image-tag to manifest mappings.
-| `storm.oci.localorhdfs.image.tag.to.manifest.plugin.hdfs.hash.file`   |   The hdfs location of image-tag to manifest mapping file. You need to set it if `org.apache.storm.container.oci.LocalOrHdfsImageTagToManifestPlugin` is used as `storm.oci.image.tag.to.manifest.plugin`.
+| `storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.hdfs.hash.file` | The hdfs location of the image-tag to manifest mapping file. If `org.apache.storm.container.oci.LocalOrHdfsImageTagToManifestPlugin` is used as `storm.oci.image.tag.to.manifest.plugin`, either `storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.hdfs.hash.file` or `storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.local.hash.file` needs to be configured.
+| `storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.local.hash.file` | The local file system location where the image-tag to manifest mapping file exists. If `org.apache.storm.container.oci.LocalOrHdfsImageTagToManifestPlugin` is used as `storm.oci.image.tag.to.manifest.plugin`, either `storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.hdfs.hash.file` or `storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.local.hash.file` needs to be configured.
+| `storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.cache.refresh.interval.secs` | The interval in seconds between refreshing the image-tag to manifest mapping cache, used by `org.apache.storm.container.oci.LocalOrHdfsImageTagToManifestPlugin`.|
+| `storm.oci.local.or.hdfs.image.tag.to.manifest.plugin.num.manifests.to.cache` | The number of manifests to cache, used by `org.apache.storm.container.oci.LocalOrHdfsImageTagToManifestPlugin`.|
 | `storm.oci.manifest.to.resources.plugin` | The plugin to be used to get oci resource according to the manifest.
 | `storm.oci.resources.localizer`   | The plugin to use for oci resources localization. |
 | `storm.oci.resources.local.dir` | The local directory for localized oci resources. |
@@ -333,7 +339,7 @@ storm.oci.resources.localizer: "org.apache.storm.container.oci.HdfsOciResourcesL
 storm.oci.seccomp.profile: "/home/y/conf/storm/seccomp.json"
 ```
 
-To use built-in plugins from `external/storm-hdfs-oci`, you need to build `external/storm-hdfs-oci` and copy `storm-hdfs-oci.jar` and its dependencies to `extlib-daemon` directory.
+To use built-in plugins from `external/storm-hdfs-oci`, you need to build `external/storm-hdfs-oci` and copy `storm-hdfs-oci.jar` and its dependencies to the `extlib-daemon` directory.
 
 Additionally, if you want to access to secure hdfs, you also need to set the following configs.  
 ```
@@ -354,7 +360,7 @@ storm.hdfs.login.principal: primary/instance@REALM
 The supervisor calls RuncLibContainerManager to launch the container and the worker inside the container. It will first call the `storm.oci.image.tag.to.manifest.plugin`
 to fetch the mapping of image tag to manifest. Then it calls `storm.oci.manifest.to.resources.plugin` to get the list of resources to be downloaded and invokes 
 `storm.oci.resources.localizer` to download the config of the image and the layers of the image to a local directory. It then composes a `oci-config.json` (see example in Appendix) and 
-invoke worker-launcher to launch the container.
+invokes worker-launcher to launch the container.
 
 The worker-launcher parses the `oci-config.json` file and do some necessary initialization and set up. It then creates /run/worker-launcher/layers/xxx/mnt directories 
 and associate them with loopback devices, for example:
