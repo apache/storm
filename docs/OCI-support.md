@@ -76,7 +76,7 @@ the manifest of this image will be placed under `./manifests` directory with the
 the config of this image will be placed under `./config` directory with the name as the sha256 value of the config content;
 the mapping from the image tag to the sha256 value of the manifest  will be written to the "./image-tag-to-manifest-file".
 
-Note that `--hdfs-root` can be any directory on HDFS, as long as it matches with the`storm.oci.image.hdfs.toplevel.dir` config. 
+Note that `--hdfs-root` can be any directory on HDFS, as long as it matches with the `storm.oci.image.hdfs.toplevel.dir` config. 
 
 ##### Example
 

@@ -101,7 +101,7 @@ To make this metric work cpuacct must be mounted.
 
 ## CGroupCpuGuarantee
 
-org.apache.storm.metric.cgroup.CGroupCpuGuarantee reports back an approximate number of ms of CPU time that this worker is guaranteed to get.  This is calculated from the resources requested by the tasks in that given worker. 
+org.apache.storm.metric.cgroup.CGroupCpuGuarantee reports back an approximate number of ms of CPU time that this worker is guaranteed to get.  This is calculated from the resources requested by the tasks in that given worker.
 
 Note: when `org.apache.storm.container.docker.DockerManager` or `org.apache.storm.container.oci.RuncLibContainerManager` is used as `storm.resource.isolation.plugin`, use `org.apache.storm.metric.cgroup.CGroupCpuGuaranteeByCfsQuota` instead.
 

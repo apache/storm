@@ -171,7 +171,7 @@ char *get_full_path(const char *dir, const char* file) {
   char *ret;
   int bytesPrinted = asprintf(&ret, "%s/%s", dir, file);
   if (bytesPrinted == -1) {
-    fprintf(ERRORFILE, "ERROR: failed to allocate file path\n");
+    fprintf(ERRORFILE, "ERROR: failed to allocate file path. EXITING the process\n");
     exit(EXIT_FAILURE);
   }
   return ret;

@@ -107,8 +107,7 @@ int storm_user_info_fetch(struct storm_user_info *uinfo,
   for (;;) {
     // On success, the following call returns 0 and pwd is set to non-NULL.
     pwd = NULL;
-    ret = getpwnam_r(username, &uinfo->pwd, uinfo->buf,
-                         uinfo->buf_sz, &pwd);
+    ret = getpwnam_r(username, &uinfo->pwd, uinfo->buf, uinfo->buf_sz, &pwd);
     switch(ret) {
       case 0:
         if (!pwd) {
@@ -191,8 +190,7 @@ int storm_user_info_getgroups(struct storm_user_info *uinfo)
     uinfo->gids_size = INITIAL_GIDS_SIZE;
   }
   ngroups = uinfo->gids_size;
-  ret = getgrouplist(uinfo->pwd.pw_name, uinfo->pwd.pw_gid, 
-                         uinfo->gids, &ngroups);
+  ret = getgrouplist(uinfo->pwd.pw_name, uinfo->pwd.pw_gid, uinfo->gids, &ngroups);
   // Return value is different on Linux vs. FreeBSD.  Linux: the number of groups
   // or -1 on error.  FreeBSD: 0 on success or -1 on error.  Unfortunately, we
   // can't accept a 0 return on Linux, because buggy implementations have been
@@ -222,8 +220,7 @@ int storm_user_info_getgroups(struct storm_user_info *uinfo)
   }
   uinfo->gids = ngids;
   uinfo->gids_size = ngroups;
-  ret = getgrouplist(uinfo->pwd.pw_name, uinfo->pwd.pw_gid, 
-                         uinfo->gids, &ngroups);
+  ret = getgrouplist(uinfo->pwd.pw_name, uinfo->pwd.pw_gid, uinfo->gids, &ngroups);
   if (ret < 0) {
     return EIO;
   }
