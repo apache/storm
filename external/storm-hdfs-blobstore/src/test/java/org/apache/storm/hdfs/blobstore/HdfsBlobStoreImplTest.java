@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.storm.blobstore.BlobStoreFile;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -34,8 +35,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -46,27 +49,34 @@ public class HdfsBlobStoreImplTest {
     public static final MiniDFSClusterRule DFS_CLUSTER_RULE = new MiniDFSClusterRule();
 
     private static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStoreImplTest.class);
+    public static final String CONCURRENT_TEST_KEY_PREFIX = "concurrent-test-key";
 
     // key dir needs to be number 0 to number of buckets, choose one so we know where to look
     private static String KEYDIR = "0";
     private Path blobDir = new Path("/storm/blobstore1");
     private Path fullKeyDir = new Path(blobDir, KEYDIR);
     private String BLOBSTORE_DATA = "data";
+    // for concurrent test
+    private Path concurrentTestBlobDir = new Path("/storm/blobstore2");
+    private Path concurrentTestFullKeyDir = new Path(concurrentTestBlobDir, KEYDIR);
 
     public class TestHdfsBlobStoreImpl extends HdfsBlobStoreImpl implements AutoCloseable {
 
+        Path basePath;
         public TestHdfsBlobStoreImpl(Path path, Map<String, Object> conf) throws IOException {
             super(path, conf);
+            basePath = path;
         }
 
         public TestHdfsBlobStoreImpl(Path path, Map<String, Object> conf,
             Configuration hconf) throws IOException {
             super(path, conf, hconf);
+            basePath = path;
         }
 
         @Override
         protected Path getKeyDir(String key) {
-            return new Path(new Path(blobDir, KEYDIR), key);
+            return new Path(new Path(basePath, KEYDIR), key);
         }
 
         @Override
@@ -228,6 +238,80 @@ public class HdfsBlobStoreImplTest {
                 ios.write(testString.getBytes(StandardCharsets.UTF_8));
             }
             assertEquals(testString.getBytes(StandardCharsets.UTF_8).length, pfile.getFileLength());
+        }
+    }
+
+    /**
+     * Test by listing keys {@link HdfsBlobStoreImpl#listKeys()} in multiple concurrent threads and then ensure that
+     * same keys are retrived in all the threads without any exceptions.
+     */
+    @Test
+    public void testConcurrentIteration() throws Exception {
+        int concurrency = 100;
+        int keyCount = 10;
+
+        class ConcurrentListerRunnable implements Runnable {
+            TestHdfsBlobStoreImpl hbs;
+            int instanceNum;
+            List<String> keys = new ArrayList<>();
+
+            public ConcurrentListerRunnable(TestHdfsBlobStoreImpl hbs, int instanceNum) {
+                this.hbs = hbs;
+                this.instanceNum = instanceNum;
+            }
+
+            @Override
+            public void run() {
+                try {
+                    Iterator<String> iterator = hbs.listKeys(concurrentTestFullKeyDir);
+                    while (iterator.hasNext()) {
+                        keys.add(iterator.next());
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
+        Map<String, Object> conf = new HashMap<>();
+        try (TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(concurrentTestBlobDir, conf, DFS_CLUSTER_RULE.getHadoopConf())) {
+            // test write again
+            for (int i = 0 ; i < keyCount ; i++) {
+                String key = CONCURRENT_TEST_KEY_PREFIX + i;
+                String val = "This is string " + i;
+                BlobStoreFile pfile = hbs.write(key, false);
+                SettableBlobMeta meta = new SettableBlobMeta();
+                meta.set_replication_factor(1);
+                pfile.setMetadata(meta);
+                try (OutputStream ios = pfile.getOutputStream()) {
+                    ios.write(val.getBytes(StandardCharsets.UTF_8));
+                }
+            }
+
+
+            ConcurrentListerRunnable[] runnables = new ConcurrentListerRunnable[concurrency];
+            Thread[] threads = new Thread[concurrency];
+            for (int i = 0 ; i < concurrency ; i++) {
+                runnables[i] = new ConcurrentListerRunnable(hbs, i);
+                threads[i] = new Thread(runnables[i]);
+            }
+            for (int i = 0 ; i < concurrency ; i++) {
+                threads[i].start();
+            }
+            for (int i = 0 ; i < concurrency ; i++) {
+                threads[i].join();
+            }
+            List<String> keys = runnables[0].keys;
+            Assert.assertEquals("Number of keys (values=" + keys + ")", keyCount, keys.size());
+            for (int i = 1 ; i < concurrency ; i++) {
+                ConcurrentListerRunnable otherRunnable = runnables[i];
+                Assert.assertEquals(keys, otherRunnable.keys);
+            }
+            for (int i = 0 ; i < keyCount ; i++) {
+                String key = CONCURRENT_TEST_KEY_PREFIX + i;
+                hbs.deleteKey(key);
+            }
+            System.out.printf("All %d threads have %d keys=[%s]\n", concurrency, keys.size(), String.join(",", keys));
         }
     }
 }
