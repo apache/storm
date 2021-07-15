@@ -18,6 +18,8 @@
 
 package org.apache.storm.eventhubs.spout;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -60,7 +62,12 @@ public class ZookeeperStateStore implements IStateStore {
     @Override
     public void saveData(String statePath, String data) {
         data = data == null ? "" : data;
-        byte[] bytes = data.getBytes();
+        byte[] bytes = new byte[0];
+        try {
+            bytes = data.getBytes(StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
 
         try {
             if (curatorFramework.checkExists().forPath(statePath) == null) {
