@@ -12,7 +12,10 @@
 
 package org.apache.storm.daemon.worker;
 
+import static org.apache.storm.Constants.WORKER_METRICS_REGISTRY;
+
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.SharedMetricRegistries;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -29,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -187,6 +191,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, null, csContext);
 
         metricRegistry.start(topologyConf, port);
+        SharedMetricRegistries.add(WORKER_METRICS_REGISTRY, metricRegistry.getRegistry());
 
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();
@@ -552,7 +557,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             }
 
             metricRegistry.stop();
-
+            SharedMetricRegistries.remove(WORKER_METRICS_REGISTRY);
             LOG.info("Shut down worker {} {} {}", topologyId, assignmentId, port);
         } catch (Exception ex) {
             throw Utils.wrapInRuntime(ex);
