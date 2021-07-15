@@ -27,7 +27,6 @@ Possible symptoms:
 
 Solutions:
 
- * Storm doesn't work with ipv6. You can force ipv4 by adding `-Djava.net.preferIPv4Stack=true` to the supervisor child options and restarting the supervisor. 
  * You may have a misconfigured subnet. See the solutions for `Worker processes are crashing on startup with no stack trace`
 
 ### Topology stops processing tuples after awhile
