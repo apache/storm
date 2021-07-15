@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, Serializable {
+    private static final long serialVersionUID = 3617034202142038877L;
     private static final int MAX_WEIGHT = 100;
     private static final Logger LOG = LoggerFactory.getLogger(LoadAwareShuffleGrouping.class);
     private final Map<Integer, IndexAndWeights> orig = new HashMap<>();

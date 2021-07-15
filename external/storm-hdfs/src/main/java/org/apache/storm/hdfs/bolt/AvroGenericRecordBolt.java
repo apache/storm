@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AvroGenericRecordBolt extends AbstractHdfsBolt {
-
+    private static final long serialVersionUID = 3426992477471290298L;
     private static final Logger LOG = LoggerFactory.getLogger(AvroGenericRecordBolt.class);
 
     public AvroGenericRecordBolt withFsUrl(String fsUrl) {

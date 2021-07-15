@@ -28,6 +28,7 @@ import redis.clients.jedis.JedisCommands;
  * <p>Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
  */
 public class RedisLookupBolt extends AbstractRedisBolt {
+    private static final long serialVersionUID = -4320199887419553507L;
     private final RedisLookupMapper lookupMapper;
     private final RedisDataTypeDescription.RedisDataType dataType;
     private final String additionalKey;

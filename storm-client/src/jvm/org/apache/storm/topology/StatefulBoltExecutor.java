@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
  * Wraps a {@link IStatefulBolt} and manages the state of the bolt.
  */
 public class StatefulBoltExecutor<T extends State> extends BaseStatefulBoltExecutor {
+    private static final long serialVersionUID = 861904750416880230L;
     private static final Logger LOG = LoggerFactory.getLogger(StatefulBoltExecutor.class);
     private final IStatefulBolt<T> bolt;
     private State state;

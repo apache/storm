@@ -17,6 +17,7 @@ import org.apache.storm.task.IBolt;
 
 
 public class TaskBundle implements Serializable {
+    private static final long serialVersionUID = 5278817822729276915L;
     public IBolt task;
     public int componentId;
 

@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
  * checkpoint and restores the state during recovery.
  */
 public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltExecutor implements IStatefulBolt<T> {
+    private static final long serialVersionUID = -4622520785223118221L;
     private static final Logger LOG = LoggerFactory.getLogger(StatefulWindowedBoltExecutor.class);
     private final IStatefulWindowedBolt<T> statefulWindowedBolt;
     private transient String msgIdFieldName;

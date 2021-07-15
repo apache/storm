@@ -26,6 +26,7 @@ import org.apache.storm.tuple.Tuple;
  * Stream bolt that executes the different processors (except windowed and stateful operations).
  */
 class ProcessorBolt extends BaseRichBolt implements StreamBolt {
+    private static final long serialVersionUID = -8125146768423145446L;
     private final ProcessorBoltDelegate delegate;
 
     ProcessorBolt(String id, DirectedGraph<Node, Edge> graph, List<ProcessorNode> nodes) {

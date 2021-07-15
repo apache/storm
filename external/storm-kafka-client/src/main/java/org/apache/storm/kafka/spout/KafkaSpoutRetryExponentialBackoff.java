@@ -56,6 +56,8 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
      * Comparator ordering by timestamp. 
      */
     private static class RetryEntryTimeStampComparator implements Serializable, Comparator<RetrySchedule> {
+        private static final long serialVersionUID = -4964614653561591552L;
+
         @Override
         public int compare(RetrySchedule entry1, RetrySchedule entry2) {
             int result = Long.valueOf(entry1.nextRetryTimeNanos()).compareTo(entry2.nextRetryTimeNanos());

@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
  * Basic bolt for querying from any database.
  */
 public class JdbcLookupBolt extends AbstractJdbcBolt {
+    private static final long serialVersionUID = 7695955541005384059L;
     private static final Logger LOG = LoggerFactory.getLogger(JdbcLookupBolt.class);
 
     private String selectQuery;

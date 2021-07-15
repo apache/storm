@@ -483,6 +483,7 @@ public class JoinBolt extends BaseWindowedBolt {
     } // class JoinInfo
 
     protected static class FieldSelector implements Serializable {
+        private static final long serialVersionUID = -5978763498109850832L;
         String streamName;    // can be null;
         String[] field;       // nested field "x.y.z"  becomes => String["x","y","z"]
         String outputName;    // either "stream1:x.y.z" or "x.y.z" depending on whether stream name is present.

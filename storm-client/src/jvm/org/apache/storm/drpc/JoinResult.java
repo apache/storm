@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 
 public class JoinResult extends BaseRichBolt {
+    private static final long serialVersionUID = -1556674750669584127L;
     public static final Logger LOG = LoggerFactory.getLogger(JoinResult.class);
 
     private String returnComponent;

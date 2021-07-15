@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EventLoggerBolt implements IBolt {
-
+    private static final long serialVersionUID = -2050937128490948907L;
     /*
      The below field declarations are also used in common.clj to define the event logger output fields
       */

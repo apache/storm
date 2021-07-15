@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
  * The class doesn't handle reconnection so you may not want to use this for production.
  */
 public class SocketBolt extends BaseRichBolt {
+    private static final long serialVersionUID = 6471424110652828097L;
     private static final Logger LOG = LoggerFactory.getLogger(SocketBolt.class);
 
     private final IOutputSerializer serializer;

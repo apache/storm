@@ -26,6 +26,7 @@ import org.apache.storm.utils.KeyedRoundRobinQueue;
 
 
 public class KeyedFairBolt implements IRichBolt, FinishedCallback {
+    private static final long serialVersionUID = 7870249047836470607L;
     IRichBolt delegate;
     KeyedRoundRobinQueue<Tuple> rrQueue;
     Thread executor;

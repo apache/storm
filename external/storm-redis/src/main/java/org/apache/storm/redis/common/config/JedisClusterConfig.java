@@ -24,6 +24,7 @@ import redis.clients.jedis.Protocol;
  * Configuration for JedisCluster.
  */
 public class JedisClusterConfig implements Serializable {
+    private static final long serialVersionUID = 5902621698779866418L;
     private Set<InetSocketAddress> nodes;
     private int timeout;
     private int maxRedirections;

@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
  * Coordination requires the request ids to be globally unique for awhile. This is so it doesn't get confused in the case of retries.
  */
 public class CoordinatedBolt implements IRichBolt {
+    private static final long serialVersionUID = -1035826489890397991L;
     public static final Logger LOG = LoggerFactory.getLogger(CoordinatedBolt.class);
     private Map<String, SourceArgs> sourceArgs;
     private IdStreamSpec idStreamSpec;
@@ -245,6 +246,7 @@ public class CoordinatedBolt implements IRichBolt {
     }
 
     public static class SourceArgs implements Serializable {
+        private static final long serialVersionUID = 4875129143014951039L;
         public boolean singleCount;
 
         protected SourceArgs(boolean singleCount) {
@@ -286,6 +288,7 @@ public class CoordinatedBolt implements IRichBolt {
     }
 
     public static class IdStreamSpec implements Serializable {
+        private static final long serialVersionUID = 338928476284639169L;
         GlobalStreamId id;
 
         protected IdStreamSpec(String component, String stream) {

@@ -100,6 +100,7 @@ public class JmsState implements State {
     }
 
     public static class Options implements Serializable {
+        private static final long serialVersionUID = 8022017182667431203L;
         private JmsProvider jmsProvider;
         private JmsMessageProducer msgProducer;
         private int jmsAcknowledgeMode = Session.AUTO_ACKNOWLEDGE;

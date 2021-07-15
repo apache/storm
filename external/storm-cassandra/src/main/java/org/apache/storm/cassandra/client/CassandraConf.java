@@ -36,7 +36,7 @@ import org.apache.storm.utils.Utils;
  * Configuration used by cassandra storm components.
  */
 public class CassandraConf implements Serializable {
-
+    private static final long serialVersionUID = -297312399366194518L;
     public static final String CASSANDRA_USERNAME = "cassandra.username";
     public static final String CASSANDRA_PASSWORD = "cassandra.password";
     public static final String CASSANDRA_KEYSPACE = "cassandra.keyspace";

@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 
 public class MqttBolt extends BaseTickTupleAwareRichBolt {
+    private static final long serialVersionUID = 3487933238122492946L;
     private static final Logger LOG = LoggerFactory.getLogger(MqttBolt.class);
     private MqttTupleMapper mapper;
     private transient MqttPublisher publisher;

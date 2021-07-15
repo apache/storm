@@ -143,8 +143,8 @@ public class HdfsSpoutTopology {
     }
 
     public static class ConstBolt extends BaseRichBolt {
-        public static final String FIELDS = "message";
         private static final long serialVersionUID = -5313598399155365865L;
+        public static final String FIELDS = "message";
         private static final Logger log = LoggerFactory.getLogger(ConstBolt.class);
         int count = 0;
         private OutputCollector collector;

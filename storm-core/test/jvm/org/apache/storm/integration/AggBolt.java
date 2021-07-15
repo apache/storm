@@ -28,7 +28,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
 class AggBolt extends BaseRichBolt {
-
+    private static final long serialVersionUID = -2660952330782180105L;
     private final int branches;
     private final List<Tuple> seen = new ArrayList<>();
     private OutputCollector collector;

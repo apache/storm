@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class OpenTsdbBolt extends BaseRichBolt {
+    private static final long serialVersionUID = 5263407253112460929L;
     private static final Logger LOG = LoggerFactory.getLogger(OpenTsdbBolt.class);
 
     private final OpenTsdbClient.Builder openTsdbClientBuilder;

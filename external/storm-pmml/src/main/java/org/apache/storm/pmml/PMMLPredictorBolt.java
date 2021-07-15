@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class PMMLPredictorBolt extends BaseTickTupleAwareRichBolt {
+    private static final long serialVersionUID = -483242809286637261L;
     protected static final Logger LOG = LoggerFactory.getLogger(PMMLPredictorBolt.class);
 
     private final ModelOutputs outputs;

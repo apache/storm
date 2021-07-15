@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestEventOrderCheckBolt extends BaseRichBolt {
+    private static final long serialVersionUID = -2495757333759321987L;
     public static Logger LOG = LoggerFactory.getLogger(TestEventOrderCheckBolt.class);
     OutputCollector collector;
     Map<Integer, Long> recentEventId = new HashMap<Integer, Long>();

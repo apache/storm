@@ -15,6 +15,7 @@ package org.apache.storm.solr.schema;
 import java.io.Serializable;
 
 public class Field implements Serializable {
+    private static final long serialVersionUID = -425962107730712704L;
     private String name;
     private String type;
 

@@ -19,6 +19,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 
 
 public class BoltTracker extends NonRichBoltTracker implements IRichBolt {
+    private static final long serialVersionUID = -3440526338756829799L;
     IRichBolt richDelegate;
 
     public BoltTracker(IRichBolt delegate, String id) {
