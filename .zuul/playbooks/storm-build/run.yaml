@@ -1,0 +1,27 @@
+- hosts: all
+  become: yes
+  tasks:
+    - name: Build storm
+      shell:
+        cmd: |
+          wget https://www.apache.org/dist/maven/maven-3/3.5.4/binaries/apache-maven-3.5.4-bin.tar.gz
+          tar -xzf apache-maven-3.5.4-bin.tar.gz
+          export PATH=$PWD/apache-maven-3.5.4/bin:$PATH
+          
+          command curl -sSL https://rvm.io/mpapis.asc | sudo gpg --import -
+          command curl -sSL https://rvm.io/pkuczynski.asc | sudo gpg --import -
+          curl -L https://get.rvm.io | bash -s stable --autolibs=enabled && source ~/.profile
+          
+          source /etc/profile.d/rvm.sh
+          
+          wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.26.1/install.sh | bash && source ~/.bashrc
+          rvm use 2.4.2 --install
+          nvm install 8.9.3
+          
+          pip install mock
+          pip3 install mock
+          
+          mvn clean install -DskipTests
+        chdir: '{{ zuul.project.src_dir }}'
+        executable: /bin/bash
+      environment: '{{ global_env }}'
