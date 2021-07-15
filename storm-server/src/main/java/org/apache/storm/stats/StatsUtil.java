@@ -18,6 +18,7 @@
 
 package org.apache.storm.stats;
 
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1991,7 +1992,7 @@ public class StatsUtil {
         win2stats.put(FAILED, ClientStatsUtil.getMapByKey(data, WIN_TO_FAILED));
 
         String compType = (String) data.get(TYPE);
-        if (compType.equals(ClientStatsUtil.SPOUT)) {
+        if (Objects.equals(compType,ClientStatsUtil.SPOUT)) {
             ret.set_component_type(ComponentType.SPOUT);
             win2stats.put(COMP_LATENCY, ClientStatsUtil.getMapByKey(data, WIN_TO_COMP_LAT));
         } else {
