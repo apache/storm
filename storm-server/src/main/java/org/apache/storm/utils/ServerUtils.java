@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -808,7 +809,7 @@ public class ServerUtils {
         LOG.debug("CMD: tasklist /fo list /fi \"pid eq {}\" /v", pid);
         ProcessBuilder pb = new ProcessBuilder("tasklist", "/fo", "list", "/fi", "pid eq " + pid, "/v");
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 0;
             String line;
             while ((line = in.readLine()) != null) {
@@ -842,7 +843,7 @@ public class ServerUtils {
         LOG.debug("CMD: ps -o user -p {}", pid);
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", String.valueOf(pid));
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 1;
             String line = in.readLine();
             LOG.debug("CMD-LINE#{}: {}", lineNo, line);
@@ -928,7 +929,7 @@ public class ServerUtils {
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         List<String> unexpectedUsers = new ArrayList<>();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 0;
             String line;
             while ((line = in.readLine()) != null) {
@@ -993,7 +994,7 @@ public class ServerUtils {
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", pidParams);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         List<String> unexpectedUsers = new ArrayList<>();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 1;
             String line = in.readLine();
             LOG.debug("CMD-LINE#{}: {}", lineNo, line);
@@ -1037,7 +1038,7 @@ public class ServerUtils {
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "uid", "-p", pidParams);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         List<String> unexpectedUsers = new ArrayList<>();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 1;
             String line = in.readLine();
             LOG.debug("CMD-LINE#{}: {}", lineNo, line);
@@ -1091,7 +1092,7 @@ public class ServerUtils {
         LOG.debug("CMD: {}", String.join(" ", cmdArgs));
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             String line = in.readLine();
             LOG.debug("CMD-LINE#1: {}", line);
             try {
@@ -1125,7 +1126,7 @@ public class ServerUtils {
         LOG.debug("CMD: ls -dn {}", fpath);
         ProcessBuilder pb = new ProcessBuilder("ls", "-dn", fpath);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             String line = in.readLine();
             LOG.debug("CMD-OUTLINE: {}", line);
             line = line.trim();
