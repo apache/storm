@@ -252,19 +252,13 @@ The System Bolt `__system` provides lots of metrics for different worker wide th
 Be aware that the `__system` bolt is an actual bolt so regular bolt metrics described above also will be reported for it.
 
 ##### Receive (NettyServer)
-`__recv-iconnection` reports stats for the netty server on the worker.  This is what gets messages from other workers.  It is of the form
+`__recv-iconnection` is a map between the address of the remote worker and the number of tuples that were sent from it to this worker:
 
 ```
 {
-    "dequeuedMessages": 0,
-    "enqueued": {
-      "/127.0.0.1:49952": 389951
-    }
+    "/127.0.0.1:49952": 389951
 }
 ```
-
-`dequeuedMessages` is a throwback to older code where there was an internal queue between the server and the bolts/spouts.  That is no longer the case and the value can be ignored.
-`enqueued` is a map between the address of the remote worker and the number of tuples that were sent from it to this worker.
 
 ##### Send (Netty Client)
 

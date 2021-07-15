@@ -12,6 +12,7 @@
 
 package org.apache.storm.messaging.netty;
 
+import com.codahale.metrics.Gauge;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,13 +25,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.TaskMessage;
-import org.apache.storm.metric.api.IMetric;
-import org.apache.storm.metric.api.IStatefulObject;
-import org.apache.storm.serialization.KryoValuesDeserializer;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.shade.io.netty.bootstrap.ServerBootstrap;
 import org.apache.storm.shade.io.netty.buffer.PooledByteBufAllocator;
@@ -47,7 +47,7 @@ import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServer {
+class Server extends ConnectionWithStatus implements ISaslServer {
 
     public static final int LOAD_METRICS_TASK_ID = -1;
     
@@ -56,7 +56,6 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private final EventLoopGroup workerEventLoopGroup;
     private final ServerBootstrap bootstrap;
     private final ConcurrentHashMap<String, AtomicInteger> messagesEnqueued = new ConcurrentHashMap<>();
-    private final AtomicInteger messagesDequeued = new AtomicInteger(0);
     private final int boundPort;
     private final Map<String, Object> topoConf;
     private final int port;
@@ -74,8 +73,10 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
      * @param cb The callback to deliver incoming messages to
      * @param newConnectionResponse The response to send to clients when they connect. Can be null. If authentication
      *                              is required, the message will be sent after authentication is complete.
+     * @param metricRegistry The metricRegistry
      */
-    Server(Map<String, Object> topoConf, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
+    Server(Map<String, Object> topoConf, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse,
+           StormMetricRegistry metricRegistry) {
         this.topoConf = topoConf;
         this.isNettyAuthRequired = (Boolean) topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
         this.port = port;
@@ -117,6 +118,30 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             allChannels.add(channel);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        }
+
+        if (metricRegistry != null) {
+            Gauge<Map<String, Integer>> enqueued = new Gauge<Map<String, Integer>>() {
+                @Override
+                public Map<String, Integer> getValue() {
+                    HashMap<String, Integer> enqueued = new HashMap<>();
+                    Iterator<Map.Entry<String, AtomicInteger>> it = messagesEnqueued.entrySet().iterator();
+                    while (it.hasNext()) {
+                        Map.Entry<String, AtomicInteger> ent = it.next();
+                        //Yes we can delete something that is not 0 because of races, but that is OK for metrics
+                        AtomicInteger i = ent.getValue();
+                        if (i.get() == 0) {
+                            it.remove();
+                        } else {
+                            enqueued.put(ent.getKey(), i.getAndSet(0));
+                        }
+                    }
+                    return enqueued;
+                }
+            };
+            metricRegistry.gauge("__recv-iconnection", enqueued, Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
+
+            cb.registerMetrics(metricRegistry);
         }
     }
 
@@ -218,36 +243,6 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             }
         }
         return allEstablished;
-    }
-
-    @Override
-    public Object getState() {
-        LOG.debug("Getting metrics for server on port {}", port);
-        HashMap<String, Object> ret = new HashMap<>();
-        ret.put("dequeuedMessages", messagesDequeued.getAndSet(0));
-        HashMap<String, Integer> enqueued = new HashMap<>();
-        Iterator<Map.Entry<String, AtomicInteger>> it = messagesEnqueued.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, AtomicInteger> ent = it.next();
-            //Yes we can delete something that is not 0 because of races, but that is OK for metrics
-            AtomicInteger i = ent.getValue();
-            if (i.get() == 0) {
-                it.remove();
-            } else {
-                enqueued.put(ent.getKey(), i.getAndSet(0));
-            }
-        }
-        ret.put("enqueued", enqueued);
-
-        // Report messageSizes metric, if enabled (non-null).
-        if (cb instanceof IMetric) {
-            Object metrics = ((IMetric) cb).getValueAndReset();
-            if (metrics instanceof Map) {
-                ret.put("messageBytes", metrics);
-            }
-        }
-
-        return ret;
     }
 
     /**

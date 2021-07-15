@@ -13,6 +13,7 @@
 package org.apache.storm.messaging;
 
 import java.util.List;
+import org.apache.storm.metrics2.StormMetricRegistry;
 
 /**
  * A class that is called when a TaskMessage arrives.
@@ -24,4 +25,6 @@ public interface IConnectionCallback {
      * @param batch the messages to be processed
      */
     void recv(List<TaskMessage> batch);
+
+    default void registerMetrics(StormMetricRegistry metricRegistry) {}
 }
