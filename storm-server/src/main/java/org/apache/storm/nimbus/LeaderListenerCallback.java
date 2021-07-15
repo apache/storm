@@ -97,16 +97,17 @@ public class LeaderListenerCallback {
     /**
      * Invoke when gains leadership.
      */
-    public void leaderCallBack() {
+    public void leaderCallBack(Object lock) {
         numGainedLeader.mark();
         //set up nimbus-info to zk
         setUpNimbusInfo(acls);
         //sync zk assignments/id-info to local
-        LOG.info("Sync remote assignments and id-info to local");
-        clusterState.syncRemoteAssignments(null);
-        clusterState.syncRemoteIds(null);
-        clusterState.setAssignmentsBackendSynchronized();
-
+        LOG.info("Locking sync remote assignments and id-info to local");
+        synchronized (lock) {
+            clusterState.syncRemoteAssignments(null);
+            clusterState.syncRemoteIds(null);
+            clusterState.setAssignmentsBackendSynchronized();
+        }
         Set<String> activeTopologyIds = new TreeSet<>(ClientZookeeper.getChildren(zk,
                                                                                   ClusterUtils.STORMS_SUBTREE, false));
 

@@ -118,16 +118,16 @@ public class Zookeeper {
      */
     public static ILeaderElector zkLeaderElector(Map<String, Object> conf, CuratorFramework zkClient, BlobStore blobStore,
                                                  final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
-                                                 StormMetricsRegistry metricsRegistry) {
-        return instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc, clusterState, acls, metricsRegistry);
+                                                 StormMetricsRegistry metricsRegistry, Object submitLock) {
+        return instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc, clusterState, acls, metricsRegistry, submitLock);
     }
 
     protected ILeaderElector zkLeaderElectorImpl(Map<String, Object> conf, CuratorFramework zk, BlobStore blobStore,
                                                  final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
-                                                 StormMetricsRegistry metricsRegistry) {
+                                                 StormMetricsRegistry metricsRegistry, Object submitLock) {
         String id = NimbusInfo.fromConf(conf).toHostPortString();
         return new LeaderElectorImp(zk, id,
-            new LeaderListenerCallbackFactory(conf, zk, blobStore, tc, clusterState, acls, metricsRegistry));
+            new LeaderListenerCallbackFactory(conf, zk, blobStore, tc, clusterState, acls, metricsRegistry, submitLock));
     }
 
 }

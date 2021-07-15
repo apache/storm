@@ -45,9 +45,10 @@ public class LeaderListenerCallbackFactory {
     private final IStormClusterState clusterState;
     private final List<ACL> acls;
     private final StormMetricsRegistry metricsRegistry;
+    private final Object submitLock;
 
     public LeaderListenerCallbackFactory(Map<String, Object> conf, CuratorFramework zk, BlobStore blobStore, TopoCache tc,
-        IStormClusterState clusterState, List<ACL> acls, StormMetricsRegistry metricsRegistry) {
+        IStormClusterState clusterState, List<ACL> acls, StormMetricsRegistry metricsRegistry, Object submitLock) {
         this.conf = conf;
         this.zk = zk;
         this.blobStore = blobStore;
@@ -55,6 +56,7 @@ public class LeaderListenerCallbackFactory {
         this.clusterState = clusterState;
         this.acls = acls;
         this.metricsRegistry = metricsRegistry;
+        this.submitLock = submitLock;
     }
     
     public LeaderLatchListener create(ILeaderElector elector) throws UnknownHostException {
@@ -65,7 +67,7 @@ public class LeaderListenerCallbackFactory {
 
             @Override
             public void isLeader() {
-                callback.leaderCallBack();
+                callback.leaderCallBack(submitLock);
                 LOG.info("{} gained leadership.", hostName);
             }
 
