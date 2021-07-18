@@ -115,7 +115,7 @@ public abstract class OciContainerManager implements ResourceIsolationInterface 
     }
 
     @Override
-    public void releaseResourcesForWorker(String workerId) {
+    public void cleanup(String user, String workerId, int port) throws IOException {
         workerToCpu.remove(workerId);
         workerToMemoryMb.remove(workerId);
         workerToCores.remove(workerId);

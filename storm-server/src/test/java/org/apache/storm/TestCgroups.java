@@ -87,7 +87,9 @@ public class TestCgroups {
         Assert.assertEquals("Check if the correct value is written into memory.limit_in_bytes", String.valueOf(1024 * 1024 * 1024),
                             readFileAll(pathTomemoryLimitInBytes));
 
-        manager.releaseResourcesForWorker(workerId);
+        String user = "dummy-user";
+        int dummyPort = 0;
+        manager.cleanup(user, workerId, dummyPort);
 
         Assert.assertFalse("Make sure cgroup was removed properly", dirExists(pathToWorkerCgroupDir));
     }

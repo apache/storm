@@ -177,12 +177,6 @@ public class DockerManager extends OciContainerManager {
 
     }
 
-    @Override
-    public void releaseResourcesForWorker(String workerId) {
-        super.releaseResourcesForWorker(workerId);
-        workerToCid.remove(workerId);
-    }
-
     //Get the container ID of the worker
     private String getContainerId(String workerId) throws IOException {
         String cid = workerToCid.get(workerId);
@@ -335,7 +329,8 @@ public class DockerManager extends OciContainerManager {
 
     @Override
     public void cleanup(String user, String workerId, int port) throws IOException {
-        //NO OP
+        super.cleanup(user, workerId, port);
+        workerToCid.remove(workerId);
     }
 
     private String dockerCidFilePath(String workerId) {

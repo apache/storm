@@ -234,7 +234,7 @@ public class RuncLibContainerManager extends OciContainerManager {
 
         Long memoryInBytes = null;
         if (workerToMemoryMb.containsKey(workerId)) {
-            memoryInBytes = workerToMemoryMb.get(workerId) * 1024 * 1024L;
+            memoryInBytes = workerToMemoryMb.get(workerId) * 1024L * 1024L;
         }
         LOG.info("workerId {}: memoryInBytes set to {}; cpusQuotas set to {}", workerId, memoryInBytes, cpusQuotas);
 
@@ -258,7 +258,7 @@ public class RuncLibContainerManager extends OciContainerManager {
 
         OciContainerExecutorConfig ociContainerExecutorConfig =
             createOciContainerExecutorConfig(user, containerId, containerPidFilePath,
-                                             workerScriptPath, null, null, null, layers, ociRuntimeConfig);
+                                             workerScriptPath, layers, ociRuntimeConfig);
 
         //launch the container using worker-launcher
         String executorConfigToJsonFile = writeOciExecutorConfigToJsonFile(mapper, ociContainerExecutorConfig, workerDir);
@@ -423,13 +423,10 @@ public class RuncLibContainerManager extends OciContainerManager {
 
     private OciContainerExecutorConfig createOciContainerExecutorConfig(
             String username, String containerId, String pidFile,
-            String containerScriptPath, String containerCredentialsPath,
-            List<String> localDirs, List<String> logDirs,
-            List<OciLayer> layers, OciRuntimeConfig ociRuntimeConfig) {
+            String containerScriptPath, List<OciLayer> layers, OciRuntimeConfig ociRuntimeConfig) {
 
         return new OciContainerExecutorConfig(username, containerId,
-                pidFile, containerScriptPath, containerCredentialsPath,
-                localDirs, logDirs, layers, layersToKeep, ociRuntimeConfig);
+                pidFile, containerScriptPath, layers, layersToKeep, ociRuntimeConfig);
     }
 
     private OciProcessConfig createOciProcessConfig(String cwd,
@@ -520,7 +517,7 @@ public class RuncLibContainerManager extends OciContainerManager {
         if (pid != null) {
             signal(pid, 9, user);
         } else {
-            LOG.warn("Trying to forceKill container {} but pidfile is not found", workerId);
+            LOG.warn("Trying to forceKill container for workerId {} but pidfile is not found", workerId);
         }
     }
 
@@ -543,12 +540,6 @@ public class RuncLibContainerManager extends OciContainerManager {
         return pid;
     }
 
-    @Override
-    public void releaseResourcesForWorker(String workerId) {
-        super.releaseResourcesForWorker(workerId);
-        workerToContainerPid.remove(workerId);
-    }
-
     /**
      * The container terminates if any process inside the container dies.
      * So we only need to check if the initial process is alive or not.
@@ -566,6 +557,8 @@ public class RuncLibContainerManager extends OciContainerManager {
 
     @Override
     public void cleanup(String user, String workerId, int port) throws IOException {
+        super.cleanup(user, workerId, port);
+
         LOG.debug("clean up worker {}", workerId);
         try {
             String containerId = getContainerId(workerId, port);
@@ -584,6 +577,7 @@ public class RuncLibContainerManager extends OciContainerManager {
         LOG.debug("Removing {} from the watched workers list", workerId);
         workerToUser.remove(workerId);
         workerToExitCallback.remove(workerId);
+        workerToContainerPid.remove(workerId);
     }
 
     /**
@@ -611,7 +605,7 @@ public class RuncLibContainerManager extends OciContainerManager {
 
         Long containerPid = getContainerPid(workerId);
         if (containerPid == null) {
-            LOG.error("Counldn't get container PID for the worker {}. Skip profiling", workerId);
+            LOG.error("Couldn't get container PID for the worker {}. Skip profiling", workerId);
             return false;
         }
 

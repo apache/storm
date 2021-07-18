@@ -42,9 +42,8 @@ public class OciContainerExecutorConfig {
 
     public OciContainerExecutorConfig(String username,
                                       String containerId,
-                                      String pidFile, String containerScriptPath, String containerCredentialsPath,
-                                      List<String> localDirs,
-                                      List<String> logDirs, List<OciLayer> layers, int reapLayerKeepCount,
+                                      String pidFile, String containerScriptPath,
+                                      List<OciLayer> layers, int reapLayerKeepCount,
                                       OciRuntimeConfig ociRuntimeConfig) {
         this("0.1", username, containerId, pidFile,
             containerScriptPath, layers, reapLayerKeepCount, ociRuntimeConfig);
@@ -215,13 +214,6 @@ public class OciContainerExecutorConfig {
             OciMount(String destination, String type, String source, List<String> options) {
                 this.destination = destination;
                 this.type = type;
-                this.source = source;
-                this.options = options;
-            }
-
-            OciMount(String destination, String source, List<String> options) {
-                this.destination = destination;
-                this.type = null;
                 this.source = source;
                 this.options = options;
             }
