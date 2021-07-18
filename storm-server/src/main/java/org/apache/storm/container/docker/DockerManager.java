@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DockerManager extends OciContainerManager {
     private static final Logger LOG = LoggerFactory.getLogger(DockerManager.class);
-    private Map<String, String> workerToCid = new ConcurrentHashMap<>();
+    private final Map<String, String> workerToCid = new ConcurrentHashMap<>();
 
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {

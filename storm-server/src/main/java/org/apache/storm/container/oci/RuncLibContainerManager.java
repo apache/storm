@@ -86,9 +86,9 @@ public class RuncLibContainerManager extends OciContainerManager {
     //CPU CFS (Completely Fair Scheduler) period
     private static final long CPU_CFS_PERIOD_US = 100000;
 
-    private Map<String, Long> workerToContainerPid = new ConcurrentHashMap<>();
-    private Map<String, ExitCodeCallback> workerToExitCallback = new ConcurrentHashMap<>();
-    private Map<String, String> workerToUser = new ConcurrentHashMap<>();
+    private final Map<String, Long> workerToContainerPid = new ConcurrentHashMap<>();
+    private final Map<String, ExitCodeCallback> workerToExitCallback = new ConcurrentHashMap<>();
+    private final Map<String, String> workerToUser = new ConcurrentHashMap<>();
     private StormTimer checkContainerAliveTimer;
 
     @Override
@@ -429,8 +429,7 @@ public class RuncLibContainerManager extends OciContainerManager {
                 pidFile, containerScriptPath, layers, layersToKeep, ociRuntimeConfig);
     }
 
-    private OciProcessConfig createOciProcessConfig(String cwd,
-                                                    List<String> env, List<String> args) {
+    private OciProcessConfig createOciProcessConfig(String cwd, List<String> env, List<String> args) {
         return new OciProcessConfig(false, null, cwd, env,
                 args, null, null, null, true, 0, null, null);
     }
