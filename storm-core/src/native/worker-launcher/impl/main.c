@@ -166,130 +166,137 @@ int main(int argc, char **argv) {
 
   if (strcasecmp("code-dir", command) == 0) {
     if (argc != 4) {
-      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for code-dir\n",
-	      argc);
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for code-dir\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      exit_code = setup_dir_permissions(argv[optind], 0, TRUE);
     }
-    exit_code = setup_dir_permissions(argv[optind], 0, TRUE);
   } else if (strcasecmp("artifacts-dir", command) == 0) {
     if (argc != 4) {
-      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for artifacts-dir\n",
-	      argc);
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for artifacts-dir\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      exit_code = setup_dir_permissions(argv[optind], 1, TRUE);
     }
-    exit_code = setup_dir_permissions(argv[optind], 1, TRUE);
   } else if (strcasecmp("blob", command) == 0) {
       if (argc != 4) {
-          fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for blob\n",
-                  argc);
-          fflush(ERRORFILE);
-          return INVALID_ARGUMENT_NUMBER;
+        fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for blob\n", argc);
+        fflush(ERRORFILE);
+        exit_code = INVALID_ARGUMENT_NUMBER;
+      } else {
+        exit_code = setup_dir_permissions(argv[optind], 0, TRUE);
       }
-      exit_code = setup_dir_permissions(argv[optind], 0, TRUE);
   } else if (strcasecmp("rmr", command) == 0) {
     if (argc != 4) {
-      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for rmr\n",
-	      argc);
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for rmr\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      exit_code = recursive_delete(argv[optind], 1);
     }
-    exit_code = recursive_delete(argv[optind], 1);
   } else if (strcasecmp("worker", command) == 0) {
     if (argc != 5) {
-      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for worker\n",
-	      argc);
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for worker\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
-    }
-    working_dir = argv[optind++];
-    exit_code = setup_dir_permissions(working_dir, 1, TRUE);
-    if (exit_code == 0) {
-      exit_code = setup_worker_tmp_permissions(working_dir);
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      working_dir = argv[optind++];
+      exit_code = setup_dir_permissions(working_dir, 1, TRUE);
       if (exit_code == 0) {
-        exit_code = exec_as_user(working_dir, argv[optind]);
+        exit_code = setup_worker_tmp_permissions(working_dir);
+        if (exit_code == 0) {
+          exit_code = exec_as_user(working_dir, argv[optind]);
+        }
       }
     }
   } else if (strcasecmp("launch-docker-container", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for launch-docker-container\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
-    }
-    working_dir = argv[optind++];
-    exit_code = setup_dir_permissions(working_dir, 1, TRUE);
-    if (exit_code == 0) {
-      exit_code = setup_worker_tmp_permissions(working_dir);
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      working_dir = argv[optind++];
+      exit_code = setup_dir_permissions(working_dir, 1, TRUE);
       if (exit_code == 0) {
-        exit_code = run_docker_cmd(working_dir, argv[optind]);
+        exit_code = setup_worker_tmp_permissions(working_dir);
+        if (exit_code == 0) {
+          exit_code = run_docker_cmd(working_dir, argv[optind]);
+        }
       }
     }
   } else if (strcasecmp("run-docker-cmd", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for run-docker-cmd\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      working_dir = argv[optind++];
+      exit_code = run_docker_cmd(working_dir, argv[optind]);
     }
-    working_dir = argv[optind++];
-    exit_code = run_docker_cmd(working_dir, argv[optind]);
   } else if (strcasecmp("profile-docker-container", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for profile-docker-container\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      const char * worker_id = argv[optind++];
+      int pid = get_docker_container_pid(worker_id);
+      exit_code = profile_oci_container(pid, argv[optind]);
     }
-    const char * worker_id = argv[optind++];
-    int pid = get_docker_container_pid(worker_id);
-    exit_code = profile_oci_container(pid, argv[optind]);
   } else if (strcasecmp("profiler", command) == 0) {
     if (argc != 5) {
-      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for profiler\n",
-	      argc);
+      fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for profiler\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      working_dir = argv[optind++];
+      exit_code = exec_as_user(working_dir, argv[optind]);
     }
-    working_dir = argv[optind++];
-    exit_code = exec_as_user(working_dir, argv[optind]);
   } else if (strcasecmp("signal", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for signal\n",
 	      argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      char* end_ptr = NULL;
+      char* option = argv[optind++];
+      int container_pid = strtol(option, &end_ptr, 10);
+      if (option == end_ptr || *end_ptr != '\0') {
+        fprintf(ERRORFILE, "Illegal argument for container pid %s\n", option);
+        fflush(ERRORFILE);
+        exit_code = INVALID_ARGUMENT_NUMBER;
+      } else {
+        option = argv[optind++];
+        int signal = strtol(option, &end_ptr, 10);
+        if (option == end_ptr || *end_ptr != '\0') {
+          fprintf(ERRORFILE, "Illegal argument for signal %s\n", option);
+          fflush(ERRORFILE);
+          exit_code = INVALID_ARGUMENT_NUMBER;
+        } else {
+          exit_code = signal_container_as_user(user_detail->pw_name, container_pid, signal);
+        }
+      }
     }
-    char* end_ptr = NULL;
-    char* option = argv[optind++];
-    int container_pid = strtol(option, &end_ptr, 10);
-    if (option == end_ptr || *end_ptr != '\0') {
-      fprintf(ERRORFILE, "Illegal argument for container pid %s\n", option);
-      fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
-    }
-    option = argv[optind++];
-    int signal = strtol(option, &end_ptr, 10);
-    if (option == end_ptr || *end_ptr != '\0') {
-      fprintf(ERRORFILE, "Illegal argument for signal %s\n", option);
-      fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
-    }
-    exit_code = signal_container_as_user(user_detail->pw_name, container_pid, signal);
   } else if (strcasecmp("run-oci-container", command) == 0) {
     if (argc != 6) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 6) for run-oci-container\n", argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
-    }
-    working_dir = argv[optind++];
-    const char* command_file = argv[optind++];
-    const char* worker_artifacts_dir = argv[optind];
-    exit_code = setup_dir_permissions(working_dir, 1, TRUE);
-    if (exit_code == 0) {
-      exit_code = setup_worker_tmp_permissions(working_dir);
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      working_dir = argv[optind++];
+      const char* command_file = argv[optind++];
+      const char* worker_artifacts_dir = argv[optind];
+      exit_code = setup_dir_permissions(working_dir, 1, TRUE);
       if (exit_code == 0) {
-        //becomes root.
-        setuid(0);
-        exit_code = run_oci_container(command_file, worker_artifacts_dir);
+        exit_code = setup_worker_tmp_permissions(working_dir);
+        if (exit_code == 0) {
+          //becomes root.
+          setuid(0);
+          exit_code = run_oci_container(command_file, worker_artifacts_dir);
+        }
       }
     }
   } else if (strcasecmp("reap-oci-container", command) == 0) {
@@ -297,22 +304,24 @@ int main(int argc, char **argv) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for reap-oci-container\n",
 	      argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      char* container_id = argv[optind++];
+      int num_reap_layers_keep = atoi(argv[optind]);
+      //becomes root.
+      setuid(0);
+      exit_code = cleanup_oci_container_by_id(container_id, num_reap_layers_keep);
     }
-    char* container_id = argv[optind++];
-    int num_reap_layers_keep = atoi(argv[optind]);
-    //becomes root.
-    setuid(0);
-    exit_code = cleanup_oci_container_by_id(container_id, num_reap_layers_keep);
   } else if (strcasecmp("profile-oci-container", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for profile-oci-container\n",
 	      argc);
       fflush(ERRORFILE);
-      return INVALID_ARGUMENT_NUMBER;
+      exit_code = INVALID_ARGUMENT_NUMBER;
+    } else {
+      char* container_pid = argv[optind++];
+      exit_code = profile_oci_container(atoi(container_pid), argv[optind]);
     }
-    char* container_pid = argv[optind++];
-    exit_code = profile_oci_container(atoi(container_pid), argv[optind]);
   } else {
     fprintf(ERRORFILE, "Invalid command %s not supported.",command);
     fflush(ERRORFILE);
