@@ -43,13 +43,13 @@ char* read_file_to_string(const char* filename) {
   int rc = -1;
   int fd = open(filename, O_RDONLY);
   if (fd < 0) {
-    fprintf(ERRORFILE, "Error opening %s : %s\n", filename, strerror(errno));
+    fprintf(ERRORFILE, "ERROR: error opening %s : %s\n", filename, strerror(errno));
     goto cleanup;
   }
 
   struct stat filestat;
   if (fstat(fd, &filestat) != 0) {
-    fprintf(ERRORFILE, "Error examining %s : %s\n", filename, strerror(errno));
+    fprintf(ERRORFILE, "ERROR: error examining %s : %s\n", filename, strerror(errno));
     goto cleanup;
   }
 
@@ -59,7 +59,7 @@ char* read_file_to_string(const char* filename) {
   }
   buff = malloc(buff_size);
   if (buff == NULL) {
-    fprintf(ERRORFILE, "Unable to allocate %ld bytes\n", buff_size);
+    fprintf(ERRORFILE, "ERROR: unable to allocate %ld bytes\n", buff_size);
     goto cleanup;
   }
 
@@ -74,7 +74,7 @@ char* read_file_to_string(const char* filename) {
       bytes_left += FILE_BUFFER_INCREMENT;
       buff = realloc(buff, buff_size);
       if (buff == NULL) {
-        fprintf(ERRORFILE, "Unable to allocate %ld bytes\n", buff_size);
+        fprintf(ERRORFILE, "ERROR: unable to allocate %ld bytes\n", buff_size);
         goto cleanup;
       }
     }
@@ -104,13 +104,13 @@ char* read_file_to_string_as_wl_user(const char* filename) {
   uid_t user = geteuid();
   gid_t group = getegid();
   if (change_effective_user_to_wl() != 0) {
-    fputs("Cannot change to worker-launcher user\n", ERRORFILE);
+    fputs("ERROR: cannot change to worker-launcher user\n", ERRORFILE);
     return NULL;
   }
 
   char* buff = read_file_to_string(filename);
   if (change_effective_user(user, group) != 0) {
-    fputs("Cannot revert to previous user\n", ERRORFILE);
+    fputs("ERROR: cannot revert to previous user\n", ERRORFILE);
     free(buff);
     return NULL;
   }
@@ -128,13 +128,13 @@ bool write_file_as_wl(const char* path, const void* data, size_t count) {
   uid_t orig_user = geteuid();
   gid_t orig_group = getegid();
   if (change_effective_user_to_wl() != 0) {
-    fputs("Error changing to worker-launcher user and group\n", ERRORFILE);
+    fputs("ERROR: error changing to worker-launcher user and group\n", ERRORFILE);
     return false;
   }
 
   fd = open(path, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR);
   if (fd == -1) {
-    fprintf(ERRORFILE, "Error creating %s : %s\n", path, strerror(errno));
+    fprintf(ERRORFILE, "ERROR: error creating %s : %s\n", path, strerror(errno));
     goto cleanup;
   }
 
@@ -142,7 +142,7 @@ bool write_file_as_wl(const char* path, const void* data, size_t count) {
   while (count > 0) {
     ssize_t bytes_written = write(fd, bp, count);
     if (bytes_written == -1) {
-      fprintf(ERRORFILE, "Error writing to %s : %s\n", path, strerror(errno));
+      fprintf(ERRORFILE, "ERROR: error writing to %s : %s\n", path, strerror(errno));
       goto cleanup;
     }
     bp += bytes_written;
@@ -154,13 +154,13 @@ bool write_file_as_wl(const char* path, const void* data, size_t count) {
 cleanup:
   if (fd != -1) {
     if (close(fd) == -1) {
-      fprintf(ERRORFILE, "Error writing to %s : %s\n", path, strerror(errno));
+      fprintf(ERRORFILE, "ERROR: error writing to %s : %s\n", path, strerror(errno));
       result = false;
     }
   }
 
   if (change_effective_user(orig_user, orig_group) != 0) {
-    fputs("Cannot restore original user/group\n", ERRORFILE);
+    fputs("ERROR: cannot restore original user/group\n", ERRORFILE);
     result = false;
   }
 
