@@ -68,7 +68,7 @@ To make supervisor work with docker, you need to configure related settings corr
 |-------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `storm.resource.isolation.plugin.enable`  | set to `true` to enable isolation plugin. `storm.resource.isolation.plugin` determines which plugin to use. If this is set to `false`, `org.apache.storm.container.DefaultResourceIsolationManager` will be used.                                                                                                                                                                                                                                           |
 | `storm.resource.isolation.plugin`         | set to `"org.apache.storm.container.docker.DockerManager"` to enable docker support                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `storm.oci.allowed.images`             | A whitelist of docker images that can be used. Users can only choose a docker image from the list.
+| `storm.oci.allowed.images`             | An allowlist of docker images that can be used. Users can only choose a docker image from the list.
 | `storm.oci.image`                      | The default docker image to be used if user doesn't specify which image to use. And it must belong to the `storm.oci.allowed.images` 
 | `topology.oci.image`                   | Topologies can specify which image to use. It must belong to the `storm.oci.allowed.images` |
 | `storm.oci.cgroup.root`                | The root path of cgroup for docker to use. On RHEL7, it should be "/sys/fs/cgroup".
@@ -76,7 +76,7 @@ To make supervisor work with docker, you need to configure related settings corr
 | `storm.oci.readonly.bindmounts`        | A list of read only bind mounted directories.
 | `storm.oci.readwrite.bindmounts`        | A list of read write bind mounted directories.
 | `storm.oci.nscd.dir`                   | The directory of nscd (name service cache daemon), e.g. "/var/run/nscd/". nscd must be running so that profiling can work properly.
-| `storm.oci.seccomp.profile`            | White listed syscalls seccomp Json file to be used as a seccomp filter
+| `storm.oci.seccomp.profile`            | Specify the seccomp Json file to be used as a seccomp filter
 | `supervisor.worker.launcher`              | Full path to the worker-launcher executable. Details explained at [How to set up worker-launcher](#how-to-set-up-worker-launcher)
 
 Note that we only support cgroupfs cgroup driver because of some issues with `systemd` cgroup driver; restricting to `cgroupfs` also makes cgroup paths simpler. Please make sure to use `cgroupfs` before setting up docker support.

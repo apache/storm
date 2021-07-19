@@ -263,19 +263,6 @@ void test_signal_container_group() {
   }
 }
 
-/**
- * Ensure that the given path and all of the parent directories are created
- * with the desired permissions.
- */
-int mkdirs(const char* path, mode_t perm) {
-  char *cmd = malloc(10 + strlen(path));
-  int ret = 0;
-  sprintf(cmd, "mkdir -p %s", path);
-  ret = system(cmd);
-  free(cmd);
-  return ret;
-}
-
 int main(int argc, char **argv) {
   LOGFILE = stdout;
   ERRORFILE = stderr;

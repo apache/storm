@@ -51,6 +51,7 @@ before_install:
   - nvm install 8.9.3
   - nvm use 8.9.3
   - sudo apt-get update
+  - sudo apt-get install libssl-dev
   - sudo apt-get install python3
   - sudo apt-get install python3-pip
   - sudo add-apt-repository ppa:deadsnakes/ppa -y

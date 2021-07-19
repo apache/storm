@@ -202,7 +202,8 @@ public class CgroupManager extends DefaultResourceIsolationManager {
     }
 
     @Override
-    public void releaseResourcesForWorker(String workerId) {
+    public void cleanup(String user, String workerId, int port) throws IOException {
+
         CgroupCommon workerGroup = new CgroupCommon(workerId, hierarchy, this.rootCgroup);
         try {
             Set<Integer> tasks = workerGroup.getTasks();

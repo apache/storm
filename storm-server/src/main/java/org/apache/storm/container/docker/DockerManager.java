@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DockerManager extends OciContainerManager {
     private static final Logger LOG = LoggerFactory.getLogger(DockerManager.class);
-    private Map<String, String> workerToCid = new ConcurrentHashMap<>();
+    private final Map<String, String> workerToCid = new ConcurrentHashMap<>();
 
     @Override
     public void prepare(Map<String, Object> conf) throws IOException {
@@ -175,12 +175,6 @@ public class DockerManager extends OciContainerManager {
             }
         }, threadName, null);
 
-    }
-
-    @Override
-    public void releaseResourcesForWorker(String workerId) {
-        super.releaseResourcesForWorker(workerId);
-        workerToCid.remove(workerId);
     }
 
     //Get the container ID of the worker
@@ -335,7 +329,8 @@ public class DockerManager extends OciContainerManager {
 
     @Override
     public void cleanup(String user, String workerId, int port) throws IOException {
-        //NO OP
+        super.cleanup(user, workerId, port);
+        workerToCid.remove(workerId);
     }
 
     private String dockerCidFilePath(String workerId) {

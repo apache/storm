@@ -50,11 +50,6 @@ public class DefaultResourceIsolationManager implements ResourceIsolationInterfa
     }
 
     @Override
-    public void releaseResourcesForWorker(String workerId) {
-        //NO OP
-    }
-
-    @Override
     public void cleanup(String user, String workerId, int port) throws IOException {
         //NO OP
     }

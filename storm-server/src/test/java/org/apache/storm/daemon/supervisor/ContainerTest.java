@@ -210,7 +210,7 @@ public class ContainerTest {
                                              "SUPERVISOR", supervisorPort, port, la, iso, workerId, topoConf, ops, new StormMetricsRegistry());
 
         mc.cleanUp();
-        verify(iso).releaseResourcesForWorker(workerId);
+        verify(iso).cleanup(user, workerId, port);
 
         verify(ops).deleteIfExists(eq(new File(workerRoot, "pids")), eq(user), any(String.class));
         verify(ops).deleteIfExists(eq(new File(workerRoot, "tmp")), eq(user), any(String.class));
@@ -267,10 +267,6 @@ public class ContainerTest {
         @Override
         public void reserveResourcesForWorker(String workerId, Integer workerMemory, Integer workerCpu, String numaId) {
             fail("THIS IS NOT UNDER TEST");
-        }
-
-        @Override
-        public void releaseResourcesForWorker(String workerId) {
         }
 
         @Override
