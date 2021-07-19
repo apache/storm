@@ -112,7 +112,7 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
     private boolean loadImageToHashFiles() throws IOException {
         boolean ret = false;
         try (BufferedReader localBr = getLocalImageToHashReader()) {
-            Map<String, String> localImageToHash = readImageToHashFile(localBr);
+            Map<String, String> localImageToHash = readImageToHashFile(localBr, localImageTagToHashFile);
             if (localImageToHash != null && !localImageToHash.equals(localImageToHashCache)) {
                 localImageToHashCache = localImageToHash;
                 LOG.info("Reloaded local image tag to hash cache");
@@ -121,7 +121,7 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
         }
 
         try (BufferedReader hdfsBr = getHdfsImageToHashReader()) {
-            Map<String, String> hdfsImageToHash = readImageToHashFile(hdfsBr);
+            Map<String, String> hdfsImageToHash = readImageToHashFile(hdfsBr, hdfsImageToHashFile);
             if (hdfsImageToHash != null && !hdfsImageToHash.equals(hdfsImageToHashCache)) {
                 hdfsImageToHashCache = hdfsImageToHash;
                 LOG.info("Reloaded hdfs image tag to hash cache");
@@ -188,7 +188,7 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
      *
      * <p>This will map both foo/bar:current and fizz/gig:latest to 123456789
      */
-    private static Map<String, String> readImageToHashFile(BufferedReader br) throws IOException {
+    private static Map<String, String> readImageToHashFile(BufferedReader br, String filePath) throws IOException {
         if (br == null) {
             return null;
         }
@@ -206,7 +206,7 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
 
             index = line.lastIndexOf(":");
             if (index == -1) {
-                LOG.warn("Malformed imageTagToManifest entry: " + line);
+                LOG.warn("Malformed imageTagToManifest entry: {} in file: {}", line, filePath);
                 continue;
             }
             String imageTags = line.substring(0, index);

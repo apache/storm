@@ -87,13 +87,13 @@ public class HdfsManifestToResourcesPlugin implements OciManifestToResourcesPlug
         for (ImageManifest.Blob blob : manifest.getLayers()) {
             String mediaType = blob.getMediaType();
             if (!mediaType.equals(LAYER_TAR_GZIP_MEDIA_TYPE)) {
-                throw new IOException("Invalid config mediaType: " + mediaType);
+                throw new IOException("Invalid layer mediaType: " + mediaType);
             }
 
             String[] layerDigest = blob.getDigest().split(":", 2);
             String algorithm = layerDigest[0];
             if (!algorithm.equals(LAYER_HASH_ALGORITHM)) {
-                throw new IOException("Invalid config digest algorithm: " + algorithm);
+                throw new IOException("Invalid layer digest algorithm: " + algorithm);
             }
 
             String hash = layerDigest[1];
@@ -136,7 +136,7 @@ public class HdfsManifestToResourcesPlugin implements OciManifestToResourcesPlug
 
         String hash = configDigest[1];
         if (!hash.matches(ALPHA_NUMERIC) || hash.length() != SHA256_HASH_LENGTH) {
-            throw new IOException("Malformed layer digest: " + hash);
+            throw new IOException("Malformed config digest: " + hash);
         }
 
         long size = config.getSize();
