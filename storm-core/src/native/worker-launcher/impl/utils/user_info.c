@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "storm_user_info.h"
+#include "user_info.h"
 
 #include <errno.h>
 #include <grp.h>
@@ -33,13 +33,13 @@
 // max is defined to avoid buggy libraries making us run out of memory.
 #define MAX_USER_BUFFER_SIZE (32*1024)
 
-struct storm_user_info *storm_user_info_alloc(void)
+struct user_info *user_info_alloc(void)
 {
-  struct storm_user_info *uinfo;
+  struct user_info *uinfo;
   long buf_sz;
   char *buf;
 
-  uinfo = calloc(1, sizeof(struct storm_user_info));
+  uinfo = calloc(1, sizeof(struct user_info));
   buf_sz = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (buf_sz < 1024) {
     buf_sz = 1024;
@@ -54,7 +54,7 @@ struct storm_user_info *storm_user_info_alloc(void)
   return uinfo;
 }
 
-static void storm_user_info_clear(struct storm_user_info *uinfo)
+static void user_info_clear(struct user_info *uinfo)
 {
   struct passwd *pwd = &uinfo->pwd;
 
@@ -71,10 +71,10 @@ static void storm_user_info_clear(struct storm_user_info *uinfo)
   uinfo->gids_size = 0;
 }
 
-void storm_user_info_free(struct storm_user_info *uinfo)
+void user_info_free(struct user_info *uinfo)
 {
   free(uinfo->buf);
-  storm_user_info_clear(uinfo);
+  user_info_clear(uinfo);
   free(uinfo);
 }
 
@@ -95,7 +95,7 @@ static int getpwnam_error_translate(int err)
   return ENOENT;
 }
 
-int storm_user_info_fetch(struct storm_user_info *uinfo,
+int user_info_fetch(struct user_info *uinfo,
                            const char *username)
 {
   struct passwd *pwd;
@@ -103,7 +103,7 @@ int storm_user_info_fetch(struct storm_user_info *uinfo,
   size_t buf_sz;
   char *nbuf;
 
-  storm_user_info_clear(uinfo);
+  user_info_clear(uinfo);
   for (;;) {
     // On success, the following call returns 0 and pwd is set to non-NULL.
     pwd = NULL;
@@ -143,7 +143,7 @@ int storm_user_info_fetch(struct storm_user_info *uinfo,
   }
 }
 
-static int put_primary_gid_first(struct storm_user_info *uinfo)
+static int put_primary_gid_first(struct user_info *uinfo)
 {
   int i, num_gids = uinfo->num_gids;
   gid_t first_gid;
@@ -172,7 +172,7 @@ static int put_primary_gid_first(struct storm_user_info *uinfo)
   return EINVAL;
 }
 
-int storm_user_info_getgroups(struct storm_user_info *uinfo)
+int user_info_getgroups(struct user_info *uinfo)
 {
   int ret, ngroups;
   gid_t *ngids;
@@ -236,16 +236,16 @@ int storm_user_info_getgroups(struct storm_user_info *uinfo)
  */
 int main(int argc, char **argv) {
   char **username, *prefix;
-  struct storm_user_info *uinfo;
+  struct user_info *uinfo;
   int i, ret;
   
-  uinfo = storm_user_info_alloc();
+  uinfo = user_info_alloc();
   if (!uinfo) {
-    fprintf(stderr, "storm_user_info_alloc returned NULL.\n");
+    fprintf(stderr, "user_info_alloc returned NULL.\n");
     return EXIT_FAILURE;
   }
   for (username = argv + 1; *username; username++) {
-    ret = storm_user_info_fetch(uinfo, *username);
+    ret = user_info_fetch(uinfo, *username);
     if (!ret) {
       fprintf(stderr, "user[%s] : pw_uid = %lld\n",
               *username, (long long)uinfo->pwd.pw_uid);
@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
       fprintf(stderr, "user[%s] : error %d (%s)\n",
               *username, ret, strerror(ret));
     }
-    ret = storm_user_info_getgroups(uinfo);
+    ret = user_info_getgroups(uinfo);
     if (!ret) {
       fprintf(stderr, "          getgroups: ");
       prefix = "";
@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
       fprintf(stderr, "          getgroups: error %d\n", ret);
     }
   }
-  storm_user_info_free(uinfo);
+  user_info_free(uinfo);
   return EXIT_SUCCESS;
 }
 #endif

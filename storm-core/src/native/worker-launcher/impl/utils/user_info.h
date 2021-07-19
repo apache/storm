@@ -14,13 +14,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#ifndef STORM_USER_INFO_DOT_H
-#define STORM_USER_INFO_DOT_H
+#ifndef USER_INFO_DOT_H
+#define USER_INFO_DOT_H
 
 #include <pwd.h> /* for struct passwd */
 #include <unistd.h> /* for size_t */
 
-struct storm_user_info {
+struct user_info {
   size_t buf_sz;
   struct passwd pwd;
   char *buf;
@@ -30,23 +30,23 @@ struct storm_user_info {
 };
 
 /**
- * Allocate a storm user info context.
+ * Allocate a user info context.
  *
  * @return                        NULL on OOM; the context otherwise.
  */
-struct storm_user_info *storm_user_info_alloc(void);
+struct user_info *user_info_alloc(void);
 
 /**
- * Free a storm user info context.
+ * Free a user info context.
  *
- * @param uinfo                   The storm user info context to free.
+ * @param uinfo                   The user info context to free.
  */
-void storm_user_info_free(struct storm_user_info *uinfo);
+void user_info_free(struct user_info *uinfo);
 
 /**
  * Look up information for a user name.
  *
- * @param uinfo                   The storm user info context.
+ * @param uinfo                   The user info context.
  *                                Existing data in this context will be cleared.
  * @param username                The user name to look up.
  *
@@ -54,13 +54,13 @@ void storm_user_info_free(struct storm_user_info *uinfo);
  *                                0 on success;
  *                                EIO, EMFILE, ENFILE, or ENOMEM if appropriate.
  */
-int storm_user_info_fetch(struct storm_user_info *uinfo,
+int user_info_fetch(struct user_info *uinfo,
                            const char *username);
 
 /**
  * Look up the groups this user belongs to. 
  *
- * @param uinfo                   The storm user info context.
+ * @param uinfo                   The user info context.
  *                                uinfo->gids will be filled in on a successful
  *                                return;
  *
@@ -68,6 +68,6 @@ int storm_user_info_fetch(struct storm_user_info *uinfo,
  *                                ENOMEM if we ran out of memory.
  *                                EINVAL if the uinfo was invalid.
  */
-int storm_user_info_getgroups(struct storm_user_info *uinfo);
+int user_info_getgroups(struct user_info *uinfo);
 
 #endif

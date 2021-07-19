@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils/storm_user_info.h"
+#include "utils/user_info.h"
 #include "utils/file-utils.h"
 
 #include "worker-launcher.h"
@@ -53,12 +53,12 @@ fail:
 
 static cJSON* build_runc_config_process_user(const char* username) {
   cJSON* user_json = cJSON_CreateObject();
-  struct storm_user_info* sui = storm_user_info_alloc();
+  struct user_info* sui = user_info_alloc();
   if (sui == NULL) {
     return NULL;
   }
 
-  int rc = storm_user_info_fetch(sui, username);
+  int rc = user_info_fetch(sui, username);
   if (rc != 0) {
     fprintf(ERRORFILE, "Error looking up user %s : %s\n", username,
         strerror(rc));
@@ -72,7 +72,7 @@ static cJSON* build_runc_config_process_user(const char* username) {
     goto fail;
   }
 
-  rc = storm_user_info_getgroups(sui);
+  rc = user_info_getgroups(sui);
   if (rc != 0) {
     fprintf(ERRORFILE, "Error getting groups for user %s : %s\n", username,
         strerror(rc));
@@ -99,7 +99,7 @@ static cJSON* build_runc_config_process_user(const char* username) {
   return user_json;
 
 fail:
-  storm_user_info_free(sui);
+  user_info_free(sui);
   cJSON_Delete(user_json);
   return NULL;
 }
