@@ -461,7 +461,7 @@ static bool do_mount_layers_with_lock(oci_launch_cmd_ctx* ctx) {
       // Touch layer directory to show this existing layer was recently used.
       if (utimes(ctx->layers[i].layer_path, NULL) == -1) {
         // Error is not critical to container launch so just print a warning.
-        fprintf(ERRORFILE, "ERROR: Error updating timestamps of %s : %s\n",
+        fprintf(ERRORFILE, "WARN: Error updating timestamps of %s : %s\n",
             ctx->layers[i].layer_path, strerror(errno));
       }
     } else {
