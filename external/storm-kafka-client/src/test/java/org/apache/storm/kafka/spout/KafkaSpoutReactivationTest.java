@@ -31,6 +31,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricSet;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -39,6 +42,7 @@ import org.apache.storm.kafka.KafkaUnitExtension;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.kafka.spout.internal.ConsumerFactory;
 import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.metrics2.KafkaOffsetMetricManager;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -146,21 +150,4 @@ public class KafkaSpoutReactivationTest {
         //With earliest, the spout should also resume where it left off, rather than restart at the earliest offset.
         doReactivationTest(FirstPollOffsetStrategy.EARLIEST);
     }
-
-    @Test
-    public void testSpoutMustHandleGettingMetricsWhileDeactivated() throws Exception {
-        //Storm will try to get metrics from the spout even while deactivated, the spout must be able to handle this
-        prepareSpout(10, FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST);
-
-        for (int i = 0; i < 5; i++) {
-            KafkaSpoutMessageId msgId = emitOne();
-            spout.ack(msgId);
-        }
-
-        spout.deactivate();
-
-        Map<String, Long> offsetMetric = (Map<String, Long>) spout.getKafkaOffsetMetric().getValueAndReset();
-        assertThat(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC + "/totalSpoutLag"), is(5L));
-    }
-
 }
