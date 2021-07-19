@@ -124,7 +124,7 @@ public class RuncLibContainerManager extends OciContainerManager {
                         checkContainersAlive();
                     } catch (Exception e) {
                         //Ignore
-                        LOG.debug("The CheckRuncContainerAlive thread has exception. Ignored", e);
+                        LOG.warn("The CheckRuncContainerAlive thread has exception. Ignored", e);
                     }
                 });
         }
