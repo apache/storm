@@ -128,6 +128,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
     private AtomicBoolean needToRefreshCreds = new AtomicBoolean(false);
     private final RateCounter reportedErrorCount;
+    private final boolean enableV2MetricsDataPoints;
+    private final Integer v2MetricsTickInterval;
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -183,6 +185,9 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         flushTuple = AddressedTuple.createFlushTuple(workerTopologyContext);
         this.reportedErrorCount = workerData.getMetricRegistry().rateCounter("__reported-error-count", componentId,
                 taskIds.get(0));
+
+        enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
+        v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -337,7 +342,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                     }
                 }
             }
-            addV2Metrics(taskId, dataPoints);
+            addV2Metrics(taskId, dataPoints, interval);
 
             if (!dataPoints.isEmpty()) {
                 IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
@@ -353,11 +358,16 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     // updates v1 metric dataPoints with v2 metric API data
-    private void addV2Metrics(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
-        boolean enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
+    private void addV2Metrics(int taskId, List<IMetricsConsumer.DataPoint> dataPoints, int interval) {
         if (!enableV2MetricsDataPoints) {
             return;
         }
+
+        // only report v2 metric on the proper metrics tick interval
+        if (interval != v2MetricsTickInterval) {
+            return;
+        }
+
         processGauges(taskId, dataPoints);
         processCounters(taskId, dataPoints);
         processHistograms(taskId, dataPoints);
@@ -444,6 +454,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     protected void setupMetrics() {
+        boolean v2TickScheduled = !enableV2MetricsDataPoints;
         for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
             StormTimer timerTask = workerData.getUserTimer();
             timerTask.scheduleRecurring(interval, interval,
@@ -451,6 +462,30 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                     TupleImpl tuple =
                         new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
                                       (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
+                    AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                    try {
+                        receiveQueue.publish(metricsTickTuple);
+                        receiveQueue.flush();  // avoid buffering
+                    } catch (InterruptedException e) {
+                        LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+            );
+            if (interval == v2MetricsTickInterval) {
+                v2TickScheduled = true;
+            }
+        }
+
+        if (!v2TickScheduled) {
+            LOG.info("Scheduling v2 metrics tick for interval {}", v2MetricsTickInterval);
+            StormTimer timerTask = workerData.getUserTimer();
+            timerTask.scheduleRecurring(v2MetricsTickInterval, v2MetricsTickInterval,
+                () -> {
+                    TupleImpl tuple =
+                            new TupleImpl(workerTopologyContext, new Values(v2MetricsTickInterval), Constants.SYSTEM_COMPONENT_ID,
+                                    (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
                     AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
                     try {
                         receiveQueue.publish(metricsTickTuple);

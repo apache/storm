@@ -278,6 +278,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_ENABLE_V2_METRICS_TICK = "topology.enable.v2.metrics.tick";
 
     /**
+     * Topology configuration to specify the V2 metrics tick interval in seconds.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    public static final String TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS = "topology.v2.metrics.tick.interval.seconds";
+
+    /**
      * The class name of the {@link org.apache.storm.state.StateProvider} implementation. If not specified defaults to {@link
      * org.apache.storm.state.InMemoryKeyValueStateProvider}. This can be overridden at the component level.
      */
