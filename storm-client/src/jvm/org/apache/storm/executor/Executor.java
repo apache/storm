@@ -456,23 +456,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected void setupMetrics() {
         boolean v2TickScheduled = !enableV2MetricsDataPoints;
         for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
-            StormTimer timerTask = workerData.getUserTimer();
-            timerTask.scheduleRecurring(interval, interval,
-                () -> {
-                    TupleImpl tuple =
-                        new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
-                                      (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                    AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                    try {
-                        receiveQueue.publish(metricsTickTuple);
-                        receiveQueue.flush();  // avoid buffering
-                    } catch (InterruptedException e) {
-                        LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                }
-            );
+            scheduleMetricsTick(interval);
             if (interval == v2MetricsTickInterval) {
                 v2TickScheduled = true;
             }
@@ -480,24 +464,28 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
         if (!v2TickScheduled) {
             LOG.info("Scheduling v2 metrics tick for interval {}", v2MetricsTickInterval);
-            StormTimer timerTask = workerData.getUserTimer();
-            timerTask.scheduleRecurring(v2MetricsTickInterval, v2MetricsTickInterval,
-                () -> {
-                    TupleImpl tuple =
-                            new TupleImpl(workerTopologyContext, new Values(v2MetricsTickInterval), Constants.SYSTEM_COMPONENT_ID,
-                                    (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                    AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                    try {
-                        receiveQueue.publish(metricsTickTuple);
-                        receiveQueue.flush();  // avoid buffering
-                    } catch (InterruptedException e) {
-                        LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                }
-            );
+            scheduleMetricsTick(v2MetricsTickInterval);
         }
+    }
+
+    private void scheduleMetricsTick(int interval) {
+        StormTimer timerTask = workerData.getUserTimer();
+        timerTask.scheduleRecurring(interval, interval,
+            () -> {
+                TupleImpl tuple =
+                        new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
+                                (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
+                AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                try {
+                    receiveQueue.publish(metricsTickTuple);
+                    receiveQueue.flush();  // avoid buffering
+                } catch (InterruptedException e) {
+                    LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        );
     }
 
     protected void setupTicks(boolean isSpout) {
