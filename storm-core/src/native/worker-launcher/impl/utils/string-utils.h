@@ -32,13 +32,6 @@ typedef struct strbuf_struct {
   size_t capacity;            // capacity of the buffer
 } strbuf;
 
-
-/*
- * Validate if the input is a valid container id
- * return false/true
- */
-bool validate_container_id(const char* input);
-
 /**
  * Converts a sequence of bytes into a hexadecimal string.
  *
