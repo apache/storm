@@ -64,8 +64,8 @@ public class KafkaOffsetMetricManager<K, V> {
                 if (topicMetrics == null) {
                     topicMetrics = new KafkaOffsetTopicMetrics(topic);
                     topicMetricsMap.put(topic, topicMetrics);
+                    topologyContext.registerMetricSet("kafkaOffset", topicMetrics);
                 }
-                topologyContext.registerMetricSet("kafkaOffset", topicMetrics);
 
                 KafkaOffsetPartitionMetrics topicPartitionMetricSet
                     = new KafkaOffsetPartitionMetrics<>(offsetManagerSupplier, consumerSupplier, topicPartition, topicMetrics);
