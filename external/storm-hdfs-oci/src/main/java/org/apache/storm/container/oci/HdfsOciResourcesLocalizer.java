@@ -89,7 +89,7 @@ public class HdfsOciResourcesLocalizer implements OciResourcesLocalizerInterface
             // this allows the operation to be atomic in case the supervisor dies.
             File workingDir = new File(dst.getParent() + "/working");
             if (!workingDir.exists()) {
-                boolean dirCreated = workingDir.mkdir();
+                boolean dirCreated = workingDir.mkdirs();
                 if (!dirCreated) {
                     throw new IOException("Couldn't create the directory: " + workingDir);
                 }
