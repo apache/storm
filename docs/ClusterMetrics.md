@@ -218,6 +218,7 @@ Metrics associated with the supervisor, which launches the workers for a topolog
 | supervisor:worker-launch-duration | timer | Time taken for a worker to launch. |
 | supervisor:worker-per-call-clean-up-duration-ns | meter | how long it takes to cleanup a worker (ns). |
 | supervisor:worker-shutdown-duration-ns | meter | how long it takes to shutdown a worker (ns). |
+| supervisor:workerTokenAuthorizer-get-password-failures | meter | Failures getting password for user in WorkerTokenAuthorizer |
 
 
 ## UI Metrics
