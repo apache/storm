@@ -12,8 +12,8 @@
 
 package org.apache.storm.security.auth.workertoken;
 
+import com.codahale.metrics.Meter;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +45,7 @@ public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(WorkerTokenAuthorizer.class);
     private final LoadingCache<WorkerTokenInfo, PrivateWorkerKey> keyCache;
     private final IStormClusterState state;
+    private static final Meter passwordFailures = new Meter();
 
     /**
      * Constructor.
@@ -134,9 +135,14 @@ public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
             byte[] password = getSignedPasswordFor(user, deser);
             return Optional.of(Base64.getEncoder().encodeToString(password).toCharArray());
         } catch (Exception e) {
+            passwordFailures.mark();
             LOG.error("Could not get password for token {}/{}", deser.get_userName(), deser.get_topologyId(), e);
             return Optional.empty();
         }
+    }
+
+    public static Meter getPasswordFailuresMeter() {
+        return passwordFailures;
     }
 
     @Override
