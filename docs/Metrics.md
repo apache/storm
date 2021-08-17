@@ -235,7 +235,7 @@ These queues report the following metrics:
 `arrival_rate_secs` is an estimation of the number of tuples that are inserted into the queue in one second, although it is actually the dequeue rate.
 The `sojourn_time_ms` is calculated from the arrival rate and is an estimate of how many milliseconds each tuple sits in the queue before it is processed.
 
-The queue has a set maximum number of entries.  If the regular queue fills up an overflow queue takes over.  The number of tuple batches stored in this overflow section are represented by the `overflow` metric.  
+The queue has a set maximum number of entries.  If the regular queue fills up an overflow queue takes over.  The number of tuples stored in this overflow section are represented by the `overflow` metric.  Note that an overflow queue is only used for executors to receive tuples from remote workers. It doesn't apply to intra-worker tuple transfer.
 
 `capacity` is the maximum number of entries in the queue. `population` is the number of entries currently filled in the queue. 'pct_full' tracks the percentage of capacity in use.
 
