@@ -145,6 +145,7 @@ to using the long metric name, but can report the short name by configuring repo
 ## Backwards Compatibility Notes
 
 1. V2 metrics can also be reported to the Metrics Consumers registered with `topology.metrics.consumer.register` by enabling the `topology.enable.v2.metrics.tick` configuration.
+The rate that they will reported to Metric Consumers is controlled by `topology.v2.metrics.tick.interval.seconds`, defaulting to every 60 seconds.
 
 2. Starting from storm 2.3, the config `storm.metrics.reporters` is deprecated in favor of `topology.metrics.reporters`.
 
