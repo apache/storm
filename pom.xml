@@ -1210,7 +1210,7 @@
                         <argLine>-Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
                         <trimStackTrace>false</trimStackTrace>
                         <forkCount>1.0C</forkCount>
-                        <reuseForks>true</reuseForks>
+                        <reuseForks>false</reuseForks>
                         <systemPropertyVariables>
                             <storm.home>${project.basedir}/target/testhome</storm.home>
                         </systemPropertyVariables>
