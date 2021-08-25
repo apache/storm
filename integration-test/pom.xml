@@ -119,7 +119,7 @@
                         </property>
                     </properties>
                     <reuseForks>true</reuseForks>
-                    <forkCount>1.0C</forkCount>
+                    <forkCount>1</forkCount>
                     <systemPropertyVariables>
                         <regression.downloadWorkerLogs>${regression.downloadWorkerLogs}</regression.downloadWorkerLogs>
                     </systemPropertyVariables>
