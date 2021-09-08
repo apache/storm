@@ -199,6 +199,10 @@ This metric records how much time a spout was idle because more tuples than `top
 
 This metric records how much time a spout was idle because back-pressure indicated that downstream queues in the topology were too full.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled. This is similar to skipped-throttle-ms in Storm 1.x.
 
+##### `__backpressure-overflow-count`
+
+This metric indicates the overflow count last time BP status was sent, with a minimum value of 1 if a task has backpressure on.
+
 ##### `skipped-inactive-ms`
 
 This metric records how much time a spout was idle because the topology was deactivated.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled.
