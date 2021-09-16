@@ -266,7 +266,7 @@ topology.max.spout.pending: null    # ideally should be larger than topology.pro
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60
-topology.fall.back.on.java.serialization: true
+topology.fall.back.on.java.serialization: false
 topology.worker.childopts: null
 topology.worker.logwriter.childopts: "-Xmx64m"
 topology.tick.tuple.freq.secs: null

@@ -536,7 +536,7 @@ public class Config extends HashMap<String, Object> {
     @IsInteger
     public static final String TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS = "topology.builtin.metrics.bucket.size.secs";
     /**
-     * Whether or not to use Java serialization in a topology.
+     * Whether or not to use Java serialization in a topology. Default is set false for security reasons.
      */
     @IsBoolean
     public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION = "topology.fall.back.on.java.serialization";
