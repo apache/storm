@@ -19,9 +19,12 @@ import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.shade.io.netty.buffer.ByteBuf;
 import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
 import org.apache.storm.shade.io.netty.handler.codec.ByteToMessageDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageDecoder extends ByteToMessageDecoder {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MessageDecoder.class);
     private final KryoValuesDeserializer deser;
 
     public MessageDecoder(KryoValuesDeserializer deser) {
@@ -163,5 +166,11 @@ public class MessageDecoder extends ByteToMessageDecoder {
         if (!ret.isEmpty()) {
             out.add(ret);
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        LOG.error("Exception thrown while decoding messages in channel {}; exception: ", ctx.channel(), cause);
+        ctx.close();
     }
 }

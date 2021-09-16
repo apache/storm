@@ -3450,12 +3450,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             getComponentPendingProfileActionsCalls.mark();
             CommonTopoInfo info = getCommonTopoInfo(id, "getComponentPendingProfileActions");
-            Map<String, String> nodeToHost = info.assignment.get_node_host();
             Map<List<? extends Number>, List<Object>> exec2hostPort = new HashMap<>();
-            for (Entry<List<Long>, NodeInfo> entry : info.assignment.get_executor_node_port().entrySet()) {
-                NodeInfo ni = entry.getValue();
-                List<Object> hostPort = Arrays.asList(nodeToHost.get(ni.get_node()), ni.get_port_iterator().next().intValue());
-                exec2hostPort.put(entry.getKey(), hostPort);
+            if (info.assignment != null) {
+                Map<String, String> nodeToHost = info.assignment.get_node_host();
+                for (Entry<List<Long>, NodeInfo> entry : info.assignment.get_executor_node_port().entrySet()) {
+                    NodeInfo ni = entry.getValue();
+                    List<Object> hostPort = Arrays.asList(nodeToHost.get(ni.get_node()), ni.get_port_iterator().next().intValue());
+                    exec2hostPort.put(entry.getKey(), hostPort);
+                }
             }
             List<Map<String, Object>> nodeInfos =
                 StatsUtil.extractNodeInfosFromHbForComp(exec2hostPort, info.taskToComponent, false, componentId);
