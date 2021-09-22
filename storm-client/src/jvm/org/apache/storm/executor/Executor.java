@@ -443,7 +443,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         addConvertedMetric(baseName, ".p999", snapshot.get999thPercentile(), dataPoints, true);
     }
 
-    private void addConvertedMetric(String baseName, String suffix, double value, List<IMetricsConsumer.DataPoint> dataPoints, boolean needConversion) {
+    private void addConvertedMetric(String baseName, String suffix, double value,
+                                    List<IMetricsConsumer.DataPoint> dataPoints, boolean needConversion) {
         IMetricsConsumer.DataPoint dataPoint
             = new IMetricsConsumer.DataPoint(baseName + suffix, needConversion ? convertDuration(value) : value);
         dataPoints.add(dataPoint);
