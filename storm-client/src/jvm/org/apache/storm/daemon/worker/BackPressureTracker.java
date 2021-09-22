@@ -136,7 +136,7 @@ public class BackPressureTracker {
                         return 0;
                     }
                 };
-                metricRegistry.gauge("__backpressure-overflow-count", bpOverflowCount, componentId, taskId);
+                metricRegistry.gauge("__backpressure-last-overflow-count", bpOverflowCount, componentId, taskId);
             }
         }
 
