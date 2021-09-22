@@ -232,7 +232,8 @@ public class WorkerState {
         }
         int maxTaskId = getMaxTaskId(componentToSortedTasks);
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
-        this.bpTracker = new BackPressureTracker(workerId, taskToExecutorQueue);
+
+        this.bpTracker = new BackPressureTracker(workerId, taskToExecutorQueue, metricRegistry, taskToComponent);
         this.deserializedWorkerHooks = deserializeWorkerHooks();
         LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
         IConnectionCallback cb = new DeserializingConnectionCallback(topologyConf,
@@ -584,7 +585,6 @@ public class WorkerState {
                 receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
                 bpTracker.setLastOverflowCount(bpState, currOverflowCount);
             } else {
-
                 if (currOverflowCount - bpTracker.getLastOverflowCount(bpState) > RESEND_BACKPRESSURE_SIZE) {
                     // resend BP status, in case prev notification was missed or reordered
                     BackPressureStatus bpStatus = bpTracker.getCurrStatus();
@@ -593,6 +593,7 @@ public class WorkerState {
                     LOG.debug("Re-sent BackPressure Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
                 }
             }
+
             if (!queue.tryPublishToOverflow(tuple)) {
                 dropMessage(tuple, queue);
             }
