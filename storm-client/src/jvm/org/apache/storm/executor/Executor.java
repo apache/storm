@@ -379,10 +379,10 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         for (Map.Entry<String, Meter> entry : meters.entrySet()) {
             IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
             dataPoints.add(dataPoint);
-            addConvertedMetric(entry.getKey(), ".m1_rate", entry.getValue().getOneMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".m5_rate", entry.getValue().getFiveMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".m15_rate", entry.getValue().getFifteenMinuteRate(), dataPoints);
-            addConvertedMetric(entry.getKey(), ".mean_rate", entry.getValue().getMeanRate(), dataPoints);
+            addConvertedMetric(entry.getKey(), ".m1_rate", entry.getValue().getOneMinuteRate(), dataPoints, false);
+            addConvertedMetric(entry.getKey(), ".m5_rate", entry.getValue().getFiveMinuteRate(), dataPoints, false);
+            addConvertedMetric(entry.getKey(), ".m15_rate", entry.getValue().getFifteenMinuteRate(), dataPoints, false);
+            addConvertedMetric(entry.getKey(), ".mean_rate", entry.getValue().getMeanRate(), dataPoints, false);
         }
     }
 
@@ -397,20 +397,21 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     private void addSnapshotDatapoints(String baseName, Snapshot snapshot, List<IMetricsConsumer.DataPoint> dataPoints) {
-        addConvertedMetric(baseName, ".max", snapshot.getMax(), dataPoints);
-        addConvertedMetric(baseName, ".mean", snapshot.getMean(), dataPoints);
-        addConvertedMetric(baseName, ".min", snapshot.getMin(), dataPoints);
-        addConvertedMetric(baseName, ".stddev", snapshot.getStdDev(), dataPoints);
-        addConvertedMetric(baseName, ".p50", snapshot.getMedian(), dataPoints);
-        addConvertedMetric(baseName, ".p75", snapshot.get75thPercentile(), dataPoints);
-        addConvertedMetric(baseName, ".p95", snapshot.get95thPercentile(), dataPoints);
-        addConvertedMetric(baseName, ".p98", snapshot.get98thPercentile(), dataPoints);
-        addConvertedMetric(baseName, ".p99", snapshot.get99thPercentile(), dataPoints);
-        addConvertedMetric(baseName, ".p999", snapshot.get999thPercentile(), dataPoints);
+        addConvertedMetric(baseName, ".max", snapshot.getMax(), dataPoints, true);
+        addConvertedMetric(baseName, ".mean", snapshot.getMean(), dataPoints, true);
+        addConvertedMetric(baseName, ".min", snapshot.getMin(), dataPoints, true);
+        addConvertedMetric(baseName, ".stddev", snapshot.getStdDev(), dataPoints, true);
+        addConvertedMetric(baseName, ".p50", snapshot.getMedian(), dataPoints, true);
+        addConvertedMetric(baseName, ".p75", snapshot.get75thPercentile(), dataPoints, true);
+        addConvertedMetric(baseName, ".p95", snapshot.get95thPercentile(), dataPoints, true);
+        addConvertedMetric(baseName, ".p98", snapshot.get98thPercentile(), dataPoints, true);
+        addConvertedMetric(baseName, ".p99", snapshot.get99thPercentile(), dataPoints, true);
+        addConvertedMetric(baseName, ".p999", snapshot.get999thPercentile(), dataPoints, true);
     }
 
-    private void addConvertedMetric(String baseName, String suffix, double value, List<IMetricsConsumer.DataPoint> dataPoints) {
-        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + suffix, convertDuration(value));
+    private void addConvertedMetric(String baseName, String suffix, double value, List<IMetricsConsumer.DataPoint> dataPoints, boolean needConversion) {
+        IMetricsConsumer.DataPoint dataPoint
+            = new IMetricsConsumer.DataPoint(baseName + suffix, needConversion ? convertDuration(value) : value);
         dataPoints.add(dataPoint);
     }
 
