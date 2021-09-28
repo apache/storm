@@ -61,7 +61,7 @@ gpg --print-md SHA512 RELEASE_NOTES.html > RELEASE_NOTES.html.sha512
 
 ## Releasing if the vote succeeds
 
-1. `svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx https://dist.apache.org/repos/release/dev/storm/apache-storm-x.x.x`. This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
+1. `svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx https://dist.apache.org/repos/dist/release/storm/apache-storm-x.x.x`. This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
 
 2. Go to http://repository.apache.org and release the staging repository
 
