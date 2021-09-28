@@ -21,7 +21,7 @@ env:
   - MODULES=Integration-Test
   - MODULES=Check-Updated-License-Files
 
-dist: trusty
+dist: xenial
 sudo: required
 
 before_cache:
