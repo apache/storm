@@ -26,7 +26,7 @@
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>2.1.1</version>
+    <version>2.1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -243,7 +243,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf/storm</url>
-      <tag>v2.1.1</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <issueManagement>
