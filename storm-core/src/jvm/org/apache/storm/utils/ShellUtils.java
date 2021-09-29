@@ -134,24 +134,16 @@ abstract public class ShellUtils {
         this.dir = dir;
     }
 
-    /** a Unix command to get the current user's groups list */
-    public static String[] getGroupsCommand() {
-        return (WINDOWS)? new String[]{"cmd", "/c", "groups"}
-        : new String[]{"bash", "-c", "groups"};
-    }
-
     /**
-     * a Unix command to get a given user's groups list.
-     * If the OS is not WINDOWS, the command will get the user's primary group
-     * first and finally get the groups list which includes the primary group.
-     * i.e. the user's primary group will be included twice.
+     * a Unix command to get a given user's groups list. Windows is not supported.
      */
     public static String[] getGroupsForUserCommand(final String user) {
+        if (WINDOWS) {
+            throw new UnsupportedOperationException("Getting user groups is not supported on Windows");
+        }
         //'groups username' command return is non-consistent across different unixes
-        return new String [] {"bash", "-c", "id -gn " + user
-                         + "&& id -Gn " + user};
+        return new String[]{"id", "-Gn", user};
     }
-
 
     /** check to see if a command needs to be executed and execute if needed */
     protected void run() throws IOException {
