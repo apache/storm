@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
+
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.generated.AuthorizationException;
@@ -186,8 +188,9 @@ public abstract class LocallyCachedBlob {
             return Files.size(p);
         } else {
             //We will not follow sym links
-            return Files.walk(p)
-                    .filter((subp) -> Files.isRegularFile(subp, LinkOption.NOFOLLOW_LINKS))
+        	try (Stream<Path> stream = Files.walk(p)){
+            return 
+                stream.filter((subp) -> Files.isRegularFile(subp, LinkOption.NOFOLLOW_LINKS))
                     .mapToLong((subp) -> {
                         try {
                             return Files.size(subp);
@@ -196,6 +199,7 @@ public abstract class LocallyCachedBlob {
                         }
                         return 0;
                     }).sum();
+        	}
         }
     }
 
