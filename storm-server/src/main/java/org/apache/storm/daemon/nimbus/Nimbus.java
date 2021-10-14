@@ -3899,7 +3899,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             }
             blobStore.deleteBlob(key, getSubject());
-            LOG.info("Deleted blob for key {}", key);
+            LOG.info("Deleted blob for key {} with {}", key, ReqContext.context());
         } catch (Exception e) {
             LOG.warn("delete blob exception.", e);
             if (e instanceof TException) {
