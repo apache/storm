@@ -170,11 +170,11 @@ public final class VersionInfo {
                 }
             } else if (p.endsWith("*")) {
                 //for a path like /<parent-path>/*
-            	Path parent = p.getParent();
-            	List<String> children = new ArrayList<>();
+                Path parent = p.getParent();
+                List<String> children = new ArrayList<>();
                 try (Stream<Path> stream = Files.list(parent)) {
                     //avoid infinite recursion
-                	stream.filter(path -> !path.endsWith("*"))
+                    stream.filter(path -> !path.endsWith("*"))
                         .forEach(path -> children.add(path.toString()));
                     IVersionInfo resFromChildren = getFromClasspath(children, propFileName);
                     if (resFromChildren != null) {
