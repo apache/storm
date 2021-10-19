@@ -65,6 +65,7 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.metrics2.PerReporterGauge;
 import org.apache.storm.metrics2.RateCounter;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
@@ -378,7 +379,13 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private void processGauges(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
         Map<String, Gauge> gauges = workerData.getMetricRegistry().getTaskGauges(taskId);
         for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
-            Object v = entry.getValue().getValue();
+            Gauge gauge = entry.getValue();
+            Object v;
+            if (gauge instanceof PerReporterGauge) {
+                v = ((PerReporterGauge) gauge).getValueForReporter(this);
+            } else {
+                v = gauge.getValue();
+            }
             if (v instanceof Number) {
                 IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), v);
                 dataPoints.add(dataPoint);
