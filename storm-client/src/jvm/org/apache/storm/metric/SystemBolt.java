@@ -75,13 +75,12 @@ public class SystemBolt implements IBolt {
 
     // newWorkerEvent: 1 when a worker is first started and 0 all other times.
     // This can be used to tell when a worker has crashed and is restarted.
-    private class NewWorkerImetric implements IMetric {
-        boolean doEvent = true;
+    private class NewWorkerMetric {
+        boolean newWorker = true;
 
-        @Override
-        public Object getValueAndReset() {
-            if (doEvent) {
-                doEvent = false;
+        public int getValueAndReset() {
+            if (newWorker) {
+                newWorker = false;
                 return 1;
             } else {
                 return 0;
@@ -91,9 +90,10 @@ public class SystemBolt implements IBolt {
 
     // allow reporting new worker metric for multiple reporters if they support getValueForReporter().
     private class NewWorkerGauge extends PerReporterGauge<Integer> {
-        private final NewWorkerImetric defaultValue = new NewWorkerImetric();
-        private final Map<Object, NewWorkerImetric> reporterValues = new HashMap<>();
+        private final NewWorkerMetric defaultValue = new NewWorkerMetric();
+        private final Map<Object, NewWorkerMetric> reporterValues = new HashMap<>();
 
+        // reporting this value will not be accurate for multiple reporters
         @Override
         public Integer getValue() {
             return (Integer) defaultValue.getValueAndReset();
@@ -101,7 +101,7 @@ public class SystemBolt implements IBolt {
 
         @Override
         public Integer getValueForReporter(Object reporter) {
-            return (Integer) reporterValues.computeIfAbsent(reporter, (rep) -> new NewWorkerImetric()).getValueAndReset();
+            return (Integer) reporterValues.computeIfAbsent(reporter, (rep) -> new NewWorkerMetric()).getValueAndReset();
         }
     }
 
