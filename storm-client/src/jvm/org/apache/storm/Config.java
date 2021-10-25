@@ -1216,6 +1216,12 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_METRICS_REPORTERS = "topology.metrics.reporters";
 
     /**
+     * A list of system metrics reporters that will get added to each topology.
+     */
+    @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
+    public static final String STORM_TOPOLOGY_METRICS_SYSTEM_REPORTERS = "storm.topology.metrics.system.reporters";
+
+    /**
      * Configure the topology metrics reporters to be used on workers.
      * @deprecated Use {@link Config#TOPOLOGY_METRICS_REPORTERS} instead.
      */

@@ -1152,6 +1152,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             ret.put(Config.TOPOLOGY_METRICS_REPORTERS, mergedConf.get(Config.STORM_METRICS_REPORTERS));
         }
 
+        // add any system metrics reporters to the topology metrics reporters
+        if (conf.containsKey(Config.STORM_TOPOLOGY_METRICS_SYSTEM_REPORTERS)) {
+            List<Map<String, Object>> reporters = (List<Map<String, Object>>)
+                    ret.computeIfAbsent(Config.TOPOLOGY_METRICS_REPORTERS, (key) -> new ArrayList<>());
+            List<Map<String, Object>> systemReporters = (List<Map<String, Object>>)
+                    conf.get(Config.STORM_TOPOLOGY_METRICS_SYSTEM_REPORTERS);
+            reporters.addAll(systemReporters);
+        }
+
         // Don't allow topoConf to override various cluster-specific properties.
         // Specifically adding the cluster settings to the topoConf here will make sure these settings
         // also override the subsequently generated conf picked up locally on the classpath.
