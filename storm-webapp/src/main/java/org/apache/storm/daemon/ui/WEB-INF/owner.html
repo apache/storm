@@ -187,14 +187,14 @@
 
                     topologySummary.append(
                         Mustache.render($(template).filter("#owner-topology-summary-template").html(), response));
-                    //name, owner, status, uptime, num workers, num executors, num tasks, assigned total mem, assigned total cpu, scheduler info
+                    //name, owner, status, uptime, num workers, num executors, num tasks, assigned total mem, assigned total cpu, scheduler info, topology version, storm version
                     dtAutoPage("#owner-topology-summary-table", {
                         columnDefs: [{
-                            type: "num",
-                            targets: [4, 5, 6, 7, 8]
+                            type: "num", targets: [4, 5, 6]
                         }, {
-                            type: "time-str",
-                            targets: [3]
+                            type: "num", targets: [7], render: $.fn.dataTable.render.number( ',', '.', 0)
+                        }, {
+                            type: "time-str", targets: [3]
                         }]
                     });
                     $('#topology-summary [data-toggle="tooltip"]').tooltip();

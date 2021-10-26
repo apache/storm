@@ -121,10 +121,11 @@ $(document).ready(function() {
                 supervisorSummary.append(
                         Mustache.render($(template).filter("#supervisor-summary-template").html(),response));
                 
-                //id, host, uptime, slots, used slots
+                //host, supervisor id, uptime, slots, used slots, used mem, version, blacklisted
                 dtAutoPage("#supervisor-summary-table", {
                     columnDefs: [
                     {type: "num", targets: [3, 4]},
+                    {type: "num", targets: [5], render: $.fn.dataTable.render.number( ',', '.', 0)},
                     {type: "time-str", targets: [2]}
                     ]
                 });

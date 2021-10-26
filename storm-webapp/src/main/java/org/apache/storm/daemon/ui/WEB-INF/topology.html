@@ -331,22 +331,27 @@ $(document).ready(function() {
               info: false,
               searching: false,
               columnDefs: [
-                {type: "num", targets: [1, 2, 3, 4, 5]},
+                {type: "num", targets: [1, 2, 4, 5], render: $.fn.dataTable.render.number( ',', '.', 0)},
+                {type: "num", targets: [3]},
                 {type: "time-str", targets: [0]}
               ]
             });
 
             spoutStats.append(Mustache.render($(template).filter("#spout-stats-template").html(),response));
+            // id, executors, tasks, emitted, transferred, latency, acked, failed, error host, error port, last error, error time
             dtAutoPage("#spout-stats-table", {
               columnDefs: [
-                {type: "num", targets: 'table-num'}
+                {type: "num", targets: [1, 2, 5]},
+                {type: "num", targets: [3, 4, 6, 7], render: $.fn.dataTable.render.number( ',', '.', 0)}
               ]
             });
 
             boltStats.append(Mustache.render($(template).filter("#bolt-stats-template").html(),response));
+            // id, executors, tasks, emitted, transferred, capacity, exec latency, executed, process latency, acked, failed, error host, error port, last error, error time
             dtAutoPage("#bolt-stats-table", {
               columnDefs: [
-                {type: "num", targets: 'table-num'}
+                {type: "num", targets: [1, 2, 5, 6, 8, 12]},
+                {type: "num", targets: [3, 4, 7, 9, 10], render: $.fn.dataTable.render.number( ',', '.', 0)}
               ]
             });
 
