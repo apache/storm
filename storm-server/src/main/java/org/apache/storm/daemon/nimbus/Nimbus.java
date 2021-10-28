@@ -986,7 +986,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     /**
-     * Returns the topology that is using this blob.
+     * Returns the topologyId of the topology using this blob.
      * @param state the cluster state
      * @param topoCache the topology cache
      * @param key the blob key
