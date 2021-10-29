@@ -187,16 +187,31 @@
 
                     topologySummary.append(
                         Mustache.render($(template).filter("#owner-topology-summary-template").html(), response));
-                    //name, owner, status, uptime, num workers, num executors, num tasks, assigned total mem, assigned total cpu, scheduler info, topology version, storm version
-                    dtAutoPage("#owner-topology-summary-table", {
-                        columnDefs: [{
-                            type: "num", targets: [4, 5, 6]
-                        }, {
-                            type: "num", targets: [7], render: $.fn.dataTable.render.number(',', '.', 0)
-                        }, {
-                            type: "time-str", targets: [3]
-                        }]
-                    });
+                    if (displayResource) {
+                        // (0) name, (1) owner, (2) status, (3) uptime, (4) workersTotal, (5) executorsTotal, (6) tasksTotal,
+                        // (7) assignedTotalMem, [ (8) assignedCpu, ] (9), schedulerInfo, (10) topologyVersion, (11) stormVersion
+                        dtAutoPage("#owner-topology-summary-table", {
+                            columnDefs: [{
+                                type: "num", targets: [4, 5, 6]
+                            }, {
+                                type: "num", targets: [7, 8], render: $.fn.dataTable.render.number(',', '.', 0)
+                            }, {
+                                type: "time-str", targets: [3]
+                            }]
+                        });
+                    } else {
+                        // (0) name, (1) owner, (2) status, (3) uptime, (4) workersTotal, (5) executorsTotal, (6) tasksTotal,
+                        // (7) assignedTotalMem, (8), schedulerInfo, (9) topologyVersion, (10) stormVersion
+                        dtAutoPage("#owner-topology-summary-table", {
+                            columnDefs: [{
+                                type: "num", targets: [4, 5, 6]
+                            }, {
+                                type: "num", targets: [7], render: $.fn.dataTable.render.number(',', '.', 0)
+                            }, {
+                                type: "time-str", targets: [3]
+                            }]
+                        });
+                    }
                     $('#topology-summary [data-toggle="tooltip"]').tooltip();
 
                 });

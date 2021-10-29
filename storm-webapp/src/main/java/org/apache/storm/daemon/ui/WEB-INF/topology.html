@@ -338,22 +338,50 @@ $(document).ready(function() {
             });
 
             spoutStats.append(Mustache.render($(template).filter("#spout-stats-template").html(),response));
-            // id, executors, tasks, emitted, transferred, latency, acked, failed, error host, error port, last error, error time
-            dtAutoPage("#spout-stats-table", {
-              columnDefs: [
-                {type: "num", targets: [1, 2, 5]},
-                {type: "num", targets: [3, 4, 6, 7], render: $.fn.dataTable.render.number(',', '.', 0)}
-              ]
-            });
+            if (displayResource){
+              // (0) id, (1) executors, [(2) requestedMemOnHeap, (3) requestedMemOffHeap, (4) requestedCpu,
+              // (5) requestedGenericResourcesComp], (6) tasks, (7) emitted, (8) transferred, (9) latency, (10) acked,
+              // (11) failed, (12) error host, (13) error port, (14) last error, (15) error time
+              dtAutoPage("#spout-stats-table", {
+                columnDefs: [
+                  {type: "num", targets: [1, 6, 9]},
+                  {type: "num", targets: [2, 3, 4, 5, 7, 8, 10, 11], render: $.fn.dataTable.render.number(',', '.', 0)}
+                ]
+              });
+            } else {
+              // (0) id, (1) executors, (2) tasks, (3) emitted, (4) transferred, (5) latency, (6) acked, (7) failed,
+              // (8) error host, (9) error port, (10) last error, (11) error time
+              dtAutoPage("#spout-stats-table", {
+                columnDefs: [
+                  {type: "num", targets: [1, 2, 5]},
+                  {type: "num", targets: [3, 4, 6, 7], render: $.fn.dataTable.render.number(',', '.', 0)}
+                ]
+              });
+            }
 
             boltStats.append(Mustache.render($(template).filter("#bolt-stats-template").html(),response));
-            // id, executors, tasks, emitted, transferred, capacity, exec latency, executed, process latency, acked, failed, error host, error port, last error, error time
-            dtAutoPage("#bolt-stats-table", {
-              columnDefs: [
-                {type: "num", targets: [1, 2, 5, 6, 8, 12]},
-                {type: "num", targets: [3, 4, 7, 9, 10], render: $.fn.dataTable.render.number(',', '.', 0)}
-              ]
-            });
+            if (displayResource){
+              // (0) id, (1) executors, (2) tasks, [(3) requestedMemOnHeap, (4) requestedMemOffHeap, (5) requestedCpu,
+              // (6) requestedGenericResourcesComp], (7) emitted, (8) transferred, (9) capacity, (10) exec latency,
+              // (11) executed, (12) process latency, (13) acked, (14) failed, (15) error host, (16) error port,
+              // (17) last error, (18) error time
+              dtAutoPage("#bolt-stats-table", {
+                columnDefs: [
+                  {type: "num", targets: [1, 2, 9, 10, 12, 16]},
+                  {type: "num", targets: [3, 4, 5, 6, 7, 8, 11, 13, 14], render: $.fn.dataTable.render.number(',', '.', 0)}
+                ]
+              });
+            } else {
+              // (0) id, (1) executors, (2) tasks, (3) emitted, (4) transferred, (5) capacity, (6) exec latency,
+              // (7) executed, (8) process latency, (9) acked, (10) failed, (11) error host, (12) error port,
+              // (13) last error, (14) error time
+              dtAutoPage("#bolt-stats-table", {
+                columnDefs: [
+                  {type: "num", targets: [1, 2, 5, 6, 8, 12]},
+                  {type: "num", targets: [3, 4, 7, 9, 10], render: $.fn.dataTable.render.number(',', '.', 0)}
+                ]
+              });
+            }
 
           jsError(function() {
             workerStats.append(Mustache.render($(template).filter("#worker-stats-template").html(),response));
