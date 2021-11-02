@@ -1000,7 +1000,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             } catch (KeyNotFoundException | AuthorizationException | IOException e) {
                 continue;
             }
-            if (null == topoConf) {
+            if (topoConf == null) {
                 continue;
             }
             @SuppressWarnings("unchecked")
