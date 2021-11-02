@@ -997,11 +997,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Map<String, Object> topoConf = null;
             try {
                 topoConf = readTopoConfAsNimbus(topologyId, topoCache);
-            } catch (KeyNotFoundException e) {
-                continue;
-            } catch (AuthorizationException e) {
-                continue;
-            } catch (IOException e) {
+            } catch (KeyNotFoundException | AuthorizationException | IOException e) {
                 continue;
             }
             if (null == topoConf) {
@@ -3939,7 +3935,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             }
             String topoId = topologyUsingThisBlob(stormClusterState, topoCache,  key);
-            if (null != topoId) {
+            if (topoId != null) {
                 String message = "Attempting to delete active blob " + key + " used by topology " + topoId;
                 LOG.warn(message);
                 throw new WrappedIllegalStateException(message);
