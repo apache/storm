@@ -335,13 +335,7 @@ public class AsyncLocalizer implements AutoCloseable {
                     f.get();
                 } catch (Exception e) {
                     updateBlobExceptions.mark();
-                    if (Utils.exceptionCauseIsInstanceOf(TTransportException.class, e)) {
-                        LOG.warn("Network error while updating blobs, will retry again later", e);
-                    } else if (Utils.exceptionCauseIsInstanceOf(NimbusLeaderNotFoundException.class, e)) {
-                        LOG.warn("Nimbus unavailable to update blobs, will retry again later", e);
-                    } else {
-                        LOG.warn("Could not update blob, will retry again later", e);
-                    }
+                    LOG.warn("Could not update blob ({}), will retry again later." , e.getClass().getName());
                 }
             }
         }
