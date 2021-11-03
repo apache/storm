@@ -1005,7 +1005,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
             @SuppressWarnings("unchecked")
             Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-            if (null != blobstoreMap && blobstoreMap.containsKey(key)) {
+            if (blobstoreMap != null && blobstoreMap.containsKey(key)) {
                 return topologyId;
             }
         }
