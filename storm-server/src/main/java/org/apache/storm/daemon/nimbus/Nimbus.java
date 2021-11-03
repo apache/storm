@@ -985,6 +985,33 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return isTopologyActive(state, topoName) || state.activeStorms().contains(topoName);
     }
 
+    /**
+     * Returns the topologyId of the topology using this blob.
+     * @param state the cluster state
+     * @param topoCache the topology cache
+     * @param key the blob key
+     * @return null or id
+     */
+    private static String topologyUsingThisBlob(IStormClusterState state, TopoCache topoCache, String key) {
+        for (String topologyId : state.activeStorms()) {
+            Map<String, Object> topoConf = null;
+            try {
+                topoConf = readTopoConfAsNimbus(topologyId, topoCache);
+            } catch (KeyNotFoundException | AuthorizationException | IOException e) {
+                continue;
+            }
+            if (topoConf == null) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+            if (blobstoreMap != null && blobstoreMap.containsKey(key)) {
+                return topologyId;
+            }
+        }
+        return null;
+    }
+
     private static Map<String, Object> tryReadTopoConf(String topoId, TopoCache tc)
         throws NotAliveException, AuthorizationException, IOException {
         try {
@@ -3906,6 +3933,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     LOG.warn(message);
                     throw new WrappedIllegalStateException(message);
                 }
+            }
+            String topoId = topologyUsingThisBlob(stormClusterState, topoCache,  key);
+            if (topoId != null) {
+                String message = "Attempting to delete active blob " + key + " used by topology " + topoId;
+                LOG.warn(message);
+                throw new WrappedIllegalStateException(message);
             }
             blobStore.deleteBlob(key, getSubject());
             LOG.info("Deleted blob for key {} with {}", key, ReqContext.context());
