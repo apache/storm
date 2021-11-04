@@ -1061,7 +1061,7 @@ def initialize_monitor_subcommand(subparsers):
         "-i", "--interval", type=check_positive, default=None,
         help="""By default, poll-interval is 4 seconds"""
     )
-    sub_parser.add_argument("-m", "--component", type=check_positive, default=None)
+    sub_parser.add_argument("-m", "--component", default=None)
     sub_parser.add_argument("-s", "--stream", default=None)
     sub_parser.add_argument("-w", "--watch", default=None)
     sub_parser.set_defaults(func=monitor)
