@@ -264,7 +264,8 @@ $(document).ready(function() {
                         info: false,
                         searching: false,
                         columnDefs: [
-                          {type: "num", targets: [1, 2, 3, 4, 5]},
+                          {type: "num", targets: [1, 2, 4, 5], render: $.fn.dataTable.render.number(',', '.', 0)},
+                          {type: "num", targets: [3]},
                           {type: "time-str", targets: [0]}
                         ]
                     });
@@ -275,7 +276,8 @@ $(document).ready(function() {
                     //stream, emitted, transferred, compltete latency, acked, failed
                     dtAutoPage("#output-stats-table", {
                       columnDefs: [
-                        {type: "num", targets: [1, 2, 3, 4, 5]}
+                        {type: "num", targets: [1, 2, 4, 5], render: $.fn.dataTable.render.number(',', '.', 0)},
+                        {type: "num", targets: [3]}
                       ]
                     });
                 });
@@ -287,7 +289,8 @@ $(document).ready(function() {
                       columnDefs: [
                         {render: renderSupervisorPageLink, searchable: true, targets: [2]},
                         {render: renderActionCheckbox, searchable: false, targets: [4]},
-                        {type: "num", targets: [5, 6, 7, 8, 9]},
+                        {type: "num", targets: [5, 6, 8, 9], render: $.fn.dataTable.render.number(',', '.', 0)},
+                        {type: "num", targets: [7]},
                         {type: "time-str", targets: [1]},
                       ]
                     }).on("draw", function(e,s) {setWorkerActionCheckboxesClickCallback()});
@@ -298,7 +301,8 @@ $(document).ready(function() {
                     //window, emitted, transferred, execute latency, executed, process latency, acked, failed
                     dtAutoPage("#bolt-stats-table", {
                       columnDefs: [
-                        {type: "num", targets: [1, 2, 3, 4, 5, 6, 7]},
+                        {type: "num", targets: [1, 2, 4, 6, 7], render: $.fn.dataTable.render.number(',', '.', 0)},
+                        {type: "num", targets: [3, 5]},
                         {type: "time-str", targets: [0]}
                       ]
                     });
@@ -309,7 +313,8 @@ $(document).ready(function() {
                     //component, stream, execute latency, executed, process latency, acked, failed
                     dtAutoPage("#bolt-input-stats-table", {
                       columnDefs: [
-                        {type: "num", targets: [2, 3, 4, 5, 6]}
+                        {type: "num", targets: [2, 4]},
+                        {type: "num", targets: [3, 5, 6], render: $.fn.dataTable.render.number(',', '.', 0)}
                       ]
                     });
                 });
@@ -319,7 +324,7 @@ $(document).ready(function() {
                     //stream, emitted, transferred
                     dtAutoPage("#bolt-output-stats-table", {
                       columnDefs: [
-                        {type: "num", targets: [1, 2]}
+                        {type: "num", targets: [1, 2], render: $.fn.dataTable.render.number(',', '.', 0)}
                       ]
                     });
                 });
@@ -331,7 +336,8 @@ $(document).ready(function() {
                       columnDefs: [
                         {render: renderSupervisorPageLink, searchable: true, targets: [2]},
                         {render: renderActionCheckbox, searchable: false, targets: [4]},
-                        {type: "num", targets: [5, 6, 7, 8, 9, 10, 11, 12]},
+                        {type: "num", targets: [5, 6, 9, 11, 12], render: $.fn.dataTable.render.number(',', '.', 0)},
+                        {type: "num", targets: [7, 8, 10]},
                         {type: "time-str", targets: [1]},
                       ]
                     }).on("draw", function(e,s) {setWorkerActionCheckboxesClickCallback()});
