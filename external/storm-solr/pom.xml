@@ -82,6 +82,10 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
                     <!-- This is leaking from hadoop-annotations. -->
                     <groupId>jdk.tools</groupId>
                     <artifactId>jdk.tools</artifactId>

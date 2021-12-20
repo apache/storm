@@ -5,7 +5,7 @@ List of third-party dependencies grouped by their license type.
     Apache License
 
         * HttpClient (commons-httpclient:commons-httpclient:3.0.1 - http://jakarta.apache.org/commons/httpclient/)
-        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.26 - http://www.slf4j.org)
+        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.33 - http://www.slf4j.org)
 
     Apache License, Version 2.0
 
@@ -688,9 +688,8 @@ List of third-party dependencies grouped by their license type.
         * jnr-x86asm (com.github.jnr:jnr-x86asm:1.0.2 - http://github.com/jnr/jnr-x86asm)
         * Joni (org.jruby.joni:joni:2.1.11 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.26 - http://www.slf4j.org)
-        * SLF4J API Module (org.slf4j:slf4j-api:1.7.26 - http://www.slf4j.org)
-        * SLF4J API Module (org.slf4j:slf4j-api:1.7.6 - http://www.slf4j.org)
-        * SLF4J LOG4J-12 Binding (org.slf4j:slf4j-log4j12:1.7.26 - http://www.slf4j.org)
+        * SLF4J API Module (org.slf4j:slf4j-api:1.7.33 - http://www.slf4j.org)
+        * SLF4J LOG4J-12 Binding (org.slf4j:slf4j-log4j12:1.7.33 - http://www.slf4j.org)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
 
     Mozilla Public License Version 1.1
