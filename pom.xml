@@ -311,7 +311,7 @@
         <auto-service.version>1.0-rc4</auto-service.version>
         <netty.version>4.1.30.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j.version>2.16.0</log4j.version>
+        <log4j.version>2.17.0</log4j.version>
         <slf4j.version>1.7.26</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
         <mockito.version>3.0.0</mockito.version>
