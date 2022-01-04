@@ -173,7 +173,10 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
         this.metricRegistry = metricRegistry;
 
         // it's possible to be passed a null metric registry if users are using their own IContext implementation.
-        if (this.metricRegistry != null) {
+        boolean reportMetrics =  this.metricRegistry != null
+                && ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_SEND_ICONNECTION_METRICS), true);
+
+        if (reportMetrics) {
             Gauge<Integer> reconnects = new Gauge<Integer>() {
                 @Override
                 public Integer getValue() {

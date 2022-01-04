@@ -285,6 +285,12 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS = "topology.v2.metrics.tick.interval.seconds";
 
     /**
+     * This config allows a topology to enable/disable reporting of __send-iconnection metrics.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_ENABLE_SEND_ICONNECTION_METRICS = "topology.enable.send.iconnection.metrics";
+
+    /**
      * The class name of the {@link org.apache.storm.state.StateProvider} implementation. If not specified defaults to {@link
      * org.apache.storm.state.InMemoryKeyValueStateProvider}. This can be overridden at the component level.
      */
