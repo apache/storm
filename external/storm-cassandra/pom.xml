@@ -33,7 +33,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <org.slf4j.version>1.7.6</org.slf4j.version>
-        <jackson.databind.version>2.3.2</jackson.databind.version>
         <junit.version>4.11</junit.version>
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
