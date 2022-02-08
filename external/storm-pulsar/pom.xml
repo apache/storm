@@ -47,11 +47,13 @@
 
   <properties>
     <pulsar.version>2.8.2</pulsar.version>
-    <asynchttpclient.version>2.12.1</asynchttpclient.version>
-
+    <netty.version>4.1.73.Final</netty.version>
+    <jetty.version>9.4.44.v20210927</jetty.version>
+    <powermock.version>2.0.9</powermock.version>
   </properties>
 
   <dependencies>
+
     <dependency>
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-client</artifactId>
@@ -71,14 +73,21 @@
 
     <dependency>
       <groupId>org.apache.pulsar</groupId>
-      <artifactId>pulsar-client</artifactId>
+      <artifactId>pulsar-client-original</artifactId>
       <version>${pulsar.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
-    <!--dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-util</artifactId>
-    </dependency-->
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-all</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -90,16 +99,17 @@
       <artifactId>guava</artifactId>
     </dependency>
 
-    <!--dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-    </dependency-->
-
     <dependency>
       <groupId>org.apache.pulsar</groupId>
       <artifactId>pulsar-common</artifactId>
       <version>${pulsar.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -109,8 +119,12 @@
       <scope>test</scope>
       <exclusions>
         <exclusion>
-          <groupId>org.testng</groupId>
-          <artifactId>testng</artifactId>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -120,6 +134,12 @@
       <artifactId>pulsar-broker</artifactId>
       <version>${pulsar.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -128,6 +148,12 @@
       <version>${pulsar.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -137,8 +163,8 @@
       <scope>test</scope>
       <exclusions>
         <exclusion>
-          <groupId>org.testng</groupId>
-          <artifactId>testng</artifactId>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.powermock</groupId>
@@ -148,22 +174,22 @@
     </dependency>
 
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito2</artifactId>
+      <version>${powermock.version}</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
-      <groupId>org.asynchttpclient</groupId>
-      <artifactId>async-http-client</artifactId>
-      <version>${asynchttpclient.version}</version>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4-rule-agent</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -219,7 +245,7 @@
         <!-- plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-checkstyle-plugin</artifactId>
-        </plugin -->
+        </plugin-->
         <!--plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-pmd-plugin</artifactId>
@@ -229,20 +255,16 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
+            <testNGArtifactName>none:none</testNGArtifactName>
             <argLine> -Xmx1G -XX:+UseG1GC
               -Dpulsar.allocator.pooled=false
               -Dpulsar.allocator.leak_detection=Advanced
               -Dpulsar.allocator.exit_on_oom=false
             </argLine>
-            <!--reuseForks>${testReuseFork}</reuseForks>
-            <forkCount>${testForkCount}</forkCount-->
+            <reuseForks>true</reuseForks>
+            <forkCount>1</forkCount>
             <shutdown>kill</shutdown>
-            <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
             <trimStackTrace>false</trimStackTrace>
-            <!--systemPropertyVariables>
-              <testRealAWS>${testRealAWS}</testRealAWS>
-              <testRetryCount>${testRetryCount}</testRetryCount>
-            </systemPropertyVariables-->
             <properties>
               <property>
                 <name>listener</name>
