@@ -1746,19 +1746,26 @@ public class UIHelpers {
     }
 
     /**
-     * sanitizeStreamName.
+     * Sanitizes streamName for use as an identifier in the visualization.  Replaces all characters except A-Z, a-z,
+     * '.', '-', and '_' with '_'.  If streamName does not start with A-Z or a-z, adds '_s' prefix.
      * @param streamName streamName
-     * @return sanitizeStreamName
+     * @return sanitized stream name
      */
     public static String sanitizeStreamName(String streamName) {
-        Pattern pattern = Pattern.compile("(?![A-Za-z_\\-:\\.]).");
-        Pattern pattern2 = Pattern.compile("^[A-Za-z]");
-        Matcher matcher = pattern2.matcher(streamName);
-        Matcher matcher2 = pattern.matcher("\\s" + streamName);
-        if (matcher.find()) {
-            matcher2 = pattern.matcher(streamName);
+        Pattern startsWithLetterPattern = Pattern.compile("^[A-Za-z]");
+        Pattern problemCharacterPattern = Pattern.compile("(?![A-Za-z_\\-\\.]).");
+
+        Matcher startsWithLetterMatcher = startsWithLetterPattern.matcher(streamName);
+        Matcher problemCharacterMatcher;
+        if (startsWithLetterMatcher.find()) {
+            problemCharacterMatcher = problemCharacterPattern.matcher(streamName);
+        } else {
+            // if the streamName starts with non-letter character, prepend "\s".  The backslash will then
+            // get replaced by an underscore, resulting in the prefix of "_s" in the final sanitized name
+            problemCharacterMatcher = problemCharacterPattern.matcher("\\s" + streamName);
         }
-        return matcher2.replaceAll("_");
+        // replace all characters not preceded by (A-Z, a-z, underscore, dash, colon, or dot) with underscore
+        return problemCharacterMatcher.replaceAll("_");
     }
 
     /**
