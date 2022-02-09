@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.pulsar.storm;
 
 import java.io.Serializable;
@@ -30,15 +31,15 @@ public interface MessageToValuesMapper extends Serializable {
     /**
      * Convert {@link org.apache.pulsar.client.api.Message} to tuple values.
      *
-     * @param msg
-     * @return
+     * @param msg - message
+     * @return values
      */
     Values toValues(Message<byte[]> msg);
 
     /**
      * Declare the output schema for the spout.
      *
-     * @param declarer
+     * @param declarer - output field declarer.
      */
     void declareOutputFields(OutputFieldsDeclarer declarer);
 }

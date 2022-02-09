@@ -16,39 +16,36 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.pulsar.storm;
 
 import java.util.Objects;
 
 /**
- * Class used to specify Pulsar bolt configuration
- *
- *
+ * Class used to specify Pulsar bolt configuration.
  */
 public class PulsarBoltConfiguration extends PulsarStormConfiguration {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     private TupleToMessageMapper tupleToMessageMapper = null;
 
     /**
-     * @return the mapper to convert storm tuples to a pulsar message
+     * Get the tuple to message mapper.
+     * @return the mapper to convert storm tuples to a pulsar message.
      */
     public TupleToMessageMapper getTupleToMessageMapper() {
         return tupleToMessageMapper;
     }
 
     /**
-     * Sets the mapper to convert storm tuples to a pulsar message
+     * Sets the mapper to convert storm tuples to a pulsar message.
      * <p>
      * Note: If the mapper returns null, the message is not sent by the producer and is acked immediately on the
      * collector
      * </p>
      *
-     * @param mapper
+     * @param mapper - tuple to message mapper
      */
     public void setTupleToMessageMapper(TupleToMessageMapper mapper) {
         this.tupleToMessageMapper = Objects.requireNonNull(mapper);

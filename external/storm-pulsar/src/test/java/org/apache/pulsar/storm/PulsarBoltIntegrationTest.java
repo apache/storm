@@ -85,6 +85,7 @@ public class PulsarBoltIntegrationTest extends ProducerConsumerBase {
         consumer = pulsarClient.newConsumer().topic(topic).subscriptionName(subscriptionName).subscribe();
     }
 
+    @Override
     @After
     public void cleanup() throws Exception {
         bolt.close();

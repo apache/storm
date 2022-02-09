@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.pulsar.storm;
 
 import java.util.concurrent.TimeUnit;
@@ -28,30 +29,30 @@ public interface PulsarSpoutConsumer {
     /**
      * Receives a single message.
      * 
-     * @param waitTime
-     * @param unit
-     * @return
-     * @throws PulsarClientException
+     * @param waitTime - time
+     * @param unit - time unit
+     * @return message
+     * @throws PulsarClientException in case of error
      */
     Message<byte[]> receive(int waitTime, TimeUnit unit) throws PulsarClientException;
     
     /**
      * Ack the message async.
      * 
-     * @param msg
+     * @param msg - message to ack
      */
     void acknowledgeAsync(Message<?> msg);
 
     /**
-     * unsubscribe the consumer
-     * @throws PulsarClientException 
+     * unsubscribe the consumer.
+     * @throws PulsarClientException in case of error
      */
     void unsubscribe() throws PulsarClientException;
     
     /**
-     * Close the consumer
+     * Close the consumer.
      * 
-     * @throws PulsarClientException
+     * @throws PulsarClientException in case of error
      */
     void close() throws PulsarClientException;
 

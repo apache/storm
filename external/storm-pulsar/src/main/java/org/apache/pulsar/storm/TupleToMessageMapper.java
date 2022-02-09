@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.pulsar.storm;
 
 import java.io.Serializable;
@@ -30,8 +31,8 @@ public interface TupleToMessageMapper extends Serializable {
     /**
      * Convert tuple to {@link org.apache.pulsar.client.api.Message}.
      *
-     * @param tuple
-     * @return
+     * @param tuple - tuple
+     * @return message
      * @deprecated use {@link #toMessage(TypedMessageBuilder, Tuple)}
      */
     @Deprecated
@@ -42,8 +43,9 @@ public interface TupleToMessageMapper extends Serializable {
     /**
      * Set the value on a message builder to prepare the message to be published from the Bolt.
      *
-     * @param tuple
-     * @return
+     * @param msgBuilder - message builder
+     * @param tuple - tuple
+     * @return message builder
      */
     default TypedMessageBuilder<byte[]> toMessage(TypedMessageBuilder<byte[]> msgBuilder, Tuple tuple) {
         // Default implementation provided for backward compatibility
@@ -60,7 +62,7 @@ public interface TupleToMessageMapper extends Serializable {
     /**
      * Declare the output schema for the bolt.
      *
-     * @param declarer
+     * @param declarer  - output field declarer
      */
-    public void declareOutputFields(OutputFieldsDeclarer declarer);
+    void declareOutputFields(OutputFieldsDeclarer declarer);
 }

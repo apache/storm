@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.pulsar.storm;
 
 import java.util.Objects;
@@ -25,15 +26,10 @@ import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.SubscriptionType;
 
 /**
- * Class used to specify pulsar spout configuration
- *
- *
+ * Class used to specify pulsar spout configuration.
  */
 public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     public static final long DEFAULT_FAILED_RETRIES_TIMEOUT_NANO = TimeUnit.SECONDS.toNanos(60);
@@ -53,6 +49,7 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
 
     
     /**
+     * Return subscription name.
      * @return the subscription name for the consumer in the spout
      */
     public String getSubscriptionName() {
@@ -60,9 +57,9 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
     }
 
     /**
-     * Sets the subscription name for the consumer in the spout
+     * Sets the subscription name for the consumer in the spout.
      *
-     * @param subscriptionName
+     * @param subscriptionName - subscription name
      */
     public void setSubscriptionName(String subscriptionName) {
         this.subscriptionName = subscriptionName;
@@ -77,6 +74,8 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
     }
 
     /**
+     * Get value mapper.
+     *
      * @return the mapper to convert pulsar message to a storm tuple
      */
     public MessageToValuesMapper getMessageToValuesMapper() {
@@ -89,15 +88,16 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
      * Note: If the mapper returns null, the message is not emitted to the collector and is acked immediately
      * </p>
      *
-     * @param mapper
+     * @param mapper - MessageToValuesMapper
      */
     public void setMessageToValuesMapper(MessageToValuesMapper mapper) {
         this.messageToValuesMapper = Objects.requireNonNull(mapper);
     }
 
     /**
+     * Get retries timeout.
      *
-     * @param unit
+     * @param unit - TimeUnit
      * @return the timeout for retrying failed messages
      */
     public long getFailedRetriesTimeout(TimeUnit unit) {
@@ -110,15 +110,15 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
      * be retried forever till it is successfully processed or max message retry count is reached, whichever comes
      * first.
      *
-     * @param failedRetriesTimeout
-     * @param unit
+     * @param failedRetriesTimeout - timeout value
+     * @param unit - time unit
      */
     public void setFailedRetriesTimeout(long failedRetriesTimeout, TimeUnit unit) {
         this.failedRetriesTimeoutNano = unit.toNanos(failedRetriesTimeout);
     }
 
     /**
-     *
+     * Get max retries.
      * @return the maximum number of times a failed message will be retried
      */
     public int getMaxFailedRetries() {
@@ -130,14 +130,14 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
      * <i>(default: -1)</i> Note: If set to 0, the message will not be retried when failed. If set to < 0, the message
      * will be retried forever till it is successfully processed or configured timeout expires, whichever comes first.
      *
-     * @param maxFailedRetries
+     * @param maxFailedRetries - max number of retries
      */
     public void setMaxFailedRetries(int maxFailedRetries) {
         this.maxFailedRetries = maxFailedRetries;
     }
 
     /**
-     *
+     * Is shared consumer enabled.
      * @return if the consumer is shared across different executors of a spout
      */
     public boolean isSharedConsumerEnabled() {
@@ -147,7 +147,7 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
     /**
      * Sets whether the consumer will be shared across different executors of a spout. <i>(default: false)</i>
      *
-     * @param sharedConsumerEnabled
+     * @param sharedConsumerEnabled - is shared consumer enabled
      */
     public void setSharedConsumerEnabled(boolean sharedConsumerEnabled) {
         this.sharedConsumerEnabled = sharedConsumerEnabled;
@@ -160,7 +160,7 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
     /**
      * It unsubscribes the subscription when spout gets closed in the topology.
      * 
-     * @param autoUnsubscribe
+     * @param autoUnsubscribe - should auto unsubscribe
      */
     public void setAutoUnsubscribe(boolean autoUnsubscribe) {
         this.autoUnsubscribe = autoUnsubscribe;
@@ -174,7 +174,7 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
      * if subscription is not durable then it creates non-durable reader to start reading from the
      * {@link #setNonDurableSubscriptionReadPosition(MessagePosition)} in topic.
      * 
-     * @param durableSubscription
+     * @param durableSubscription - is subscription durable
      */
     public void setDurableSubscription(boolean durableSubscription) {
         this.durableSubscription = durableSubscription;
@@ -187,7 +187,7 @@ public class PulsarSpoutConfiguration extends PulsarStormConfiguration {
     /**
      * Non-durable-subscription/Reader can be set to start reading from a specific position earliest/latest.
      * 
-     * @param nonDurableSubscriptionReadPosition
+     * @param nonDurableSubscriptionReadPosition - position for the non-durable subcription
      */
     public void setNonDurableSubscriptionReadPosition(MessageId nonDurableSubscriptionReadPosition) {
         this.nonDurableSubscriptionReadPosition = nonDurableSubscriptionReadPosition;

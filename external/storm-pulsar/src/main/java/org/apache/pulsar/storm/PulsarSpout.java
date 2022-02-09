@@ -16,8 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.pulsar.storm;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 import java.io.IOException;
@@ -31,7 +33,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import org.apache.pulsar.client.api.ClientBuilder;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
@@ -124,7 +125,7 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
             if (pulsarSpoutConf.isAutoUnsubscribe()) {
                 try {
                     consumer.unsubscribe();    
-                }catch(PulsarClientException e) {
+                } catch (PulsarClientException e) {
                     LOG.error("[{}] Failed to unsubscribe {} on topic {}", spoutId,
                             this.pulsarSpoutConf.getSubscriptionName(), pulsarSpoutConf.getTopic(), e);
                 }
@@ -188,7 +189,7 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
     }
 
     /**
-     * Emits a tuple received from the Pulsar consumer unless there are any failed messages
+     * Emits a tuple received from the Pulsar consumer unless there are any failed messages.
      */
     @Override
     public void nextTuple() {
@@ -203,7 +204,7 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
      */
     public void emitNextAvailableTuple() {
         // check if there are any failed messages to re-emit in the topology
-        if(emitFailedMessage()) {
+        if (emitFailedMessage()) {
             return;
         }
 
@@ -256,7 +257,7 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
 
             // messageRetries is null because messageRetries is already acked and removed from pendingMessageRetries
             // then remove it from failed message queue as well.
-            if(LOG.isDebugEnabled()) {
+            if (LOG.isDebugEnabled()) {
                 LOG.debug("[{}]-{} removing {} from failedMessage because it's already acked",
                         pulsarSpoutConf.getTopic(), spoutId, msg.getMessageId());
             }
@@ -364,7 +365,7 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
     }
 
     /**
-     * Helpers for metrics
+     * Helpers for metrics.
      */
 
     @SuppressWarnings({ "rawtypes" })
@@ -423,7 +424,7 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
     static class SpoutConsumer implements PulsarSpoutConsumer {
         private Consumer<byte[]> consumer;
 
-        public SpoutConsumer(Consumer<byte[]> consumer) {
+        SpoutConsumer(Consumer<byte[]> consumer) {
             super();
             this.consumer = consumer;
         }
@@ -453,7 +454,7 @@ public class PulsarSpout extends BaseRichSpout implements IMetric {
     static class SpoutReader implements PulsarSpoutConsumer {
         private Reader<byte[]> reader;
 
-        public SpoutReader(Reader<byte[]> reader) {
+        SpoutReader(Reader<byte[]> reader) {
             super();
             this.reader = reader;
         }

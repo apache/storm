@@ -88,6 +88,7 @@ public class PulsarSpoutIntegrationTest extends ProducerConsumerBase {
         producer = pulsarClient.newProducer().topic(topic).create();
     }
 
+    @Override
     @After
     public void cleanup() throws Exception {
         producer.close();

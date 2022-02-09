@@ -16,20 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.pulsar.storm;
 
 import java.io.Serializable;
 
 /**
- * Class used to specify pulsar storm configurations like service url and topic
- *
- *
+ * Class used to specify pulsar storm configurations like service url and topic.
  */
 public class PulsarStormConfiguration implements Serializable {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     public static final int DEFAULT_METRICS_TIME_INTERVAL_IN_SECS = 60;
@@ -39,23 +35,25 @@ public class PulsarStormConfiguration implements Serializable {
     private int metricsTimeIntervalInSecs = DEFAULT_METRICS_TIME_INTERVAL_IN_SECS;
 
     /**
-     * @return the service URL to connect to from the client
+     * Get service url.
+     * @return the service URL to connect to from the client.
      */
     public String getServiceUrl() {
         return serviceUrl;
     }
 
     /**
-     * Sets the service URL to connect to from the client
+     * Sets the service URL to connect to from the client.
      *
-     * @param serviceUrl
+     * @param serviceUrl - service url
      */
     public void setServiceUrl(String serviceUrl) {
         this.serviceUrl = serviceUrl;
     }
 
     /**
-     * @return the topic name for the producer/consumer
+     * Get topic.
+     * @return the topic name for the producer/consumer.
      */
     public String getTopic() {
         return topic;
@@ -63,25 +61,26 @@ public class PulsarStormConfiguration implements Serializable {
 
     /**
      * Sets the topic name for the producer/consumer. It should be of the format
-     * {persistent|non-persistent}://{property}/{cluster}/{namespace}/{topic}
+     * {persistent|non-persistent}://{property}/{cluster}/{namespace}/{topic}.
      *
-     * @param topic
+     * @param topic - topic name
      */
     public void setTopic(String topic) {
         this.topic = topic;
     }
 
     /**
-     * @return the time interval in seconds for metrics generation
+     * Get metrics interval.
+     * @return the time interval in seconds for metrics generation.
      */
     public int getMetricsTimeIntervalInSecs() {
         return metricsTimeIntervalInSecs;
     }
 
     /**
-     * Sets the time interval in seconds for metrics generation <i>(default: 60 seconds)</i>
+     * Sets the time interval in seconds for metrics generation <i>(default: 60 seconds)</i>.
      *
-     * @param metricsTimeIntervalInSecs
+     * @param metricsTimeIntervalInSecs - metrics interval in sec.
      */
     public void setMetricsTimeIntervalInSecs(int metricsTimeIntervalInSecs) {
         this.metricsTimeIntervalInSecs = metricsTimeIntervalInSecs;

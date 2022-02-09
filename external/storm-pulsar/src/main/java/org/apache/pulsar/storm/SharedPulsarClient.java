@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.pulsar.storm;
 
 import java.util.concurrent.CompletionException;
@@ -58,11 +59,10 @@ public class SharedPulsarClient {
      * Provides a shared pulsar client that is shared across all different tasks in the same component. Different
      * components will not share the pulsar client since they can have different configurations.
      *
-     * @param componentId
-     *            the id of the spout/bolt
-     * @param clientConf
-     * @return
-     * @throws PulsarClientException
+     * @param componentId - the id of the spout/bolt
+     * @param clientConf - client config
+     * @return SharedPulsarClient
+     * @throws PulsarClientException in case of an error
      */
     public static SharedPulsarClient get(String componentId, ClientConfigurationData clientConf)
             throws PulsarClientException {
