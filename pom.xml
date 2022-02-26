@@ -270,8 +270,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf/storm</url>
-      <tag>HEAD</tag>
-  </scm>
+    </scm>
 
     <issueManagement>
         <system>jira</system>
