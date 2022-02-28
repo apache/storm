@@ -302,7 +302,7 @@
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.5.0</carbonite.version>
         <snakeyaml.version>1.26</snakeyaml.version>
-        <httpclient.version>4.5.6</httpclient.version>
+        <httpclient.version>4.5.13</httpclient.version>
         <jctools.version>2.0.1</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>27.0.1-jre</guava.version>
