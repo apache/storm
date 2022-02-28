@@ -183,10 +183,10 @@
         <artifactId>java-hamcrest</artifactId>
     </dependency>
     <dependency>
-        <!-- Needed in this version by hive -->
+      <!-- Needed in this version by hive -->
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>0.9.3</version>
+      <version>${thrift.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
