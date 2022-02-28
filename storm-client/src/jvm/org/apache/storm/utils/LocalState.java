@@ -33,6 +33,7 @@ import org.apache.storm.thrift.TBase;
 import org.apache.storm.thrift.TDeserializer;
 import org.apache.storm.thrift.TSerializer;
 import org.apache.storm.thrift.protocol.TProtocolException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,7 @@ public class LocalState {
         }
     }
 
-    private Map<String, TBase> deserializeLatestVersion() throws IOException {
+    private Map<String, TBase> deserializeLatestVersion() throws TTransportException {
         Map<String, TBase> result = new HashMap<>();
         TDeserializer td = new TDeserializer();
         for (Map.Entry<String, ThriftSerializedObject> ent : partialDeserializeLatestVersion(td).entrySet()) {
@@ -135,7 +136,12 @@ public class LocalState {
     }
 
     public TBase get(String key) {
-        TDeserializer td = new TDeserializer();
+        TDeserializer td;
+        try {
+            td = new TDeserializer();
+        } catch (TTransportException e) {
+            throw new IllegalStateException("Failed to create TDeserializer", e);
+        }
         Map<String, ThriftSerializedObject> partial = partialSnapshot(td);
         ThriftSerializedObject tso = partial.get(key);
         TBase ret = null;
@@ -151,7 +157,12 @@ public class LocalState {
 
     public synchronized void put(String key, TBase val, boolean cleanup) {
         Map<String, ThriftSerializedObject> curr = partialSnapshot(null);
-        TSerializer ser = new TSerializer();
+        TSerializer ser;
+        try {
+            ser = new TSerializer();
+        } catch (TTransportException e) {
+            throw new IllegalStateException("Failed to create TSerializer", e);
+        }
         curr.put(key, serialize(val, ser));
         persistInternal(curr, ser, cleanup);
     }

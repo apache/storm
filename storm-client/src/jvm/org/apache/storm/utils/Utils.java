@@ -107,6 +107,7 @@ import org.apache.storm.thrift.TBase;
 import org.apache.storm.thrift.TDeserializer;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.thrift.TSerializer;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -719,7 +720,7 @@ public class Utils {
         }
     }
 
-    private static TDeserializer getDes() {
+    private static TDeserializer getDes() throws TTransportException {
         TDeserializer des = threadDes.get();
         if (des == null) {
             des = new TDeserializer();

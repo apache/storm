@@ -191,13 +191,18 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         props.put(Sasl.SERVER_AUTH, "false");
 
         LOG.debug("SASL GSSAPI client transport is being established");
-        final TTransport sasalTransport = new TSaslClientTransport(KERBEROS,
-                                                                   principal,
-                                                                   serviceName,
-                                                                   serverHost,
-                                                                   props,
-                                                                   null,
-                                                                   transport);
+        final TTransport sasalTransport;
+        try {
+            sasalTransport = new TSaslClientTransport(KERBEROS,
+                    principal,
+                    serviceName,
+                    serverHost,
+                    props,
+                    null,
+                    transport);
+        } catch (TTransportException tte) {
+            throw new IOException("Failed to created TSaslClientTransport", tte);
+        }
 
         //open Sasl transport with the login credential
         try {
