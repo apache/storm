@@ -207,7 +207,7 @@
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.el</artifactId>
-            <version>3.0.1-b12</version>
+            <version>3.0.0</version>
         </dependency>
     </dependencies>
     <build>
