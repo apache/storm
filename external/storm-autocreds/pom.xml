@@ -135,6 +135,11 @@
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
                 </exclusion>
+                <!-- https://jira.apache.org/jira/browse/STORM-3828 -->
+                <exclusion>
+                    <groupId>org.glassfish</groupId>
+                    <artifactId>javax.el</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -198,6 +203,11 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.el</artifactId>
+            <version>3.0.0</version>
         </dependency>
     </dependencies>
     <build>
