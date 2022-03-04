@@ -28,7 +28,7 @@
     <packaging>jar</packaging>
     <name>Storm Core</name>
     <description>Storm Core Java API and Clojure implementation.</description>
-
+	<!-- force travis-rebuild test -->
     <properties>
         <worker-launcher.conf.dir>/etc/storm</worker-launcher.conf.dir>
         <worker-launcher.build.dir>${project.build.directory}/native/worker-launcher</worker-launcher.build.dir>
