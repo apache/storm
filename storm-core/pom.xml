@@ -58,17 +58,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!--Hadoop Mini Cluster cannot use log4j2 bridge,
-        Surefire has a way to exclude the conflicting log4j API jar
-        from the classpath, classpathDependencyExcludes, but it didn't work in practice.
-        This is here as a work around to place it at the beginning of the classpath
-        even though maven does not officially support ordering of the classpath.-->
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-            <scope>test</scope>
-        </dependency>
         <!--clojure-->
         <dependency>
             <groupId>org.clojure</groupId>
