@@ -695,6 +695,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.2 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.6 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.8.1 - http://commons.apache.org/proper/commons-lang/)
+        * Apache Commons Lang (org.apache.commons:commons-lang3:3.12.0 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Logging (commons-logging:commons-logging:1.2 - http://commons.apache.org/proper/commons-logging/)
         * Apache Commons Math (org.apache.commons:commons-math3:3.6.1 - http://commons.apache.org/proper/commons-math/)
         * Apache Commons Text (org.apache.commons:commons-text:1.2 - http://commons.apache.org/proper/commons-text/)
