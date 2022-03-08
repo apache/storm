@@ -54,9 +54,6 @@ All existing messages will remain archived there, and can be accessed/searched [
 
 New messages sent to storm-user@googlegroups.com will either be rejected/bounced or replied to with a message to direct the email to the appropriate Apache-hosted group.
 
-### IRC
-You can also come to the #storm-user room on [freenode](http://freenode.net/). You can usually find a Storm developer there to help you out.
-
 ## License
 
 Licensed to the Apache Software Foundation (ASF) under one
