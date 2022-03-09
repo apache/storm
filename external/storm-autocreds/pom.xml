@@ -102,6 +102,10 @@
             <version>${hbase.version}</version>
             <exclusions>
                 <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
@@ -122,6 +126,10 @@
             <artifactId>hbase-server</artifactId>
             <version>${hbase.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
@@ -147,6 +155,10 @@
             <artifactId>hive-hcatalog-streaming</artifactId>
             <version>${hive.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
