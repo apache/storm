@@ -645,6 +645,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Apache License, Version 2.0
 
+        * reload4j (ch.qos.reload4j:reload4j:1.2.19 - https://reload4j.qos.ch)
         * HttpClient (commons-httpclient:commons-httpclient:3.0.1 - http://jakarta.apache.org/commons/httpclient/)
         * Plexus Common Utilities (org.codehaus.plexus:plexus-utils:3.1.0 - http://codehaus-plexus.github.io/plexus-utils/)
         * Maven Artifact (org.apache.maven:maven-artifact:3.6.0 - https://maven.apache.org/ref/3.6.0/maven-artifact/)
@@ -747,7 +748,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.13 - http://hc.apache.org/httpcomponents-core-ga)
         * Apache Ivy (org.apache.ivy:ivy:2.4.0 - http://ant.apache.org/ivy/)
         * Apache Kafka (org.apache.kafka:kafka-clients:0.11.0.3 - http://kafka.apache.org)
-        * Apache Log4j (log4j:log4j:1.2.17 - http://logging.apache.org/log4j/1.2/)
         * Apache Log4j 1.x Compatibility API (org.apache.logging.log4j:log4j-1.2-api:2.17.1 - https://logging.apache.org/log4j/2.x/log4j-1.2-api/)
         * Apache Log4j API (org.apache.logging.log4j:log4j-api:2.17.1 - https://logging.apache.org/log4j/2.x/log4j-api/)
         * Apache Log4j Core (org.apache.logging.log4j:log4j-core:2.17.1 - https://logging.apache.org/log4j/2.x/log4j-core/)
@@ -910,7 +910,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Tephra API (co.cask.tephra:tephra-api:0.6.0 - https://github.com/caskdata/tephra/tephra-api)
         * Tephra Core (co.cask.tephra:tephra-core:0.6.0 - https://github.com/caskdata/tephra/tephra-core)
         * Tephra HBase 1.0 Compatibility (co.cask.tephra:tephra-hbase-compat-1.0:0.6.0 - https://github.com/caskdata/tephra/tephra-hbase-compat-1.0)
-        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.26 - http://www.slf4j.org)
+        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.36 - http://www.slf4j.org)
         * Jetty :: Aggregate :: All core Jetty (org.eclipse.jetty.aggregate:jetty-all:7.6.0.v20120127 - http://www.eclipse.org/jetty/jetty-aggregate-project/jetty-all)
         * Jetty :: Continuation (org.eclipse.jetty:jetty-continuation:9.4.45.v20220203 - http://www.eclipse.org/jetty)
         * Jetty :: Http Utility (org.eclipse.jetty:jetty-http:9.4.45.v20220203 - http://www.eclipse.org/jetty)
@@ -1045,9 +1045,9 @@ The license texts of these dependencies can be found in the licenses directory.
         * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.25 - http://www.slf4j.org)
         * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.26 - http://www.slf4j.org)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.26 - http://www.slf4j.org)
-        * SLF4J API Module (org.slf4j:slf4j-api:1.7.26 - http://www.slf4j.org)
-        * SLF4J LOG4J-12 Binding (org.slf4j:slf4j-log4j12:1.7.26 - http://www.slf4j.org)
+        * SLF4J API Module (org.slf4j:slf4j-api:1.7.36 - http://www.slf4j.org)
         * Sysout over SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
+        * SLF4J Reload4j Binding (org.slf4j:slf4j-reload4j:1.7.36 - http://reload4j.qos.ch)
 
     Mozilla Public License Version 2.0
 
