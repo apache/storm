@@ -273,25 +273,6 @@
                         <executions>
                             <execution>
                                 <configuration>
-                                    <executable>python2.7</executable>
-                                    <workingDirectory>test/py</workingDirectory>
-                                    <arguments>
-                                        <argument>test_storm_cli.py</argument>
-                                    </arguments>
-                                    <environmentVariables>
-                                        <PYTHONPATH>../../../bin:$PYTHONPATH</PYTHONPATH>
-                                        <PYTHONDONTWRITEBYTECODE>true</PYTHONDONTWRITEBYTECODE>
-                                    </environmentVariables>
-                                    <skip>${skipTests}</skip>
-                                </configuration>
-                                <id>python2.7-test</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <configuration>
                                     <executable>python3</executable>
                                     <workingDirectory>test/py</workingDirectory>
                                     <arguments>
