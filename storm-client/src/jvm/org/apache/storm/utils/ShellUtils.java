@@ -182,6 +182,7 @@ public abstract class ShellUtils {
             runCommand();
         } catch (IOException e) {
             numShellExceptions.mark();
+            LOG.info("Failed running command {}", getExecString(), e);
             throw e;
         }
     }
