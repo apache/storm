@@ -298,7 +298,7 @@
         <commons-cli.version>1.4</commons-cli.version>
         <curator.version>4.3.0</curator.version>
         <json-simple.version>1.1</json-simple.version>
-        <jetty.version>9.4.14.v20181114</jetty.version>
+        <jetty.version>9.4.45.v20220203</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.5.0</carbonite.version>
         <snakeyaml.version>1.26</snakeyaml.version>
