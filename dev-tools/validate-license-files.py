@@ -59,6 +59,13 @@ def check_dependency_licenses():
     """Compares the regenerated DEPENDENCY-LICENSES in target with the DEPENDENCY-LICENSES in the root, and verifies that they are identical"""
     print('Checking DEPENDENCY-LICENSES')
     if (not filecmp.cmp(Path('DEPENDENCY-LICENSES'), Path('target') / 'DEPENDENCY-LICENSES', shallow=False)):
+        file_handle = open("target/DEPENDENCY-LICENSES")
+
+        lines = file_handle.readlines()
+        for line in lines:
+            print(line)
+        file_handle.close()
+        print("")
         print(
             f"DEPENDENCY-LICENSES and target/DEPENDENCY-LICENSES are different. Please update DEPENDENCY-LICENSES by running '{update_dependency_licenses_cmd}' in the project root")
         return False
