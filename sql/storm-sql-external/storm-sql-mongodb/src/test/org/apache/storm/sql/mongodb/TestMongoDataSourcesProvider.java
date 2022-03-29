@@ -28,7 +28,7 @@ import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.topology.IRichBolt;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestMongoDataSourcesProvider {
 
@@ -47,9 +47,9 @@ public class TestMongoDataSourcesProvider {
     public void testMongoSink() throws Exception {
         ISqlStreamsDataSource ds = DataSourcesRegistry.constructStreamsDataSource(
             URI.create("mongodb://127.0.0.1:27017/test"), null, null, TBL_PROPERTIES, FIELDS);
-        Assert.assertNotNull(ds);
+        assertNotNull(ds);
 
         IRichBolt consumer = ds.getConsumer();
-        Assert.assertEquals(MongoInsertBolt.class, consumer.getClass());
+        fail(MongoInsertBolt.class, consumer.getClass());
     }
 }

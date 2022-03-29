@@ -40,22 +40,23 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class TestSequenceFileBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestSequenceFileBolt.class);
@@ -81,13 +82,13 @@ public class TestSequenceFileBolt {
     @Mock
     private TopologyContext topologyContext;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         fs = dfsClusterRule.getDfscluster().getFileSystem();
         hdfsURI = "hdfs://localhost:" + dfsClusterRule.getDfscluster().getNameNodePort() + "/";
     }
 
-    @After
+    @AfterEach
     public void shutDown() throws IOException {
         fs.close();
     }
@@ -103,7 +104,7 @@ public class TestSequenceFileBolt {
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(2, countNonZeroLengthFiles(testRoot));
+        assertEquals(2, countNonZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -118,7 +119,7 @@ public class TestSequenceFileBolt {
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
     }
 
     @Test

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -20,23 +20,21 @@ import org.apache.storm.annotation.InterfaceStability;
  * Context information passed to the {@link Processor}.
  */
 @InterfaceStability.Unstable
-public interface ProcessorContext extends Serializable {
+public interface ProcessorContext<T> extends Serializable {
     /**
      * Forwards the input to all downstream processors.
      *
      * @param input the input
-     * @param <T>   the type of the input
      */
-    <T> void forward(T input);
+    void forward(T input);
 
     /**
      * Forwards the input to downstream processors at specified stream.
      *
      * @param input  the input
      * @param stream the stream to forward
-     * @param <T>    the type of the input
      */
-    <T> void forward(T input, String stream);
+    void forward(T input, String stream);
 
     /**
      * Returns true if the processing is in a windowed context and should wait for punctuation before emitting results.

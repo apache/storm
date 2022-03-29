@@ -28,7 +28,7 @@ import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -208,37 +208,37 @@ public class TestStatsUtil {
         for (WorkerSummary ws : summaries) {
             String host = ws.get_host();
             int port = ws.get_port();
-            Assert.assertEquals("my-storm-id", ws.get_topology_id());
-            Assert.assertEquals("my-storm-name", ws.get_topology_name());
+            assertEquals("my-storm-id", ws.get_topology_id());
+            assertEquals("my-storm-name", ws.get_topology_name());
             boolean includeSupervisor = filterSupervisor == null || filterSupervisor.equals(host);
             switch (port) {
                 case 1:
-                    Assert.assertEquals("host1", ws.get_host());
-                    Assert.assertEquals("node1", ws.get_supervisor_id());
-                    Assert.assertEquals(1, ws.get_num_executors());
-                    Assert.assertEquals(100, ws.get_uptime_secs());
-                    Assert.assertEquals(1.0, ws.get_assigned_memonheap(), 0.001);
-                    Assert.assertEquals(2.0, ws.get_assigned_memoffheap(), 0.001);
-                    Assert.assertEquals(3.0, ws.get_assigned_cpu(), 0.001);
+                    assertEquals("host1", ws.get_host());
+                    assertEquals("node1", ws.get_supervisor_id());
+                    assertEquals(1, ws.get_num_executors());
+                    assertEquals(100, ws.get_uptime_secs());
+                    assertEquals(1.0, ws.get_assigned_memonheap(), 0.001);
+                    assertEquals(2.0, ws.get_assigned_memoffheap(), 0.001);
+                    assertEquals(3.0, ws.get_assigned_cpu(), 0.001);
                     break;
                 case 2:
-                    Assert.assertEquals("host2", ws.get_host());
-                    Assert.assertEquals("node2", ws.get_supervisor_id());
-                    Assert.assertEquals(1, ws.get_num_executors());
-                    Assert.assertEquals(200, ws.get_uptime_secs());
-                    Assert.assertEquals(4.0, ws.get_assigned_memonheap(), 0.001);
-                    Assert.assertEquals(8.0, ws.get_assigned_memoffheap(), 0.001);
-                    Assert.assertEquals(12.0, ws.get_assigned_cpu(), 0.001);
+                    assertEquals("host2", ws.get_host());
+                    assertEquals("node2", ws.get_supervisor_id());
+                    assertEquals(1, ws.get_num_executors());
+                    assertEquals(200, ws.get_uptime_secs());
+                    assertEquals(4.0, ws.get_assigned_memonheap(), 0.001);
+                    assertEquals(8.0, ws.get_assigned_memoffheap(), 0.001);
+                    assertEquals(12.0, ws.get_assigned_cpu(), 0.001);
                     break;
                 case 3:
-                    Assert.assertEquals("host3", ws.get_host());
-                    Assert.assertEquals("node3", ws.get_supervisor_id());
-                    Assert.assertEquals(1, ws.get_num_executors());
+                    assertEquals("host3", ws.get_host());
+                    assertEquals("node3", ws.get_supervisor_id());
+                    assertEquals(1, ws.get_num_executors());
                     // no heartbeat for this one, should be 0
-                    Assert.assertEquals(0, ws.get_uptime_secs());
-                    Assert.assertEquals(16.0, ws.get_assigned_memonheap(), 0.001);
-                    Assert.assertEquals(32.0, ws.get_assigned_memoffheap(), 0.001);
-                    Assert.assertEquals(48.0, ws.get_assigned_cpu(), 0.001);
+                    assertEquals(0, ws.get_uptime_secs());
+                    assertEquals(16.0, ws.get_assigned_memonheap(), 0.001);
+                    assertEquals(32.0, ws.get_assigned_memoffheap(), 0.001);
+                    assertEquals(48.0, ws.get_assigned_cpu(), 0.001);
                     break;
             }
         }
@@ -264,9 +264,9 @@ public class TestStatsUtil {
                                                          true /*user authorized*/,
                                                          null /*filter supervisor*/);
         WorkerSummary ws = getWorkerSummaryForPort(summaries, 1);
-        Assert.assertEquals(1, ws.get_component_to_num_tasks().size());
-        Assert.assertEquals(1, ws.get_component_to_num_tasks().get("my-component").intValue());
-        Assert.assertEquals(1, summaries.size());
+        assertEquals(1, ws.get_component_to_num_tasks().size());
+        assertEquals(1, ws.get_component_to_num_tasks().get("my-component").intValue());
+        assertEquals(1, summaries.size());
     }
 
     @Test
@@ -277,11 +277,11 @@ public class TestStatsUtil {
                                                          null /*filter supervisor*/);
         WorkerSummary ws = getWorkerSummaryForPort(summaries, 2);
         // since we made sys components visible, the component map has all system components
-        Assert.assertEquals(3, ws.get_component_to_num_tasks().size());
-        Assert.assertEquals(1, ws.get_component_to_num_tasks().get("__sys1").intValue());
-        Assert.assertEquals(1, ws.get_component_to_num_tasks().get("__sys2").intValue());
-        Assert.assertEquals(1, ws.get_component_to_num_tasks().get("__sys3").intValue());
-        Assert.assertEquals(2, summaries.size());
+        assertEquals(3, ws.get_component_to_num_tasks().size());
+        assertEquals(1, ws.get_component_to_num_tasks().get("__sys1").intValue());
+        assertEquals(1, ws.get_component_to_num_tasks().get("__sys2").intValue());
+        assertEquals(1, ws.get_component_to_num_tasks().get("__sys3").intValue());
+        assertEquals(2, summaries.size());
     }
 
     @Test
@@ -292,10 +292,10 @@ public class TestStatsUtil {
                                                          null  /*filter supervisor*/);
         WorkerSummary ws1 = getWorkerSummaryForPort(summaries, 1);
         WorkerSummary ws2 = getWorkerSummaryForPort(summaries, 2);
-        Assert.assertEquals(1, ws1.get_component_to_num_tasks().size());
+        assertEquals(1, ws1.get_component_to_num_tasks().size());
         // since we made sys components hidden, the component map is empty for this worker
-        Assert.assertEquals(0, ws2.get_component_to_num_tasks().size());
-        Assert.assertEquals(2, summaries.size());
+        assertEquals(0, ws2.get_component_to_num_tasks().size());
+        assertEquals(2, summaries.size());
     }
 
     @Test
@@ -307,9 +307,9 @@ public class TestStatsUtil {
         WorkerSummary ws1 = getWorkerSummaryForPort(summaries, 1);
         WorkerSummary ws2 = getWorkerSummaryForPort(summaries, 2);
         // since we made user not authorized, component map is empty
-        Assert.assertEquals(0, ws1.get_component_to_num_tasks().size());
-        Assert.assertEquals(0, ws2.get_component_to_num_tasks().size());
-        Assert.assertEquals(2, summaries.size());
+        assertEquals(0, ws1.get_component_to_num_tasks().size());
+        assertEquals(0, ws2.get_component_to_num_tasks().size());
+        assertEquals(2, summaries.size());
     }
 
     @Test
@@ -320,10 +320,10 @@ public class TestStatsUtil {
                                                          "node3" /*filter supervisor*/);
         WorkerSummary ws = getWorkerSummaryForPort(summaries, 3);
         // only host3 should be returned given filter
-        Assert.assertEquals(2, ws.get_component_to_num_tasks().size());
-        Assert.assertEquals(2, ws.get_component_to_num_tasks().get("__sys4").intValue());
-        Assert.assertEquals(1, ws.get_component_to_num_tasks().get("my-component2").intValue());
-        Assert.assertEquals(1, summaries.size());
+        assertEquals(2, ws.get_component_to_num_tasks().size());
+        assertEquals(2, ws.get_component_to_num_tasks().get("__sys4").intValue());
+        assertEquals(1, ws.get_component_to_num_tasks().get("my-component2").intValue());
+        assertEquals(1, summaries.size());
     }
 
     @Test
@@ -335,9 +335,9 @@ public class TestStatsUtil {
 
         WorkerSummary ws = getWorkerSummaryForPort(summaries, 3);
         // hidden sys component
-        Assert.assertEquals(1, ws.get_component_to_num_tasks().size());
-        Assert.assertEquals(1, ws.get_component_to_num_tasks().get("my-component2").intValue());
-        Assert.assertEquals(1, summaries.size());
+        assertEquals(1, ws.get_component_to_num_tasks().size());
+        assertEquals(1, ws.get_component_to_num_tasks().get("my-component2").intValue());
+        assertEquals(1, summaries.size());
     }
 
     /**

@@ -24,12 +24,12 @@ import org.apache.storm.security.auth.KerberosPrincipalToLocal;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.SingleUserPrincipal;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,7 +46,7 @@ public class DRPCSimpleACLAuthorizerTest {
     private static IAuthorizer strictHandler;
     private static IAuthorizer permissiveHandler;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         strictHandler = new DRPCSimpleACLAuthorizer();
         strictHandler.prepare(ImmutableMap
@@ -68,101 +68,101 @@ public class DRPCSimpleACLAuthorizerTest {
     @Test
     public void test_partial_authorization() {
 
-        Assert.assertFalse("Deny execute to unauthroized user",
-                           isPermitted(strictHandler, ReqContext.context(), "execute", partialFunction));
+        assertFalse(isPermitted(strictHandler, ReqContext.context(), "execute", partialFunction),
+            "Deny execute to unauthorized user");
 
-        Assert.assertTrue("Allow execute to authorized kerb user for correct function",
-                          isPermitted(strictHandler, aliceKerbContext, "execute", partialFunction));
+        assertTrue(isPermitted(strictHandler, aliceKerbContext, "execute", partialFunction),
+            "Allow execute to authorized kerb user for correct function");
 
-        Assert.assertFalse("Deny fetchRequest to unauthorized user for correct function",
-                           isPermitted(strictHandler, aliceKerbContext, "fetchRequest", partialFunction));
+        assertFalse(isPermitted(strictHandler, aliceKerbContext, "fetchRequest", partialFunction),
+            "Deny fetchRequest to unauthorized user for correct function");
     }
 
     @Test
     public void test_client_authorization_strict() {
 
-        Assert.assertFalse("Deny execute to unauthroized user",
-                           isPermitted(strictHandler, ReqContext.context(), "execute", function));
+        assertFalse(isPermitted(strictHandler, ReqContext.context(), "execute", function),
+            "Deny execute to unauthorized user");
 
-        Assert.assertFalse("Deny execute to valid user for incorrect function",
-                           isPermitted(strictHandler, aliceContext, "execute", wrongFunction));
+        assertFalse(isPermitted(strictHandler, aliceContext, "execute", wrongFunction),
+            "Deny execute to valid user for incorrect function");
 
-        Assert.assertTrue("Allow execute to authorized kerb user for correct function",
-                          isPermitted(strictHandler, aliceKerbContext, "execute", function));
+        assertTrue(isPermitted(strictHandler, aliceKerbContext, "execute", function),
+            "Allow execute to authorized kerb user for correct function");
 
-        Assert.assertTrue("Allow execute to authorized user for correct function",
-                          isPermitted(strictHandler, aliceContext, "execute", function));
+        assertTrue(isPermitted(strictHandler, aliceContext, "execute", function),
+            "Allow execute to authorized user for correct function");
     }
 
     @Test
     public void test_client_authorization_permissive() {
 
-        Assert.assertFalse("deny execute to unauthorized user for correct function",
-                           isPermitted(permissiveHandler, ReqContext.context(), "execute", function));
+        assertFalse(isPermitted(permissiveHandler, ReqContext.context(), "execute", function),
+            "deny execute to unauthorized user for correct function");
 
-        Assert.assertTrue("allow execute for user for incorrect function when permissive",
-                          isPermitted(permissiveHandler, aliceContext, "execute", wrongFunction));
+        assertTrue(isPermitted(permissiveHandler, aliceContext, "execute", wrongFunction),
+            "allow execute for user for incorrect function when permissive");
 
-        Assert.assertTrue("allow execute for user for incorrect function when permissive",
-                          isPermitted(permissiveHandler, aliceKerbContext, "execute", wrongFunction));
+        assertTrue(isPermitted(permissiveHandler, aliceKerbContext, "execute", wrongFunction),
+            "allow execute for user for incorrect function when permissive");
 
-        Assert.assertTrue("allow execute to authorized user for correct function",
-                          isPermitted(permissiveHandler, bobContext, "execute", function));
+        assertTrue(isPermitted(permissiveHandler, bobContext, "execute", function),
+            "allow execute to authorized user for correct function");
     }
 
     @Test
     public void test_invocation_authorization_strict() {
         for (String operation : new String[]{ "fetchRequest", "failRequest", "result" }) {
-            Assert.assertFalse("Deny " + operation + " to unauthorized user for correct function",
-                               isPermitted(strictHandler, aliceContext, operation, function));
+            assertFalse(isPermitted(strictHandler, aliceContext, operation, function),
+                "Deny " + operation + " to unauthorized user for correct function");
 
-            Assert.assertFalse("Deny " + operation + " to user for incorrect function when strict",
-                               isPermitted(strictHandler, charlieContext, operation, wrongFunction));
+            assertFalse(isPermitted(strictHandler, charlieContext, operation, wrongFunction),
+                "Deny " + operation + " to user for incorrect function when strict");
 
-            Assert.assertTrue("allow " + operation + " to authorized user for correct function",
-                              isPermitted(strictHandler, charlieContext, operation, function));
+            assertTrue(isPermitted(strictHandler, charlieContext, operation, function),
+                "allow " + operation + " to authorized user for correct function");
         }
     }
 
     @Test
     public void test_invocation_authorization_permissive() {
         for (String operation : new String[]{ "fetchRequest", "failRequest", "result" }) {
-            Assert.assertFalse("Deny " + operation + " to unauthorized user for correct function",
-                               isPermitted(permissiveHandler, bobContext, operation, function));
+            assertFalse(isPermitted(permissiveHandler, bobContext, operation, function),
+                "Deny " + operation + " to unauthorized user for correct function");
 
-            Assert.assertTrue("Allow " + operation + " to user for incorrect function when permissive",
-                              isPermitted(permissiveHandler, charlieContext, operation, wrongFunction));
+            assertTrue(isPermitted(permissiveHandler, charlieContext, operation, wrongFunction),
+                "Allow " + operation + " to user for incorrect function when permissive");
 
-            Assert.assertTrue("allow " + operation + " to authorized user",
-                              isPermitted(permissiveHandler, charlieContext, operation, function));
+            assertTrue(isPermitted(permissiveHandler, charlieContext, operation, function),
+                "allow " + operation + " to authorized user");
         }
     }
 
     @Test
     public void test_deny_when_no_function_given() {
-        Assert.assertFalse(strictHandler.permit(aliceContext, "execute", new HashMap()));
+        assertFalse(strictHandler.permit(aliceContext, "execute", new HashMap<>()));
 
-        Assert.assertFalse(isPermitted(strictHandler, aliceContext, "execute", null));
+        assertFalse(isPermitted(strictHandler, aliceContext, "execute", null));
 
-        Assert.assertFalse(permissiveHandler.permit(bobContext, "execute", new HashMap()));
+        assertFalse(permissiveHandler.permit(bobContext, "execute", new HashMap<>()));
 
-        Assert.assertFalse(isPermitted(permissiveHandler, bobContext, "execute", null));
+        assertFalse(isPermitted(permissiveHandler, bobContext, "execute", null));
     }
 
     @Test
     public void test_deny_when_invalid_user_given() {
-        Assert.assertFalse(isPermitted(strictHandler, Mockito.mock(ReqContext.class), "execute", function));
+        assertFalse(isPermitted(strictHandler, Mockito.mock(ReqContext.class), "execute", function));
 
-        Assert.assertFalse(isPermitted(strictHandler, null, "execute", function));
+        assertFalse(isPermitted(strictHandler, null, "execute", function));
 
-        Assert.assertFalse(isPermitted(permissiveHandler, Mockito.mock(ReqContext.class), "execute", function));
+        assertFalse(isPermitted(permissiveHandler, Mockito.mock(ReqContext.class), "execute", function));
 
-        Assert.assertFalse(isPermitted(permissiveHandler, null, "execute", function));
+        assertFalse(isPermitted(permissiveHandler, null, "execute", function));
 
     }
 
     private boolean isPermitted(IAuthorizer authorizer, ReqContext context, String operation, String function) {
-        Map<String, Object> config = new HashMap();
+        Map<String, Object> config = new HashMap<>();
         config.put(DRPCSimpleACLAuthorizer.FUNCTION_KEY, function);
         return authorizer.permit(context, operation, config);
     }

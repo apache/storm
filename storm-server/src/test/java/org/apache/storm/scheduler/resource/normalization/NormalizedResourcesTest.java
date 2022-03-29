@@ -18,7 +18,6 @@ package org.apache.storm.scheduler.resource.normalization;
 
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +26,7 @@ import java.util.function.BiConsumer;
 import org.apache.storm.Constants;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
 
 public class NormalizedResourcesTest {

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -41,25 +41,22 @@ import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 import java.util.concurrent.ExecutionException;
 import org.apache.storm.metric.StormMetricsRegistry;
 
 public class SlotTest {
-    private static final Logger LOG = LoggerFactory.getLogger(SlotTest.class);
 
     static WorkerResources mkWorkerResources(Double cpu, Double mem_on_heap, Double mem_off_heap) {
         WorkerResources resources = new WorkerResources();
@@ -128,7 +125,7 @@ public class SlotTest {
 
     @Test
     public void testEmptyToEmpty() throws Exception {
-        try (SimulatedTime t = new SimulatedTime(1010)) {
+        try (SimulatedTime ignored = new SimulatedTime(1010)) {
             AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             LocalState state = mock(LocalState.class);
             BlobChangingCallback cb = mock(BlobChangingCallback.class);
@@ -147,7 +144,7 @@ public class SlotTest {
 
     @Test
     public void testLaunchContainerFromEmpty() throws Exception {
-        try (SimulatedTime t = new SimulatedTime(1010)) {
+        try (SimulatedTime ignored = new SimulatedTime(1010)) {
             int port = 8080;
             String topoId = "NEW";
             List<ExecutorInfo> execList = mkExecutorInfoList(1, 2, 3, 4, 5);
@@ -177,7 +174,7 @@ public class SlotTest {
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
             verify(localizer).requestDownloadTopologyBlobs(newAssignment, port, cb);
             assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
-            assertSame("pendingDownload not set properly", blobFuture, nextState.pendingDownload);
+            assertSame(blobFuture, nextState.pendingDownload, "pendingDownload not set properly");
             assertEquals(newAssignment, nextState.pendingLocalization);
             assertEquals(0, Time.currentTimeMillis());
 
@@ -185,7 +182,7 @@ public class SlotTest {
             verify(blobFuture).get(1000, TimeUnit.MILLISECONDS);
             verify(containerLauncher).launchContainer(port, newAssignment, state);
             assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
@@ -193,7 +190,7 @@ public class SlotTest {
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
@@ -201,7 +198,7 @@ public class SlotTest {
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
@@ -209,7 +206,7 @@ public class SlotTest {
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
@@ -219,7 +216,7 @@ public class SlotTest {
     
     @Test
     public void testErrorHandlingWhenLocalizationFails() throws Exception {
-        try (SimulatedTime t = new SimulatedTime(1010)) {
+        try (SimulatedTime ignored = new SimulatedTime(1010)) {
             int port = 8080;
             String topoId = "NEW";
             List<ExecutorInfo> execList = mkExecutorInfoList(1, 2, 3, 4, 5);
@@ -255,7 +252,7 @@ public class SlotTest {
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
             verify(localizer).requestDownloadTopologyBlobs(newAssignment, port, cb);
             assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
-            assertSame("pendingDownload not set properly", blobFuture, nextState.pendingDownload);
+            assertSame(blobFuture, nextState.pendingDownload, "pendingDownload not set properly");
             assertEquals(newAssignment, nextState.pendingLocalization);
             assertEquals(0, Time.currentTimeMillis());
 
@@ -271,7 +268,7 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(dynamicState.withNewAssignment(newAssignment), staticState);
             verify(localizer).requestDownloadTopologyBlobs(newAssignment, port, cb);
             assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
-            assertSame("pendingDownload not set properly", secondBlobFuture, nextState.pendingDownload);
+            assertSame(secondBlobFuture, nextState.pendingDownload, "pendingDownload not set properly");
             assertEquals(newAssignment, nextState.pendingLocalization);
             
             //Error occurs, but assignment has not changed
@@ -279,7 +276,7 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             verify(localizer).requestDownloadTopologyBlobs(newAssignment, port, cb);
             assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
-            assertSame("pendingDownload not set properly", thirdBlobFuture, nextState.pendingDownload);
+            assertSame(thirdBlobFuture, nextState.pendingDownload, "pendingDownload not set properly");
             assertEquals(newAssignment, nextState.pendingLocalization);
             assertThat(Time.currentTimeMillis(), greaterThan(3L));
 
@@ -287,7 +284,7 @@ public class SlotTest {
             verify(thirdBlobFuture).get(1000, TimeUnit.MILLISECONDS);
             verify(containerLauncher).launchContainer(port, newAssignment, state);
             assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
@@ -296,7 +293,7 @@ public class SlotTest {
 
     @Test
     public void testRelaunch() throws Exception {
-        try (SimulatedTime t = new SimulatedTime(1010)) {
+        try (SimulatedTime ignored = new SimulatedTime(1010)) {
             int port = 8080;
             String topoId = "CURRENT";
             List<ExecutorInfo> execList = mkExecutorInfoList(1, 2, 3, 4, 5);
@@ -344,7 +341,7 @@ public class SlotTest {
 
     @Test
     public void testReschedule() throws Exception {
-        try (SimulatedTime t = new SimulatedTime(1010)) {
+        try (SimulatedTime ignored = new SimulatedTime(1010)) {
             int port = 8080;
             String cTopoId = "CURRENT";
             List<ExecutorInfo> cExecList = mkExecutorInfoList(1, 2, 3, 4, 5);
@@ -385,14 +382,14 @@ public class SlotTest {
             assertEquals(MachineState.KILL, nextState.state);
             verify(cContainer).kill();
             verify(localizer).requestDownloadTopologyBlobs(nAssignment, port, cb);
-            assertSame("pendingDownload not set properly", blobFuture, nextState.pendingDownload);
+            assertSame(blobFuture, nextState.pendingDownload, "pendingDownload not set properly");
             assertEquals(nAssignment, nextState.pendingLocalization);
             assertTrue(Time.currentTimeMillis() > 1000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.KILL, nextState.state);
             verify(cContainer).forceKill();
-            assertSame("pendingDownload not set properly", blobFuture, nextState.pendingDownload);
+            assertSame(blobFuture, nextState.pendingDownload, "pendingDownload not set properly");
             assertEquals(nAssignment, nextState.pendingLocalization);
             assertTrue(Time.currentTimeMillis() > 2000);
 
@@ -406,7 +403,7 @@ public class SlotTest {
             verify(blobFuture).get(1000, TimeUnit.MILLISECONDS);
             verify(containerLauncher).launchContainer(port, nAssignment, state);
             assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
@@ -414,7 +411,7 @@ public class SlotTest {
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
@@ -422,7 +419,7 @@ public class SlotTest {
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
@@ -430,7 +427,7 @@ public class SlotTest {
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame("pendingDownload is not null", null, nextState.pendingDownload);
+            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
             assertSame(null, nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
@@ -440,7 +437,7 @@ public class SlotTest {
 
     @Test
     public void testRunningToEmpty() throws Exception {
-        try (SimulatedTime t = new SimulatedTime(1010)) {
+        try (SimulatedTime ignored = new SimulatedTime(1010)) {
             int port = 8080;
             String cTopoId = "CURRENT";
             List<ExecutorInfo> cExecList = mkExecutorInfoList(1, 2, 3, 4, 5);
@@ -467,42 +464,42 @@ public class SlotTest {
             assertEquals(MachineState.KILL, nextState.state);
             verify(cContainer).kill();
             verify(localizer, never()).requestDownloadTopologyBlobs(null, port, cb);
-            assertSame("pendingDownload not set properly", null, nextState.pendingDownload);
-            assertEquals(null, nextState.pendingLocalization);
+            assertSame(null, nextState.pendingDownload, "pendingDownload not set properly");
+            assertNull(nextState.pendingLocalization);
             assertTrue(Time.currentTimeMillis() > 1000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.KILL, nextState.state);
             verify(cContainer).forceKill();
-            assertSame("pendingDownload not set properly", null, nextState.pendingDownload);
-            assertEquals(null, nextState.pendingLocalization);
+            assertSame(null, nextState.pendingDownload, "pendingDownload not set properly");
+            assertNull(nextState.pendingLocalization);
             assertTrue(Time.currentTimeMillis() > 2000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.EMPTY, nextState.state);
             verify(cContainer).cleanUp();
             verify(localizer).releaseSlotFor(cAssignment, port);
-            assertEquals(null, nextState.container);
-            assertEquals(null, nextState.currentAssignment);
+            assertNull(nextState.container);
+            assertNull(nextState.currentAssignment);
             assertTrue(Time.currentTimeMillis() > 2000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.EMPTY, nextState.state);
-            assertEquals(null, nextState.container);
-            assertEquals(null, nextState.currentAssignment);
+            assertNull(nextState.container);
+            assertNull(nextState.currentAssignment);
             assertTrue(Time.currentTimeMillis() > 3000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.EMPTY, nextState.state);
-            assertEquals(null, nextState.container);
-            assertEquals(null, nextState.currentAssignment);
+            assertNull(nextState.container);
+            assertNull(nextState.currentAssignment);
             assertTrue(Time.currentTimeMillis() > 3000);
         }
     }
 
     @Test
     public void testRunWithProfileActions() throws Exception {
-        try (SimulatedTime t = new SimulatedTime(1010)) {
+        try (SimulatedTime ignored = new SimulatedTime(1010)) {
             int port = 8080;
             String cTopoId = "CURRENT";
             List<ExecutorInfo> cExecList = mkExecutorInfoList(1, 2, 3, 4, 5);
@@ -538,7 +535,7 @@ public class SlotTest {
 
             SlotMetrics slotMetrics = new SlotMetrics(new StormMetricsRegistry());
             DynamicState dynamicState = new DynamicState(cAssignment, cContainer, cAssignment, slotMetrics)
-                .withProfileActions(profileActions, Collections.<TopoProfileAction>emptySet());
+                .withProfileActions(profileActions, Collections.emptySet());
 
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
@@ -577,7 +574,7 @@ public class SlotTest {
 
     @Test
     public void testResourcesChangedFiltered() throws Exception {
-        try (SimulatedTime t = new SimulatedTime(1010)) {
+        try (SimulatedTime ignored = new SimulatedTime(1010)) {
             int port = 8080;
             String cTopoId = "CURRENT";
             List<ExecutorInfo> cExecList = mkExecutorInfoList(1, 2, 3, 4, 5);

@@ -16,8 +16,8 @@
 package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -39,9 +39,9 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InOrder;
@@ -68,7 +68,7 @@ public class KafkaSpoutRetryLimitTest {
     @Captor
     private ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> commitCapture;
     
-    @Before
+    @BeforeEach
     public void setUp() {
         spoutConfig = createKafkaSpoutConfigBuilder(mock(TopicFilter.class), mock(ManualPartitioner.class), -1)
             .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
@@ -80,7 +80,7 @@ public class KafkaSpoutRetryLimitTest {
     @Test
     public void testFailingTupleCompletesAckAfterRetryLimitIsMet() {
         //Spout should ack failed messages after they hit the retry limit
-        try (SimulatedTime simulatedTime = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
             Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
             int lastOffset = 3;
@@ -111,7 +111,7 @@ public class KafkaSpoutRetryLimitTest {
 
             //verify that offset 4 was committed for the given TopicPartition, since processing should resume at 4.
             assertTrue(commitCapture.getValue().containsKey(partition));
-            assertEquals(lastOffset + 1, ((OffsetAndMetadata) (commitCapture.getValue().get(partition))).offset());
+            assertEquals(lastOffset + 1, commitCapture.getValue().get(partition).offset());
         }
     }
     

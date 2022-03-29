@@ -23,11 +23,11 @@ import org.apache.storm.eventhubs.spout.EventHubReceiverMock;
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 import org.apache.storm.eventhubs.spout.IEventHubReceiver;
 import org.apache.storm.eventhubs.spout.IEventHubReceiverFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestTransactionalTridentEmitter {
     private final int batchSize = 32;
@@ -35,7 +35,7 @@ public class TestTransactionalTridentEmitter {
     private Partition partition;
     private TridentCollectorMock collectorMock;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password",
                                                            "namespace", "entityname", 16, "zookeeper");
@@ -52,7 +52,7 @@ public class TestTransactionalTridentEmitter {
         collectorMock = new TridentCollectorMock();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         emitter.close();
         emitter = null;

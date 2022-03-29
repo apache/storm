@@ -61,7 +61,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Duration;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -104,7 +104,7 @@ public class TestResourceAwareScheduler {
         return config;
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (scheduler != null) {
             scheduler.cleanup();

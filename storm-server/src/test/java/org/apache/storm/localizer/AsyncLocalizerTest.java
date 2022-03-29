@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -57,7 +57,7 @@ import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,11 +65,12 @@ import org.slf4j.LoggerFactory;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.WORLD_EVERYTHING;
 import static org.apache.storm.localizer.LocalizedResource.USERCACHE;
 import static org.apache.storm.localizer.LocallyCachedTopologyBlob.LOCAL_MODE_JAR_VERSION;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -362,7 +363,7 @@ public class AsyncLocalizerTest {
     @Test
     public void testDirPaths() throws Exception {
         try (TmpPath tmp = new TmpPath()) {
-            Map<String, Object> conf = new HashMap();
+            Map<String, Object> conf = new HashMap<>();
             AsyncLocalizer localizer = new TestLocalizer(conf, tmp.getPath());
 
             String expectedDir = constructUserCacheDir(tmp.getPath(), user1);
@@ -404,16 +405,16 @@ public class AsyncLocalizerTest {
             File user2archive2file = new File(user2archive2, "file2");
 
             // setup some files/dirs to emulate supervisor restart
-            assertTrue("Failed setup filecache dir1", new File(expectedFileDir1).mkdirs());
-            assertTrue("Failed setup filecache dir2", new File(expectedFileDir2).mkdirs());
-            assertTrue("Failed setup file1", user1file1.createNewFile());
-            assertTrue("Failed setup file2", user1file2.createNewFile());
-            assertTrue("Failed setup file3", user2file3.createNewFile());
-            assertTrue("Failed setup file4", user2file4.createNewFile());
-            assertTrue("Failed setup archive dir1", user1archive1.mkdirs());
-            assertTrue("Failed setup archive dir2", user2archive2.mkdirs());
-            assertTrue("Failed setup file in archivedir1", user1archive1file.createNewFile());
-            assertTrue("Failed setup file in archivedir2", user2archive2file.createNewFile());
+            assertTrue(new File(expectedFileDir1).mkdirs(), "Failed setup filecache dir1");
+            assertTrue(new File(expectedFileDir2).mkdirs(), "Failed setup filecache dir2");
+            assertTrue(user1file1.createNewFile(), "Failed setup file1");
+            assertTrue(user1file2.createNewFile(), "Failed setup file2");
+            assertTrue(user2file3.createNewFile(), "Failed setup file3");
+            assertTrue(user2file4.createNewFile(), "Failed setup file4");
+            assertTrue(user1archive1.mkdirs(), "Failed setup archive dir1");
+            assertTrue(user2archive2.mkdirs(), "Failed setup archive dir2");
+            assertTrue(user1archive1file.createNewFile(), "Failed setup file in archivedir1");
+            assertTrue(user2archive2file.createNewFile(), "Failed setup file in archivedir2");
 
             TestLocalizer localizer = new TestLocalizer(conf, tmp.getPath());
 
@@ -425,35 +426,35 @@ public class AsyncLocalizerTest {
 
             ConcurrentMap<String, LocalizedResource> lrsrcFiles = localizer.getUserFiles().get(user1);
             ConcurrentMap<String, LocalizedResource> lrsrcArchives = localizer.getUserArchives().get(user1);
-            assertEquals("local resource set size wrong", 3, lrsrcFiles.size() + lrsrcArchives.size());
+            assertEquals(3, lrsrcFiles.size() + lrsrcArchives.size(), "local resource set size wrong");
             LocalizedResource key1rsrc = lrsrcFiles.get(key1);
-            assertNotNull("Local resource doesn't exist but should", key1rsrc);
-            assertEquals("key doesn't match", key1, key1rsrc.getKey());
-            assertEquals("references doesn't match " + key1rsrc.getDependencies(), true, key1rsrc.isUsed());
+            assertNotNull(key1rsrc, "Local resource doesn't exist but should");
+            assertEquals(key1, key1rsrc.getKey(), "key doesn't match");
+            assertTrue(key1rsrc.isUsed(), "references doesn't match " + key1rsrc.getDependencies());
             LocalizedResource key2rsrc = lrsrcFiles.get(key2);
-            assertNotNull("Local resource doesn't exist but should", key2rsrc);
+            assertNotNull(key2rsrc, "Local resource doesn't exist but should");
             assertEquals("key doesn't match", key2, key2rsrc.getKey());
-            assertEquals("refcount doesn't match " + key2rsrc.getDependencies(), false, key2rsrc.isUsed());
+            assertFalse(key2rsrc.isUsed(), "refcount doesn't match " + key2rsrc.getDependencies());
             LocalizedResource archive1rsrc = lrsrcArchives.get(archive1);
-            assertNotNull("Local resource doesn't exist but should", archive1rsrc);
-            assertEquals("key doesn't match", archive1, archive1rsrc.getKey());
-            assertEquals("refcount doesn't match " + archive1rsrc.getDependencies(), true, archive1rsrc.isUsed());
+            assertNotNull(archive1rsrc, "Local resource doesn't exist but should");
+            assertEquals(archive1, archive1rsrc.getKey(), "key doesn't match");
+            assertTrue(archive1rsrc.isUsed(), "refcount doesn't match " + archive1rsrc.getDependencies());
 
             ConcurrentMap<String, LocalizedResource> lrsrcFiles2 = localizer.getUserFiles().get(user2);
             ConcurrentMap<String, LocalizedResource> lrsrcArchives2 = localizer.getUserArchives().get(user2);
-            assertEquals("local resource set size wrong", 3, lrsrcFiles2.size() + lrsrcArchives2.size());
+            assertEquals(3, lrsrcFiles2.size() + lrsrcArchives2.size(), "local resource set size wrong");
             LocalizedResource key3rsrc = lrsrcFiles2.get(key3);
-            assertNotNull("Local resource doesn't exist but should", key3rsrc);
+            assertNotNull(key3rsrc, "Local resource doesn't exist but should");
             assertEquals("key doesn't match", key3, key3rsrc.getKey());
-            assertEquals("refcount doesn't match " + key3rsrc.getDependencies(), false, key3rsrc.isUsed());
+            assertFalse(key3rsrc.isUsed(), "refcount doesn't match " + key3rsrc.getDependencies());
             LocalizedResource key4rsrc = lrsrcFiles2.get(key4);
-            assertNotNull("Local resource doesn't exist but should", key4rsrc);
+            assertNotNull(key4rsrc, "Local resource doesn't exist but should");
             assertEquals("key doesn't match", key4, key4rsrc.getKey());
-            assertEquals("refcount doesn't match " + key4rsrc.getDependencies(), false, key4rsrc.isUsed());
+            assertFalse(key4rsrc.isUsed(), "refcount doesn't match " + key4rsrc.getDependencies());
             LocalizedResource archive2rsrc = lrsrcArchives2.get(archive2);
-            assertNotNull("Local resource doesn't exist but should", archive2rsrc);
+            assertNotNull(archive2rsrc, "Local resource doesn't exist but should");
             assertEquals("key doesn't match", archive2, archive2rsrc.getKey());
-            assertEquals("refcount doesn't match " + archive2rsrc.getDependencies(), false, archive2rsrc.isUsed());
+            assertFalse(archive2rsrc.isUsed(), "refcount doesn't match " + archive2rsrc.getDependencies());
         }
     }
 
@@ -493,7 +494,7 @@ public class AsyncLocalizerTest {
             // Windows should set this to false cause symlink in compressed file doesn't work properly.
             supportSymlinks = false;
         }
-        try (Time.SimulatedTime st = new Time.SimulatedTime(); TmpPath tmp = new TmpPath()) {
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime(); TmpPath tmp = new TmpPath()) {
 
             Map<String, Object> conf = new HashMap<>();
             // set clean time really high so doesn't kick in
@@ -503,7 +504,7 @@ public class AsyncLocalizerTest {
             String topo1 = "topo1";
             LOG.info("About to create new AsyncLocalizer...");
             TestLocalizer localizer = new TestLocalizer(conf, tmp.getPath());
-            // set really small so will do cleanup
+            // set really small, so will do cleanup
             localizer.setTargetCacheSize(1);
             LOG.info("created AsyncLocalizer...");
 
@@ -512,13 +513,13 @@ public class AsyncLocalizerTest {
             when(mockBlobStore.getBlobMeta(key1)).thenReturn(rbm);
 
             when(mockBlobStore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(new
-                                                                                         FileInputStream(archiveFile.getAbsolutePath()),
-                                                                                     0, archiveFile.length()));
+                FileInputStream(archiveFile.getAbsolutePath()),
+                0, archiveFile.length()));
 
             long timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
             File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
+            assertTrue(user1Dir.mkdirs(), "failed to create user dir");
             LocalAssignment topo1Assignment = constructLocalAssignment(topo1, user1, Collections.emptyList());
             PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
             LocalizedResource lrsrc = localizer.getBlob(new LocalResource(key1, true, false), topo1Pna, null);
@@ -528,29 +529,29 @@ public class AsyncLocalizerTest {
 
             String expectedUserDir = joinPath(tmp.getPath(), USERCACHE, user1);
             String expectedFileDir = joinPath(expectedUserDir, LocalizedResource.FILECACHE, LocalizedResource.ARCHIVESDIR);
-            assertTrue("user filecache dir not created", new File(expectedFileDir).exists());
+            assertTrue(new File(expectedFileDir).exists(), "user filecache dir not created");
             File keyFile = new File(expectedFileDir, key1 + ".0");
-            assertTrue("blob not created " + keyFile, keyFile.exists());
-            assertTrue("blob is not uncompressed", keyFile.isDirectory());
+            assertTrue(keyFile.exists(), "blob not created " + keyFile);
+            assertTrue(keyFile.isDirectory(), "blob is not uncompressed");
             File symlinkFile = new File(keyFile, "tmptestsymlink");
 
             if (supportSymlinks) {
-                assertTrue("blob uncompressed doesn't contain symlink", Files.isSymbolicLink(
-                    symlinkFile.toPath()));
+                assertTrue(Files.isSymbolicLink(
+                                    symlinkFile.toPath()), "blob uncompressed doesn't contain symlink");
             } else {
-                assertTrue("blob symlink file doesn't exist", symlinkFile.exists());
+                assertTrue(symlinkFile.exists(), "blob symlink file doesn't exist");
             }
 
             ConcurrentMap<String, LocalizedResource> lrsrcSet = localizer.getUserArchives().get(user1);
-            assertEquals("local resource set size wrong", 1, lrsrcSet.size());
+            assertEquals(1, lrsrcSet.size(), "local resource set size wrong");
             LocalizedResource key1rsrc = lrsrcSet.get(key1);
-            assertNotNull("Local resource doesn't exist but should", key1rsrc);
-            assertEquals("key doesn't match", key1, key1rsrc.getKey());
-            assertEquals("refcount doesn't match " + key1rsrc.getDependencies(), true, key1rsrc.isUsed());
-            assertEquals("file path doesn't match", keyFile.toPath(), key1rsrc.getFilePathWithVersion());
-            assertEquals("size doesn't match", size, key1rsrc.getSizeOnDisk());
-            assertTrue("timestamp not within range", (key1rsrc.getLastUsed() >= timeBefore && key1rsrc
-                                                                                                  .getLastUsed() <= timeAfter));
+            assertNotNull(key1rsrc, "Local resource doesn't exist but should");
+            assertEquals(key1, key1rsrc.getKey(), "key doesn't match");
+            assertEquals(true, key1rsrc.isUsed(), "refcount doesn't match " + key1rsrc.getDependencies());
+            assertEquals(keyFile.toPath(), key1rsrc.getFilePathWithVersion(), "file path doesn't match");
+            assertEquals(size, key1rsrc.getSizeOnDisk(), "size doesn't match");
+            assertTrue((key1rsrc.getLastUsed() >= timeBefore && key1rsrc
+                                                                                                              .getLastUsed() <= timeAfter), "timestamp not within range");
 
             timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
@@ -560,29 +561,29 @@ public class AsyncLocalizerTest {
             Time.advanceTime(10);
 
             lrsrcSet = localizer.getUserArchives().get(user1);
-            assertEquals("local resource set size wrong", 1, lrsrcSet.size());
+            assertEquals(1, lrsrcSet.size(), "local resource set size wrong");
             key1rsrc = lrsrcSet.get(key1);
-            assertNotNull("Local resource doesn't exist but should", key1rsrc);
-            assertEquals("refcount doesn't match " + key1rsrc.getDependencies(), false, key1rsrc.isUsed());
-            assertTrue("timestamp not within range", (key1rsrc.getLastUsed() >= timeBefore && key1rsrc
-                                                                                                  .getLastUsed() <= timeAfter));
+            assertNotNull(key1rsrc, "Local resource doesn't exist but should");
+            assertEquals(false, key1rsrc.isUsed(), "refcount doesn't match " + key1rsrc.getDependencies());
+            assertTrue((key1rsrc.getLastUsed() >= timeBefore && key1rsrc
+                                                                                                              .getLastUsed() <= timeAfter), "timestamp not within range");
 
             // should remove the blob since cache size set really small
             localizer.cleanup();
 
             lrsrcSet = localizer.getUserArchives().get(user1);
-            assertFalse("blob contents not deleted", symlinkFile.exists());
-            assertFalse("blob not deleted", keyFile.exists());
-            assertFalse("blob file dir not deleted", new File(expectedFileDir).exists());
-            assertFalse("blob dir not deleted", new File(expectedUserDir).exists());
-            assertNull("user set should be null", lrsrcSet);
+            assertFalse(symlinkFile.exists(), "blob contents not deleted");
+            assertFalse(keyFile.exists(), "blob not deleted");
+            assertFalse(new File(expectedFileDir).exists(), "blob file dir not deleted");
+            assertFalse(new File(expectedUserDir).exists(), "blob dir not deleted");
+            assertNull(lrsrcSet, "user set should be null");
         }
     }
 
     @Test
     public void testBasic() throws Exception {
-        try (Time.SimulatedTime st = new Time.SimulatedTime(); TmpPath tmp = new TmpPath()) {
-            Map<String, Object> conf = new HashMap();
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime(); TmpPath tmp = new TmpPath()) {
+            Map<String, Object> conf = new HashMap<>();
             // set clean time really high so doesn't kick in
             conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
 
@@ -601,7 +602,7 @@ public class AsyncLocalizerTest {
             long timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
             File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
+            assertTrue(user1Dir.mkdirs(), "failed to create user dir");
             Time.advanceTime(10);
             LocalAssignment topo1Assignment = constructLocalAssignment(topo1, user1, Collections.emptyList());
             PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
@@ -611,22 +612,22 @@ public class AsyncLocalizerTest {
 
             String expectedUserDir = joinPath(tmp.getPath(), USERCACHE, user1);
             String expectedFileDir = joinPath(expectedUserDir, LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
-            assertTrue("user filecache dir not created", new File(expectedFileDir).exists());
+            assertTrue(new File(expectedFileDir).exists(), "user filecache dir not created");
             File keyFile = new File(expectedFileDir, key1 + ".current");
             File keyFileCurrentSymlink = new File(expectedFileDir, key1 + LocalizedResource.CURRENT_BLOB_SUFFIX);
 
-            assertTrue("blob not created", keyFileCurrentSymlink.exists());
+            assertTrue(keyFileCurrentSymlink.exists(), "blob not created");
 
             ConcurrentMap<String, LocalizedResource> lrsrcSet = localizer.getUserFiles().get(user1);
-            assertEquals("local resource set size wrong", 1, lrsrcSet.size());
+            assertEquals(1, lrsrcSet.size(), "local resource set size wrong");
             LocalizedResource key1rsrc = lrsrcSet.get(key1);
-            assertNotNull("Local resource doesn't exist but should", key1rsrc);
+            assertNotNull(key1rsrc, "Local resource doesn't exist but should");
             assertEquals("key doesn't match", key1, key1rsrc.getKey());
-            assertEquals("refcount doesn't match " + key1rsrc.getDependencies(), true, key1rsrc.isUsed());
-            assertEquals("file path doesn't match", keyFile.toPath(), key1rsrc.getCurrentSymlinkPath());
-            assertEquals("size doesn't match", 34, key1rsrc.getSizeOnDisk());
-            assertTrue("timestamp not within range", (key1rsrc.getLastUsed() >= timeBefore && key1rsrc
-                                                                                                  .getLastUsed() <= timeAfter));
+            assertEquals(true, key1rsrc.isUsed(), "refcount doesn't match " + key1rsrc.getDependencies());
+            assertEquals(keyFile.toPath(), key1rsrc.getCurrentSymlinkPath(), "file path doesn't match");
+            assertEquals(34, key1rsrc.getSizeOnDisk(), "size doesn't match");
+            assertTrue((key1rsrc.getLastUsed() >= timeBefore && key1rsrc
+                                                                                                              .getLastUsed() <= timeAfter), "timestamp not within range");
 
             timeBefore = Time.currentTimeMillis();
             Time.advanceTime(10);
@@ -636,27 +637,27 @@ public class AsyncLocalizerTest {
             Time.advanceTime(10);
 
             lrsrcSet = localizer.getUserFiles().get(user1);
-            assertEquals("local resource set size wrong", 1, lrsrcSet.size());
+            assertEquals(1, lrsrcSet.size(), "local resource set size wrong");
             key1rsrc = lrsrcSet.get(key1);
-            assertNotNull("Local resource doesn't exist but should", key1rsrc);
-            assertEquals("refcount doesn't match " + key1rsrc.getDependencies(), false, key1rsrc.isUsed());
-            assertTrue("timestamp not within range " + timeBefore + " " + key1rsrc.getLastUsed() + " " + timeAfter,
-                       (key1rsrc.getLastUsed() >= timeBefore && key1rsrc.getLastUsed() <= timeAfter));
+            assertNotNull(key1rsrc, "Local resource doesn't exist but should");
+            assertEquals(false, key1rsrc.isUsed(), "refcount doesn't match " + key1rsrc.getDependencies());
+            assertTrue((key1rsrc.getLastUsed() >= timeBefore && key1rsrc.getLastUsed() <= timeAfter),
+                "timestamp not within range " + timeBefore + " " + key1rsrc.getLastUsed() + " " + timeAfter);
 
             // should remove the blob since cache size set really small
             localizer.cleanup();
 
             lrsrcSet = localizer.getUserFiles().get(user1);
-            assertNull("user set should be null", lrsrcSet);
-            assertFalse("blob not deleted", keyFile.exists());
-            assertFalse("blob dir not deleted", new File(expectedFileDir).exists());
-            assertFalse("blob dir not deleted", new File(expectedUserDir).exists());
+            assertNull(lrsrcSet, "user set should be null");
+            assertFalse(keyFile.exists(), "blob not deleted");
+            assertFalse(new File(expectedFileDir).exists(), "blob dir not deleted");
+            assertFalse(new File(expectedUserDir).exists(), "blob dir not deleted");
         }
     }
 
     @Test
     public void testMultipleKeysOneUser() throws Exception {
-        try (Time.SimulatedTime st = new Time.SimulatedTime(); TmpPath tmp = new TmpPath()) {
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime(); TmpPath tmp = new TmpPath()) {
             Map<String, Object> conf = new HashMap<>();
             // set clean time really high so doesn't kick in
             conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1_000);
@@ -680,7 +681,7 @@ public class AsyncLocalizerTest {
             List<LocalResource> keys = Arrays.asList(new LocalResource(key1, false, false),
                     new LocalResource(key2, false, false), new LocalResource(key3, false, false));
             File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
+            assertTrue(user1Dir.mkdirs(), "failed to create user dir");
 
             LocalAssignment topo1Assignment = constructLocalAssignment(topo1, user1, Collections.emptyList());
             PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
@@ -691,23 +692,23 @@ public class AsyncLocalizerTest {
 
             String expectedFileDir = joinPath(tmp.getPath(), USERCACHE, user1,
                                               LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
-            assertTrue("user filecache dir not created", new File(expectedFileDir).exists());
+            assertTrue(new File(expectedFileDir).exists(), "user filecache dir not created");
             File keyFile = new File(expectedFileDir, key1 + LocalizedResource.CURRENT_BLOB_SUFFIX);
             File keyFile2 = new File(expectedFileDir, key2 + LocalizedResource.CURRENT_BLOB_SUFFIX);
             File keyFile3 = new File(expectedFileDir, key3 + LocalizedResource.CURRENT_BLOB_SUFFIX);
 
-            assertTrue("blob not created", keyFile.exists());
-            assertTrue("blob not created", keyFile2.exists());
-            assertTrue("blob not created", keyFile3.exists());
-            assertEquals("size doesn't match", 34, keyFile.length());
-            assertEquals("size doesn't match", 34, keyFile2.length());
-            assertEquals("size doesn't match", 34, keyFile3.length());
-            assertEquals("size doesn't match", 34, lrsrc.getSizeOnDisk());
-            assertEquals("size doesn't match", 34, lrsrc3.getSizeOnDisk());
-            assertEquals("size doesn't match", 34, lrsrc2.getSizeOnDisk());
+            assertTrue(keyFile.exists(), "blob not created");
+            assertTrue(keyFile2.exists(), "blob not created");
+            assertTrue(keyFile3.exists(), "blob not created");
+            assertEquals(34, keyFile.length(), "size doesn't match");
+            assertEquals(34, keyFile2.length(), "size doesn't match");
+            assertEquals(34, keyFile3.length(), "size doesn't match");
+            assertEquals(34, lrsrc.getSizeOnDisk(), "size doesn't match");
+            assertEquals(34, lrsrc3.getSizeOnDisk(), "size doesn't match");
+            assertEquals(34, lrsrc2.getSizeOnDisk(), "size doesn't match");
 
             ConcurrentMap<String, LocalizedResource> lrsrcSet = localizer.getUserFiles().get(user1);
-            assertEquals("local resource set size wrong", 3, lrsrcSet.size());
+            assertEquals(3, lrsrcSet.size(), "local resource set size wrong");
 
             LOG.info("Removing blob references...");
             long timeBefore = Time.nanoTime();
@@ -725,8 +726,8 @@ public class AsyncLocalizerTest {
             LOG.info("Get Blob...");
             lrsrc = localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
             LOG.info("Got Blob...");
-            assertTrue("timestamp not within range " + timeBefore + " <= " + lrsrc.getLastUsed() + " <= " + timeAfter,
-                       (lrsrc.getLastUsed() >= timeBefore && lrsrc.getLastUsed() <= timeAfter));
+            assertTrue((lrsrc.getLastUsed() >= timeBefore && lrsrc.getLastUsed() <= timeAfter),
+                "timestamp not within range " + timeBefore + " <= " + lrsrc.getLastUsed() + " <= " + timeAfter);
             //Resets the last access time for key1
             localizer.removeBlobReference(lrsrc.getKey(), topo1Pna, false);
 
@@ -734,14 +735,14 @@ public class AsyncLocalizerTest {
             localizer.cleanup();
 
             lrsrcSet = localizer.getUserFiles().get(user1);
-            assertEquals("local resource set size wrong", 2, lrsrcSet.size());
+            assertEquals(2, lrsrcSet.size(), "local resource set size wrong");
             long end = System.currentTimeMillis() + 100;
             while ((end - System.currentTimeMillis()) >= 0 && keyFile2.exists()) {
                 Thread.sleep(1);
             }
-            assertTrue("blob deleted", keyFile.exists());
-            assertFalse("blob not deleted", keyFile2.exists());
-            assertTrue("blob deleted", keyFile3.exists());
+            assertTrue(keyFile.exists(), "blob deleted");
+            assertFalse(keyFile2.exists(), "blob not deleted");
+            assertTrue(keyFile3.exists(), "blob deleted");
 
             // set size to cleanup another one
             localizer.setTargetCacheSize(34);
@@ -750,54 +751,58 @@ public class AsyncLocalizerTest {
             localizer.cleanup();
 
             lrsrcSet = localizer.getUserFiles().get(user1);
-            assertEquals("local resource set size wrong", 1, lrsrcSet.size());
-            assertTrue("blob deleted", keyFile.exists());
-            assertFalse("blob not deleted", keyFile2.exists());
-            assertFalse("blob not deleted", keyFile3.exists());
+            assertEquals(1, lrsrcSet.size(), "local resource set size wrong");
+            assertTrue(keyFile.exists(), "blob deleted");
+            assertFalse(keyFile2.exists(), "blob not deleted");
+            assertFalse(keyFile3.exists(), "blob not deleted");
         }
     }
 
-    @Test(expected = AuthorizationException.class)
-    public void testFailAcls() throws Exception {
-        try (TmpPath tmp = new TmpPath()) {
-            Map<String, Object> conf = new HashMap();
-            // set clean time really high so doesn't kick in
-            conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
-            // enable blobstore acl validation
-            conf.put(Config.STORM_BLOBSTORE_ACL_VALIDATION_ENABLED, true);
+    @Test
+    public void testFailAcls() {
+        assertThrows(AuthorizationException.class, () -> {
+            try (TmpPath tmp = new TmpPath()) {
+                Map<String, Object> conf = new HashMap<>();
+                // set clean time really high so doesn't kick in
+                conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
+                // enable blobstore acl validation
+                conf.put(Config.STORM_BLOBSTORE_ACL_VALIDATION_ENABLED, true);
 
-            String topo1 = "topo1";
+                String topo1 = "topo1";
+                String key1 = "key1";
+                TestLocalizer localizer = new TestLocalizer(conf, tmp.getPath());
+
+                ReadableBlobMeta rbm = new ReadableBlobMeta();
+                // set acl so user doesn't have read access
+                AccessControl acl = new AccessControl(AccessControlType.USER, BlobStoreAclHandler.ADMIN);
+                acl.set_name(user1);
+                rbm.set_settable(new SettableBlobMeta(Collections.singletonList(acl)));
+                when(mockBlobStore.getBlobMeta(anyString())).thenReturn(rbm);
+                when(mockBlobStore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(1));
+                File user1Dir = localizer.getLocalUserFileCacheDir(user1);
+                assertTrue(user1Dir.mkdirs(), "failed to create user dir");
+
+                LocalAssignment topo1Assignment = constructLocalAssignment(topo1, user1, Collections.emptyList());
+                PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
+                // This should throw AuthorizationException because auth failed
+                localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
+            }
+        });
+    }
+
+    @Test
+    public void testKeyNotFoundException() {
+        assertThrows(KeyNotFoundException.class, () -> {
+            Map<String, Object> conf = Utils.readStormConfig();
             String key1 = "key1";
-            TestLocalizer localizer = new TestLocalizer(conf, tmp.getPath());
-
-            ReadableBlobMeta rbm = new ReadableBlobMeta();
-            // set acl so user doesn't have read access
-            AccessControl acl = new AccessControl(AccessControlType.USER, BlobStoreAclHandler.ADMIN);
-            acl.set_name(user1);
-            rbm.set_settable(new SettableBlobMeta(Arrays.asList(acl)));
-            when(mockBlobStore.getBlobMeta(anyString())).thenReturn(rbm);
-            when(mockBlobStore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(1));
-            File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
-
-            LocalAssignment topo1Assignment = constructLocalAssignment(topo1, user1, Collections.emptyList());
-            PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
-            // This should throw AuthorizationException because auth failed
-            localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
-        }
-    }
-
-    @Test(expected = KeyNotFoundException.class)
-    public void testKeyNotFoundException() throws Exception {
-        Map<String, Object> conf = Utils.readStormConfig();
-        String key1 = "key1";
-        conf.put(Config.STORM_LOCAL_DIR, "target");
-        LocalFsBlobStore bs = new LocalFsBlobStore();
-        LocalFsBlobStore spy = spy(bs);
-        Mockito.doReturn(true).when(spy).checkForBlobOrDownload(key1);
-        Mockito.doNothing().when(spy).checkForBlobUpdate(key1);
-        spy.prepare(conf, null, null, null);
-        spy.getBlob(key1, null);
+            conf.put(Config.STORM_LOCAL_DIR, "target");
+            LocalFsBlobStore bs = new LocalFsBlobStore();
+            LocalFsBlobStore spy = spy(bs);
+            Mockito.doReturn(true).when(spy).checkForBlobOrDownload(key1);
+            Mockito.doNothing().when(spy).checkForBlobUpdate(key1);
+            spy.prepare(conf, null, null, null);
+            spy.getBlob(key1, null);
+        });
     }
 
     @Test
@@ -826,11 +831,11 @@ public class AsyncLocalizerTest {
             when(mockBlobStore.getBlob(key3)).thenReturn(new TestInputStreamWithMeta(1));
 
             File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
+            assertTrue(user1Dir.mkdirs(), "failed to create user dir");
             File user2Dir = localizer.getLocalUserFileCacheDir(user2);
-            assertTrue("failed to create user dir", user2Dir.mkdirs());
+            assertTrue(user2Dir.mkdirs(), "failed to create user dir");
             File user3Dir = localizer.getLocalUserFileCacheDir(user3);
-            assertTrue("failed to create user dir", user3Dir.mkdirs());
+            assertTrue(user3Dir.mkdirs(), "failed to create user dir");
 
             LocalAssignment topo1Assignment = constructLocalAssignment(topo1, user1, Collections.emptyList());
             PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
@@ -853,33 +858,33 @@ public class AsyncLocalizerTest {
                     LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
             String expectedFileDirUser3 = joinPath(tmp.getPath(), USERCACHE, user3,
                     LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
-            assertTrue("user filecache dir user1 not created", new File(expectedFileDirUser1).exists());
-            assertTrue("user filecache dir user2 not created", new File(expectedFileDirUser2).exists());
-            assertTrue("user filecache dir user3 not created", new File(expectedFileDirUser3).exists());
+            assertTrue(new File(expectedFileDirUser1).exists(), "user filecache dir user1 not created");
+            assertTrue(new File(expectedFileDirUser2).exists(), "user filecache dir user2 not created");
+            assertTrue(new File(expectedFileDirUser3).exists(), "user filecache dir user3 not created");
 
             File keyFile = new File(expectedFileDirUser1, key1 + LocalizedResource.CURRENT_BLOB_SUFFIX);
             File keyFile2 = new File(expectedFileDirUser2, key2 + LocalizedResource.CURRENT_BLOB_SUFFIX);
             File keyFile3 = new File(expectedFileDirUser3, key3 + LocalizedResource.CURRENT_BLOB_SUFFIX);
             File keyFile1user3 = new File(expectedFileDirUser3, key1 + LocalizedResource.CURRENT_BLOB_SUFFIX);
 
-            assertTrue("blob not created", keyFile.exists());
-            assertTrue("blob not created", keyFile2.exists());
-            assertTrue("blob not created", keyFile3.exists());
-            assertTrue("blob not created", keyFile1user3.exists());
+            assertTrue(keyFile.exists(), "blob not created");
+            assertTrue(keyFile2.exists(), "blob not created");
+            assertTrue(keyFile3.exists(), "blob not created");
+            assertTrue(keyFile1user3.exists(), "blob not created");
 
             //Should assert file size
-            assertEquals("size doesn't match", 34, lrsrc.getSizeOnDisk());
-            assertEquals("size doesn't match", 34, lrsrc2.getSizeOnDisk());
-            assertEquals("size doesn't match", 34, lrsrc3.getSizeOnDisk());
+            assertEquals(34, lrsrc.getSizeOnDisk(), "size doesn't match");
+            assertEquals(34, lrsrc2.getSizeOnDisk(), "size doesn't match");
+            assertEquals(34, lrsrc3.getSizeOnDisk(), "size doesn't match");
             //This was 0 byte in test
-            assertEquals("size doesn't match", 34, lrsrc1_user3.getSizeOnDisk());
+            assertEquals(34, lrsrc1_user3.getSizeOnDisk(), "size doesn't match");
 
             ConcurrentMap<String, LocalizedResource> lrsrcSet = localizer.getUserFiles().get(user1);
-            assertEquals("local resource set size wrong", 1, lrsrcSet.size());
+            assertEquals(1, lrsrcSet.size(), "local resource set size wrong");
             ConcurrentMap<String, LocalizedResource> lrsrcSet2 = localizer.getUserFiles().get(user2);
-            assertEquals("local resource set size wrong", 1, lrsrcSet2.size());
+            assertEquals(1, lrsrcSet2.size(), "local resource set size wrong");
             ConcurrentMap<String, LocalizedResource> lrsrcSet3 = localizer.getUserFiles().get(user3);
-            assertEquals("local resource set size wrong", 2, lrsrcSet3.size());
+            assertEquals(2, lrsrcSet3.size(), "local resource set size wrong");
 
             localizer.removeBlobReference(lrsrc.getKey(), topo1Pna, false);
             // should remove key1
@@ -887,15 +892,15 @@ public class AsyncLocalizerTest {
 
             lrsrcSet = localizer.getUserFiles().get(user1);
             lrsrcSet3 = localizer.getUserFiles().get(user3);
-            assertNull("user set should be null", lrsrcSet);
-            assertFalse("blob dir not deleted", new File(expectedFileDirUser1).exists());
-            assertFalse("blob dir not deleted", new File(expectedUserDir1).exists());
-            assertEquals("local resource set size wrong", 2, lrsrcSet3.size());
+            assertNull(lrsrcSet, "user set should be null");
+            assertFalse(new File(expectedFileDirUser1).exists(), "blob dir not deleted");
+            assertFalse(new File(expectedUserDir1).exists(), "blob dir not deleted");
+            assertEquals(2, lrsrcSet3.size(), "local resource set size wrong");
 
-            assertTrue("blob deleted", keyFile2.exists());
-            assertFalse("blob not deleted", keyFile.exists());
-            assertTrue("blob deleted", keyFile3.exists());
-            assertTrue("blob deleted", keyFile1user3.exists());
+            assertTrue(keyFile2.exists(), "blob deleted");
+            assertFalse(keyFile.exists(), "blob not deleted");
+            assertTrue(keyFile3.exists(), "blob deleted");
+            assertTrue(keyFile1user3.exists(), "blob deleted");
         }
     }
 
@@ -918,23 +923,23 @@ public class AsyncLocalizerTest {
             when(mockBlobStore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(1));
 
             File user1Dir = localizer.getLocalUserFileCacheDir(user1);
-            assertTrue("failed to create user dir", user1Dir.mkdirs());
+            assertTrue(user1Dir.mkdirs(), "failed to create user dir");
             LocalAssignment topo1Assignment = constructLocalAssignment(topo1, user1, Collections.emptyList());
             PortAndAssignment topo1Pna = new PortAndAssignmentImpl(1, topo1Assignment);
             LocalizedResource lrsrc = localizer.getBlob(new LocalResource(key1, false, false), topo1Pna, null);
 
             String expectedUserDir = joinPath(tmp.getPath(), USERCACHE, user1);
             String expectedFileDir = joinPath(expectedUserDir, LocalizedResource.FILECACHE, LocalizedResource.FILESDIR);
-            assertTrue("user filecache dir not created", new File(expectedFileDir).exists());
+            assertTrue(new File(expectedFileDir).exists(), "user filecache dir not created");
             Path keyVersionFile = Paths.get(expectedFileDir, key1 + ".version");
             File keyFileCurrentSymlink = new File(expectedFileDir, key1 + LocalizedResource.CURRENT_BLOB_SUFFIX);
-            assertTrue("blob not created", keyFileCurrentSymlink.exists());
+            assertTrue(keyFileCurrentSymlink.exists(), "blob not created");
             File versionFile = new File(expectedFileDir, key1 + LocalizedResource.BLOB_VERSION_SUFFIX);
-            assertTrue("blob version file not created", versionFile.exists());
-            assertEquals("blob version not correct", 1, LocalizedResource.localVersionOfBlob(keyVersionFile));
+            assertTrue(versionFile.exists(), "blob version file not created");
+            assertEquals(1, LocalizedResource.localVersionOfBlob(keyVersionFile), "blob version not correct");
 
             ConcurrentMap<String, LocalizedResource> lrsrcSet = localizer.getUserFiles().get(user1);
-            assertEquals("local resource set size wrong", 1, lrsrcSet.size());
+            assertEquals(1, lrsrcSet.size(), "local resource set size wrong");
 
             // test another topology getting blob with updated version - it should update version now
             rbm.set_version(2);
@@ -943,9 +948,9 @@ public class AsyncLocalizerTest {
             LocalAssignment topo2Assignment = constructLocalAssignment(topo2, user1, Collections.emptyList());
             PortAndAssignment topo2Pna = new PortAndAssignmentImpl(1, topo2Assignment);
             localizer.getBlob(new LocalResource(key1, false, false), topo2Pna, null);
-            assertTrue("blob version file not created", versionFile.exists());
-            assertEquals("blob version not correct", 2, LocalizedResource.localVersionOfBlob(keyVersionFile));
-            assertTrue("blob file with version 2 not created", new File(expectedFileDir, key1 + ".2").exists());
+            assertTrue(versionFile.exists(), "blob version file not created");
+            assertEquals(2, LocalizedResource.localVersionOfBlob(keyVersionFile), "blob version not correct");
+            assertTrue(new File(expectedFileDir, key1 + ".2").exists(), "blob file with version 2 not created");
 
             // now test regular updateBlob
             rbm.set_version(3);
@@ -954,9 +959,9 @@ public class AsyncLocalizerTest {
             ArrayList<LocalResource> arr = new ArrayList<>();
             arr.add(new LocalResource(key1, false, false));
             localizer.updateBlobs();
-            assertTrue("blob version file not created", versionFile.exists());
-            assertEquals("blob version not correct", 3, LocalizedResource.localVersionOfBlob(keyVersionFile));
-            assertTrue("blob file with version 3 not created", new File(expectedFileDir, key1 + ".3").exists());
+            assertTrue(versionFile.exists(), "blob version file not created");
+            assertEquals(3, LocalizedResource.localVersionOfBlob(keyVersionFile), "blob version not correct");
+            assertTrue(new File(expectedFileDir, key1 + ".3").exists(), "blob file with version 3 not created");
         }
     }
 
@@ -1030,7 +1035,7 @@ public class AsyncLocalizerTest {
         }
     }
 
-    class TestInputStreamWithMeta extends InputStreamWithMeta {
+    static class TestInputStreamWithMeta extends InputStreamWithMeta {
         private final long version;
         private final long fileLength;
         private InputStream iostream;
@@ -1049,7 +1054,7 @@ public class AsyncLocalizerTest {
         }
 
         @Override
-        public long getVersion() throws IOException {
+        public long getVersion() {
             return version;
         }
 

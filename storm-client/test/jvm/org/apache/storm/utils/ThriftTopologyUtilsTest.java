@@ -20,7 +20,6 @@ package org.apache.storm.utils;
 
 import java.nio.ByteBuffer;
 import java.util.Set;
-import junit.framework.TestCase;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.SpoutSpec;
@@ -29,68 +28,74 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hooks.BaseWorkerHook;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ThriftTopologyUtilsTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class ThriftTopologyUtilsTest {
     @Test
     public void testIsWorkerHook() {
-        Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.BOLTS));
-        Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.SPOUTS));
-        Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.STATE_SPOUTS));
-        Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.DEPENDENCY_JARS));
-        Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.DEPENDENCY_ARTIFACTS));
-        Assert.assertEquals(true, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.WORKER_HOOKS));
+        assertFalse(ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.BOLTS));
+        assertFalse(ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.SPOUTS));
+        assertFalse(ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.STATE_SPOUTS));
+        assertFalse(ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.DEPENDENCY_JARS));
+        assertFalse(ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.DEPENDENCY_ARTIFACTS));
+        assertTrue(ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.WORKER_HOOKS));
     }
 
     @Test
     public void testIsDependencies() {
-        Assert.assertEquals(false, ThriftTopologyUtils.isDependencies(StormTopology._Fields.BOLTS));
-        Assert.assertEquals(false, ThriftTopologyUtils.isDependencies(StormTopology._Fields.SPOUTS));
-        Assert.assertEquals(false, ThriftTopologyUtils.isDependencies(StormTopology._Fields.STATE_SPOUTS));
-        Assert.assertEquals(false, ThriftTopologyUtils.isDependencies(StormTopology._Fields.WORKER_HOOKS));
-        Assert.assertEquals(true, ThriftTopologyUtils.isDependencies(StormTopology._Fields.DEPENDENCY_JARS));
-        Assert.assertEquals(true, ThriftTopologyUtils.isDependencies(StormTopology._Fields.DEPENDENCY_ARTIFACTS));
+        assertFalse(ThriftTopologyUtils.isDependencies(StormTopology._Fields.BOLTS));
+        assertFalse(ThriftTopologyUtils.isDependencies(StormTopology._Fields.SPOUTS));
+        assertFalse(ThriftTopologyUtils.isDependencies(StormTopology._Fields.STATE_SPOUTS));
+        assertFalse(ThriftTopologyUtils.isDependencies(StormTopology._Fields.WORKER_HOOKS));
+        assertTrue(ThriftTopologyUtils.isDependencies(StormTopology._Fields.DEPENDENCY_JARS));
+        assertTrue(ThriftTopologyUtils.isDependencies(StormTopology._Fields.DEPENDENCY_ARTIFACTS));
     }
 
     @Test
     public void testGetComponentIdsWithWorkerHook() {
         StormTopology stormTopology = genereateStormTopology(true);
         Set<String> componentIds = ThriftTopologyUtils.getComponentIds(stormTopology);
-        Assert.assertEquals(
-            "We expect to get the IDs of the components sans the Worker Hook",
+        assertEquals(
             ImmutableSet.of("bolt-1", "spout-1"),
-            componentIds);
+            componentIds,
+            "We expect to get the IDs of the components sans the Worker Hook"
+        );
     }
 
     @Test
     public void testGetComponentIdsWithoutWorkerHook() {
         StormTopology stormTopology = genereateStormTopology(false);
         Set<String> componentIds = ThriftTopologyUtils.getComponentIds(stormTopology);
-        Assert.assertEquals(
-            "We expect to get the IDs of the components sans the Worker Hook",
+        assertEquals(
             ImmutableSet.of("bolt-1", "spout-1"),
-            componentIds);
+            componentIds,
+            "We expect to get the IDs of the components sans the Worker Hook"
+            );
     }
 
     @Test
     public void testGetComponentCommonWithWorkerHook() {
         StormTopology stormTopology = genereateStormTopology(true);
         ComponentCommon componentCommon = ThriftTopologyUtils.getComponentCommon(stormTopology, "bolt-1");
-        Assert.assertEquals(
-            "We expect to get bolt-1's common",
+        assertEquals(
             new Bolt().get_common(),
-            componentCommon);
+            componentCommon,
+            "We expect to get bolt-1's common");
     }
 
     @Test
     public void testGetComponentCommonWithoutWorkerHook() {
         StormTopology stormTopology = genereateStormTopology(false);
         ComponentCommon componentCommon = ThriftTopologyUtils.getComponentCommon(stormTopology, "bolt-1");
-        Assert.assertEquals(
-            "We expect to get bolt-1's common",
+        assertEquals(
             new Bolt().get_common(),
-            componentCommon);
+            componentCommon,
+            "We expect to get bolt-1's common"
+            );
     }
 
     private StormTopology genereateStormTopology(boolean withWorkerHook) {

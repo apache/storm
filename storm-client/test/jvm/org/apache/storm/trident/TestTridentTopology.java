@@ -23,8 +23,9 @@ import org.apache.storm.trident.testing.Split;
 import org.apache.storm.trident.testing.StringLength;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestTridentTopology {
 
@@ -60,7 +61,7 @@ public class TestTridentTopology {
             Map<String, Bolt> cur = topology.get_bolts();
             System.out.println(cur.keySet());
             if (pre != null) {
-                Assert.assertTrue("bold id not consistent with group name", pre.equals(cur.keySet()));
+                assertEquals(pre, cur.keySet(), "bold id not consistent with group name");
             }
             pre = cur.keySet();
         }

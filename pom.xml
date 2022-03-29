@@ -324,7 +324,7 @@
         <joda-time.version>2.3</joda-time.version>
         <thrift.version>0.13.0</thrift.version>
         <junit.jupiter.version>5.5.1</junit.jupiter.version>
-        <surefire.version>2.22.2</surefire.version>
+        <surefire.version>3.0.0-M5</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
         <hamcrest.version>2.0.0.0</hamcrest.version>
@@ -388,12 +388,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- This also puts JUnit 4 on the test classpath for all modules -->
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

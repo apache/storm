@@ -15,21 +15,18 @@ package org.apache.storm.security.auth;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.thrift.transport.TTransportException;
-import org.apache.storm.utils.ThrowableNestedCauseMatcher;
 import org.apache.storm.utils.Utils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ThriftClientTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-    private int NIMBUS_TIMEOUT = 3 * 1000;
+    private final int NIMBUS_TIMEOUT = 3 * 1000;
     private Map<String, Object> conf;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = Utils.readDefaultConfig();
         conf.put(Config.STORM_NIMBUS_RETRY_TIMES, 0);
@@ -37,25 +34,25 @@ public class ThriftClientTest {
 
     @Test
     public void testConstructorThrowsIfPortNegative() {
-        expectedException.expect(ThrowableNestedCauseMatcher.isCausedBy(IllegalArgumentException.class));
-        new ThriftClient(conf, ThriftConnectionType.DRPC, "bogushost", -1, NIMBUS_TIMEOUT);
+        assertThrows(IllegalArgumentException.class,
+            () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "bogushost", -1, NIMBUS_TIMEOUT));
     }
 
     @Test
     public void testConstructorThrowsIfPortZero() {
-        expectedException.expect(ThrowableNestedCauseMatcher.isCausedBy(IllegalArgumentException.class));
-        new ThriftClient(conf, ThriftConnectionType.DRPC, "bogushost", 0, NIMBUS_TIMEOUT);
+        assertThrows(IllegalArgumentException.class,
+            () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "bogushost", 0, NIMBUS_TIMEOUT));
     }
 
     @Test
     public void testConstructorThrowsIfHostNull() {
-        expectedException.expect(ThrowableNestedCauseMatcher.isCausedBy(IllegalArgumentException.class));
-        new ThriftClient(conf, ThriftConnectionType.DRPC, null, 4242, NIMBUS_TIMEOUT);
+        assertThrows(IllegalArgumentException.class,
+            () -> new ThriftClient(conf, ThriftConnectionType.DRPC, null, 4242, NIMBUS_TIMEOUT));
     }
 
     @Test
     public void testConstructorThrowsIfHostEmpty() {
-        expectedException.expect(ThrowableNestedCauseMatcher.isCausedBy(TTransportException.class));
-        new ThriftClient(conf, ThriftConnectionType.DRPC, "", 4242, NIMBUS_TIMEOUT);
+        assertThrows(TTransportException.class,
+            () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "", 4242, NIMBUS_TIMEOUT));
     }
 }

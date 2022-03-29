@@ -21,21 +21,19 @@ import org.apache.storm.st.helper.AbstractTest;
 import org.apache.storm.st.topology.window.SlidingTimeCorrectness;
 import org.apache.storm.st.topology.window.SlidingWindowCorrectness;
 import org.apache.storm.st.wrapper.TopoWrap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 public final class SlidingWindowTest extends AbstractTest {
-    private static final Logger LOG = LoggerFactory.getLogger(SlidingWindowTest.class);
     private final WindowVerifier windowVerifier = new WindowVerifier();
     private TopoWrap topo;
 
     @DataProvider
     public static Object[][] generateCountWindows() {
-        final Object[][] objects = new Object[][]{
+        return new Object[][]{
                 {-1, 10},
                 {10, -1},
                 {0, 10},
@@ -50,7 +48,6 @@ public final class SlidingWindowTest extends AbstractTest {
                 {200, 100},
                 {500, 100},
         };
-        return objects;
     }
 
     @Test(dataProvider = "generateCountWindows")
@@ -60,7 +57,7 @@ public final class SlidingWindowTest extends AbstractTest {
         if (windowSize <= 0 || slideSize <= 0) {
             try {
                 testable.newTopology();
-                Assert.fail("Expected IllegalArgumentException was not thrown.");
+                fail("Expected IllegalArgumentException was not thrown.");
             } catch (IllegalArgumentException ignore) {
                 return;
             }
@@ -71,7 +68,7 @@ public final class SlidingWindowTest extends AbstractTest {
 
     @DataProvider
     public static Object[][] generateTimeWindows() {
-        final Object[][] objects = new Object[][]{
+        return new Object[][]{
                 {-1, 10},
                 {10, -1},
                 {0, 10},
@@ -84,7 +81,6 @@ public final class SlidingWindowTest extends AbstractTest {
                 {20, 5},
                 {20, 10},
         };
-        return objects;
     }
 
     @Test(dataProvider = "generateTimeWindows")
@@ -94,7 +90,7 @@ public final class SlidingWindowTest extends AbstractTest {
         if (windowSec <= 0 || slideSec <= 0) {
             try {
                 testable.newTopology();
-                Assert.fail("Expected IllegalArgumentException was not thrown.");
+                fail("Expected IllegalArgumentException was not thrown.");
             } catch (IllegalArgumentException ignore) {
                 return;
             }

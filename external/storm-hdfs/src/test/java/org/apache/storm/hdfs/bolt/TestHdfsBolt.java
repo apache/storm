@@ -43,21 +43,22 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.MockTupleHelpers;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class TestHdfsBolt {
 
     private static final String testRoot = "/unittest";
@@ -82,13 +83,13 @@ public class TestHdfsBolt {
     @Mock
     private TopologyContext topologyContext;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         fs = dfsClusterRule.getDfscluster().getFileSystem();
         hdfsURI = "hdfs://localhost:" + dfsClusterRule.getDfscluster().getNameNodePort() + "/";
     }
 
-    @After
+    @AfterEach
     public void shutDown() throws IOException {
         fs.close();
     }
@@ -104,7 +105,7 @@ public class TestHdfsBolt {
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(2, countNonZeroLengthFiles(testRoot));
+        assertEquals(2, countNonZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -127,8 +128,8 @@ public class TestHdfsBolt {
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot + "/SFO"));
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot + "/SJO"));
+        assertEquals(1, countNonZeroLengthFiles(testRoot + "/SFO"));
+        assertEquals(1, countNonZeroLengthFiles(testRoot + "/SJO"));
     }
 
     @Test
@@ -143,7 +144,7 @@ public class TestHdfsBolt {
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -185,8 +186,8 @@ public class TestHdfsBolt {
             //
         }
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
-        Assert.assertEquals(0, countZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(0, countZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -197,12 +198,12 @@ public class TestHdfsBolt {
         bolt.execute(tuple1);
 
         //Should not have flushed to file system yet
-        Assert.assertEquals(0, countNonZeroLengthFiles(testRoot));
+        assertEquals(0, countNonZeroLengthFiles(testRoot));
 
         bolt.execute(MockTupleHelpers.mockTickTuple());
 
         //Tick should have flushed it
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
     }
     
     @Test

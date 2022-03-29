@@ -42,8 +42,8 @@ import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.MockTupleHelpers;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -91,7 +91,7 @@ public class TestHiveBolt {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
@@ -127,7 +127,7 @@ public class TestHiveBolt {
             verify(collector).ack(t);
         }
 
-        Assert.assertEquals(4, bolt.getRecordWritten(partVals).size());
+        failassertEquals(4, bolt.getRecordWritten(partVals).size());
 
         bolt.cleanup();
     }
@@ -162,8 +162,8 @@ public class TestHiveBolt {
         }
 
         List<byte[]> recordWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordWritten);
-        Assert.assertEquals(4, recordWritten.size());
+        failassertNotNull(recordWritten);
+        failassertEquals(4, recordWritten.size());
 
         bolt.cleanup();
     }
@@ -203,13 +203,13 @@ public class TestHiveBolt {
         List<String> partVals = Lists.newArrayList(today);
 
         List<byte[]> recordsWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordsWritten);
-        Assert.assertEquals(2, recordsWritten.size());
+        failassertNotNull(recordsWritten);
+        failassertEquals(2, recordsWritten.size());
 
         byte[] mapped = generateDelimiteredRecord(Lists.newArrayList(id, msg), mapper.getFieldDelimiter());
 
         for (byte[] record : recordsWritten) {
-            Assert.assertArrayEquals(mapped, record);
+            failassertArrayEquals(mapped, record);
         }
 
         bolt.cleanup();
@@ -241,11 +241,11 @@ public class TestHiveBolt {
         List<String> partVals = Lists.newArrayList(city, state);
 
         List<byte[]> recordsWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordsWritten);
-        Assert.assertEquals(1, recordsWritten.size());
+        failassertNotNull(recordsWritten);
+        failassertEquals(1, recordsWritten.size());
 
         byte[] mapped = generateDelimiteredRecord(Lists.newArrayList(id, msg), mapper.getFieldDelimiter());
-        Assert.assertArrayEquals(mapped, recordsWritten.get(0));
+        failassertArrayEquals(mapped, recordsWritten.get(0));
 
         bolt.cleanup();
     }
@@ -278,8 +278,8 @@ public class TestHiveBolt {
         List<String> partVals = Lists.newArrayList(city, state);
 
         List<byte[]> recordsWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordsWritten);
-        Assert.assertEquals(1, recordsWritten.size());
+        failassertNotNull(recordsWritten);
+        failassertEquals(1, recordsWritten.size());
 
         byte[] written = recordsWritten.get(0);
 
@@ -290,7 +290,7 @@ public class TestHiveBolt {
         expected.put(COL1, id);
         expected.put(COL2, msg);
 
-        Assert.assertEquals(expected, writtenMap);
+        failassertEquals(expected, writtenMap);
 
         bolt.cleanup();
     }
@@ -426,14 +426,14 @@ public class TestHiveBolt {
         List<String> partVals = Lists.newArrayList(city, state);
 
         List<byte[]> recordsWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordsWritten);
-        Assert.assertEquals(100, recordsWritten.size());
+        failassertNotNull(recordsWritten);
+        failassertEquals(100, recordsWritten.size());
 
 
         byte[] mapped = generateDelimiteredRecord(Lists.newArrayList(id, msg), mapper.getFieldDelimiter());
 
         for (byte[] record : recordsWritten) {
-            Assert.assertArrayEquals(mapped, record);
+            failassertArrayEquals(mapped, record);
         }
 
         bolt.cleanup();

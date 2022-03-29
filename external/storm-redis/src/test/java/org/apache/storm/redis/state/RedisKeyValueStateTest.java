@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -22,16 +22,16 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.storm.redis.common.commands.RedisCommands;
 import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
 import org.apache.storm.state.DefaultStateSerializer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import redis.clients.util.SafeEncoder;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Unit tests for {@link RedisKeyValueState}
@@ -45,7 +45,7 @@ public class RedisKeyValueStateTest {
     RedisCommands mockCommands;
     RedisKeyValueState<String, String> keyValueState;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         final NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap =
             new ConcurrentSkipListMap<>(UnsignedBytes.lexicographicalComparator());
@@ -57,107 +57,83 @@ public class RedisKeyValueStateTest {
         ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
 
         Mockito.when(mockCommands.exists(Mockito.any(byte[].class)))
-               .thenAnswer(new Answer<Boolean>() {
-                   @Override
-                   public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                       Object[] args = invocation.getArguments();
-                       return exists(mockMap, (byte[]) args[0]);
-                   }
+               .thenAnswer((Answer<Boolean>) invocation -> {
+                   Object[] args = invocation.getArguments();
+                   return exists(mockMap, (byte[]) args[0]);
                });
 
         Mockito.when(mockCommands.del(Mockito.any(byte[].class)))
-               .thenAnswer(new Answer<Long>() {
-                   @Override
-                   public Long answer(InvocationOnMock invocation) throws Throwable {
-                       Object[] args = invocation.getArguments();
-                       return del(mockMap, (byte[]) args[0]);
-                   }
+               .thenAnswer((Answer<Long>) invocation -> {
+                   Object[] args = invocation.getArguments();
+                   return del(mockMap, (byte[]) args[0]);
                });
 
         Mockito.when(mockCommands.hmset(Mockito.any(byte[].class), Mockito.anyMap()))
-               .thenAnswer(new Answer<String>() {
-                   @Override
-                   public String answer(InvocationOnMock invocation) throws Throwable {
-                       Object[] args = invocation.getArguments();
-                       return hmset(mockMap, (byte[]) args[0], (Map<byte[], byte[]>) args[1]);
-                   }
+               .thenAnswer((Answer<String>) invocation -> {
+                   Object[] args = invocation.getArguments();
+                   return hmset(mockMap, (byte[]) args[0], (Map<byte[], byte[]>) args[1]);
                });
 
         Mockito.when(mockCommands.hget(Mockito.any(byte[].class), Mockito.any(byte[].class)))
-               .thenAnswer(new Answer<byte[]>() {
-                   @Override
-                   public byte[] answer(InvocationOnMock invocation) throws Throwable {
-                       Object[] args = invocation.getArguments();
-                       return hget(mockMap, (byte[]) args[0], (byte[]) args[1]);
-                   }
+               .thenAnswer((Answer<byte[]>) invocation -> {
+                   Object[] args = invocation.getArguments();
+                   return hget(mockMap, (byte[]) args[0], (byte[]) args[1]);
                });
 
         Mockito.when(mockCommands.hdel(Mockito.any(byte[].class), Mockito.<byte[]>anyVararg()))
-               .thenAnswer(new Answer<Long>() {
-                   @Override
-                   public Long answer(InvocationOnMock invocation) throws Throwable {
-                       Object[] args = invocation.getArguments();
-                       int argsSize = args.length;
-                       byte[][] fields = Arrays.asList(args).subList(1, argsSize).toArray(new byte[argsSize - 1][]);
-                       return hdel(mockMap, (byte[]) args[0], fields);
-                   }
+               .thenAnswer((Answer<Long>) invocation -> {
+                   Object[] args = invocation.getArguments();
+                   int argsSize = args.length;
+                   byte[][] fields = Arrays.asList(args).subList(1, argsSize).toArray(new byte[argsSize - 1][]);
+                   return hdel(mockMap, (byte[]) args[0], fields);
                });
 
         Mockito.when(mockCommands.exists(Mockito.anyString()))
-               .thenAnswer(new Answer<Boolean>() {
-                   @Override
-                   public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                       Object[] args = invocation.getArguments();
-                       return exists(mockMap, (String) args[0]);
-                   }
+               .thenAnswer((Answer<Boolean>) invocation -> {
+                   Object[] args = invocation.getArguments();
+                   return exists(mockMap, (String) args[0]);
                });
 
         Mockito.when(mockCommands.hmset(Mockito.anyString(), Mockito.anyMap()))
-               .thenAnswer(new Answer<String>() {
-                   @Override
-                   public String answer(InvocationOnMock invocation) throws Throwable {
-                       Object[] args = invocation.getArguments();
-                       return hmset(mockMap, (String) args[0], (Map<String, String>) args[1]);
-                   }
+               .thenAnswer((Answer<String>) invocation -> {
+                   Object[] args = invocation.getArguments();
+                   return hmset(mockMap, (String) args[0], (Map<String, String>) args[1]);
                });
 
         Mockito.when(mockCommands.hgetAll(Mockito.anyString()))
-               .thenAnswer(new Answer<Map<String, String>>() {
-                   @Override
-                   public Map<String, String> answer(InvocationOnMock invocation) throws Throwable {
-                       Object[] args = invocation.getArguments();
-                       return hgetAll(mockMap, (String) args[0]);
-                   }
+               .thenAnswer((Answer<Map<String, String>>) invocation -> {
+                   Object[] args = invocation.getArguments();
+                   return hgetAll(mockMap, (String) args[0]);
                });
 
-        keyValueState = new RedisKeyValueState<String, String>("test", mockContainer, new DefaultStateSerializer<String>(),
-                                                               new DefaultStateSerializer<String>());
+        keyValueState = new RedisKeyValueState<>("test", mockContainer, new DefaultStateSerializer<>(),
+            new DefaultStateSerializer<>());
     }
 
     @Test
-    public void testPutAndGet() throws Exception {
+    public void testPutAndGet() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         assertEquals("1", keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
-        assertEquals(null, keyValueState.get("c"));
+        assertNull(keyValueState.get("c"));
     }
 
     @Test
-    public void testPutAndDelete() throws Exception {
+    public void testPutAndDelete() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         assertEquals("1", keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
-        assertEquals(null, keyValueState.get("c"));
+        assertNull(keyValueState.get("c"));
         assertEquals("1", keyValueState.delete("a"));
-        assertEquals(null, keyValueState.get("a"));
+        assertNull(keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
-        assertEquals(null, keyValueState.get("c"));
+        assertNull(keyValueState.get("c"));
     }
 
     @Test
-    public void testPrepareCommitRollback() throws Exception {
+    public void testPrepareCommitRollback() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(1);
@@ -207,9 +183,7 @@ public class RedisKeyValueStateTest {
             currentValue = new TreeMap<>(UnsignedBytes.lexicographicalComparator());
         }
 
-        for (Map.Entry<byte[], byte[]> entry : value.entrySet()) {
-            currentValue.put(entry.getKey(), entry.getValue());
-        }
+        currentValue.putAll(value);
 
         mockMap.put(key, currentValue);
         return "";

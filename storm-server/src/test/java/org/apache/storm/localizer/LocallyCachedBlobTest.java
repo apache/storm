@@ -23,21 +23,23 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.metric.StormMetricsRegistry;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class LocallyCachedBlobTest {
-    private static ClientBlobStore blobStore = Mockito.mock(ClientBlobStore.class);
-    private static PortAndAssignment pna = new PortAndAssignmentImpl(6077, new LocalAssignment());
-    private static Map<String, Object> conf = new HashMap<>();
+    private static final ClientBlobStore blobStore = Mockito.mock(ClientBlobStore.class);
+    private static final PortAndAssignment pna = new PortAndAssignmentImpl(6077, new LocalAssignment());
+    private static final Map<String, Object> conf = new HashMap<>();
 
     @Test
     public void testNotUsed() throws KeyNotFoundException, AuthorizationException {
         LocallyCachedBlob blob = new LocalizedResource("key", Paths.get("/bogus"), false,
                 AdvancedFSOps.make(conf), conf, "user1", new StormMetricsRegistry());
-        Assert.assertFalse(blob.isUsed());
-        Assert.assertFalse(blob.requiresUpdate(blobStore, -1L));
+        assertFalse(blob.isUsed());
+        assertFalse(blob.requiresUpdate(blobStore, -1L));
     }
 
     @Test
@@ -45,9 +47,9 @@ public class LocallyCachedBlobTest {
         LocallyCachedBlob blob = new LocalizedResource("key", Paths.get("/bogus"), false,
                 AdvancedFSOps.make(conf), conf, "user1", new StormMetricsRegistry());
         blob.addReference(pna, null);
-        Assert.assertTrue(blob.isUsed());
-        Assert.assertFalse(blob.isFullyDownloaded());
-        Assert.assertTrue(blob.requiresUpdate(blobStore, -1L));
+        assertTrue(blob.isUsed());
+        assertFalse(blob.isFullyDownloaded());
+        assertTrue(blob.requiresUpdate(blobStore, -1L));
     }
 
     @Test
@@ -55,26 +57,26 @@ public class LocallyCachedBlobTest {
         TestableBlob blob = new TestableBlob("key", Paths.get("/bogus"), false,
                 AdvancedFSOps.make(conf), conf, "user1", new StormMetricsRegistry());
         blob.addReference(pna, null);
-        Assert.assertTrue(blob.isUsed());
-        Assert.assertTrue(blob.isFullyDownloaded());
+        assertTrue(blob.isUsed());
+        assertTrue(blob.isFullyDownloaded());
 
         // validate blob needs update due to version mismatch
-        Assert.assertTrue(blob.requiresUpdate(blobStore, -1L));
+        assertTrue(blob.requiresUpdate(blobStore, -1L));
 
         // when blob update time matches remote blobstore update time, validate blob
         // will skip looking at remote version and assume it's up to date
         blob.localUpdateTime = 101L;
-        Assert.assertFalse(blob.requiresUpdate(blobStore, 101L));
+        assertFalse(blob.requiresUpdate(blobStore, 101L));
 
         // now when the update time on the remote blobstore differs, we should again see that the
         // blob version differs from the remote blobstore
-        Assert.assertTrue(blob.requiresUpdate(blobStore, 102L));
+        assertTrue(blob.requiresUpdate(blobStore, 102L));
 
         // now validate we don't need any update as versions match, regardless of remote blobstore update time
         blob.localVersion = blob.getRemoteVersion(blobStore);
-        Assert.assertFalse(blob.requiresUpdate(blobStore, -1L));
-        Assert.assertFalse(blob.requiresUpdate(blobStore, 101L));
-        Assert.assertFalse(blob.requiresUpdate(blobStore, 102L));
+        assertFalse(blob.requiresUpdate(blobStore, -1L));
+        assertFalse(blob.requiresUpdate(blobStore, 101L));
+        assertFalse(blob.requiresUpdate(blobStore, 102L));
     }
 
     public class TestableBlob extends LocalizedResource {
@@ -90,7 +92,7 @@ public class LocallyCachedBlobTest {
         }
 
         @Override
-        public long getRemoteVersion(ClientBlobStore store) throws KeyNotFoundException, AuthorizationException {
+        public long getRemoteVersion(ClientBlobStore store) {
             return 10L;
         }
 

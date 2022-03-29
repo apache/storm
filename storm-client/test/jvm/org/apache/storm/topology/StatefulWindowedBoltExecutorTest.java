@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -26,12 +26,13 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.windowing.TupleWindow;
 import org.apache.storm.windowing.TupleWindowImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.apache.storm.topology.StatefulWindowedBoltExecutor.TaskStream;
 import static org.apache.storm.topology.StatefulWindowedBoltExecutor.WindowState;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit tests for {@link StatefulWindowedBoltExecutor}
@@ -44,7 +45,7 @@ public class StatefulWindowedBoltExecutorTest {
     TopologyContext mockTopologyContext;
     Map<String, Object> mockStormConf = new HashMap<>();
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mockBolt = Mockito.mock(IStatefulWindowedBolt.class);
         mockTopologyContext = Mockito.mock(TopologyContext.class);
@@ -52,14 +53,15 @@ public class StatefulWindowedBoltExecutorTest {
         executor = new StatefulWindowedBoltExecutor<>(mockBolt);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testPrepare() throws Exception {
-        executor.prepare(mockStormConf, mockTopologyContext, mockOutputCollector);
+    @Test
+    public void testPrepare() {
+        assertThrows(IllegalArgumentException.class,
+            () -> executor.prepare(mockStormConf, mockTopologyContext, mockOutputCollector));
     }
 
 
     @Test
-    public void testPrepareWithMsgid() throws Exception {
+    public void testPrepareWithMsgid() {
         mockStormConf.put(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME, "msgid");
         mockStormConf.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT, 5);
         mockStormConf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT, 5);
@@ -85,7 +87,7 @@ public class StatefulWindowedBoltExecutorTest {
     }
 
     @Test
-    public void testRecovery() throws Exception {
+    public void testRecovery() {
         mockStormConf.put(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME, "msgid");
         mockStormConf.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT, 5);
         mockStormConf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT, 5);
@@ -108,7 +110,7 @@ public class StatefulWindowedBoltExecutorTest {
     }
 
     private TupleWindow getTupleWindow(List<Tuple> tuples) {
-        return new TupleWindowImpl(tuples, tuples, Collections.<Tuple>emptyList());
+        return new TupleWindowImpl(tuples, tuples, Collections.emptyList());
     }
 
     private List<Tuple> getMockTuples(int count) {

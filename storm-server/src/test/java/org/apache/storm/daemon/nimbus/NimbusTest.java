@@ -33,10 +33,11 @@ import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class NimbusTest {
     protected Class getDefaultResourceAwareStrategyClass() {
@@ -44,7 +45,7 @@ public class NimbusTest {
     }
 
     @Test
-    public void testMemoryLoadLargerThanMaxHeapSize() throws Exception {
+    public void testMemoryLoadLargerThanMaxHeapSize() {
         // Topology will not be able to be successfully scheduled: Config TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB=128.0 < 129.0,
         // Largest memory requirement of a component in the topology).
         TopologyBuilder builder1 = new TopologyBuilder();
@@ -76,15 +77,15 @@ public class NimbusTest {
         Map<String, Object> conf = new HashMap<>();
         conf.put(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS, 300000);
 
-        try (Time.SimulatedTime t = new Time.SimulatedTime(null)) {
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime(null)) {
             Set<String> toDelete = Nimbus.getExpiredTopologyIds(idleTopologies, conf);
-            Assert.assertTrue(toDelete.isEmpty());
+            assertTrue(toDelete.isEmpty());
 
             Time.advanceTime(10 * 60 * 1000L);
 
             toDelete = Nimbus.getExpiredTopologyIds(idleTopologies, conf);
-            Assert.assertTrue(toDelete.contains("topology1"));
-            Assert.assertEquals(1, toDelete.size());
+            assertTrue(toDelete.contains("topology1"));
+            assertEquals(1, toDelete.size());
 
         }
     }

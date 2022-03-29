@@ -25,7 +25,7 @@ import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
 import org.apache.storm.topology.IRichBolt;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.List;
@@ -55,11 +55,11 @@ public class TestRedisDataSourcesProvider {
     public void testRedisSink() throws Exception {
         ISqlStreamsDataSource ds = DataSourcesRegistry.constructStreamsDataSource(
                 URI.create("redis://:foobared@localhost:6380/2"), null, null, TBL_PROPERTIES, FIELDS);
-        Assert.assertNotNull(ds);
+        assertNotNull(ds);
 
         IRichBolt consumer = ds.getConsumer();
 
-        Assert.assertEquals(RedisStoreBolt.class, consumer.getClass());
+        assertEquals(RedisStoreBolt.class, consumer.getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -67,10 +67,10 @@ public class TestRedisDataSourcesProvider {
     public void testRedisClusterSink() throws Exception {
         ISqlStreamsDataSource ds = DataSourcesRegistry.constructStreamsDataSource(
             URI.create("redis://localhost:6380"), null, null, CLUSTER_TBL_PROPERTIES, FIELDS);
-        Assert.assertNotNull(ds);
+        assertNotNull(ds);
 
         IRichBolt consumer = ds.getConsumer();
 
-        Assert.assertEquals(RedisStoreBolt.class, consumer.getClass());
+        assertEquals(RedisStoreBolt.class, consumer.getClass());
     }
 }

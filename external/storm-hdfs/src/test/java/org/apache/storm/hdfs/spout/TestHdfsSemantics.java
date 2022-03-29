@@ -12,6 +12,7 @@
 
 package org.apache.storm.hdfs.spout;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 import java.io.IOException;
@@ -24,14 +25,16 @@ import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException;
 import org.apache.hadoop.ipc.RemoteException;
 import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestHdfsSemantics {
 
@@ -41,14 +44,14 @@ public class TestHdfsSemantics {
     public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule();
     private FileSystem fs;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         conf.set(CommonConfigurationKeys.IPC_PING_INTERVAL_KEY, "5000");
         fs = dfsClusterRule.getDfscluster().getFileSystem();
         assert fs.mkdirs(dir);
     }
 
-    @After
+    @AfterEach
     public void teardown() throws IOException {
         fs.delete(dir, true);
         fs.close();
@@ -59,23 +62,23 @@ public class TestHdfsSemantics {
         Path file = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
         //    try {
         // 1) Delete absent file - should return false
-        Assert.assertFalse(fs.exists(file));
+        assertFalse(fs.exists(file));
         try {
-            Assert.assertFalse(fs.delete(file, false));
+            assertFalse(fs.delete(file, false));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         // 2) deleting open file - should return true
         fs.create(file, false);
-        Assert.assertTrue(fs.delete(file, false));
+        assertTrue(fs.delete(file, false));
 
         // 3) deleting closed file  - should return true
         FSDataOutputStream os = fs.create(file, false);
         os.close();
-        Assert.assertTrue(fs.exists(file));
-        Assert.assertTrue(fs.delete(file, false));
-        Assert.assertFalse(fs.exists(file));
+        assertTrue(fs.exists(file));
+        assertTrue(fs.delete(file, false));
+        assertFalse(fs.exists(file));
     }
 
     @Test
@@ -93,11 +96,11 @@ public class TestHdfsSemantics {
                     successCount++;
                 }
                 if (thd.exception != null) {
-                    Assert.assertNotNull(thd.exception);
+                    assertNotNull(thd.exception);
                 }
             }
             System.err.println(successCount);
-            Assert.assertEquals(1, successCount);
+            assertEquals(1, successCount);
         } finally {
             if (threads != null) {
                 for (FileDeletionThread thread : threads) {
@@ -120,7 +123,7 @@ public class TestHdfsSemantics {
             fail("Append did not throw an exception");
         } catch (RemoteException e) {
             // expecting AlreadyBeingCreatedException inside RemoteException
-            Assert.assertEquals(AlreadyBeingCreatedException.class, e.unwrapRemoteException().getClass());
+            assertEquals(AlreadyBeingCreatedException.class, e.unwrapRemoteException().getClass());
         }
 
         //2 try to append to a closed file
@@ -137,7 +140,7 @@ public class TestHdfsSemantics {
             fs.create(file1, false); // should fail
             fail("Create did not throw an exception");
         } catch (RemoteException e) {
-            Assert.assertEquals(AlreadyBeingCreatedException.class, e.unwrapRemoteException().getClass());
+            assertEquals(AlreadyBeingCreatedException.class, e.unwrapRemoteException().getClass());
         }
         //2 close file and retry creation
         try {
@@ -150,7 +153,7 @@ public class TestHdfsSemantics {
         //3 delete file and retry creation
         fs.delete(file1, false);
         try (FSDataOutputStream os2 = fs.create(file1, false)) {
-            Assert.assertNotNull(os2);
+            assertNotNull(os2);
         }
     }
 

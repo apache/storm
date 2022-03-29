@@ -17,9 +17,9 @@
 package org.apache.storm.kafka.spout.trident;
 
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -38,7 +38,7 @@ import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.apache.storm.kafka.spout.trident.config.builder.SingleTopicKafkaTridentSpoutConfiguration;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class KafkaTridentSpoutOpaqueCoordinatorTest {
 
@@ -67,7 +67,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
 
     @Test
     public void testCanUpdatePartitions() {
-        try (SimulatedTime time = new SimulatedTime()) {
+        try (SimulatedTime ignored1 = new SimulatedTime()) {
             KafkaConsumer<String, String> mockConsumer = mock(KafkaConsumer.class);
             TopicPartition expectedPartition = new TopicPartition("test", 0);
             TopicPartition addedLaterPartition = new TopicPartition("test-2", 0);
@@ -104,7 +104,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
 
     private List<TopicPartition> deserializePartitions(List<Map<String, Object>> tps) {
         return tps.stream()
-            .map(map -> tpSerializer.fromMap(map))
+            .map(tpSerializer::fromMap)
             .collect(Collectors.toList());
     }
 

@@ -32,13 +32,13 @@ import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.state.Serializer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test for HBaseKeyValueStateIterator.
@@ -49,12 +49,12 @@ public class HBaseKeyValueStateIteratorTest {
     private byte[] keyNamespace;
     private byte[] columnFamily;
     private HBaseClient mockHBaseClient;
-    private int chunkSize = 1000;
-    private Serializer<byte[]> keySerializer = new DefaultStateSerializer<>();
-    private Serializer<byte[]> valueSerializer = new DefaultStateSerializer<>();
+    private final int chunkSize = 1000;
+    private final Serializer<byte[]> keySerializer = new DefaultStateSerializer<>();
+    private final Serializer<byte[]> valueSerializer = new DefaultStateSerializer<>();
     private DefaultStateEncoder<byte[], byte[]> encoder;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         namespace = "namespace";
         keyNamespace = (namespace + "$key:").getBytes();
@@ -199,15 +199,5 @@ public class HBaseKeyValueStateIteratorTest {
                                             Durability durability) {
         ColumnList columnList = buildColumnList(columnFamily, map);
         return mockHBaseClient.constructMutationReq(rowKey, columnList, durability);
-    }
-
-    private void mutateRow(byte[] rowKey, byte[] columnFamily, Map<byte[], byte[]> map)
-        throws Exception {
-        mutateRow(rowKey, columnFamily, map, Durability.USE_DEFAULT);
-    }
-
-    private void mutateRow(byte[] rowKey, byte[] columnFamily, Map<byte[], byte[]> map,
-                           Durability durability) throws Exception {
-        mockHBaseClient.batchMutate(prepareMutateRow(rowKey, columnFamily, map, durability));
     }
 }

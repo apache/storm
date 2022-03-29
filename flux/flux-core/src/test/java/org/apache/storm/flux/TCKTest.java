@@ -25,9 +25,9 @@ import org.apache.storm.flux.model.ExecutionContext;
 import org.apache.storm.flux.model.TopologyDef;
 import org.apache.storm.flux.parser.FluxParser;
 import org.apache.storm.flux.test.TestBolt;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Collections;
 import java.util.Properties;

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -28,7 +28,7 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.utils.Time;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -80,7 +80,7 @@ public class TestFIFOSchedulingPriorityStrategy {
 
                 LOG.info("\n\n\t\tINSERTING topo-5");
                 //new topology needs to be scheduled
-                //topo-3 should be evicted since its been up the longest
+                //topo-3 should be evicted since it's been up the longest
                 topologies = addTopologies(topologies,
                     genTopology("topo-5-derek", config, 1, 0, 1, 0, Time.currentTimeSecs() - 15, 29, "derek"));
 

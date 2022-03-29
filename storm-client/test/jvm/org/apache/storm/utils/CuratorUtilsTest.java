@@ -18,7 +18,7 @@
 
 package org.apache.storm.utils;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +29,14 @@ import org.apache.storm.shade.org.apache.curator.ensemble.fixed.FixedEnsemblePro
 import org.apache.storm.shade.org.apache.curator.framework.AuthInfo;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CuratorUtilsTest {
     @Test
-    public void newCuratorUsesExponentialBackoffTest() throws InterruptedException {
+    public void newCuratorUsesExponentialBackoffTest() {
         final int expectedInterval = 2400;
         final int expectedRetries = 10;
         final int expectedCeiling = 3000;
@@ -44,27 +46,27 @@ public class CuratorUtilsTest {
         config.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, expectedRetries);
         config.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING, expectedCeiling);
 
-        CuratorFramework curator = CuratorUtils.newCurator(config, Arrays.asList("bogus_server"), 42, "",
-                                                           DaemonType.WORKER.getDefaultZkAcls(config));
+        CuratorFramework curator = CuratorUtils.newCurator(config,
+            Collections.singletonList("bogus_server"), 42, "", DaemonType.WORKER.getDefaultZkAcls(config));
         StormBoundedExponentialBackoffRetry policy =
             (StormBoundedExponentialBackoffRetry) curator.getZookeeperClient().getRetryPolicy();
-        Assert.assertEquals(policy.getBaseSleepTimeMs(), expectedInterval);
-        Assert.assertEquals(policy.getN(), expectedRetries);
-        Assert.assertEquals(policy.getSleepTimeMs(10, 0), expectedCeiling);
+        assertEquals(policy.getBaseSleepTimeMs(), expectedInterval);
+        assertEquals(policy.getN(), expectedRetries);
+        assertEquals(policy.getSleepTimeMs(10, 0), expectedCeiling);
     }
 
     @Test
     public void givenExhibitorServersBuilderUsesExhibitorProviderTest() {
         CuratorFrameworkFactory.Builder builder = setupBuilder(true /*with exhibitor*/);
-        Assert.assertEquals(builder.getEnsembleProvider().getConnectionString(), "");
-        Assert.assertEquals(builder.getEnsembleProvider().getClass(), ExhibitorEnsembleProvider.class);
+        assertEquals(builder.getEnsembleProvider().getConnectionString(), "");
+        assertEquals(builder.getEnsembleProvider().getClass(), ExhibitorEnsembleProvider.class);
     }
 
     @Test
     public void givenNoExhibitorServersBuilderUsesFixedProviderTest() {
         CuratorFrameworkFactory.Builder builder = setupBuilder(false /*without exhibitor*/);
-        Assert.assertEquals(builder.getEnsembleProvider().getConnectionString(), "zk_connection_string");
-        Assert.assertEquals(builder.getEnsembleProvider().getClass(), FixedEnsembleProvider.class);
+        assertEquals(builder.getEnsembleProvider().getConnectionString(), "zk_connection_string");
+        assertEquals(builder.getEnsembleProvider().getClass(), FixedEnsembleProvider.class);
     }
 
     @Test
@@ -72,8 +74,8 @@ public class CuratorUtilsTest {
         CuratorFrameworkFactory.Builder builder = setupBuilder(false /*without exhibitor*/, true /*with auth*/);
         List<AuthInfo> authInfos = builder.getAuthInfos();
         AuthInfo authInfo = authInfos.get(0);
-        Assert.assertEquals(authInfo.getScheme(), "scheme");
-        Assert.assertArrayEquals(authInfo.getAuth(), "abc".getBytes());
+        assertEquals(authInfo.getScheme(), "scheme");
+        assertArrayEquals(authInfo.getAuth(), "abc".getBytes());
     }
 
 
@@ -83,7 +85,7 @@ public class CuratorUtilsTest {
 
     private CuratorFrameworkFactory.Builder setupBuilder(boolean withExhibitor, boolean withAuth) {
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
-        Map<String, Object> conf = new HashMap<String, Object>();
+        Map<String, Object> conf = new HashMap<>();
         if (withExhibitor) {
             conf.put(Config.STORM_EXHIBITOR_SERVERS, "foo");
             conf.put(Config.STORM_EXHIBITOR_PORT, 0);
@@ -98,7 +100,7 @@ public class CuratorUtilsTest {
         conf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 0);
         conf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING, 0);
         conf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 0);
-        String zkStr = new String("zk_connection_string");
+        String zkStr = "zk_connection_string";
         ZookeeperAuthInfo auth = null;
         if (withAuth) {
             auth = new ZookeeperAuthInfo("scheme", "abc".getBytes());

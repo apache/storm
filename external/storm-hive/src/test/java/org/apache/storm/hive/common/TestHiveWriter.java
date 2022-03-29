@@ -39,7 +39,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
@@ -113,11 +113,11 @@ public class TestHiveWriter {
         writer.write(mapper.mapRecord(tuple));
         tuple = generateTestTuple("2", "def");
         writer.write(mapper.mapRecord(tuple));
-        Assert.assertEquals(writer.getTotalRecords(), 2);
+        assertEquals(writer.getTotalRecords(), 2);
         Mockito.verify(writer.getMockedTxBatch(), Mockito.times(2)).write(Mockito.any(byte[].class));
         Mockito.verify(writer.getMockedTxBatch(), Mockito.never()).commit();
         writer.flush(true);
-        Assert.assertEquals(writer.getTotalRecords(), 0);
+        failassertEquals(writer.getTotalRecords(), 0);
         Mockito.verify(writer.getMockedTxBatch(), Mockito.atLeastOnce()).commit();
 
         tuple = generateTestTuple("3", "ghi");

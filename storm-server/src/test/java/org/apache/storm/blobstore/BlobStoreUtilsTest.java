@@ -15,7 +15,7 @@ package org.apache.storm.blobstore;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
@@ -30,10 +30,10 @@ public class BlobStoreUtilsTest {
     private static final String BLOBSTORE_KEY = "/blobstore/" + KEY;
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> conf = (Map<String, Object>) mock(Map.class);
-    private MockZookeeperClientBuilder zkClientBuilder = new MockZookeeperClientBuilder();
-    private BlobStore blobStore = mock(BlobStore.class);
-    private NimbusInfo nimbusDetails = mock(NimbusInfo.class);
+    private final Map<String, Object> conf = (Map<String, Object>) mock(Map.class);
+    private final MockZookeeperClientBuilder zkClientBuilder = new MockZookeeperClientBuilder();
+    private final BlobStore blobStore = mock(BlobStore.class);
+    private final NimbusInfo nimbusDetails = mock(NimbusInfo.class);
 
     /**
      * If nimbusDetails are null, the method returns without any Zookeeper calls.

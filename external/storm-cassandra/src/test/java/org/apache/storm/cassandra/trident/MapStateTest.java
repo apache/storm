@@ -20,8 +20,6 @@ import com.datastax.driver.core.querybuilder.Truncate;
 import com.datastax.driver.core.schemabuilder.Create;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 import java.util.HashMap;
-import java.util.Map;
-import org.apache.cassandra.locator.SimpleStrategy;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalDRPC;
@@ -39,21 +37,21 @@ import org.apache.storm.trident.testing.FixedBatchSpout;
 import org.apache.storm.trident.testing.Split;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MapStateTest {
 
     @ClassRule
     public static final EmbeddedCassandraResource cassandra = new EmbeddedCassandraResource();
 
-    private static Logger logger = LoggerFactory.getLogger(MapStateTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(MapStateTest.class);
     private static Cluster cluster;
     private Session session;
 
@@ -77,8 +75,6 @@ public class MapStateTest {
 
     @Test
     public void transactionalStateTest() throws Exception {
-
-        Map<String, Object> config = new HashMap();
         StateFactory factory = MapStateFactoryBuilder.transactional(getCassandraConfig())
                                                      .withTable("words_ks", "words_table")
                                                      .withKeys("word")
@@ -90,8 +86,6 @@ public class MapStateTest {
 
     @Test
     public void opaqueStateTest() throws Exception {
-
-        Map<String, Object> config = new HashMap();
         StateFactory factory = MapStateFactoryBuilder.opaque(getCassandraConfig())
                                                      .withTable("words_ks", "words_table")
                                                      .withKeys("word")
@@ -130,7 +124,7 @@ public class MapStateTest {
                 .aggregate(new Fields("state"), new Sum(), new Fields("sum"));
         
         logger.info("Submitting topology.");
-        cluster.submitTopology("test", new HashMap(), topology.build());
+        cluster.submitTopology("test", new HashMap<>(), topology.build());
 
         logger.info("Waiting for something to happen.");
         int count;
@@ -152,7 +146,7 @@ public class MapStateTest {
 
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         Cluster.Builder clusterBuilder = Cluster.builder();
@@ -172,7 +166,7 @@ public class MapStateTest {
 
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         truncateTable("words_ks", "words_table");
         session.close();
@@ -204,10 +198,6 @@ public class MapStateTest {
     }
 
     protected void createTable(String keyspace, String table, Column key, Column... fields) {
-        Map<String, Object> replication = new HashMap<>();
-        replication.put("class", SimpleStrategy.class.getSimpleName());
-        replication.put("replication_factor", 1);
-
         Create createTable = SchemaBuilder.createTable(keyspace, table)
                                           .ifNotExists()
                                           .addPartitionKey(key.name, key.type);

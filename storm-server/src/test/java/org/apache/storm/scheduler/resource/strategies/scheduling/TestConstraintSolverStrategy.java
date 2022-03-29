@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,6 +20,7 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,9 +44,8 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.NodeSort
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
@@ -58,11 +58,16 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
-@RunWith(Parameterized.class)
+@ExtendWith(Parameterized.class)
 public class TestConstraintSolverStrategy {
     @Parameters
     public static Object[] data() {
@@ -176,7 +181,7 @@ public class TestConstraintSolverStrategy {
             config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, constraints);
             for (Map.Entry<String, Integer> e: spreads.entrySet()) {
                 if (e.getValue() > 1) {
-                    Assert.fail(String.format("Invalid %s=%d for component=%s, expecting 1 for old-style configuration",
+                    fail(String.format("Invalid %s=%d for component=%s, expecting 1 for old-style configuration",
                             ConstraintSolverConfig.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT,
                             e.getValue(),
                             e.getKey()));
@@ -218,10 +223,10 @@ public class TestConstraintSolverStrategy {
         SchedulingResult result = cs.schedule(cluster, topo);
         LOG.info("Done scheduling {}...", result);
 
-        Assert.assertTrue("Assert scheduling topology success " + result, result.isSuccess());
-        Assert.assertEquals("Assert no unassigned executors, found unassigned: " + cluster.getUnassignedExecutors(topo),
-            0, cluster.getUnassignedExecutors(topo).size());
-        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo));
+        assertTrue(result.isSuccess(), "Assert scheduling topology success " + result);
+        assertEquals(0, cluster.getUnassignedExecutors(topo).size(),
+            "Assert no unassigned executors, found unassigned: " + cluster.getUnassignedExecutors(topo));
+        assertTrue(ConstraintSolverStrategy.validateSolution(cluster, topo), "Valid Scheduling?");
         LOG.info("Slots Used {}", cluster.getAssignmentById(topo.getId()).getSlots());
         LOG.info("Assignment {}", cluster.getAssignmentById(topo.getId()).getSlotToExecutors());
 
@@ -249,9 +254,9 @@ public class TestConstraintSolverStrategy {
         result = cs.schedule(cluster, topo);
         LOG.info("Done scheduling {}...", result);
 
-        Assert.assertTrue("Assert scheduling topology success " + result, result.isSuccess());
-        Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
-        Assert.assertTrue("Valid Scheduling?", ConstraintSolverStrategy.validateSolution(cluster, topo));
+        assertTrue(result.isSuccess(), "Assert scheduling topology success " + result);
+        assertEquals(0, cluster.getUnassignedExecutors(topo).size(), "topo all executors scheduled?");
+        assertTrue(ConstraintSolverStrategy.validateSolution(cluster, topo), "Valid Scheduling?");
     }
 
     /**
@@ -296,9 +301,9 @@ public class TestConstraintSolverStrategy {
             Map<String, Object> conf = new HashMap<>();
             conf.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
             new ConstraintSolverConfig("test-topoid-2", conf, new HashSet<>());
-            new ConstraintSolverConfig("test-topoid-3", conf, new HashSet<>(Arrays.asList("comp-x")));
-            new ConstraintSolverConfig("test-topoid-4", conf, new HashSet<>(Arrays.asList("comp-1")));
-            new ConstraintSolverConfig("test-topoid-5", conf, new HashSet<>(Arrays.asList("comp-1, comp-x")));
+            new ConstraintSolverConfig("test-topoid-3", conf, new HashSet<>(Collections.singletonList("comp-x")));
+            new ConstraintSolverConfig("test-topoid-4", conf, new HashSet<>(Collections.singletonList("comp-1")));
+            new ConstraintSolverConfig("test-topoid-5", conf, new HashSet<>(Collections.singletonList("comp-1, comp-x")));
         }
     }
 
@@ -331,11 +336,11 @@ public class TestConstraintSolverStrategy {
         expectedSetComp2.addAll(Arrays.asList("comp-1", "comp-4"));
         Set<String> expectedSetComp3 = new HashSet<>();
         expectedSetComp3.addAll(Arrays.asList("comp-1", "comp-5"));
-        Assert.assertEquals("comp-1 incompatible components", expectedSetComp1, constraintSolverConfig.getIncompatibleComponentSets().get("comp-1"));
-        Assert.assertEquals("comp-2 incompatible components", expectedSetComp2, constraintSolverConfig.getIncompatibleComponentSets().get("comp-2"));
-        Assert.assertEquals("comp-3 incompatible components", expectedSetComp3, constraintSolverConfig.getIncompatibleComponentSets().get("comp-3"));
-        Assert.assertEquals("comp-1 maxNodeCoLocationCnt", 2, (int) constraintSolverConfig.getMaxNodeCoLocationCnts().getOrDefault("comp-1", -1));
-        Assert.assertNull("comp-2 maxNodeCoLocationCnt", constraintSolverConfig.getMaxNodeCoLocationCnts().get("comp-2"));
+        assertEquals(expectedSetComp1, constraintSolverConfig.getIncompatibleComponentSets().get("comp-1"), "comp-1 incompatible components");
+        assertEquals(expectedSetComp2, constraintSolverConfig.getIncompatibleComponentSets().get("comp-2"), "comp-2 incompatible components");
+        assertEquals(expectedSetComp3, constraintSolverConfig.getIncompatibleComponentSets().get("comp-3"), "comp-3 incompatible components");
+        assertEquals(2, (int) constraintSolverConfig.getMaxNodeCoLocationCnts().getOrDefault("comp-1", -1), "comp-1 maxNodeCoLocationCnt");
+        assertNull(constraintSolverConfig.getMaxNodeCoLocationCnts().get("comp-2"), "comp-2 maxNodeCoLocationCnt");
     }
 
     @Test
@@ -405,7 +410,7 @@ public class TestConstraintSolverStrategy {
         SchedulingResult result = cs.schedule(cluster, topo);
         LOG.info("Done scheduling {}...", result);
 
-        Assert.assertTrue("Assert scheduling topology success " + result, !result.isSuccess());
+        assertTrue(!result.isSuccess(), "Assert scheduling topology success " + result);
     }
 
     @Test
@@ -448,7 +453,7 @@ public class TestConstraintSolverStrategy {
 
     private void testScheduleLargeExecutorConstraintCount(int parallelismMultiplier) {
         if (parallelismMultiplier > 1 && !consolidatedConfigFlag) {
-            Assert.assertFalse("Large parallelism test requires new consolidated constraint format with maxCoLocationCnt=" + parallelismMultiplier, consolidatedConfigFlag);
+            assertFalse(consolidatedConfigFlag, "Large parallelism test requires new consolidated constraint format with maxCoLocationCnt=" + parallelismMultiplier);
             return;
         }
 
@@ -486,7 +491,7 @@ public class TestConstraintSolverStrategy {
         boolean scheduleSuccess = isStatusSuccess(cluster.getStatus(topo.getId()));
         LOG.info("testScheduleLargeExecutorCount scheduling {} with {}x executor multiplier, consolidatedConfigFlag={}",
                 scheduleSuccess ? "succeeds" : "fails", parallelismMultiplier, consolidatedConfigFlag);
-        Assert.assertTrue(scheduleSuccess);
+        assertTrue(scheduleSuccess);
     }
 
     @Test
@@ -528,7 +533,7 @@ public class TestConstraintSolverStrategy {
         try {
             rs.schedule(topologies, cluster);
             assertStatusSuccess(cluster, topo.getId());
-            Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
+            assertEquals(0, cluster.getUnassignedExecutors(topo).size(), "topo all executors scheduled?");
         } finally {
             rs.cleanup();
         }
@@ -550,7 +555,7 @@ public class TestConstraintSolverStrategy {
         try {
             rs.schedule(topologies, cluster);
             assertStatusSuccess(cluster, topo.getId());
-            Assert.assertEquals("topo all executors scheduled?", 0, cluster.getUnassignedExecutors(topo).size());
+            assertEquals(0, cluster.getUnassignedExecutors(topo).size(), "topo all executors scheduled?");
         } finally {
             rs.cleanup();
         }
@@ -577,9 +582,9 @@ public class TestConstraintSolverStrategy {
     public void testGetMaxStateSearchFromTopoConf() {
         Map<String, Object> topoConf = new HashMap<>();
 
-        Assert.assertEquals(10_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
+        assertEquals(10_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
 
         topoConf.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, 40_000);
-        Assert.assertEquals(40_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
+        assertEquals(40_000, ConstraintSolverStrategy.getMaxStateSearchFromTopoConf(topoConf));
     }
 }

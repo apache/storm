@@ -25,11 +25,16 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.storm.hdfs.common.HdfsUtils;
 import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestFileLock {
 
@@ -46,7 +51,7 @@ public class TestFileLock {
         m.invoke(lock);
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         conf.set(CommonConfigurationKeys.IPC_PING_INTERVAL_KEY, "5000");
         fs = dfsClusterRule.getDfscluster().getFileSystem();
@@ -54,7 +59,7 @@ public class TestFileLock {
         assert fs.mkdirs(locksDir);
     }
 
-    @After
+    @AfterEach
     public void teardown() throws IOException {
         fs.delete(filesDir, true);
         fs.delete(locksDir, true);
@@ -71,38 +76,38 @@ public class TestFileLock {
 
         // acquire lock on file1 and verify if worked
         FileLock lock1a = FileLock.tryLock(fs, file1, locksDir, "spout1");
-        Assert.assertNotNull(lock1a);
-        Assert.assertTrue(fs.exists(lock1a.getLockFile()));
-        Assert.assertEquals(lock1a.getLockFile().getParent(), locksDir); // verify lock file location
-        Assert.assertEquals(lock1a.getLockFile().getName(), file1.getName()); // verify lock filename
+        assertNotNull(lock1a);
+        assertTrue(fs.exists(lock1a.getLockFile()));
+        assertEquals(lock1a.getLockFile().getParent(), locksDir); // verify lock file location
+        assertEquals(lock1a.getLockFile().getName(), file1.getName()); // verify lock filename
 
         // acquire another lock on file1 and verify it failed
         FileLock lock1b = FileLock.tryLock(fs, file1, locksDir, "spout1");
-        Assert.assertNull(lock1b);
+        assertNull(lock1b);
 
         // release lock on file1 and check
         lock1a.release();
-        Assert.assertFalse(fs.exists(lock1a.getLockFile()));
+        assertFalse(fs.exists(lock1a.getLockFile()));
 
         // Retry locking and verify
         FileLock lock1c = FileLock.tryLock(fs, file1, locksDir, "spout1");
-        Assert.assertNotNull(lock1c);
-        Assert.assertTrue(fs.exists(lock1c.getLockFile()));
-        Assert.assertEquals(lock1c.getLockFile().getParent(), locksDir); // verify lock file location
-        Assert.assertEquals(lock1c.getLockFile().getName(), file1.getName()); // verify lock filename
+        assertNotNull(lock1c);
+        assertTrue(fs.exists(lock1c.getLockFile()));
+        assertEquals(lock1c.getLockFile().getParent(), locksDir); // verify lock file location
+        assertEquals(lock1c.getLockFile().getName(), file1.getName()); // verify lock filename
 
         // try locking another file2 at the same time
         FileLock lock2a = FileLock.tryLock(fs, file2, locksDir, "spout1");
-        Assert.assertNotNull(lock2a);
-        Assert.assertTrue(fs.exists(lock2a.getLockFile()));
-        Assert.assertEquals(lock2a.getLockFile().getParent(), locksDir); // verify lock file location
-        Assert.assertEquals(lock2a.getLockFile().getName(), file2.getName()); // verify lock filename
+        assertNotNull(lock2a);
+        assertTrue(fs.exists(lock2a.getLockFile()));
+        assertEquals(lock2a.getLockFile().getParent(), locksDir); // verify lock file location
+        assertEquals(lock2a.getLockFile().getName(), file2.getName()); // verify lock filename
 
         // release both locks
         lock2a.release();
-        Assert.assertFalse(fs.exists(lock2a.getLockFile()));
+        assertFalse(fs.exists(lock2a.getLockFile()));
         lock1c.release();
-        Assert.assertFalse(fs.exists(lock1c.getLockFile()));
+        assertFalse(fs.exists(lock1c.getLockFile()));
     }
 
     @Test
@@ -112,31 +117,31 @@ public class TestFileLock {
 
         // acquire lock on file1
         FileLock lock1 = FileLock.tryLock(fs, file1, locksDir, "spout1");
-        Assert.assertNotNull(lock1);
-        Assert.assertTrue(fs.exists(lock1.getLockFile()));
+        assertNotNull(lock1);
+        assertTrue(fs.exists(lock1.getLockFile()));
 
         ArrayList<String> lines = readTextFile(lock1.getLockFile());
-        Assert.assertEquals("heartbeats appear to be missing", 1, lines.size());
+        assertEquals(1, lines.size(), "heartbeats appear to be missing");
 
-        // hearbeat upon it
+        // heartbeat upon it
         lock1.heartbeat("1");
         lock1.heartbeat("2");
         lock1.heartbeat("3");
 
         lines = readTextFile(lock1.getLockFile());
-        Assert.assertEquals("heartbeats appear to be missing", 4, lines.size());
+        assertEquals(4, lines.size(), "heartbeats appear to be missing");
 
         lock1.heartbeat("4");
         lock1.heartbeat("5");
         lock1.heartbeat("6");
 
         lines = readTextFile(lock1.getLockFile());
-        Assert.assertEquals("heartbeats appear to be missing", 7, lines.size());
+        assertEquals(7, lines.size(), "heartbeats appear to be missing");
 
         lock1.release();
         lines = readTextFile(lock1.getLockFile());
-        Assert.assertNull(lines);
-        Assert.assertFalse(fs.exists(lock1.getLockFile()));
+        assertNull(lines);
+        assertFalse(fs.exists(lock1.getLockFile()));
     }
 
     @Test
@@ -149,11 +154,11 @@ public class TestFileLock {
             threads = startThreads(100, file1, locksDir);
             for (FileLockingThread thd : threads) {
                 thd.join(30_000);
-                Assert.assertTrue(thd.getName() + " did not exit cleanly", thd.cleanExit);
+                assertTrue(thd.cleanExit, thd.getName() + " did not exit cleanly");
             }
 
             Path lockFile = new Path(locksDir + Path.SEPARATOR + file1.getName());
-            Assert.assertFalse(fs.exists(lockFile));
+            assertFalse(fs.exists(lockFile));
         } finally {
             if (threads != null) {
                 for (FileLockingThread thread : threads) {
@@ -171,7 +176,7 @@ public class TestFileLock {
         throws IOException {
         FileLockingThread[] result = new FileLockingThread[thdCount];
         for (int i = 0; i < thdCount; i++) {
-            result[i] = new FileLockingThread(i, fs, fileToLock, locksDir, "spout" + Integer.toString(i));
+            result[i] = new FileLockingThread(i, fs, fileToLock, locksDir, "spout" + i);
         }
 
         for (FileLockingThread thd : result) {
@@ -189,25 +194,25 @@ public class TestFileLock {
         FileLock lock1 = FileLock.tryLock(fs, file1, locksDir, "spout1");
         try {
             // acquire lock on file1
-            Assert.assertNotNull(lock1);
-            Assert.assertTrue(fs.exists(lock1.getLockFile()));
+            assertNotNull(lock1);
+            assertTrue(fs.exists(lock1.getLockFile()));
             Thread.sleep(WAIT_MSEC);   // wait for lock to expire
             HdfsUtils.Pair<Path, FileLock.LogEntry> expired = FileLock.locateOldestExpiredLock(fs, locksDir, LOCK_EXPIRY_SEC);
-            Assert.assertNotNull(expired);
+            assertNotNull(expired);
 
             // heartbeat, ensure its no longer stale and read back the heartbeat data
             lock1.heartbeat("1");
             expired = FileLock.locateOldestExpiredLock(fs, locksDir, 1);
-            Assert.assertNull(expired);
+            assertNull(expired);
 
             FileLock.LogEntry lastEntry = lock1.getLastLogEntry();
-            Assert.assertNotNull(lastEntry);
-            Assert.assertEquals("1", lastEntry.fileOffset);
+            assertNotNull(lastEntry);
+            assertEquals("1", lastEntry.fileOffset);
 
             // wait and check for expiry again
             Thread.sleep(WAIT_MSEC);
             expired = FileLock.locateOldestExpiredLock(fs, locksDir, LOCK_EXPIRY_SEC);
-            Assert.assertNotNull(expired);
+            assertNotNull(expired);
         } finally {
             lock1.release();
             fs.delete(file1, false);
@@ -230,13 +235,13 @@ public class TestFileLock {
         FileLock lock1 = FileLock.tryLock(fs, file1, locksDir, "spout1");
         FileLock lock2 = FileLock.tryLock(fs, file2, locksDir, "spout2");
         FileLock lock3 = FileLock.tryLock(fs, file3, locksDir, "spout3");
-        Assert.assertNotNull(lock1);
-        Assert.assertNotNull(lock2);
-        Assert.assertNotNull(lock3);
+        assertNotNull(lock1);
+        assertNotNull(lock2);
+        assertNotNull(lock3);
 
         try {
             HdfsUtils.Pair<Path, FileLock.LogEntry> expired = FileLock.locateOldestExpiredLock(fs, locksDir, LOCK_EXPIRY_SEC);
-            Assert.assertNull(expired);
+            failassertNull(expired);
 
             // 2) wait for all 3 locks to expire then heart beat on 2 locks and verify stale lock
             Thread.sleep(WAIT_MSEC);
@@ -244,8 +249,8 @@ public class TestFileLock {
             lock2.heartbeat("1");
 
             expired = FileLock.locateOldestExpiredLock(fs, locksDir, LOCK_EXPIRY_SEC);
-            Assert.assertNotNull(expired);
-            Assert.assertEquals("spout3", expired.getValue().componentId);
+            assertNotNull(expired);
+            assertEquals("spout3", expired.getValue().componentId);
         } finally {
             lock1.release();
             lock2.release();
@@ -272,13 +277,13 @@ public class TestFileLock {
         FileLock lock1 = FileLock.tryLock(fs, file1, locksDir, "spout1");
         FileLock lock2 = FileLock.tryLock(fs, file2, locksDir, "spout2");
         FileLock lock3 = FileLock.tryLock(fs, file3, locksDir, "spout3");
-        Assert.assertNotNull(lock1);
-        Assert.assertNotNull(lock2);
-        Assert.assertNotNull(lock3);
+        assertNotNull(lock1);
+        assertNotNull(lock2);
+        assertNotNull(lock3);
 
         try {
             HdfsUtils.Pair<Path, FileLock.LogEntry> expired = FileLock.locateOldestExpiredLock(fs, locksDir, LOCK_EXPIRY_SEC);
-            Assert.assertNull(expired);
+            assertNull(expired);
 
             // 1) Simulate lock file lease expiring and getting closed by HDFS
             closeUnderlyingLockFile(lock3);
@@ -290,8 +295,8 @@ public class TestFileLock {
 
             // 3) Take ownership of stale lock
             FileLock lock3b = FileLock.acquireOldestExpiredLock(fs, locksDir, LOCK_EXPIRY_SEC, "spout1");
-            Assert.assertNotNull(lock3b);
-            Assert.assertEquals("Expected lock3 file", Path.getPathWithoutSchemeAndAuthority(lock3b.getLockFile()), lock3.getLockFile());
+            assertNotNull(lock3b);
+            assertEquals(Path.getPathWithoutSchemeAndAuthority(lock3b.getLockFile()), lock3.getLockFile(), "Expected lock3 file");
         } finally {
             lock1.release();
             lock2.release();
@@ -310,9 +315,7 @@ public class TestFileLock {
      * return null if file not found
      */
     private ArrayList<String> readTextFile(Path file) throws IOException {
-        FSDataInputStream os = null;
-        try {
-            os = fs.open(file);
+        try (FSDataInputStream os = fs.open(file)) {
             if (os == null) {
                 return null;
             }
@@ -324,24 +327,19 @@ public class TestFileLock {
             return lines;
         } catch (FileNotFoundException e) {
             return null;
-        } finally {
-            if (os != null) {
-                os.close();
-            }
         }
     }
 
-    class FileLockingThread extends Thread {
+    static class FileLockingThread extends Thread {
 
         private final FileSystem fs;
         public boolean cleanExit = false;
-        private int thdNum;
-        private Path fileToLock;
-        private Path locksDir;
-        private String spoutId;
+        private final int thdNum;
+        private final Path fileToLock;
+        private final Path locksDir;
+        private final String spoutId;
 
-        public FileLockingThread(int thdNum, FileSystem fs, Path fileToLock, Path locksDir, String spoutId)
-            throws IOException {
+        public FileLockingThread(int thdNum, FileSystem fs, Path fileToLock, Path locksDir, String spoutId) {
             this.thdNum = thdNum;
             this.fs = fs;
             this.fileToLock = fileToLock;

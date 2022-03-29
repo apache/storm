@@ -19,19 +19,21 @@ package org.apache.storm.integration;
 import static org.apache.storm.AssertLoop.assertAcked;
 import static org.apache.storm.AssertLoop.assertFailed;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.Testing;
@@ -94,7 +96,7 @@ public class TopologyIntegrationTest {
             stormConf.put(Config.TOPOLOGY_WORKERS, 2);
             stormConf.put(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE, true);
 
-            List<FixedTuple> testTuples = Arrays.asList("nathan", "bob", "joey", "nathan").stream()
+            List<FixedTuple> testTuples = Stream.of("nathan", "bob", "joey", "nathan")
                 .map(value -> new FixedTuple(new Values(value)))
                 .collect(Collectors.toList());
 
@@ -320,7 +322,7 @@ public class TopologyIntegrationTest {
 
     private boolean tryCompleteWordCountTopology(LocalCluster cluster, StormTopology topology) throws Exception {
         try {
-            List<FixedTuple> testTuples = Arrays.asList("nathan", "bob", "joey", "nathan").stream()
+            List<FixedTuple> testTuples = Stream.of("nathan", "bob", "joey", "nathan")
                 .map(value -> new FixedTuple(new Values(value)))
                 .collect(Collectors.toList());
             MockedSources mockedSources = new MockedSources(Collections.singletonMap("1", testTuples));
@@ -363,7 +365,7 @@ public class TopologyIntegrationTest {
             Map<String, Object> stormConf = new HashMap<>();
             stormConf.put(Config.TOPOLOGY_WORKERS, 2);
 
-            List<FixedTuple> testTuples = Arrays.asList("a", "b", "c").stream()
+            List<FixedTuple> testTuples = Stream.of("a", "b", "c")
                 .map(value -> new FixedTuple(new Values(value)))
                 .collect(Collectors.toList());
 
@@ -380,17 +382,6 @@ public class TopologyIntegrationTest {
                 new Values("b"),
                 new Values("c")
             ));
-        }
-    }
-
-    private static class SpoutAndChecker {
-
-        private final FeederSpout spout;
-        private final Consumer<Integer> checker;
-
-        public SpoutAndChecker(FeederSpout spout, Consumer<Integer> checker) {
-            this.spout = spout;
-            this.checker = checker;
         }
     }
 
@@ -672,8 +663,8 @@ public class TopologyIntegrationTest {
             topologyBuilder.setBolt("2", new TestConfBolt(Collections.singletonMap(Config.TOPOLOGY_KRYO_DECORATORS, Arrays.asList("one", "two"))))
                 .shuffleGrouping("1");
 
-            List<FixedTuple> testTuples = Arrays.asList(new Values(Config.TOPOLOGY_KRYO_DECORATORS)).stream()
-                .map(value -> new FixedTuple(value))
+            List<FixedTuple> testTuples = Collections.singletonList(new Values(Config.TOPOLOGY_KRYO_DECORATORS)).stream()
+                .map(FixedTuple::new)
                 .collect(Collectors.toList());
 
             MockedSources mockedSources = new MockedSources(Collections.singletonMap("1", testTuples));
@@ -685,7 +676,7 @@ public class TopologyIntegrationTest {
             Map<String, List<FixedTuple>> results = Testing.completeTopology(cluster, topologyBuilder.createTopology(), completeTopologyParams);
 
             List<Object> concatValues = Testing.readTuples(results, "2").stream()
-                .flatMap(values -> values.stream())
+                .flatMap(Collection::stream)
                 .collect(Collectors.toList());
             assertThat(concatValues.get(0), is(Config.TOPOLOGY_KRYO_DECORATORS));
             assertThat(concatValues.get(1), is(Arrays.asList("one", "two", "three")));
@@ -712,14 +703,14 @@ public class TopologyIntegrationTest {
                 .setMaxTaskParallelism(2)
                 .addConfiguration("fake.config2", 987);
 
-            List<FixedTuple> testTuples = Arrays.asList("fake.config", Config.TOPOLOGY_MAX_TASK_PARALLELISM, Config.TOPOLOGY_MAX_SPOUT_PENDING, "fake.config2", Config.TOPOLOGY_KRYO_REGISTER).stream()
+            List<FixedTuple> testTuples = Stream.of("fake.config", Config.TOPOLOGY_MAX_TASK_PARALLELISM, Config.TOPOLOGY_MAX_SPOUT_PENDING, "fake.config2", Config.TOPOLOGY_KRYO_REGISTER)
                 .map(value -> new FixedTuple(new Values(value)))
                 .collect(Collectors.toList());
             Map<String, String> kryoRegister = new HashMap<>();
             kryoRegister.put("fake.type", "good.serializer");
             kryoRegister.put("fake.type3", "a.serializer3");
             Map<String, Object> stormConf = new HashMap<>();
-            stormConf.put(Config.TOPOLOGY_KRYO_REGISTER, Arrays.asList(kryoRegister));
+            stormConf.put(Config.TOPOLOGY_KRYO_REGISTER, Collections.singletonList(kryoRegister));
 
             MockedSources mockedSources = new MockedSources(Collections.singletonMap("1", testTuples));
 
@@ -734,12 +725,11 @@ public class TopologyIntegrationTest {
             expectedValues.put("fake.config2", 987L);
             expectedValues.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 2L);
             expectedValues.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 30L);
-            Map<String, String> expectedKryoRegister = new HashMap<>();
-            expectedKryoRegister.putAll(kryoRegister);
+            Map<String, String> expectedKryoRegister = new HashMap<>(kryoRegister);
             expectedKryoRegister.put("fake.type2", "a.serializer");
             expectedValues.put(Config.TOPOLOGY_KRYO_REGISTER, expectedKryoRegister);
             List<Object> concatValues = Testing.readTuples(results, "2").stream()
-                .flatMap(values -> values.stream())
+                .flatMap(Collection::stream)
                 .collect(Collectors.toList());
             assertThat(listToMap(concatValues), is(expectedValues));
         }
@@ -806,7 +796,7 @@ public class TopologyIntegrationTest {
             builder.setBolt("2", new HooksBolt()).shuffleGrouping("1");
             StormTopology topology = builder.createTopology();
 
-            List<FixedTuple> testTuples = Arrays.asList(1, 1, 1, 1).stream()
+            List<FixedTuple> testTuples = Stream.of(1, 1, 1, 1)
                 .map(value -> new FixedTuple(new Values(value)))
                 .collect(Collectors.toList());
 

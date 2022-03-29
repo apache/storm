@@ -17,8 +17,8 @@ package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
-import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -52,9 +52,9 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.MockitoJUnit;
@@ -77,7 +77,7 @@ public class KafkaSpoutRebalanceTest {
     private TopicFilter topicFilterMock;
     private ManualPartitioner partitionerMock;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         contextMock = mock(TopologyContext.class);
         collectorMock = mock(SpoutOutputCollector.class);
@@ -134,9 +134,9 @@ public class KafkaSpoutRebalanceTest {
     }
 
     @Test
-    public void spoutMustIgnoreAcksForTuplesItIsNotAssignedAfterRebalance() throws Exception {
-        //Acking tuples for partitions that are no longer assigned is useless since the spout will not be allowed to commit them
-        try (SimulatedTime simulatedTime = new SimulatedTime()) {
+    public void spoutMustIgnoreAcksForTuplesItIsNotAssignedAfterRebalance() {
+        // Acking tuples for partitions that are no longer assigned is useless since the spout will not be allowed to commit them
+        try (SimulatedTime ignored = new SimulatedTime()) {
             TopicAssigner assignerMock = mock(TopicAssigner.class);
             KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(topicFilterMock, partitionerMock, -1)
                 .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
@@ -167,7 +167,7 @@ public class KafkaSpoutRebalanceTest {
     }
 
     @Test
-    public void spoutMustIgnoreFailsForTuplesItIsNotAssignedAfterRebalance() throws Exception {
+    public void spoutMustIgnoreFailsForTuplesItIsNotAssignedAfterRebalance() {
         //Failing tuples for partitions that are no longer assigned is useless since the spout will not be allowed to commit them if they later pass
         TopicAssigner assignerMock = mock(TopicAssigner.class);
         KafkaSpoutRetryService retryServiceMock = mock(KafkaSpoutRetryService.class);

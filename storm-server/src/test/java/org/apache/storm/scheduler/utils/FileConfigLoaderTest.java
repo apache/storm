@@ -18,15 +18,14 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
-import org.junit.Assert;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
-public class FileConfigLoaderTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileConfigLoaderTest.class);
+public class FileConfigLoaderTest {
 
     private static final String FILE_SCHEME_PREFIX = "file://";
 
@@ -36,15 +35,15 @@ public class FileConfigLoaderTest {
         conf.put(DaemonConfig.SCHEDULER_CONFIG_LOADER_URI, FILE_SCHEME_PREFIX + "/file/not/exist/");
         FileConfigLoader testLoader = new FileConfigLoader(conf);
         Map<String, Object> result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-        Assert.assertNull("Unexpectedly returned a map", result);
+        assertNull(result, "Unexpectedly returned a map");
     }
 
     @Test
-    public void testInvalidConfig() throws Exception {
+    public void testInvalidConfig() {
         Config conf = new Config();
         FileConfigLoader testLoader = new FileConfigLoader(conf);
         Map<String, Object> result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-        Assert.assertNull("Unexpectedly returned a map", result);
+        assertNull(result, "Unexpectedly returned a map");
     }
 
     @Test
@@ -64,7 +63,7 @@ public class FileConfigLoaderTest {
 
         FileConfigLoader testLoader = new FileConfigLoader(conf);
         Map<String, Object> result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-        Assert.assertNull("Unexpectedly returned a map", result);
+        assertNull(result, "Unexpectedly returned a map");
     }
 
     @Test
@@ -95,14 +94,14 @@ public class FileConfigLoaderTest {
 
         Map<String, Object> result = loader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
 
-        Assert.assertNotNull("Unexpectedly returned null", result);
+        assertNotNull(result, "Unexpectedly returned null");
 
-        Assert.assertEquals("Maps are a different size", testMap.keySet().size(), result.keySet().size());
+        assertEquals(testMap.keySet().size(), result.keySet().size(), "Maps are a different size");
 
         for (String key : testMap.keySet()) {
             Integer expectedValue = testMap.get(key);
             Integer returnedValue = (Integer) result.get(key);
-            Assert.assertEquals("Bad value for key=" + key, expectedValue, returnedValue);
+            assertEquals(expectedValue, returnedValue, "Bad value for key=" + key);
         }
     }
 }

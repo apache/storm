@@ -19,7 +19,7 @@ package org.apache.storm.elasticsearch.bolt;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -44,7 +44,7 @@ public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercola
     }
 
     @BeforeEach
-    public void populateIndexWithTestData() throws Exception {
+    public void populateIndexWithTestData() {
         node.client().prepareIndex(index, ".percolator", documentId)
             .setSource("{\"query\":{\"match\":" + source + "}}")
             .setRefresh(true)
@@ -52,7 +52,7 @@ public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercola
     }
 
     @Test
-    public void testEsPercolateBolt() throws Exception {
+    public void testEsPercolateBolt() {
         Tuple tuple = EsTestUtil.generateTestTuple(source, index, type, null);
 
         bolt.execute(tuple);
@@ -65,7 +65,7 @@ public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercola
     }
 
     @Test
-    public void noDocumentsMatch() throws Exception {
+    public void noDocumentsMatch() {
         Tuple tuple = EsTestUtil.generateTestTuple("{\"user\":\"user2\"}", index, type, null);
 
         bolt.execute(tuple);
@@ -75,8 +75,7 @@ public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercola
     }
 
     @Test
-    public void indexMissing()
-            throws Exception {
+    public void indexMissing() {
         String index = "missing";
 
         Tuple tuple = EsTestUtil.generateTestTuple(source, index, type, null);

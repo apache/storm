@@ -32,10 +32,12 @@ import org.apache.storm.hdfs.trident.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.trident.rotation.FileSizeRotationPolicy;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -84,30 +86,29 @@ public class HdfsStateTest {
 
     private List<String> getLinesFromCurrentDataFile() throws IOException {
         Path dataFile = Paths.get(TEST_OUT_DIR, fileNameFormat.getCurrentFileName());
-        List<String> lines = Files.readAllLines(dataFile, Charset.defaultCharset());
-        return lines;
+        return Files.readAllLines(dataFile, Charset.defaultCharset());
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         FileUtils.deleteQuietly(new File(TEST_OUT_DIR));
     }
 
     @Test
-    public void testPrepare() throws Exception {
+    public void testPrepare() {
         HdfsState state = createHdfsState();
         Collection<File> files = FileUtils.listFiles(new File(TEST_OUT_DIR), null, false);
         File hdfsDataFile = Paths.get(TEST_OUT_DIR, FILE_NAME_PREFIX + "0").toFile();
-        Assert.assertTrue(files.contains(hdfsDataFile));
+        assertTrue(files.contains(hdfsDataFile));
     }
 
     @Test
-    public void testIndexFileCreation() throws Exception {
+    public void testIndexFileCreation() {
         HdfsState state = createHdfsState();
         state.beginCommit(1L);
         Collection<File> files = FileUtils.listFiles(new File(TEST_OUT_DIR), null, false);
         File hdfsIndexFile = Paths.get(TEST_OUT_DIR, INDEX_FILE_PREFIX + TEST_TOPOLOGY_NAME + ".0").toFile();
-        Assert.assertTrue(files.contains(hdfsIndexFile));
+        assertTrue(files.contains(hdfsIndexFile));
     }
 
     @Test
@@ -123,8 +124,8 @@ public class HdfsStateTest {
         for (int i = 0; i < tupleCount; i++) {
             expected.add("data");
         }
-        Assert.assertEquals(tupleCount, lines.size());
-        Assert.assertEquals(expected, lines);
+        assertEquals(tupleCount, lines.size());
+        assertEquals(expected, lines);
     }
 
     @Test
@@ -142,12 +143,12 @@ public class HdfsStateTest {
         state.close();
         // Ensure that the original batch1 is discarded and new one is persisted.
         List<String> lines = getLinesFromCurrentDataFile();
-        Assert.assertEquals(replayBatchSize, lines.size());
+        assertEquals(replayBatchSize, lines.size());
         List<String> expected = new ArrayList<>();
         for (int i = 0; i < replayBatchSize; i++) {
             expected.add("data");
         }
-        Assert.assertEquals(expected, lines);
+        assertEquals(expected, lines);
     }
 
     @Test
@@ -186,8 +187,8 @@ public class HdfsStateTest {
         int preReplayCount = batch1Count + batch2Count + batch3Count;
         int expectedTupleCount = batch1Count + batch2Count + batch3ReplayCount;
 
-        Assert.assertNotEquals(preReplayCount, lines.size());
-        Assert.assertEquals(expectedTupleCount, lines.size());
+        assertNotEquals(preReplayCount, lines.size());
+        assertEquals(expectedTupleCount, lines.size());
     }
 
     private static class TestFileNameFormat implements FileNameFormat {
@@ -200,7 +201,7 @@ public class HdfsStateTest {
 
         @Override
         public String getName(long rotation, long timeStamp) {
-            currentFileName = FILE_NAME_PREFIX + Long.toString(rotation);
+            currentFileName = FILE_NAME_PREFIX + rotation;
             return currentFileName;
         }
 

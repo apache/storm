@@ -100,8 +100,8 @@ public class StormMqttIntegrationTest implements Serializable {
             LOG.info("Payload: {}", new String(message.getPayload()));
             message.ack();
 
-            Assert.assertArrayEquals(message.getPayload(), RESULT_PAYLOAD.getBytes());
-            Assert.assertEquals(message.getTopic(), RESULT_TOPIC);
+            failassertArrayEquals(message.getPayload(), RESULT_PAYLOAD.getBytes());
+            failassertEquals(message.getTopic(), RESULT_TOPIC);
         }
     }
 
