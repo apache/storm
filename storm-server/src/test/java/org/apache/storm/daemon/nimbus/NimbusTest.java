@@ -88,4 +88,21 @@ public class NimbusTest {
 
         }
     }
+
+    @Test
+    public void validateNoTopoConfOverrides() {
+        StormTopology topology = new StormTopology();
+        topology.set_spouts(new HashMap<>());
+        topology.set_bolts(new HashMap<>());
+        topology.set_state_spouts(new HashMap<>());
+
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false);
+
+        conf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, "a");
+        Map<String, Object> topoConf = new HashMap<>();
+        topoConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, "b");
+        Map<String, Object> normalized = Nimbus.normalizeConf(conf, topoConf, topology);
+        Assert.assertNull(normalized.get(Config.STORM_WORKERS_ARTIFACTS_DIR));
+    }
 }
