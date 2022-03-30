@@ -1132,7 +1132,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      * @param topoConf initial topology conf
      * @param topology  the Storm topology
      */
-    private static Map<String, Object> normalizeConf(Map<String, Object> conf, Map<String, Object> topoConf, StormTopology topology) {
+    static Map<String, Object> normalizeConf(Map<String, Object> conf, Map<String, Object> topoConf, StormTopology topology) {
+
+        // clear any values from the topoConf that it should not be setting.
+        topoConf.remove(Config.STORM_WORKERS_ARTIFACTS_DIR);
+
         //ensure that serializations are same for all tasks no matter what's on
         // the supervisors. this also allows you to declare the serializations as a sequence
         List<Map<String, Object>> allConfs = new ArrayList<>();
