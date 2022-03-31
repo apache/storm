@@ -496,6 +496,9 @@ class UIHelpersTest {
 
         // has the expected effect when streamName begins with a non-alpha character
         assertEquals("_s_foo", UIHelpers.sanitizeStreamName("3foo"));
+
+        // handles empty string, though that's not an expected stream name
+        assertEquals("_s", UIHelpers.sanitizeStreamName(""));
     }
 
     /**
