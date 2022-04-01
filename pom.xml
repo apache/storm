@@ -335,7 +335,7 @@
         <solr.version>5.2.1</solr.version>
         <jpmml.version>1.0.22</jpmml.version>
         <jedis.version>2.9.0</jedis.version>
-        <activemq.version>5.15.8</activemq.version>
+        <activemq.version>5.15.15</activemq.version>
         <rocketmq.version>4.2.0</rocketmq.version>
 
         <jackson.version>2.10.0</jackson.version>
