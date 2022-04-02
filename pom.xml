@@ -44,14 +44,14 @@
             <subscribe>user-subscribe@storm.apache.org</subscribe>
             <unsubscribe>user-unsubscribe@storm.apache.org</unsubscribe>
             <post>user@storm.apache.org</post>
-            <archive>http://mail-archives.apache.org/mod_mbox/storm-user/</archive>
+            <archive>https://mail-archives.apache.org/mod_mbox/storm-user/</archive>
         </mailingList>
         <mailingList>
             <name>Storm developer mailing list</name>
             <subscribe>dev-subscribe@storm.apache.org</subscribe>
             <unsubscribe>dev-unsubscribe@storm.apache.org</unsubscribe>
             <post>dev@storm.apache.org</post>
-            <archive>http://mail-archives.apache.org/mod_mbox/storm-dev/</archive>
+            <archive>https://mail-archives.apache.org/mod_mbox/storm-dev/</archive>
         </mailingList>
     </mailingLists>
 
@@ -315,7 +315,7 @@
         <mockito.version>3.0.0</mockito.version>
         <zookeeper.version>3.5.9</zookeeper.version>
         <jline.version>0.9.94</jline.version>
-        <hive.version>2.3.9</hive.version>
+        <hive.version>2.3.4</hive.version>
         <hadoop.version>2.8.5</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
         <hbase.version>2.1.3</hbase.version>
