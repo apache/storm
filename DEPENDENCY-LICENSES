@@ -9,11 +9,11 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0
 
-        * ActiveMQ :: Broker (org.apache.activemq:activemq-broker:5.15.15 - http://activemq.apache.org/activemq-broker)
-        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.15.15 - http://activemq.apache.org/activemq-client)
-        * ActiveMQ :: KahaDB Store (org.apache.activemq:activemq-kahadb-store:5.15.15 - http://activemq.apache.org/activemq-kahadb-store)
-        * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.15.15 - http://activemq.apache.org/activemq-mqtt)
-        * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.15.15 - http://activemq.apache.org/activemq-openwire-legacy)
+        * ActiveMQ :: Broker (org.apache.activemq:activemq-broker:5.17.0 - http://activemq.apache.org/activemq-broker)
+        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.17.0 - http://activemq.apache.org/activemq-client)
+        * ActiveMQ :: KahaDB Store (org.apache.activemq:activemq-kahadb-store:5.17.0 - http://activemq.apache.org/activemq-kahadb-store)
+        * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.17.0 - http://activemq.apache.org/activemq-mqtt)
+        * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.17.0 - http://activemq.apache.org/activemq-openwire-legacy)
         * ActiveMQ Protocol Buffers Implementation and Compiler (org.apache.activemq.protobuf:activemq-protobuf:1.1 - http://activemq.apache.org/activemq-protobuf)
         * Aether :: API (org.sonatype.aether:aether-api:1.7 - http://aether.sonatype.org/aether-api/)
         * Aether :: Implementation (org.sonatype.aether:aether-impl:1.7 - http://aether.sonatype.org/aether-impl/)
@@ -49,7 +49,6 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.8.1 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Logging (commons-logging:commons-logging:1.2 - http://commons.apache.org/proper/commons-logging/)
         * Apache Commons Math (org.apache.commons:commons-math3:3.6.1 - http://commons.apache.org/proper/commons-math/)
-        * Apache Commons Net (commons-net:commons-net:3.8.0 - https://commons.apache.org/proper/commons-net/)
         * Apache Commons Pool (org.apache.commons:commons-pool2:2.4.2 - http://commons.apache.org/proper/commons-pool/)
         * Apache Commons Text (org.apache.commons:commons-text:1.2 - http://commons.apache.org/proper/commons-text/)
         * Apache Curator (org.apache.curator:apache-curator:2.7.1 - http://curator.apache.org)
@@ -612,9 +611,9 @@ List of third-party dependencies grouped by their license type.
     Common Development and Distribution License (CDDL) v1.1
 
         * Java Message Service (javax.jms:jms:1.1 - http://java.sun.com/products/jms)
-        * Java Transaction API (javax.transaction:jta:1.1 - http://java.sun.com/products/jta)
         * jsp-api (javax.servlet:jsp-api:2.0 - no url defined)
         * jsp-api (javax.servlet.jsp:jsp-api:2.1 - no url defined)
+        * jta (javax.transaction:jta:1.1 - no url defined)
         * servlet-api (javax.servlet:servlet-api:2.5 - no url defined)
         * transaction-api (javax.transaction:transaction-api:1.1 - no url defined)
 
