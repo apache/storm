@@ -338,7 +338,8 @@
         <activemq.version>5.15.15</activemq.version>
         <rocketmq.version>4.2.0</rocketmq.version>
 
-        <jackson.version>2.10.0</jackson.version>
+        <jackson.version>2.10.5</jackson.version>
+        <jackson.databind.version>2.10.5.1</jackson.databind.version>
         
         <storm.kafka.client.version>0.11.0.3</storm.kafka.client.version>
 
