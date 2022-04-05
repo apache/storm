@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -79,11 +79,7 @@ public class ConfigUtils {
     }
 
     public static Map<String, Object> maskPasswords(final Map<String, Object> conf) {
-        Maps.EntryTransformer<String, Object, Object> maskPasswords = new Maps.EntryTransformer<String, Object, Object>() {
-            public Object transformEntry(String key, Object value) {
-                return passwordConfigKeys.contains(key) ? "*****" : value;
-            }
-        };
+        Maps.EntryTransformer<String, Object, Object> maskPasswords = (key, value) -> passwordConfigKeys.contains(key) ? "*****" : value;
         return Maps.transformEntries(conf, maskPasswords);
     }
 
@@ -109,7 +105,7 @@ public class ConfigUtils {
      */
     public static Collection<String> readDirContents(String dir) {
         Collection<File> ret = readDirFiles(dir);
-        return ret.stream().map(car -> car.getName()).collect(Collectors.toList());
+        return ret.stream().map(File::getName).collect(Collectors.toList());
     }
 
     /**
@@ -122,9 +118,7 @@ public class ConfigUtils {
         Collection<File> ret = new HashSet<>();
         File[] files = new File(dir).listFiles();
         if (files != null) {
-            for (File f : files) {
-                ret.add(f);
-            }
+            ret.addAll(Arrays.asList(files));
         }
         return ret;
     }

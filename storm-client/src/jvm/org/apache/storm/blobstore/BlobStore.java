@@ -149,7 +149,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * Updates the blob data.
      *
      * @param key Key for the blob
-     * @param who Is the subject having the write privilege for the blob
+     * @param who Is the subject with write privilege for the blob
      * @return AtomicOutputStream returns a stream into which the data can be written
      */
     public abstract AtomicOutputStream updateBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
@@ -185,7 +185,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     public abstract ReadableBlobMeta getBlobMeta(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
 
     /**
-     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi.
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi).
      */
 
     public abstract void setLeaderElector(ILeaderElector leaderElector);
@@ -195,7 +195,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      *
      * @param key  Key for the blob
      * @param meta Metadata which contains the updated acls information
-     * @param who  Is the subject having the write privilege for the blob
+     * @param who  Is the subject with write privilege for the blob
      */
     public abstract void setBlobMeta(String key, SettableBlobMeta meta, Subject who) throws AuthorizationException, KeyNotFoundException;
 
@@ -217,7 +217,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     public abstract InputStreamWithMeta getBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
 
     /**
-     * Returns an iterator with all the list of keys currently available on the blob store.
+     * Returns an iterator with all the list of keys currently available in the blob store.
      *
      * @return {@code Iterator<String>}
      */
@@ -308,7 +308,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
 
     /**
      * Get IDs stored in blob store.
-     * @return a set of all of the topology ids with special data stored in the blob store.
+     * @return a set of all topology ids with special data stored in the blob store.
      */
     public Set<String> storedTopoIds() {
         return filterAndListKeys(TO_TOPO_ID);
@@ -324,7 +324,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
-     * Validates that the blob update time of the blobstore is up to date with the current existing blobs.
+     * Validates that the blob update time of the blobstore is up-to-date with the current existing blobs.
      *
      * @throws IOException on any error
      */

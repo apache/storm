@@ -116,10 +116,10 @@ public class Utils {
     private static final Set<Class<?>> defaultAllowedExceptions = Collections.emptySet();
     private static final List<String> LOCALHOST_ADDRESSES = Lists.newArrayList("localhost", "127.0.0.1", "0:0:0:0:0:0:0:1");
     static SerializationDelegate serializationDelegate;
-    private static ThreadLocal<TSerializer> threadSer = new ThreadLocal<TSerializer>();
-    private static ThreadLocal<TDeserializer> threadDes = new ThreadLocal<TDeserializer>();
+    private static final ThreadLocal<TSerializer> threadSer = new ThreadLocal<>();
+    private static final ThreadLocal<TDeserializer> threadDes = new ThreadLocal<>();
     private static ClassLoader cl = null;
-    private static Map<String, Object> localConf;
+    private static final Map<String, Object> localConf;
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
     private static Utils _instance = new Utils();
@@ -159,7 +159,7 @@ public class Utils {
     public static List<URL> findResources(String name) {
         try {
             Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(name);
-            List<URL> ret = new ArrayList<URL>();
+            List<URL> ret = new ArrayList<>();
             while (resources.hasMoreElements()) {
                 ret.add(resources.nextElement());
             }
@@ -176,8 +176,7 @@ public class Utils {
             in = getConfigFileInputStream(name);
             if (null != in) {
                 Yaml yaml = new Yaml(new SafeConstructor());
-                @SuppressWarnings("unchecked")
-                Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(in));
+                Map<String, Object> ret = yaml.load(new InputStreamReader(in));
                 if (null != ret) {
                     return new HashMap<>(ret);
                 } else {
@@ -218,7 +217,7 @@ public class Utils {
                 "Could not find config file, name not specified");
         }
 
-        HashSet<URL> resources = new HashSet<URL>(findResources(configFilePath));
+        HashSet<URL> resources = new HashSet<>(findResources(configFilePath));
         if (resources.isEmpty()) {
             File configFile = new File(configFilePath);
             if (configFile.exists()) {
@@ -385,41 +384,37 @@ public class Utils {
     public static SmartThread asyncLoop(final Callable afn, boolean isDaemon, final Thread.UncaughtExceptionHandler eh,
                                         int priority, final boolean isFactory, boolean startImmediately,
                                         String threadName) {
-        SmartThread thread = new SmartThread(new Runnable() {
-            public void run() {
-                try {
-                    final Callable<Long> fn = isFactory ? (Callable<Long>) afn.call() : afn;
-                    while (true) {
-                        if (Thread.interrupted()) {
-                            throw new InterruptedException();
-                        }
-                        final Long s = fn.call();
-                        if (s == null) { // then stop running it
-                            break;
-                        }
-                        if (s > 0) {
-                            Time.sleep(s);
-                        }
+        SmartThread thread = new SmartThread(() -> {
+            try {
+                final Callable<Long> fn = (Callable<Long>) (isFactory ? afn.call() : afn);
+                while (true) {
+                    if (Thread.interrupted()) {
+                        throw new InterruptedException();
                     }
-                } catch (Throwable t) {
-                    if (Utils.exceptionCauseIsInstanceOf(
-                        InterruptedException.class, t)) {
-                        LOG.info("Async loop interrupted!");
-                        return;
+                    final Long s = fn.call();
+                    if (s == null) { // then stop running it
+                        break;
                     }
-                    LOG.error("Async loop died!", t);
-                    throw new RuntimeException(t);
+                    if (s > 0) {
+                        Time.sleep(s);
+                    }
                 }
+            } catch (Throwable t) {
+                if (Utils.exceptionCauseIsInstanceOf(
+                    InterruptedException.class, t)) {
+                    LOG.info("Async loop interrupted!");
+                    return;
+                }
+                LOG.error("Async loop died!", t);
+                throw new RuntimeException(t);
             }
         });
         if (eh != null) {
             thread.setUncaughtExceptionHandler(eh);
         } else {
-            thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                public void uncaughtException(Thread t, Throwable e) {
-                    LOG.error("Async loop died!", e);
-                    Utils.exitProcess(1, "Async loop died!");
-                }
+            thread.setUncaughtExceptionHandler((t, e) -> {
+                LOG.error("Async loop died!", e);
+                Utils.exitProcess(1, "Async loop died!");
             });
         }
         thread.setDaemon(isDaemon);
@@ -540,7 +535,7 @@ public class Utils {
 
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
-            ObjectInputStream ois = null;
+            ObjectInputStream ois;
             if (null == Utils.cl) {
                 ois = new ObjectInputStream(bis);
             } else {
@@ -550,10 +545,8 @@ public class Utils {
             Object ret = ois.readObject();
             ois.close();
             return (T) ret;
-        } catch (IOException ioe) {
+        } catch (IOException | ClassNotFoundException ioe) {
             throw new RuntimeException(ioe);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -592,8 +585,8 @@ public class Utils {
     /**
      * Get the ACL for nimbus/supervisor.  The Super User ACL. This assumes that security is enabled.
      *
-     * @param conf the config to get the super User ACL from
-     * @return the super user ACL.
+     * @param conf the config to get the superuser ACL from
+     * @return the superuser ACL.
      */
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static ACL getSuperUserAcl(Map<String, Object> conf) {
@@ -671,7 +664,7 @@ public class Utils {
         handleUncaughtException(t, defaultAllowedExceptions, true);
     }
 
-    // Hadoop UserGroupInformation can launch an autorenewal thread that can cause a NullPointerException
+    // Hadoop UserGroupInformation can launch an auto-renewal thread that can cause a NullPointerException
     // for workers.  See STORM-3606 for an explanation.
     private static boolean isAllowedWorkerException(Throwable t) {
         if (t instanceof NullPointerException) {
@@ -756,14 +749,14 @@ public class Utils {
      * <p>Example usage in java:
      * <code>Map&lt;Integer, String&gt; tasks; Map&lt;String, List&lt;Integer&gt;&gt; componentTasks = Utils.reverse_map(tasks);</code>
      *
-     * <p>The order of he resulting list values depends on the ordering properties of the Map passed in. The caller is
+     * <p>The order of the resulting list values depends on the ordering properties of the Map passed in. The caller is
      * responsible for passing an ordered map if they expect the result to be consistently ordered as well.
      *
      * @param map to reverse
      * @return a reversed map
      */
     public static <K, V> HashMap<V, List<K>> reverseMap(Map<K, V> map) {
-        HashMap<V, List<K>> rtn = new HashMap<V, List<K>>();
+        HashMap<V, List<K>> rtn = new HashMap<>();
         if (map == null) {
             return rtn;
         }
@@ -772,7 +765,7 @@ public class Utils {
             V val = entry.getValue();
             List<K> list = rtn.get(val);
             if (list == null) {
-                list = new ArrayList<K>();
+                list = new ArrayList<>();
                 rtn.put(entry.getValue(), list);
             }
             list.add(key);
@@ -794,11 +787,7 @@ public class Utils {
         for (List<Object> listEntry : listSeq) {
             Object key = listEntry.get(0);
             Object val = listEntry.get(1);
-            List<Object> list = rtn.get(val);
-            if (list == null) {
-                list = new ArrayList<>();
-                rtn.put(val, list);
-            }
+            List<Object> list = rtn.computeIfAbsent(val, k -> new ArrayList<>());
             list.add(key);
         }
         return rtn;
@@ -862,18 +851,13 @@ public class Utils {
     }
 
     public static Runnable mkSuicideFn() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                exitProcess(1, "Worker died");
-            }
-        };
+        return () -> exitProcess(1, "Worker died");
     }
 
     public static void readAndLogStream(String prefix, InputStream in) {
         try {
             BufferedReader r = new BufferedReader(new InputStreamReader(in));
-            String line = null;
+            String line;
             while ((line = r.readLine()) != null) {
                 LOG.info("{}:{}", prefix, line);
             }
@@ -915,10 +899,8 @@ public class Utils {
     }
 
     public static List<Object> tuple(Object... values) {
-        List<Object> ret = new ArrayList<Object>();
-        for (Object v : values) {
-            ret.add(v);
-        }
+        List<Object> ret = new ArrayList<>();
+        Collections.addAll(ret, values);
         return ret;
     }
 
@@ -940,7 +922,7 @@ public class Utils {
             ByteArrayInputStream bis = new ByteArrayInputStream(data);
             GZIPInputStream in = new GZIPInputStream(bis);
             byte[] buffer = new byte[1024];
-            int len = 0;
+            int len;
             while ((len = in.read(buffer)) >= 0) {
                 bos.write(buffer, 0, len);
             }
@@ -953,8 +935,8 @@ public class Utils {
     }
 
     public static List<String> getRepeat(List<String> list) {
-        List<String> rtn = new ArrayList<String>();
-        Set<String> idSet = new HashSet<String>();
+        List<String> rtn = new ArrayList<>();
+        Set<String> idSet = new HashSet<>();
 
         for (String id : list) {
             if (idSet.contains(id)) {
@@ -987,7 +969,7 @@ public class Utils {
     /**
      * A cheap way to deterministically convert a number to a positive value. When the input is positive, the original value is returned.
      * When the input number is negative, the returned positive value is the original value bit AND against Integer.MAX_VALUE(0x7fffffff)
-     * which is not its absolutely value.
+     * which is not its absolute value.
      *
      * @param number a given number
      * @return a positive number.
@@ -1022,8 +1004,8 @@ public class Utils {
     }
 
     /**
-     * Creates a new map with a string value in the map replaced with an equivalently-lengthed string of '#'.  (If the object is not a
-     * string to string will be called on it and replaced)
+     * Creates a new map with a string value in the map replaced with an equally long string of '#'.  (If the object is not a
+     * string toString() will be called on it and replaced)
      *
      * @param m   The map that a value will be redacted from
      * @param key The key pointing to the value to be redacted
@@ -1101,7 +1083,7 @@ public class Utils {
                         default:
                             unit = 1;
                     }
-                    Double result = value * unit / 1024.0 / 1024.0;
+                    double result = value * unit / 1024.0 / 1024.0;
                     return (result < 1.0) ? 1.0 : result;
                 }
             }
@@ -1112,7 +1094,7 @@ public class Utils {
     }
 
     public static ClientBlobStore getClientBlobStore(Map<String, Object> conf) {
-        ClientBlobStore store = (ClientBlobStore) ReflectionUtils.newInstance((String) conf.get(Config.CLIENT_BLOBSTORE));
+        ClientBlobStore store = ReflectionUtils.newInstance((String) conf.get(Config.CLIENT_BLOBSTORE));
         store.prepare(conf);
         return store;
     }
@@ -1142,9 +1124,7 @@ public class Utils {
             return new HashMap<>();
         }
         Map<String, Object> ret = new HashMap<>(conf);
-        for (Map.Entry<String, Object> entry : ret.entrySet()) {
-            ret.put(entry.getKey(), normalizeConfValue(entry.getValue()));
-        }
+        ret.replaceAll((k, v) -> normalizeConfValue(v));
         return ret;
     }
 
@@ -1378,7 +1358,7 @@ public class Utils {
         int base = sum / numPieces;
         int numInc = sum % numPieces;
         int numBases = numPieces - numInc;
-        TreeMap<Integer, Integer> ret = new TreeMap<Integer, Integer>();
+        TreeMap<Integer, Integer> ret = new TreeMap<>();
         ret.put(base, numBases);
         if (numInc != 0) {
             ret.put(base + 1, numInc);
@@ -1406,8 +1386,8 @@ public class Utils {
         Map<Integer, Integer> parts = integerDivided(coll.size(), maxNumChunks);
 
         // Keys sorted in descending order
-        List<Integer> sortedKeys = new ArrayList<Integer>(parts.keySet());
-        Collections.sort(sortedKeys, Collections.reverseOrder());
+        List<Integer> sortedKeys = new ArrayList<>(parts.keySet());
+        sortedKeys.sort(Collections.reverseOrder());
 
 
         Iterator<T> it = coll.iterator();
@@ -1664,17 +1644,16 @@ public class Utils {
                 }
                 return defaultValue;
             }
-            LOG.warn("Could not find a higer compatible version for {} {}, using {} instead", what, desiredVersion, ret.getKey());
+            LOG.warn("Could not find a higher compatible version for {} {}, using {} instead", what, desiredVersion, ret.getKey());
         }
         return ret.getValue();
     }
 
-    @SuppressWarnings("unchecked")
     private static Map<String, Object> readConfIgnoreNotFound(Yaml yaml, File f) throws IOException {
         Map<String, Object> ret = null;
         if (f.exists()) {
             try (FileReader fr = new FileReader(f)) {
-                ret = (Map<String, Object>) yaml.load(fr);
+                ret = yaml.load(fr);
             }
         }
         return ret;
@@ -1850,7 +1829,7 @@ public class Utils {
     }
 
     public static class UptimeComputer {
-        int startTime = 0;
+        final int startTime;
 
         public UptimeComputer() {
             startTime = Time.currentTimeSecs();
@@ -1862,10 +1841,10 @@ public class Utils {
     }
 
     private static class JarConfigReader {
-        private Yaml yaml;
+        private final Yaml yaml;
         private Map<String, Object> defaultsConf;
         private Map<String, Object> stormConf;
-        private File file;
+        private final File file;
 
         JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, File file) {
             this.yaml = yaml;
@@ -1903,13 +1882,13 @@ public class Utils {
                 if (!entry.isDirectory()) {
                     if (defaultsConf == null && entry.getName().equals("defaults.yaml")) {
                         try (InputStreamReader isr = new InputStreamReader(zipFile.getInputStream(entry))) {
-                            defaultsConf = (Map<String, Object>) yaml.load(isr);
+                            defaultsConf = yaml.load(isr);
                         }
                     }
 
                     if (stormConf == null && entry.getName().equals("storm.yaml")) {
                         try (InputStreamReader isr = new InputStreamReader(zipFile.getInputStream(entry))) {
-                            stormConf = (Map<String, Object>) yaml.load(isr);
+                            stormConf = yaml.load(isr);
                         }
                     }
                 }
@@ -1918,7 +1897,7 @@ public class Utils {
     }
 
     /**
-     * Create a map of forward edges for bolts in a topology. Note that spouts can be source but not a target in
+     * Create a map of forward edges for bolts in a topology. Note that spouts can be a source but not a target in
      * the edge. The mapping contains ids of spouts and bolts.
      *
      * @param topology StormTopology to examine.
@@ -1928,11 +1907,10 @@ public class Utils {
         Map<String, Set<String>> edgesOut = new HashMap<>();
 
         if (topology.get_bolts() != null) {
-            topology.get_bolts().entrySet().forEach(entry -> {
-                if (!Utils.isSystemId(entry.getKey())) {
-                    entry.getValue().get_common().get_inputs().forEach((k, v) -> {
-                        edgesOut.computeIfAbsent(k.get_componentId(), x -> new HashSet<>()).add(entry.getKey());
-                    });
+            topology.get_bolts().forEach((key, value) -> {
+                if (!Utils.isSystemId(key)) {
+                    value.get_common().get_inputs().forEach(
+                        (k, v) -> edgesOut.computeIfAbsent(k.get_componentId(), x -> new HashSet<>()).add(key));
                 }
             });
         }

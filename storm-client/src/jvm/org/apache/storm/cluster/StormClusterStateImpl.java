@@ -530,7 +530,7 @@ public class StormClusterStateImpl implements IStormClusterState {
      * @param stormId   The topology Id
      * @param timeoutMs How long until the backpressure znode is invalid.
      * @param callback  The callback function
-     * @return True is backpressure/storm-id dir is not empty and at least one of the backpressure znodes has not timed out; false otherwise.
+     * @return True only when backpressure/storm-id dir is not empty and at least one of the backpressure znodes has not timed out.
      */
     @Override
     public boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback) {

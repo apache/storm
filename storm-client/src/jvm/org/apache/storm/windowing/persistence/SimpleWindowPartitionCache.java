@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -180,16 +180,19 @@ public class SimpleWindowPartitionCache<K, V> implements WindowPartitionCache<K,
         private long maximumSize;
         private RemovalListener<K, V> removalListener;
 
+        @Override
         public SimpleWindowPartitionCacheBuilder<K, V> maximumSize(long size) {
             maximumSize = size;
             return this;
         }
 
+        @Override
         public SimpleWindowPartitionCacheBuilder<K, V> removalListener(RemovalListener<K, V> listener) {
             removalListener = listener;
             return this;
         }
 
+        @Override
         public SimpleWindowPartitionCache<K, V> build(CacheLoader<K, V> loader) {
             return new SimpleWindowPartitionCache<>(maximumSize, removalListener, loader);
         }

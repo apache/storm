@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -23,11 +23,8 @@ import java.io.InputStream;
 import java.util.Map;
 
 import javax.security.auth.Subject;
-import javax.security.auth.login.LoginContext;
 
 import org.apache.storm.Config;
-import org.apache.storm.blobstore.BlobStore;
-import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
@@ -47,9 +44,8 @@ public class MigrateBlobs {
         }
     }
     
-    protected static void copyBlobStoreKeys(BlobStore bsFrom,
-            Subject whoFrom,
-            BlobStore bsTo, Subject whoTo) throws AuthorizationException,
+    protected static void copyBlobStoreKeys(BlobStore bsFrom, Subject whoFrom, BlobStore bsTo, Subject whoTo)
+        throws AuthorizationException,
             KeyAlreadyExistsException,
             IOException,
             KeyNotFoundException {
@@ -63,13 +59,12 @@ public class MigrateBlobs {
             System.out.println("DONE CREATING BLOB " + key);
         }
     }
-    
-    
+
     public static void main(String[] args) throws Exception {
         Map<String, Object> hdfsConf = Utils.readStormConfig();
         
         if (args.length < 2) {
-            System.out.println("Need at least 2 arguments, but have " + Integer.toString(args.length));
+            System.out.println("Need at least 2 arguments, but have " + args.length);
             System.out.println("migrate <local_blobstore_dir> <hdfs_blobstore_path> <hdfs_principal> <keytab>");
             System.out.println("Migrates blobs from LocalFsBlobStore to HdfsBlobStore");
             System.out.println("Example: migrate '/srv/storm' "
@@ -104,8 +99,7 @@ public class MigrateBlobs {
         
         HdfsBlobStore hdfsBlobStore = new HdfsBlobStore();
         hdfsBlobStore.prepare(hdfsConf, null, null, null);
-        
-        
+
         /* LOOK AT LOCAL BLOBSTORE */
         System.out.println("Listing local blobstore keys.");
         MigratorMain.listBlobStoreKeys(lfsBlobStore, null);

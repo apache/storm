@@ -56,10 +56,10 @@ public class FluxParser {
      *
      * @param inputFile       source YAML file
      * @param dumpYaml        if true, dump the parsed YAML to stdout
-     * @param processIncludes whether or not to process includes
+     * @param processIncludes whether to process includes
      * @param properties      properties file for variable substitution
-     * @param envSub          whether or not to perform environment variable substitution
-     * @return resulting topologuy definition
+     * @param envSub          whether to perform environment variable substitution
+     * @return resulting topology definition
      * @throws IOException if there is a problem reading file(s)
      */
     public static TopologyDef parseFile(String inputFile, boolean dumpYaml, boolean processIncludes,
@@ -72,14 +72,14 @@ public class FluxParser {
     }
 
     /**
-     * Parse a flux topology definition from a classpath resource..
+     * Parse a flux topology definition from a classpath resource.
      *
      * @param resource        YAML resource
      * @param dumpYaml        if true, dump the parsed YAML to stdout
-     * @param processIncludes whether or not to process includes
+     * @param processIncludes whether to process includes
      * @param properties      properties file for variable substitution
-     * @param envSub          whether or not to perform environment variable substitution
-     * @return resulting topologuy definition
+     * @param envSub          whether to perform environment variable substitution
+     * @return resulting topology definition
      * @throws IOException if there is a problem reading file(s)
      */
     public static TopologyDef parseResource(String resource, boolean dumpYaml, boolean processIncludes,
@@ -96,9 +96,9 @@ public class FluxParser {
      *
      * @param inputStream     InputStream representation of YAML file
      * @param dumpYaml        if true, dump the parsed YAML to stdout
-     * @param processIncludes whether or not to process includes
+     * @param processIncludes whether to process includes
      * @param properties      properties file for variable substitution
-     * @param envSub          whether or not to perform environment variable substitution
+     * @param envSub          whether to perform environment variable substitution
      * @return resulting topology definition
      * @throws IOException if there is a problem reading file(s)
      */
@@ -118,7 +118,7 @@ public class FluxParser {
         }
 
         if (processIncludes) {
-            return processIncludes(yaml, topology, properties, envSub);
+            return processIncludes(topology, properties, envSub);
         } else {
             return topology;
         }
@@ -128,7 +128,7 @@ public class FluxParser {
      * Parse filter properties file.
      *
      * @param propertiesFile properties file for variable substitution
-     * @param resource       whether or not to load properties file from classpath
+     * @param resource       whether to load properties file from classpath
      * @return resulting filter properties
      * @throws IOException if there is a problem reading file
      */
@@ -137,7 +137,7 @@ public class FluxParser {
 
         if (propertiesFile != null) {
             properties = new Properties();
-            InputStream in = null;
+            InputStream in;
             if (resource) {
                 in = FluxParser.class.getResourceAsStream(propertiesFile);
             } else {
@@ -165,7 +165,7 @@ public class FluxParser {
                         : line;
             }).collect(Collectors.joining(System.lineSeparator()));
 
-            return (TopologyDef) yaml.load(conf);
+            return yaml.load(conf);
         }
     }
 
@@ -203,25 +203,23 @@ public class FluxParser {
         Constructor constructor = new Constructor(TopologyDef.class);
         constructor.addTypeDescription(topologyDescription);
 
-        Yaml yaml = new Yaml(constructor);
-        return yaml;
+        return new Yaml(constructor);
     }
 
     /**
      * Process includes contained within a yaml file.
      *
-     * @param yaml        the yaml parser for parsing the include file(s)
      * @param topologyDef the topology definition containing (possibly zero) includes
      * @param properties  properties file for variable substitution
-     * @param envSub      whether or not to perform environment variable substitution
+     * @param envSub      whether to perform environment variable substitution
      * @return The TopologyDef with includes resolved.
      */
-    private static TopologyDef processIncludes(Yaml yaml, TopologyDef topologyDef, Properties properties, boolean envSub)
+    private static TopologyDef processIncludes(TopologyDef topologyDef, Properties properties, boolean envSub)
             throws IOException {
         //TODO support multiple levels of includes
         if (topologyDef.getIncludes() != null) {
             for (IncludeDef include : topologyDef.getIncludes()) {
-                TopologyDef includeTopologyDef = null;
+                TopologyDef includeTopologyDef;
                 if (include.isResource()) {
                     LOG.info("Loading includes from resource: {}", include.getFile());
                     includeTopologyDef = parseResource(include.getFile(), true, false, properties, envSub);

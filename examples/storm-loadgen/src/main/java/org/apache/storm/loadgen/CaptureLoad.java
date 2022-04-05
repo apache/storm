@@ -271,7 +271,8 @@ public class CaptureLoad {
         return new TopologyLoadConf(topologyName, savedTopoConf, spouts, bolts, streams);
     }
 
-    private static void addCpuMemToBuilders(Map<String, LoadCompConf.Builder> boltBuilders, Map<String, Map<String, Double>> boltResources) {
+    private static void addCpuMemToBuilders(Map<String, LoadCompConf.Builder> boltBuilders,
+                                            Map<String, Map<String, Double>> boltResources) {
         for (Map.Entry<String, Map<String, Double>> entry: boltResources.entrySet()) {
             LoadCompConf.Builder bd = boltBuilders.get(entry.getKey());
             if (bd != null) {

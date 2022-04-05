@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -70,7 +70,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
      */
     private boolean fireAndForget = false;
     /**
-     * {@see KafkaBolt#setAsync(boolean)} for more details on this. 
+     * {@see KafkaBolt#setAsync(boolean)} for more details on this.
      */
     private boolean async = true;
 
@@ -116,7 +116,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
         //for backward compatibility.
         if (mapper == null) {
             LOG.info("Mapper not specified. Setting default mapper to {}", FieldNameBasedTupleToKafkaMapper.class.getSimpleName());
-            this.mapper = new FieldNameBasedTupleToKafkaMapper<K, V>();
+            this.mapper = new FieldNameBasedTupleToKafkaMapper<>();
         }
 
         //for backward compatibility.
@@ -169,9 +169,9 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
     @Override
     protected void process(final Tuple input) {
-        K key = null;
-        V message = null;
-        String topic = null;
+        K key;
+        V message;
+        String topic;
         try {
             key = mapper.getKeyFromTuple(input);
             message = mapper.getMessageFromTuple(input);
@@ -238,10 +238,10 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
     @Override
     public String toString() {
-        return "KafkaBolt: {mapper: " + mapper 
+        return "KafkaBolt: {mapper: " + mapper
             + " topicSelector: " + topicSelector
-            + " fireAndForget: " + fireAndForget 
-            + " async: " + async 
-            + " proerties: " + boltSpecifiedProperties;
+            + " fireAndForget: " + fireAndForget
+            + " async: " + async
+            + " properties: " + boltSpecifiedProperties;
     }
 }

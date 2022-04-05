@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
  * See the NOTICE file distributed with this work for additional information regarding copyright ownership.
  * The ASF licenses this file to you under the Apache License, Version 2.0 (the "License");
@@ -75,14 +75,13 @@ import org.slf4j.LoggerFactory;
  * 2. The USER sets the ACLs, and the blob access is validated against these ACLs.
  * 3. The SUPERVISOR interacts with nimbus through the NimbusBlobStore Client API to download the blobs.
  * The supervisors principal should match the set of users configured into SUPERVISOR_ADMINS.
- * Here, the PrincipalToLocalPlugin takes care of mapping the principal to user name before the ACL validation.
+ * Here, the PrincipalToLocalPlugin takes care of mapping the principal to username before the ACL validation.
  */
 public class LocalFsBlobStore extends BlobStore {
     public static final Logger LOG = LoggerFactory.getLogger(LocalFsBlobStore.class);
     private static final String DATA_PREFIX = "data_";
     private static final String META_PREFIX = "meta_";
     private static final String BLOBSTORE_SUBTREE = "/blobstore/";
-    private final int allPermissions = READ | WRITE | ADMIN;
     protected BlobStoreAclHandler aclHandler;
     private NimbusInfo nimbusInfo;
     private FileBlobStoreImpl fbs;
@@ -208,6 +207,7 @@ public class LocalFsBlobStore extends BlobStore {
         KeyAlreadyExistsException {
         LOG.debug("Creating Blob for key {}", key);
         validateKey(key);
+        int allPermissions = READ | WRITE | ADMIN;
         aclHandler.normalizeSettableBlobMeta(key, meta, who, allPermissions);
         BlobStoreAclHandler.validateSettableACLs(key, meta.get_acl());
         aclHandler.hasPermissions(meta.get_acl(), allPermissions, who, key);
@@ -222,9 +222,7 @@ public class LocalFsBlobStore extends BlobStore {
             outputStream = null;
             this.stormClusterState.setupBlob(key, this.nimbusInfo, getVersionForKey(key, this.nimbusInfo, zkClient));
             return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX + key, true));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (KeyNotFoundException e) {
+        } catch (IOException | KeyNotFoundException e) {
             throw new RuntimeException(e);
         } finally {
             if (outputStream != null) {
@@ -299,7 +297,7 @@ public class LocalFsBlobStore extends BlobStore {
     }
 
     /**
-     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi.
+     * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi).
      */
     @Override
     public void setLeaderElector(ILeaderElector leaderElector) {
@@ -412,7 +410,7 @@ public class LocalFsBlobStore extends BlobStore {
             zkClient.close();
         }
         if (timer != null) {
-            timer.cancel();;
+            timer.cancel();
         }
         stormClusterState.disconnect();
     }
@@ -436,9 +434,10 @@ public class LocalFsBlobStore extends BlobStore {
     }
 
     @Override
-    public int updateBlobReplication(String key, int replication, Subject who) throws AuthorizationException, KeyNotFoundException {
-        throw new UnsupportedOperationException("For local file system blob store the update blobs function does not work. "
-                                                + "Please use HDFS blob store to make this feature available.");
+    public int updateBlobReplication(String key, int replication, Subject who) {
+        throw new UnsupportedOperationException(
+            "For local file system blob store the update blobs function does not work. "
+                + "Please use HDFS blob store to make this feature available.");
     }
 
     //This additional check and download is for nimbus high availability in case you have more than one nimbus

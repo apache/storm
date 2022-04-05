@@ -52,7 +52,7 @@ public class SerializationFactory {
     public static final ServiceLoader<SerializationRegister> loader = ServiceLoader.load(SerializationRegister.class);
 
     public static Kryo getKryo(Map<String, Object> conf) {
-        IKryoFactory kryoFactory = (IKryoFactory) ReflectionUtils.newInstance((String) conf.get(Config.TOPOLOGY_KRYO_FACTORY));
+        IKryoFactory kryoFactory = ReflectionUtils.newInstance((String) conf.get(Config.TOPOLOGY_KRYO_FACTORY));
         Kryo k = kryoFactory.getKryo(conf);
         k.register(byte[].class);
 
@@ -108,9 +108,7 @@ public class SerializationFactory {
                     } else {
                         throw new RuntimeException(e);
                     }
-                } catch (InstantiationException e) {
-                    throw new RuntimeException(e);
-                } catch (IllegalAccessException e) {
+                } catch (InstantiationException | IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -231,7 +229,7 @@ public class SerializationFactory {
          * <p>Note: Only one key wins if there are duplicate values. Which key wins is indeterminate: "{:a 1  :b 1} -> {1 :a} *or* {1 :b}"
          */
         private static <K, V> Map<V, K> simpleReverseMap(Map<K, V> map) {
-            Map<V, K> ret = new HashMap<V, K>();
+            Map<V, K> ret = new HashMap<>();
             for (Map.Entry<K, V> entry : map.entrySet()) {
                 ret.put(entry.getValue(), entry.getKey());
             }

@@ -587,6 +587,7 @@ public class NodeSorter implements INodeSorter {
      *
      * @return a sorted list of racks
      */
+    @Override
     public List<ObjectResourcesItem> getSortedRacks() {
 
         final ObjectResourcesSummary clusterResourcesSummary = createClusterSummarizedResources();

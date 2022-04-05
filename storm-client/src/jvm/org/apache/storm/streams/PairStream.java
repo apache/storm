@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -168,6 +168,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public PairStream<K, V> filter(Predicate<? super Pair<K, V>> predicate) {
         return toPairStream(super.filter(predicate));
     }
@@ -534,7 +535,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
 
         @Override
         public ArrayList<V> merge(ArrayList<V> accum1, ArrayList<V> accum2) {
-            ArrayList<V> res = new ArrayList<V>();
+            ArrayList<V> res = new ArrayList<>();
             res.addAll(accum1);
             res.addAll(accum2);
             return res;

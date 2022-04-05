@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,6 +20,7 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,7 +73,7 @@ public class TestConstraintSolverStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestConstraintSolverStrategy.class);
     private static final int MAX_TRAVERSAL_DEPTH = 2000;
     private static final int NORMAL_BOLT_PARALLEL = 11;
-    //Dropping the parallelism of the bolts to 3 instead of 11 so we can find a solution in a reasonable amount of work when backtracking.
+    //Dropping the parallelism of the bolts to 3 instead of 11, so we can find a solution in a reasonable amount of work when backtracking.
     private static final int BACKTRACK_BOLT_PARALLEL = 3;
     private static final int CO_LOCATION_CNT = 2;
 
@@ -182,7 +183,7 @@ public class TestConstraintSolverStrategy {
                             e.getKey()));
                 }
             }
-            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, new ArrayList(spreads.keySet()));
+            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, new ArrayList<>(spreads.keySet()));
         }
     }
 
@@ -296,9 +297,9 @@ public class TestConstraintSolverStrategy {
             Map<String, Object> conf = new HashMap<>();
             conf.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
             new ConstraintSolverConfig("test-topoid-2", conf, new HashSet<>());
-            new ConstraintSolverConfig("test-topoid-3", conf, new HashSet<>(Arrays.asList("comp-x")));
-            new ConstraintSolverConfig("test-topoid-4", conf, new HashSet<>(Arrays.asList("comp-1")));
-            new ConstraintSolverConfig("test-topoid-5", conf, new HashSet<>(Arrays.asList("comp-1, comp-x")));
+            new ConstraintSolverConfig("test-topoid-3", conf, new HashSet<>(Collections.singletonList("comp-x")));
+            new ConstraintSolverConfig("test-topoid-4", conf, new HashSet<>(Collections.singletonList("comp-1")));
+            new ConstraintSolverConfig("test-topoid-5", conf, new HashSet<>(Collections.singletonList("comp-1, comp-x")));
         }
     }
 
@@ -321,16 +322,12 @@ public class TestConstraintSolverStrategy {
         Object jsonValue = JSONValue.parse(s);
         Map<String, Object> config = Utils.readDefaultConfig();
         config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
-        Set<String> allComps = new HashSet<>();
-        allComps.addAll(Arrays.asList("comp-1", "comp-2", "comp-3", "comp-4", "comp-5"));
+        Set<String> allComps = new HashSet<>(Arrays.asList("comp-1", "comp-2", "comp-3", "comp-4", "comp-5"));
         ConstraintSolverConfig constraintSolverConfig = new ConstraintSolverConfig("test-topoid-1", config, allComps);
 
-        Set<String> expectedSetComp1 = new HashSet<>();
-        expectedSetComp1.addAll(Arrays.asList("comp-2", "comp-3"));
-        Set<String> expectedSetComp2 = new HashSet<>();
-        expectedSetComp2.addAll(Arrays.asList("comp-1", "comp-4"));
-        Set<String> expectedSetComp3 = new HashSet<>();
-        expectedSetComp3.addAll(Arrays.asList("comp-1", "comp-5"));
+        Set<String> expectedSetComp1 = new HashSet<>(Arrays.asList("comp-2", "comp-3"));
+        Set<String> expectedSetComp2 = new HashSet<>(Arrays.asList("comp-1", "comp-4"));
+        Set<String> expectedSetComp3 = new HashSet<>(Arrays.asList("comp-1", "comp-5"));
         Assert.assertEquals("comp-1 incompatible components", expectedSetComp1, constraintSolverConfig.getIncompatibleComponentSets().get("comp-1"));
         Assert.assertEquals("comp-2 incompatible components", expectedSetComp2, constraintSolverConfig.getIncompatibleComponentSets().get("comp-2"));
         Assert.assertEquals("comp-3 incompatible components", expectedSetComp3, constraintSolverConfig.getIncompatibleComponentSets().get("comp-3"));
@@ -352,6 +349,7 @@ public class TestConstraintSolverStrategy {
         }
 
         ConstraintSolverStrategy cs = new ConstraintSolverStrategy() {
+            @Override
             protected void prepareForScheduling(Cluster cluster, TopologyDetails topologyDetails) {
                 super.prepareForScheduling(cluster, topologyDetails);
 
@@ -510,7 +508,7 @@ public class TestConstraintSolverStrategy {
         addConstraints("bolt-1", "bolt-1", constraints);
         addConstraints("bolt-1", "bolt-2", constraints);
 
-        Map<String, Integer> spreads = new HashMap<String, Integer>();
+        Map<String, Integer> spreads = new HashMap<>();
         spreads.put("spout-0", 1);
         spreads.put("bolt-1", 10);
 
@@ -569,7 +567,7 @@ public class TestConstraintSolverStrategy {
         Cluster cluster = makeCluster(new Topologies(topo));
         cs.schedule(cluster, topo);
         LOG.info("********************* Scheduling Zero Unassigned Executors *********************");
-        cs.schedule(cluster, topo); // reschedule a fully schedule topology
+        cs.schedule(cluster, topo); // reschedule a fully scheduled topology
         LOG.info("********************* End of Scheduling Zero Unassigned Executors *********************");
     }
 

@@ -185,7 +185,7 @@ public class NodeSorterHostProximity implements INodeSorter {
      * <li>
      *     The tie between two nodes with same resource availability is broken by using the node with lower minimum
      *     percentage used. This comparison was used in {@link #sortObjectResourcesDefault(ObjectResourcesSummary, ExistingScheduleFunc)}
-     *     but here it is made subservient to modified resource availbility used in
+     *     but here it is made subservient to modified resource availability used in
      *     {@link #sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
      *
      * </li>
@@ -384,7 +384,7 @@ public class NodeSorterHostProximity implements INodeSorter {
      * <p>2) the subordinate/subservient resource availability percentage of a node in descending
      * order We calculate the resource availability percentage by dividing the resource availability that have exhausted or little of one of
      * the resources mentioned above will be ranked after on the node by the resource availability of the entire rack By doing this
-     * calculation, nodes nodes that have more balanced resource availability. So we will be less likely to pick a node that have a lot of
+     * calculation, nodes that have more balanced resource availability. So we will be less likely to pick a node that have a lot of
      * one resource but a low amount of another.
      *
      * @param availHosts a collection of all the hosts we want to sort
@@ -431,7 +431,7 @@ public class NodeSorterHostProximity implements INodeSorter {
      * <p>2) the subordinate/subservient resource availability percentage of a node in descending
      * order We calculate the resource availability percentage by dividing the resource availability that have exhausted or little of one of
      * the resources mentioned above will be ranked after on the node by the resource availability of the entire rack By doing this
-     * calculation, nodes nodes that have more balanced resource availability. So we will be less likely to pick a node that have a lot of
+     * calculation, nodes that have more balanced resource availability. So we will be less likely to pick a node that have a lot of
      * one resource but a low amount of another.
      *
      * @param availRasNodes a list of all the nodes we want to sort
@@ -640,7 +640,7 @@ public class NodeSorterHostProximity implements INodeSorter {
             clusterResourcesSummary.getAvailableResourcesOverall(),
             clusterResourcesSummary.getTotalResourcesOverall(),
             clusterResourcesSummary.getObjectResources().size(),
-            rackIdToHosts.values().stream().mapToInt(x -> x.size()).sum());
+            rackIdToHosts.values().stream().mapToInt(Set::size).sum());
         return clusterResourcesSummary;
     }
 
@@ -674,6 +674,7 @@ public class NodeSorterHostProximity implements INodeSorter {
      *
      * @return an iterable of sorted racks
      */
+    @Override
     public Iterable<ObjectResourcesItem> getSortedRacks() {
 
         final ObjectResourcesSummary clusterResourcesSummary = createClusterSummarizedResources();
@@ -702,7 +703,7 @@ public class NodeSorterHostProximity implements INodeSorter {
     }
 
     /**
-     * interface for calculating the number of existing executors scheduled on a object (rack or node).
+     * interface for calculating the number of existing executors scheduled on an object (rack or node).
      */
     public interface ExistingScheduleFunc {
         int getNumExistingSchedule(String objectId);

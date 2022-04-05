@@ -44,7 +44,8 @@ public class JCQueuePerfTest {
     //private static void ackingProducerSimulation() {
     //    WaitStrategyPark ws = new WaitStrategyPark(100);
     //    StormMetricRegistry registry = new StormMetricRegistry();
-    //    JCQueue spoutQ = new JCQueue("spoutQ", "spoutQ", 1024, 0, 100, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
+    //    JCQueue spoutQ = new JCQueue("spoutQ", "spoutQ", 1024, 0, 100, ws, "test", "test",
+    //        Collections.singletonList(1000), 1000, registry);
     //    JCQueue ackQ = new JCQueue("ackQ", "ackQ", 1024, 0, 100, ws, "test", "test", Collections.singletonList(1000), 1000, registry);
     //
     //    final AckingProducer ackingProducer = new AckingProducer(spoutQ, ackQ);

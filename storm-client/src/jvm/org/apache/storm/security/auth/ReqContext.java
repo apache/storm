@@ -92,7 +92,7 @@ public class ReqContext {
                 + ", reqId=" + reqId
                 + ", remoteAddr=" + remoteAddr
                 + ", authZPrincipal=" + ((principal() != null) ? principal().getName() : "null")
-                + ", ThreadId=" + Thread.currentThread().toString()
+                + ", ThreadId=" + Thread.currentThread()
                 + '}';
     }
 

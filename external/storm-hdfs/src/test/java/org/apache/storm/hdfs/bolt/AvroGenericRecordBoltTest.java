@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -68,10 +68,9 @@ public class AvroGenericRecordBoltTest {
                                            + "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"},"
                                            + "{ \"name\":\"bar\", \"type\":\"string\", \"default\":\"baz\" },"
                                            + "{ \"name\":\"int1\", \"type\":\"int\" }]}";
-    private static Schema schema1;
-    private static Schema schema2;
     private static Tuple tuple1;
     private static Tuple tuple2;
+
     @Rule
     public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule(() -> {
         Configuration conf = new Configuration();
@@ -92,10 +91,10 @@ public class AvroGenericRecordBoltTest {
     @BeforeClass
     public static void setupClass() {
         Schema.Parser parser = new Schema.Parser();
-        schema1 = parser.parse(schemaV1);
+        Schema schema1 = parser.parse(schemaV1);
 
         parser = new Schema.Parser();
-        schema2 = parser.parse(schemaV2);
+        Schema schema2 = parser.parse(schemaV2);
 
         GenericRecordBuilder builder1 = new GenericRecordBuilder(schema1);
         builder1.set("foo1", "bar1");
@@ -110,8 +109,8 @@ public class AvroGenericRecordBoltTest {
 
     private static Tuple generateTestTuple(GenericRecord record) {
         TopologyBuilder builder = new TopologyBuilder();
-        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(),
-                                                                            new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(), new Config(),
+            new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
                 return new Fields("record");

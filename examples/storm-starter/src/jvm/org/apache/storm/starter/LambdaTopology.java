@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -12,7 +12,6 @@
 
 package org.apache.storm.starter;
 
-import java.io.Serializable;
 import java.util.UUID;
 import org.apache.storm.Config;
 import org.apache.storm.topology.ConfigurableTopology;
@@ -42,10 +41,10 @@ public class LambdaTopology extends ConfigurableTopology {
 
         builder.setSpout("spout1", () -> UUID.randomUUID().toString());
         builder.setBolt("bolt1", (tuple, collector) -> {
-            String[] parts = tuple.getStringByField("lambda").split("\\-");
+            String[] parts = tuple.getStringByField("lambda").split("-");
             collector.emit(new Values(prefix + parts[0] + suffix, tag));
         }, "strValue", "intValue").shuffleGrouping("spout1");
-        builder.setBolt("bolt2", tuple -> System.out.println(tuple)).shuffleGrouping("bolt1");
+        builder.setBolt("bolt2", System.out::println).shuffleGrouping("bolt1");
 
         Config conf = new Config();
         conf.setDebug(true);

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF)
  * under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -60,7 +60,7 @@ public class AdminCommands {
         void run(String [] args, Map<String, Object> conf, String command) throws Exception;
 
         /**
-         * Print a help message to out.  typically this should be in the form of.
+         * Print a help message to stdout. Typically, this should be in the form of.
          * command arguments:
          *     description of command
          *     argument - description
@@ -75,7 +75,7 @@ public class AdminCommands {
                 IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf,
                         new ClusterStateContext(DaemonType.NIMBUS, conf));
 
-                Set<String> blobStoreTopologyIds = nimbusBlobStore.filterAndListKeys(key -> ConfigUtils.getIdFromBlobKey(key));
+                Set<String> blobStoreTopologyIds = nimbusBlobStore.filterAndListKeys(ConfigUtils::getIdFromBlobKey);
                 Set<String> activeTopologyIds = new HashSet<>(stormClusterState.activeStorms());
                 Sets.SetView<String> diffTopology = Sets.difference(activeTopologyIds, blobStoreTopologyIds);
                 LOG.info("active-topology-ids [{}] blob-topology-ids [{}] diff-topology [{}]",
@@ -119,7 +119,7 @@ public class AdminCommands {
     /**
      * Print value in a human readable format.
      * @param value what to print.
-     * @return a human readable string
+     * @return a human-readable string
      */
     public static String prettyPrint(TBase value) {
         StringBuilder builder = new StringBuilder();

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -94,8 +94,8 @@ public class TopologyBuilder {
     private final Map<String, SharedMemory> sharedMemory = new HashMap<>();
     private boolean hasStatefulBolt = false;
 
-    private Map<String, StateSpoutSpec> stateSpouts = new HashMap<>();
-    private List<ByteBuffer> workerHooks = new ArrayList<>();
+    private final Map<String, StateSpoutSpec> stateSpouts = new HashMap<>();
+    private final List<ByteBuffer> workerHooks = new ArrayList<>();
 
     private static String mergeIntoJson(Map<String, Object> into, Map<String, Object> newMap) {
         Map<String, Object> res = new HashMap<>(into);
@@ -251,7 +251,7 @@ public class TopologyBuilder {
      *                         outputs.
      * @param bolt             the windowed bolt
      * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
-     *                         somwehere around the cluster.
+     *                         somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
@@ -292,7 +292,7 @@ public class TopologyBuilder {
      *                         outputs.
      * @param bolt             the stateful bolt
      * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
-     *                         somwehere around the cluster.
+     *                         somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
@@ -300,7 +300,7 @@ public class TopologyBuilder {
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt, Number parallelismHint) throws
         IllegalArgumentException {
         hasStatefulBolt = true;
-        return setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelismHint);
+        return setBolt(id, new StatefulBoltExecutor<>(bolt), parallelismHint);
     }
 
     /**
@@ -330,7 +330,7 @@ public class TopologyBuilder {
      *                         outputs.
      * @param bolt             the stateful windowed bolt
      * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
-     *                         somwehere around the cluster.
+     *                         somewhere around the cluster.
      * @param <T>              the type of the state (e.g. {@link org.apache.storm.state.KeyValueState})
      * @return use the returned object to declare the inputs to this component
      *
@@ -343,9 +343,9 @@ public class TopologyBuilder {
         if (bolt.isPersistent()) {
             executor = new PersistentWindowedBoltExecutor<>(bolt);
         } else {
-            executor = new StatefulWindowedBoltExecutor<T>(bolt);
+            executor = new StatefulWindowedBoltExecutor<>(bolt);
         }
-        return setBolt(id, new StatefulBoltExecutor<T>(executor), parallelismHint);
+        return setBolt(id, new StatefulBoltExecutor<>(executor), parallelismHint);
     }
 
     /**
@@ -553,7 +553,7 @@ public class TopologyBuilder {
 
     private void initCommon(String id, IComponent component, Number parallelism) throws IllegalArgumentException {
         ComponentCommon common = new ComponentCommon();
-        common.set_inputs(new HashMap<GlobalStreamId, Grouping>());
+        common.set_inputs(new HashMap<>());
         if (parallelism != null) {
             int dop = parallelism.intValue();
             if (dop < 1) {
@@ -646,69 +646,84 @@ public class TopologyBuilder {
     }
 
     protected class BoltGetter extends ConfigGetter<BoltDeclarer> implements BoltDeclarer {
-        private String boltId;
+        private final String boltId;
 
         public BoltGetter(String boltId) {
             super(boltId);
             this.boltId = boltId;
         }
 
+        @Override
         public BoltDeclarer fieldsGrouping(String componentId, Fields fields) {
             return fieldsGrouping(componentId, Utils.DEFAULT_STREAM_ID, fields);
         }
 
+        @Override
         public BoltDeclarer fieldsGrouping(String componentId, String streamId, Fields fields) {
             return grouping(componentId, streamId, Grouping.fields(fields.toList()));
         }
 
+        @Override
         public BoltDeclarer globalGrouping(String componentId) {
             return globalGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer globalGrouping(String componentId, String streamId) {
-            return grouping(componentId, streamId, Grouping.fields(new ArrayList<String>()));
+            return grouping(componentId, streamId, Grouping.fields(new ArrayList<>()));
         }
 
+        @Override
         public BoltDeclarer shuffleGrouping(String componentId) {
             return shuffleGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer shuffleGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.shuffle(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer localOrShuffleGrouping(String componentId) {
             return localOrShuffleGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer localOrShuffleGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.local_or_shuffle(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer noneGrouping(String componentId) {
             return noneGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer noneGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.none(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer allGrouping(String componentId) {
             return allGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer allGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.all(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer directGrouping(String componentId) {
             return directGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer directGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.direct(new NullStruct()));
         }
 
+        /* does not implement or override a super or interface */
         private BoltDeclarer grouping(String componentId, String streamId, Grouping grouping) {
             commons.get(boltId).put_to_inputs(new GlobalStreamId(componentId, streamId), grouping);
             return this;

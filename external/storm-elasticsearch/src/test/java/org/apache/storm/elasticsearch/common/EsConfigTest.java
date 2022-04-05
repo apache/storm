@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,23 +17,22 @@
  */
 package org.apache.storm.elasticsearch.common;
 
-import static org.junit.Assert.assertEquals;
-
-import org.apache.http.HttpHost;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.NullPointerTester;
-import org.junit.jupiter.api.Assertions;
+import org.apache.http.HttpHost;
 import org.junit.jupiter.api.Test;
 
 public class EsConfigTest {
 
     @Test
-    public void urlsCannotBeEmpty() throws Exception {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new EsConfig(new String[] {}));
+    public void urlsCannotBeEmpty() {
+        assertThrows(IllegalArgumentException.class, () -> new EsConfig(new String[] {}));
     }
 
     @Test
-    public void constructorThrowsOnNull() throws Exception {
+    public void constructorThrowsOnNull() {
         new NullPointerTester().testAllPublicConstructors(EsConfig.class);
     }
 
