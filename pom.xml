@@ -44,14 +44,14 @@
             <subscribe>user-subscribe@storm.apache.org</subscribe>
             <unsubscribe>user-unsubscribe@storm.apache.org</unsubscribe>
             <post>user@storm.apache.org</post>
-            <archive>http://mail-archives.apache.org/mod_mbox/storm-user/</archive>
+            <archive>https://mail-archives.apache.org/mod_mbox/storm-user/</archive>
         </mailingList>
         <mailingList>
             <name>Storm developer mailing list</name>
             <subscribe>dev-subscribe@storm.apache.org</subscribe>
             <unsubscribe>dev-unsubscribe@storm.apache.org</unsubscribe>
             <post>dev@storm.apache.org</post>
-            <archive>http://mail-archives.apache.org/mod_mbox/storm-dev/</archive>
+            <archive>https://mail-archives.apache.org/mod_mbox/storm-dev/</archive>
         </mailingList>
     </mailingLists>
 
