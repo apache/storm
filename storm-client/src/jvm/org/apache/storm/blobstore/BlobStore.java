@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.generated.AuthorizationException;
@@ -33,8 +32,6 @@ import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provides a way to store blobs that can be downloaded. Blobs must be able to be uploaded and listed from Nimbus, and
@@ -51,15 +48,14 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BlobStore implements Shutdownable, AutoCloseable {
     protected static final String BASE_BLOBS_DIR_NAME = "blobs";
-    private static final Logger LOG = LoggerFactory.getLogger(BlobStore.class);
-    private static final KeyFilter<String> TO_TOPO_ID = (key) -> ConfigUtils.getIdFromBlobKey(key);
+    private static final KeyFilter<String> TO_TOPO_ID = ConfigUtils::getIdFromBlobKey;
 
     /**
      * Validates key checking for potentially harmful patterns.
      *
      * @param key Key for the blob
      */
-    public static final void validateKey(String key) throws IllegalArgumentException {
+    public static void validateKey(String key) throws IllegalArgumentException {
         if (!Utils.isValidKey(key)) {
             throw new IllegalArgumentException(key + " does not appear to be a valid blob key");
         }
@@ -131,7 +127,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
         try {
             out = createBlob(key, meta, who);
             byte[] buffer = new byte[2048];
-            int len = 0;
+            int len;
             while ((len = in.read(buffer)) > 0) {
                 out.write(buffer, 0, len);
             }
@@ -260,7 +256,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @return Set of filtered keys
      */
     public <R> Set<R> filterAndListKeys(KeyFilter<R> filter) {
-        Set<R> ret = new HashSet<R>();
+        Set<R> ret = new HashSet<>();
         Iterator<String> keys = listKeys();
         while (keys.hasNext()) {
             String key = keys.next();
@@ -285,7 +281,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
             throw new IOException("Could not find " + key);
         }
         byte[] buffer = new byte[2048];
-        int len = 0;
+        int len;
         try {
             while ((len = in.read(buffer)) > 0) {
                 out.write(buffer, 0, len);
@@ -340,9 +336,9 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * Blob store implements its own version of iterator to list the blobs.
      */
     public static class KeyTranslationIterator implements Iterator<String> {
-        private Iterator<String> it = null;
+        private final Iterator<String> it;
         private String next = null;
-        private String prefix = null;
+        private final String prefix;
 
         public KeyTranslationIterator(Iterator<String> it, String prefix) throws IOException {
             this.it = it;
@@ -385,9 +381,9 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     /**
      * Output stream implementation used for reading the metadata and data information.
      */
-    protected class BlobStoreFileOutputStream extends AtomicOutputStream {
-        private BlobStoreFile part;
-        private OutputStream out;
+    protected static class BlobStoreFileOutputStream extends AtomicOutputStream {
+        private final BlobStoreFile part;
+        private final OutputStream out;
 
         public BlobStoreFileOutputStream(BlobStoreFile part) throws IOException {
             this.part = part;
@@ -434,9 +430,9 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     /**
      * Input stream implementation used for writing both the metadata containing the acl information and the blob data.
      */
-    protected class BlobStoreFileInputStream extends InputStreamWithMeta {
-        private BlobStoreFile part;
-        private InputStream in;
+    protected static class BlobStoreFileInputStream extends InputStreamWithMeta {
+        private final BlobStoreFile part;
+        private final InputStream in;
 
         public BlobStoreFileInputStream(BlobStoreFile part) throws IOException {
             this.part = part;
