@@ -55,12 +55,34 @@ def generate_dependency_licenses():
     print('Done generating DEPENDENCY-LICENSES')
 
 
+def print_file_contents(msg, file1, file2):
+    """
+    Print contents of the files. Used for dumping the actual and expected DEPENDENCY-LICENSES files.
+    :param msg: message to print about the files
+    :param file1: original file
+    :param file2: new file
+    :return:
+    """
+    f_names = [file1, file2]
+    print('*' * 80)
+    print('*' * 30 + msg + ' ' + file1 + ',' + file2 + '*' * 30)
+    for i, f_name in enumerate(f_names):
+        print('*' * 30 + ' Start of file ' + f_name + ' ' + '*' * 30)
+        print('(' + str(i) + ') File ' + f_name + ' content is:')
+        print('\t' + '\t'.join(open(f_name).readlines()))
+        print('*' * 30 + ' End of file ' + f_name + ' ' + '*' * 30)
+    print('*' * 80)
+
+
 def check_dependency_licenses():
-    """Compares the regenerated DEPENDENCY-LICENSES in target with the DEPENDENCY-LICENSES in the root, and verifies that they are identical"""
+    """Compares the regenerated DEPENDENCY-LICENSES in target with the DEPENDENCY-LICENSES in the root, and verifies
+    that they are identical"""
     print('Checking DEPENDENCY-LICENSES')
-    if (not filecmp.cmp(Path('DEPENDENCY-LICENSES'), Path('target') / 'DEPENDENCY-LICENSES', shallow=False)):
+    if not filecmp.cmp(Path('DEPENDENCY-LICENSES'), Path('target') / 'DEPENDENCY-LICENSES', shallow=False):
         print(
-            f"DEPENDENCY-LICENSES and target/DEPENDENCY-LICENSES are different. Please update DEPENDENCY-LICENSES by running '{update_dependency_licenses_cmd}' in the project root")
+            f"DEPENDENCY-LICENSES and target/DEPENDENCY-LICENSES are different. "
+            f"Please update DEPENDENCY-LICENSES by running '{update_dependency_licenses_cmd}' in the project root")
+        print_file_contents('Actual is different from expected', 'DEPENDENCY-LICENSES', 'target/DEPENDENCY-LICENSES')
         return False
     return True
 
@@ -120,6 +142,7 @@ def generate_storm_dist_dependencies_coordinate_set():
 
     return generated_coordinate_set
 
+
 def generate_storm_dist_license_report():
     with cd(project_root / 'storm-dist' / 'binary'):
         print('')
@@ -127,8 +150,12 @@ def generate_storm_dist_license_report():
         subprocess.check_call(shlex.split(update_dependency_licenses_cmd))
         print('Done generating storm-dist license report')
 
+
 def make_license_binary_checker():
-    """Checks that the dependencies in the storm-dist/binary license report are mentioned in LICENSE-binary, and vice versa."""
+    """
+    Checks that the dependencies in the storm-dist/binary license report are mentioned in LICENSE-binary,
+    and vice versa.
+    """
     print('Checking LICENSE-binary')
 
     license_binary_coordinate_set = parse_license_binary_dependencies_coordinate_set()
@@ -138,6 +165,7 @@ def make_license_binary_checker():
     coordinates_missing_in_license = generated_coordinate_set.difference(
         license_binary_coordinate_set)
     print('Done checking LICENSE-binary')
+
     def check_for_errors():
         if superfluous_coordinates_in_license:
             print('Dependencies in LICENSE-binary that appear unused: ')
@@ -150,7 +178,8 @@ def make_license_binary_checker():
                 print(coord)
         any_wrong_coordinates = coordinates_missing_in_license or superfluous_coordinates_in_license
         if any_wrong_coordinates:
-            print('LICENSE-binary needs to be updated. Please remove any unnecessary dependencies from LICENSE-binary, and add any that are missing. You can copy any missing dependencies from DEPENDENCY-LICENSES')
+            print('LICENSE-binary needs to be updated. Please remove any unnecessary dependencies from LICENSE-binary, '
+                  'and add any that are missing. You can copy any missing dependencies from DEPENDENCY-LICENSES')
         return not any_wrong_coordinates
     return check_for_errors
 
