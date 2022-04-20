@@ -1263,7 +1263,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.12.0</version>
+                    <version>3.16.0</version>
                     <configuration>
                         <rulesets>
                             <ruleset>storm/pmd-ruleset.xml</ruleset>
