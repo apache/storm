@@ -1265,6 +1265,7 @@
                     <artifactId>maven-pmd-plugin</artifactId>
                     <version>3.12.0</version>
                     <configuration>
+                        <targetJdk>1.8</targetJdk>
                         <rulesets>
                             <ruleset>storm/pmd-ruleset.xml</ruleset>
                         </rulesets>
