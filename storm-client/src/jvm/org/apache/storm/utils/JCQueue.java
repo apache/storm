@@ -254,6 +254,7 @@ public class JCQueue implements Closeable {
     }
 
     public interface Consumer extends MessagePassingQueue.Consumer<Object> {
+        @Override
         void accept(Object event);
 
         void flush() throws InterruptedException;
