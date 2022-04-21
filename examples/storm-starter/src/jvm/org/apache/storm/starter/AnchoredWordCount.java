@@ -32,6 +32,7 @@ import org.apache.storm.utils.Utils;
 
 public class AnchoredWordCount extends ConfigurableTopology {
 
+    @Override
     protected int run(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
