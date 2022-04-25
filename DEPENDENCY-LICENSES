@@ -611,9 +611,9 @@ List of third-party dependencies grouped by their license type.
     Common Development and Distribution License (CDDL) v1.1
 
         * Java Message Service (javax.jms:jms:1.1 - http://java.sun.com/products/jms)
+        * Java Transaction API (javax.transaction:jta:1.1 - http://java.sun.com/products/jta)
         * jsp-api (javax.servlet:jsp-api:2.0 - no url defined)
         * jsp-api (javax.servlet.jsp:jsp-api:2.1 - no url defined)
-        * jta (javax.transaction:jta:1.1 - no url defined)
         * servlet-api (javax.servlet:servlet-api:2.5 - no url defined)
         * transaction-api (javax.transaction:transaction-api:1.1 - no url defined)
 
