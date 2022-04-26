@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -41,8 +41,10 @@ class CompleteReportBuilder(ReportBuilder):
 
         # all unresolved JIRA issues
         jira_unresolved = JiraReport(self.jira_repo.unresolved_jiras("STORM"))
-        jira_open = JiraReport(dict((x, y) for x, y in self.jira_repo.unresolved_jiras("STORM").items() if y.get_status() == 'Open'))
-        jira_in_progress = JiraReport(dict((x, y) for x, y in self.jira_repo.in_progress_jiras("STORM").items() if y.get_status() == 'In Progress'),
+        jira_open = JiraReport(dict((x, y) for x, y in self.jira_repo.unresolved_jiras("STORM").items()
+                                    if y.get_status().lower() == 'open'))
+        jira_in_progress = JiraReport(dict((x, y) for x, y in self.jira_repo.in_progress_jiras("STORM").items()
+                                           if y.get_status() == 'In Progress'),
                                       "\nIN PROGRESS JIRA ISSUES")
 
         for pull in github_open.pull_requests:

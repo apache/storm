@@ -13,7 +13,8 @@
 
 import re
 import urllib
-import urllib2
+import urllib.request
+import urllib.parse
 from datetime import datetime
 
 try:
@@ -25,7 +26,7 @@ except ImportError:
 def mstr(obj):
     if obj is None:
         return ""
-    return unicode(obj)
+    return str(obj)
 
 
 def jiratime(obj):
@@ -33,10 +34,11 @@ def jiratime(obj):
         return None
     return datetime.strptime(obj[0:19], "%Y-%m-%dT%H:%M:%S")
 
+
 # Regex pattern definitions
-github_user = re.compile("Git[Hh]ub user ([\w-]+)")
-github_pull = re.compile("https://github.com/[^/\s]+/[^/\s]+/pull/[0-9]+")
-has_vote = re.compile("\s+([-+][01])\s*")
+github_user = re.compile(r"Git[Hh]ub user ([\w-]+)")
+github_pull = re.compile(r"https://github.com/[^/\s]+/[^/\s]+/pull/[0-9]+")
+has_vote = re.compile(r"\s+([-+][01])\s*")
 is_diff = re.compile("--- End diff --")
 
 
@@ -112,7 +114,7 @@ class Jira:
     def getReleaseNote(self):
         if self.notes is None:
             field = self.parent.fieldIdMap['Release Note']
-            if self.fields.has_key(field):
+            if field in self.fields:
                 self.notes = mstr(self.fields[field])
             else:
                 self.notes = self.get_description()
@@ -191,11 +193,11 @@ class Jira:
             at = 0
             end = 1
             count = 100
-            while (at < end):
-                params = urllib.urlencode({'startAt': at, 'maxResults': count})
-                resp = urllib2.urlopen(self.parent.baseUrl + "/issue/" + jiraId + "/comment?" + params)
+            while at < end:
+                params = urllib.parse.urlencode({'startAt': at, 'maxResults': count})
+                resp = urllib.request.urlopen(self.parent.baseUrl + "/issue/" + jiraId + "/comment?" + params)
                 data = json.loads(resp.read())
-                if (data.has_key('errorMessages')):
+                if 'errorMessages' in data:
                     raise Exception(data['errorMessages'])
                 at = data['startAt'] + data['maxResults']
                 end = data['total']
@@ -213,12 +215,12 @@ class Jira:
 
     def get_trimmed_comments(self, limit=40):
         comments = self.get_comments()
-        return comments if len(comments) < limit else comments[0:limit] + "..."
+        return comments if len(comments) < limit else comments[0:limit] + ["..."]
 
     def raw(self):
         return self.fields
 
-    def storm_jira_cmp(x, y):
+    def storm_jira_cmp(self, x, y):
         xn = x.get_id().split("-")[1]
         yn = y.get_id().split("-")[1]
         return int(xn) - int(yn)
@@ -229,7 +231,7 @@ class JiraRepo:
 
     def __init__(self, baseUrl):
         self.baseUrl = baseUrl
-        resp = urllib2.urlopen(baseUrl + "/field")
+        resp = urllib.request.urlopen(baseUrl + "/field")
         data = json.loads(resp.read())
 
         self.fieldIdMap = {}
@@ -237,9 +239,9 @@ class JiraRepo:
             self.fieldIdMap[part['name']] = part['id']
 
     def get(self, id):
-        resp = urllib2.urlopen(self.baseUrl + "/issue/" + id)
+        resp = urllib.request.urlopen(self.baseUrl + "/issue/" + id)
         data = json.loads(resp.read())
-        if (data.has_key('errorMessages')):
+        if 'errorMessages' in data:
             raise Exception(data['errorMessages'])
         j = Jira(data, self)
         return j
@@ -249,12 +251,12 @@ class JiraRepo:
         at = 0
         end = 1
         count = 100
-        while (at < end):
-            params = urllib.urlencode({'jql': query, 'startAt': at, 'maxResults': count})
+        while at < end:
+            params = urllib.parse.urlencode({'jql': query, 'startAt': at, 'maxResults': count})
             # print params
-            resp = urllib2.urlopen(self.baseUrl + "/search?%s" % params)
+            resp = urllib.request.urlopen(self.baseUrl + "/search?%s" % params)
             data = json.loads(resp.read())
-            if (data.has_key('errorMessages')):
+            if 'errorMessages' in data:
                 raise Exception(data['errorMessages'])
             at = data['startAt'] + data['maxResults']
             end = data['total']
@@ -268,18 +270,18 @@ class JiraRepo:
         :param project: The JIRA project to search for unresolved issues
         :return: All JIRA issues that have the field resolution = Unresolved
         """
-        return self.query("project = " + project + " AND resolution = Unresolved")
+        return self.query(f"project = {project} AND resolution = Unresolved")
 
     def open_jiras(self, project):
         """
         :param project: The JIRA project to search for open issues
         :return: All JIRA issues that have the field status = Open
         """
-        return self.query("project = " + project + " AND status = Open")
+        return self.query(f"project = {project} AND status = Open")
 
     def in_progress_jiras(self, project):
         """
         :param project: The JIRA project to search for In Progress issues
         :return: All JIRA issues that have the field status = 'In Progress'
         """
-        return self.query("project = " + project + " AND status = 'In Progress'")
+        return self.query(f"project = {project} AND status = 'In Progress'")

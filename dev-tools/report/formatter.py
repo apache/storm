@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ def encode(obj, encoding='UTF-8'):
     For example objects of type 'int' do not support encode
     """
     return obj.encode(encoding) if 'encode' in dir(obj) else obj
+
 
 class Formatter:
     def __init__(self, fields_tuple=(), row_tuple=(), min_width_tuple=None):

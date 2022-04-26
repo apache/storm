@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Licensed to the Apache Software Foundation (ASF) under one
@@ -9,7 +9,7 @@ to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -62,13 +62,11 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error,
         timer.start()
         out, err = process.communicate()
 
-        if raise_on_error and process.returncode is not 0:
-            exception_string = ("Command: " + str(command)
-                                + " failed with returncode: "
-                                + str(process.returncode))
-            if out is not None:
+        if raise_on_error and process.returncode:
+            exception_string = f"Command: {command} failed with returncode: {process.returncode}"
+            if out:
                 exception_string = exception_string + "\nstdout: " + str(out)
-            if err is not None:
+            if err:
                 exception_string = exception_string + "\nstderr: " + str(err)
             raise Exception(exception_string)
 
@@ -88,7 +86,7 @@ def process_timeout(process):
 
 def does_hdfs_entry_exist(entry, raise_on_error=True):
     out, err, returncode = hdfs_ls(entry, raise_on_error=raise_on_error)
-    if returncode is not 0:
+    if returncode:
         return False
     return True
 

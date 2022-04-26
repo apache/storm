@@ -13,7 +13,8 @@
 
 import getpass
 import base64
-import urllib2
+import urllib
+import urllib.request
 from datetime import datetime
 import re
 
@@ -26,7 +27,7 @@ except ImportError:
 def mstr(obj):
     if obj is None:
         return ""
-    return unicode(obj)
+    return str(obj)
 
 
 def git_time(obj):
@@ -111,10 +112,9 @@ class GitHub:
         page = 1
         ret = []
         while True:
-            url = "https://api.github.com/repos/" + user + "/" + repo + "/pulls?state=" + type + "&page=" + str(page)
-
-            req = urllib2.Request(url, None, self.headers)
-            result = urllib2.urlopen(req)
+            url = f"https://api.github.com/repos/{user}/{repo}/pulls?state={type}&page={page}"
+            req = urllib.request.Request(url, None, self.headers)
+            result = urllib.request.urlopen(req)
             contents = result.read()
             if result.getcode() != 200:
                 raise Exception(result.getcode() + " != 200 " + contents)
@@ -129,9 +129,9 @@ class GitHub:
         return self.pulls(user, repo, "open")
 
     def pull(self, user, repo, number):
-        url = "https://api.github.com/repos/" + user + "/" + repo + "/pulls/" + number
-        req = urllib2.Request(url, None, self.headers)
-        result = urllib2.urlopen(req)
+        url = f"https://api.github.com/repos/{user}/{repo}/pulls/{number}"
+        req = urllib.request.Request(url, None, self.headers)
+        result = urllib.request.urlopen(req)
         contents = result.read()
         if result.getcode() != 200:
             raise Exception(result.getcode() + " != 200 " + contents)

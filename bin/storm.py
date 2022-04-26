@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -28,24 +28,26 @@ from random import randint
 from argparse import HelpFormatter
 from operator import attrgetter
 
-class SortingHelpFormatter(HelpFormatter):
+if sys.version_info[0] == 2:
+    raise Exception("Python version 2 is not supported. Please download and use python3")
 
+import configparser
+from urllib.parse import quote_plus
+
+
+class SortingHelpFormatter(HelpFormatter):
     def add_arguments(self, actions):
         actions = sorted(actions, key=attrgetter('option_strings'))
         super(SortingHelpFormatter, self).add_arguments(actions)
 
-if sys.version_info[0] == 2:
-    import ConfigParser as configparser
-    from urllib import quote_plus
-else:
-    import configparser
-    from urllib.parse import quote_plus
 
 def is_windows():
     return sys.platform.startswith('win')
 
+
 def identity(x):
     return x
+
 
 def cygpath(x):
     command = ["cygpath", "-wp", x]
@@ -54,8 +56,10 @@ def cygpath(x):
     lines = output.split(os.linesep)
     return lines[0]
 
+
 def get_config_opts(storm_config_opts):
     return "-Dstorm.options=" + ','.join([quote_plus(s) for s in storm_config_opts])
+
 
 def get_jars_full(adir):
     files = []
@@ -66,8 +70,9 @@ def get_jars_full(adir):
 
     return [os.path.join(adir, f) for f in files if f.endswith(".jar")]
 
-# If given path is a dir, make it a wildcard so the JVM will include all JARs in the directory.
+
 def get_wildcard_dir(path):
+    """If given path is a dir, make it a wildcard so the JVM will include all JARs in the directory."""
     ret = []
     if os.path.isdir(path):
         ret = [(os.path.join(path, "*"))]
@@ -75,11 +80,13 @@ def get_wildcard_dir(path):
         ret = [path]
     return ret
 
+
 def get_java_cmd():
     cmd = 'java' if not is_windows() else 'java.exe'
     if JAVA_HOME:
         cmd = os.path.join(JAVA_HOME, 'bin', cmd)
     return cmd
+
 
 def confvalue(name, storm_config_opts, extrapaths, overriding_conf_file=None, daemon=True):
     command = [
@@ -148,7 +155,7 @@ def init_storm_env():
     JAVA_CMD = get_java_cmd()
 
     if JAVA_HOME and not os.path.exists(JAVA_CMD):
-        print("ERROR:  JAVA_HOME is invalid.  Could not find bin/java at %s." % JAVA_HOME)
+        print(f"ERROR:  JAVA_HOME is invalid.  Could not find bin/java at {JAVA_HOME}.")
         sys.exit(1)
 
     if not os.path.exists(STORM_LIB_DIR):
@@ -158,7 +165,6 @@ You appear to be trying to run the client from a checkout of Storm's source code
 You can download a Storm release at https://storm.apache.org/downloads.html")''')
         print("*" * 20)
         sys.exit(1)
-
 
     STORM_EXT_CLASSPATH = os.getenv('STORM_EXT_CLASSPATH', None)
     STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
@@ -181,13 +187,13 @@ def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir
     if not artifacts:
         return {}
 
-    print("Resolving dependencies on demand: artifacts (%s) with repositories (%s)" % (artifacts, artifact_repositories))
+    print(f"Resolving dependencies on demand: artifacts ({artifacts}) with repositories ({artifact_repositories})")
 
     if maven_local_repos_dir:
-        print("Local repository directory: %s" % maven_local_repos_dir)
+        print(f"Local repository directory: {maven_local_repos_dir}")
 
     if proxy_url:
-        print("Proxy information: url (%s) username (%s)" % (proxy_url, proxy_username))
+        print(f"Proxy information: url ({proxy_url}) username ({proxy_username})")
 
     sys.stdout.flush()
 
@@ -214,20 +220,19 @@ def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir
     p = subprocess.Popen(command, stdout=subprocess.PIPE)
     output, errors = p.communicate()
     if p.returncode != 0:
-        raise RuntimeError("dependency handler returns non-zero code: code<%s> syserr<%s>" % (p.returncode, errors))
+        raise RuntimeError(f"dependency handler returns non-zero code: code<{p.returncode}> syserr<{errors}>")
 
-    # python 3
     if not isinstance(output, str):
         output = output.decode('utf-8')
 
     # For debug purpose, uncomment when you need to debug DependencyResolver
-    # print("Resolved dependencies: %s" % output)
+    # print(f"Resolved dependencies: {output}")
 
     try:
         out_dict = json.loads(output)
         return out_dict
     except:
-        raise RuntimeError("dependency handler returns non-json response: sysout<%s>", output)
+        raise RuntimeError(f"dependency handler returns non-json response: sysout<{output}>", )
 
 
 def exec_storm_class(klass, storm_config_opts, jvmtype="-server", jvmopts=[],
@@ -238,15 +243,15 @@ def exec_storm_class(klass, storm_config_opts, jvmtype="-server", jvmopts=[],
     if storm_log_dir is None or storm_log_dir in ["null", ""]:
         storm_log_dir = os.path.join(STORM_DIR, "logs")
     all_args = [
-        JAVA_CMD, jvmtype,
-        "-Ddaemon.name=" + daemonName,
-        get_config_opts(storm_config_opts),
-       "-Dstorm.home=" + STORM_DIR,
-       "-Dstorm.log.dir=" + storm_log_dir,
-       "-Djava.library.path=" + confvalue("java.library.path", storm_config_opts, extrajars, daemon=daemon),
-       "-Dstorm.conf.file=" + (overriding_conf_file if overriding_conf_file else ""),
-       "-cp", get_classpath(extrajars, daemon, client=client),
-    ] + jvmopts + [klass] + list(main_class_args)
+            JAVA_CMD, jvmtype,
+            f"-Ddaemon.name={daemonName}",
+            get_config_opts(storm_config_opts),
+            f"-Dstorm.home={STORM_DIR}",
+            f"-Dstorm.log.dir={storm_log_dir}",
+            "-Djava.library.path=" + confvalue("java.library.path", storm_config_opts, extrajars, daemon=daemon),
+            "-Dstorm.conf.file=" + (overriding_conf_file if overriding_conf_file else ""),
+            "-cp", get_classpath(extrajars, daemon, client=client),
+        ] + jvmopts + [klass] + list(main_class_args)
     print("Running: " + " ".join(all_args))
     sys.stdout.flush()
     exit_code = 0
@@ -354,7 +359,6 @@ def initialize_localconfvalue_subcommand(subparsers):
     add_common_options(sub_parser)
 
 
-
 def initialize_remoteconfvalue_subcommand(subparsers):
     command_help = '''Prints out the value for conf-name in the cluster's Storm configs.
     The cluster's Storm configs are the ones in $STORM-PATH/conf/storm.yaml
@@ -380,6 +384,7 @@ def add_common_options(parser, main_args=True):
             nargs='*', help="Runs the main method with the specified arguments."
         )
 
+
 def remove_common_options(sys_args):
     flags_to_filter = ["-c", "-storm_config_opts", "--config"]
     filtered_sys_args = [
@@ -388,6 +393,7 @@ def remove_common_options(sys_args):
     ]
     return filtered_sys_args
 
+
 def add_topology_jar_options(parser):
     parser.add_argument(
         "topology_jar_path", metavar="topology-jar-path",
@@ -395,7 +401,7 @@ def add_topology_jar_options(parser):
     )
     parser.add_argument(
         "topology_main_class", metavar="topology-main-class",
-    help="main class of the topology jar being submitted"
+        help="main class of the topology jar being submitted"
     )
 
 
@@ -413,7 +419,6 @@ def add_client_jar_options(parser):
     For example, -artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka-clients:1.0.0^org.slf4j:slf4j-api" will load jedis and kafka-clients artifact and all of transitive dependencies but exclude slf4j-api from kafka.
         ''', default="")
 
-
     parser.add_argument("--artifactRepositories", help='''
     When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with a comma-separated string.
     Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters.
@@ -421,7 +426,6 @@ def add_client_jar_options(parser):
     ''', default="")
 
     parser.add_argument("--mavenLocalRepositoryDirectory", help="You can provide local maven repository directory via --mavenLocalRepositoryDirectory if you would like to use specific directory. It might help when you don't have '.m2/repository' directory in home directory, because CWD is sometimes non-deterministic (fragile).", default="")
-
 
     parser.add_argument("--proxyUrl", help="You can also provide proxy information to let dependency resolver utilizing proxy if needed. URL representation of proxy ('http://host:port')", default="")
     parser.add_argument("--proxyUsername", help="username of proxy if it requires basic auth", default="")
@@ -518,14 +522,16 @@ def initialize_kill_subcommand(subparsers):
 def check_non_negative(value):
     ivalue = int(value)
     if ivalue < 0:
-        raise argparse.ArgumentTypeError("%s is not a non-zero integer" % value)
+        raise argparse.ArgumentTypeError(f"{value} is not a non-zero integer")
     return ivalue
+
 
 def check_positive(value):
     ivalue = int(value)
     if ivalue <= 0:
         raise argparse.ArgumentTypeError("%s is not a positive integer" % value)
     return ivalue
+
 
 def initialize_upload_credentials_subcommand(subparsers):
     command_help = """Uploads a new set of credentials to a running topology."""
@@ -569,7 +575,6 @@ def initialize_sql_subcommand(subparsers):
 
     add_client_jar_options(sub_parser)
 
-
     sub_parser.add_argument("sql_file", metavar="sql-file")
 
     group = sub_parser.add_mutually_exclusive_group(required=True)
@@ -607,7 +612,6 @@ def initialize_blobstore_subcommand(subparsers):
     cat_parser.add_argument("KEY")
     cat_parser.add_argument("-f", '--FILE', default=None)
     add_common_options(cat_parser)
-
 
     create_parser = sub_sub_parsers.add_parser(
         "create", help="create a new blob. Contents comes from a FILE or STDIN", formatter_class=SortingHelpFormatter
@@ -1133,8 +1137,8 @@ def kill(args):
 
 
 def upload_credentials(args):
-    if (len(args.cred_list) % 2 != 0):
-        raise argparse.ArgumentTypeError("please provide a list of cred key and value pairs " + cred_list)
+    if len(args.cred_list) % 2 != 0:
+        raise argparse.ArgumentTypeError("please provide a list of cred key and value pairs " + args.cred_list)
     exec_storm_class(
         "org.apache.storm.command.UploadCredentials",
         main_class_args=remove_common_options(sys.argv[2:]), storm_config_opts=args.storm_config_opts,
@@ -1171,6 +1175,7 @@ def activate(args):
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
 
+
 def listtopos(args):
     exec_storm_class(
         "org.apache.storm.command.ListTopologies",
@@ -1178,6 +1183,7 @@ def listtopos(args):
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
+
 
 def set_log_level(args):
     for log_level in args.l:
@@ -1194,6 +1200,7 @@ def set_log_level(args):
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
         overriding_conf_file=args.config)
+
 
 def deactivate(args):
     exec_storm_class(
@@ -1477,6 +1484,7 @@ def monitor(args):
         main_class_args=remove_common_options(sys.argv[2:]),
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
 
 def main():
     init_storm_env()

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,9 +13,8 @@
 #  limitations under the License.
 
 from datetime import datetime
-from github import mstr
 from jira_github import Jira
-from formatter import Formatter, encode
+from formatter import Formatter
 
 
 def daydiff(a, b):
@@ -24,23 +23,25 @@ def daydiff(a, b):
 
 class Report:
     now = datetime.utcnow()
+
     def __init__(self, header=''):
         self.header = header
 
     # if padding starts with - it puts padding before contents, otherwise after
     @staticmethod
     def _build_tuple(contents, padding=''):
-        if padding is not '':
+        if padding:
             out = []
             for i in range(len(contents)):
-                out += [padding[1:] + str(contents[i])] if padding[0] is '-' else [str(contents[i]) + padding]
+                out += [padding[1:] + str(contents[i])] if padding[0] == '-' else [str(contents[i]) + padding]
             return tuple(out)
         return contents
 
     # calls the native print function with the following format. Text1,Text2,... has the correct spacing
-    # print ("%s%s%s" % ("Text1, Text2, Text3))
+    # print("%s%s%s" % ("Text1, Text2, Text3))
     def print_(self, formatter, row_tuple):
-        print (formatter.format % formatter.row_str_format(row_tuple))
+        print(formatter.format % formatter.row_str_format(row_tuple))
+
 
 class JiraReport(Report):
     def __init__(self, issues, header=''):
@@ -58,9 +59,7 @@ class JiraReport(Report):
 
     def values_view(self, excluded=None):
         temp_dic = dict(self.issues) if excluded is None else self.view(excluded)
-        values = temp_dic.values()
-        values.sort(Jira.storm_jira_cmp, reverse=True)
-        return values
+        return sorted(temp_dic.values(), key=lambda jira: jira.get_id_num(), reverse=True)
 
     @staticmethod
     def _row_tuple(jira):
@@ -71,7 +70,7 @@ class JiraReport(Report):
         return -1, 43, -1, -1
 
     def print_report(self):
-        print "%s (Count = %s) " % (self.header, len(self.issues))
+        print(f"{self.header} (Count = {len(self.issues)}) ")
         jiras = self.values_view()
         fields_tuple = ('Jira Id', 'Summary', 'Created', 'Last Updated (Days)')
         row_tuple = self._row_tuple(jiras[0])
@@ -110,7 +109,7 @@ class GitHubReport(Report):
         return -1, 43, -1, -1, -1
 
     def print_report(self):
-        print "%s (Count = %s) " % (self.header, len(self.pull_requests))
+        print("%s (Count = %s) " % (self.header, len(self.pull_requests)))
 
         fields_tuple = self._build_tuple(('URL', 'Title', 'Created', 'Last Updated (Days)', 'User'), '')
         if len(self.pull_requests) > 0:
@@ -131,6 +130,7 @@ class GitHubReport(Report):
         for pull in self.pull_requests:
             jira_ids.append(pull.jira_id())
         return sorted(jira_ids)
+
 
 class JiraGitHubCombinedReport(Report):
     def __init__(self, jira_report, github_report, header='', print_comments=False):
@@ -158,7 +158,7 @@ class JiraGitHubCombinedReport(Report):
 
     def _jira_id(self, pull_idx):
         pull = self._pull_request(pull_idx)
-        return encode(pull.jira_id())
+        return str(pull.jira_id())
 
     def _jira_issue(self, jira_id):
         return self.jira_report.issues[jira_id]
@@ -168,11 +168,11 @@ class JiraGitHubCombinedReport(Report):
         jira_id = self._jira_id(pull_idx)
         jira_issue = self._jira_issue(jira_id)
 
-        return (jira_id, mstr(pull), jira_issue.get_trimmed_summary(),
+        return (jira_id, str(pull) if pull else "No PR", jira_issue.get_trimmed_summary(),
                 daydiff(Report.now, jira_issue.get_created()),
-                daydiff(Report.now, pull.created_at()),
+                daydiff(Report.now, pull.created_at() if pull else "No PR"),
                 daydiff(Report.now, jira_issue.get_updated()),
-                daydiff(Report.now, pull.updated_at()),
+                daydiff(Report.now, pull.updated_at() if pull else "No PR"),
                 jira_issue.get_status(), pull.user())
 
     def _row_tuple_1(self, pull_idx, comment_idx):
@@ -188,7 +188,10 @@ class JiraGitHubCombinedReport(Report):
 
     # variables and method names ending with _1 correspond to the comments part
     def print_report(self, print_comments=False):
-        print "%s (Count = %s) " % (self.header, len(self.github_report.pull_requests))
+        pull_request_cnt = len(self.github_report.pull_requests)
+        print("%s (Count = %s) " % (self.header, pull_request_cnt))
+        if not pull_request_cnt:
+            return
 
         fields_tuple = ('JIRA ID', 'Pull Request', 'Jira Summary', 'JIRA Age',
                         'Pull Age', 'JIRA Update Age', 'Pull Update Age (Days)',
@@ -197,15 +200,12 @@ class JiraGitHubCombinedReport(Report):
         formatter = Formatter(fields_tuple, row_tuple)
         self.print_(formatter, fields_tuple)
 
-        row_tuple_1 = ()
-        formatter_1 = Formatter()
-
         if print_comments or self.print_comments:
             fields_tuple_1 = self._build_tuple(('Comment Vote', 'Comment Author', 'Pull URL', 'Comment Age'), '-\t\t')
             row_tuple_1 = self._build_tuple(self._row_tuple_1(*self._idx_1st_comment_with_vote()), '-\t\t')
             formatter_1 = Formatter(fields_tuple_1, row_tuple_1)
             self.print_(formatter_1, fields_tuple_1)
-            print ''
+            print('')
 
         for p in range(0, len(self.github_report.pull_requests)):
             row_tuple = self._row_tuple(p)
@@ -219,10 +219,11 @@ class JiraGitHubCombinedReport(Report):
                     if comment.has_vote():
                         row_tuple_1 = self._build_tuple(self._row_tuple_1(p, c), '-\t\t')
                         if row_tuple_1 is not None:
+                            formatter_1 = Formatter()
                             self.print_(formatter_1, row_tuple_1)
                             has_vote = True
                 if has_vote:
-                    print ''
+                    print('')
 
 
 class CompleteReport(Report):
@@ -233,8 +234,8 @@ class CompleteReport(Report):
         self.jira_github_combined_reports = []
 
     def print_all(self):
-        if self.header is not '':
-            print self.header
+        if self.header:
+            print(self.header)
 
         self._print_github_reports()
         self._print_jira_github_combined_reports()
