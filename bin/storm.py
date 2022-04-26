@@ -110,7 +110,7 @@ def get_classpath(extrajars, daemon=True, client=False):
     ret = get_wildcard_dir(STORM_DIR)
     if client:
         ret.extend(get_wildcard_dir(STORM_WORKER_LIB_DIR))
-    else :
+    else:
         ret.extend(get_wildcard_dir(STORM_LIB_DIR))
     ret.extend(get_wildcard_dir(os.path.join(STORM_DIR, "extlib")))
     if daemon:
@@ -123,7 +123,7 @@ def get_classpath(extrajars, daemon=True, client=False):
     return NORMAL_CLASS_PATH(os.pathsep.join(ret))
 
 
-def init_storm_env():
+def init_storm_env(within_unittest=False):
 
     global NORMAL_CLASS_PATH, STORM_DIR, USER_CONF_DIR, STORM_CONF_DIR, STORM_WORKER_LIB_DIR, STORM_LIB_DIR,\
         STORM_TOOLS_LIB_DIR, STORM_WEBAPP_LIB_DIR, STORM_BIN_DIR, STORM_LOG4J2_CONF_DIR, STORM_SUPERVISOR_LOG_FILE,\
@@ -137,7 +137,7 @@ def init_storm_env():
 
     CLUSTER_CONF_DIR = STORM_CONF_DIR if STORM_CONF_DIR else os.path.join(STORM_DIR, "conf")
 
-    if (not os.path.isfile(os.path.join(USER_CONF_DIR, "storm.yaml"))):
+    if not os.path.isfile(os.path.join(USER_CONF_DIR, "storm.yaml")):
         USER_CONF_DIR = CLUSTER_CONF_DIR
 
     STORM_WORKER_LIB_DIR = os.path.join(STORM_DIR, "lib-worker")
@@ -158,7 +158,7 @@ def init_storm_env():
         print(f"ERROR:  JAVA_HOME is invalid.  Could not find bin/java at {JAVA_HOME}.")
         sys.exit(1)
 
-    if not os.path.exists(STORM_LIB_DIR):
+    if not (within_unittest or os.path.exists(STORM_LIB_DIR)):
         print("*" * 20)
         print('''The storm client can only be run from within a release. 
 You appear to be trying to run the client from a checkout of Storm's source code.
@@ -1293,9 +1293,9 @@ def get_log4j2_conf_dir(storm_config_opts, args):
         "storm.log4j2.conf.dir", storm_config_opts=storm_config_opts,
         extrapaths=cppaths, overriding_conf_file=args.config
     )
-    if(not storm_log4j2_conf_dir or storm_log4j2_conf_dir == "null"):
+    if not storm_log4j2_conf_dir or storm_log4j2_conf_dir == "null":
         storm_log4j2_conf_dir = STORM_LOG4J2_CONF_DIR
-    elif(not os.path.isabs(storm_log4j2_conf_dir)):
+    elif not os.path.isabs(storm_log4j2_conf_dir):
         storm_log4j2_conf_dir = os.path.join(STORM_DIR, storm_log4j2_conf_dir)
     return storm_log4j2_conf_dir
 
