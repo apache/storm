@@ -31,6 +31,7 @@ def main(file, cmd):
     pout = process.stdout
     line = pout.readline()
     while line:
+        line = line.decode('utf-8')
         count = count + 1
         if datetime.now() > nextPrint:
             diff = datetime.now() - start
@@ -49,8 +50,8 @@ def main(file, cmd):
 
 
 if __name__ == "__main__":
-    if sys.argv < 1:
-        print(f"Usage: {sys.argv[0]} [file info]")
+    if len(sys.argv) < 3:
+        print(f"Usage: {sys.argv[0]} <file-path> <cmd>")
         sys.exit(1)
 
     sys.exit(main(sys.argv[1], sys.argv[2:]))
