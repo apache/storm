@@ -349,10 +349,12 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         return RATE_COUNTER_UPDATE_INTERVAL_SECONDS;
     }
 
+    @Override
     public MetricRegistry getRegistry() {
         return registry;
     }
 
+    @Override
     public Map<TaskMetricDimensions, TaskMetricRepo> getTaskMetrics() {
         return taskMetrics;
     }
