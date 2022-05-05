@@ -143,6 +143,11 @@ public class HdfsBlobStoreImpl {
         if (!fileSystem.exists(fullPath)) {
             FsPermission perms = new FsPermission(BLOBSTORE_DIR_PERMISSION);
             boolean success = fileSystem.mkdirs(fullPath, perms);
+            if (!fileSystem.getFileStatus(fullPath).getPermission().equals(perms)) {
+                LOG.warn("Directory {} created with unexpected permission {}.Set permission {} for this directory.",
+                    fullPath, fileSystem.getFileStatus(fullPath).getPermission(), perms);
+                fileSystem.setPermission(fullPath, perms);
+            }
             if (!success) {
                 throw new IOException("Error creating blobstore directory: " + fullPath);
             }
