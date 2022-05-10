@@ -36,10 +36,13 @@ import subprocess
 from threading import Timer
 
 LOG_LEVEL = None
-HADOOP_BIN_DIR = None
+HADOOP_BIN_DIR = "/undefined"
+MAX_IMAGE_LAYERS = 0
+MAX_IMAGE_SIZE = 0
+HADOOP_PREFIX = "/undefined"
 
-def shell_command(command, print_stdout, print_stderr, raise_on_error,
-                  timeout_sec=600):
+
+def shell_command(command, print_stdout, print_stderr, raise_on_error, timeout_sec=600):
     global LOG_LEVEL
     stdout_val = subprocess.PIPE
     stderr_val = subprocess.PIPE
@@ -54,9 +57,10 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error,
 
     process = None
     timer = None
+    out = None
+    err = None
     try:
-        process = subprocess.Popen(command, stdout=stdout_val,
-                                   stderr=stderr_val)
+        process = subprocess.Popen(command, stdout=stdout_val, stderr=stderr_val)
         timer = Timer(timeout_sec, process_timeout, [process])
 
         timer.start()
@@ -69,26 +73,27 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error,
             if err:
                 exception_string = exception_string + "\nstderr: " + str(err)
             raise Exception(exception_string)
-
-    except:
+    except Exception as ex:
         if process and process.poll() is None:
             process.kill()
-        raise Exception("Popen failure")
+        raise Exception("Popen failure, " + str(ex))
     finally:
         if timer:
             timer.cancel()
+        return out, err, (process.returncode if process else -1)
 
-    return out, err, process.returncode
 
 def process_timeout(process):
     process.kill()
     logging.error("Process killed due to timeout")
 
+
 def does_hdfs_entry_exist(entry, raise_on_error=True):
-    out, err, returncode = hdfs_ls(entry, raise_on_error=raise_on_error)
-    if returncode:
+    out, err, rc = hdfs_ls(entry, raise_on_error=raise_on_error)
+    if rc:
         return False
     return True
+
 
 def setup_hdfs_dirs(dirs):
     if does_hdfs_entry_exist(dirs, raise_on_error=False):
@@ -100,10 +105,11 @@ def setup_hdfs_dirs(dirs):
         directories = dir_entry.split("/")[1:]
         dir_path = ""
         for directory in directories:
-            dir_path = dir_path + "/" +  directory
+            dir_path = dir_path + "/" + directory
             logging.info("dir_path: %s", str(dir_path))
             chmod_dirs.append(dir_path)
     hdfs_chmod("755", chmod_dirs)
+
 
 def append_or_extend_to_list(src, src_list):
     if isinstance(src, list):
@@ -111,48 +117,51 @@ def append_or_extend_to_list(src, src_list):
     else:
         src_list.append(src)
 
+
 def hdfs_get(src, dest, print_stdout=False, print_stderr=False, raise_on_error=True):
     global HADOOP_BIN_DIR
     command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-get"]
     append_or_extend_to_list(src, command)
     command.append(dest)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr, raise_on_error)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error)
+    return out, err, rc
 
-def hdfs_ls(file_path, options="", print_stdout=False, print_stderr=False,
-            raise_on_error=True):
+
+def hdfs_ls(file_path, options="", print_stdout=False, print_stderr=False, raise_on_error=True):
     global HADOOP_BIN_DIR
     command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-ls"]
     if options:
         append_or_extend_to_list(options, command)
     append_or_extend_to_list(file_path, command)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr,
-                                         raise_on_error)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error)
+    return out, err, rc
+
 
 def hdfs_cat(file_path, print_stdout=False, print_stderr=True, raise_on_error=True):
     global HADOOP_BIN_DIR
     command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-cat"]
     append_or_extend_to_list(file_path, command)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr, raise_on_error)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error)
+    return out, err, rc
 
-def hdfs_mkdir(file_path, print_stdout=False, print_stderr=True, raise_on_error=True,
-               create_parents=False):
+
+def hdfs_mkdir(file_path, print_stdout=False, print_stderr=True, raise_on_error=True, create_parents=False):
     global HADOOP_BIN_DIR
     command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-mkdir"]
     if create_parents:
         command.append("-p")
     append_or_extend_to_list(file_path, command)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr, raise_on_error)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error)
+    return out, err, rc
+
 
 def hdfs_rm(file_path, print_stdout=False, print_stderr=True, raise_on_error=True):
     global HADOOP_BIN_DIR
     command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-rm"]
     append_or_extend_to_list(file_path, command)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr, raise_on_error)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error)
+    return out, err, rc
+
 
 def hdfs_put(src, dest, force=False, print_stdout=False, print_stderr=True, raise_on_error=True):
     global HADOOP_BIN_DIR
@@ -161,63 +170,66 @@ def hdfs_put(src, dest, force=False, print_stdout=False, print_stderr=True, rais
         command.append("-f")
     append_or_extend_to_list(src, command)
     command.append(dest)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr,
-                                         raise_on_error, 60)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error, 60)
+    return out, err, rc
 
-def hdfs_chmod(mode, file_path, print_stdout=False, print_stderr=True, raise_on_error=True,
-               recursive=False):
+
+def hdfs_chmod(mode, file_path, print_stdout=False, print_stderr=True, raise_on_error=True, recursive=False):
     global HADOOP_BIN_DIR
     command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-chmod"]
     if recursive:
         command.append("-R")
     command.append(mode)
     append_or_extend_to_list(file_path, command)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr, raise_on_error)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error)
+    return out, err, rc
+
 
 def hdfs_setrep(replication, file_path, print_stdout=False, print_stderr=True, raise_on_error=True):
     global HADOOP_BIN_DIR
-    command = [HADOOP_BIN_DIR +  "/hadoop", "fs", "-setrep", str(replication)]
+    command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-setrep", str(replication)]
     append_or_extend_to_list(file_path, command)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr, raise_on_error)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error)
+    return out, err, rc
+
 
 def hdfs_cp(src, dest, force=False, print_stdout=False, print_stderr=True, raise_on_error=True):
     global HADOOP_BIN_DIR
-    command = [HADOOP_BIN_DIR +  "/hadoop", "fs", "-cp"]
+    command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-cp"]
     if force:
         command.append("-f")
     append_or_extend_to_list(src, command)
     command.append(dest)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr,
-                                         raise_on_error, 60)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error, 60)
+    return out, err, rc
 
-def hdfs_touchz(file_path, print_stdout=False, print_stderr=True,
-                raise_on_error=True):
+
+def hdfs_touchz(file_path, print_stdout=False, print_stderr=True, raise_on_error=True):
     global HADOOP_BIN_DIR
     command = [HADOOP_BIN_DIR + "/hadoop", "fs", "-touchz"]
     append_or_extend_to_list(file_path, command)
-    out, err, returncode = shell_command(command, print_stdout, print_stderr, raise_on_error)
-    return out, err, returncode
+    out, err, rc = shell_command(command, print_stdout, print_stderr, raise_on_error)
+    return out, err, rc
 
 
 def get_working_dir(directory):
+    working_dir = "(undefined)"
     try:
         if os.path.isdir(directory):
             working_dir = os.path.join(directory, "docker-to-squash")
         else:
             working_dir = directory
         os.makedirs(working_dir)
-    except:
-        raise Exception("Could not create working_dir: " + working_dir)
+    except Exception as ex:
+        raise Exception(f"Could not create working_dir: {working_dir}, {ex}")
     return working_dir
 
+
 def is_sha256_hash(string):
-    if not re.findall(r"^[a-fA-F\d]{64,64}$", string):
+    if not re.findall(r"^[a-fA-F\d]{64}$", string):
         return False
     return True
+
 
 def calculate_file_hash(filename):
     sha = hashlib.sha256()
@@ -227,15 +239,17 @@ def calculate_file_hash(filename):
             if not data:
                 break
             sha.update(data)
-    hexdigest = sha.hexdigest()
-    if hexdigest == 0:
-        raise Exception("Hex digest for file: " + hexdigest + "returned 0")
-    return hexdigest
+    hex_digest = sha.hexdigest()
+    if hex_digest == 0:
+        raise Exception("Hex digest for file: " + filename + " returned 0")
+    return hex_digest
+
 
 def calculate_string_hash(string):
     sha = hashlib.sha256()
     sha.update(string)
     return sha.hexdigest()
+
 
 def get_local_manifest_from_path(manifest_path):
     with open(manifest_path, "rb") as file_pointer:
@@ -244,15 +258,18 @@ def get_local_manifest_from_path(manifest_path):
     manifest = json.loads(out)
     return manifest, manifest_hash
 
+
 def get_hdfs_manifest_from_path(manifest_path):
-    out, err, returncode = hdfs_cat(manifest_path)
+    out, err, rc = hdfs_cat(manifest_path)
     manifest_hash = calculate_string_hash(str(out))
     manifest = json.loads(out)
     return manifest, manifest_hash
 
+
 def get_config_hash_from_manifest(manifest):
     config_hash = manifest['config']['digest'].split(":", 1)[1]
     return config_hash
+
 
 def check_total_layer_number(layers):
     global MAX_IMAGE_LAYERS
@@ -262,6 +279,7 @@ def check_total_layer_number(layers):
                         " layers, which is more than the maximum " + str(MAX_IMAGE_LAYERS) +
                         " layers. Failing out")
 
+
 def check_total_layer_size(manifest, size):
     global MAX_IMAGE_SIZE
     if size > MAX_IMAGE_SIZE:
@@ -269,6 +287,7 @@ def check_total_layer_size(manifest, size):
             logging.error("layer " + layer['digest'] + " has size " + str(layer['size']))
         raise Exception("Image has total size " + str(size) +
                         " B. which is more than the maximum size " + str(MAX_IMAGE_SIZE) + " B. Failing out")
+
 
 def get_layer_hashes_from_manifest(manifest, error_on_size_check=True):
     layers = []
@@ -284,23 +303,24 @@ def get_layer_hashes_from_manifest(manifest, error_on_size_check=True):
 
     return layers
 
+
 def get_pull_fmt_string(pull_format):
     pull_fmt_string = pull_format + ":"
     if pull_format == "docker":
         pull_fmt_string = pull_fmt_string + "//"
     return pull_fmt_string
 
+
 def get_manifest_from_docker_image(pull_format, image):
     pull_fmt_string = get_pull_fmt_string(pull_format)
-    out, err, returncode = shell_command(["skopeo", "inspect", "--raw", pull_fmt_string + image],
-                                         False, True, True, 60)
+    out, err, rc = shell_command(["skopeo", "inspect", "--raw", pull_fmt_string + image], False, True, True, 60)
     manifest = json.loads(out)
     if 'manifests' in manifest:
         logging.debug("skopeo inspect --raw returned a list of manifests")
         manifests_dict = manifest['manifests']
         sha = None
         for mfest in manifests_dict:
-            if(mfest['platform']['architecture'] == "amd64"):
+            if mfest['platform']['architecture'] == "amd64":
                 sha = mfest['digest']
                 break
         if not sha:
@@ -318,11 +338,13 @@ def get_manifest_from_docker_image(pull_format, image):
     logging.debug("manifest: %s", str(manifest))
     return manifest, manifest_hash
 
+
 def split_image_and_tag(image_and_tag):
     split = image_and_tag.split(",")
     image = split[0]
     tags = split[1:]
     return image, tags
+
 
 def read_image_tag_to_hash(image_tag_to_hash):
     hash_to_tags = dict()
@@ -346,7 +368,7 @@ def read_image_tag_to_hash(image_tag_to_hash):
             tags_list = ' '.join(split_line[:-1]).split(",")
 
             if not is_sha256_hash(manifest_hash) or not tags_list:
-                logging.warn("image-tag-to-hash file malformed. Skipping entry %s", line)
+                logging.warning("image-tag-to-hash file malformed. Skipping entry %s", line)
                 continue
 
             tags_and_comments = hash_to_tags.get(manifest_hash, None)
@@ -366,10 +388,11 @@ def read_image_tag_to_hash(image_tag_to_hash):
             for tag in tags_list:
                 cur_manifest = tag_to_hash.get(tag, None)
                 if cur_manifest is not None:
-                    logging.warn("tag_to_hash already has manifest %s defined for tag %s."
-                                 + "This entry will be overwritten", cur_manifest, tag)
+                    logging.warning("tag_to_hash already has manifest %s defined for tag %s. "
+                                    "This entry will be overwritten", cur_manifest, tag)
                 tag_to_hash[tag] = manifest_hash
     return hash_to_tags, tag_to_hash
+
 
 def remove_tag_from_dicts(hash_to_tags, tag_to_hash, tag):
     if not hash_to_tags:
@@ -389,6 +412,7 @@ def remove_tag_from_dicts(hash_to_tags, tag_to_hash, tag):
     else:
         logging.debug("Tag not found. Not removing tag: %s", tag)
 
+
 def remove_image_hash_from_dicts(hash_to_tags, tag_to_hash, image_hash):
     if not hash_to_tags:
         logging.debug("hash_to_tags is null. Not removing image_hash %s", image_hash)
@@ -401,6 +425,7 @@ def remove_image_hash_from_dicts(hash_to_tags, tag_to_hash, image_hash):
         hash_to_tags.pop(image_hash)
         for tag in prev_tags:
             del tag_to_hash[tag]
+
 
 def add_tag_to_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment):
     tag_to_hash[tag] = manifest_hash
@@ -417,6 +442,7 @@ def add_tag_to_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment):
             new_comment.append(comment)
     hash_to_tags[manifest_hash] = (new_tags, new_comment)
 
+
 def write_local_image_tag_to_hash(image_tag_to_hash, hash_to_tags):
     file_contents = []
     for key, value in hash_to_tags.iteritems():
@@ -424,7 +450,7 @@ def write_local_image_tag_to_hash(image_tag_to_hash, hash_to_tags):
         tags = ','.join(map(str, value[0]))
         if tags:
             comment = ', '.join(map(str, value[1]))
-            if comment > 0:
+            if comment:
                 comment = "#" + comment
             file_contents.append(tags + ":" + manifest_hash + comment + "\n")
 
@@ -433,19 +459,22 @@ def write_local_image_tag_to_hash(image_tag_to_hash, hash_to_tags):
         for val in file_contents:
             file_pointer.write(val)
 
-def update_dicts_for_multiple_tags(hash_to_tags, tag_to_hash, tags,
-                                   manifest_hash, comment):
+
+def update_dicts_for_multiple_tags(hash_to_tags, tag_to_hash, tags, manifest_hash, comment):
     for tag in tags:
         update_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment)
+
 
 def update_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment):
     remove_tag_from_dicts(hash_to_tags, tag_to_hash, tag)
     add_tag_to_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment)
 
+
 def remove_from_dicts(hash_to_tags, tag_to_hash, tags):
     for tag in tags:
         logging.debug("removing tag: %s", tag)
         remove_tag_from_dicts(hash_to_tags, tag_to_hash, tag)
+
 
 def populate_tag_dicts(hdfs_root, image_tag_to_hash, local_image_tag_to_hash):
 
@@ -470,6 +499,7 @@ def setup_squashfs_hdfs_dirs(hdfs_dirs, image_tag_to_hash_path):
         hdfs_touchz(image_tag_to_hash_path)
         hdfs_chmod("755", image_tag_to_hash_path)
 
+
 def skopeo_copy_image(pull_format, image, skopeo_format, skopeo_dir):
     logging.info("Pulling image: %s", image)
     if os.path.isdir(skopeo_dir):
@@ -480,32 +510,31 @@ def skopeo_copy_image(pull_format, image, skopeo_format, skopeo_dir):
     shell_command(["skopeo", "copy", pull_fmt_string + image,
                    skopeo_format + ":" + skopeo_dir], False, True, True, 600)
 
+
 def untar_layer(tmp_dir, layer_path):
-    shell_command(["tar", "-C", tmp_dir, "--xattrs",
-                   "--xattrs-include='*'", "-xf", layer_path],
-                  False, True, True, 600)
+    shell_command(["tar", "-C", tmp_dir, "--xattrs", "--xattrs-include='*'", "-xf", layer_path], False, True, True, 600)
+
 
 def tar_file_search(archive, target):
-    out, err, returncode = shell_command(["tar", "-xf", archive, target, "-O"],
-                                         False, False, False, 600)
+    out, err, rc = shell_command(["tar", "-xf", archive, target, "-O"], False, False, False, 600)
     return out
 
+
 def set_fattr(directory):
-    shell_command(["setfattr", "-n", "trusted.overlay.opaque",
-                   "-v", "y", directory], False, True, True)
+    shell_command(["setfattr", "-n", "trusted.overlay.opaque", "-v", "y", directory], False, True, True)
+
 
 def make_whiteout_block_device(file_path, whiteout):
-    shell_command(["mknod", "-m", "000", file_path,
-                   "c", "0", "0"], False, True, True)
+    shell_command(["mknod", "-m", "000", file_path, "c", "0", "0"], False, True, True)
 
-    out, err, returncode = shell_command(["stat", "-c", "%U:%G", whiteout], False, True, True)
+    out, err, rc = shell_command(["stat", "-c", "%U:%G", whiteout], False, True, True)
     perms = str(out).strip()
 
     shell_command(["chown", perms, file_path], False, True, True)
 
+
 def convert_oci_whiteouts(tmp_dir):
-    out, err, returncode = shell_command(["find", tmp_dir, "-name", ".wh.*"],
-                                         False, False, True, 60)
+    out, err, rc = shell_command(["find", tmp_dir, "-name", ".wh.*"], False, False, True, 60)
     whiteouts = str(out).splitlines()
     for whiteout in whiteouts:
         if whiteout == 0:
@@ -522,25 +551,27 @@ def convert_oci_whiteouts(tmp_dir):
             make_whiteout_block_device(file_path, whiteout)
         shell_command(["rm", whiteout], False, True, True)
 
+
 def dir_to_squashfs(tmp_dir, squash_path):
-    shell_command(["/usr/sbin/mksquashfs", tmp_dir, squash_path, "-write-queue", "4096",
-                   "-read-queue", "4096", "-fragment-queue", "4096"],
+    shell_command(["/usr/sbin/mksquashfs", tmp_dir, squash_path, "-write-queue", "4096", "-read-queue", "4096",
+                   "-fragment-queue", "4096"],
                   False, True, True, 600)
+
 
 def upload_to_hdfs(file_path, file_name, hdfs_dir, replication, mode, force=False):
     dest = hdfs_dir + "/" + file_name
 
     if does_hdfs_entry_exist(dest, raise_on_error=False):
         if not force:
-            logging.warn("Not uploading to HDFS. File already exists: %s", dest)
+            logging.warning("Not uploading to HDFS. File already exists: %s", dest)
             return
         logging.info("File already exists, but overwriting due to force option: %s", dest)
 
     hdfs_put(file_path, dest, force)
     hdfs_setrep(replication, dest)
     hdfs_chmod(mode, dest)
-    logging.info("Uploaded file %s with replication %d and permissions %s",
-                 dest, replication, mode)
+    logging.info("Uploaded file %s with replication %d and permissions %s", dest, replication, mode)
+
 
 def atomic_upload_mv_to_hdfs(file_path, file_name, hdfs_dir, replication, image_tag_to_hash_file_hash):
     global HADOOP_PREFIX
@@ -565,17 +596,18 @@ def atomic_upload_mv_to_hdfs(file_path, file_name, hdfs_dir, replication, image_
             jar_file = file
 
         if not jar_file:
-            raise Exception("SymlinkTool Jar doesn't exist: %s" % (jar_path))
+            raise Exception("SymlinkTool Jar doesn't exist: %s" % jar_path)
 
         logging.debug("jar_file: " + jar_file)
 
         shell_command(["hadoop", "jar", jar_file, "org.apache.hadoop.tools.SymlinkTool",
                        "mvlink", "-f", hdfs_tmp_path, hdfs_file_path], False, False, True)
 
-    except:
+    except Exception as ex:
         if does_hdfs_entry_exist(hdfs_tmp_path, raise_on_error=False):
             hdfs_rm(hdfs_tmp_path)
-        raise Exception("image tag to hash file upload failed")
+        raise Exception("image tag to hash file upload failed, exception=" + str(ex))
+
 
 def docker_to_squash(layer_dir, layer, working_dir):
     tmp_dir = os.path.join(working_dir, "expand_archive_" + layer)
@@ -593,8 +625,7 @@ def docker_to_squash(layer_dir, layer, working_dir):
         dir_to_squashfs(tmp_dir, squash_path)
     finally:
         os.remove(layer_path)
-        shell_command(["rm", "-rf", tmp_dir],
-                      False, True, True)
+        shell_command(["rm", "-rf", tmp_dir], False, True, True)
 
 
 def check_image_for_magic_file(magic_file, skopeo_dir, layers):
@@ -606,8 +637,8 @@ def check_image_for_magic_file(magic_file, skopeo_dir, layers):
             logging.debug("Found magic file %s in layer %s", magic_file_absolute, layer)
             logging.debug("Magic file %s has contents:\n%s", magic_file_absolute, ret)
             return ret
-    raise Exception("Magic file %s doesn't exist in any layer" %
-                    (magic_file_absolute))
+    raise Exception(f"Magic file {magic_file_absolute} doesn't exist in any layer")
+
 
 def pull_build_push_update(args):
     skopeo_format = args.skopeo_format
@@ -626,7 +657,6 @@ def pull_build_push_update(args):
     hdfs_manifest_dir = hdfs_root + "/manifests"
     working_dir = None
 
-
     try:
         working_dir = get_working_dir(args.working_dir)
         local_image_tag_to_hash = os.path.join(working_dir, os.path.basename(image_tag_to_hash))
@@ -637,12 +667,10 @@ def pull_build_push_update(args):
         hash_to_tags, tag_to_hash, image_tag_to_hash_hash = populate_tag_dicts(hdfs_root,
                                                                                image_tag_to_hash,
                                                                                local_image_tag_to_hash)
-
         for image_and_tag_arg in images_and_tags:
             image, tags = split_image_and_tag(image_and_tag_arg)
             if not image or not tags:
-                raise Exception("Positional parameter requires an image and at least 1 tag: "
-                                + image_and_tag_arg)
+                raise Exception("Positional parameter requires an image and at least 1 tag: " + image_and_tag_arg)
 
             logging.info("Working on image %s with tags %s", image, str(tags))
             manifest, manifest_hash = get_manifest_from_docker_image(pull_format, image)
@@ -653,17 +681,14 @@ def pull_build_push_update(args):
             logging.debug("Layers: %s", str(layers))
             logging.debug("Config: %s", str(config_hash))
 
-            update_dicts_for_multiple_tags(hash_to_tags, tag_to_hash, tags,
-                                           manifest_hash, image)
+            update_dicts_for_multiple_tags(hash_to_tags, tag_to_hash, tags, manifest_hash, image)
 
             all_layers_exist = True
 
-            if not does_hdfs_entry_exist(hdfs_manifest_dir + "/" + manifest_hash,
-                                         raise_on_error=False):
+            if not does_hdfs_entry_exist(hdfs_manifest_dir + "/" + manifest_hash, raise_on_error=False):
                 all_layers_exist = False
 
-            if not does_hdfs_entry_exist(hdfs_config_dir + "/" + config_hash,
-                                         raise_on_error=False):
+            if not does_hdfs_entry_exist(hdfs_config_dir + "/" + config_hash, raise_on_error=False):
                 all_layers_exist = False
 
             for layer in layers:
@@ -691,11 +716,9 @@ def pull_build_push_update(args):
                 hdfs_squash_path = hdfs_layers_dir + "/" + layer + ".sqsh"
                 if does_hdfs_entry_exist(hdfs_squash_path, raise_on_error=False):
                     if force:
-                        logging.info("Layer already exists, but overwriting due to force"
-                                     + "option: %s", layer)
+                        logging.info(f"Layer already exists, but overwriting due to force option: {layer}")
                     else:
-                        logging.info("Layer exists. Skipping and not squashifying or"
-                                     + "uploading: %s", layer)
+                        logging.info(f"Layer exists. Skipping and not squashifying or uploading: {layer}")
                         continue
 
                 docker_to_squash(skopeo_dir, layer, working_dir)
@@ -703,15 +726,13 @@ def pull_build_push_update(args):
                 squash_name = os.path.basename(squash_path)
                 upload_to_hdfs(squash_path, squash_name, hdfs_layers_dir, replication, "444", force)
 
-
             config_local_path = os.path.join(skopeo_dir, config_hash)
             upload_to_hdfs(config_local_path,
                            os.path.basename(config_local_path),
                            hdfs_config_dir, replication, "444", force)
 
             manifest_local_path = os.path.join(skopeo_dir, "manifest.json")
-            upload_to_hdfs(manifest_local_path, manifest_hash,
-                           hdfs_manifest_dir, replication, "444", force)
+            upload_to_hdfs(manifest_local_path, manifest_hash, hdfs_manifest_dir, replication, "444", force)
 
         write_local_image_tag_to_hash(local_image_tag_to_hash, hash_to_tags)
         atomic_upload_mv_to_hdfs(local_image_tag_to_hash, image_tag_to_hash,
@@ -720,8 +741,8 @@ def pull_build_push_update(args):
     finally:
         if working_dir:
             if os.path.isdir(working_dir):
-                shell_command(["rm", "-rf", working_dir],
-                              False, True, True)
+                shell_command(["rm", "-rf", working_dir], False, True, True)
+
 
 def pull_build(args):
     skopeo_format = args.skopeo_format
@@ -733,8 +754,7 @@ def pull_build(args):
     for image_and_tag_arg in images_and_tags:
         image, tags = split_image_and_tag(image_and_tag_arg)
         if not image or not tags:
-            raise Exception("Positional parameter requires an image and at least 1 tag: "
-                            + image_and_tag_arg)
+            raise Exception("Positional parameter requires an image and at least 1 tag: " + image_and_tag_arg)
 
         logging.info("Working on image %s with tags %s", image, str(tags))
         manifest, manifest_hash = get_manifest_from_docker_image(pull_format, image)
@@ -744,7 +764,6 @@ def pull_build(args):
 
         logging.debug("Layers: %s", str(layers))
         logging.debug("Config: %s", str(config_hash))
-
 
         try:
             working_dir = get_working_dir(args.working_dir)
@@ -759,10 +778,11 @@ def pull_build(args):
                 logging.info("Squashifying layer: %s", layer)
                 docker_to_squash(skopeo_dir, layer, working_dir)
 
-        except:
+        except Exception as _:
             if os.path.isdir(skopeo_dir):
                 shutil.rmtree(skopeo_dir)
             raise
+
 
 def push_update(args):
     hdfs_root = args.hdfs_root
@@ -787,17 +807,15 @@ def push_update(args):
         hash_to_tags, tag_to_hash, image_tag_to_hash_hash = populate_tag_dicts(hdfs_root,
                                                                                image_tag_to_hash,
                                                                                local_image_tag_to_hash)
-
         for image_and_tag_arg in images_and_tags:
             image, tags = split_image_and_tag(image_and_tag_arg)
             if not image or not tags:
-                raise Exception("Positional parameter requires an image and at least 1 tag: "
-                                + image_and_tag_arg)
+                raise Exception("Positional parameter requires an image and at least 1 tag: " + image_and_tag_arg)
 
             logging.info("Working on image %s with tags %s", image, str(tags))
             skopeo_dir = os.path.join(working_dir, image.split("/")[-1])
             if not os.path.exists(skopeo_dir):
-                raise Exception("skopeo_dir doesn't exists: %s" % (skopeo_dir))
+                raise Exception("skopeo_dir doesn't exists: %s" % skopeo_dir)
             manifest, manifest_hash = get_local_manifest_from_path(skopeo_dir + "/manifest.json")
 
             layers = get_layer_hashes_from_manifest(manifest)
@@ -806,17 +824,14 @@ def push_update(args):
             logging.debug("Layers: %s", str(layers))
             logging.debug("Config: %s", str(config_hash))
 
-            update_dicts_for_multiple_tags(hash_to_tags, tag_to_hash, tags,
-                                           manifest_hash, image)
+            update_dicts_for_multiple_tags(hash_to_tags, tag_to_hash, tags, manifest_hash, image)
 
             all_layers_exist = True
 
-            if not does_hdfs_entry_exist(hdfs_manifest_dir + "/" + manifest_hash,
-                                         raise_on_error=False):
+            if not does_hdfs_entry_exist(hdfs_manifest_dir + "/" + manifest_hash, raise_on_error=False):
                 all_layers_exist = False
 
-            if not does_hdfs_entry_exist(hdfs_config_dir + "/" + config_hash,
-                                         raise_on_error=False):
+            if not does_hdfs_entry_exist(hdfs_config_dir + "/" + config_hash, raise_on_error=False):
                 all_layers_exist = False
 
             for layer in layers:
@@ -835,17 +850,14 @@ def push_update(args):
                 hdfs_squash_path = hdfs_layers_dir + "/" + layer + ".sqsh"
                 if does_hdfs_entry_exist(hdfs_squash_path, raise_on_error=False):
                     if force:
-                        logging.info("Layer already exists, but overwriting due to force"
-                                     + "option: %s", layer)
+                        logging.info(f"Layer already exists, but overwriting due to force option: {layer}")
                     else:
-                        logging.info("Layer exists. Skipping and not squashifying or"
-                                     + "uploading: %s", layer)
+                        logging.info(f"Layer exists. Skipping and not squashifying or uploading: {layer}")
                         continue
 
                 squash_path = os.path.join(skopeo_dir, layer + ".sqsh")
                 squash_name = os.path.basename(squash_path)
                 upload_to_hdfs(squash_path, squash_name, hdfs_layers_dir, replication, "444", force)
-
 
             config_local_path = os.path.join(skopeo_dir, config_hash)
             upload_to_hdfs(config_local_path,
@@ -889,7 +901,7 @@ def remove_image(args):
 
         delete_list = []
 
-        known_images, err, returncode = hdfs_ls(hdfs_manifest_dir, "-C", False, False, False)
+        known_images, err, rc = hdfs_ls(hdfs_manifest_dir, "-C", False, False, False)
         known_images = known_images.split()
 
         logging.debug("known_images:\n%s", known_images)
@@ -922,7 +934,7 @@ def remove_image(args):
 
         logging.debug("images_to_remove:\n%s", images_to_remove)
         if not images_to_remove:
-            logging.warn("No images to remove")
+            logging.warning("No images to remove")
             return
 
         for image in known_images:
@@ -986,6 +998,7 @@ def remove_image(args):
             if os.path.isdir(working_dir):
                 shutil.rmtree(working_dir)
 
+
 def add_remove_tag(args):
     pull_format = args.pull_format
     hdfs_root = args.hdfs_root
@@ -1014,20 +1027,19 @@ def add_remove_tag(args):
 
                 if manifest_hash:
                     manifest_path = hdfs_manifest_dir + "/" + manifest_hash
-                    out, err, returncode = hdfs_cat(manifest_path)
+                    out, err, rc = hdfs_cat(manifest_path)
                     manifest = json.loads(out)
                     logging.debug("image tag exists for %s", image)
                 else:
                     manifest, manifest_hash = get_manifest_from_docker_image(pull_format, image)
 
-                update_dicts_for_multiple_tags(hash_to_tags, tag_to_hash, tags,
-                                               manifest_hash, image)
+                update_dicts_for_multiple_tags(hash_to_tags, tag_to_hash, tags, manifest_hash, image)
 
             elif sub_command == "remove-tag":
                 tags = image_and_tag_arg.split(",")
                 remove_from_dicts(hash_to_tags, tag_to_hash, tags)
             else:
-                raise Exception("Invalid sub_command: %s" % (sub_command))
+                raise Exception(f"Invalid sub_command: {sub_command}")
 
         write_local_image_tag_to_hash(local_image_tag_to_hash, hash_to_tags)
         atomic_upload_mv_to_hdfs(local_image_tag_to_hash, image_tag_to_hash,
@@ -1037,6 +1049,7 @@ def add_remove_tag(args):
         if working_dir:
             if os.path.isdir(working_dir):
                 shutil.rmtree(working_dir)
+
 
 def copy_update(args):
     image_tag_to_hash = args.image_tag_to_hash
@@ -1049,10 +1062,10 @@ def copy_update(args):
 
     src_layers_dir = src_root + "/layers"
     src_config_dir = src_root + "/config"
-    src_manifest_dir = src_root  + "/manifests"
+    src_manifest_dir = src_root + "/manifests"
     dest_layers_dir = dest_root + "/layers"
     dest_config_dir = dest_root + "/config"
-    dest_manifest_dir = dest_root  + "/manifests"
+    dest_manifest_dir = dest_root + "/manifests"
 
     if bootstrap:
         hdfs_dirs = [dest_root, dest_layers_dir, dest_config_dir, dest_manifest_dir]
@@ -1062,13 +1075,13 @@ def copy_update(args):
 
     try:
         working_dir = get_working_dir(args.working_dir)
-        local_src_image_tag_to_hash = os.path.join(working_dir, "src-"
-                                                   + os.path.basename(image_tag_to_hash))
-        local_dest_image_tag_to_hash = os.path.join(working_dir, "dest-"
-                                                    + os.path.basename(image_tag_to_hash))
+        local_src_image_tag_to_hash = os.path.join(working_dir, "src-" + os.path.basename(image_tag_to_hash))
+        local_dest_image_tag_to_hash = os.path.join(working_dir, "dest-" + os.path.basename(image_tag_to_hash))
 
-        src_hash_to_tags, src_tag_to_hash, src_image_tag_to_hash_hash = populate_tag_dicts(src_root, image_tag_to_hash, local_src_image_tag_to_hash)
-        dest_hash_to_tags, dest_tag_to_hash, dest_image_tag_to_hash_hash = populate_tag_dicts(dest_root, image_tag_to_hash, local_dest_image_tag_to_hash)
+        src_hash_to_tags, src_tag_to_hash, src_image_tag_to_hash_hash = populate_tag_dicts(
+            src_root, image_tag_to_hash, local_src_image_tag_to_hash)
+        dest_hash_to_tags, dest_tag_to_hash, dest_image_tag_to_hash_hash = populate_tag_dicts(
+            dest_root, image_tag_to_hash, local_dest_image_tag_to_hash)
 
         for image_and_tag_arg in images_and_tags:
             image, tags = split_image_and_tag(image_and_tag_arg)
@@ -1131,6 +1144,7 @@ def copy_update(args):
             if os.path.isdir(working_dir):
                 shutil.rmtree(working_dir)
 
+
 def query_tag(args):
     hdfs_root = args.hdfs_root
     image_tag_to_hash = args.image_tag_to_hash
@@ -1182,6 +1196,7 @@ def query_tag(args):
             if os.path.isdir(working_dir):
                 shutil.rmtree(working_dir)
 
+
 def list_tags(args):
     hdfs_root = args.hdfs_root
     image_tag_to_hash = args.image_tag_to_hash
@@ -1191,6 +1206,7 @@ def list_tags(args):
         hdfs_cat(hdfs_image_tag_to_hash, True, True, False)
     else:
         logging.error("image-tag-to-hash file doesn't exist: %s", hdfs_image_tag_to_hash)
+
 
 def bootstrap_setup(args):
     hdfs_root = args.hdfs_root
@@ -1202,6 +1218,7 @@ def bootstrap_setup(args):
     hdfs_dirs = [hdfs_root, hdfs_layers_dir, hdfs_config_dir, hdfs_manifest_dir]
     image_tag_to_hash_path = hdfs_root + "/" + image_tag_to_hash
     setup_squashfs_hdfs_dirs(hdfs_dirs, image_tag_to_hash_path)
+
 
 def create_parsers():
     parser = argparse.ArgumentParser()
@@ -1284,13 +1301,12 @@ def create_parsers():
     parse_list_tags.set_defaults(func=list_tags)
     add_parser_default_arguments(parse_list_tags)
 
-    parse_bootstrap_setup= subparsers.add_parser('bootstrap',
-                                                 help='Bootstrap setup of required HDFS'
-                                                      + 'directories')
+    parse_bootstrap_setup = subparsers.add_parser('bootstrap', help='Bootstrap setup of required HDFS directories')
     parse_bootstrap_setup.set_defaults(func=bootstrap_setup)
     add_parser_default_arguments(parse_bootstrap_setup)
 
     return parser
+
 
 def add_parser_default_arguments(parser):
     parser.add_argument("--working-dir", type=str, dest='working_dir', default="dts-work-dir",
@@ -1329,29 +1345,30 @@ def add_parser_default_arguments(parser):
                                                                  + " of required HDFS directories")
     return parser
 
+
 def check_dependencies():
     global HADOOP_BIN_DIR
     try:
         command = [HADOOP_BIN_DIR + "/hadoop", "version"]
         shell_command(command, False, False, True)
-    except:
+    except Exception as ex:
         logging.error("Could not find hadoop. Make sure HADOOP_PREFIX " +
                       "is set correctly either in your environment or on the command line " +
-                      "via --hadoop-prefix")
+                      "via --hadoop-prefix" +
+                      ", exception is " + str(ex))
         return 1
 
     try:
         command = ["skopeo", "-v"]
         shell_command(command, False, False, True)
-    except:
-        logging.error("Could not find skopeo. Make sure it is installed and present " +
-                      "on the PATH")
+    except Exception as _:
+        logging.error("Could not find skopeo. Make sure it is installed and present on the PATH")
         return 1
 
     try:
         command = ["/usr/sbin/mksquashfs", "-version"]
         shell_command(command, False, False, True)
-    except:
+    except Exception as _:
         logging.error("Could not find /usr/sbin/mksquashfs. Make sure squashfs-tools is installed " +
                       "and /usr/sbin/mksquashfs is present on the the PATH")
         return 1
@@ -1359,20 +1376,19 @@ def check_dependencies():
     try:
         command = ["tar", "--version"]
         shell_command(command, False, False, True)
-    except:
-        logging.error("Could not find tar. Make sure it is installed and present " +
-                      "on the PATH")
+    except Exception as _:
+        logging.error("Could not find tar. Make sure it is installed and present on the PATH")
         return 1
 
     try:
         command = ["setfattr", "--version"]
         shell_command(command, False, False, True)
     except:
-        logging.error("Could not find setfattr . Make sure it is installed and present " +
-                      "on the PATH")
+        logging.error("Could not find setfattr . Make sure it is installed and present on the PATH")
         return 1
 
     return 0
+
 
 def main():
     global LOG_LEVEL
@@ -1389,7 +1405,7 @@ def main():
     args, extra = parser.parse_known_args()
 
     if extra:
-        raise Exception("Extra unknown arguments given: %s" % (extra))
+        raise Exception(f"Extra unknown arguments given: {extra}")
 
     MAX_IMAGE_LAYERS = args.MAX_IMAGE_LAYERS
     MAX_IMAGE_SIZE = args.MAX_IMAGE_SIZE
@@ -1424,6 +1440,7 @@ def main():
     logging.debug("HADOOP_BIN_DIR: %s", str(HADOOP_BIN_DIR))
 
     args.func(args)
+
 
 if __name__ == "__main__":
     main()
