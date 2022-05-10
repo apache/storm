@@ -354,7 +354,7 @@ def read_image_tag_to_hash(image_tag_to_hash):
             line = file_pointer.readline()
             if not line:
                 break
-            line = line.rstrip()
+            line = str(line).rstrip()
 
             if not line:
                 continue
@@ -484,7 +484,7 @@ def populate_tag_dicts(hdfs_root, image_tag_to_hash, local_image_tag_to_hash):
     else:
         image_tag_to_hash_hash = 0
 
-    if image_tag_to_hash_hash != 0:
+    if image_tag_to_hash_hash:
         hash_to_tags, tag_to_hash = read_image_tag_to_hash(local_image_tag_to_hash)
     else:
         hash_to_tags = {}
@@ -764,6 +764,7 @@ def pull_build(args):
 
         logging.debug("Layers: %s", str(layers))
         logging.debug("Config: %s", str(config_hash))
+        skopeo_dir = None
 
         try:
             working_dir = get_working_dir(args.working_dir)
@@ -779,7 +780,7 @@ def pull_build(args):
                 docker_to_squash(skopeo_dir, layer, working_dir)
 
         except Exception as _:
-            if os.path.isdir(skopeo_dir):
+            if skopeo_dir and os.path.isdir(skopeo_dir):
                 shutil.rmtree(skopeo_dir)
             raise
 
