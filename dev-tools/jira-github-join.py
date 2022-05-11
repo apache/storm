@@ -39,7 +39,9 @@ def main():
     jira_repo = JiraRepo("https://issues.apache.org/jira/rest/api/2")
     github_repo = GitHub(options)
 
+    print("=" * 100)
     print("Report generated on: %s (GMT)" % (datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S")))
+    print("-" * 100)
     report_builder = CompleteReportBuilder(jira_repo, github_repo)
     report_builder.report.print_all()
 

@@ -12,15 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-def encode(obj, encoding='UTF-8'):
-    """
-    Check if the object supports encode() method, and if so, encodes it.
-    Encoding defaults to UTF-8.
-    For example objects of type 'int' do not support encode
-    """
-    return obj.encode(encoding) if 'encode' in dir(obj) else obj
-
-
 class Formatter:
     def __init__(self, fields_tuple=(), row_tuple=(), min_width_tuple=None):
         # Format to pass as first argument to the print function, e.g. '%s%s%s'
@@ -47,7 +38,7 @@ class Formatter:
         sizes = []
         padding = 3
         for i in range(0, len(row_tuple)):
-            max_len = max(len(encode(fields_tuple[i])), len(str(encode(row_tuple[i]))))
+            max_len = max(len(fields_tuple[i]), len(str(row_tuple[i])))
             if min_width_tuple is not None:
                 max_len = max(max_len, min_width_tuple[i])
             sizes += [max_len + padding]
@@ -63,7 +54,7 @@ class Formatter:
     # Returns a tuple where each entry has a string that is the result of
     # statements with the pattern "{!s:43}".format("Text")
     def row_str_format(self, row_tuple):
-        format_with_values = [str(self.data_format[0].format(encode(row_tuple[0])))]
+        format_with_values = [self.data_format[0].format(row_tuple[0])]
         for i in range(1, len(row_tuple)):
-            format_with_values += [str(self.data_format[i].format(encode(row_tuple[i])))]
+            format_with_values += [self.data_format[i].format(row_tuple[i])]
         return tuple(format_with_values)

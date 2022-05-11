@@ -23,12 +23,6 @@ except ImportError:
     import simplejson as json
 
 
-def mstr(obj):
-    if obj is None:
-        return ""
-    return str(obj)
-
-
 def jiratime(obj):
     if obj is None:
         return None
@@ -54,7 +48,7 @@ class JiraComment:
 
     def __init__(self, data):
         self.data = data
-        self.author = mstr(self.data['author']['name'])
+        self.author = self.data['author']['name']
         self.github_author = None
         self.githubPull = None
         self.githubComment = (self.author == "githubbot")
@@ -74,7 +68,7 @@ class JiraComment:
         return self.author
 
     def get_body(self):
-        return mstr(self.data['body'])
+        return self.data['body']
 
     def get_pull(self):
         return self.githubPull
@@ -106,16 +100,27 @@ class Jira:
         self.comments = None
 
     def get_id(self):
-        return mstr(self.key)
+        """
+        Get Jira ID as a string from the string stored in self.key
+        :return: Jira id, example "STORM-1234"
+        """
+        return self.key
+
+    def get_id_num(self):
+        """
+        Get Jira ID number as an integer from the string stored in self.key
+        :return: Numeric Jira Id as a number. Example "STORM-1234" and "ZKP-1234" will both return 1234
+        """
+        return int(self.key.split('-')[-1])
 
     def get_description(self):
-        return mstr(self.fields['description'])
+        return self.fields['description']
 
     def getReleaseNote(self):
         if self.notes is None:
             field = self.parent.fieldIdMap['Release Note']
             if field in self.fields:
-                self.notes = mstr(self.fields[field])
+                self.notes = self.fields[field]
             else:
                 self.notes = self.get_description()
         return self.notes
@@ -125,28 +130,28 @@ class Jira:
         status = self.fields['status']
         if status is not None:
             ret = status['name']
-        return mstr(ret)
+        return ret
 
     def get_priority(self):
         ret = ""
         pri = self.fields['priority']
         if pri is not None:
             ret = pri['name']
-        return mstr(ret)
+        return ret
 
     def get_assignee_email(self):
         ret = ""
         mid = self.fields['assignee']
         if mid is not None:
             ret = mid['emailAddress']
-        return mstr(ret)
+        return ret
 
     def get_assignee(self):
         ret = ""
         mid = self.fields['assignee']
         if mid is not None:
             ret = mid['displayName']
-        return mstr(ret)
+        return ret
 
     def get_components(self):
         return " , ".join([comp['name'] for comp in self.fields['components']])
@@ -164,21 +169,21 @@ class Jira:
         mid = self.fields['issuetype']
         if mid is not None:
             ret = mid['name']
-        return mstr(ret)
+        return ret
 
     def get_reporter(self):
         ret = ""
         mid = self.fields['reporter']
         if mid is not None:
             ret = mid['displayName']
-        return mstr(ret)
+        return ret
 
     def get_project(self):
         ret = ""
         mid = self.fields['project']
         if mid is not None:
             ret = mid['key']
-        return mstr(ret)
+        return ret
 
     def get_created(self):
         return jiratime(self.fields['created'])
@@ -196,7 +201,8 @@ class Jira:
             while at < end:
                 params = urllib.parse.urlencode({'startAt': at, 'maxResults': count})
                 resp = urllib.request.urlopen(self.parent.baseUrl + "/issue/" + jiraId + "/comment?" + params)
-                data = json.loads(resp.read())
+                resp_str = resp.read().decode()
+                data = json.loads(resp_str)
                 if 'errorMessages' in data:
                     raise Exception(data['errorMessages'])
                 at = data['startAt'] + data['maxResults']
@@ -232,7 +238,8 @@ class JiraRepo:
     def __init__(self, baseUrl):
         self.baseUrl = baseUrl
         resp = urllib.request.urlopen(baseUrl + "/field")
-        data = json.loads(resp.read())
+        resp_str = resp.read().decode()
+        data = json.loads(resp_str)
 
         self.fieldIdMap = {}
         for part in data:
@@ -240,7 +247,8 @@ class JiraRepo:
 
     def get(self, id):
         resp = urllib.request.urlopen(self.baseUrl + "/issue/" + id)
-        data = json.loads(resp.read())
+        resp_str = resp.read().decode()
+        data = json.loads(resp_str)
         if 'errorMessages' in data:
             raise Exception(data['errorMessages'])
         j = Jira(data, self)
@@ -255,7 +263,8 @@ class JiraRepo:
             params = urllib.parse.urlencode({'jql': query, 'startAt': at, 'maxResults': count})
             # print params
             resp = urllib.request.urlopen(self.baseUrl + "/search?%s" % params)
-            data = json.loads(resp.read())
+            resp_str = resp.read().decode()
+            data = json.loads(resp_str)
             if 'errorMessages' in data:
                 raise Exception(data['errorMessages'])
             at = data['startAt'] + data['maxResults']

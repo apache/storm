@@ -14,7 +14,7 @@
 
 from datetime import datetime
 from jira_github import Jira
-from formatter import Formatter
+from .formatter import Formatter
 
 
 def daydiff(a, b):
