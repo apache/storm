@@ -78,6 +78,7 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error, timeout_s
             process.kill()
         raise Exception("Popen failure, " + str(ex))
     finally:
+        # Note that finally clause executes even when there is no exception, hence the "return" statement
         if timer:
             timer.cancel()
         return out, err, (process.returncode if process else -1)
@@ -477,7 +478,6 @@ def remove_from_dicts(hash_to_tags, tag_to_hash, tags):
 
 
 def populate_tag_dicts(hdfs_root, image_tag_to_hash, local_image_tag_to_hash):
-
     if does_hdfs_entry_exist(hdfs_root + "/" + image_tag_to_hash):
         hdfs_get(hdfs_root + "/" + image_tag_to_hash, local_image_tag_to_hash)
         image_tag_to_hash_hash = calculate_file_hash(local_image_tag_to_hash)

@@ -27,6 +27,7 @@ def main():
         pull = github.pull("apache", "storm", pullNumber)
         print("git pull --no-ff " + pull.from_repo() + " " + pull.from_branch())
 
-    if __name__ == "__main__":
-        main()
+
+if __name__ == "__main__":
+    main()
 
