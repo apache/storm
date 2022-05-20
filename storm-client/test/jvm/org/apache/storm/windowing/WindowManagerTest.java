@@ -19,17 +19,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link WindowManager}
@@ -38,21 +38,21 @@ public class WindowManagerTest {
     private WindowManager<Integer> windowManager;
     private Listener listener;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         listener = new Listener();
         windowManager = new WindowManager<>(listener);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         windowManager.shutdown();
     }
 
     @Test
-    public void testCountBasedWindow() throws Exception {
-        EvictionPolicy<Integer, ?> evictionPolicy = new CountEvictionPolicy<Integer>(5);
-        TriggerPolicy<Integer, ?> triggerPolicy = new CountTriggerPolicy<Integer>(2, windowManager, evictionPolicy);
+    public void testCountBasedWindow() {
+        EvictionPolicy<Integer, ?> evictionPolicy = new CountEvictionPolicy<>(5);
+        TriggerPolicy<Integer, ?> triggerPolicy = new CountTriggerPolicy<>(2, windowManager, evictionPolicy);
         triggerPolicy.start();
         windowManager.setEvictionPolicy(evictionPolicy);
         windowManager.setTriggerPolicy(triggerPolicy);
@@ -90,11 +90,11 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testExpireThreshold() throws Exception {
+    public void testExpireThreshold() {
         int threshold = WindowManager.EXPIRE_EVENTS_THRESHOLD;
         int windowLength = 5;
-        windowManager.setEvictionPolicy(new CountEvictionPolicy<Integer>(5));
-        TriggerPolicy<Integer, ?> triggerPolicy = new TimeTriggerPolicy<Integer>(new Duration(1, TimeUnit.HOURS).value, windowManager);
+        windowManager.setEvictionPolicy(new CountEvictionPolicy<>(5));
+        TriggerPolicy<Integer, ?> triggerPolicy = new TimeTriggerPolicy<>(new Duration(1, TimeUnit.HOURS).value, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
         for (int i : seq(1, 5)) {
@@ -112,16 +112,15 @@ public class WindowManagerTest {
         assertEquals(seq(1, threshold - windowLength), listener.onExpiryEvents);
     }
 
-    private void testEvictBeforeWatermarkForWatermarkEvictionPolicy(EvictionPolicy watermarkEvictionPolicy, int windowLength) throws
-        Exception {
-        /**
+    private void testEvictBeforeWatermarkForWatermarkEvictionPolicy(EvictionPolicy<Integer, ?> watermarkEvictionPolicy, int windowLength) {
+        /*
          * The watermark eviction policy must not evict tuples until the first watermark has been received.
          * The policies can't make a meaningful decision prior to the first watermark, so the safe decision
          * is to postpone eviction.
          */
         int threshold = WindowManager.EXPIRE_EVENTS_THRESHOLD;
         windowManager.setEvictionPolicy(watermarkEvictionPolicy);
-        WatermarkCountTriggerPolicy triggerPolicy = new WatermarkCountTriggerPolicy(windowLength, windowManager,
+        WatermarkCountTriggerPolicy<Integer> triggerPolicy = new WatermarkCountTriggerPolicy<>(windowLength, windowManager,
                                                                                     watermarkEvictionPolicy, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
@@ -143,29 +142,29 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testExpireThresholdWithWatermarkCountEvictionPolicy() throws Exception {
+    public void testExpireThresholdWithWatermarkCountEvictionPolicy() {
         int windowLength = WindowManager.EXPIRE_EVENTS_THRESHOLD;
-        EvictionPolicy watermarkCountEvictionPolicy = new WatermarkCountEvictionPolicy(windowLength);
+        EvictionPolicy<Integer, ?> watermarkCountEvictionPolicy = new WatermarkCountEvictionPolicy<>(windowLength);
         testEvictBeforeWatermarkForWatermarkEvictionPolicy(watermarkCountEvictionPolicy, windowLength);
     }
 
     @Test
-    public void testExpireThresholdWithWatermarkTimeEvictionPolicy() throws Exception {
+    public void testExpireThresholdWithWatermarkTimeEvictionPolicy() {
         int windowLength = WindowManager.EXPIRE_EVENTS_THRESHOLD;
-        EvictionPolicy watermarkTimeEvictionPolicy = new WatermarkTimeEvictionPolicy(windowLength);
+        EvictionPolicy<Integer, ?> watermarkTimeEvictionPolicy = new WatermarkTimeEvictionPolicy<>(windowLength);
         testEvictBeforeWatermarkForWatermarkEvictionPolicy(watermarkTimeEvictionPolicy, windowLength);
     }
 
     @Test
-    public void testTimeBasedWindow() throws Exception {
-        EvictionPolicy<Integer, ?> evictionPolicy = new TimeEvictionPolicy<Integer>(new Duration(1, TimeUnit.SECONDS).value);
+    public void testTimeBasedWindow() {
+        EvictionPolicy<Integer, ?> evictionPolicy = new TimeEvictionPolicy<>(new Duration(1, TimeUnit.SECONDS).value);
         windowManager.setEvictionPolicy(evictionPolicy);
         /*
          * Don't wait for Timetrigger to fire since this could lead to timing issues in unit tests.
          * Set it to a large value and trigger manually.
          */
         TriggerPolicy<Integer, ?> triggerPolicy =
-            new TimeTriggerPolicy<Integer>(new Duration(1, TimeUnit.DAYS).value, windowManager, evictionPolicy);
+            new TimeTriggerPolicy<>(new Duration(1, TimeUnit.DAYS).value, windowManager, evictionPolicy);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
         long now = System.currentTimeMillis();
@@ -219,14 +218,14 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testTimeBasedWindowExpiry() throws Exception {
-        EvictionPolicy<Integer, ?> evictionPolicy = new TimeEvictionPolicy<Integer>(new Duration(100, TimeUnit.MILLISECONDS).value);
+    public void testTimeBasedWindowExpiry() {
+        EvictionPolicy<Integer, ?> evictionPolicy = new TimeEvictionPolicy<>(new Duration(100, TimeUnit.MILLISECONDS).value);
         windowManager.setEvictionPolicy(evictionPolicy);
         /*
          * Don't wait for Timetrigger to fire since this could lead to timing issues in unit tests.
          * Set it to a large value and trigger manually.
          */
-        TriggerPolicy<Integer, ?> triggerPolicy = new TimeTriggerPolicy<Integer>(new Duration(1, TimeUnit.DAYS).value, windowManager);
+        TriggerPolicy<Integer, ?> triggerPolicy = new TimeTriggerPolicy<>(new Duration(1, TimeUnit.DAYS).value, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
         long now = System.currentTimeMillis();
@@ -256,10 +255,10 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testTumblingWindow() throws Exception {
-        EvictionPolicy<Integer, ?> evictionPolicy = new CountEvictionPolicy<Integer>(3);
+    public void testTumblingWindow() {
+        EvictionPolicy<Integer, ?> evictionPolicy = new CountEvictionPolicy<>(3);
         windowManager.setEvictionPolicy(evictionPolicy);
-        TriggerPolicy<Integer, ?> triggerPolicy = new CountTriggerPolicy<Integer>(3, windowManager, evictionPolicy);
+        TriggerPolicy<Integer, ?> triggerPolicy = new CountTriggerPolicy<>(3, windowManager, evictionPolicy);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
         windowManager.add(1);
@@ -285,10 +284,10 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testEventTimeBasedWindow() throws Exception {
+    public void testEventTimeBasedWindow() {
         EvictionPolicy<Integer, ?> evictionPolicy = new WatermarkTimeEvictionPolicy<>(20);
         windowManager.setEvictionPolicy(evictionPolicy);
-        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkTimeTriggerPolicy<Integer>(10, windowManager, evictionPolicy, windowManager);
+        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkTimeTriggerPolicy<>(10, windowManager, evictionPolicy, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
 
@@ -298,14 +297,14 @@ public class WindowManagerTest {
 
         // This should trigger the scan to find
         // the next aligned window end ts, but not produce any activations
-        windowManager.add(new WaterMarkEvent<Integer>(609));
+        windowManager.add(new WaterMarkEvent<>(609));
         assertEquals(Collections.emptyList(), listener.allOnActivationEvents);
 
         windowManager.add(4, 618);
         windowManager.add(5, 626);
         windowManager.add(6, 636);
         // send a watermark event, which should trigger three windows.
-        windowManager.add(new WaterMarkEvent<Integer>(631));
+        windowManager.add(new WaterMarkEvent<>(631));
 
         //        System.out.println(listener.allOnActivationEvents);
         assertEquals(3, listener.allOnActivationEvents.size());
@@ -330,7 +329,7 @@ public class WindowManagerTest {
         windowManager.add(10, 839);
 
         listener.clear();
-        windowManager.add(new WaterMarkEvent<Integer>(834));
+        windowManager.add(new WaterMarkEvent<>(834));
 
         assertEquals(3, listener.allOnActivationEvents.size());
         assertEquals(seq(5, 6), listener.allOnActivationEvents.get(0));
@@ -351,10 +350,10 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testCountBasedWindowWithEventTs() throws Exception {
+    public void testCountBasedWindowWithEventTs() {
         EvictionPolicy<Integer, ?> evictionPolicy = new WatermarkCountEvictionPolicy<>(3);
         windowManager.setEvictionPolicy(evictionPolicy);
-        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkTimeTriggerPolicy<Integer>(10, windowManager, evictionPolicy, windowManager);
+        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkTimeTriggerPolicy<>(10, windowManager, evictionPolicy, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
 
@@ -365,7 +364,7 @@ public class WindowManagerTest {
         windowManager.add(5, 626);
         windowManager.add(6, 636);
         // send a watermark event, which should trigger three windows.
-        windowManager.add(new WaterMarkEvent<Integer>(631));
+        windowManager.add(new WaterMarkEvent<>(631));
 
         assertEquals(3, listener.allOnActivationEvents.size());
         assertEquals(seq(1, 3), listener.allOnActivationEvents.get(0));
@@ -379,7 +378,7 @@ public class WindowManagerTest {
         windowManager.add(10, 679);
 
         listener.clear();
-        windowManager.add(new WaterMarkEvent<Integer>(674));
+        windowManager.add(new WaterMarkEvent<>(674));
         //        System.out.println(listener.allOnActivationEvents);
         assertEquals(4, listener.allOnActivationEvents.size());
         // same set of events part of three windows
@@ -390,10 +389,10 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testCountBasedTriggerWithEventTs() throws Exception {
-        EvictionPolicy<Integer, ?> evictionPolicy = new WatermarkTimeEvictionPolicy<Integer>(20);
+    public void testCountBasedTriggerWithEventTs() {
+        EvictionPolicy<Integer, ?> evictionPolicy = new WatermarkTimeEvictionPolicy<>(20);
         windowManager.setEvictionPolicy(evictionPolicy);
-        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkCountTriggerPolicy<Integer>(3, windowManager, evictionPolicy, windowManager);
+        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkCountTriggerPolicy<>(3, windowManager, evictionPolicy, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
 
@@ -406,7 +405,7 @@ public class WindowManagerTest {
         windowManager.add(7, 629);
         windowManager.add(8, 636);
         // send a watermark event, which should trigger three windows.
-        windowManager.add(new WaterMarkEvent<Integer>(631));
+        windowManager.add(new WaterMarkEvent<>(631));
         //        System.out.println(listener.allOnActivationEvents);
 
         assertEquals(2, listener.allOnActivationEvents.size());
@@ -421,7 +420,7 @@ public class WindowManagerTest {
         windowManager.add(12, 679);
 
         listener.clear();
-        windowManager.add(new WaterMarkEvent<Integer>(674));
+        windowManager.add(new WaterMarkEvent<>(674));
         //        System.out.println(listener.allOnActivationEvents);
         assertEquals(2, listener.allOnActivationEvents.size());
         // same set of events part of three windows
@@ -430,10 +429,10 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testCountBasedTumblingWithSameEventTs() throws Exception {
+    public void testCountBasedTumblingWithSameEventTs() {
         EvictionPolicy<Integer, ?> evictionPolicy = new WatermarkCountEvictionPolicy<>(2);
         windowManager.setEvictionPolicy(evictionPolicy);
-        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkCountTriggerPolicy<Integer>(2, windowManager, evictionPolicy, windowManager);
+        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkCountTriggerPolicy<>(2, windowManager, evictionPolicy, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
 
@@ -448,7 +447,7 @@ public class WindowManagerTest {
         windowManager.add(9, 14);
         windowManager.add(10, 15);
 
-        windowManager.add(new WaterMarkEvent<Integer>(20));
+        windowManager.add(new WaterMarkEvent<>(20));
         assertEquals(5, listener.allOnActivationEvents.size());
         assertEquals(seq(1, 2), listener.allOnActivationEvents.get(0));
         assertEquals(seq(3, 4), listener.allOnActivationEvents.get(1));
@@ -458,10 +457,10 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testCountBasedSlidingWithSameEventTs() throws Exception {
+    public void testCountBasedSlidingWithSameEventTs() {
         EvictionPolicy<Integer, ?> evictionPolicy = new WatermarkCountEvictionPolicy<>(5);
         windowManager.setEvictionPolicy(evictionPolicy);
-        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkCountTriggerPolicy<Integer>(2, windowManager, evictionPolicy, windowManager);
+        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkCountTriggerPolicy<>(2, windowManager, evictionPolicy, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
 
@@ -476,7 +475,7 @@ public class WindowManagerTest {
         windowManager.add(9, 14);
         windowManager.add(10, 15);
 
-        windowManager.add(new WaterMarkEvent<Integer>(20));
+        windowManager.add(new WaterMarkEvent<>(20));
         assertEquals(5, listener.allOnActivationEvents.size());
         assertEquals(seq(1, 2), listener.allOnActivationEvents.get(0));
         assertEquals(seq(1, 4), listener.allOnActivationEvents.get(1));
@@ -487,10 +486,10 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testEventTimeLag() throws Exception {
+    public void testEventTimeLag() {
         EvictionPolicy<Integer, ?> evictionPolicy = new WatermarkTimeEvictionPolicy<>(20, 5);
         windowManager.setEvictionPolicy(evictionPolicy);
-        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkTimeTriggerPolicy<Integer>(10, windowManager, evictionPolicy, windowManager);
+        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkTimeTriggerPolicy<>(10, windowManager, evictionPolicy, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
 
@@ -503,7 +502,7 @@ public class WindowManagerTest {
         windowManager.add(7, 629);
         windowManager.add(8, 636);
         // send a watermark event, which should trigger three windows.
-        windowManager.add(new WaterMarkEvent<Integer>(631));
+        windowManager.add(new WaterMarkEvent<>(631));
         //        System.out.println(listener.allOnActivationEvents);
         assertEquals(3, listener.allOnActivationEvents.size());
         assertEquals(seq(1, 3), listener.allOnActivationEvents.get(0));
@@ -513,7 +512,7 @@ public class WindowManagerTest {
     }
 
     @Test
-    public void testScanStop() throws Exception {
+    public void testScanStop() {
         final Set<Integer> eventsScanned = new HashSet<>();
         EvictionPolicy<Integer, ?> evictionPolicy = new WatermarkTimeEvictionPolicy<Integer>(20, 5) {
 
@@ -525,7 +524,7 @@ public class WindowManagerTest {
 
         };
         windowManager.setEvictionPolicy(evictionPolicy);
-        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkTimeTriggerPolicy<Integer>(10, windowManager, evictionPolicy, windowManager);
+        TriggerPolicy<Integer, ?> triggerPolicy = new WatermarkTimeTriggerPolicy<>(10, windowManager, evictionPolicy, windowManager);
         triggerPolicy.start();
         windowManager.setTriggerPolicy(triggerPolicy);
 
@@ -541,7 +540,7 @@ public class WindowManagerTest {
         windowManager.add(10, 639);
 
         // send a watermark event, which should trigger three windows.
-        windowManager.add(new WaterMarkEvent<Integer>(631));
+        windowManager.add(new WaterMarkEvent<>(631));
 
         assertEquals(3, listener.allOnActivationEvents.size());
         assertEquals(seq(1, 3), listener.allOnActivationEvents.get(0));

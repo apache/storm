@@ -26,8 +26,11 @@ import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.utils.WrappedInvalidTopologyException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class OciUtilsTest {
 
@@ -55,37 +58,43 @@ public class OciUtilsTest {
         OciUtils.validateImageInDaemonConf(conf);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validateImageInDaemonConfNotInAllowedList() {
-        Map<String, Object> conf = new HashMap<>();
-        List<String> allowedImages = new ArrayList<>();
-        allowedImages.add("storm/rhel7:dev_test");
-        conf.put(DaemonConfig.STORM_OCI_ALLOWED_IMAGES, allowedImages);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Map<String, Object> conf = new HashMap<>();
+            List<String> allowedImages = new ArrayList<>();
+            allowedImages.add("storm/rhel7:dev_test");
+            conf.put(DaemonConfig.STORM_OCI_ALLOWED_IMAGES, allowedImages);
 
-        conf.put(DaemonConfig.STORM_OCI_IMAGE, "storm/rhel7:wow");
-        OciUtils.validateImageInDaemonConf(conf);
+            conf.put(DaemonConfig.STORM_OCI_IMAGE, "storm/rhel7:wow");
+            OciUtils.validateImageInDaemonConf(conf);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validateImageInDaemonConfWithNullDefault() {
-        Map<String, Object> conf = new HashMap<>();
-        List<String> allowedImages = new ArrayList<>();
-        allowedImages.add("storm/rhel7:dev_test");
-        conf.put(DaemonConfig.STORM_OCI_ALLOWED_IMAGES, allowedImages);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Map<String, Object> conf = new HashMap<>();
+            List<String> allowedImages = new ArrayList<>();
+            allowedImages.add("storm/rhel7:dev_test");
+            conf.put(DaemonConfig.STORM_OCI_ALLOWED_IMAGES, allowedImages);
 
-        conf.put(DaemonConfig.STORM_OCI_IMAGE, null); //or not set
-        OciUtils.validateImageInDaemonConf(conf);
+            conf.put(DaemonConfig.STORM_OCI_IMAGE, null); //or not set
+            OciUtils.validateImageInDaemonConf(conf);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validateImageInDaemonConfWrongPattern() {
-        Map<String, Object> conf = new HashMap<>();
-        List<String> allowedImages = new ArrayList<>();
-        allowedImages.add("*");
-        conf.put(DaemonConfig.STORM_OCI_ALLOWED_IMAGES, allowedImages);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Map<String, Object> conf = new HashMap<>();
+            List<String> allowedImages = new ArrayList<>();
+            allowedImages.add("*");
+            conf.put(DaemonConfig.STORM_OCI_ALLOWED_IMAGES, allowedImages);
 
-        conf.put(DaemonConfig.STORM_OCI_IMAGE, "a-strange@image-name");
-        OciUtils.validateImageInDaemonConf(conf);
+            conf.put(DaemonConfig.STORM_OCI_IMAGE, "a-strange@image-name");
+            OciUtils.validateImageInDaemonConf(conf);
+        });
     }
 
     @Test
@@ -105,7 +114,7 @@ public class OciUtilsTest {
         //case 2: allowed list is not set; topology oci image will be set to null
         topoConf.put(Config.TOPOLOGY_OCI_IMAGE, image1);
         OciUtils.adjustImageConfigForTopo(conf, topoConf, topoId);
-        Assert.assertNull(Config.TOPOLOGY_OCI_IMAGE + " is not removed", topoConf.get(Config.TOPOLOGY_OCI_IMAGE));
+        assertNull(topoConf.get(Config.TOPOLOGY_OCI_IMAGE), Config.TOPOLOGY_OCI_IMAGE + " is not removed");
 
         //set up daemon conf properly
         List<String> allowedImages = new ArrayList<>();
@@ -117,22 +126,22 @@ public class OciUtilsTest {
         //case 3: configs are set properly; nothing will happen
         topoConf.put(Config.TOPOLOGY_OCI_IMAGE, image1);
         OciUtils.adjustImageConfigForTopo(conf, topoConf, topoId);
-        Assert.assertEquals(image1, topoConf.get(Config.TOPOLOGY_OCI_IMAGE));
+        assertEquals(image1, topoConf.get(Config.TOPOLOGY_OCI_IMAGE));
 
         //case 4: topology oci image is not set; will be set to default image
         topoConf.remove(Config.TOPOLOGY_OCI_IMAGE);
         OciUtils.adjustImageConfigForTopo(conf, topoConf, topoId);
-        Assert.assertEquals(defaultImage, topoConf.get(Config.TOPOLOGY_OCI_IMAGE));
+        assertEquals(defaultImage, topoConf.get(Config.TOPOLOGY_OCI_IMAGE));
 
         //case 5: any topology oci image is allowed
         allowedImages.add("*");
         String image2 = "storm/rhel7:dev_wow";
         topoConf.put(Config.TOPOLOGY_OCI_IMAGE, image2);
         OciUtils.adjustImageConfigForTopo(conf, topoConf, topoId);
-        Assert.assertEquals(image2, topoConf.get(Config.TOPOLOGY_OCI_IMAGE));
+        assertEquals(image2, topoConf.get(Config.TOPOLOGY_OCI_IMAGE));
     }
 
-    @Test(expected = WrappedInvalidTopologyException.class)
+    @Test
     public void adjustImageConfigForTopoNotInAllowedList() throws InvalidTopologyException {
         String image1 = "storm/rhel7:dev_test";
         String image2 = "storm/rhel7:dev_current";
@@ -146,6 +155,7 @@ public class OciUtilsTest {
         String topoId = "topo1";
         topoConf.put(Config.TOPOLOGY_OCI_IMAGE, image2);
 
-        OciUtils.adjustImageConfigForTopo(conf, topoConf, topoId);
+        assertThrows(WrappedInvalidTopologyException.class, () ->
+            OciUtils.adjustImageConfigForTopo(conf, topoConf, topoId));
     }
 }

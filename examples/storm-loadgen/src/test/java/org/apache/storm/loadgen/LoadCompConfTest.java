@@ -18,13 +18,13 @@
 
 package org.apache.storm.loadgen;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LoadCompConfTest {
     @Test
-    public void scaleParallel() throws Exception {
+    public void scaleParallel() {
         LoadCompConf orig = new LoadCompConf.Builder()
             .withId("SOME_SPOUT")
             .withParallelism(1)
@@ -40,7 +40,7 @@ public class LoadCompConfTest {
     }
 
     @Test
-    public void scaleThroughput() throws Exception {
+    public void scaleThroughput() {
         LoadCompConf orig = new LoadCompConf.Builder()
             .withId("SOME_SPOUT")
             .withParallelism(1)

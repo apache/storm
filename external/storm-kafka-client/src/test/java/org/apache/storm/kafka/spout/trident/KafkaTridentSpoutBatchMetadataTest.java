@@ -17,23 +17,23 @@
 package org.apache.storm.kafka.spout.trident;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Map;
 import org.json.simple.JSONValue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class KafkaTridentSpoutBatchMetadataTest {
 
+    /**
+     * Tests that the metadata object can be converted to and from a Map. This is needed because Trident metadata is written to
+     * Zookeeper as JSON with the json-simple library, so the spout converts the metadata to Map before returning it to Trident.
+     * It is important that all map entries are types json-simple knows about,
+     * since otherwise the library just calls toString on them which will likely produce invalid JSON.
+     */
     @SuppressWarnings("rawtypes")
     @Test
     public void testMetadataIsRoundTripSerializableWithJsonSimple() throws Exception {
-        /**
-         * Tests that the metadata object can be converted to and from a Map. This is needed because Trident metadata is written to
-         * Zookeeper as JSON with the json-simple library, so the spout converts the metadata to Map before returning it to Trident.
-         * It is important that all map entries are types json-simple knows about,
-         * since otherwise the library just calls toString on them which will likely produce invalid JSON.
-         */
         long startOffset = 10;
         long endOffset = 20;
         String topologyId = "topologyId";

@@ -18,13 +18,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.storm.generated.GlobalStreamId;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link WaterMarkEventGenerator}
@@ -38,7 +38,7 @@ public class WaterMarkEventGeneratorTest {
         return new GlobalStreamId(component, "default");
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         windowManager = new WindowManager<Integer>(null) {
             @Override
@@ -52,13 +52,13 @@ public class WaterMarkEventGeneratorTest {
         waterMarkEventGenerator.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         waterMarkEventGenerator.shutdown();
     }
 
     @Test
-    public void testTrackSingleStream() throws Exception {
+    public void testTrackSingleStream() {
         waterMarkEventGenerator.track(streamId("s1"), 100);
         waterMarkEventGenerator.track(streamId("s1"), 110);
         waterMarkEventGenerator.run();
@@ -67,7 +67,7 @@ public class WaterMarkEventGeneratorTest {
     }
 
     @Test
-    public void testTrackSingleStreamOutOfOrder() throws Exception {
+    public void testTrackSingleStreamOutOfOrder() {
         waterMarkEventGenerator.track(streamId("s1"), 100);
         waterMarkEventGenerator.track(streamId("s1"), 110);
         waterMarkEventGenerator.track(streamId("s1"), 104);
@@ -77,7 +77,7 @@ public class WaterMarkEventGeneratorTest {
     }
 
     @Test
-    public void testTrackTwoStreams() throws Exception {
+    public void testTrackTwoStreams() {
         Set<GlobalStreamId> streams = new HashSet<>();
         streams.add(streamId("s1"));
         streams.add(streamId("s2"));
@@ -95,13 +95,13 @@ public class WaterMarkEventGeneratorTest {
     }
 
     @Test
-    public void testNoEvents() throws Exception {
+    public void testNoEvents() {
         waterMarkEventGenerator.run();
         assertTrue(eventList.isEmpty());
     }
 
     @Test
-    public void testLateEvent() throws Exception {
+    public void testLateEvent() {
         assertTrue(waterMarkEventGenerator.track(streamId("s1"), 100));
         assertTrue(waterMarkEventGenerator.track(streamId("s1"), 110));
         waterMarkEventGenerator.run();

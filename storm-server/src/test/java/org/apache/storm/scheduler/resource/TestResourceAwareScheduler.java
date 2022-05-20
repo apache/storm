@@ -56,12 +56,14 @@ import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.time.Duration;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -104,7 +106,7 @@ public class TestResourceAwareScheduler {
         return config;
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (scheduler != null) {
             scheduler.cleanup();
@@ -649,8 +651,8 @@ public class TestResourceAwareScheduler {
                 Double cpuUsed = superToCpu.get(supervisor);
                 Double memUsed = superToMem.get(supervisor);
 
-                assertTrue(supervisor.getId() + " MEM: " + memAvailable + " == " + memUsed + " OR CPU: " + cpuAvailable + " == " + cpuUsed,
-                        (Math.abs(memAvailable - memUsed) < EPSILON) || (Math.abs(cpuAvailable - cpuUsed) < EPSILON));
+                assertTrue((Math.abs(memAvailable - memUsed) < EPSILON) || (Math.abs(cpuAvailable - cpuUsed) < EPSILON),
+                        supervisor.getId() + " MEM: " + memAvailable + " == " + memUsed + " OR CPU: " + cpuAvailable + " == " + cpuUsed);
             }
         } finally {
             rs.cleanup();
@@ -948,15 +950,15 @@ public class TestResourceAwareScheduler {
                 double memoryBefore = nodes.get(ws.getNodeId()).getAvailableMemoryResources();
                 double cpuBefore = nodes.get(ws.getNodeId()).getAvailableCpuResources();
                 double memoryUsedByWorker = wr.get_mem_on_heap() + wr.get_mem_off_heap();
-                assertEquals("Check if memory used by worker is calculated correctly", 1000.0, memoryUsedByWorker, 0.001);
+                assertEquals(1000.0, memoryUsedByWorker, 0.001, "Check if memory used by worker is calculated correctly");
                 double cpuUsedByWorker = wr.get_cpu();
-                assertEquals("Check if CPU used by worker is calculated correctly", 100.0, cpuUsedByWorker, 0.001);
+                assertEquals(100.0, cpuUsedByWorker, 0.001, "Check if CPU used by worker is calculated correctly");
                 nodes.get(ws.getNodeId()).free(ws);
                 double memoryAfter = nodes.get(ws.getNodeId()).getAvailableMemoryResources();
                 double cpuAfter = nodes.get(ws.getNodeId()).getAvailableCpuResources();
-                assertEquals("Check if free correctly frees amount of memory", memoryBefore + memoryUsedByWorker, memoryAfter, 0.001);
-                assertEquals("Check if free correctly frees amount of memory", cpuBefore + cpuUsedByWorker, cpuAfter, 0.001);
-                assertFalse("Check if worker was removed from assignments", assignment.getSlotToExecutors().containsKey(ws));
+                assertEquals(memoryBefore + memoryUsedByWorker, memoryAfter, 0.001, "Check if free correctly frees amount of memory");
+                assertEquals(cpuBefore + cpuUsedByWorker, cpuAfter, 0.001, "Check if free correctly frees amount of memory");
+                assertFalse(assignment.getSlotToExecutors().containsKey(ws), "Check if worker was removed from assignments");
             }
         }
     }
@@ -981,11 +983,11 @@ public class TestResourceAwareScheduler {
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
-        assertFalse("Topo-1 unscheduled?", cluster.getAssignmentById(topo1.getId()) != null);
-        assertTrue("Topo-2 scheduled?", cluster.getAssignmentById(topo2.getId()) != null);
-        assertEquals("Topo-2 all executors scheduled?", 4, cluster.getAssignmentById(topo2.getId()).getExecutorToSlot().size());
-        assertTrue("Topo-3 scheduled?", cluster.getAssignmentById(topo3.getId()) != null);
-        assertEquals("Topo-3 all executors scheduled?", 3, cluster.getAssignmentById(topo3.getId()).getExecutorToSlot().size());
+        assertFalse(cluster.getAssignmentById(topo1.getId()) != null, "Topo-1 unscheduled?");
+        assertTrue(cluster.getAssignmentById(topo2.getId()) != null, "Topo-2 scheduled?");
+        assertEquals(4, cluster.getAssignmentById(topo2.getId()).getExecutorToSlot().size(), "Topo-2 all executors scheduled?");
+        assertTrue(cluster.getAssignmentById(topo3.getId()) != null, "Topo-3 scheduled?");
+        assertEquals(3, cluster.getAssignmentById(topo3.getId()).getExecutorToSlot().size(), "Topo-3 all executors scheduled?");
     }
 
     /**
@@ -1005,7 +1007,7 @@ public class TestResourceAwareScheduler {
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         assertFalse(cluster.needsSchedulingRas(topo1));
-        assertTrue("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
+        assertTrue(cluster.getAssignmentById(topo1.getId()) != null, "Topo-1 scheduled?");
     }
 
     /**
@@ -1029,9 +1031,9 @@ public class TestResourceAwareScheduler {
         assertFalse(cluster.needsSchedulingRas(topo1));
         assertFalse(cluster.needsSchedulingRas(topo2));
         assertTrue(cluster.needsSchedulingRas(topo3));
-        assertTrue("topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
-        assertTrue("topo-2 scheduled?", cluster.getAssignmentById(topo2.getId()) != null);
-        assertFalse("topo-3 unscheduled?", cluster.getAssignmentById(topo3.getId()) != null);
+        assertTrue(cluster.getAssignmentById(topo1.getId()) != null, "topo-1 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo2.getId()) != null, "topo-2 scheduled?");
+        assertFalse(cluster.getAssignmentById(topo3.getId()) != null, "topo-3 unscheduled?");
 
         SchedulerAssignment assignment1 = cluster.getAssignmentById(topo1.getId());
         assertEquals(1, assignment1.getSlots().size());
@@ -1087,16 +1089,16 @@ public class TestResourceAwareScheduler {
         assertFalse(cluster.needsSchedulingRas(topo8));
         assertTrue(cluster.needsSchedulingRas(topo9));
 
-        assertTrue("topo-0 scheduled?", cluster.getAssignmentById(topo0.getId()) != null);
-        assertTrue("topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
-        assertTrue("topo-2 scheduled?", cluster.getAssignmentById(topo2.getId()) != null);
-        assertTrue("topo-3 scheduled?", cluster.getAssignmentById(topo3.getId()) != null);
-        assertTrue("topo-4 scheduled?", cluster.getAssignmentById(topo4.getId()) != null);
-        assertTrue("topo-5 scheduled?", cluster.getAssignmentById(topo5.getId()) != null);
-        assertTrue("topo-6 scheduled?", cluster.getAssignmentById(topo6.getId()) != null);
-        assertTrue("topo-7 scheduled?", cluster.getAssignmentById(topo7.getId()) != null);
-        assertTrue("topo-8 scheduled?", cluster.getAssignmentById(topo8.getId()) != null);
-        assertFalse("topo-9 unscheduled?", cluster.getAssignmentById(topo9.getId()) != null);
+        assertTrue(cluster.getAssignmentById(topo0.getId()) != null,"topo-0 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo1.getId()) != null, "topo-1 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo2.getId()) != null, "topo-2 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo3.getId()) != null, "topo-3 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo4.getId()) != null, "topo-4 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo5.getId()) != null, "topo-5 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo6.getId()) != null, "topo-6 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo7.getId()) != null, "topo-7 scheduled?");
+        assertTrue(cluster.getAssignmentById(topo8.getId()) != null, "topo-8 scheduled?");
+        assertFalse(cluster.getAssignmentById(topo9.getId()) != null, "topo-9 unscheduled?");
     }
 
     /**
@@ -1117,7 +1119,7 @@ public class TestResourceAwareScheduler {
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
         assertTrue(cluster.needsSchedulingRas(topo1));
-        assertFalse("Topo-1 unscheduled?", cluster.getAssignmentById(topo1.getId()) != null);
+        assertFalse(cluster.getAssignmentById(topo1.getId()) != null, "Topo-1 unscheduled?");
     }
 
     protected static class TimeBlockResult {
@@ -1247,7 +1249,7 @@ public class TestResourceAwareScheduler {
             msg += String.format("Ratio was %.2f (high/low=%.2f/%.2f), max allowed is %.2f (%.2f * %.2f)",
                     ratio, medianLastBlockTime, medianFirstBlockTime,
                     ratioAccepted * slowSchedulingThreshold, ratioAccepted, slowSchedulingThreshold);
-            assertTrue(msg, ratio < slowSchedulingThreshold * ratioAccepted);
+            assertTrue(ratio < slowSchedulingThreshold * ratioAccepted, msg);
         }
     }
 
@@ -1366,8 +1368,8 @@ public class TestResourceAwareScheduler {
         scheduler.prepare(config, new StormMetricsRegistry());
         scheduler.schedule(topologies, cluster);
 
-        assertTrue("Topo scheduled?", cluster.getAssignmentById(topo.getId()) != null);
-        assertEquals("Topo all executors scheduled?", 25, cluster.getAssignmentById(topo.getId()).getExecutorToSlot().size());
+        assertTrue(cluster.getAssignmentById(topo.getId()) != null, "Topo scheduled?");
+        assertEquals(25, cluster.getAssignmentById(topo.getId()).getExecutorToSlot().size(), "Topo all executors scheduled?");
     }
 
     @Test
@@ -1460,14 +1462,14 @@ public class TestResourceAwareScheduler {
         assertTrue(cluster.needsSchedulingRas(topo2));
         assertFalse(cluster.needsSchedulingRas(topo3));
 
-        assertTrue("Topo-1 scheduled?", cluster.getAssignmentById(topo1.getId()) != null);
-        assertEquals("Topo-1 all executors scheduled?", 2, cluster.getAssignmentById(topo1.getId()).getExecutorToSlot().size());
-        assertTrue("Topo-2 not scheduled", cluster.getAssignmentById(topo2.getId()) == null);
+        assertTrue(cluster.getAssignmentById(topo1.getId()) != null, "Topo-1 scheduled?");
+        assertEquals(2, cluster.getAssignmentById(topo1.getId()).getExecutorToSlot().size(), "Topo-1 all executors scheduled?");
+        assertTrue(cluster.getAssignmentById(topo2.getId()) == null, "Topo-2 not scheduled");
         assertEquals("Scheduling took too long for " + topo2.getId() + " using strategy "
                 + NeverEndingSchedulingStrategy.class.getName()
                 + " timeout after 30 seconds using config scheduling.timeout.seconds.per.topology.", cluster.getStatusMap().get(topo2.getId()));
-        assertTrue("Topo-3 scheduled?", cluster.getAssignmentById(topo3.getId()) != null);
-        assertEquals("Topo-3 all executors scheduled?", 3, cluster.getAssignmentById(topo3.getId()).getExecutorToSlot().size());
+        assertTrue(cluster.getAssignmentById(topo3.getId()) != null, "Topo-3 scheduled?");
+        assertEquals(3, cluster.getAssignmentById(topo3.getId()).getExecutorToSlot().size(), "Topo-3 all executors scheduled?");
     }
 
     public void testLargeTopologiesCommon(final String strategy, final boolean includeGpu, final int multiplier) {

@@ -1,5 +1,5 @@
 
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,10 +61,9 @@ public class BlobStoreTest {
     public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension();
 
     private static final Logger LOG = LoggerFactory.getLogger(BlobStoreTest.class);
-    URI base;
     private static final Map<String, Object> CONF = new HashMap<>();
     public static final int READ = 0x01;
-    public static final int WRITE = 0x02;
+    // public static final int WRITE = 0x02;
     public static final int ADMIN = 0x04;
 
     @BeforeEach
@@ -74,8 +72,7 @@ public class BlobStoreTest {
     }
 
     @AfterEach
-    public void cleanup()
-        throws IOException {
+    public void cleanup() {
     }
 
     // Method which initializes nimbus admin
@@ -104,9 +101,8 @@ public class BlobStoreTest {
         return nimbus;
     }
 
-    // Overloading the assertStoreHasExactly method accomodate Subject in order to check for authorization
-    public static void assertStoreHasExactly(BlobStore store, Subject who, String... keys)
-        throws IOException, KeyNotFoundException, AuthorizationException {
+    // Overloading the assertStoreHasExactly method accommodate Subject in order to check for authorization
+    public static void assertStoreHasExactly(BlobStore store, Subject who, String... keys) {
         Set<String> expected = new HashSet<>(Arrays.asList(keys));
         Set<String> found = new HashSet<>();
         Iterator<String> c = store.listKeys();
@@ -116,18 +112,17 @@ public class BlobStoreTest {
         }
         Set<String> extra = new HashSet<>(found);
         extra.removeAll(expected);
-        assertTrue("Found extra keys in the blob store " + extra, extra.isEmpty());
+        assertTrue(extra.isEmpty(), "Found extra keys in the blob store " + extra);
         Set<String> missing = new HashSet<>(expected);
         missing.removeAll(found);
-        assertTrue("Found keys missing from the blob store " + missing, missing.isEmpty());
+        assertTrue(missing.isEmpty(), "Found keys missing from the blob store " + missing);
     }
 
-    public static void assertStoreHasExactly(BlobStore store, String... keys)
-        throws IOException, KeyNotFoundException, AuthorizationException {
+    public static void assertStoreHasExactly(BlobStore store, String... keys) {
         assertStoreHasExactly(store, null, keys);
     }
 
-    // Overloading the readInt method accomodate Subject in order to check for authorization (security turned on)
+    // Overloading the readInt method accommodate Subject in order to check for authorization (security turned on)
     public static int readInt(BlobStore store, Subject who, String key) throws IOException, KeyNotFoundException, AuthorizationException {
         try (InputStream in = store.getBlob(key, who)) {
             return in.read();
@@ -169,7 +164,7 @@ public class BlobStoreTest {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
             this.blobStore.shutdown();
         }
 
@@ -194,7 +189,7 @@ public class BlobStoreTest {
     @Test
     public void testMultipleHdfs()
         throws Exception {
-        // use different blobstore dir so it doesn't conflict with other test
+        // use different blobstore dir, so it doesn't conflict with other test
         try (AutoCloseableBlobStoreContainer container = initHdfs("/storm/blobstore2")) {
             testMultiple(container.blobStore);
         }
@@ -209,7 +204,7 @@ public class BlobStoreTest {
             out.write(1);
         }
         assertStoreHasExactly(store, "test");
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", null), 4);
+        assertEquals(store.getBlobReplication("test", null), 4, "Blobstore replication not matching");
         store.deleteBlob("test", null);
 
         //Test for replication with NIMBUS as user
@@ -220,9 +215,9 @@ public class BlobStoreTest {
             out.write(1);
         }
         assertStoreHasExactly(store, "test");
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", admin), 4);
+        assertEquals(store.getBlobReplication("test", admin), 4, "Blobstore replication not matching");
         store.updateBlobReplication("test", 5, admin);
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", admin), 5);
+        assertEquals(store.getBlobReplication("test", admin), 5, "Blobstore replication not matching");
         store.deleteBlob("test", admin);
 
         //Test for replication using SUPERVISOR access
@@ -233,9 +228,9 @@ public class BlobStoreTest {
             out.write(1);
         }
         assertStoreHasExactly(store, "test");
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", supervisor), 4);
+        assertEquals(store.getBlobReplication("test", supervisor), 4, "Blobstore replication not matching");
         store.updateBlobReplication("test", 5, supervisor);
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", supervisor), 5);
+        assertEquals(store.getBlobReplication("test", supervisor), 5, "Blobstore replication not matching");
         store.deleteBlob("test", supervisor);
 
         Subject adminsGroupsUser = getSubject("adminsGroupsUser");
@@ -245,9 +240,9 @@ public class BlobStoreTest {
             out.write(1);
         }
         assertStoreHasExactly(store, "test");
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", adminsGroupsUser), 4);
+        assertEquals(store.getBlobReplication("test", adminsGroupsUser), 4, "Blobstore replication not matching");
         store.updateBlobReplication("test", 5, adminsGroupsUser);
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", adminsGroupsUser), 5);
+        assertEquals(store.getBlobReplication("test", adminsGroupsUser), 5, "Blobstore replication not matching");
         store.deleteBlob("test", adminsGroupsUser);
 
         //Test for a user having read or write or admin access to read replication for a blob
@@ -267,12 +262,12 @@ public class BlobStoreTest {
         }
         assertStoreHasExactly(store, "test");
         who = getSubject(writeSubject);
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", who), 4);
+        assertEquals(store.getBlobReplication("test", who), 4, "Blobstore replication not matching");
 
         //Test for a user having WRITE or ADMIN privileges to change replication of a blob
         who = getSubject(adminSubject);
         store.updateBlobReplication("test", 5, who);
-        assertEquals("Blobstore replication not matching", store.getBlobReplication("test", who), 5);
+        assertEquals(store.getBlobReplication("test", who), 5, "Blobstore replication not matching");
         store.deleteBlob("test", getSubject(createSubject));
     }
 
@@ -283,7 +278,7 @@ public class BlobStoreTest {
         return subject;
     }
     
-    static enum AuthenticationTestSubject {
+    enum AuthenticationTestSubject {
         //Nimbus Admin
         ADMIN(getSubject("admin")),
         //Nimbus groups admin
@@ -293,9 +288,9 @@ public class BlobStoreTest {
         //Nimbus itself
         NIMBUS(getNimbusSubject());
         
-        private Subject subject;
+        private final Subject subject;
 
-        private AuthenticationTestSubject(Subject subject) {
+        AuthenticationTestSubject(Subject subject) {
             this.subject = subject;
         }
     }
@@ -334,10 +329,10 @@ public class BlobStoreTest {
                 // Testing whether acls are set to WORLD_EVERYTHING. Here the acl should not contain WORLD_EVERYTHING because
                 // the subject is neither null nor empty. The ACL should however contain USER_EVERYTHING as user needs to have
                 // complete access to the blob
-                assertTrue("ACL contains WORLD_EVERYTHING", !metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+                assertFalse(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL contains WORLD_EVERYTHING");
             } else {
                 // Testing whether acls are set to WORLD_EVERYTHING
-                assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+                assertTrue(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
             }
             
             readAssertEqualsWithAuth(store, who, "test", 1);
@@ -397,7 +392,7 @@ public class BlobStoreTest {
             }
             assertStoreHasExactly(store, "test");
             // With no principals in the subject ACL should always be set to WORLD_EVERYTHING
-            assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+            assertTrue(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
             
             readAssertEqualsWithAuth(store, who, "test", 1);
         }
@@ -415,7 +410,7 @@ public class BlobStoreTest {
         }
         assertStoreHasExactly(store, "test");
         // Testing whether acls are set to WORLD_EVERYTHING
-        assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+        assertTrue(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
         readAssertEquals(store, "test", 1);
 
         LOG.info("Deleting test");

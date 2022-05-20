@@ -18,7 +18,7 @@
 package org.apache.storm.elasticsearch.bolt;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,7 +35,6 @@ import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.AfterEach;
@@ -55,9 +54,6 @@ public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
     static final Map<String, String> params = new HashMap<>();
 
     @Mock
-    private EsConfig esConfig;
-
-    @Mock
     private EsTupleMapper tupleMapper;
 
     @Mock
@@ -65,9 +61,6 @@ public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
 
     @Mock
     private Tuple tuple;
-
-    @Mock
-    private GetRequest request;
 
     @Mock
     private RestClient client;
@@ -82,12 +75,12 @@ public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
     }
 
     @AfterEach
-    public void replaceClientWithOriginal() throws Exception {
+    public void replaceClientWithOriginal() {
         EsLookupBolt.replaceClient(originalClient);
     }
 
     @BeforeEach
-    public void configureBoltDependencies() throws Exception {
+    public void configureBoltDependencies() {
         when(tupleMapper.getIndex(tuple)).thenReturn(index);
         when(tupleMapper.getType(tuple)).thenReturn(type);
         when(tupleMapper.getId(tuple)).thenReturn(documentId);
@@ -113,7 +106,7 @@ public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
     }
 
     @Test
-    public void fieldsAreDeclaredThroughProvidedOutput() throws Exception {
+    public void fieldsAreDeclaredThroughProvidedOutput() {
         Fields fields = new Fields(UUID.randomUUID().toString());
         when(output.fields()).thenReturn(fields);
         OutputFieldsDeclarer declarer = mock(OutputFieldsDeclarer.class);

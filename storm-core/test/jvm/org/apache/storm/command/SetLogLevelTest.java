@@ -15,8 +15,10 @@ package org.apache.storm.command;
 import java.util.Map;
 import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SetLogLevelTest {
 
@@ -24,24 +26,24 @@ public class SetLogLevelTest {
     public void testUpdateLogLevelParser() {
         SetLogLevel.LogLevelsParser logLevelsParser = new SetLogLevel.LogLevelsParser(LogLevelAction.UPDATE);
         LogLevel logLevel = ((Map<String, LogLevel>) logLevelsParser.parse("com.foo.one=warn")).get("com.foo.one");
-        Assert.assertEquals(0, logLevel.get_reset_log_level_timeout_secs());
-        Assert.assertEquals("WARN", logLevel.get_target_log_level());
+        assertEquals(0, logLevel.get_reset_log_level_timeout_secs());
+        assertEquals("WARN", logLevel.get_target_log_level());
 
         logLevel = ((Map<String, LogLevel>) logLevelsParser.parse("com.foo.two=DEBUG:10")).get("com.foo.two");
-        Assert.assertEquals(10, logLevel.get_reset_log_level_timeout_secs());
-        Assert.assertEquals("DEBUG", logLevel.get_target_log_level());
+        assertEquals(10, logLevel.get_reset_log_level_timeout_secs());
+        assertEquals("DEBUG", logLevel.get_target_log_level());
     }
 
-    @Test(expected = NumberFormatException.class)
+    @Test
     public void testInvalidTimeout() {
         SetLogLevel.LogLevelsParser logLevelsParser = new SetLogLevel.LogLevelsParser(LogLevelAction.UPDATE);
-        logLevelsParser.parse("com.foo.bar=warn:NaN");
+        assertThrows(IllegalArgumentException.class, () -> logLevelsParser.parse("com.foo.bar=warn:NaN"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidLogLevel() {
         SetLogLevel.LogLevelsParser logLevelsParser = new SetLogLevel.LogLevelsParser(LogLevelAction.UPDATE);
-        logLevelsParser.parse("com.foo.bar=CRITICAL");
+        assertThrows(IllegalArgumentException.class, () -> logLevelsParser.parse("com.foo.bar=CRITICAL"));
     }
 
 }

@@ -22,26 +22,29 @@ import org.apache.storm.Config;
 import org.apache.storm.shade.com.google.common.base.Joiner;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.utils.ListDelegate;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BlowfishTupleSerializerTest {
 
     /**
      * Throws RuntimeException when no encryption key is given.
      */
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testConstructorThrowsOnNullKey() {
-        new BlowfishTupleSerializer(null, new HashMap());
+        assertThrows(RuntimeException.class, () -> new BlowfishTupleSerializer(null, new HashMap<>()));
     }
 
     /**
      * Throws RuntimeException when an invalid encryption key is given.
      */
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testConstructorThrowsOnInvalidKey() {
         // The encryption key must be hexadecimal.
-        new BlowfishTupleSerializer(null, ImmutableMap.of(BlowfishTupleSerializer.SECRET_KEY, "0123456789abcdefg"));
+        assertThrows(RuntimeException.class,
+            () -> new BlowfishTupleSerializer(null, ImmutableMap.of(BlowfishTupleSerializer.SECRET_KEY, "0123456789abcdefg")));
     }
 
     /**
@@ -91,6 +94,6 @@ public class BlowfishTupleSerializerTest {
         writerBTS.write(kryo, output, delegate);
         input.setBuffer(output.getBuffer());
         ListDelegate outDelegate = readerBTS.read(kryo, input, ListDelegate.class);
-        Assert.assertEquals(testText, Joiner.on(" ").join(outDelegate.toArray()));
+        assertEquals(testText, Joiner.on(" ").join(outDelegate.toArray()));
     }
 }

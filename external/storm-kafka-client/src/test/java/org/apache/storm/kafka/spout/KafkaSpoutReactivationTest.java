@@ -18,7 +18,7 @@ package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.KafkaSpout.TIMER_DELAY_MS;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -94,7 +94,7 @@ public class KafkaSpoutReactivationTest {
     }
 
     private void doReactivationTest(FirstPollOffsetStrategy firstPollOffsetStrategy) throws Exception {
-        try (Time.SimulatedTime time = new Time.SimulatedTime()) {
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime()) {
             int messageCount = maxPollRecords * 2;
             prepareSpout(messageCount, firstPollOffsetStrategy);
 

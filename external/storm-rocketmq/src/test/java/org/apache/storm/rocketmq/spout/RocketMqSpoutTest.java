@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -32,8 +32,8 @@ import org.apache.storm.rocketmq.RocketMqUtils;
 import org.apache.storm.rocketmq.SpoutConfig;
 import org.apache.storm.rocketmq.TestUtils;
 import org.apache.storm.spout.SpoutOutputCollector;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -47,8 +47,8 @@ public class RocketMqSpoutTest {
     private BlockingQueue<ConsumerBatchMessage> queue;
     private Properties properties;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp() {
         properties = new Properties();
         properties.setProperty(SpoutConfig.NAME_SERVER_ADDR, "address");
         properties.setProperty(SpoutConfig.CONSUMER_GROUP, "group");
@@ -63,7 +63,7 @@ public class RocketMqSpoutTest {
         queue = new LinkedBlockingQueue<>();
         TestUtils.setFieldValue(spout, "queue", queue);
 
-        Map<String,ConsumerBatchMessage> cache = mock(Map.class);
+        Map<String, ConsumerBatchMessage> cache = mock(Map.class);
         TestUtils.setFieldValue(spout, "cache", cache);
     }
 
@@ -80,7 +80,7 @@ public class RocketMqSpoutTest {
     }
 
     @Test
-    public void close() throws Exception {
+    public void close() {
         spout.close();
         verify(consumer).shutdown();
     }

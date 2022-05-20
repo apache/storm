@@ -36,29 +36,26 @@ import org.apache.storm.security.auth.NimbusPrincipal;
 import org.apache.storm.security.auth.SingleUserPrincipal;
 import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.utils.Utils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.spy;
 
 public class LocalFsBlobStoreTest {
   private static final Logger LOG = LoggerFactory.getLogger(LocalFsBlobStoreTest.class);
   URI base;
   File baseFile;
-  private static Map<String, Object> conf = new HashMap();
-  public static final int READ = 0x01;
-  public static final int WRITE = 0x02;
-  public static final int ADMIN = 0x04;
+  private static Map<String, Object> conf = new HashMap<>();
   private InProcessZookeeper zk;
 
-  @Before
+  @BeforeEach
   public void init() {
     initializeConfigs();
     baseFile = new File("target/blob-store-test-"+UUID.randomUUID());
@@ -70,7 +67,7 @@ public class LocalFsBlobStoreTest {
     }
   }
 
-  @After
+  @AfterEach
   public void cleanup() throws IOException {
     FileUtils.deleteDirectory(baseFile);
     try {
@@ -152,36 +149,31 @@ public class LocalFsBlobStoreTest {
     }
 
     // Overloading the assertStoreHasExactly method accomodate Subject in order to check for authorization
-    public static void assertStoreHasExactly(BlobStore store, Subject who, String... keys)
-        throws IOException, KeyNotFoundException, AuthorizationException {
-        Set<String> expected = new HashSet<String>(Arrays.asList(keys));
-        Set<String> found = new HashSet<String>();
+    public static void assertStoreHasExactly(BlobStore store, Subject who, String... keys) {
+        Set<String> expected = new HashSet<>(Arrays.asList(keys));
+        Set<String> found = new HashSet<>();
         Iterator<String> c = store.listKeys();
         while (c.hasNext()) {
             String keyName = c.next();
             found.add(keyName);
         }
-        Set<String> extra = new HashSet<String>(found);
+        Set<String> extra = new HashSet<>(found);
         extra.removeAll(expected);
-        assertTrue("Found extra keys in the blob store " + extra, extra.isEmpty());
-        Set<String> missing = new HashSet<String>(expected);
+        assertTrue(extra.isEmpty(), "Found extra keys in the blob store " + extra);
+        Set<String> missing = new HashSet<>(expected);
         missing.removeAll(found);
-        assertTrue("Found keys missing from the blob store " + missing, missing.isEmpty());
+        assertTrue(missing.isEmpty(), "Found keys missing from the blob store " + missing);
     }
 
-    public static void assertStoreHasExactly(BlobStore store, String... keys)
-        throws IOException, KeyNotFoundException, AuthorizationException {
+    public static void assertStoreHasExactly(BlobStore store, String... keys) {
         assertStoreHasExactly(store, null, keys);
     }
 
     // Overloading the readInt method accomodate Subject in order to check for authorization (security turned on)
     public static int readInt(BlobStore store, Subject who, String key)
         throws IOException, KeyNotFoundException, AuthorizationException {
-        InputStream in = store.getBlob(key, who);
-        try {
+        try (InputStream in = store.getBlob(key, who)) {
             return in.read();
-        } finally {
-            in.close();
         }
     }
 
@@ -245,7 +237,7 @@ public class LocalFsBlobStoreTest {
         }
         assertStoreHasExactly(store, "test");
         // Testing whether acls are set to WORLD_EVERYTHING
-        assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+        assertTrue(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
         readAssertEqualsWithAuth(store, who, "test", 1);
 
         LOG.info("Deleting test");
@@ -263,7 +255,7 @@ public class LocalFsBlobStoreTest {
         // Testing whether acls are set to WORLD_EVERYTHING. Here the acl should not contain WORLD_EVERYTHING because
         // the subject is neither null nor empty. The ACL should however contain USER_EVERYTHING as user needs to have
         // complete access to the blob
-        assertTrue("ACL does not contain WORLD_EVERYTHING", !metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+        assertTrue(!metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
         readAssertEqualsWithAuth(store, who, "test", 2);
 
         LOG.info("Updating test");
@@ -292,7 +284,7 @@ public class LocalFsBlobStoreTest {
         }
         assertStoreHasExactly(store, "test-empty-subject-WE", "test");
         // Testing whether acls are set to WORLD_EVERYTHING
-        assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+        assertTrue(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
         readAssertEqualsWithAuth(store, who, "test-empty-subject-WE", 2);
 
         // Test for subject with no principals and acls set to DEFAULT
@@ -305,7 +297,7 @@ public class LocalFsBlobStoreTest {
         }
         assertStoreHasExactly(store, "test-empty-subject-DEF", "test", "test-empty-subject-WE");
         // Testing whether acls are set to WORLD_EVERYTHING
-        assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+        assertTrue(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
         readAssertEqualsWithAuth(store, who, "test-empty-subject-DEF", 2);
 
         if (store instanceof LocalFsBlobStore) {
@@ -327,7 +319,7 @@ public class LocalFsBlobStoreTest {
         }
         assertStoreHasExactly(store, "test");
         // Testing whether acls are set to WORLD_EVERYTHING
-        assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+        assertTrue(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
         readAssertEquals(store, "test", 1);
 
         LOG.info("Deleting test");
@@ -343,7 +335,7 @@ public class LocalFsBlobStoreTest {
         }
         assertStoreHasExactly(store, "test");
         if (store instanceof LocalFsBlobStore) {
-            assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.toString().contains("AccessControl(type:OTHER, access:7)"));
+            assertTrue(metadata.toString().contains("AccessControl(type:OTHER, access:7)"), "ACL does not contain WORLD_EVERYTHING");
         }
         readAssertEquals(store, "test", 2);
         LOG.info("Updating test");
@@ -374,7 +366,7 @@ public class LocalFsBlobStoreTest {
             // Testing whether acls are set to WORLD_EVERYTHING, Here we are testing only for LocalFsBlobstore
             // as the HdfsBlobstore gets the subject information of the local system user and behaves as it is
             // always authenticated.
-            assertTrue("ACL does not contain WORLD_EVERYTHING", metadata.get_acl().toString().contains("OTHER"));
+            assertTrue(metadata.get_acl().toString().contains("OTHER"), "ACL does not contain WORLD_EVERYTHING");
 
             LOG.info("Deleting test-empty-acls");
             store.deleteBlob("test-empty-acls", null);

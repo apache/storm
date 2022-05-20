@@ -27,8 +27,8 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,7 @@ public class TestDefaultEvictionStrategy {
         return config;
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (scheduler != null) {
             scheduler.cleanup();
@@ -227,7 +227,7 @@ public class TestDefaultEvictionStrategy {
         assertTopologiesFullyScheduled(cluster, "topo-1", "topo-2", "topo-5", "topo-6");
         assertTopologiesNotScheduled(cluster, "topo-3");
 
-        //user jerry submits another topology but this one should be scheduled since it has higher priority than than the
+        //user jerry submits another topology but this one should be scheduled since it has higher priority than the
         //rest of jerry's running topologies
         topologies = addTopologies(topologies,
             genTopology("topo-4", config, 1, 0, 1, 0, currentTime - 2, 10, "jerry"));

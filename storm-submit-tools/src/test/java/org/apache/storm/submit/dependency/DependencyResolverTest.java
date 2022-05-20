@@ -19,10 +19,10 @@ package org.apache.storm.submit.dependency;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -32,24 +32,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DependencyResolverTest {
     private static Path tempDirForTest;
 
     private DependencyResolver sut;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() throws Exception {
         tempDirForTest = Files.createTempDirectory("dr-test");
     }
 
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception {
+    @AfterAll
+    public static void tearDownAfterClass() {
         FileUtils.deleteQuietly(tempDirForTest.toFile());
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         sut = new DependencyResolver(tempDirForTest.toAbsolutePath().toString());
     }

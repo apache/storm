@@ -31,10 +31,8 @@ import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
 import org.apache.storm.utils.Time;
-import org.junit.After;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,12 +51,10 @@ import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareSched
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
 
 public class TestGenericResourceAwareSchedulingPriorityStrategy {
-
-    private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareSchedulingPriorityStrategy.class);
-    private int currentTime = Time.currentTimeSecs();
+    private final int currentTime = Time.currentTimeSecs();
     private IScheduler scheduler = null;
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (scheduler != null) {
             scheduler.cleanup();
@@ -229,7 +225,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
 
     private Set<String> collectMapValues(Map<String, Set<String>> map) {
         Set<String> set = new HashSet<>();
-        map.values().forEach((s) -> set.addAll(s));
+        map.values().forEach(set::addAll);
         return set;
     }
 }

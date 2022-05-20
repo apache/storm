@@ -33,7 +33,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <org.slf4j.version>1.7.6</org.slf4j.version>
-        <junit.version>4.11</junit.version>
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
         <cassandra.driver.core.version>3.1.2</cassandra.driver.core.version>
@@ -79,6 +78,12 @@
             <groupId>org.apache.cassandra</groupId>
             <artifactId>cassandra-all</artifactId>
             <version>${cassandra.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>test</scope>
         </dependency>
 

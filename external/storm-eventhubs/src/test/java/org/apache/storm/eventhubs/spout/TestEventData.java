@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -14,28 +14,28 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *******************************************************************************/
+ */
 
 package org.apache.storm.eventhubs.spout;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestEventData {
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp() {
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    public void tearDown() {
     }
 
     @Test
-    public void testEventDataComparision() {
+    public void testEventDataComparison() {
 
         MessageId messageId1 = MessageId.create(null, "3", 1);
         EventDataWrap eventData1 = EventDataWrap.create(null, messageId1);

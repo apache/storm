@@ -23,7 +23,10 @@ import static org.mockito.Mockito.when;
 import java.util.regex.Pattern;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class KafkaSpoutTopologyDeployActivateDeactivateTest extends KafkaSpoutAbstractTest {
 
     public KafkaSpoutTopologyDeployActivateDeactivateTest() {

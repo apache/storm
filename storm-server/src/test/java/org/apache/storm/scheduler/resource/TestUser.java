@@ -24,22 +24,19 @@ import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.utils.Time;
-import org.junit.Assert;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.Test;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.toDouble;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userRes;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class TestUser {
-    private static final Logger LOG = LoggerFactory.getLogger(TestUser.class);
 
     protected Class getDefaultResourceAwareStrategyClass() {
         return DefaultResourceAwareStrategy.class;
@@ -56,8 +53,8 @@ public class TestUser {
     public void testResourcePoolUtilization() {
         INimbus iNimbus = new INimbusTest();
         Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 100, 1000);
-        Double cpuGuarantee = 400.0;
-        Double memoryGuarantee = 1000.0;
+        double cpuGuarantee = 400.0;
+        double memoryGuarantee = 1000.0;
         Map<String, Map<String, Number>> resourceUserPool = userResourcePool(
             userRes("user1", cpuGuarantee, memoryGuarantee));
         Config config = createClusterConfig(100, 200, 200, resourceUserPool);
@@ -69,12 +66,12 @@ public class TestUser {
         WorkerSlot slot = cluster.getAvailableSlots().get(0);
         cluster.assign(slot, topo1.getId(), topo1.getExecutors());
 
-        Assert.assertEquals("check cpu resource guarantee", cpuGuarantee, user1.getCpuResourceGuaranteed(), 0.001);
-        Assert.assertEquals("check memory resource guarantee", memoryGuarantee, user1.getMemoryResourceGuaranteed(), 0.001);
+        assertEquals(cpuGuarantee, user1.getCpuResourceGuaranteed(), 0.001, "check cpu resource guarantee");
+        assertEquals(memoryGuarantee, user1.getMemoryResourceGuaranteed(), 0.001, "check memory resource guarantee");
 
-        Assert.assertEquals("check cpu resource pool utilization", ((100.0 * 3.0) / cpuGuarantee),
-                            user1.getCpuResourcePoolUtilization(cluster), 0.001);
-        Assert.assertEquals("check memory resource pool utilization", ((200.0 + 200.0) * 3.0) / memoryGuarantee,
-                            user1.getMemoryResourcePoolUtilization(cluster), 0.001);
+        assertEquals(((100.0 * 3.0) / cpuGuarantee), user1.getCpuResourcePoolUtilization(cluster), 0.001,
+            "check cpu resource pool utilization");
+        assertEquals(((200.0 + 200.0) * 3.0) / memoryGuarantee, user1.getMemoryResourcePoolUtilization(cluster), 0.001,
+            "check memory resource pool utilization");
     }
 }
