@@ -2,6 +2,10 @@
 List of third-party dependencies grouped by their license type.
 
 
+    Apache-2.0
+
+         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
+
     Apache License
 
         * HttpClient (commons-httpclient:commons-httpclient:3.0.1 - http://jakarta.apache.org/commons/httpclient/)
@@ -271,7 +275,6 @@ List of third-party dependencies grouped by their license type.
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:3.2.6 - http://metrics.dropwizard.io/metrics-graphite/)
         * Gson (com.google.code.gson:gson:2.2.4 - http://code.google.com/p/google-gson/)
         * Gson (com.google.code.gson:gson:2.3.1 - http://code.google.com/p/google-gson/)
-        * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:16.0.1 - http://code.google.com/p/guava-libraries/guava)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:17.0 - http://code.google.com/p/guava-libraries/guava)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:27.0.1-jre - https://github.com/google/guava/guava)
