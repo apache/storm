@@ -4,7 +4,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache-2.0
 
-         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
+        * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
 
     Apache License
 
