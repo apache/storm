@@ -944,7 +944,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * jersey-core-server (org.glassfish.jersey.core:jersey-server:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
         * jersey-core-common (org.glassfish.jersey.core:jersey-common:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:6.0.17.Final - http://hibernate.org/validator/hibernate-validator)
-        * zookeeper (org.apache.zookeeper:zookeeper:3.4.6 - no url defined)
 
     BSD 3-Clause License
 
