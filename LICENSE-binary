@@ -896,7 +896,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:7.9 - https://bitbucket.org/connect2id/nimbus-jose-jwt)
         * Objenesis (org.objenesis:objenesis:2.1 - http://objenesis.org)
         * OkHttp (com.squareup.okhttp:okhttp:2.7.5 - https://github.com/square/okhttp/okhttp)
-        * Okio (com.squareup.okio:okio:1.4.0 - https://github.com/square/okio/okio)
+        * Okio (com.squareup.okio:okio:1.6.0 - https://github.com/square/okio/okio)
         * opencsv (net.sf.opencsv:opencsv:2.3 - http://opencsv.sf.net)
         * Open JSON (com.tdunning:json:1.8 - https://github.com/tdunning/open-json)
         * ORC Core (org.apache.orc:orc-core:1.3.3 - http://orc.apache.org/orc-core)
