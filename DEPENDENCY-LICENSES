@@ -13,11 +13,11 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0
 
-        * ActiveMQ :: Broker (org.apache.activemq:activemq-broker:5.15.15 - http://activemq.apache.org/activemq-broker)
-        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.15.15 - http://activemq.apache.org/activemq-client)
-        * ActiveMQ :: KahaDB Store (org.apache.activemq:activemq-kahadb-store:5.15.15 - http://activemq.apache.org/activemq-kahadb-store)
-        * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.15.15 - http://activemq.apache.org/activemq-mqtt)
-        * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.15.15 - http://activemq.apache.org/activemq-openwire-legacy)
+        * ActiveMQ :: Broker (org.apache.activemq:activemq-broker:5.16.5 - http://activemq.apache.org/activemq-broker)
+        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.16.5 - http://activemq.apache.org/activemq-client)
+        * ActiveMQ :: KahaDB Store (org.apache.activemq:activemq-kahadb-store:5.16.5 - http://activemq.apache.org/activemq-kahadb-store)
+        * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.16.5 - http://activemq.apache.org/activemq-mqtt)
+        * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.16.5 - http://activemq.apache.org/activemq-openwire-legacy)
         * ActiveMQ Protocol Buffers Implementation and Compiler (org.apache.activemq.protobuf:activemq-protobuf:1.1 - http://activemq.apache.org/activemq-protobuf)
         * Aether :: API (org.sonatype.aether:aether-api:1.7 - http://aether.sonatype.org/aether-api/)
         * Aether :: Implementation (org.sonatype.aether:aether-impl:1.7 - http://aether.sonatype.org/aether-impl/)
