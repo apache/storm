@@ -643,10 +643,13 @@ SOFTWARE.
 The following dependencies are included in the binary Storm distributions, in addition to the source dependencies listed above.
 The license texts of these dependencies can be found in the licenses directory.
 
+    Apache License
+
+        * HttpClient (commons-httpclient:commons-httpclient:3.1 - http://jakarta.apache.org/httpcomponents/httpclient-3.x/)
+
     Apache License, Version 2.0
 
         * reload4j (ch.qos.reload4j:reload4j:1.2.19 - https://reload4j.qos.ch)
-        * HttpClient (commons-httpclient:commons-httpclient:3.0.1 - http://jakarta.apache.org/commons/httpclient/)
         * Plexus Common Utilities (org.codehaus.plexus:plexus-utils:3.1.0 - http://codehaus-plexus.github.io/plexus-utils/)
         * Maven Artifact (org.apache.maven:maven-artifact:3.6.0 - https://maven.apache.org/ref/3.6.0/maven-artifact/)
         * Maven Builder Support (org.apache.maven:maven-builder-support:3.6.0 - https://maven.apache.org/ref/3.6.0/maven-builder-support/)
@@ -674,16 +677,14 @@ The license texts of these dependencies can be found in the licenses directory.
         * Netty/Transport (io.netty:netty-transport:4.1.30.Final - http://netty.io/netty-transport/)
         * Netty (io.netty:netty:3.6.2.Final - http://netty.io/)
         * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
-        * aircompressor (io.airlift:aircompressor:0.3 - http://github.com/airlift/aircompressor)
+        * aircompressor (io.airlift:aircompressor:0.8 - http://github.com/airlift/aircompressor)
         * Annotation 1.0 (org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-annotation_1.0_spec)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.0.5 - http://metrics.dropwizard.io/metrics-annotation)
         * ant (ant:ant:1.6.5 - http://www.apache.org/ant/)
         * Apache Ant Core (org.apache.ant:ant:1.9.1 - http://ant.apache.org/)
         * Apache Ant Launcher (org.apache.ant:ant-launcher:1.9.1 - http://ant.apache.org/)
         * Apache Avro (org.apache.avro:avro:1.7.7 - http://avro.apache.org)
-        * Apache Calcite Avatica (org.apache.calcite.avatica:avatica:1.8.0 - http://calcite.apache.org/avatica/avatica)
         * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.10.0 - https://calcite.apache.org/avatica/avatica-core)
-        * Apache Calcite Avatica Metrics (org.apache.calcite.avatica:avatica-metrics:1.8.0 - http://calcite.apache.org/avatica/avatica-metrics)
         * Apache Commons CLI (commons-cli:commons-cli:1.4 - http://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.11 - http://commons.apache.org/proper/commons-codec/)
         * Apache Commons Collections (commons-collections:commons-collections:3.2.2 - http://commons.apache.org/collections/)
@@ -770,8 +771,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:1.2 - http://www.minidev.net/)
         * BoneCP :: Core Library (com.jolbox:bonecp:0.8.0.RELEASE - http://jolbox.com/bonecp)
         * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
-        * Calcite Druid (org.apache.calcite:calcite-druid:1.10.0 - http://calcite.apache.org/calcite-druid)
-        * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.10.0 - http://calcite.apache.org/calcite-linq4j)
         * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.14.0 - https://calcite.apache.org/calcite-linq4j)
         * carbonite (com.twitter:carbonite:1.5.0 - no url defined)
         * chill-java (com.twitter:chill-java:0.8.0 - https://github.com/twitter/chill)
@@ -806,6 +805,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Dropwizard Servlet Support (io.dropwizard:dropwizard-servlets:1.3.19 - http://www.dropwizard.io/1.3.19/dropwizard-servlets)
         * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:1.3.19 - http://www.dropwizard.io/1.3.19/dropwizard-util)
         * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:1.3.19 - http://www.dropwizard.io/1.3.19/dropwizard-validation)
+        * eigenbase-properties (net.hydromatic:eigenbase-properties:1.1.5 - http://github.com/julianhyde/eigenbase-properties)
         * EL (commons-el:commons-el:1.0 - http://jakarta.apache.org/commons/el/)
         * error-prone annotations (com.google.errorprone:error_prone_annotations:2.2.0 - http://nexus.sonatype.org/oss-repository-hosting.html/error_prone_parent/error_prone_annotations)
         * Esri Geometry API for Java (com.esri.geometry:esri-geometry-api:2.0.0 - https://github.com/Esri/geometry-api-java)
@@ -900,8 +900,10 @@ The license texts of these dependencies can be found in the licenses directory.
         * Okio (com.squareup.okio:okio:1.4.0 - https://github.com/square/okio/okio)
         * opencsv (net.sf.opencsv:opencsv:2.3 - http://opencsv.sf.net)
         * Open JSON (com.tdunning:json:1.8 - https://github.com/tdunning/open-json)
-        * ORC Core (org.apache.orc:orc-core:1.3.3 - http://orc.apache.org/orc-core)
+        * ORC Core (org.apache.orc:orc-core:1.3.4 - http://orc.apache.org/orc-core)
         * oro (oro:oro:2.0.8 - no url defined)
+        * Pentaho Aggregate Designer Algorithm (org.pentaho:pentaho-aggdesigner-algorithm:5.1.5-jhyde - http://github.com/pentaho/mondrian/pentaho-aggdesigner-algorithm)
+        * slice (io.airlift:slice:0.29 - https://github.com/airlift/slice)
         * Slider Core (org.apache.slider:slider-core:0.90.2-incubating - http://slider.incubator.apache.org/slider-core/)
         * SnakeYAML (org.yaml:snakeyaml:1.26 - http://www.snakeyaml.org)
         * Snappy for Java (org.xerial.snappy:snappy-java:1.0.5 - http://github.com/xerial/snappy-java/)
@@ -989,7 +991,6 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Common Development and Distribution License (CDDL) v1.1
 
-        * Java Message Service (javax.jms:jms:1.1 - http://java.sun.com/products/jms)
         * Java Transaction API (javax.transaction:jta:1.1 - http://java.sun.com/products/jta)
         * jsp-api (javax.servlet:jsp-api:2.0 - no url defined)
         * jsp-api (javax.servlet.jsp:jsp-api:2.1 - no url defined)
@@ -1029,12 +1030,17 @@ The license texts of these dependencies can be found in the licenses directory.
         * OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
         * ServiceLocator Default Implementation (org.glassfish.hk2:hk2-locator:2.5.0 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-locator)
         * Expression Language 3.0 (org.glassfish:jakarta.el:3.0.2 - https://projects.eclipse.org/projects/ee4j.el)
+        * jms (jakarta.jms:jakarta.jms-api:2.0.2 - https://projects.eclipse.org/projects/ee4j.jms)
         
     Eclipse Distribution License, Version 1.0
         * JavaBeans Activation Framework (com.sun.activation:jakarta.activation:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation)
         * JavaBeans Activation Framework API jar (jakarta.activation:jakarta.activation-api:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation-api)
         * jakarta.xml.bind-api (jakarta.xml.bind:jakarta.xml.bind-api:2.3.2 - https://github.com/eclipse-ee4j/jaxb-api/jakarta.xml.bind-api)
 
+    GNU General Public License (GPL), version 2, with the Classpath exception
+        
+        * Java Object Layout: Core (org.openjdk.jol:jol-core:0.2 - http://maven.apache.org)
+        
     MIT License
 
         * Animal Sniffer Annotations (org.codehaus.mojo:animal-sniffer-annotations:1.17 - http://www.mojohaus.org/animal-sniffer/animal-sniffer-annotations)
