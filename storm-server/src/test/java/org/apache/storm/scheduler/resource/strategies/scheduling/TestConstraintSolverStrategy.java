@@ -352,6 +352,7 @@ public class TestConstraintSolverStrategy {
         }
 
         ConstraintSolverStrategy cs = new ConstraintSolverStrategy() {
+            @Override
             protected void prepareForScheduling(Cluster cluster, TopologyDetails topologyDetails) {
                 super.prepareForScheduling(cluster, topologyDetails);
 

@@ -1055,6 +1055,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     }
 
+    @Override
     public void processWorkerMetrics(WorkerMetrics metrics) throws TException {
         getNimbus().processWorkerMetrics(metrics);
     }

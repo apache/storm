@@ -168,6 +168,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public PairStream<K, V> filter(Predicate<? super Pair<K, V>> predicate) {
         return toPairStream(super.filter(predicate));
     }

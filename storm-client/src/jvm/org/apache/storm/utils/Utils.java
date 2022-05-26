@@ -386,6 +386,7 @@ public class Utils {
                                         int priority, final boolean isFactory, boolean startImmediately,
                                         String threadName) {
         SmartThread thread = new SmartThread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     final Callable<Long> fn = isFactory ? (Callable<Long>) afn.call() : afn;
@@ -416,6 +417,7 @@ public class Utils {
             thread.setUncaughtExceptionHandler(eh);
         } else {
             thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                @Override
                 public void uncaughtException(Thread t, Throwable e) {
                     LOG.error("Async loop died!", e);
                     Utils.exitProcess(1, "Async loop died!");

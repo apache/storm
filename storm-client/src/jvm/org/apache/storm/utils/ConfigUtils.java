@@ -80,6 +80,7 @@ public class ConfigUtils {
 
     public static Map<String, Object> maskPasswords(final Map<String, Object> conf) {
         Maps.EntryTransformer<String, Object, Object> maskPasswords = new Maps.EntryTransformer<String, Object, Object>() {
+            @Override
             public Object transformEntry(String key, Object value) {
                 return passwordConfigKeys.contains(key) ? "*****" : value;
             }

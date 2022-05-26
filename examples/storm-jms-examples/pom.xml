@@ -29,7 +29,7 @@
     <artifactId>storm-jms-examples</artifactId>
 
     <properties>
-        <spring.version>5.1.5.RELEASE</spring.version>
+        <spring.version>5.3.20</spring.version>
     </properties>
     <dependencies>
         <dependency>
@@ -72,6 +72,7 @@
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
+            <version>${activemq.version}</version>
         </dependency>
     </dependencies>
     <build>

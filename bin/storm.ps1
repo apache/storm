@@ -23,12 +23,12 @@ while((Get-Item $PRG).LinkType -eq "SymbolicLink") {
 }
 
 # Check for Python version
-$PythonVersion = (& python -V 2>&1)[0].ToString().Split(" ")[1];
+$PythonVersion = (& python -V 2>&1).Split(" ")[1];
 $PythonMajor = [int]$PythonVersion.Split(".")[0];
 $PythonMinor = [int]$PythonVersion.Split(".")[1];
 $PythonNumVersion = $PythonMajor * 10 + $PythonMinor;
 if($PythonNumVersion -le 26) {
-  echo "Need python version > 2.6";
+  Write-Output "Need python version > 2.6";
   exit 1;
 }
 
@@ -40,14 +40,14 @@ if($args.Length -ge 1) {
   if("--config" -eq $args.get(0)) {
     $ConfFile = $args.get(1);
     if(-not (Test-Path $ConfFile)) {
-      echo ("Error: Path {0} does not exist" -f $ConfFile);
+      Write-Output ("Error: Path {0} does not exist" -f $ConfFile);
       exit 1;
     }
     if((Get-Item $ConfFile).PsIsContainer) {
       $ConfFile=[io.path]::combine($ConfFile, "storm.yaml");
     }
     if(-not (Test-Path $ConfFile)) {
-      echo ("Error: Path {0} does not exist" -f $ConfFile);
+      Write-Output ("Error: Path {0} does not exist" -f $ConfFile);
       exit 1;
     }
     $STORM_CONF_FILE = $ConfFile;
@@ -55,14 +55,15 @@ if($args.Length -ge 1) {
   } 
 }
 
-$env:STORM_CONF_DIR = if($STORM_CONF_DIR -ne $null) { $STORM_CONF_DIR; } else { [io.path]::combine($env:STORM_BASE_DIR, "conf"); }
-$env:STORM_CONF_FILE = if($STORM_CONF_FILE -ne $null) { $STORM_CONF_FILE; } else { [io.path]::combine($env:STORM_BASE_DIR, "conf", "storm.yaml"); }
+$env:STORM_CONF_DIR = if($null -ne $STORM_CONF_DIR) { $STORM_CONF_DIR; } else { [io.path]::combine($env:STORM_BASE_DIR, "conf"); }
+$env:STORM_CONF_FILE = if($null -ne $STORM_CONF_FILE) { $STORM_CONF_FILE; } else { [io.path]::combine($env:STORM_BASE_DIR, "conf", "storm.yaml"); }
 
 $StormEnvPath = [io.path]::combine($env:STORM_CONF_DIR, "storm-env.ps1");
 if(Test-Path $StormEnvPath) {
   . $StormEnvPath;
 }
 
-& ([io.path]::combine("$STORM_BIN_DIR", "storm.py")) $args;
+$ArgsForProcess = @(([io.path]::combine("$STORM_BIN_DIR", "storm.py"))) + $args
+Start-Process -FilePath python -ArgumentList $ArgsForProcess -Wait -NoNewWindow
 
 exit $LastExitCode
