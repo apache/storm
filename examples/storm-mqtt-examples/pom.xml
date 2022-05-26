@@ -30,11 +30,6 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
   
-  <properties>
-      <!-- Required downgrade by activemq-broker 5.15.3 -->
-      <guava.version>16.0.1</guava.version>
-  </properties>
-
   <dependencies>
    <dependency>
       <groupId>org.apache.storm</groupId>
