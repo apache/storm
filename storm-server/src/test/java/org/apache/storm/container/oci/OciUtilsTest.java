@@ -142,7 +142,7 @@ public class OciUtilsTest {
     }
 
     @Test
-    public void adjustImageConfigForTopoNotInAllowedList() throws InvalidTopologyException {
+    public void adjustImageConfigForTopoNotInAllowedList() {
         String image1 = "storm/rhel7:dev_test";
         String image2 = "storm/rhel7:dev_current";
 

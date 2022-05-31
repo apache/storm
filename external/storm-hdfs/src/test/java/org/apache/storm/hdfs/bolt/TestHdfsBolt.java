@@ -12,12 +12,17 @@
 
 package org.apache.storm.hdfs.bolt;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.hdfs.protocol.HdfsConstants.SafeModeAction;
 import org.apache.storm.Config;
 import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
@@ -56,7 +61,15 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @ExtendWith(MockitoExtension.class)
 public class TestHdfsBolt {
     @RegisterExtension
-    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension();
+    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension(() -> {
+        Configuration conf = new Configuration();
+        conf.set("fs.trash.interval", "10");
+        conf.setBoolean("dfs.permissions", true);
+        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
+        FileUtil.fullyDelete(baseDir);
+        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
+        return conf;
+    });
     private static final String testRoot = "/unittest";
     Tuple tuple1 = generateTestTuple(1, "First Tuple", "SFO", "CA");
     Tuple tuple2 = generateTestTuple(1, "Second Tuple", "SJO", "CA");

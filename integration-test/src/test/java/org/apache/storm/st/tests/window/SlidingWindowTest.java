@@ -24,8 +24,7 @@ import org.apache.storm.st.wrapper.TopoWrap;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public final class SlidingWindowTest extends AbstractTest {
     private final WindowVerifier windowVerifier = new WindowVerifier();
@@ -55,12 +54,7 @@ public final class SlidingWindowTest extends AbstractTest {
         final SlidingWindowCorrectness testable = new SlidingWindowCorrectness(windowSize, slideSize);
         final String topologyName = this.getClass().getSimpleName() + "-size-window" + windowSize + "-slide" + slideSize;
         if (windowSize <= 0 || slideSize <= 0) {
-            try {
-                testable.newTopology();
-                fail("Expected IllegalArgumentException was not thrown.");
-            } catch (IllegalArgumentException ignore) {
-                return;
-            }
+            assertThrows(IllegalArgumentException.class, () -> testable.newTopology());
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
         windowVerifier.runAndVerifyCount(windowSize, slideSize, testable, topo);
@@ -88,12 +82,7 @@ public final class SlidingWindowTest extends AbstractTest {
         final SlidingTimeCorrectness testable = new SlidingTimeCorrectness(windowSec, slideSec);
         final String topologyName = this.getClass().getSimpleName() + "-sec-window" + windowSec + "-slide" + slideSec;
         if (windowSec <= 0 || slideSec <= 0) {
-            try {
-                testable.newTopology();
-                fail("Expected IllegalArgumentException was not thrown.");
-            } catch (IllegalArgumentException ignore) {
-                return;
-            }
+            assertThrows(IllegalArgumentException.class, () -> testable.newTopology());
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
         windowVerifier.runAndVerifyTime(windowSec, slideSec, testable, topo);

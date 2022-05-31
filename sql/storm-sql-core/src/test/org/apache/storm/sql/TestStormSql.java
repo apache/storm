@@ -30,12 +30,12 @@ import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.tuple.Values;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(TestUtils.MockBoltExtension.class)
 @ExtendWith(TestUtils.MockInsertBoltExtension.class)
@@ -182,7 +182,7 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM MYPLUS(NAME, 1) FROM FOO WHERE ID = 0");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        Assertions.assertThrows(ValidationException.class,
+        assertThrows(ValidationException.class,
             () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 
@@ -196,7 +196,7 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM ID FROM FOO WHERE MYPLUS(ID, 1) = 'x'");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        Assertions.assertThrows(CompilingClassLoader.CompilerException.class,
+        assertThrows(CompilingClassLoader.CompilerException.class,
             () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 
@@ -226,7 +226,7 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM MYPLUS(ID, 1) FROM FOO WHERE ID > 2");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        Assertions.assertThrows(UnsupportedOperationException.class,
+        assertThrows(UnsupportedOperationException.class,
             () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 

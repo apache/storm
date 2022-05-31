@@ -32,18 +32,18 @@ public class DefaultHttpCredentialsPluginTest {
         DefaultHttpCredentialsPlugin handler = new DefaultHttpCredentialsPlugin();
         handler.prepare(new HashMap<>());
 
-        assertNull(handler.getUserName(null), "returns null when request is null");
+        assertNull(handler.getUserName(null), "Should return null when request is null");
 
-        assertNull(handler.getUserName(Mockito.mock(HttpServletRequest.class)), "returns null when user principal is null");
+        assertNull(handler.getUserName(Mockito.mock(HttpServletRequest.class)), "Should return null when user principal is null");
 
         HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
         Mockito.when(mockRequest.getUserPrincipal()).thenReturn(new SingleUserPrincipal(""));
-        assertNull(handler.getUserName(mockRequest), "returns null when user is blank");
+        assertNull(handler.getUserName(mockRequest), "Should return null when user is blank");
 
         String expName = "Alice";
         mockRequest = Mockito.mock(HttpServletRequest.class);
         Mockito.when(mockRequest.getUserPrincipal()).thenReturn(new SingleUserPrincipal(expName));
-        assertEquals(expName, handler.getUserName(mockRequest), "returns correct user from requests principal");
+        assertEquals(expName, handler.getUserName(mockRequest), "Should return correct user from requests principal");
 
         try {
             String doAsUserName = "Bob";

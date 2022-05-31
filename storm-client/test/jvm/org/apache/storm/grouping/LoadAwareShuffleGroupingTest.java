@@ -211,7 +211,7 @@ public class LoadAwareShuffleGroupingTest {
 
                     // Validate a single task id return
                     assertNotNull(taskIds, "Not null taskId list returned");
-                    assertEquals(1, taskIds.size(), "Single task Id returned");
+                    assertEquals(1, taskIds.size(), "Single task Id not returned");
 
                     int taskId = taskIds.get(0);
 
@@ -372,7 +372,7 @@ public class LoadAwareShuffleGroupingTest {
 
             // Validate a single task id return
             assertNotNull(taskIds, "Not null taskId list returned");
-            assertEquals(1, taskIds.size(), "Single task Id returned");
+            assertEquals(1, taskIds.size(), "Single task Id not returned");
 
             int taskId = taskIds.get(0);
 

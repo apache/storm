@@ -62,7 +62,15 @@ public class TestSequenceFileBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TestSequenceFileBolt.class);
     private static final String testRoot = "/unittest";
     @RegisterExtension
-    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension();
+    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension(() -> {
+        Configuration conf = new Configuration();
+        conf.set("fs.trash.interval", "10");
+        conf.setBoolean("dfs.permissions", true);
+        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
+        FileUtil.fullyDelete(baseDir);
+        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
+        return conf;
+    });
 
     Tuple tuple1 = generateTestTuple(1l, "first tuple");
     Tuple tuple2 = generateTestTuple(2l, "second tuple");

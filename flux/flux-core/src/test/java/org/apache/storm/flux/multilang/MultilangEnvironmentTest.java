@@ -45,7 +45,7 @@ public class MultilangEnvironmentTest {
     public void testInvokeNode() throws Exception {
         String[] command = new String[]{"node", "--version"};
         int exitVal = invokeCommand(command);
-        assertEquals(0, exitVal, "Exit value for node is 0.");
+        assertEquals(0, exitVal, "Exit value for node should be 0.");
     }
 
     private static class StreamRedirect implements Runnable {

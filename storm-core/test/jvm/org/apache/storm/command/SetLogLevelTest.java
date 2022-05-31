@@ -37,7 +37,7 @@ public class SetLogLevelTest {
     @Test
     public void testInvalidTimeout() {
         SetLogLevel.LogLevelsParser logLevelsParser = new SetLogLevel.LogLevelsParser(LogLevelAction.UPDATE);
-        assertThrows(IllegalArgumentException.class, () -> logLevelsParser.parse("com.foo.bar=warn:NaN"));
+        assertThrows(NumberFormatException.class, () -> logLevelsParser.parse("com.foo.bar=warn:NaN"));
     }
 
     @Test

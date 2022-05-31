@@ -25,6 +25,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public final class TumblingWindowTest extends AbstractTest {
@@ -78,12 +79,7 @@ public final class TumblingWindowTest extends AbstractTest {
         final TumblingTimeCorrectness testable = new TumblingTimeCorrectness(tumbleSec);
         final String topologyName = this.getClass().getSimpleName() + "-sec" + tumbleSec;
         if (tumbleSec <= 0) {
-            try {
-                testable.newTopology();
-                fail("Expected IllegalArgumentException was not thrown.");
-            } catch (IllegalArgumentException ignore) {
-                return;
-            }
+            assertThrows(IllegalArgumentException.class, () -> testable.newTopology());
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
         windowVerifier.runAndVerifyTime(tumbleSec, tumbleSec, testable, topo);

@@ -28,9 +28,7 @@ import org.apache.storm.testing.TestSerObject;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 // FIXME: it should be moved to storm-client when serialization-test.clj can be removed
 public class SerializationTest {
@@ -45,11 +43,7 @@ public class SerializationTest {
             put("org.apache.storm.testing.TestSerObject", null);
         }});
         conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, false);
-        try {
-            roundtrip(vals, conf);
-            fail("Expected Exception not Thrown for config: " + conf);
-        } catch (Exception e) {
-        }
+        assertThrows(Exception.class, () -> roundtrip(vals, conf));
 
         conf.clear();
         conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, true);

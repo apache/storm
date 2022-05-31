@@ -63,7 +63,6 @@ public class BlobStoreTest {
     private static final Logger LOG = LoggerFactory.getLogger(BlobStoreTest.class);
     private static final Map<String, Object> CONF = new HashMap<>();
     public static final int READ = 0x01;
-    // public static final int WRITE = 0x02;
     public static final int ADMIN = 0x04;
 
     @BeforeEach

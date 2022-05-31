@@ -420,25 +420,25 @@ public class TestHdfsSpout {
             runSpout(spout, "r3");
             FileReader reader = getField(spout, "reader");
             assertNotNull(reader);
-            assertEquals(false, getBoolField(spout, "fileReadCompletely"));
+            assertFalse(getBoolField(spout, "fileReadCompletely"));
 
             // read remaining lines
             runSpout(spout, "r3");
             reader = getField(spout, "reader");
             assertNotNull(reader);
-            assertEquals(true, getBoolField(spout, "fileReadCompletely"));
+            assertTrue(getBoolField(spout, "fileReadCompletely"));
 
             // ack few
             runSpout(spout, "a0", "a1", "a2");
             reader = getField(spout, "reader");
             assertNotNull(reader);
-            assertEquals(true, getBoolField(spout, "fileReadCompletely"));
+            assertTrue(getBoolField(spout, "fileReadCompletely"));
 
             //ack rest
             runSpout(spout, "a3", "a4");
             reader = getField(spout, "reader");
             assertNull(reader);
-            assertEquals(true, getBoolField(spout, "fileReadCompletely"));
+            assertTrue(getBoolField(spout, "fileReadCompletely"));
 
             // go to next file
             Path file2 = new Path(source.toString() + "/file2.txt");
@@ -447,17 +447,17 @@ public class TestHdfsSpout {
             // Read 1 line
             runSpout(spout, "r1");
             assertNotNull(getField(spout, "reader"));
-            assertEquals(false, getBoolField(spout, "fileReadCompletely"));
+            assertFalse(getBoolField(spout, "fileReadCompletely"));
 
             // ack 1 tuple
             runSpout(spout, "a5");
             assertNotNull(getField(spout, "reader"));
-            assertEquals(false, getBoolField(spout, "fileReadCompletely"));
+            assertFalse(getBoolField(spout, "fileReadCompletely"));
 
             // read and ack remaining lines
             runSpout(spout, "r5", "a6", "a7", "a8", "a9");
             assertNull(getField(spout, "reader"));
-            assertEquals(true, getBoolField(spout, "fileReadCompletely"));
+            assertTrue(getBoolField(spout, "fileReadCompletely"));
         }
     }
 

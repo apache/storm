@@ -22,8 +22,7 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.validation.ConfigValidation;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DaemonConfigTest {
 
@@ -48,12 +47,8 @@ public class DaemonConfigTest {
         }
 
         for (Object value : failCases) {
-            try {
-                conf.put(key, value);
-                ConfigValidation.validateFields(conf);
-                fail("Expected Exception not Thrown for value: " + value);
-            } catch (IllegalArgumentException ignore) {
-            }
+            conf.put(key, value);
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
         }
     }
 

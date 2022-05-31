@@ -75,7 +75,15 @@ public class AvroGenericRecordBoltTest {
     private static Tuple tuple2;
 
     @RegisterExtension
-    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension();
+    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension(() -> {
+        Configuration conf = new Configuration();
+        conf.set("fs.trash.interval", "10");
+        conf.setBoolean("dfs.permissions", true);
+        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
+        FileUtil.fullyDelete(baseDir);
+        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
+        return conf;
+    });
     @Mock
     private OutputCollector collector;
     @Mock
@@ -141,7 +149,7 @@ public class AvroGenericRecordBoltTest {
     }
 
     @Test
-    public void multipleTuplesMuliplesFiles() throws IOException {
+    public void multipleTuplesMultiplesFiles() throws IOException {
         AvroGenericRecordBolt bolt = makeAvroBolt(hdfsURI, 1, .0001f, schemaV1);
 
         bolt.prepare(new Config(), topologyContext, collector);

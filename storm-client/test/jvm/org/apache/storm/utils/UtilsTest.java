@@ -144,14 +144,8 @@ public class UtilsTest {
         Map<String, Object> config = ConfigUtils.readStormConfig();
         config.put(Config.STORM_NIMBUS_RETRY_TIMES, 0);
 
-        try {
-            new NimbusClient(config, "", 65535);
-            fail("Expected exception to be thrown");
-        } catch (RuntimeException e) {
-            assertTrue(
-                Utils.exceptionCauseIsInstanceOf(TTransportException.class, e),
-                "Cause is not TTransportException " + e);
-        }
+        Exception e = assertThrows(RuntimeException.class, () -> new NimbusClient(config, "", 65535));
+        assertEquals(TTransportException.class, e.getCause(), "Cause is not TTransportException " + e);
     }
 
     @Test

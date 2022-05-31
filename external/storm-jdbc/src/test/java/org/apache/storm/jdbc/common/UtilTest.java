@@ -46,7 +46,9 @@ public class UtilTest {
 
     @Test
     public void testError() {
-        assertThrows(RuntimeException.class, () -> Util.getJavaType(Types.REF));
-        assertThrows(RuntimeException.class, () -> Util.getJavaType(-1000));
+        Exception e = assertThrows(Exception.class, () -> Util.getJavaType(Types.REF));
+        assertEquals("We do not support tables with SqlType: REF", e.getMessage());
+        e = assertThrows(Exception.class, () -> Util.getJavaType(-1000));
+        assertEquals("Unknown sqlType -1000", e.getMessage());
     }
 }

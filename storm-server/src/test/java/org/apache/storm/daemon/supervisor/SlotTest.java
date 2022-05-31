@@ -182,32 +182,32 @@ public class SlotTest {
             verify(blobFuture).get(1000, TimeUnit.MILLISECONDS);
             verify(containerLauncher).launchContainer(port, newAssignment, state);
             assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
             assertEquals(0, Time.currentTimeMillis());
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
             assertEquals(0, Time.currentTimeMillis());
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
             assertTrue(Time.currentTimeMillis() > 1000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
             assertTrue(Time.currentTimeMillis() > 2000);
@@ -284,8 +284,8 @@ public class SlotTest {
             verify(thirdBlobFuture).get(1000, TimeUnit.MILLISECONDS);
             verify(containerLauncher).launchContainer(port, newAssignment, state);
             assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
         }
@@ -403,32 +403,32 @@ public class SlotTest {
             verify(blobFuture).get(1000, TimeUnit.MILLISECONDS);
             verify(containerLauncher).launchContainer(port, nAssignment, state);
             assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 2000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 2000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 3000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-            assertSame(null, nextState.pendingDownload, "pendingDownload is not null");
-            assertSame(null, nextState.pendingLocalization);
+            assertNull(nextState.pendingDownload, "pendingDownload is not null");
+            assertNull(nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 4000);
@@ -464,14 +464,14 @@ public class SlotTest {
             assertEquals(MachineState.KILL, nextState.state);
             verify(cContainer).kill();
             verify(localizer, never()).requestDownloadTopologyBlobs(null, port, cb);
-            assertSame(null, nextState.pendingDownload, "pendingDownload not set properly");
+            assertNull(nextState.pendingDownload, "pendingDownload not set properly");
             assertNull(nextState.pendingLocalization);
             assertTrue(Time.currentTimeMillis() > 1000);
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.KILL, nextState.state);
             verify(cContainer).forceKill();
-            assertSame(null, nextState.pendingDownload, "pendingDownload not set properly");
+            assertNull(nextState.pendingDownload, "pendingDownload not set properly");
             assertNull(nextState.pendingLocalization);
             assertTrue(Time.currentTimeMillis() > 2000);
 

@@ -69,58 +69,58 @@ public class DRPCSimpleACLAuthorizerTest {
     public void test_partial_authorization() {
 
         assertFalse(isPermitted(strictHandler, ReqContext.context(), "execute", partialFunction),
-            "Deny execute to unauthorized user");
+            "Did not deny execute to unauthorized user");
 
         assertTrue(isPermitted(strictHandler, aliceKerbContext, "execute", partialFunction),
-            "Allow execute to authorized kerb user for correct function");
+            "Did not allow execute to authorized kerb user for correct function");
 
         assertFalse(isPermitted(strictHandler, aliceKerbContext, "fetchRequest", partialFunction),
-            "Deny fetchRequest to unauthorized user for correct function");
+            "Did not deny fetchRequest to unauthorized user for correct function");
     }
 
     @Test
     public void test_client_authorization_strict() {
 
         assertFalse(isPermitted(strictHandler, ReqContext.context(), "execute", function),
-            "Deny execute to unauthorized user");
+            "Did not deny execute to unauthorized user");
 
         assertFalse(isPermitted(strictHandler, aliceContext, "execute", wrongFunction),
-            "Deny execute to valid user for incorrect function");
+            "Did not deny execute to valid user for incorrect function");
 
         assertTrue(isPermitted(strictHandler, aliceKerbContext, "execute", function),
-            "Allow execute to authorized kerb user for correct function");
+            "Did not allow execute to authorized kerb user for correct function");
 
         assertTrue(isPermitted(strictHandler, aliceContext, "execute", function),
-            "Allow execute to authorized user for correct function");
+            "Did not allow execute to authorized user for correct function");
     }
 
     @Test
     public void test_client_authorization_permissive() {
 
         assertFalse(isPermitted(permissiveHandler, ReqContext.context(), "execute", function),
-            "deny execute to unauthorized user for correct function");
+            "Did not deny execute to unauthorized user for correct function");
 
         assertTrue(isPermitted(permissiveHandler, aliceContext, "execute", wrongFunction),
-            "allow execute for user for incorrect function when permissive");
+            "Did not allow execute for user for incorrect function when permissive");
 
         assertTrue(isPermitted(permissiveHandler, aliceKerbContext, "execute", wrongFunction),
-            "allow execute for user for incorrect function when permissive");
+            "Did not allow execute for user for incorrect function when permissive");
 
         assertTrue(isPermitted(permissiveHandler, bobContext, "execute", function),
-            "allow execute to authorized user for correct function");
+            "Did not allow execute to authorized user for correct function");
     }
 
     @Test
     public void test_invocation_authorization_strict() {
         for (String operation : new String[]{ "fetchRequest", "failRequest", "result" }) {
             assertFalse(isPermitted(strictHandler, aliceContext, operation, function),
-                "Deny " + operation + " to unauthorized user for correct function");
+                "Did not deny " + operation + " to unauthorized user for correct function");
 
             assertFalse(isPermitted(strictHandler, charlieContext, operation, wrongFunction),
-                "Deny " + operation + " to user for incorrect function when strict");
+                "Did not deny " + operation + " to user for incorrect function when strict");
 
             assertTrue(isPermitted(strictHandler, charlieContext, operation, function),
-                "allow " + operation + " to authorized user for correct function");
+                "Did not allow " + operation + " to authorized user for correct function");
         }
     }
 
@@ -128,13 +128,13 @@ public class DRPCSimpleACLAuthorizerTest {
     public void test_invocation_authorization_permissive() {
         for (String operation : new String[]{ "fetchRequest", "failRequest", "result" }) {
             assertFalse(isPermitted(permissiveHandler, bobContext, operation, function),
-                "Deny " + operation + " to unauthorized user for correct function");
+                "Did not deny " + operation + " to unauthorized user for correct function");
 
             assertTrue(isPermitted(permissiveHandler, charlieContext, operation, wrongFunction),
-                "Allow " + operation + " to user for incorrect function when permissive");
+                "Did not allow " + operation + " to user for incorrect function when permissive");
 
             assertTrue(isPermitted(permissiveHandler, charlieContext, operation, function),
-                "allow " + operation + " to authorized user");
+                "Did not allow " + operation + " to authorized user");
         }
     }
 

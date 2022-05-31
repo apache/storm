@@ -61,7 +61,7 @@ public class TestTridentTopology {
             Map<String, Bolt> cur = topology.get_bolts();
             System.out.println(cur.keySet());
             if (pre != null) {
-                assertEquals(pre, cur.keySet(), "bold id not consistent with group name");
+                assertEquals(pre, cur.keySet(), "bolt id not consistent with group name");
             }
             pre = cur.keySet();
         }

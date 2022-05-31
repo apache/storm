@@ -93,7 +93,6 @@ public class DependencyUploaderTest {
 
             sut.uploadFiles(dependencies, false);
         });
-        // fail("Should throw FileNotAvailableException");
     }
 
     @Test
@@ -111,7 +110,6 @@ public class DependencyUploaderTest {
 
             sut.uploadFiles(dependencies, false);
         });
-        // fail("Should throw FileNotAvailableException");
     }
 
     @Test
@@ -208,7 +206,6 @@ public class DependencyUploaderTest {
 
             sut.uploadArtifacts(artifacts);
         });
-        // fail("Should throw FileNotAvailableException");
     }
 
     @Test
@@ -228,7 +225,6 @@ public class DependencyUploaderTest {
 
             sut.uploadArtifacts(artifacts);
         });
-        // fail("Should throw FileNotAvailableException");
     }
 
     @Test
