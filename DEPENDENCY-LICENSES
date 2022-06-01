@@ -8,7 +8,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License
 
-        * HttpClient (commons-httpclient:commons-httpclient:3.0.1 - http://jakarta.apache.org/commons/httpclient/)
+        * HttpClient (commons-httpclient:commons-httpclient:3.1 - http://jakarta.apache.org/httpcomponents/httpclient-3.x/)
         * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.36 - http://www.slf4j.org)
 
     Apache License, Version 2.0
@@ -24,7 +24,7 @@ List of third-party dependencies grouped by their license type.
         * Aether :: SPI (org.sonatype.aether:aether-spi:1.7 - http://aether.sonatype.org/aether-spi/)
         * Aether :: Utilities (org.sonatype.aether:aether-util:1.7 - http://aether.sonatype.org/aether-util/)
         * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
-        * aircompressor (io.airlift:aircompressor:0.3 - http://github.com/airlift/aircompressor)
+        * aircompressor (io.airlift:aircompressor:0.8 - http://github.com/airlift/aircompressor)
         * Annotation 1.0 (org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-annotation_1.0_spec)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.0.5 - http://metrics.dropwizard.io/metrics-annotation)
         * An open source Java toolkit for Amazon S3 (net.java.dev.jets3t:jets3t:0.9.0 - http://www.jets3t.org)
@@ -32,10 +32,9 @@ List of third-party dependencies grouped by their license type.
         * Apache Ant Core (org.apache.ant:ant:1.9.1 - http://ant.apache.org/)
         * Apache Ant Launcher (org.apache.ant:ant-launcher:1.9.1 - http://ant.apache.org/)
         * Apache Avro (org.apache.avro:avro:1.7.7 - http://avro.apache.org)
-        * Apache Calcite Avatica (org.apache.calcite.avatica:avatica:1.8.0 - http://calcite.apache.org/avatica/avatica)
+        * Apache Avro (org.apache.avro:avro:1.8.2 - http://avro.apache.org)
         * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.10.0 - https://calcite.apache.org/avatica/avatica-core)
         * Apache Calcite Avatica Metrics (org.apache.calcite.avatica:avatica-metrics:1.10.0 - https://calcite.apache.org/avatica/avatica-metrics)
-        * Apache Calcite Avatica Metrics (org.apache.calcite.avatica:avatica-metrics:1.8.0 - http://calcite.apache.org/avatica/avatica-metrics)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.4 - http://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.11 - http://commons.apache.org/proper/commons-codec/)
@@ -210,8 +209,6 @@ List of third-party dependencies grouped by their license type.
         * BoneCP :: Core Library (com.jolbox:bonecp:0.8.0.RELEASE - http://jolbox.com/bonecp)
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:2.3.5 - https://github.com/ben-manes/caffeine)
         * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
-        * Calcite Druid (org.apache.calcite:calcite-druid:1.10.0 - http://calcite.apache.org/calcite-druid)
-        * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.10.0 - http://calcite.apache.org/calcite-linq4j)
         * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.14.0 - https://calcite.apache.org/calcite-linq4j)
         * carbonite (com.twitter:carbonite:1.5.0 - no url defined)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
@@ -257,6 +254,7 @@ List of third-party dependencies grouped by their license type.
         * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:1.3.19 - http://www.dropwizard.io/1.3.19/dropwizard-util)
         * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:1.3.19 - http://www.dropwizard.io/1.3.19/dropwizard-validation)
         * Ehcache (org.ehcache:ehcache:3.3.1 - http://ehcache.org)
+        * eigenbase-properties (net.hydromatic:eigenbase-properties:1.1.5 - http://github.com/julianhyde/eigenbase-properties)
         * EL (commons-el:commons-el:1.0 - http://jakarta.apache.org/commons/el/)
         * Elasticsearch: Core (org.elasticsearch:elasticsearch:2.4.4 - http://nexus.sonatype.org/oss-repository-hosting.html/parent/elasticsearch)
         * Elasticsearch SecureSM (org.elasticsearch:securesm:1.0 - http://nexus.sonatype.org/oss-repository-hosting.html/securesm)
@@ -290,27 +288,27 @@ List of third-party dependencies grouped by their license type.
         * HikariCP (com.zaxxer:HikariCP:2.4.7 - https://github.com/brettwooldridge/HikariCP)
         * HikariCP (com.zaxxer:HikariCP:2.5.1 - https://github.com/brettwooldridge/HikariCP)
         * HikariCP (com.zaxxer:HikariCP-java7:2.4.12 - https://github.com/brettwooldridge/HikariCP)
-        * Hive CLI (org.apache.hive:hive-cli:2.3.4 - http://hive.apache.org/hive-cli)
-        * Hive Common (org.apache.hive:hive-common:2.3.4 - http://hive.apache.org/hive-common)
-        * Hive HCatalog Core (org.apache.hive.hcatalog:hive-hcatalog-core:2.3.4 - http://hive.apache.org/hive-hcatalog/hive-hcatalog-core)
-        * Hive HCatalog Server Extensions (org.apache.hive.hcatalog:hive-hcatalog-server-extensions:2.3.4 - http://hive.apache.org/hive-hcatalog/hive-hcatalog-server-extensions)
-        * Hive HCatalog Streaming (org.apache.hive.hcatalog:hive-hcatalog-streaming:2.3.4 - http://hive.apache.org/hive-hcatalog/hive-hcatalog-streaming)
-        * Hive HCatalog Webhcat Java Client (org.apache.hive.hcatalog:hive-webhcat-java-client:2.3.4 - http://hive.apache.org/hive-hcatalog/hive-webhcat-java-client)
-        * Hive Llap Client (org.apache.hive:hive-llap-client:2.3.4 - http://hive.apache.org/hive-llap-client)
-        * Hive Llap Common (org.apache.hive:hive-llap-common:2.3.4 - http://hive.apache.org/hive-llap-common)
-        * Hive Llap Server (org.apache.hive:hive-llap-server:2.3.4 - http://hive.apache.org/hive-llap-server)
-        * Hive Llap Tez (org.apache.hive:hive-llap-tez:2.3.4 - http://hive.apache.org/hive-llap-tez)
-        * Hive Metastore (org.apache.hive:hive-metastore:2.3.4 - http://hive.apache.org/hive-metastore)
-        * Hive Query Language (org.apache.hive:hive-exec:2.3.4 - http://hive.apache.org/hive-exec)
-        * Hive Serde (org.apache.hive:hive-serde:2.3.4 - http://hive.apache.org/hive-serde)
-        * Hive Service (org.apache.hive:hive-service:2.3.4 - http://hive.apache.org/hive-service)
-        * Hive Service RPC (org.apache.hive:hive-service-rpc:2.3.4 - http://hive.apache.org/hive-service-rpc)
-        * Hive Shims (org.apache.hive:hive-shims:2.3.4 - http://hive.apache.org/hive-shims)
-        * Hive Shims 0.23 (org.apache.hive.shims:hive-shims-0.23:2.3.4 - http://hive.apache.org/hive-shims-0.23)
-        * Hive Shims Common (org.apache.hive.shims:hive-shims-common:2.3.4 - http://hive.apache.org/hive-shims-common)
-        * Hive Shims Scheduler (org.apache.hive.shims:hive-shims-scheduler:2.3.4 - http://hive.apache.org/hive-shims-scheduler)
+        * Hive CLI (org.apache.hive:hive-cli:2.3.9 - https://hive.apache.org/hive-cli)
+        * Hive Common (org.apache.hive:hive-common:2.3.9 - https://hive.apache.org/hive-common)
+        * Hive HCatalog Core (org.apache.hive.hcatalog:hive-hcatalog-core:2.3.9 - https://hive.apache.org/hive-hcatalog/hive-hcatalog-core)
+        * Hive HCatalog Server Extensions (org.apache.hive.hcatalog:hive-hcatalog-server-extensions:2.3.9 - https://hive.apache.org/hive-hcatalog/hive-hcatalog-server-extensions)
+        * Hive HCatalog Streaming (org.apache.hive.hcatalog:hive-hcatalog-streaming:2.3.9 - https://hive.apache.org/hive-hcatalog/hive-hcatalog-streaming)
+        * Hive HCatalog Webhcat Java Client (org.apache.hive.hcatalog:hive-webhcat-java-client:2.3.9 - https://hive.apache.org/hive-hcatalog/hive-webhcat-java-client)
+        * Hive Llap Client (org.apache.hive:hive-llap-client:2.3.9 - https://hive.apache.org/hive-llap-client)
+        * Hive Llap Common (org.apache.hive:hive-llap-common:2.3.9 - https://hive.apache.org/hive-llap-common)
+        * Hive Llap Server (org.apache.hive:hive-llap-server:2.3.9 - https://hive.apache.org/hive-llap-server)
+        * Hive Llap Tez (org.apache.hive:hive-llap-tez:2.3.9 - https://hive.apache.org/hive-llap-tez)
+        * Hive Metastore (org.apache.hive:hive-metastore:2.3.9 - https://hive.apache.org/hive-metastore)
+        * Hive Query Language (org.apache.hive:hive-exec:2.3.9 - https://hive.apache.org/hive-exec)
+        * Hive Serde (org.apache.hive:hive-serde:2.3.9 - https://hive.apache.org/hive-serde)
+        * Hive Service (org.apache.hive:hive-service:2.3.9 - https://hive.apache.org/hive-service)
+        * Hive Service RPC (org.apache.hive:hive-service-rpc:2.3.9 - https://hive.apache.org/hive-service-rpc)
+        * Hive Shims (org.apache.hive:hive-shims:2.3.9 - https://hive.apache.org/hive-shims)
+        * Hive Shims 0.23 (org.apache.hive.shims:hive-shims-0.23:2.3.9 - https://hive.apache.org/hive-shims-0.23)
+        * Hive Shims Common (org.apache.hive.shims:hive-shims-common:2.3.9 - https://hive.apache.org/hive-shims-common)
+        * Hive Shims Scheduler (org.apache.hive.shims:hive-shims-scheduler:2.3.9 - https://hive.apache.org/hive-shims-scheduler)
         * Hive Storage API (org.apache.hive:hive-storage-api:2.4.0 - https://www.apache.org/hive-storage-api/)
-        * Hive Vector-Code-Gen Utilities (org.apache.hive:hive-vector-code-gen:2.3.4 - http://hive.apache.org/hive-vector-code-gen)
+        * Hive Vector-Code-Gen Utilities (org.apache.hive:hive-vector-code-gen:2.3.9 - https://hive.apache.org/hive-vector-code-gen)
         * HPPC Collections (com.carrotsearch:hppc:0.7.1 - http://labs.carrotsearch.com/hppc.html/hppc)
         * htrace-core4 (org.apache.htrace:htrace-core4:4.1.0-incubating - http://incubator.apache.org/projects/htrace.html)
         * htrace-core4 (org.apache.htrace:htrace-core4:4.2.0-incubating - http://incubator.apache.org/projects/htrace.html)
@@ -443,8 +441,9 @@ List of third-party dependencies grouped by their license type.
         * Okio (com.squareup.okio:okio:1.6.0 - https://github.com/square/okio/okio)
         * opencsv (net.sf.opencsv:opencsv:2.3 - http://opencsv.sf.net)
         * Open JSON (com.tdunning:json:1.8 - https://github.com/tdunning/open-json)
-        * ORC Core (org.apache.orc:orc-core:1.3.3 - http://orc.apache.org/orc-core)
+        * ORC Core (org.apache.orc:orc-core:1.3.4 - http://orc.apache.org/orc-core)
         * oro (oro:oro:2.0.8 - no url defined)
+        * Pentaho Aggregate Designer Algorithm (org.pentaho:pentaho-aggdesigner-algorithm:5.1.5-jhyde - http://github.com/pentaho/mondrian/pentaho-aggdesigner-algorithm)
         * Plexus :: Component Annotations (org.codehaus.plexus:plexus-component-annotations:1.5.5 - http://plexus.codehaus.org/plexus-containers/plexus-component-annotations/)
         * Plexus :: Component Annotations (org.codehaus.plexus:plexus-component-annotations:1.7.1 - http://codehaus-plexus.github.io/plexus-containers/plexus-component-annotations/)
         * Plexus Cipher: encryption/decryption Component (org.sonatype.plexus:plexus-cipher:1.4 - http://spice.sonatype.org/plexus-cipher)
@@ -465,9 +464,11 @@ List of third-party dependencies grouped by their license type.
         * Sisu - Guice (org.sonatype.sisu:sisu-guice:2.1.7 - http://forge.sonatype.com/sisu-guice/)
         * Sisu - Inject (JSR330 bean support) (org.sonatype.sisu:sisu-inject-bean:1.4.2 - http://sisu.sonatype.org/sisu-inject/guice-bean/sisu-inject-bean/)
         * Sisu - Inject (Plexus bean support) (org.sonatype.sisu:sisu-inject-plexus:1.4.2 - http://sisu.sonatype.org/sisu-inject/guice-bean/guice-plexus/sisu-inject-plexus/)
+        * slice (io.airlift:slice:0.29 - https://github.com/airlift/slice)
         * Slider Core (org.apache.slider:slider-core:0.90.2-incubating - http://slider.incubator.apache.org/slider-core/)
         * SnakeYAML (org.yaml:snakeyaml:1.26 - http://www.snakeyaml.org)
         * Snappy for Java (org.xerial.snappy:snappy-java:1.0.5 - http://github.com/xerial/snappy-java/)
+        * snappy-java (org.xerial.snappy:snappy-java:1.1.1.3 - https://github.comm/xerial/snappy-java)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.2.6 - https://github.com/xerial/snappy-java)
         * Spatial4J (com.spatial4j:spatial4j:0.5 - http://nexus.sonatype.org/oss-repository-hosting.html/spatial4j)
         * Spring AOP (org.springframework:spring-aop:5.3.20 - https://github.com/spring-projects/spring-framework)
@@ -597,6 +598,7 @@ List of third-party dependencies grouped by their license type.
         * Javolution (javolution:javolution:5.5.1 - http://javolution.org)
         * JLine (jline:jline:0.9.94 - http://jline.sourceforge.net)
         * ParaNamer Core (com.thoughtworks.paranamer:paranamer:2.3 - http://paranamer.codehaus.org/paranamer)
+        * ParaNamer Core (com.thoughtworks.paranamer:paranamer:2.7 - http://paranamer.codehaus.org/paranamer)
         * Stax2 API (org.codehaus.woodstox:stax2-api:3.1.4 - http://wiki.fasterxml.com/WoodstoxStax2)
         * xmlenc Library (xmlenc:xmlenc:0.52 - http://xmlenc.sourceforge.net)
 
@@ -621,7 +623,6 @@ List of third-party dependencies grouped by their license type.
 
     Common Development and Distribution License (CDDL) v1.1
 
-        * Java Message Service (javax.jms:jms:1.1 - http://java.sun.com/products/jms)
         * Java Transaction API (javax.transaction:jta:1.1 - http://java.sun.com/products/jta)
         * jsp-api (javax.servlet:jsp-api:2.0 - no url defined)
         * jsp-api (javax.servlet.jsp:jsp-api:2.1 - no url defined)
@@ -685,6 +686,14 @@ List of third-party dependencies grouped by their license type.
 
         * JGraphT - Core (org.jgrapht:jgrapht-core:0.9.0 - http://www.jgrapht.org/jgrapht-core)
 
+    Eclipse Public License v. 2.0, GNU General Public License, version 2 with the GNU Classpath Exception
+
+        * jms (jakarta.jms:jakarta.jms-api:2.0.2 - https://projects.eclipse.org/projects/ee4j.jms)
+
+    GNU General Public License (GPL), version 2, with the Classpath exception
+
+        * Java Object Layout: Core (org.openjdk.jol:jol-core:0.2 - http://maven.apache.org)
+
     MIT License
 
         * Animal Sniffer Annotations (org.codehaus.mojo:animal-sniffer-annotations:1.17 - http://www.mojohaus.org/animal-sniffer/animal-sniffer-annotations)
@@ -716,6 +725,7 @@ List of third-party dependencies grouped by their license type.
     Public Domain
 
         * AOP alliance (aopalliance:aopalliance:1.0 - http://aopalliance.sourceforge.net)
+        * XZ for Java (org.tukaani:xz:1.5 - http://tukaani.org/xz/java.html)
 
     Revised BSD
 
