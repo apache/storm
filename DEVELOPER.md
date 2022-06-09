@@ -261,10 +261,12 @@ nvm use 8.9.3
 
 in order to get started as fast as possible. Users can still install a specific version of `ruby` and/or `node` manually.
 
-You will also need the [mock](https://docs.python.org/3/library/unittest.mock.html) Python testing library (as well as [Python 2.7.x and Python 3.x](https://github.com/pyenv/pyenv)). With [pip](https://pip.pypa.io/en/stable/installing/) installed you can run
-
+You will also need the [mock](https://docs.python.org/3/library/unittest.mock.html) 
+python testing library (as well as [Python 3.x](https://github.com/pyenv/pyenv)). 
+With [pip3](https://pip.pypa.io/en/stable/installation/) installed you can run
+(python 2.7.x is not supported).
 ```
-pip install mock
+pip3 install mock
 ```
 
 ## Building
