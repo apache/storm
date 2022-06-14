@@ -327,7 +327,7 @@
         <surefire.version>3.0.0-M5</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
-        <hamcrest.version>2.0.0.0</hamcrest.version>
+        <hamcrest.version>2.2</hamcrest.version>
         <cassandra.version>2.1.7</cassandra.version>
         <elasticsearch.version>5.2.2</elasticsearch.version>
         <calcite.version>1.14.0</calcite.version>
@@ -1000,7 +1000,7 @@
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
-                <artifactId>java-hamcrest</artifactId>
+                <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>

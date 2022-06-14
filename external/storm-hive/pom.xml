@@ -192,7 +192,7 @@
     </dependency>
     <dependency>
         <groupId>org.hamcrest</groupId>
-        <artifactId>java-hamcrest</artifactId>
+        <artifactId>hamcrest</artifactId>
     </dependency>
     <dependency>
         <!-- Needed in this version by hive -->
