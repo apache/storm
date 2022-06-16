@@ -24,11 +24,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.storm.blobstore.BlobStoreFile;
 import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.storm.hdfs.testing.MiniDFSClusterExtensionClassLevel;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,20 +36,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HdfsBlobStoreImplTest {
 
-    @ClassRule
-    public static final MiniDFSClusterRule DFS_CLUSTER_RULE = new MiniDFSClusterRule();
-
-    private static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStoreImplTest.class);
+    @RegisterExtension
+    public static final MiniDFSClusterExtensionClassLevel DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtensionClassLevel();
 
     // key dir needs to be number 0 to number of buckets, choose one so we know where to look
-    private static String KEYDIR = "0";
-    private Path blobDir = new Path("/storm/blobstore1");
-    private Path fullKeyDir = new Path(blobDir, KEYDIR);
-    private String BLOBSTORE_DATA = "data";
+    private static final String KEYDIR = "0";
+    private final Path blobDir = new Path("/storm/blobstore1");
+    private final Path fullKeyDir = new Path(blobDir, KEYDIR);
+    private final String BLOBSTORE_DATA = "data";
 
     public class TestHdfsBlobStoreImpl extends HdfsBlobStoreImpl implements AutoCloseable {
 
@@ -70,7 +66,7 @@ public class HdfsBlobStoreImplTest {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
             this.shutdown();
         }
     }
@@ -82,17 +78,17 @@ public class HdfsBlobStoreImplTest {
         String validKey = "validkeyBasic";
 
         //Will be closed automatically when shutting down the DFS cluster
-        FileSystem fs = DFS_CLUSTER_RULE.getDfscluster().getFileSystem();
+        FileSystem fs = DFS_CLUSTER_EXTENSION.getDfscluster().getFileSystem();
         Map<String, Object> conf = new HashMap<>();
 
-        try (TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(blobDir, conf, DFS_CLUSTER_RULE.getHadoopConf())) {
+        try (TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(blobDir, conf, DFS_CLUSTER_EXTENSION.getHadoopConf())) {
             // should have created blobDir
-            assertTrue("BlobStore dir wasn't created", fs.exists(blobDir));
-            assertEquals("BlobStore dir was created with wrong permissions",
-                HdfsBlobStoreImpl.BLOBSTORE_DIR_PERMISSION, fs.getFileStatus(blobDir).getPermission());
+            assertTrue(fs.exists(blobDir), "BlobStore dir wasn't created");
+            assertEquals(HdfsBlobStoreImpl.BLOBSTORE_DIR_PERMISSION, fs.getFileStatus(blobDir).getPermission(),
+                "BlobStore dir was created with wrong permissions");
 
             // test exist with non-existent key
-            assertFalse("file exists but shouldn't", hbs.exists("bogus"));
+            assertFalse(hbs.exists("bogus"), "file exists but shouldn't");
 
             // test write
             BlobStoreFile pfile = hbs.write(validKey, false);
@@ -105,38 +101,38 @@ public class HdfsBlobStoreImplTest {
             }
 
             // test modTime can change
-            Long initialModTime = pfile.getModTime();
+            long initialModTime = pfile.getModTime();
             try (OutputStream ios = pfile.getOutputStream()) {
                 ios.write(testString.getBytes(StandardCharsets.UTF_8));
             }
-            Long nextModTime = pfile.getModTime();
+            long nextModTime = pfile.getModTime();
             assertTrue(nextModTime > initialModTime);
 
             // test commit creates properly
-            assertTrue("BlobStore key dir wasn't created", fs.exists(fullKeyDir));
+            assertTrue(fs.exists(fullKeyDir), "BlobStore key dir wasn't created");
             pfile.commit();
             Path dataFile = new Path(new Path(fullKeyDir, validKey), BLOBSTORE_DATA);
-            assertTrue("blob data not committed", fs.exists(dataFile));
-            assertEquals("BlobStore dir was created with wrong permissions",
-                HdfsBlobStoreFile.BLOBSTORE_FILE_PERMISSION, fs.getFileStatus(dataFile).getPermission());
-            assertTrue("key doesn't exist but should", hbs.exists(validKey));
+            assertTrue(fs.exists(dataFile), "blob data not committed");
+            assertEquals(HdfsBlobStoreFile.BLOBSTORE_FILE_PERMISSION, fs.getFileStatus(dataFile).getPermission(),
+                "BlobStore dir was created with wrong permissions");
+            assertTrue(hbs.exists(validKey), "key doesn't exist but should");
 
             // test read
             BlobStoreFile readpFile = hbs.read(validKey);
             try (InputStream inStream = readpFile.getInputStream()) {
                 String readString = IOUtils.toString(inStream, StandardCharsets.UTF_8);
-                assertEquals("string read from blob doesn't match", testString, readString);
+                assertEquals(testString, readString, "string read from blob doesn't match");
             }
 
             // test listkeys
             Iterator<String> keys = hbs.listKeys();
-            assertTrue("blob has one key", keys.hasNext());
-            assertEquals("one key in blobstore", validKey, keys.next());
+            assertTrue(keys.hasNext(), "blob has one key");
+            assertEquals(validKey, keys.next(), "one key in blobstore");
 
             // delete
             hbs.deleteKey(validKey);
-            assertFalse("key not deleted", fs.exists(dataFile));
-            assertFalse("key not deleted", hbs.exists(validKey));
+            assertFalse(fs.exists(dataFile), "key not deleted");
+            assertFalse(hbs.exists(validKey), "key not deleted");
 
             // Now do multiple
             String testString2 = "testingblob2";
@@ -150,12 +146,12 @@ public class HdfsBlobStoreImplTest {
             }
 
             // test commit creates properly
-            assertTrue("BlobStore key dir wasn't created", fs.exists(fullKeyDir));
+            assertTrue(fs.exists(fullKeyDir), "BlobStore key dir wasn't created");
             pfile.commit();
-            assertTrue("blob data not committed", fs.exists(dataFile));
-            assertEquals("BlobStore dir was created with wrong permissions",
-                HdfsBlobStoreFile.BLOBSTORE_FILE_PERMISSION, fs.getFileStatus(dataFile).getPermission());
-            assertTrue("key doesn't exist but should", hbs.exists(validKey));
+            assertTrue(fs.exists(dataFile), "blob data not committed");
+            assertEquals(HdfsBlobStoreFile.BLOBSTORE_FILE_PERMISSION, fs.getFileStatus(dataFile).getPermission(),
+                "BlobStore dir was created with wrong permissions");
+            assertTrue(hbs.exists(validKey), "key doesn't exist but should");
 
             // test write again
             pfile = hbs.write(validKey2, false);
@@ -167,10 +163,10 @@ public class HdfsBlobStoreImplTest {
             // test commit second creates properly
             pfile.commit();
             Path dataFile2 = new Path(new Path(fullKeyDir, validKey2), BLOBSTORE_DATA);
-            assertTrue("blob data not committed", fs.exists(dataFile2));
-            assertEquals("BlobStore dir was created with wrong permissions",
-                HdfsBlobStoreFile.BLOBSTORE_FILE_PERMISSION, fs.getFileStatus(dataFile2).getPermission());
-            assertTrue("key doesn't exist but should", hbs.exists(validKey2));
+            assertTrue(fs.exists(dataFile2), "blob data not committed");
+            assertEquals(HdfsBlobStoreFile.BLOBSTORE_FILE_PERMISSION, fs.getFileStatus(dataFile2).getPermission(),
+                "BlobStore dir was created with wrong permissions");
+            assertTrue(hbs.exists(validKey2), "key doesn't exist but should");
 
             // test listkeys
             keys = hbs.listKeys();
@@ -188,28 +184,28 @@ public class HdfsBlobStoreImplTest {
                     fail("Found key that wasn't expected: " + key);
                 }
             }
-            assertEquals("number of keys is wrong", 2, total);
-            assertTrue("blobstore missing key1", key1Found);
-            assertTrue("blobstore missing key2", key2Found);
+            assertEquals(2, total, "number of keys is wrong");
+            assertTrue(key1Found, "blobstore missing key1");
+            assertTrue(key2Found, "blobstore missing key2");
 
             // test read
             readpFile = hbs.read(validKey);
             try (InputStream inStream = readpFile.getInputStream()) {
                 String readString = IOUtils.toString(inStream, StandardCharsets.UTF_8);
-                assertEquals("string read from blob doesn't match", testString, readString);
+                assertEquals(testString, readString, "string read from blob doesn't match");
             }
 
             // test read
             readpFile = hbs.read(validKey2);
             try (InputStream inStream = readpFile.getInputStream()) {
                 String readString = IOUtils.toString(inStream, StandardCharsets.UTF_8);
-                assertEquals("string read from blob doesn't match", testString2, readString);
+                assertEquals(testString2, readString, "string read from blob doesn't match");
             }
 
             hbs.deleteKey(validKey);
-            assertFalse("key not deleted", hbs.exists(validKey));
+            assertFalse(hbs.exists(validKey), "key not deleted");
             hbs.deleteKey(validKey2);
-            assertFalse("key not deleted", hbs.exists(validKey2));
+            assertFalse(hbs.exists(validKey2), "key not deleted");
         }
     }
 
@@ -218,7 +214,7 @@ public class HdfsBlobStoreImplTest {
         Map<String, Object> conf = new HashMap<>();
         String validKey = "validkeyBasic";
         String testString = "testingblob";
-        try (TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(blobDir, conf, DFS_CLUSTER_RULE.getHadoopConf())) {
+        try (TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(blobDir, conf, DFS_CLUSTER_EXTENSION.getHadoopConf())) {
             BlobStoreFile pfile = hbs.write(validKey, false);
             // Adding metadata to avoid null pointer exception
             SettableBlobMeta meta = new SettableBlobMeta();

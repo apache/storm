@@ -52,15 +52,15 @@ import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.ServerUtils;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
@@ -71,7 +71,7 @@ public class TestGenericResourceAwareStrategy {
     private final int currentTime = 1450418597;
     private IScheduler scheduler = null;
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (scheduler != null) {
             scheduler.cleanup();
@@ -114,7 +114,7 @@ public class TestGenericResourceAwareStrategy {
         builder.setBolt("bolt-3", new TestBolt(),
                 boltParallelism).addSharedMemory(new SharedOnHeap(sharedOnHeap, "bolt-3 shared worker")).shuffleGrouping("bolt-2");
 
-        StormTopology stormToplogy = builder.createTopology();
+        StormTopology stormTopology = builder.createTopology();
 
         INimbus iNimbus = new INimbusTest();
 
@@ -127,8 +127,8 @@ public class TestGenericResourceAwareStrategy {
         conf.put(Config.TOPOLOGY_PRIORITY, 0);
         conf.put(Config.TOPOLOGY_NAME, "testTopology");
         conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
-        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
-                genExecsAndComps(stormToplogy), currentTime, "user");
+        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormTopology, 0,
+                genExecsAndComps(stormTopology), currentTime, "user");
 
         Topologies topologies = new Topologies(topo);
 
@@ -142,14 +142,14 @@ public class TestGenericResourceAwareStrategy {
         for (Entry<String, SupervisorResources> entry: cluster.getSupervisorsResourcesMap().entrySet()) {
             String supervisorId = entry.getKey();
             SupervisorResources resources = entry.getValue();
-            assertTrue(supervisorId, resources.getTotalCpu() >= resources.getUsedCpu());
-            assertTrue(supervisorId, resources.getTotalMem() >= resources.getUsedMem());
+            assertTrue(resources.getTotalCpu() >= resources.getUsedCpu(), supervisorId);
+            assertTrue(resources.getTotalMem() >= resources.getUsedMem(), supervisorId);
         }
 
         // If we didn't take GPUs into account everything would fit under a single slot
         // But because there is only 1 GPU per node, and each of the 2 spouts needs a GPU
         // It has to be scheduled on at least 2 nodes, and hence 2 slots.
-        // Because of this all of the bolts will be scheduled on a single slot with one of
+        // Because of this, all the bolts will be scheduled on a single slot with one of
         // the spouts and the other spout is on its own slot.  So everything that can be shared is
         // shared.
         int totalNumberOfTasks = (spoutParallelism + (boltParallelism * numBolts));
@@ -207,7 +207,7 @@ public class TestGenericResourceAwareStrategy {
                 boltParallelism).shuffleGrouping("bolt-2").addResource("gpu.count", 2.0);
 
         String topoName = "testTopology";
-        StormTopology stormToplogy = builder.createTopology();
+        StormTopology stormTopology = builder.createTopology();
 
         INimbus iNimbus = new INimbusTest();
 
@@ -232,14 +232,14 @@ public class TestGenericResourceAwareStrategy {
             conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
         }
 
-        int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(conf, stormToplogy);
+        int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(conf, stormTopology);
         Nimbus.setUpAckerExecutorConfigs(topoName, conf, conf, estimatedNumWorker);
 
         conf.put(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB, 250);
         conf.put(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT, 50);
 
-        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
-                genExecsAndComps(StormCommon.systemTopology(conf, stormToplogy)), currentTime, "user");
+        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormTopology, 0,
+                genExecsAndComps(StormCommon.systemTopology(conf, stormTopology)), currentTime, "user");
 
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
@@ -259,7 +259,7 @@ public class TestGenericResourceAwareStrategy {
         // Ackers: [[8, 8], [7, 7]] (+ [[9, 9], [10, 10]] when numOfAckersPerWorker=2)
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
         if (numOfAckersPerWorker == -1 || numOfAckersPerWorker == 1) {
-            expectedScheduling.add(new HashSet<>(Arrays.asList(
+            expectedScheduling.add(new HashSet<>(Collections.singletonList(
                 new ExecutorDetails(3, 3)))); //bolt-3 - 500 MB, 50% CPU, 2 GPU
             //Total 500 MB, 50% CPU, 2 - GPU -> this node has 1500 MB, 150% cpu, 0 GPU left
             expectedScheduling.add(new HashSet<>(Arrays.asList(
@@ -275,7 +275,7 @@ public class TestGenericResourceAwareStrategy {
                 new ExecutorDetails(7, 7) ))); //acker - 250 MB, 50% CPU, 0 GPU
             //Total 1750 MB, 200% CPU, 2 GPU -> this node has 250 MB, 0% CPU, 0 GPU left
         } else if (numOfAckersPerWorker == 0) {
-            expectedScheduling.add(new HashSet<>(Arrays.asList(
+            expectedScheduling.add(new HashSet<>(Collections.singletonList(
                 new ExecutorDetails(3, 3)))); //bolt-3 - 500 MB, 50% CPU, 2 GPU
             //Total 500 MB, 50% CPU, 2 - GPU -> this node has 1500 MB, 150% cpu, 0 GPU left
             expectedScheduling.add(new HashSet<>(Arrays.asList(
@@ -289,7 +289,7 @@ public class TestGenericResourceAwareStrategy {
                 new ExecutorDetails(4, 4)))); //bolt-3 500 MB, 50% cpu, 2 GPU
             //Total 1000 MB, 100% CPU, 2 GPU -> this node has 1000 MB, 100% CPU, 0 GPU left
         } else if (numOfAckersPerWorker == 2) {
-            expectedScheduling.add(new HashSet<>(Arrays.asList(
+            expectedScheduling.add(new HashSet<>(Collections.singletonList(
                 new ExecutorDetails(3, 3)))); //bolt-3 - 500 MB, 50% CPU, 2 GPU
             //Total 500 MB, 50% CPU, 2 - GPU -> this node has 1500 MB, 150% cpu, 0 GPU left
             expectedScheduling.add(new HashSet<>(Arrays.asList(
@@ -341,7 +341,7 @@ public class TestGenericResourceAwareStrategy {
             boltParallelism).shuffleGrouping("bolt-2").addResource("gpu.count", 2.0);
 
         String topoName = "testTopology";
-        StormTopology stormToplogy = builder.createTopology();
+        StormTopology stormTopology = builder.createTopology();
 
         INimbus iNimbus = new INimbusTest();
 
@@ -363,14 +363,14 @@ public class TestGenericResourceAwareStrategy {
             conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
         }
 
-        int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(conf, stormToplogy);
+        int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRasTopo(conf, stormTopology);
         Nimbus.setUpAckerExecutorConfigs(topoName, conf, conf, estimatedNumWorker);
 
         conf.put(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB, 250);
         conf.put(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT, 50);
 
-        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
-            genExecsAndComps(StormCommon.systemTopology(conf, stormToplogy)), currentTime, "user");
+        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormTopology, 0,
+            genExecsAndComps(StormCommon.systemTopology(conf, stormTopology)), currentTime, "user");
 
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
@@ -389,7 +389,7 @@ public class TestGenericResourceAwareStrategy {
         // Ordered execs: [[6, 6], [2, 2], [4, 4], [5, 5], [1, 1], [3, 3], [0, 0]]
         // Ackers: [[8, 8], [7, 7]] (+ [[9, 9], [10, 10]] when numOfAckersPerWorker=2)
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
-        expectedScheduling.add(new HashSet<>(Arrays.asList(
+        expectedScheduling.add(new HashSet<>(Collections.singletonList(
             new ExecutorDetails(3, 3)))); //bolt-3 - 500 MB, 50% CPU, 2 GPU
         //Total 500 MB, 50% CPU, 2 - GPU -> this node has 1500 MB, 150% cpu, 0 GPU left
         expectedScheduling.add(new HashSet<>(Arrays.asList(
@@ -500,7 +500,7 @@ public class TestGenericResourceAwareStrategy {
         builder.setBolt("bolt-3", new TestBolt(),
             boltParallelism).shuffleGrouping("bolt-2").addResource("gpu.count", 2.0);
 
-        StormTopology stormToplogy = builder.createTopology();
+        StormTopology stormTopology = builder.createTopology();
 
         INimbus iNimbus = new INimbusTest();
 
@@ -516,8 +516,8 @@ public class TestGenericResourceAwareStrategy {
         conf.put(Config.TOPOLOGY_SUBMITTER_USER, "user");
         conf.put(Config.TOPOLOGY_RAS_ORDER_EXECUTORS_BY_PROXIMITY_NEEDS, true);
 
-        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
-            genExecsAndComps(StormCommon.systemTopology(conf,stormToplogy)), currentTime, "user");
+        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormTopology, 0,
+            genExecsAndComps(StormCommon.systemTopology(conf,stormTopology)), currentTime, "user");
 
         Topologies topologies = new Topologies(topo);
         Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, conf);
@@ -538,8 +538,8 @@ public class TestGenericResourceAwareStrategy {
         expectedScheduling.add(new HashSet<>(Arrays.asList(
             new ExecutorDetails(4, 4),      //bolt-3
             new ExecutorDetails(1, 1))));   //bolt-1
-        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(5, 5))));    //bolt-2
-        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(3, 3))));    //bolt-3
+        expectedScheduling.add(new HashSet<>(Collections.singletonList(new ExecutorDetails(5, 5))));    //bolt-2
+        expectedScheduling.add(new HashSet<>(Collections.singletonList(new ExecutorDetails(3, 3))));    //bolt-3
         HashSet<HashSet<ExecutorDetails>> foundScheduling = new HashSet<>();
         SchedulerAssignment assignment = cluster.getAssignmentById("testTopology-id");
         for (Collection<ExecutorDetails> execs : assignment.getSlotToExecutors().values()) {

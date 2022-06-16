@@ -21,7 +21,7 @@ import org.apache.storm.streams.ProcessorNode;
 /**
  * A composite context that holds a chain of {@link ProcessorContext}.
  */
-public class ChainedProcessorContext implements ProcessorContext {
+public class ChainedProcessorContext<T> implements ProcessorContext<T> {
     private final ProcessorNode processorNode;
     private final List<? extends ProcessorContext> contexts;
 
@@ -35,14 +35,14 @@ public class ChainedProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public <T> void forward(T input) {
+    public void forward(T input) {
         for (ProcessorContext context : contexts) {
             context.forward(input);
         }
     }
 
     @Override
-    public <T> void forward(T input, String stream) {
+    public void forward(T input, String stream) {
         for (ProcessorContext context : contexts) {
             context.forward(input, stream);
         }

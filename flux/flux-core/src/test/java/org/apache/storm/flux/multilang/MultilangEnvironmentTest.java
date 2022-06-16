@@ -18,7 +18,7 @@
 package org.apache.storm.flux.multilang;
 
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Sanity checks to make sure we can at least invoke the shells used.
@@ -38,19 +38,19 @@ public class MultilangEnvironmentTest {
     public void testInvokePython() throws Exception {
         String[] command = new String[]{"python", "--version"};
         int exitVal = invokeCommand(command);
-        assertEquals("Exit value for python is 0.", 0, exitVal);
+        assertEquals(0, exitVal, "Exit value for python is 0.");
     }
 
     @Test
     public void testInvokeNode() throws Exception {
         String[] command = new String[]{"node", "--version"};
         int exitVal = invokeCommand(command);
-        assertEquals("Exit value for node is 0.", 0, exitVal);
+        assertEquals(0, exitVal, "Exit value for node should be 0.");
     }
 
     private static class StreamRedirect implements Runnable {
-        private InputStream in;
-        private OutputStream out;
+        private final InputStream in;
+        private final OutputStream out;
 
         public StreamRedirect(InputStream in, OutputStream out) {
             this.in = in;
@@ -60,7 +60,7 @@ public class MultilangEnvironmentTest {
         @Override
         public void run() {
             try {
-                int i = -1;
+                int i;
                 while ((i = this.in.read()) != -1) {
                     out.write(i);
                 }
@@ -73,7 +73,7 @@ public class MultilangEnvironmentTest {
     }
 
     private int invokeCommand(String[] args) throws Exception {
-        LOG.debug("Invoking command: {}", args);
+        LOG.debug("Invoking command: {}", (Object) args);
 
         ProcessBuilder pb = new ProcessBuilder(args);
         pb.redirectErrorStream(true);
@@ -83,7 +83,7 @@ public class MultilangEnvironmentTest {
         Thread t = new Thread(new StreamRedirect(proc.getInputStream(), out));
         t.start();
         int exitVal = proc.waitFor();
-        LOG.debug("Command result: {}", out.toString());
+        LOG.debug("Command result: {}", out);
         return exitVal;
     }
 }

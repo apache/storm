@@ -18,8 +18,10 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestSimpleFileNameFormat {
 
@@ -32,9 +34,9 @@ public class TestSimpleFileNameFormat {
         String path = format.getPath();
         String name = format.getName(1, now);
 
-        Assert.assertEquals("/storm", path);
+        assertEquals("/storm", path);
         String time = new SimpleDateFormat("yyyyMMddHHmmss").format(now);
-        Assert.assertEquals(time + ".1.txt", name);
+        assertEquals(time + ".1.txt", name);
     }
 
     @Test
@@ -49,7 +51,7 @@ public class TestSimpleFileNameFormat {
         String path = format.getPath();
         String name = format.getName(1, now);
 
-        Assert.assertEquals("/mypath", path);
+        assertEquals("/mypath", path);
         String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(now);
         String host = null;
         try {
@@ -57,15 +59,14 @@ public class TestSimpleFileNameFormat {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        Assert.assertEquals(time + "." + host + ".Xcom.7.1.txt", name);
+        assertEquals(time + "." + host + ".Xcom.7.1.txt", name);
     }
 
-    @Test(expected = IllegalArgumentException.class)
     public void testTimeFormat() {
         Map<String, Object> topoConf = new HashMap();
         SimpleFileNameFormat format = new SimpleFileNameFormat()
             .withTimeFormat("xyz");
-        format.prepare(null, createTopologyContext(topoConf));
+        assertThrows(IllegalArgumentException.class, () -> format.prepare(null, createTopologyContext(topoConf)));
     }
 
     private TopologyContext createTopologyContext(Map<String, Object> topoConf) {

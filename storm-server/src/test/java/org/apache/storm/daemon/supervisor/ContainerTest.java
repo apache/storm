@@ -33,11 +33,11 @@ import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.utils.ObjectReader;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -94,7 +94,6 @@ public class ContainerTest {
         assertEquals(iso.allWorkerIds, iso.forceKilledWorkerIds);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testSetup() throws Exception {
         final int port = 8080;
@@ -234,7 +233,7 @@ public class ContainerTest {
         }
 
         @Override
-        public void relaunch() throws IOException {
+        public void relaunch() {
             fail("THIS IS NOT UNDER TEST");
         }
 
@@ -245,7 +244,7 @@ public class ContainerTest {
         }
 
         @Override
-        public boolean runProfiling(ProfileRequest request, boolean stop) throws IOException, InterruptedException {
+        public boolean runProfiling(ProfileRequest request, boolean stop) {
             fail("THIS IS NOT UNDER TEST");
             return false;
         }
@@ -273,40 +272,40 @@ public class ContainerTest {
         public void launchWorkerProcess(String user, String topologyId, Map<String, Object> topoConf,
                                         int port, String workerId, List<String> command,
                                         Map<String, String> env, String logPrefix,
-                                        ExitCodeCallback processExitCallback, File targetDir) throws IOException {
+                                        ExitCodeCallback processExitCallback, File targetDir) {
             workerCmds.add(new CommandRun(command, env, targetDir));
         }
 
         @Override
-        public long getMemoryUsage(String user, String workerId, int port) throws IOException {
+        public long getMemoryUsage(String user, String workerId, int port) {
             fail("THIS IS NOT UNDER TEST");
             return 0;
         }
 
         @Override
-        public long getSystemFreeMemoryMb() throws IOException {
+        public long getSystemFreeMemoryMb() {
             fail("THIS IS NOT UNDER TEST");
             return 0;
         }
 
         @Override
-        public void kill(String user, String workerId) throws IOException {
+        public void kill(String user, String workerId) {
             killedWorkerIds.add(workerId);
         }
 
         @Override
-        public void forceKill(String user, String workerId) throws IOException {
+        public void forceKill(String user, String workerId) {
             forceKilledWorkerIds.add(workerId);
         }
 
         @Override
-        public boolean areAllProcessesDead(String user, String workerId) throws IOException {
+        public boolean areAllProcessesDead(String user, String workerId) {
             fail("THIS IS NOT UNDER TEST");
             return false;
         }
 
         @Override
-        public boolean runProfilingCommand(String user, String workerId, List<String> command, Map<String, String> env, String logPrefix, File targetDir) throws IOException, InterruptedException {
+        public boolean runProfilingCommand(String user, String workerId, List<String> command, Map<String, String> env, String logPrefix, File targetDir) {
             profileCmds.add(new CommandRun(command, env, targetDir));
             return true;
         }

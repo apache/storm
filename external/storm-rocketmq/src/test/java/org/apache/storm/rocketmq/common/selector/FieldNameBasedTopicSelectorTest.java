@@ -20,13 +20,13 @@ package org.apache.storm.rocketmq.common.selector;
 
 import org.apache.storm.rocketmq.TestUtils;
 import org.apache.storm.tuple.Tuple;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FieldNameBasedTopicSelectorTest {
     @Test
-    public void getTopic() throws Exception {
+    public void getTopic() {
         FieldNameBasedTopicSelector topicSelector = new FieldNameBasedTopicSelector("f1", "tpc", "f2",  "tg");
         Tuple tuple = TestUtils.generateTestTuple("f1", "fn", "v1", "vn");
         assertEquals("v1", topicSelector.getTopic(tuple));

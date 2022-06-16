@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.storm.spout.CheckPointState;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit tests for {@link DefaultStateSerializer}
@@ -32,23 +32,23 @@ import static org.junit.Assert.assertEquals;
 public class DefaultStateSerializerTest {
 
     @Test
-    public void testSerializeDeserialize() throws Exception {
-        Serializer<Long> s1 = new DefaultStateSerializer<Long>();
+    public void testSerializeDeserialize() {
+        Serializer<Long> s1 = new DefaultStateSerializer<>();
         byte[] bytes;
         long val = 100;
         bytes = s1.serialize(val);
         assertEquals(val, (long) s1.deserialize(bytes));
 
-        Serializer<CheckPointState> s2 = new DefaultStateSerializer<CheckPointState>();
+        Serializer<CheckPointState> s2 = new DefaultStateSerializer<>();
         CheckPointState cs = new CheckPointState(100, CheckPointState.State.COMMITTED);
         bytes = s2.serialize(cs);
-        assertEquals(cs, (CheckPointState) s2.deserialize(bytes));
+        assertEquals(cs, s2.deserialize(bytes));
 
         List<Class<?>> classesToRegister = new ArrayList<>();
         classesToRegister.add(CheckPointState.class);
         Serializer<CheckPointState> s3 = new DefaultStateSerializer<>(Collections.emptyMap(), null, classesToRegister);
         bytes = s2.serialize(cs);
-        assertEquals(cs, (CheckPointState) s2.deserialize(bytes));
+        assertEquals(cs, s2.deserialize(bytes));
 
     }
 }

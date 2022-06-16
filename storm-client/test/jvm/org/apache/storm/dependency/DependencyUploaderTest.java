@@ -37,16 +37,16 @@ import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.com.google.common.io.Files;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -63,7 +63,7 @@ public class DependencyUploaderTest {
     private DependencyUploader sut;
     private ClientBlobStore mockBlobStore;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         sut = new DependencyUploader();
         mockBlobStore = mock(ClientBlobStore.class);
@@ -71,43 +71,45 @@ public class DependencyUploaderTest {
         doNothing().when(mockBlobStore).shutdown();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         sut.shutdown();
     }
 
-    @Test(expected = FileNotAvailableException.class)
-    public void uploadFilesWhichOneOfThemIsNotFoundInLocal() throws Exception {
-        File mockFile = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(true);
+    @Test
+    public void uploadFilesWhichOneOfThemIsNotFoundInLocal() {
+        assertThrows(FileNotAvailableException.class, () -> {
+            File mockFile = mock(File.class);
+            when(mockFile.isFile()).thenReturn(true);
+            when(mockFile.exists()).thenReturn(true);
 
-        File mockFile2 = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(false);
+            File mockFile2 = mock(File.class);
+            when(mockFile.isFile()).thenReturn(true);
+            when(mockFile.exists()).thenReturn(false);
 
-        List<File> dependencies = new ArrayList<>();
-        dependencies.add(mockFile);
-        dependencies.add(mockFile2);
+            List<File> dependencies = new ArrayList<>();
+            dependencies.add(mockFile);
+            dependencies.add(mockFile2);
 
-        sut.uploadFiles(dependencies, false);
-        fail("Should throw FileNotAvailableException");
+            sut.uploadFiles(dependencies, false);
+        });
     }
 
-    @Test(expected = FileNotAvailableException.class)
-    public void uploadFilesWhichOneOfThemIsNotFile() throws Exception {
-        File mockFile = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(true);
+    @Test
+    public void uploadFilesWhichOneOfThemIsNotFile() {
+        assertThrows(FileNotAvailableException.class, () -> {
+            File mockFile = mock(File.class);
+            when(mockFile.isFile()).thenReturn(true);
+            when(mockFile.exists()).thenReturn(true);
 
-        File mockFile2 = mock(File.class);
-        when(mockFile.isFile()).thenReturn(false);
-        when(mockFile.exists()).thenReturn(true);
+            File mockFile2 = mock(File.class);
+            when(mockFile.isFile()).thenReturn(false);
+            when(mockFile.exists()).thenReturn(true);
 
-        List<File> dependencies = Lists.newArrayList(mockFile, mockFile2);
+            List<File> dependencies = Lists.newArrayList(mockFile, mockFile2);
 
-        sut.uploadFiles(dependencies, false);
-        fail("Should throw FileNotAvailableException");
+            sut.uploadFiles(dependencies, false);
+        });
     }
 
     @Test
@@ -134,7 +136,7 @@ public class DependencyUploaderTest {
         try {
             sut.uploadFiles(dependencies, true);
             fail("Should pass RuntimeException");
-        } catch (RuntimeException e) {
+        } catch (RuntimeException ignore) {
             // intended behavior
         }
 
@@ -151,12 +153,9 @@ public class DependencyUploaderTest {
         doNothing().when(mockOutputStream).cancel();
 
         final AtomicInteger counter = new AtomicInteger();
-        final Answer incrementCounter = new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                counter.addAndGet(1);
-                return null;
-            }
+        final Answer<Object> incrementCounter = invocation -> {
+            counter.addAndGet(1);
+            return null;
         };
 
         doAnswer(incrementCounter).when(mockOutputStream).write(anyInt());
@@ -190,40 +189,42 @@ public class DependencyUploaderTest {
                                                          BlobStoreAclHandler.READ)));
     }
 
-    @Test(expected = FileNotAvailableException.class)
-    public void uploadArtifactsWhichOneOfThemIsNotFoundInLocal() throws Exception {
-        File mockFile = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(true);
+    @Test
+    public void uploadArtifactsWhichOneOfThemIsNotFoundInLocal() {
+        assertThrows(FileNotAvailableException.class, () -> {
+            File mockFile = mock(File.class);
+            when(mockFile.isFile()).thenReturn(true);
+            when(mockFile.exists()).thenReturn(true);
 
-        File mockFile2 = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(false);
+            File mockFile2 = mock(File.class);
+            when(mockFile.isFile()).thenReturn(true);
+            when(mockFile.exists()).thenReturn(false);
 
-        Map<String, File> artifacts = new LinkedHashMap<>();
-        artifacts.put("group:artifact:1.0.0", mockFile);
-        artifacts.put("group:artifact:1.1.0", mockFile2);
+            Map<String, File> artifacts = new LinkedHashMap<>();
+            artifacts.put("group:artifact:1.0.0", mockFile);
+            artifacts.put("group:artifact:1.1.0", mockFile2);
 
-        sut.uploadArtifacts(artifacts);
-        fail("Should throw FileNotAvailableException");
+            sut.uploadArtifacts(artifacts);
+        });
     }
 
-    @Test(expected = FileNotAvailableException.class)
-    public void uploadArtifactsWhichOneOfThemIsNotFile() throws Exception {
-        File mockFile = mock(File.class);
-        when(mockFile.isFile()).thenReturn(true);
-        when(mockFile.exists()).thenReturn(true);
+    @Test
+    public void uploadArtifactsWhichOneOfThemIsNotFile() {
+        assertThrows(FileNotAvailableException.class, () -> {
+            File mockFile = mock(File.class);
+            when(mockFile.isFile()).thenReturn(true);
+            when(mockFile.exists()).thenReturn(true);
 
-        File mockFile2 = mock(File.class);
-        when(mockFile.isFile()).thenReturn(false);
-        when(mockFile.exists()).thenReturn(true);
+            File mockFile2 = mock(File.class);
+            when(mockFile.isFile()).thenReturn(false);
+            when(mockFile.exists()).thenReturn(true);
 
-        Map<String, File> artifacts = new LinkedHashMap<>();
-        artifacts.put("group:artifact:1.0.0", mockFile);
-        artifacts.put("group:artifact:1.1.0", mockFile2);
+            Map<String, File> artifacts = new LinkedHashMap<>();
+            artifacts.put("group:artifact:1.0.0", mockFile);
+            artifacts.put("group:artifact:1.1.0", mockFile2);
 
-        sut.uploadArtifacts(artifacts);
-        fail("Should throw FileNotAvailableException");
+            sut.uploadArtifacts(artifacts);
+        });
     }
 
     @Test
@@ -271,12 +272,9 @@ public class DependencyUploaderTest {
         doNothing().when(mockOutputStream).cancel();
 
         final AtomicInteger counter = new AtomicInteger();
-        final Answer incrementCounter = new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                counter.addAndGet(1);
-                return null;
-            }
+        final Answer<Object> incrementCounter = invocation -> {
+            counter.addAndGet(1);
+            return null;
         };
 
         doAnswer(incrementCounter).when(mockOutputStream).write(anyInt());
@@ -311,5 +309,4 @@ public class DependencyUploaderTest {
 
         return tempFile;
     }
-
 }

@@ -17,13 +17,14 @@
  */
 package org.apache.storm.flux;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FluxBuilderTest {
 
     @Test
-    public void testIsPrimitiveNumber() throws Exception {
+    public void testIsPrimitiveNumber() {
         assertTrue(FluxBuilder.isPrimitiveNumber(int.class));
         assertFalse(FluxBuilder.isPrimitiveNumber(boolean.class));
         assertFalse(FluxBuilder.isPrimitiveNumber(String.class));

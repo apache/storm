@@ -14,33 +14,32 @@ package org.apache.storm;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.ILocalCluster.ILocalTopology;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.testing.AckFailMapTracker;
+import org.apache.storm.testing.FeederSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.storm.testing.AckFailMapTracker;
-import org.apache.storm.testing.FeederSpout;
-import org.apache.storm.tuple.Values;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class TickTupleTest {
     private final static Logger LOG = LoggerFactory.getLogger(TickTupleTest.class);
@@ -75,7 +74,7 @@ public class TickTupleTest {
             Config topoConf = new Config();
             topoConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, TICK_INTERVAL_SECS);
             
-            try (ILocalTopology topo = cluster.submitTopology("test", topoConf, builder.createTopology())) {
+            try (ILocalTopology ignored = cluster.submitTopology("test", topoConf, builder.createTopology())) {
                 //Use a bootstrap tuple to wait for topology to be running
                 feeder.feed(new Values("val"), 1);
                 AssertLoop.assertAcked(tracker, 1);
@@ -93,7 +92,7 @@ public class TickTupleTest {
                 } catch (ConditionTimeoutException e) {
                     throw new AssertionError(e.getMessage());
                 }
-                assertNull("The bolt got a tuple that is not a tick tuple " + nonTickTuple.get(), nonTickTuple.get());
+                assertNull(nonTickTuple.get(), "The bolt got a tuple that is not a tick tuple " + nonTickTuple.get());
             }
         }
     }

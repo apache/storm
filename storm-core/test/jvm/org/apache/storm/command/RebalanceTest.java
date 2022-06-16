@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -14,21 +14,25 @@
 package org.apache.storm.command;
 
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RebalanceTest {
 
     @Test
-    public void testParser() throws Exception {
+    public void testParser() {
         Rebalance.ExecutorParser executorParser = new Rebalance.ExecutorParser();
         Map<String, Integer> componentParallelism = (Map<String, Integer>) executorParser.parse("comp1=3");
-        Assert.assertEquals(3, (int) componentParallelism.get("comp1"));
+        assertEquals(3, (int) componentParallelism.get("comp1"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testExepction() throws Exception {
-        Rebalance.ExecutorParser executorParser = new Rebalance.ExecutorParser();
-        executorParser.parse("comp1 3");
+    @Test
+    public void testException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Rebalance.ExecutorParser executorParser = new Rebalance.ExecutorParser();
+            executorParser.parse("comp1 3");
+        });
     }
 }

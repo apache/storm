@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -13,9 +13,11 @@
 package org.apache.storm.hdfs.avro;
 
 import org.apache.avro.Schema;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class TestGenericAvroSerializer {
     private static final String schemaString1 = "{\"type\":\"record\"," +
@@ -31,7 +33,7 @@ public class TestGenericAvroSerializer {
 
     AvroSchemaRegistry reg = new GenericAvroSerializer();
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() {
 
         Schema.Parser parser = new Schema.Parser();
@@ -52,7 +54,7 @@ public class TestGenericAvroSerializer {
         String fp1 = reg.getFingerprint(schema1);
         String fp2 = reg.getFingerprint(schema2);
 
-        Assert.assertNotEquals(fp1, fp2);
+        assertNotEquals(fp1, fp2);
     }
 
     private void testTheSchema(Schema schema) {
@@ -60,7 +62,7 @@ public class TestGenericAvroSerializer {
         Schema found = reg.getSchema(fp1);
         String fp2 = reg.getFingerprint(found);
 
-        Assert.assertEquals(found, schema);
-        Assert.assertEquals(fp1, fp2);
+        assertEquals(found, schema);
+        assertEquals(fp1, fp2);
     }
 }

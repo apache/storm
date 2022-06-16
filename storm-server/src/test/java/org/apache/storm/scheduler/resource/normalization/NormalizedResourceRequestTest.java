@@ -23,8 +23,10 @@ import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.daemon.Acker;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class NormalizedResourceRequestTest {
 
@@ -36,8 +38,8 @@ public class NormalizedResourceRequestTest {
         NormalizedResourceRequest request = new NormalizedResourceRequest(topoConf, Acker.ACKER_COMPONENT_ID);
         Map<String, Double> normalizedMap = request.toNormalizedMap();
         Double cpu = normalizedMap.get(Constants.COMMON_CPU_RESOURCE_NAME);
-        Assert.assertNotNull(cpu);
-        Assert.assertEquals(40, cpu, 0.001);
+        assertNotNull(cpu);
+        assertEquals(40, cpu, 0.001);
     }
 
     @Test
@@ -48,7 +50,7 @@ public class NormalizedResourceRequestTest {
         NormalizedResourceRequest request = new NormalizedResourceRequest(topoConf, "notAnAckerComponent");
         Map<String, Double> normalizedMap = request.toNormalizedMap();
         Double cpu = normalizedMap.get(Constants.COMMON_CPU_RESOURCE_NAME);
-        Assert.assertNotNull(cpu);
-        Assert.assertEquals(50, cpu, 0.001);
+        assertNotNull(cpu);
+        assertEquals(50, cpu, 0.001);
     }
 }

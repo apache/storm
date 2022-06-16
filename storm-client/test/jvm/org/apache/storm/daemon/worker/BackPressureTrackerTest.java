@@ -16,10 +16,10 @@
 
 package org.apache.storm.daemon.worker;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,7 +30,7 @@ import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.shade.org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.apache.storm.utils.JCQueue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BackPressureTrackerTest {
 

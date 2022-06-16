@@ -33,12 +33,14 @@ import org.fusesource.mqtt.client.MQTT;
 import org.fusesource.mqtt.client.Message;
 import org.fusesource.mqtt.client.QoS;
 import org.fusesource.mqtt.client.Topic;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @IntegrationTest
 public class StormMqttIntegrationTest implements Serializable {
@@ -100,8 +102,8 @@ public class StormMqttIntegrationTest implements Serializable {
             LOG.info("Payload: {}", new String(message.getPayload()));
             message.ack();
 
-            Assert.assertArrayEquals(message.getPayload(), RESULT_PAYLOAD.getBytes());
-            Assert.assertEquals(message.getTopic(), RESULT_TOPIC);
+            assertArrayEquals(message.getPayload(), RESULT_PAYLOAD.getBytes());
+            assertEquals(message.getTopic(), RESULT_TOPIC);
         }
     }
 

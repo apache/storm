@@ -39,7 +39,6 @@ import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesExte
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,6 +62,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith({NormalizedResourcesExtension.class})
 public class TestLargeCluster {
@@ -300,7 +302,7 @@ public class TestLargeCluster {
         for (TEST_CLUSTER_NAME testClusterName: TEST_CLUSTER_NAME.values()) {
             String resourcePath = testClusterName.getResourcePath();
             List<String> resources = getResourceFiles(resourcePath);
-            Assert.assertFalse("No resource files found in " + resourcePath, resources.isEmpty());
+            assertFalse(resources.isEmpty(), "No resource files found in " + resourcePath);
             createTopoDetailsArray(resourcePath, true);
         }
     }
@@ -389,7 +391,7 @@ public class TestLargeCluster {
             Map<String, SupervisorDetails> supervisors = createSupervisors(testClusterName, 0);
 
             TopologyDetails[] topoDetailsArray = createTopoDetailsArray(resourcePath, false);
-            Assert.assertTrue("No topologies found for cluster " + testClusterName.getClusterName(), topoDetailsArray.length > 0);
+            assertTrue(topoDetailsArray.length > 0, "No topologies found for cluster " + testClusterName.getClusterName());
             Topologies topologies = new Topologies(topoDetailsArray);
 
             Config confWithDefaultStrategy = new Config();

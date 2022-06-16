@@ -31,12 +31,12 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestRebalance {
 
@@ -137,10 +137,10 @@ public class TestRebalance {
             JSONObject readTopologyConf = (JSONObject) parser.parse(componentConfRaw);
 
             Map<String, Double> componentResources = (Map<String, Double>) readTopologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
-            assertTrue("Topology has been updated", topologyUpdated);
-            assertEquals("Updated CPU correct", 25.0, componentResources.get(Constants.COMMON_CPU_RESOURCE_NAME), 0.001);
-            assertEquals("Updated Memory correct", 120.0, componentResources.get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME), 0.001);
-            assertEquals("Updated Generic resource correct", 5.0, componentResources.get("gpu.count"), 0.001);
+            assertTrue(topologyUpdated, "Topology has been updated");
+            assertEquals(25.0, componentResources.get(Constants.COMMON_CPU_RESOURCE_NAME), 0.001, "Updated CPU correct");
+            assertEquals(120.0, componentResources.get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME), 0.001, "Updated Memory correct");
+            assertEquals(5.0, componentResources.get("gpu.count"), 0.001, "Updated Generic resource correct");
         }
     }
 

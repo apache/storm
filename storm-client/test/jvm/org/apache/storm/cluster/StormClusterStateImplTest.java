@@ -14,8 +14,8 @@ package org.apache.storm.cluster;
 
 import org.apache.storm.assignments.LocalAssignmentsBackendFactory;
 import org.apache.storm.callback.ZKStateChangedCallback;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class StormClusterStateImplTest {
     private ClusterStateContext context;
     private StormClusterStateImpl state;
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         storage = Mockito.mock(IStateStorage.class);
         context = new ClusterStateContext();

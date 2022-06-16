@@ -13,76 +13,82 @@
 package org.apache.storm.utils;
 
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TimeTest {
 
     @Test
     public void secsToMillisLongTest() {
-        Assert.assertEquals(Time.secsToMillisLong(0), 0);
-        Assert.assertEquals(Time.secsToMillisLong(0.002), 2);
-        Assert.assertEquals(Time.secsToMillisLong(1), 1000);
-        Assert.assertEquals(Time.secsToMillisLong(1.08), 1080);
-        Assert.assertEquals(Time.secsToMillisLong(10), 10000);
-        Assert.assertEquals(Time.secsToMillisLong(10.1), 10100);
+        assertEquals(Time.secsToMillisLong(0), 0);
+        assertEquals(Time.secsToMillisLong(0.002), 2);
+        assertEquals(Time.secsToMillisLong(1), 1000);
+        assertEquals(Time.secsToMillisLong(1.08), 1080);
+        assertEquals(Time.secsToMillisLong(10), 10000);
+        assertEquals(Time.secsToMillisLong(10.1), 10100);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void ifNotSimulatingAdvanceTimeThrowsTest() {
-        Time.advanceTime(1000);
+        assertThrows(IllegalStateException.class, () -> Time.advanceTime(1000));
     }
 
     @Test
     public void isSimulatingReturnsTrueDuringSimulationTest() {
-        Assert.assertFalse(Time.isSimulating());
-        try (SimulatedTime t = new SimulatedTime()) {
-            Assert.assertTrue(Time.isSimulating());
+        assertFalse(Time.isSimulating());
+        try (SimulatedTime ignored = new SimulatedTime()) {
+            assertTrue(Time.isSimulating());
         }
     }
 
     @Test
     public void shouldNotAdvanceTimeTest() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long current = Time.currentTimeMillis();
             Time.advanceTime(0);
-            Assert.assertEquals(Time.deltaMs(current), 0);
+            assertEquals(Time.deltaMs(current), 0);
         }
     }
 
     @Test
     public void shouldAdvanceForwardTest() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long current = Time.currentTimeMillis();
             Time.advanceTime(1000);
-            Assert.assertEquals(Time.deltaMs(current), 1000);
+            assertEquals(Time.deltaMs(current), 1000);
             Time.advanceTime(500);
-            Assert.assertEquals(Time.deltaMs(current), 1500);
-        }
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowIfAttemptToAdvanceBackwardsTest() {
-        try (SimulatedTime t = new SimulatedTime()) {
-            Time.advanceTime(-1500);
+            assertEquals(Time.deltaMs(current), 1500);
         }
     }
 
     @Test
+    public void shouldThrowIfAttemptToAdvanceBackwardsTest() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            try (SimulatedTime t = new SimulatedTime()) {
+                Time.advanceTime(-1500);
+            }
+        });
+    }
+
+    @Test
     public void deltaSecsConvertsToSecondsTest() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             int current = Time.currentTimeSecs();
             Time.advanceTime(1000);
-            Assert.assertEquals(Time.deltaSecs(current), 1);
+            assertEquals(Time.deltaSecs(current), 1);
         }
     }
 
     @Test
     public void deltaSecsTruncatesFractionalSecondsTest() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             int current = Time.currentTimeSecs();
             Time.advanceTime(1500);
-            Assert.assertEquals(Time.deltaSecs(current), 1, 0);
+            assertEquals(Time.deltaSecs(current), 1, 0);
         }
     }
 

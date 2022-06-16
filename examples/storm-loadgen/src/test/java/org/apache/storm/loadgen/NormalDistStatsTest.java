@@ -18,20 +18,20 @@
 
 package org.apache.storm.loadgen;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NormalDistStatsTest {
     public static void assertNDSEquals(NormalDistStats a, NormalDistStats b) {
-        assertEquals("mean", a.mean, b.mean, 0.0001);
-        assertEquals("min", a.min, b.min, 0.0001);
-        assertEquals("max", a.max, b.max, 0.0001);
-        assertEquals("stddev", a.stddev, b.stddev, 0.0001);
+        assertEquals(a.mean, b.mean, 0.0001, "mean");
+        assertEquals(a.min, b.min, 0.0001, "min");
+        assertEquals(a.max, b.max, 0.0001, "max");
+        assertEquals(a.stddev, b.stddev, 0.0001, "stddev");
     }
 
     @Test
-    public void scaleBy() throws Exception {
+    public void scaleBy() {
         NormalDistStats orig = new NormalDistStats(1.0, 0.5, 0.0, 2.0);
         assertNDSEquals(orig, orig.scaleBy(1.0));
         NormalDistStats expectedDouble = new NormalDistStats(2.0, 0.5, 1.0, 3.0);

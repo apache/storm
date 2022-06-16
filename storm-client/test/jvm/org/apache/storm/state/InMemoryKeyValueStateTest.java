@@ -12,11 +12,12 @@
 
 package org.apache.storm.state;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Unit tests for {@link InMemoryKeyValueState}
@@ -25,33 +26,33 @@ public class InMemoryKeyValueStateTest {
 
     KeyValueState<String, String> keyValueState;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         keyValueState = new InMemoryKeyValueState<>();
     }
 
     @Test
-    public void testPutAndGet() throws Exception {
+    public void testPutAndGet() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         assertArrayEquals(new String[]{ "1", "2", null }, getValues());
     }
 
     @Test
-    public void testPutAndDelete() throws Exception {
+    public void testPutAndDelete() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         assertEquals("1", keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
-        assertEquals(null, keyValueState.get("c"));
+        assertNull(keyValueState.get("c"));
         assertEquals("1", keyValueState.delete("a"));
-        assertEquals(null, keyValueState.get("a"));
+        assertNull(keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
-        assertEquals(null, keyValueState.get("c"));
+        assertNull(keyValueState.get("c"));
     }
 
     @Test
-    public void testPrepareCommitRollback() throws Exception {
+    public void testPrepareCommitRollback() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(1);

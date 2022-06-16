@@ -28,7 +28,7 @@ import org.apache.storm.scheduler.resource.strategies.eviction.TestDefaultEvicti
 import org.apache.storm.scheduler.resource.strategies.priority.TestFIFOSchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.TestGenericResourceAwareSchedulingPriorityStrategy;
 import org.apache.storm.testing.PerformanceTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 

@@ -22,12 +22,12 @@ import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.anyString;
@@ -67,7 +67,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testLogResetShouldNotTriggerForFutureTime() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long theFuture = Time.currentTimeMillis() + 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("foo", ll(theFuture));
@@ -81,7 +81,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testLogResetTriggersForPastTime() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("foo", ll("INFO", "WARN", past));
@@ -106,7 +106,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testLogResetResetsRootLoggerIfSet() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put(LogManager.ROOT_LOGGER_NAME, ll("DEBUG", "WARN", past));
@@ -120,8 +120,8 @@ public class LogConfigManagerTest {
     }
 
     @Test
-    public void testLogResetProperlyResetLogLevelAfterTimeout() throws InterruptedException {
-        try (SimulatedTime t = new SimulatedTime()) {
+    public void testLogResetProperlyResetLogLevelAfterTimeout() {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long inThirtySeconds = Time.currentTimeMillis() + 30_000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put(LogManager.ROOT_LOGGER_NAME, ll("DEBUG", "WARN", inThirtySeconds));
@@ -162,7 +162,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testLogResetsNamedLoggersWithPastTimeout() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("my_debug_logger", ll("DEBUG", "INFO", past));
@@ -181,7 +181,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testProcessRootLogLevelToDebugSetsLoggerAndTimeout2() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             LogConfig mockConfig = new LogConfig();
             AtomicReference<TreeMap<String, LogLevel>> mockConfigAtom = new AtomicReference<>(null);
 
@@ -232,7 +232,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testProcessRootLogLevelToDebugSetsLoggerAndTimeout() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             LogConfig mockConfig = new LogConfig();
             AtomicReference<TreeMap<String, LogLevel>> mockConfigAtom = new AtomicReference<>(null);
             long inThirtySeconds = Time.currentTimeMillis() + 30_000;
@@ -254,10 +254,6 @@ public class LogConfigManagerTest {
     }
 
     public static class LogConfigManagerUnderTest extends LogConfigManager {
-        public LogConfigManagerUnderTest() {
-            super();
-        }
-
         public LogConfigManagerUnderTest(AtomicReference<TreeMap<String, LogLevel>> latestLogConfig) {
             super(latestLogConfig);
         }

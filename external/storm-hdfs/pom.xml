@@ -30,6 +30,8 @@
     <properties>
         <!-- Required downgrade by hadoop-hdfs 2.8.5 -->
         <guava.version>16.0.1</guava.version>
+        <!-- Required downgrade by hadoop-hdfs 2.8.5 (org.apache.hadoop.test.GenericTestUtils.getTestDir)-->
+        <junit.version>4.12</junit.version>
     </properties>
 
     <developers>
@@ -197,7 +199,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>java-hamcrest</artifactId>
+            <artifactId>hamcrest</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -236,9 +238,19 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
