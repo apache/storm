@@ -65,10 +65,11 @@ The access given to all users being read, write and admin with a replication fac
 Users can submit their topology with the following command. The command includes the 
 topology map configuration. The configuration holds two keys “key1” and “key2” with the 
 key “key1” having a local file name mapping named “blob_file” and it is not compressed.
+Workers will restart when the key1 file is updated on the supervisors.
 
 ```
 storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar 
-org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":false},"key2":{}}'
+org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":false, "workerRestart":true},"key2":{}}'
 ```
 
 ### Blob Creation Process
@@ -432,7 +433,7 @@ both the optional parameters are omitted, this file will get the local name =
 
 It is possible for the cached files to be updated while topologies are running.
 The update happens in an eventual consistency model, where the supervisors poll
-Nimbus every 30 seconds, and update their local copies. In the current version,
+Nimbus every supervisor.localizer.update.blob.interval.secs seconds, and update their local copies. In the current version,
 it is the user's responsibility to check whether a new file is available.
 
 To update a cached file, use the following command. Contents come from a FILE or
