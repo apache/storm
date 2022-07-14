@@ -443,7 +443,6 @@ List of third-party dependencies grouped by their license type.
         * Open JSON (com.tdunning:json:1.8 - https://github.com/tdunning/open-json)
         * ORC Core (org.apache.orc:orc-core:1.3.4 - http://orc.apache.org/orc-core)
         * oro (oro:oro:2.0.8 - no url defined)
-        * Pentaho Aggregate Designer Algorithm (org.pentaho:pentaho-aggdesigner-algorithm:5.1.5-jhyde - http://github.com/pentaho/mondrian/pentaho-aggdesigner-algorithm)
         * Plexus :: Component Annotations (org.codehaus.plexus:plexus-component-annotations:1.5.5 - http://plexus.codehaus.org/plexus-containers/plexus-component-annotations/)
         * Plexus :: Component Annotations (org.codehaus.plexus:plexus-component-annotations:1.7.1 - http://codehaus-plexus.github.io/plexus-containers/plexus-component-annotations/)
         * Plexus Cipher: encryption/decryption Component (org.sonatype.plexus:plexus-cipher:1.4 - http://spice.sonatype.org/plexus-cipher)

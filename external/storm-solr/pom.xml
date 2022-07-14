@@ -82,6 +82,14 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
+                    <groupId>org.restlet.jee</groupId>
+                    <artifactId>org.restlet</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.restlet.jee</groupId>
+                    <artifactId>org.restlet.ext.servlet</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                 </exclusion>
@@ -98,6 +106,14 @@
             <version>${solr.version}</version>
             <scope>test</scope>
             <exclusions>
+                <exclusion>
+                    <groupId>org.restlet.jee</groupId>
+                    <artifactId>org.restlet</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.restlet.jee</groupId>
+                    <artifactId>org.restlet.ext.servlet</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>

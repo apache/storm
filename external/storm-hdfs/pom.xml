@@ -86,7 +86,7 @@
             <artifactId>hadoop-client</artifactId>
             <version>${hadoop.version}</version>
             <exclusions>
-	    	<exclusion>
+	    	    <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                 </exclusion>
