@@ -17,12 +17,17 @@
  */
 package org.apache.storm.hdfs.testing;
 
+import java.io.File;
 import java.util.function.Supplier;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import static org.apache.hadoop.test.GenericTestUtils.DEFAULT_TEST_DATA_DIR;
+import static org.apache.hadoop.test.GenericTestUtils.SYSPROP_TEST_DATA_DIR;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MiniDFSClusterExtension implements BeforeEachCallback, AfterEachCallback {
 
@@ -52,6 +57,8 @@ public class MiniDFSClusterExtension implements BeforeEachCallback, AfterEachCal
     public void beforeEach(ExtensionContext arg0) throws Exception {
         System.setProperty(TEST_BUILD_DATA, "target/test/data");
         hadoopConf = hadoopConfSupplier.get();
+        String tempDir = getTestDir("dfs").getAbsolutePath() + File.separator;
+        hadoopConf.set("hdfs.minidfs.basedir", tempDir);
         dfscluster = new MiniDFSCluster.Builder(hadoopConf).numDataNodes(3).build();
         dfscluster.waitActive();
     }
@@ -60,5 +67,31 @@ public class MiniDFSClusterExtension implements BeforeEachCallback, AfterEachCal
     public void afterEach(ExtensionContext arg0) throws Exception {
         dfscluster.shutdown();
         System.clearProperty(TEST_BUILD_DATA);
+    }
+
+    /**
+     * Get an uncreated directory for tests.
+     * We use this method to get rid of getTestDir() in GenericTestUtils in Hadoop code
+     * which uses assert from junit4.
+     * @return the absolute directory for tests. Caller is expected to create it.
+     */
+    public static File getTestDir(String subdir) {
+        return new File(getTestDir(), subdir).getAbsoluteFile();
+    }
+
+    /**
+     * Get the (created) base directory for tests.
+     * @return the absolute directory
+     */
+    public static File getTestDir() {
+        String prop = System.getProperty(SYSPROP_TEST_DATA_DIR, DEFAULT_TEST_DATA_DIR);
+        if (prop.isEmpty()) {
+            // corner case: property is there but empty
+            prop = DEFAULT_TEST_DATA_DIR;
+        }
+        File dir = new File(prop).getAbsoluteFile();
+        dir.mkdirs();
+        assertTrue(dir.exists(), "File " + dir + " should exist");
+        return dir;
     }
 }
