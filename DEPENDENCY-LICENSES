@@ -563,7 +563,6 @@ List of third-party dependencies grouped by their license type.
         * ASM Core (asm:asm:3.1 - http://asm.objectweb.org/asm/)
         * ASM Tree (asm:asm-tree:3.1 - http://asm.objectweb.org/asm-tree/)
         * Commons Compiler (org.codehaus.janino:commons-compiler:2.7.6 - http://docs.codehaus.org/display/JANINO/Home/commons-compiler)
-        * Hamcrest Core (org.hamcrest:hamcrest-core:1.3 - https://github.com/hamcrest/JavaHamcrest/hamcrest-core)
         * Janino (org.codehaus.janino:janino:2.7.6 - http://docs.codehaus.org/display/JANINO/Home/janino)
         * JPMML evaluator (org.jpmml:pmml-evaluator:1.0.22 - http://www.jpmml.org/pmml-evaluator)
         * JPMML manager (org.jpmml:pmml-manager:1.0.22 - http://www.jpmml.org/pmml-manager)
@@ -601,10 +600,6 @@ List of third-party dependencies grouped by their license type.
         * ParaNamer Core (com.thoughtworks.paranamer:paranamer:2.7 - http://paranamer.codehaus.org/paranamer)
         * Stax2 API (org.codehaus.woodstox:stax2-api:3.1.4 - http://wiki.fasterxml.com/WoodstoxStax2)
         * xmlenc Library (xmlenc:xmlenc:0.52 - http://xmlenc.sourceforge.net)
-
-    BSD style
-
-        * Hamcrest Core (org.hamcrest:hamcrest-core:1.1 - no url defined)
 
     CC0 1.0 Universal
 
@@ -660,7 +655,6 @@ List of third-party dependencies grouped by their license type.
         * Aether Utilities (org.eclipse.aether:aether-util:0.9.0.M2 - http://www.eclipse.org/aether/aether-util/)
         * clojure (org.clojure:clojure:1.10.0 - http://clojure.org/)
         * core.specs.alpha (org.clojure:core.specs.alpha:0.2.44 - https://github.com/clojure/build.poms/core.specs.alpha)
-        * JUnit (junit:junit:4.12 - http://junit.org)
         * org.eclipse.sisu.inject (org.eclipse.sisu:org.eclipse.sisu.inject:0.3.3 - http://www.eclipse.org/sisu/org.eclipse.sisu.inject/)
         * org.eclipse.sisu.plexus (org.eclipse.sisu:org.eclipse.sisu.plexus:0.3.3 - http://www.eclipse.org/sisu/org.eclipse.sisu.plexus/)
         * spec.alpha (org.clojure:spec.alpha:0.2.176 - https://github.com/clojure/build.poms/spec.alpha)
