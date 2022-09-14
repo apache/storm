@@ -16,6 +16,7 @@ addons:
 arch:
   - amd64
   - arm64
+  - s390x
 
 env:
   - MODULES=Client
@@ -38,11 +39,10 @@ jdk:
   - openjdk11
   
 matrix:
-  include:
-    - arch: s390x
-      jdk: openjdk11
   exclude:
     - arch: arm64
+      jdk: openjdk8
+    - arch: s390x
       jdk: openjdk8
 
 before_install:
@@ -61,9 +61,7 @@ before_install:
 
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
 script:
-  - if [[ $(uname -m) != 's390x' ]]; then 
-      /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES;
-    fi
+  - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
 cache:
   directories:
     - "$HOME/.m2/repository"

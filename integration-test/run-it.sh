@@ -36,7 +36,7 @@ then
   chmod o+rx /home/travis
 fi
 list_storm_processes || true
-if [ "$(uname -m)" != aarch64 ]; then
+if [ "$(uname -m)" != aarch64 ] && [ "$(uname -m)" != s390x ]; then
   # increasing swap space so we can run lots of workers
   sudo dd if=/dev/zero of=/swapfile.img bs=4096 count=1M
   sudo mkswap /swapfile.img
