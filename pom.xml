@@ -330,7 +330,7 @@
         <hamcrest.version>2.2</hamcrest.version>
         <cassandra.version>2.1.7</cassandra.version>
         <elasticsearch.version>5.2.2</elasticsearch.version>
-        <calcite.version>1.14.0</calcite.version>
+        <calcite.version>1.32.0</calcite.version>
         <mongodb.version>3.2.0</mongodb.version>
         <solr.version>5.2.1</solr.version>
         <jpmml.version>1.0.22</jpmml.version>
