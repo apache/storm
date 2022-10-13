@@ -27,7 +27,7 @@
 
     <artifactId>storm-elasticsearch-examples</artifactId>
     <properties>
-        <elasticsearch.test.version>2.4.4</elasticsearch.test.version>
+        <elasticsearch.test.version>6.8.17</elasticsearch.test.version>
     </properties>
 
     <dependencies>
