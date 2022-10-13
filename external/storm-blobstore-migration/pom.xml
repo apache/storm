@@ -33,7 +33,7 @@ limitations under the License.
     
     <properties>
         <!-- Required downgrade by hadoop-hdfs 2.8.5 -->
-        <guava.version>16.0.1</guava.version>
+        <guava.version>30.0-jre</guava.version>
     </properties>
     
     <dependencies>

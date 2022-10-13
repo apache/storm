@@ -38,7 +38,7 @@
 
     <properties>
         <!-- Required downgrade by hive-hcatalog-core 2.3.4 -->
-        <guava.version>16.0.1</guava.version>
+        <guava.version>30.0-jre</guava.version>
     </properties>
 
   <dependencies>

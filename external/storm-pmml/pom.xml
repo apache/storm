@@ -33,7 +33,7 @@
     
     <properties>
         <!-- Required downgrade by pmml-evaluator 1.0.22 -->
-        <guava.version>16.0.1</guava.version>
+        <guava.version>30.0-jre</guava.version>
     </properties>
 
     <developers>
