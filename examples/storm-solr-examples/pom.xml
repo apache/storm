@@ -29,7 +29,7 @@
     
     <properties>
         <!-- Required downgrade by solr-core 5.5.5 -->
-        <guava.version>17.0</guava.version>
+        <guava.version>30.0-jre</guava.version>
     </properties>
 
     <dependencies>
