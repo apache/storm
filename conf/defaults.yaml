@@ -192,7 +192,7 @@ supervisor.thrift.socket.timeout.ms: 5000
 
 ### worker.* configs are for task workers
 worker.heap.memory.mb: 768
-worker.childopts: "-Xmx%HEAP-MEM%m -XX:+PrintGCDetails -Xloggc:artifacts/gc.log -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
+worker.childopts: "-Xmx%HEAP-MEM%m XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGCDetails -Xloggc:artifacts/gc.log -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
 worker.gc.childopts: ""
 
 # Unlocking commercial features requires a special license from Oracle.
