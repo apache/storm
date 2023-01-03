@@ -470,7 +470,7 @@ List of third-party dependencies grouped by their license type.
         * Sisu - Inject (Plexus bean support) (org.sonatype.sisu:sisu-inject-plexus:1.4.2 - http://sisu.sonatype.org/sisu-inject/guice-bean/guice-plexus/sisu-inject-plexus/)
         * slice (io.airlift:slice:0.29 - https://github.com/airlift/slice)
         * Slider Core (org.apache.slider:slider-core:0.90.2-incubating - http://slider.incubator.apache.org/slider-core/)
-        * SnakeYAML (org.yaml:snakeyaml:1.32 - http://www.snakeyaml.org)
+        * SnakeYAML (org.yaml:snakeyaml:1.32 - https://bitbucket.org/snakeyaml/snakeyaml)
         * Snappy for Java (org.xerial.snappy:snappy-java:1.0.5 - http://github.com/xerial/snappy-java/)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.1.3 - https://github.comm/xerial/snappy-java)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.2.6 - https://github.com/xerial/snappy-java)
