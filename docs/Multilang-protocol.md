@@ -7,7 +7,7 @@ This page explains the multilang protocol as of Storm 0.7.1. Versions prior to 0
 
 # Storm Multi-Language Protocol
 
-## Supported Lanugages
+## Supported Languages
 
 Storm Multi-Language has implementation in the following languages:
 

@@ -204,7 +204,7 @@ Stream<Long> sums = numbers.window(TumblingWindows.of(Duration.seconds(10)).aggr
 Stream<Long> sums = numbers.window(...).reduce((x, y) -> x + y);
 ```
 
-`aggreagate` and `reduce` differs in the way in which the aggreate results are computed. 
+`aggregate` and `reduce` differs in the way in which the aggregate results are computed. 
 
 A `reduce` operation repeatedly applies the given reducer and reduces two values to a single value until there is only one value left. This may not be feasible or easy for all kinds of aggreagations (e.g. avg).
  
