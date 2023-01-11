@@ -35,7 +35,13 @@
     "PARALLELISM",
     "STORED",
     "TBLPROPERTIES",
-    "JAR"
+    "JAR",
+    "NEGATE",
+    "TILDE"
+  ]
+
+  # List of joinTypes.
+  joinTypes: [
   ]
 
   # List of methods for parsing custom SQL statements.
@@ -65,6 +71,21 @@
   dropStatementParserMethods: [
   ]
 
+  extraBinaryExpressions: [
+  ]
+
+  builtinFunctionCallMethods: [
+  ]
+
+  nonReservedKeywordsToAdd: [
+    "userkeyword1",
+    "userkeyword2",
+    "userkeyword3"
+  ]
+
+  binaryOperatorsTokens: [
+  ]
+
   # List of files in @includes directory that have parser method
   # implementations for custom SQL statements, literals or types
   # given as part of "statementParserMethods", "literalParserMethods" or
@@ -73,6 +94,7 @@
     "parserImpls.ftl"
   ]
 
+  includePosixOperators: true
   includeCompoundIdentifier: true,
   includeBraces: true,
   includeAdditionalDeclarations: false,

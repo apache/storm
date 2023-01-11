@@ -126,6 +126,7 @@
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
         <hamcrest.version>2.2</hamcrest.version>
         <elasticsearch.version>5.2.2</elasticsearch.version>
+<!--        <calcite.version>1.14.0</calcite.version>-->
         <calcite.version>1.32.0</calcite.version>
         <jedis.version>2.9.0</jedis.version>
         <activemq.version>5.18.2</activemq.version>
