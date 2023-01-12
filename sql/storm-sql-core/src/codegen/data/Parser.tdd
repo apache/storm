@@ -59,7 +59,15 @@
   dataTypeParserMethods: [
   ]
 
+  # if this list is empty then an empty "()" section is generated and it leads to parsing error in calcite 1.17.0
+  # and higher. Use three keywords arbitrarily chosen to have least impact if removed.
   nonReservedKeywords: [
+    "SPACE",
+    "UPSERT"
+  ]
+
+  nonReservedKeywordsToAdd: [
+    "ALTER"
   ]
 
   createStatementParserMethods: [
@@ -75,12 +83,6 @@
   ]
 
   builtinFunctionCallMethods: [
-  ]
-
-  nonReservedKeywordsToAdd: [
-    "userkeyword1",
-    "userkeyword2",
-    "userkeyword3"
   ]
 
   binaryOperatorsTokens: [

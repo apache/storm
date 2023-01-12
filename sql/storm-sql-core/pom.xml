@@ -46,7 +46,7 @@
             <email>ricetons@gmail.com</email>
         </developer>
     </developers>
-    
+
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -141,6 +141,16 @@
             <artifactId>commons-collections4</artifactId>
             <version>4.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <version>2.9.3</version>
         </dependency>
     </dependencies>
     <build>
@@ -266,7 +276,7 @@
                     <dependency>
                         <groupId>org.freemarker</groupId>
                         <artifactId>freemarker</artifactId>
-                        <version>2.3.25-incubating</version>
+                        <version>2.3.31</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -306,7 +316,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>javacc-maven-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.0.1</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
