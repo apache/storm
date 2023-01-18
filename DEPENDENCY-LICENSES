@@ -6,6 +6,7 @@ List of third-party dependencies grouped by their license type.
 
         * Kryo (com.esotericsoftware:kryo:4.0.2 - https://github.com/EsotericSoftware/kryo/kryo)
         * Kryo Shaded (com.esotericsoftware:kryo-shaded:4.0.2 - https://github.com/EsotericSoftware/kryo/kryo-shaded)
+        * Protocol Buffers [Core] (com.google.protobuf:protobuf-java:3.3.0 - https://developers.google.com/protocol-buffers/protobuf-java/)
 
     Apache-2.0
 
@@ -38,8 +39,8 @@ List of third-party dependencies grouped by their license type.
         * Apache Ant Launcher (org.apache.ant:ant-launcher:1.9.1 - http://ant.apache.org/)
         * Apache Avro (org.apache.avro:avro:1.7.7 - http://avro.apache.org)
         * Apache Avro (org.apache.avro:avro:1.8.2 - http://avro.apache.org)
-        * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.10.0 - https://calcite.apache.org/avatica/avatica-core)
-        * Apache Calcite Avatica Metrics (org.apache.calcite.avatica:avatica-metrics:1.10.0 - https://calcite.apache.org/avatica/avatica-metrics)
+        * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
+        * Apache Calcite Avatica Metrics (org.apache.calcite.avatica:avatica-metrics:1.11.0 - https://calcite.apache.org/avatica/avatica-metrics)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.4 - http://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.11 - http://commons.apache.org/proper/commons-codec/)
@@ -213,8 +214,8 @@ List of third-party dependencies grouped by their license type.
         * Bean Validation API (javax.validation:validation-api:2.0.1.Final - http://beanvalidation.org)
         * BoneCP :: Core Library (com.jolbox:bonecp:0.8.0.RELEASE - http://jolbox.com/bonecp)
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:2.3.5 - https://github.com/ben-manes/caffeine)
-        * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
-        * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.14.0 - https://calcite.apache.org/calcite-linq4j)
+        * Calcite Core (org.apache.calcite:calcite-core:1.16.0 - https://calcite.apache.org/calcite-core)
+        * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.16.0 - https://calcite.apache.org/calcite-linq4j)
         * carbonite (com.twitter:carbonite:1.5.0 - no url defined)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
         * chill-java (com.twitter:chill-java:0.8.0 - https://github.com/twitter/chill)
@@ -222,6 +223,8 @@ List of third-party dependencies grouped by their license type.
         * CloudWatch Metrics for AWS Java SDK (com.amazonaws:aws-java-sdk-cloudwatchmetrics:1.10.77 - https://aws.amazon.com/sdkforjava)
         * Codec (commons-codec:commons-codec:1.3 - http://jakarta.apache.org/commons/codec/)
         * com.papertrail:profiler (com.papertrail:profiler:1.0.2 - https://github.com/papertrail/profiler)
+        * com.yahoo.datasketches:memory (com.yahoo.datasketches:memory:0.9.0 - https://datasketches.github.io/memory/)
+        * com.yahoo.datasketches:sketches-core (com.yahoo.datasketches:sketches-core:0.9.0 - https://datasketches.github.io/sketches-core/)
         * Commons CLI (commons-cli:commons-cli:1.2 - http://commons.apache.org/cli/)
         * Commons Configuration (commons-configuration:commons-configuration:1.6 - http://commons.apache.org/${pom.artifactId.substring(8)}/)
         * Commons Daemon (commons-daemon:commons-daemon:1.0.13 - http://commons.apache.org/daemon/)
@@ -576,7 +579,6 @@ List of third-party dependencies grouped by their license type.
         * leveldbjni-all (org.fusesource.leveldbjni:leveldbjni-all:1.8 - http://leveldbjni.fusesource.org/leveldbjni-all)
         * MinLog (com.esotericsoftware:minlog:1.3.0 - https://github.com/EsotericSoftware/minlog)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
-        * Protocol Buffers [Core] (com.google.protobuf:protobuf-java:3.1.0 - https://developers.google.com/protocol-buffers/protobuf-java/)
         * ReflectASM (com.esotericsoftware:reflectasm:1.11.3 - https://github.com/EsotericSoftware/reflectasm)
 
     BSD licence
