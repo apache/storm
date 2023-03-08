@@ -222,7 +222,6 @@ List of third-party dependencies grouped by their license type.
         * CloudWatch Metrics for AWS Java SDK (com.amazonaws:aws-java-sdk-cloudwatchmetrics:1.10.77 - https://aws.amazon.com/sdkforjava)
         * Codec (commons-codec:commons-codec:1.3 - http://jakarta.apache.org/commons/codec/)
         * com.papertrail:profiler (com.papertrail:profiler:1.0.2 - https://github.com/papertrail/profiler)
-        * Commons CLI (commons-cli:commons-cli:1.2 - http://commons.apache.org/cli/)
         * Commons Configuration (commons-configuration:commons-configuration:1.6 - http://commons.apache.org/${pom.artifactId.substring(8)}/)
         * Commons Daemon (commons-daemon:commons-daemon:1.0.13 - http://commons.apache.org/daemon/)
         * Commons DBCP (commons-dbcp:commons-dbcp:1.4 - http://commons.apache.org/dbcp/)
