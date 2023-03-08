@@ -29,8 +29,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         java: [ 8, 11 ]
-        # Ignore 'Integration-Test' atm as it is highly Travis specific
-        module: [ Client, Server, Core, External, Check-Updated-License-Files ]
+        module: [ Client, Server, Core, External, Check-Updated-License-Files, Integration-Test ]
         experimental: [false]
       fail-fast: false
     steps:
@@ -67,4 +66,7 @@ jobs:
       - name: Set up project dependencies
         run: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
       - name: Run build
-        run:  /bin/bash ./dev-tools/travis/travis-script.sh `pwd` ${{ matrix.module }};
+        run: |
+          export JDK_VERSION=${{ matrix.java }} 
+          export USER=github
+          /bin/bash ./dev-tools/travis/travis-script.sh `pwd` ${{ matrix.module }};
