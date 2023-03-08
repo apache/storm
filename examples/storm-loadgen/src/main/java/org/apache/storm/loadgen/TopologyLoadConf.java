@@ -87,7 +87,7 @@ public class TopologyLoadConf {
      * @throws IOException if there is an issue reading the file.
      */
     public static TopologyLoadConf fromConf(File file) throws IOException {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(new FileReader(file));
         return TopologyLoadConf.fromConf(yamlConf);
     }
@@ -133,7 +133,7 @@ public class TopologyLoadConf {
      * @throws IOException if there is an error writing to the file.
      */
     public void writeTo(File file) throws IOException {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions));
         try (FileWriter writer = new FileWriter(file)) {
             yaml.dump(toConf(), writer);
         }
@@ -144,7 +144,7 @@ public class TopologyLoadConf {
      * @return this as a YAML String.
      */
     public String toYamlString() {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions));
         StringWriter writer = new StringWriter();
         yaml.dump(toConf(), writer);
         return writer.toString();

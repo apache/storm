@@ -31,6 +31,7 @@ import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.yaml.snakeyaml.LoaderOptions;
 import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.shade.org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.apache.storm.utils.Utils;
@@ -73,7 +74,7 @@ public abstract class ConfigurableTopology {
 
     public static Config loadConf(String resource, Config conf)
         throws FileNotFoundException {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(
             new FileInputStream(resource), Charset.defaultCharset()));
         if (ret == null) {
