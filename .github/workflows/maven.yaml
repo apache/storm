@@ -64,9 +64,9 @@ jobs:
       - name: Ensure a clean state without storm artifacts
         run: rm -rf ~/.m2/repository/org/apache/storm
       - name: Set up project dependencies
-        run: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
+        run: /bin/bash ./dev-tools/gitact/gitact-install.sh `pwd`
       - name: Run build
         run: |
           export JDK_VERSION=${{ matrix.java }} 
           export USER=github
-          /bin/bash ./dev-tools/travis/travis-script.sh `pwd` ${{ matrix.module }};
+          /bin/bash ./dev-tools/gitact/gitact-script.sh `pwd` ${{ matrix.module }};

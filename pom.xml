@@ -459,7 +459,7 @@
                                 <!-- thrift-generated code -->
                                 <exclude>**/src/py/**</exclude>
 
-                                <!-- Used as part of travis-ci build -->
+                                <!-- Used as part of GitHub action build -->
                                 <exclude>install.txt</exclude>
                                 <exclude>storm-shaded-deps/install-shade.txt</exclude>
                                 <!-- the following are in the LICENSE file -->

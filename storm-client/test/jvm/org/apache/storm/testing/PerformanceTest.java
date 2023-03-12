@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Tag;
  * }
  * <p/>
  *  In general performance tests should have a time limit on them, but the time limit should be liberal enough to account
- *  for running on CI systems like travis ci, or the apache jenkins build.
+ *  for running on CI systems like GitHub actions, or the apache jenkins build.
  */
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
