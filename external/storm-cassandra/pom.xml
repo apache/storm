@@ -32,14 +32,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <cassandra.version.noPatchLastIndex>${cassandra.version}.lastIndexOf('.')}</cassandra.version.noPatchLastIndex>
-        <cassandra.version.noPatchString>${cassandra.version}.substring(0, ${cassandra.version.noPatchLastIndex})</cassandra.version.noPatchString>
-        <cassandra.version.noPatch>${cassandra.version.noPatchString}</cassandra.version.noPatch>
-        <cassandra.cve.suppressionFile>https://github.com/apache/cassandra/blob/cassandra-${cassandra.version.noPatch}/.build/dependency-check-suppressions.xml</cassandra.cve.suppressionFile>
         <org.slf4j.version>1.7.6</org.slf4j.version>
         <guava.version>16.0.1</guava.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
-        <cassandra.driver.core.version>3.11.3</cassandra.driver.core.version>
+        <commons-lang3.version>3.3</commons-lang3.version>
+        <cassandra.driver.core.version>3.1.2</cassandra.driver.core.version>
     </properties>
 
     <developers>
@@ -161,41 +157,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-            </plugin>
-            <!-- org.codehaus.mojo:versions-maven-plugin to be used to create a version number without the patch.
-            This variable is used to cerate a path to cassandra CVE suppression file in the the org.owasp:dependecy-check-maven -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>versions-maven-plugin</artifactId>
-                <version>2.15.0</version>
-                <executions>
-                    <execution>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>display-property-updates</goal>
-                            <goal>update-property</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>8.1.2</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <suppressionFiles>
-                        <suppressionFile>${cassandra.cve.suppressionFile}</suppressionFile>
-                    </suppressionFiles>
-                    <!-- avoid .net analyzer -->
-                    <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-                </configuration>
             </plugin>
         </plugins>
     </build>
