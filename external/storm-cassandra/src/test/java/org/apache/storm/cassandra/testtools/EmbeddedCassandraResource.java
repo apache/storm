@@ -72,12 +72,7 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
 
         // Cassandra daemon calls System.exit() on windows, which kills the test.
         // Stop services without killing the process instead.
-        if (FBUtilities.isWindows()) {
-            cassandraDaemon.thriftServer.stop();
-            cassandraDaemon.nativeServer.stop();
-        } else {
-            cassandraDaemon.stop();
-        }
+        cassandraDaemon.stop();
 
         // Register file cleanup after jvm shutdown
         // Cassandra doesn't actually shut down until jvm shutdown so need to wait for that first.
