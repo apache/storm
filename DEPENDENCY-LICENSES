@@ -4,8 +4,7 @@ List of third-party dependencies grouped by their license type.
 
     3-Clause BSD License
 
-        * Kryo (com.esotericsoftware:kryo:4.0.2 - https://github.com/EsotericSoftware/kryo/kryo)
-        * Kryo Shaded (com.esotericsoftware:kryo-shaded:4.0.2 - https://github.com/EsotericSoftware/kryo/kryo-shaded)
+        * Kryo (com.esotericsoftware:kryo:5.4.0 - https://github.com/EsotericSoftware/kryo/kryo)
 
     Apache-2.0
 
@@ -541,7 +540,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, GNU General Public License, version 2
 
-        * RocksDB JNI (org.rocksdb:rocksdbjni:6.27.3 - https://rocksdb.org)
+        * RocksDB JNI (org.rocksdb:rocksdbjni:6.29.5 - https://rocksdb.org)
 
     Apache License, Version 2.0, GNU Lesser General Public License (LGPL), Version 2.1
 
