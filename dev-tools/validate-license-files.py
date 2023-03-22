@@ -53,23 +53,37 @@ def generate_dependency_licenses():
     print('Done generating DEPENDENCY-LICENSES')
 
 
-def print_file_contents(msg, file1, file2):
+def print_file_contents(msg, file1, file2, show_summary_diff=True, show_file_contents=True):
     """
     Print contents of the files. Used for dumping the actual and expected DEPENDENCY-LICENSES files.
     :param msg: message to print about the files
     :param file1: original file
     :param file2: new file
+    :param show_summary_diff: (optional, default True): if true, then print the summary of differences in the files
+    :param show_file_contents: (optional, default True): if true, then print the contents of the files
     :return:
     """
     f_names = [file1, file2]
     print('*' * 80)
     print('*' * 30 + msg + ' ' + file1 + ',' + file2 + '*' * 30)
-    for i, f_name in enumerate(f_names):
-        print('*' * 30 + ' Start of file ' + f_name + ' ' + '*' * 30)
-        print('(' + str(i) + ') File ' + f_name + ' content is:')
-        print('\t' + '\t'.join(open(f_name).readlines()))
-        print('*' * 30 + ' End of file ' + f_name + ' ' + '*' * 30)
-    print('*' * 80)
+
+    if show_summary_diff:
+        with open(file1, 'r') as f1:
+            with open(file2, 'r') as f2:
+                diff = set(f1).difference(f2)
+        diff.discard('\n')
+        print(f'***** Difference between file {file1} and {file2} *******')
+        for line in diff:
+            print(line)
+        print('*' * 80)
+    if show_file_contents:
+        print('*' * 80)
+        for i, f_name in enumerate(f_names):
+            print('*' * 30 + ' Start of file ' + f_name + ' ' + '*' * 30)
+            print('(' + str(i) + ') File ' + f_name + ' content is:')
+            print('\t' + '\t'.join(open(f_name).readlines()))
+            print('*' * 30 + ' End of file ' + f_name + ' ' + '*' * 30)
+        print('*' * 80)
 
 
 def check_dependency_licenses():
