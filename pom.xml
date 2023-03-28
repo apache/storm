@@ -312,7 +312,7 @@
         <log4j.version>2.17.1</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
-        <mockito.version>3.0.0</mockito.version>
+        <mockito.version>3.11.2</mockito.version>
         <zookeeper.version>3.5.9</zookeeper.version>
         <jline.version>0.9.94</jline.version>
         <hive.version>2.3.9</hive.version>
