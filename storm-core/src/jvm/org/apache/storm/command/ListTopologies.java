@@ -13,7 +13,6 @@
 package org.apache.storm.command;
 
 import java.util.List;
-import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.utils.NimbusClient;
 import org.slf4j.Logger;

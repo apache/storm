@@ -16,7 +16,6 @@ import static java.lang.String.format;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;

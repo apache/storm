@@ -12,7 +12,6 @@
 
 package org.apache.storm.command;
 
-import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.NimbusClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

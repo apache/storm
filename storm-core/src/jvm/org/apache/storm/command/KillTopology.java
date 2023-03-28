@@ -16,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.generated.KillOptions;
-import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -74,12 +73,10 @@ public class KillTopology {
                     LOG.info("Killed topology: {}", name);
                 } catch (Exception e) {
                     errorCount += 1;
-                    if (!continueOnError) {
-                        throw e;
+                    if (continueOnError) {
+                        LOG.error("Caught error killing topology '{}'; continuing as -i was passed.", name, e);
                     } else {
-                        LOG.error(
-                                "Caught error killing topology '{}'; continuing as -i was passed.", name, e
-                        );
+                        throw e;
                     }
                 }
             }

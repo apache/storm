@@ -19,7 +19,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.storm.generated.LogConfig;
 import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
-import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
