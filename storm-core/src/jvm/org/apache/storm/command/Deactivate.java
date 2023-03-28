@@ -23,12 +23,9 @@ public class Deactivate {
     public static void main(String[] args) throws Exception {
         final String name = args[0];
 
-        NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
-            @Override
-            public void run(Nimbus.Iface nimbus) throws Exception {
-                nimbus.deactivate(name);
-                LOG.info("Deactivated topology: {}", name);
-            }
+        NimbusClient.withConfiguredClient(nimbus -> {
+            nimbus.deactivate(name);
+            LOG.info("Deactivated topology: {}", name);
         });
     }
 }

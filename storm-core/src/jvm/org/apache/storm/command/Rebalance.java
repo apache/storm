@@ -73,12 +73,9 @@ public class Rebalance {
             rebalanceOptions.set_topology_conf_overrides(JSONValue.toJSONString(confOverrides));
         }
 
-        NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
-            @Override
-            public void run(Nimbus.Iface nimbus) throws Exception {
-                nimbus.rebalance(name, rebalanceOptions);
-                LOG.info("Topology {} is rebalancing", name);
-            }
+        NimbusClient.withConfiguredClient(nimbus -> {
+            nimbus.rebalance(name, rebalanceOptions);
+            LOG.info("Topology {} is rebalancing", name);
         });
     }
 

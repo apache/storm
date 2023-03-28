@@ -52,16 +52,13 @@ public class SetLogLevel {
             logConfig.put_to_named_logger_level(entry.getKey(), entry.getValue());
         }
 
-        NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
-            @Override
-            public void run(Nimbus.Iface nimbus) throws Exception {
-                String topologyId = Utils.getTopologyId(topologyName, nimbus);
-                if (null == topologyId) {
-                    throw new IllegalArgumentException(topologyName + " is not a running topology");
-                }
-                nimbus.setLogConfig(topologyId, logConfig);
-                LOG.info("Log config {} is sent for topology {}", logConfig, topologyName);
+        NimbusClient.withConfiguredClient(nimbus -> {
+            String topologyId = Utils.getTopologyId(topologyName, nimbus);
+            if (null == topologyId) {
+                throw new IllegalArgumentException(topologyName + " is not a running topology");
             }
+            nimbus.setLogConfig(topologyId, logConfig);
+            LOG.info("Log config {} is sent for topology {}", logConfig, topologyName);
         });
     }
 

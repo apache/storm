@@ -67,29 +67,26 @@ public class KillTopology {
             opts.set_wait_secs(wait);
         }
 
-        NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
-            @Override
-            public void run(Nimbus.Iface nimbus) throws Exception {
-                for (String name : names) {
-                    try {
-                        nimbus.killTopologyWithOpts(name, opts);
-                        LOG.info("Killed topology: {}", name);
-                    } catch (Exception e) {
-                        errorCount += 1;
-                        if (!continueOnError) {
-                            throw e;
-                        } else {
-                            LOG.error(
-                                    "Caught error killing topology '{}'; continuing as -i was passed.", name, e
-                            );
-                        }
+        NimbusClient.withConfiguredClient(nimbus -> {
+            for (String name : names) {
+                try {
+                    nimbus.killTopologyWithOpts(name, opts);
+                    LOG.info("Killed topology: {}", name);
+                } catch (Exception e) {
+                    errorCount += 1;
+                    if (!continueOnError) {
+                        throw e;
+                    } else {
+                        LOG.error(
+                                "Caught error killing topology '{}'; continuing as -i was passed.", name, e
+                        );
                     }
                 }
+            }
 
-                // If we failed to kill any topology, still exit with failure status
-                if (errorCount > 0) {
-                    throw new RuntimeException("Failed to successfully kill " + errorCount + " topologies.");
-                }
+            // If we failed to kill any topology, still exit with failure status
+            if (errorCount > 0) {
+                throw new RuntimeException("Failed to successfully kill " + errorCount + " topologies.");
             }
         });
     }

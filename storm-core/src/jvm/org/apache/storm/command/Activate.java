@@ -23,12 +23,9 @@ public class Activate {
     public static void main(String[] args) throws Exception {
         final String name = args[0];
 
-        NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
-            @Override
-            public void run(Nimbus.Iface nimbus) throws Exception {
-                nimbus.activate(name);
-                LOG.info("Activated topology: {}", name);
-            }
+        NimbusClient.withConfiguredClient(nimbus -> {
+            nimbus.activate(name);
+            LOG.info("Activated topology: {}", name);
         });
     }
 }
