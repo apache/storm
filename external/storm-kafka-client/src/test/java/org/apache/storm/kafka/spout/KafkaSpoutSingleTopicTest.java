@@ -24,8 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyListOf;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -36,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
@@ -115,7 +112,7 @@ public class KafkaSpoutSingleTopicTest extends KafkaSpoutAbstractTest {
         for(int i = 0; i < 3; i++) {
             spout.nextTuple();
         }
-        verify(collectorMock, never()).emit(anyString(), anyList(), anyObject());
+        verify(collectorMock, never()).emit(anyString(), anyList(), any());
     }
     
     @Test
@@ -171,7 +168,7 @@ public class KafkaSpoutSingleTopicTest extends KafkaSpoutAbstractTest {
         for(int i = 0; i < 3; i++) {
             spout.nextTuple();
         }
-        verify(collectorMock, never()).emit(anyString(), anyList(), anyObject());
+        verify(collectorMock, never()).emit(anyString(), anyList(), any());
     }
 
     @Test
@@ -368,7 +365,7 @@ public class KafkaSpoutSingleTopicTest extends KafkaSpoutAbstractTest {
         for (int i = 0; i <= maxRetries; i++) {
             ArgumentCaptor<KafkaSpoutMessageId> messageIdFailed = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
             spout.nextTuple();
-            verify(collectorMock).emit(anyString(), anyListOf(Object.class), messageIdFailed.capture());
+            verify(collectorMock).emit(anyString(), anyList(), messageIdFailed.capture());
             KafkaSpoutMessageId msgId = messageIdFailed.getValue();
             spout.fail(msgId);
             assertThat("Expected message id number of failures to match the number of times the message has failed", msgId.numFails(), is(i + 1));
@@ -377,7 +374,7 @@ public class KafkaSpoutSingleTopicTest extends KafkaSpoutAbstractTest {
 
         //Verify that the tuple is not emitted again
         spout.nextTuple();
-        verify(collectorMock, never()).emit(anyString(), anyListOf(Object.class), anyObject());
+        verify(collectorMock, never()).emit(anyString(), anyList(), any());
     }
 
     @Test
