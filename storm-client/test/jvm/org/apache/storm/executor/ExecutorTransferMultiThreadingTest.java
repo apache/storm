@@ -12,6 +12,7 @@
 
 package org.apache.storm.executor;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +41,6 @@ import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.reflection.FieldSetter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -70,7 +70,7 @@ public class ExecutorTransferMultiThreadingTest {
     private static final int value2 = 1234;
 
     @BeforeEach
-    public void setup() throws NoSuchFieldException {
+    public void setup() throws NoSuchFieldException, IllegalAccessException {
         topoConf = Utils.readStormConfig();
         String topologyId = "multi-threaded-topo-test";
         StormTopology stormTopology = createStormTopology();
@@ -101,10 +101,16 @@ public class ExecutorTransferMultiThreadingTest {
 
         //Replace the transferQueue inside WorkerTransfer (inside WorkerState) with the customized transferQueue to be used in this test
         WorkerTransfer workerTransfer = new WorkerTransfer(workerState, topoConf, 2);
-        FieldSetter.setField(workerTransfer, workerTransfer.getClass().getDeclaredField("transferQueue"), transferQueue);
-        FieldSetter.setField(workerState, workerState.getClass().getDeclaredField("workerTransfer"), workerTransfer);
+        setPrivateField(workerTransfer, "transferQueue", transferQueue);
+        setPrivateField(workerState, "workerTransfer", workerTransfer);
 
         generalTopologyContext = mock(GeneralTopologyContext.class);
+    }
+
+    private void setPrivateField(Object target, String fieldName, Object fieldValue) throws NoSuchFieldException, IllegalAccessException {
+        Field privateField = target.getClass().getDeclaredField(fieldName);
+        privateField.setAccessible(true);
+        privateField.set(target, fieldValue);
     }
 
     @Test
