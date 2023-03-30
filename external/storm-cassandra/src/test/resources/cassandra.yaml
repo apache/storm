@@ -23,7 +23,7 @@ commitlog_directory: ./target/cassandra/commitlog
 saved_caches_directory: ./target/cassandra/saved_caches
 
 listen_address: 127.0.0.1
-storage_port: 7000
+storage_port: 7000 # on Mac, some chrome service can be found running at port 7000
 rpc_address: 127.0.0.1
 rpc_port: 7365
 start_native_transport: true

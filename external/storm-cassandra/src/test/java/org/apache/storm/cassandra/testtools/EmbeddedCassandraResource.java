@@ -135,11 +135,15 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
      */
     private Set<String> getDataDirs() {
         Set<String> dirs = new HashSet<String>();
-        for (String s : DatabaseDescriptor.getAllDataFileLocations()) {
-            dirs.add(s);
+        try {
+            for (String s : DatabaseDescriptor.getAllDataFileLocations()) {
+                dirs.add(s);
+            }
+            dirs.add(DatabaseDescriptor.getCommitLogLocation());
+            dirs.add(DatabaseDescriptor.getSavedCachesLocation());
+        } catch (Throwable ex) {
+            ex.printStackTrace();
         }
-        dirs.add(DatabaseDescriptor.getCommitLogLocation());
-        dirs.add(DatabaseDescriptor.getSavedCachesLocation());
         return dirs;
     }
 

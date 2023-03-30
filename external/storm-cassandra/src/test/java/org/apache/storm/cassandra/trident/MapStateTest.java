@@ -48,8 +48,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MapStateTest {
 
-    @RegisterExtension
-    public static final EmbeddedCassandraResource cassandra = new EmbeddedCassandraResource();
+    //@RegisterExtension
+    //public static final
+    // EmbeddedCassandraResource cassandra= new EmbeddedCassandraResource();
+
+    EmbeddedCassandraResource cassandra;
 
     private static final Logger logger = LoggerFactory.getLogger(MapStateTest.class);
     private static Cluster cluster;
@@ -149,6 +152,7 @@ public class MapStateTest {
     @BeforeEach
     public void setUp() throws Exception {
 
+        cassandra = new EmbeddedCassandraResource();
         Cluster.Builder clusterBuilder = Cluster.builder();
 
         // Add cassandra cluster contact points

@@ -35,8 +35,9 @@
         <org.slf4j.version>1.7.6</org.slf4j.version>
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
+        <cassandra.version>2.1.6</cassandra.version>
         <cassandra.driver.core.version>3.1.2</cassandra.driver.core.version>
-    </properties>
+        <cassandra.cve.suppressionFile>https://github.com/apache/cassandra/blob/cassandra-${cassandra.version}/.build/dependency-check-suppressions.xml</cassandra.cve.suppressionFile>    </properties>
 
     <developers>
         <developer>
@@ -64,14 +65,14 @@
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
             <version>${cassandra.driver.core.version}</version>
-            <scope>provided</scope>
+<!--            <scope>provided</scope>-->
         </dependency>
 
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-mapping</artifactId>
             <version>${cassandra.driver.core.version}</version>
-            <scope>provided</scope>
+<!--            <scope>provided</scope>-->
         </dependency>
 
         <dependency>
@@ -157,6 +158,25 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>8.1.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <suppressionFiles>
+                        <suppressionFile>${cassandra.cve.suppressionFile}</suppressionFile>
+                    </suppressionFiles>
+                    <!-- avoid .net analyzer -->
+                    <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                </configuration>
             </plugin>
         </plugins>
     </build>
