@@ -12,20 +12,21 @@
 
 package org.apache.storm.cassandra.trident.state;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static org.apache.storm.cassandra.DynamicStatementBuilder.all;
 import static org.apache.storm.cassandra.DynamicStatementBuilder.boundQuery;
 
-import com.datastax.driver.core.querybuilder.Insert;
-import com.datastax.driver.core.querybuilder.Select;
+import com.datastax.oss.driver.api.querybuilder.insert.InsertInto;
+import com.datastax.oss.driver.api.querybuilder.select.Select;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
 import org.apache.storm.cassandra.CassandraContext;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
 import org.apache.storm.trident.state.JSONNonTransactionalSerializer;
@@ -173,12 +174,12 @@ public class MapStateFactoryBuilder<T> {
         allFields.addAll(stateFields);
 
         // Build get query
-        Select.Where getQuery = select(stateFieldsArray)
-            .from(keyspace, table)
-            .where();
+        Select getQuery = selectFrom(keyspace, table)
+                .columns(stateFieldsArray)
+                .all();
 
         for (String key : keys) {
-            getQuery.and(eq(key, bindMarker()));
+            getQuery.whereColumn(key).isEqualTo(bindMarker());
         }
 
         CQLStatementTupleMapper get = boundQuery(getQuery.toString())
@@ -186,9 +187,8 @@ public class MapStateFactoryBuilder<T> {
             .build();
 
         // Build put query
-        Insert putStatement = insertInto(keyspace, table)
-            .values(allFields, Collections.<Object>nCopies(allFields.size(), bindMarker()));
-
+        InsertInto putStatement = insertInto(keyspace, table);
+        allFields.forEach(columnName -> putStatement.value(columnName, bindMarker()));
         CQLStatementTupleMapper put = boundQuery(putStatement.toString())
             .bind(all())
             .build();

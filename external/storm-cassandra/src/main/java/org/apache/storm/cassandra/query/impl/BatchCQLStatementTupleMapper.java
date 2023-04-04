@@ -12,26 +12,28 @@
 
 package org.apache.storm.cassandra.query.impl;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchType;
+import com.datastax.oss.driver.api.core.cql.BatchableStatement;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
 import org.apache.storm.tuple.ITuple;
 
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class BatchCQLStatementTupleMapper implements CQLStatementTupleMapper {
 
-    private final List<CQLStatementTupleMapper> mappers;
-    private final BatchStatement.Type type;
+    private final List<BatchCQLStatementTupleMapper> mappers;
+    private final BatchType type;
 
     /**
      * Creates a new {@link BatchCQLStatementTupleMapper} instance.
      */
-    public BatchCQLStatementTupleMapper(BatchStatement.Type type, List<CQLStatementTupleMapper> mappers) {
+    public BatchCQLStatementTupleMapper(BatchType type, List<BatchCQLStatementTupleMapper> mappers) {
         this.mappers = new ArrayList<>(mappers);
         this.type = type;
     }
@@ -40,11 +42,14 @@ public class BatchCQLStatementTupleMapper implements CQLStatementTupleMapper {
      * {@inheritDoc}
      */
     @Override
-    public List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple) {
-        final BatchStatement batch = new BatchStatement(this.type);
-        for (CQLStatementTupleMapper m : mappers) {
-            batch.addAll(m.map(conf, session, tuple));
+    public List<BatchableStatement<?>> map(Map<String, Object> conf, CqlSession session, ITuple tuple) {
+        List<BatchableStatement<?>> ret = new ArrayList<>();
+        final BatchStatement batch = BatchStatement.newInstance(this.type);
+        for (BatchCQLStatementTupleMapper m : mappers) {
+            List<? extends BatchableStatement<?>> statements = m.map(conf, session, tuple);
+            statements.forEach(batch::add);
         }
-        return Arrays.asList((Statement) batch);
+        batch.forEach(ret::add);
+        return ret;
     }
 }

@@ -12,12 +12,14 @@
 
 package org.apache.storm.cassandra;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.querybuilder.BuiltStatement;
+import com.datastax.oss.driver.api.core.cql.BatchType;
+import com.datastax.oss.driver.api.core.cql.StatementBuilder;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import org.apache.storm.cassandra.query.CQLStatementBuilder;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
 import org.apache.storm.cassandra.query.ContextQuery;
@@ -32,12 +34,12 @@ public class DynamicStatementBuilder implements Serializable {
     private DynamicStatementBuilder() {
     }
 
-    public static final SimpleCQLStatementMapperBuilder simpleQuery(String queryString) {
+    public static SimpleCQLStatementMapperBuilder simpleQuery(String queryString) {
         return new SimpleCQLStatementMapperBuilder(queryString);
     }
 
-    public static final SimpleCQLStatementMapperBuilder simpleQuery(BuiltStatement builtStatement) {
-        return new SimpleCQLStatementMapperBuilder(builtStatement);
+    public static SimpleCQLStatementMapperBuilder simpleQuery(StatementBuilder builtStatement) {
+        return new SimpleCQLStatementMapperBuilder(builtStatement.toString());
     }
 
     /**
@@ -46,7 +48,7 @@ public class DynamicStatementBuilder implements Serializable {
      * @param cql the query.
      * @return a new {@link org.apache.storm.cassandra.query.builder.BoundCQLStatementMapperBuilder} instance.
      */
-    public static final BoundCQLStatementMapperBuilder boundQuery(String cql) {
+    public static BoundCQLStatementMapperBuilder boundQuery(String cql) {
         return new BoundCQLStatementMapperBuilder(cql);
     }
 
@@ -56,7 +58,7 @@ public class DynamicStatementBuilder implements Serializable {
      * @param field a context used to resolve the cassandra query.
      * @return a new {@link org.apache.storm.cassandra.query.builder.BoundCQLStatementMapperBuilder} instance.
      */
-    public static final BoundCQLStatementMapperBuilder boundQuery(ContextQuery field) {
+    public static BoundCQLStatementMapperBuilder boundQuery(ContextQuery field) {
         return new BoundCQLStatementMapperBuilder(field);
     }
 
@@ -66,35 +68,35 @@ public class DynamicStatementBuilder implements Serializable {
      * @param builders a list of {@link CQLStatementBuilder}.
      * @return a new {@link CQLStatementTupleMapper}.
      */
-    public static final CQLStatementTupleMapper async(final CQLStatementBuilder... builders) {
+    public static CQLStatementTupleMapper async(final CQLStatementBuilder<?>... builders) {
         return new CQLStatementTupleMapper.DynamicCQLStatementTupleMapper(Arrays.asList(builders));
     }
 
     /**
-     * Creates a new {@link com.datastax.driver.core.BatchStatement.Type#LOGGED} batch statement for the specified CQL statement builders.
+     * Creates a new {@link BatchType#LOGGED} batch statement for the specified CQL statement builders.
      */
-    public static final BatchCQLStatementTupleMapper loggedBatch(CQLStatementBuilder... builders) {
-        return newBatchStatementBuilder(BatchStatement.Type.LOGGED, builders);
+    public static BatchCQLStatementTupleMapper loggedBatch(CQLStatementBuilder<?>... builders) {
+        return newBatchStatementBuilder(BatchType.LOGGED, builders);
     }
 
     /**
-     * Creates a new {@link com.datastax.driver.core.BatchStatement.Type#COUNTER} batch statement for the specified CQL statement builders.
+     * Creates a new {@link BatchType#COUNTER} batch statement for the specified CQL statement builders.
      */
-    public static final BatchCQLStatementTupleMapper counterBatch(CQLStatementBuilder... builders) {
-        return newBatchStatementBuilder(BatchStatement.Type.COUNTER, builders);
+    public static BatchCQLStatementTupleMapper counterBatch(CQLStatementBuilder<?>... builders) {
+        return newBatchStatementBuilder(BatchType.COUNTER, builders);
     }
 
     /**
-     * Creates a new {@link com.datastax.driver.core.BatchStatement.Type#UNLOGGED} batch statement for the specified CQL statement builders.
+     * Creates a new {@link BatchType#UNLOGGED} batch statement for the specified CQL statement builders.
      */
-    public static final BatchCQLStatementTupleMapper unLoggedBatch(CQLStatementBuilder... builders) {
-        return newBatchStatementBuilder(BatchStatement.Type.UNLOGGED, builders);
+    public static BatchCQLStatementTupleMapper unLoggedBatch(CQLStatementBuilder<?>... builders) {
+        return newBatchStatementBuilder(BatchType.UNLOGGED, builders);
     }
 
-    private static BatchCQLStatementTupleMapper newBatchStatementBuilder(BatchStatement.Type type, CQLStatementBuilder[] builders) {
-        List<CQLStatementTupleMapper> mappers = new ArrayList<>(builders.length);
-        for (CQLStatementBuilder b : Arrays.asList(builders)) {
-            mappers.add(b.build());
+    private static BatchCQLStatementTupleMapper newBatchStatementBuilder(BatchType type, CQLStatementBuilder<?>[] builders) {
+        List<BatchCQLStatementTupleMapper> mappers = new ArrayList<>(builders.length);
+        for (CQLStatementBuilder<?> b : builders) {
+            mappers.add((BatchCQLStatementTupleMapper) b.build());
         }
         return new BatchCQLStatementTupleMapper(type, mappers);
     }
@@ -104,7 +106,7 @@ public class DynamicStatementBuilder implements Serializable {
      *
      * @param name query's name.
      */
-    public static final ContextQuery named(final String name) {
+    public static ContextQuery named(final String name) {
         return new ContextQuery.BoundQueryContext(name);
     }
 
@@ -113,7 +115,7 @@ public class DynamicStatementBuilder implements Serializable {
      *
      * @param fieldName field's name that contains the named of the query.
      */
-    public static final ContextQuery namedByField(final String fieldName) {
+    public static ContextQuery namedByField(final String fieldName) {
         return new ContextQuery.BoundQueryNamedByFieldContext(fieldName);
     }
 
@@ -124,7 +126,7 @@ public class DynamicStatementBuilder implements Serializable {
      * @param name the name of a tuple field.
      * @return a new {@link FieldSelector}.
      */
-    public static final FieldSelector field(final String name) {
+    public static FieldSelector field(final String name) {
         return new FieldSelector(name);
     }
 
@@ -134,7 +136,7 @@ public class DynamicStatementBuilder implements Serializable {
      * @param fields a list of tuple fields
      * @return a list of {@link FieldSelector}.
      */
-    public static final FieldSelector[] fields(final String... fields) {
+    public static FieldSelector[] fields(final String... fields) {
         int size = fields.length;
         List<FieldSelector> fl = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
@@ -147,7 +149,7 @@ public class DynamicStatementBuilder implements Serializable {
     /**
      * Includes all tuple fields.
      */
-    public static final CqlMapper.DefaultCqlMapper all() {
+    public static CqlMapper.DefaultCqlMapper all() {
         return new CqlMapper.DefaultCqlMapper();
     }
 }

@@ -12,7 +12,7 @@
 
 package org.apache.storm.cassandra.executor;
 
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
 
 /**
  * This class must be used to obtain a single instance of {@link AsyncExecutor} per storm executor.
@@ -24,7 +24,7 @@ public class AsyncExecutorProvider {
     /**
      * Returns a new {@link AsyncExecutor} per storm executor.
      */
-    public static <T> AsyncExecutor getLocal(Session session, AsyncResultHandler<T> handler) {
+    public static <T> AsyncExecutor getLocal(CqlSession session, AsyncResultHandler<T> handler) {
         AsyncExecutor<T> executor = localAsyncExecutor.<T>get();
         if (executor == null) {
             localAsyncExecutor.set(executor = new AsyncExecutor<>(session, handler));

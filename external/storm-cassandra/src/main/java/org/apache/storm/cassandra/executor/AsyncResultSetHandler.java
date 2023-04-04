@@ -12,7 +12,8 @@
 
 package org.apache.storm.cassandra.executor;
 
-import com.datastax.driver.core.ResultSet;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+
 import java.io.Serializable;
 
 /**
@@ -27,7 +28,7 @@ public interface AsyncResultSetHandler<T> extends Serializable {
         }
 
         @Override
-        public void success(Object inputs, ResultSet resultSet) {
+        public void success(Object inputs, AsyncResultSet resultSet) {
             /** no-operation **/
         }
 
@@ -46,6 +47,6 @@ public interface AsyncResultSetHandler<T> extends Serializable {
      *
      * @param inputs The input tuple proceed.
      */
-    void success(T inputs, ResultSet resultSet);
+    void success(T inputs, AsyncResultSet resultSet);
 
 }

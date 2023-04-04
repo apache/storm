@@ -12,16 +12,18 @@
 
 package org.apache.storm.cassandra.query;
 
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.Statement;
+
 import java.io.Serializable;
 import java.util.List;
+
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
 
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface CQLResultSetValuesMapper extends Serializable {
 
-    List<List<Values>> map(Session session, Statement statement, ITuple tuple);
+    List<List<Values>> map(CqlSession session, Statement statement, ITuple tuple);
 
 }

@@ -12,10 +12,12 @@
 
 package org.apache.storm.cassandra.query.builder;
 
-import com.datastax.driver.core.querybuilder.BuiltStatement;
+import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+
 import org.apache.storm.cassandra.query.CQLStatementBuilder;
 import org.apache.storm.cassandra.query.CqlMapper;
 import org.apache.storm.cassandra.query.impl.RoutingKeyGenerator;
@@ -46,8 +48,8 @@ public class SimpleCQLStatementMapperBuilder implements CQLStatementBuilder<Simp
      * Creates a new {@link SimpleCQLStatementMapperBuilder} instance.
      * @param builtStatement a query built statements
      */
-    public SimpleCQLStatementMapperBuilder(BuiltStatement builtStatement) {
-        this.queryString = builtStatement.getQueryString();
+    public SimpleCQLStatementMapperBuilder(QueryBuilder builtStatement) {
+        this.queryString = builtStatement.toString();
     }
 
     /**

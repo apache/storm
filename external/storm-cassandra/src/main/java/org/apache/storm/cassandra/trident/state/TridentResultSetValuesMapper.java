@@ -12,10 +12,11 @@
 
 package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.cql.Statement;
+import com.datastax.oss.driver.api.core.session.Session;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,7 +33,7 @@ public class TridentResultSetValuesMapper implements CQLResultSetValuesMapper {
     }
 
     @Override
-    public List<List<Values>> map(Session session, Statement statement, ITuple tuple) {
+    public List<List<Values>> map(CqlSession session, Statement statement, ITuple tuple) {
         List<List<Values>> list = new ArrayList<>();
         List<Values> innerList = new LinkedList<>();
         list.add(innerList);

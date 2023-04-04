@@ -12,8 +12,7 @@
 
 package org.apache.storm.cassandra.bolt;
 
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +50,7 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
 
     protected SimpleClientProvider clientProvider;
     protected SimpleClient client;
-    protected Session session;
+    protected CqlSession cqlSession;
     protected Map<String, Object> topoConfig;
 
     protected CassandraConf cassandraConf;
@@ -91,8 +90,8 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
         this.client = clientProvider.getClient(cassandraClientConfig);
 
         try {
-            session = client.connect();
-        } catch (NoHostAvailableException e) {
+            cqlSession = client.connect();
+        } catch (Throwable e) {
             outputCollector.reportError(e);
             throw e;
         }
@@ -151,7 +150,7 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
     protected abstract AsyncResultHandler<T> getAsyncHandler();
 
     protected AsyncExecutor<T> getAsyncExecutor() {
-        return AsyncExecutorProvider.getLocal(session, getAsyncHandler());
+        return AsyncExecutorProvider.getLocal(cqlSession, getAsyncHandler());
     }
 
     /**

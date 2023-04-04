@@ -12,9 +12,11 @@
 
 package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchType;
+import com.datastax.oss.driver.api.core.cql.BatchableStatement;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -39,7 +41,7 @@ public class CassandraState implements State {
     private final Map<String, Object> conf;
     private final Options options;
 
-    private Session session;
+    private CqlSession session;
     private SimpleClient client;
 
     protected CassandraState(Map<String, Object> conf, Options options) {
@@ -83,8 +85,8 @@ public class CassandraState implements State {
 
         try {
             if (options.batchingType != null) {
-                BatchStatement batchStatement = new BatchStatement(options.batchingType);
-                batchStatement.addAll(statements);
+                BatchStatement batchStatement = BatchStatement.newInstance(options.batchingType);
+                statements.forEach(statement -> batchStatement.add((BatchableStatement) statement));
                 session.execute(batchStatement);
             } else {
                 for (Statement statement : statements) {
@@ -105,7 +107,7 @@ public class CassandraState implements State {
         List<List<Values>> batchRetrieveResult = new ArrayList<>();
         try {
             for (TridentTuple tridentTuple : tridentTuples) {
-                List<Statement> statements = options.cqlStatementTupleMapper.map(conf, session, tridentTuple);
+                List<? extends Statement> statements = options.cqlStatementTupleMapper.map(conf, session, tridentTuple);
                 for (Statement statement : statements) {
                     List<List<Values>> values = options.cqlResultSetValuesMapper.map(session, statement, tridentTuple);
                     batchRetrieveResult.addAll(values);
@@ -122,7 +124,7 @@ public class CassandraState implements State {
         private final SimpleClientProvider clientProvider;
         private CQLStatementTupleMapper cqlStatementTupleMapper;
         private CQLResultSetValuesMapper cqlResultSetValuesMapper;
-        private BatchStatement.Type batchingType;
+        private BatchType batchingType;
 
         public Options(SimpleClientProvider clientProvider) {
             this.clientProvider = clientProvider;
@@ -140,7 +142,7 @@ public class CassandraState implements State {
             return this;
         }
 
-        public Options withBatching(BatchStatement.Type batchingType) {
+        public Options withBatching(BatchType batchingType) {
             this.batchingType = batchingType;
             return this;
         }

@@ -12,8 +12,8 @@
 
 package org.apache.storm.cassandra.query;
 
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +21,7 @@ import java.util.Map;
 import org.apache.storm.tuple.ITuple;
 
 /**
- * Default interface to map a {@link org.apache.storm.tuple.ITuple} to a CQL {@link com.datastax.driver.core.Statement}.
+ * Default interface to map a {@link org.apache.storm.tuple.ITuple} to a CQL {@link Statement}.
  */
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public abstract class BaseCQLStatementTupleMapper implements CQLStatementTupleMapper, Serializable {
@@ -30,7 +30,7 @@ public abstract class BaseCQLStatementTupleMapper implements CQLStatementTupleMa
      * {@inheritDoc}
      */
     @Override
-    public List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple) {
+    public List<Statement<?>> map(Map<String, Object> conf, CqlSession session, ITuple tuple) {
         return Arrays.asList(map(tuple));
     }
 
@@ -38,7 +38,7 @@ public abstract class BaseCQLStatementTupleMapper implements CQLStatementTupleMa
      * Maps a given tuple to a single CQL statements.
      *
      * @param tuple the incoming tuple to map.
-     * @return a list of {@link com.datastax.driver.core.Statement}.
+     * @return a list of {@link Statement}.
      */
     public abstract Statement map(ITuple tuple);
 }

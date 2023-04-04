@@ -12,8 +12,8 @@
 
 package org.apache.storm.cassandra.query.impl;
 
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.core.ProtocolVersion;
+import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -37,7 +37,7 @@ public class RoutingKeyGenerator implements Serializable {
         List<ByteBuffer> keys = new ArrayList<>(routingKeys.size());
         for (String s : routingKeys) {
             Object value = tuple.getValueByField(s);
-            ByteBuffer serialized = CodecRegistry.DEFAULT_INSTANCE.codecFor(value).serialize(value, ProtocolVersion.NEWEST_SUPPORTED);
+            ByteBuffer serialized = CodecRegistry.DEFAULT.codecFor(value).encode(value, ProtocolVersion.DEFAULT);
             keys.add(serialized);
         }
         return keys;

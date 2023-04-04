@@ -12,10 +12,8 @@
 
 package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -67,7 +65,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
     private final Fields allFields;
 
     private SimpleClient client;
-    private Session session;
+    private CqlSession session;
     private AyncCQLResultSetValuesMapper getResultMapper;
     private AyncCQLResultSetValuesMapper putResultMapper;
     private Semaphore throttle;
@@ -87,15 +85,15 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
         Preconditions.checkNotNull(options.putMapper, "CassandraBackingMap.Options should have putMapper");
         client = options.clientProvider.getClient(conf);
         session = client.connect();
-        if (options.maxParallelism == null || options.maxParallelism <= 0) {
-            PoolingOptions po = session.getCluster().getConfiguration().getPoolingOptions();
-            Integer maxRequestsPerHost = Math.min(
-                po.getMaxConnectionsPerHost(HostDistance.LOCAL) * po.getMaxRequestsPerConnection(HostDistance.LOCAL),
-                po.getMaxConnectionsPerHost(HostDistance.REMOTE) * po.getMaxRequestsPerConnection(HostDistance.REMOTE)
-            );
-            options.maxParallelism = maxRequestsPerHost / 2;
-            LOG.info("Parallelism default set to {}", options.maxParallelism);
-        }
+        //if (options.maxParallelism == null || options.maxParallelism <= 0) {
+        //    PoolingOptions po = session.getCluster().getConfiguration().getPoolingOptions();
+        //    Integer maxRequestsPerHost = Math.min(
+        //        po.getMaxConnectionsPerHost(HostDistance.LOCAL) * po.getMaxRequestsPerConnection(HostDistance.LOCAL),
+        //        po.getMaxConnectionsPerHost(HostDistance.REMOTE) * po.getMaxRequestsPerConnection(HostDistance.REMOTE)
+        //    );
+        //    options.maxParallelism = maxRequestsPerHost / 2;
+        //    LOG.info("Parallelism default set to {}", options.maxParallelism);
+        //}
         throttle = new Semaphore(options.maxParallelism, false);
         this.getResultMapper = new TridentAyncCQLResultSetValuesMapper(options.stateMapper.getStateFields(), throttle);
         this.putResultMapper = new TridentAyncCQLResultSetValuesMapper(null, throttle);
@@ -109,7 +107,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
 
         for (int i = 0; i < keys.size(); i++) {
             SimpleTuple keyTuple = new SimpleTuple(options.keyFields, keys.get(i));
-            List<Statement> mappedStatements = options.getMapper.map(conf, session, keyTuple);
+            List<? extends Statement<?>> mappedStatements = options.getMapper.map(conf, session, keyTuple);
             if (mappedStatements.size() > 1) {
                 throw new IllegalArgumentException("Only one statement per map state item is supported.");
             }

@@ -35,8 +35,8 @@
         <org.slf4j.version>1.7.6</org.slf4j.version>
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
-        <cassandra.version>2.1.6</cassandra.version>
-        <cassandra.driver.core.version>3.1.2</cassandra.driver.core.version>
+        <cassandra.version>4.1.1</cassandra.version>
+        <cassandra.driver.core.version>4.15.0</cassandra.driver.core.version>
     </properties>
     <developers>
         <developer>
@@ -61,17 +61,21 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.datastax.cassandra</groupId>
-            <artifactId>cassandra-driver-core</artifactId>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-core</artifactId>
             <version>${cassandra.driver.core.version}</version>
 <!--            <scope>provided</scope>-->
         </dependency>
-
         <dependency>
-            <groupId>com.datastax.cassandra</groupId>
-            <artifactId>cassandra-driver-mapping</artifactId>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-mapper-runtime</artifactId>
             <version>${cassandra.driver.core.version}</version>
-<!--            <scope>provided</scope>-->
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-query-builder</artifactId>
+            <version>${cassandra.driver.core.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>

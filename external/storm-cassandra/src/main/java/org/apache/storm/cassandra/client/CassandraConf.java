@@ -12,23 +12,12 @@
 
 package org.apache.storm.cassandra.client;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.SocketOptions;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy.Builder;
-import com.datastax.driver.core.policies.DefaultRetryPolicy;
-import com.datastax.driver.core.policies.DowngradingConsistencyRetryPolicy;
-import com.datastax.driver.core.policies.FallthroughRetryPolicy;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.datastax.driver.core.policies.LoggingRetryPolicy;
-import com.datastax.driver.core.policies.RetryPolicy;
-import com.datastax.driver.core.policies.RoundRobinPolicy;
-import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
 import com.google.common.base.Objects;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 
@@ -148,24 +137,25 @@ public class CassandraConf implements Serializable {
         this.password = (String) Utils.get(conf, CASSANDRA_PASSWORD, null);
         this.keyspace = get(conf, CASSANDRA_KEYSPACE);
         this.consistencyLevel =
-            ConsistencyLevel.valueOf((String) Utils.get(conf, CASSANDRA_CONSISTENCY_LEVEL, ConsistencyLevel.ONE.name()));
+            DefaultConsistencyLevel.valueOf((String) Utils.get(conf, CASSANDRA_CONSISTENCY_LEVEL, ConsistencyLevel.ONE.name()));
         this.nodes = ((String) Utils.get(conf, CASSANDRA_NODES, "localhost")).split(",");
         this.batchSizeRows = ObjectReader.getInt(conf.get(CASSANDRA_BATCH_SIZE_ROWS), 100);
         this.port = ObjectReader.getInt(conf.get(CASSANDRA_PORT), 9042);
-        this.retryPolicyName = (String) Utils.get(conf, CASSANDRA_RETRY_POLICY, DefaultRetryPolicy.class.getSimpleName());
+        //this.retryPolicyName = (String) Utils.get(conf, CASSANDRA_RETRY_POLICY, DefaultRetryPolicy.class.getSimpleName());
         this.reconnectionPolicyBaseMs = getLong(conf.get(CASSANDRA_RECONNECT_POLICY_BASE_MS), 100L);
         this.reconnectionPolicyMaxMs = getLong(conf.get(CASSANDRA_RECONNECT_POLICY_MAX_MS), TimeUnit.MINUTES.toMillis(1));
         this.poolMaxQueueSize = getInt(conf.get(CASSANDRA_POOL_MAX_SIZE), 256);
-        this.loadBalancingPolicyName = (String) Utils.get(conf, CASSANDRA_LOAD_BALANCING_POLICY, TokenAwarePolicy.class.getSimpleName());
+        //this.loadBalancingPolicyName = (String) Utils.get(conf,
+        // CASSANDRA_LOAD_BALANCING_POLICY, BasicLoadBalancingPolicy.class.getSimpleName());
         this.datacenterName = (String) Utils.get(conf, CASSANDRA_DATACENTER_NAME, null);
         this.maxRequestPerConnectionLocal = getInt(conf.get(CASSANDRA_MAX_REQUESTS_PER_CON_LOCAL), 1024);
         this.maxRequestPerConnectionRemote = getInt(conf.get(CASSANDRA_MAX_REQUESTS_PER_CON_REMOTE), 256);
         this.heartbeatIntervalSeconds = getInt(conf.get(CASSANDRA_HEARTBEAT_INTERVAL_SEC), 30);
         this.idleTimeoutSeconds = getInt(conf.get(CASSANDRA_IDLE_TIMEOUT_SEC), 60);
-        this.socketReadTimeoutMillis =
-            getLong(conf.get(CASSANDRA_SOCKET_READ_TIMEOUT_MS), (long) SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS);
-        this.socketConnectTimeoutMillis =
-            getLong(conf.get(CASSANDRA_SOCKET_CONNECT_TIMEOUT_MS), (long) SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        //this.socketReadTimeoutMillis =
+        //    getLong(conf.get(CASSANDRA_SOCKET_READ_TIMEOUT_MS), (long) SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS);
+        //this.socketConnectTimeoutMillis =
+        //    getLong(conf.get(CASSANDRA_SOCKET_CONNECT_TIMEOUT_MS), (long) SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS);
     }
 
     public static Integer getInt(Object o, Integer defaultValue) {
@@ -228,32 +218,41 @@ public class CassandraConf implements Serializable {
         return reconnectionPolicyMaxMs;
     }
 
-    public RetryPolicy getRetryPolicy() {
-        if (this.retryPolicyName.equals(DowngradingConsistencyRetryPolicy.class.getSimpleName())) {
-            return new LoggingRetryPolicy(DowngradingConsistencyRetryPolicy.INSTANCE);
-        }
-        if (this.retryPolicyName.equals(FallthroughRetryPolicy.class.getSimpleName())) {
-            return FallthroughRetryPolicy.INSTANCE;
-        }
-        if (this.retryPolicyName.equals(DefaultRetryPolicy.class.getSimpleName())) {
-            return DefaultRetryPolicy.INSTANCE;
-        }
-        throw new IllegalArgumentException("Unknown cassandra retry policy " + this.retryPolicyName);
+    public String getRetryPolicyName() {
+        return this.retryPolicyName;
     }
+    //public RetryPolicy getRetryPolicy() throws ClassNotFoundException, NoSuchMethodException {
+    //    Class clazz = Class.forName(retryPolicyName);
+    //    RetryPolicy retryPolicy = clazz.getConstructor(DriverContext.class, String.class)
+    //            .newInstance(cqlSession.getMetadata().getContext(), profileName);
+    //
+    //    //if (this.retryPolicyName.equals(DowngradingConsistencyRetryPolicy.class.getSimpleName())) {
+    //    //    return new LoggingRetryPolicy(DowngradingConsistencyRetryPolicy.INSTANCE);
+    //    //}
+    //    //if (this.retryPolicyName.equals(FallthroughRetryPolicy.class.getSimpleName())) {
+    //    //    return FallthroughRetryPolicy.INSTANCE;
+    //    //}
+    //    //if (this.retryPolicyName.equals(DefaultRetryPolicy.class.getSimpleName())) {
+    //    //    return DefaultRetryPolicy.INSTANCE;
+    //    //}
+    //    throw new IllegalArgumentException("Unknown cassandra retry policy " + this.retryPolicyName);
+    //}
 
-    public LoadBalancingPolicy getLoadBalancingPolicy() {
-        if (this.loadBalancingPolicyName.equals(TokenAwarePolicy.class.getSimpleName())) {
-            return new TokenAwarePolicy(new RoundRobinPolicy());
-        }
-        if (this.loadBalancingPolicyName.equals(DCAwareRoundRobinPolicy.class.getSimpleName())) {
-            Builder builder = DCAwareRoundRobinPolicy.builder();
-            if (StringUtils.isNotBlank(datacenterName)) {
-                builder = builder.withLocalDc(this.datacenterName);
-            }
-            return new TokenAwarePolicy(builder.build());
-        }
-        throw new IllegalArgumentException("Unknown cassandra load balancing policy " + this.loadBalancingPolicyName);
+    public String getLoadBalancingPolicyName() {
+        return this.loadBalancingPolicyName;
     }
+    //public LoadBalancingPolicy getLoadBalancingPolicy() {
+    //    if (this.loadBalancingPolicyName == null) {
+    //        return new DefaultLoadBalancingPolicy(driverContext, DefaultLoadBalancingPolicy.class.getSimpleName());
+    //    } else {
+    //        try {
+    //            return Class.forName(this.loadBalancingPolicyName).getConstructor(DriverContext.class, String.class)
+    //                    .newInstance(driverContext, this.loadBalancingPolicyName);
+    //        } catch (Throwable t) {
+    //            throw new IllegalArgumentException("Error creating cassandra load balancing policy " + this.loadBalancingPolicyName, t);
+    //        }
+    //    }
+    //}
 
     public int getPoolMaxQueueSize() {
         return poolMaxQueueSize;

@@ -12,11 +12,12 @@
 
 package org.apache.storm.cassandra.query.impl;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.core.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import java.io.Serializable;
 import java.util.List;
+
 import org.apache.storm.cassandra.query.Column;
 
 public interface PreparedStatementBinder extends Serializable {
@@ -54,7 +55,7 @@ public interface PreparedStatementBinder extends Serializable {
                     boundStatement.setToNull(col.getColumnName());
                 } else {
                     boundStatement.set(col.getColumnName(), col.getVal(),
-                                       CodecRegistry.DEFAULT_INSTANCE.codecFor(col.getVal()));
+                                       CodecRegistry.DEFAULT.codecFor(col.getVal()));
                 }
             }
             return statement.bind(values);

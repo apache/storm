@@ -12,12 +12,16 @@
 
 package org.apache.storm.cassandra.bolt;
 
-import com.datastax.driver.core.BatchStatement;
-import com.google.common.base.Function;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchType;
+import com.datastax.oss.driver.api.core.cql.BatchableStatement;
 import com.google.common.collect.Iterables;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import org.apache.storm.tuple.Tuple;
 
 public class GroupingBatchBuilder implements Iterable<PairBatchStatementTuples> {
@@ -41,17 +45,14 @@ public class GroupingBatchBuilder implements Iterable<PairBatchStatementTuples> 
 
     private Iterable<PairBatchStatementTuples> build() {
         Iterable<List<PairStatementTuple>> partition = Iterables.partition(statements, batchSizeRows);
-        return Iterables.transform(partition, new Function<List<PairStatementTuple>, PairBatchStatementTuples>() {
-            @Override
-            public PairBatchStatementTuples apply(List<PairStatementTuple> l) {
-                final List<Tuple> inputs = new LinkedList<>();
-                final BatchStatement batch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-                for (PairStatementTuple pair : l) {
-                    batch.add(pair.getStatement());
-                    inputs.add(pair.getTuple());
-                }
-                return new PairBatchStatementTuples(inputs, batch);
+        return StreamSupport.stream(partition.spliterator(), false).map(l -> {
+            final List<Tuple> inputs = new LinkedList<>();
+            final BatchStatement batch = BatchStatement.newInstance(BatchType.UNLOGGED);
+            for (PairStatementTuple pair : l) {
+                batch.add((BatchableStatement) pair.getStatement());
+                inputs.add(pair.getTuple());
             }
-        });
+            return new PairBatchStatementTuples(inputs, batch);
+        }).collect(Collectors.toList());
     }
 }

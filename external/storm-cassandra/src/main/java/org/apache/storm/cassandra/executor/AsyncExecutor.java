@@ -12,10 +12,10 @@
 
 package org.apache.storm.cassandra.executor;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -40,7 +41,7 @@ public class AsyncExecutor<T> implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncExecutor.class);
 
-    protected Session session;
+    protected CqlSession session;
 
     protected ExecutorService executorService;
 
@@ -51,7 +52,7 @@ public class AsyncExecutor<T> implements Serializable {
     /**
      * Creates a new {@link AsyncExecutor} instance.
      */
-    protected AsyncExecutor(Session session, AsyncResultHandler<T> handler) {
+    protected AsyncExecutor(CqlSession session, AsyncResultHandler<T> handler) {
         this(session, newSingleThreadExecutor(), handler);
     }
 
@@ -61,7 +62,7 @@ public class AsyncExecutor<T> implements Serializable {
      * @param session The cassandra session.
      * @param executorService The executor service responsible to execute handler.
      */
-    private AsyncExecutor(Session session, ExecutorService executorService, AsyncResultHandler<T> handler) {
+    private AsyncExecutor(CqlSession session, ExecutorService executorService, AsyncResultHandler<T> handler) {
         this.session = session;
         this.executorService = executorService;
         this.handler = handler;
@@ -113,27 +114,42 @@ public class AsyncExecutor<T> implements Serializable {
     public SettableFuture<T> execAsync(final Statement statement, final T inputs, final AsyncResultHandler<T> handler) {
         final SettableFuture<T> settableFuture = SettableFuture.create();
         pending.incrementAndGet();
-        ResultSetFuture future = session.executeAsync(statement);
-        Futures.addCallback(future, new FutureCallback<ResultSet>() {
-            public void release() {
-                pending.decrementAndGet();
-            }
-
-            @Override
-            public void onSuccess(ResultSet result) {
-                release();
-                settableFuture.set(inputs);
-                handler.success(inputs);
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                LOG.error(String.format("Failed to execute statement '%s' ", statement), t);
-                release();
-                settableFuture.setException(t);
-                handler.failure(t, inputs);
-            }
-        }, executorService);
+        CompletionStage<AsyncResultSet> future = session.executeAsync(statement);
+        future
+            .thenAccept(
+                result -> {
+                    pending.decrementAndGet();
+                    settableFuture.set(inputs);
+                    handler.success(inputs);
+                })
+            .exceptionally(
+                t -> {
+                    pending.decrementAndGet();
+                    LOG.error("Failed to execute statement '{}' ", statement, t);
+                    settableFuture.setException(t);
+                    handler.failure(t, inputs);
+                    return null;
+                });
+        //Futures.addCallback(future, new FutureCallback<ResultSet>() {
+        //    public void release() {
+        //        pending.decrementAndGet();
+        //    }
+        //
+        //    @Override
+        //    public void onSuccess(ResultSet result) {
+        //        release();
+        //        settableFuture.set(inputs);
+        //        handler.success(inputs);
+        //    }
+        //
+        //    @Override
+        //    public void onFailure(Throwable t) {
+        //        LOG.error(String.format("Failed to execute statement '%s' ", statement), t);
+        //        release();
+        //        settableFuture.setException(t);
+        //        handler.failure(t, inputs);
+        //    }
+        //}, executorService);
         return settableFuture;
     }
 
@@ -159,45 +175,68 @@ public class AsyncExecutor<T> implements Serializable {
                     pending.incrementAndGet();
                     final T input = inputs.get(i);
                     final Statement statement = statements.get(i);
-                    ResultSetFuture future = session.executeAsync(statement);
-                    Futures.addCallback(future, new FutureCallback<ResultSet>() {
-                        @Override
-                        public void onSuccess(ResultSet result) {
-                            try {
-                                handler.success(input, result);
-                            } catch (Throwable throwable) {
-                                asyncContext.exception(throwable);
-                            } finally {
-                                pending.decrementAndGet();
-                                asyncContext.release();
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Throwable throwable) {
-                            try {
-                                handler.failure(throwable, input);
-                            } catch (Throwable throwable2) {
-                                asyncContext.exception(throwable2);
-                            } finally {
-                                asyncContext
-                                    .exception(throwable)
-                                    .release();
-                                pending.decrementAndGet();
-                                LOG.error(String.format("Failed to execute statement '%s' ", statement), throwable);
-                            }
-                        }
-                    }, executorService);
+                    CompletionStage<AsyncResultSet> future = session.executeAsync(statement);
+                    future
+                        .thenAccept(
+                            result -> {
+                                try {
+                                    ResultSet r = (ResultSet) result;
+                                    handler.success(input, result);
+                                } catch (Throwable throwable) {
+                                    asyncContext.exception(throwable);
+                                } finally {
+                                    pending.decrementAndGet();
+                                    asyncContext.release();
+                                }
+                            })
+                        .exceptionally(
+                            t -> {
+                                try {
+                                    handler.failure(t, input);
+                                } catch (Throwable throwable2) {
+                                    asyncContext.exception(throwable2);
+                                } finally {
+                                    asyncContext.exception(t).release();
+                                    pending.decrementAndGet();
+                                    LOG.error("Failed to execute statement '{}' ", statement, t);
+                                }
+                                return null;
+                            });
+                    //    Futures.addCallback(future, new FutureCallback<ResultSet>() {
+                    //        @Override
+                    //        public void onSuccess(ResultSet result) {
+                    //            try {
+                    //                handler.success(input, result);
+                    //            } catch (Throwable throwable) {
+                    //                asyncContext.exception(throwable);
+                    //            } finally {
+                    //                pending.decrementAndGet();
+                    //                asyncContext.release();
+                    //            }
+                    //        }
+                    //
+                    //        @Override
+                    //        public void onFailure(Throwable throwable) {
+                    //            try {
+                    //                handler.failure(throwable, input);
+                    //            } catch (Throwable throwable2) {
+                    //                asyncContext.exception(throwable2);
+                    //            } finally {
+                    //                asyncContext
+                    //                    .exception(throwable)
+                    //                    .release();
+                    //                pending.decrementAndGet();
+                    //                LOG.error(String.format("Failed to execute statement '%s' ", statement), throwable);
+                    //            }
+                    //        }
+                    //    }, executorService);
                 } catch (Throwable throwable) {
-                    asyncContext.exception(throwable)
-                                .release();
+                    asyncContext.exception(throwable).release();
                     pending.decrementAndGet();
                     break;
                 }
             }
-
         }
-
         return settableFuture;
     }
 

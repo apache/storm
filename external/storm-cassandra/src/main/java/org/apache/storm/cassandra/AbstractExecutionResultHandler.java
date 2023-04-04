@@ -12,10 +12,10 @@
 
 package org.apache.storm.cassandra;
 
-import com.datastax.driver.core.exceptions.QueryValidationException;
-import com.datastax.driver.core.exceptions.ReadTimeoutException;
-import com.datastax.driver.core.exceptions.UnavailableException;
-import com.datastax.driver.core.exceptions.WriteTimeoutException;
+import com.datastax.oss.driver.api.core.servererrors.QueryValidationException;
+import com.datastax.oss.driver.api.core.servererrors.ReadTimeoutException;
+import com.datastax.oss.driver.api.core.servererrors.UnavailableException;
+import com.datastax.oss.driver.api.core.servererrors.WriteTimeoutException;
 import java.util.List;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.tuple.Tuple;

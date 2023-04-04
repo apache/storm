@@ -27,11 +27,15 @@ public class Column<T> implements Serializable {
     }
 
     public static Object[] getVals(List<Column> columns) {
+        return getValsList(columns).toArray();
+    }
+
+    public static List<Object> getValsList(List<Column> columns) {
         List<Object> vals = new ArrayList<>(columns.size());
         for (Column c : columns) {
             vals.add(c.getVal());
         }
-        return vals.toArray();
+        return vals;
     }
 
     public String getColumnName() {

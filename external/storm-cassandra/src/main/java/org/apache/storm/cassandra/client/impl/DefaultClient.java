@@ -12,51 +12,51 @@
 
 package org.apache.storm.cassandra.client.impl;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.Metadata;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.Node;
 import com.google.common.base.Preconditions;
 import java.io.Closeable;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
+
 import org.apache.storm.cassandra.client.SimpleClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Simple class to wrap cassandra {@link com.datastax.driver.core.Cluster} instance.
+ * Simple class to wrap cassandra {@link CqlSession} instance.
  */
 public class DefaultClient implements SimpleClient, Closeable, Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultClient.class);
 
     private String keyspace;
+    private CqlSessionBuilder cqlSessionBuilder;
 
-    private Cluster cluster;
-
-    private Session session;
+    private CqlSession cqlSession;
 
     /**
      * Create a new {@link DefaultClient} instance.
      *
-     * @param cluster a cassandra cluster client.
+     * @param cqlSessionBuilder a cassandra session builder.
      */
-    public DefaultClient(Cluster cluster, String keyspace) {
-        Preconditions.checkNotNull(cluster, "Cluster cannot be 'null");
-        this.cluster = cluster;
+    public DefaultClient(CqlSessionBuilder cqlSessionBuilder, String keyspace) {
+        Preconditions.checkNotNull(cqlSessionBuilder, "CqlSessionBuilder cannot be 'null");
+        this.cqlSessionBuilder = cqlSessionBuilder;
         this.keyspace = keyspace;
 
     }
 
-    public Set<Host> getAllHosts() {
+    public Set<Node> getAllNodes() {
         Metadata metadata = getMetadata();
-        return metadata.getAllHosts();
+        return new HashSet<>(metadata.getNodes().values());
     }
 
     public Metadata getMetadata() {
-        return cluster.getMetadata();
+        return cqlSession.getMetadata();
     }
 
 
@@ -69,31 +69,32 @@ public class DefaultClient implements SimpleClient, Closeable, Serializable {
      * {@inheritDoc}
      */
     @Override
-    public synchronized Session connect() throws NoHostAvailableException {
+    public synchronized CqlSession connect() {
         if (isDisconnected()) {
-            LOG.info("Connected to cluster: {}", cluster.getClusterName());
-            for (Host host : getAllHosts()) {
-                LOG.info("Datacenter: {}; Host: {}; Rack: {}", host.getDatacenter(), host.getAddress(), host.getRack());
+            LOG.info("Connecting to cluster: {}", cqlSession.getName());
+            for (Node node : getAllNodes()) {
+                LOG.info("Datacenter: {}; Host: {}; Rack: {}", node.getDatacenter(),
+                        node.getListenAddress().get().getHostName(), node.getRack());
             }
 
             LOG.info("Connect to cluster using keyspace %s", keyspace);
-            session = cluster.connect(keyspace);
+            cqlSession = cqlSessionBuilder.build();
         } else {
-            LOG.warn("{} - Already connected to cluster: {}", getExecutorName(), cluster.getClusterName());
+            LOG.warn("{} - Already connected to cluster: {}", getExecutorName(), cqlSession.getName());
         }
 
-        if (session.isClosed()) {
+        if (cqlSession.isClosed()) {
             LOG.warn("Session has been closed - create new one!");
-            this.session = cluster.newSession();
+            this.cqlSession = cqlSessionBuilder.build();
         }
-        return session;
+        return cqlSession;
     }
 
     /**
      * Checks whether the client is already connected to the cluster.
      */
     protected boolean isDisconnected() {
-        return session == null;
+        return cqlSession == null;
     }
 
     /**
@@ -101,10 +102,9 @@ public class DefaultClient implements SimpleClient, Closeable, Serializable {
      */
     @Override
     public void close() {
-        if (cluster != null && !cluster.isClosed()) {
-            LOG.info("Try to close connection to cluster: {}", cluster.getClusterName());
-            session.close();
-            cluster.close();
+        if (!cqlSession.isClosed()) {
+            LOG.info("Try to close connection to cluster: {}", cqlSession.getMetadata().getClusterName());
+            cqlSession.close();
         }
     }
 
@@ -113,7 +113,6 @@ public class DefaultClient implements SimpleClient, Closeable, Serializable {
      */
     @Override
     public boolean isClose() {
-        return this.cluster.isClosed();
+        return this.cqlSession.isClosed();
     }
-
 }

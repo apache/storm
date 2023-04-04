@@ -12,8 +12,9 @@
 
 package org.apache.storm.cassandra.bolt;
 
-import com.datastax.driver.core.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
 import java.util.List;
+
 import org.apache.storm.tuple.Tuple;
 
 /**

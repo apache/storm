@@ -12,10 +12,11 @@
 
 package org.apache.storm.cassandra;
 
-import com.datastax.driver.core.exceptions.QueryValidationException;
-import com.datastax.driver.core.exceptions.ReadTimeoutException;
-import com.datastax.driver.core.exceptions.UnavailableException;
-import com.datastax.driver.core.exceptions.WriteTimeoutException;
+import com.datastax.oss.driver.api.core.servererrors.QueryValidationException;
+import com.datastax.oss.driver.api.core.servererrors.ReadTimeoutException;
+import com.datastax.oss.driver.api.core.servererrors.UnavailableException;
+import com.datastax.oss.driver.api.core.servererrors.WriteTimeoutException;
+
 import java.io.Serializable;
 import java.util.List;
 import org.apache.storm.task.OutputCollector;
@@ -28,7 +29,7 @@ import org.apache.storm.tuple.Tuple;
 public interface ExecutionResultHandler extends Serializable {
 
     /**
-     * Invoked when a {@link com.datastax.driver.core.exceptions.QueryValidationException} is thrown.
+     * Invoked when a {@link QueryValidationException} is thrown.
      *
      * @param e the cassandra exception.
      * @param collector the storm collector.
@@ -37,7 +38,7 @@ public interface ExecutionResultHandler extends Serializable {
     void onQueryValidationException(QueryValidationException e, OutputCollector collector, Tuple tuple);
 
     /**
-     * Invoked when a {@link com.datastax.driver.core.exceptions.ReadTimeoutException} is thrown.
+     * Invoked when a {@link ReadTimeoutException} is thrown.
      *
      * @param e the cassandra exception.
      * @param collector the storm collector.
@@ -46,7 +47,7 @@ public interface ExecutionResultHandler extends Serializable {
     void onReadTimeoutException(ReadTimeoutException e, OutputCollector collector, Tuple tuple);
 
     /**
-     * Invoked when a {@link com.datastax.driver.core.exceptions.WriteTimeoutException} is thrown.
+     * Invoked when a {@link WriteTimeoutException} is thrown.
      *
      * @param e the cassandra exception.
      * @param collector the storm collector.
@@ -55,7 +56,7 @@ public interface ExecutionResultHandler extends Serializable {
     void onWriteTimeoutException(WriteTimeoutException e, OutputCollector collector, Tuple tuple);
 
     /**
-     * Invoked when a {@link com.datastax.driver.core.exceptions.UnavailableException} is thrown.
+     * Invoked when a {@link UnavailableException} is thrown.
      *
      *
      * @param e the cassandra exception.

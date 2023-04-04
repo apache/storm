@@ -12,8 +12,11 @@
 
 package org.apache.storm.cassandra.bolt;
 
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.cql.Statement;
+
+import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.storm.cassandra.executor.AsyncResultHandler;
 import org.apache.storm.cassandra.executor.impl.SingleAsyncResultHandler;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
@@ -46,11 +49,13 @@ public class CassandraWriterBolt extends BaseCassandraBolt<Tuple> {
      */
     @Override
     protected void process(Tuple input) {
-        List<Statement> statements = getMapper().map(topoConfig, session, input);
+        List<? extends Statement<?>> statements = getMapper().map(topoConfig, cqlSession, input);
         if (statements.size() == 1) {
             getAsyncExecutor().execAsync(statements.get(0), input);
         } else {
-            getAsyncExecutor().execAsync(statements, input);
+            List<Statement> s2 = new ArrayList<>();
+            statements.forEach(x -> s2.add(x));
+            getAsyncExecutor().execAsync(s2, input);
         }
     }
 }

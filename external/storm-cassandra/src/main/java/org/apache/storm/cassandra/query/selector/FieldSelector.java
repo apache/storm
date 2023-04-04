@@ -12,7 +12,7 @@
 
 package org.apache.storm.cassandra.query.selector;
 
-import com.datastax.driver.core.utils.UUIDs;
+import com.datastax.oss.driver.api.core.uuid.Uuids;
 import java.io.Serializable;
 import org.apache.storm.cassandra.query.Column;
 import org.apache.storm.tuple.ITuple;
@@ -32,7 +32,7 @@ public class FieldSelector implements Serializable {
     }
 
     public Column select(ITuple t) {
-        return new Column<>(as != null ? as : field, isNow ? UUIDs.timeBased() : getFieldValue(t));
+        return new Column<>(as != null ? as : field, isNow ? Uuids.timeBased() : getFieldValue(t));
     }
 
     /**

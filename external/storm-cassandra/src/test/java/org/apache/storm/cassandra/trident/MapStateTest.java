@@ -12,20 +12,26 @@
 
 package org.apache.storm.cassandra.trident;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Truncate;
-import com.datastax.driver.core.schemabuilder.Create;
-import com.datastax.driver.core.schemabuilder.SchemaBuilder;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
+
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.type.DataType;
+import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
+import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
+import com.datastax.oss.driver.api.querybuilder.schema.CreateTable;
+import com.datastax.oss.driver.api.querybuilder.schema.CreateTableStart;
+import com.datastax.oss.driver.api.querybuilder.truncate.Truncate;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.cassandra.client.CassandraConf;
 import org.apache.storm.cassandra.testtools.EmbeddedCassandraResource;
 import org.apache.storm.cassandra.trident.state.MapStateFactoryBuilder;
+import org.apache.storm.shade.org.apache.zookeeper.Op;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.builtin.Count;
@@ -40,7 +46,6 @@ import org.apache.storm.tuple.Values;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +60,7 @@ public class MapStateTest {
     EmbeddedCassandraResource cassandra;
 
     private static final Logger logger = LoggerFactory.getLogger(MapStateTest.class);
-    private static Cluster cluster;
-    private Session session;
+    private CqlSession cqlSession;
 
     protected static Column column(String name, DataType type) {
         Column column = new Column();
@@ -133,7 +137,7 @@ public class MapStateTest {
         int count;
         do {
             Thread.sleep(2000);
-            count = session.execute(QueryBuilder.select().all().from("words_ks", "words_table"))
+            count = cqlSession.execute(QueryBuilder.selectFrom("words_ks", "words_table").all().asCql())
                            .getAvailableWithoutFetching();
             logger.info("Found {} records", count);
         } while (count < 24);
@@ -153,27 +157,26 @@ public class MapStateTest {
     public void setUp() throws Exception {
 
         cassandra = new EmbeddedCassandraResource();
-        Cluster.Builder clusterBuilder = Cluster.builder();
 
-        // Add cassandra cluster contact points
-        clusterBuilder.addContactPoint(cassandra.getHost());
-        clusterBuilder.withPort(cassandra.getNativeTransportPort());
+        ///////
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getByName(
+                cassandra.getHost()),
+                cassandra.getNativeTransportPort());
+        CqlSessionBuilder cqlSessionBuilder = CqlSession.builder().addContactPoint(inetSocketAddress);
 
         // Build cluster and connect
-        cluster = clusterBuilder.build();
-        session = cluster.connect();
+        cqlSession = cqlSessionBuilder.build();
 
         createKeyspace("words_ks");
         createTable("words_ks", "words_table",
-                    column("word", DataType.varchar()),
-                    column("state", DataType.blob()));
-
+                    column("word", DataTypes.TEXT),
+                    column("state", DataTypes.BLOB));
     }
 
     @AfterEach
     public void tearDown() {
         truncateTable("words_ks", "words_table");
-        session.close();
+        cqlSession.close();
     }
 
     protected void createKeyspace(String keyspace) throws Exception {
@@ -182,7 +185,7 @@ public class MapStateTest {
                                 + keyspace
                                 + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
         logger.info(createKeyspace);
-        if (!session.execute(createKeyspace)
+        if (!cqlSession.execute(createKeyspace)
                     .wasApplied()) {
             throw new Exception("Did not create keyspace " + keyspace);
         }
@@ -198,18 +201,18 @@ public class MapStateTest {
 
     protected void truncateTable(String keyspace, String table) {
         Truncate truncate = QueryBuilder.truncate(keyspace, table);
-        session.execute(truncate);
+        cqlSession.execute(truncate.asCql());
     }
 
     protected void createTable(String keyspace, String table, Column key, Column... fields) {
-        Create createTable = SchemaBuilder.createTable(keyspace, table)
+        CreateTable createTable = SchemaBuilder.createTable(keyspace, table)
                                           .ifNotExists()
-                                          .addPartitionKey(key.name, key.type);
+                                          .withPartitionKey(key.name, key.type);
         for (Column field : fields) {
-            createTable.addColumn(field.name, field.type);
+            createTable.withColumn(field.name, field.type);
         }
         logger.info(createTable.toString());
-        session.execute(createTable);
+        cqlSession.execute(createTable.asCql());
     }
 
     protected static class Column {

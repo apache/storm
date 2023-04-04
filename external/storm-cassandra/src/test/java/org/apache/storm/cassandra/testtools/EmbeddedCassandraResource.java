@@ -16,12 +16,12 @@ package org.apache.storm.cassandra.testtools;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.service.CassandraDaemon;
-import org.apache.cassandra.utils.FBUtilities;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -54,7 +54,7 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
         try {
             prepare();
             cassandraDaemon = new CassandraDaemon();
-            cassandraDaemon.init(null);
+            cassandraDaemon.activate();
             host = DatabaseDescriptor.getRpcAddress().getHostName();
             nativeTransportPort = DatabaseDescriptor.getNativeTransportPort();
         } catch (Exception e) {
@@ -72,12 +72,7 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
 
         // Cassandra daemon calls System.exit() on windows, which kills the test.
         // Stop services without killing the process instead.
-        if (FBUtilities.isWindows()) {
-            cassandraDaemon.thriftServer.stop();
-            cassandraDaemon.nativeServer.stop();
-        } else {
-            cassandraDaemon.stop();
-        }
+        cassandraDaemon.stop();
 
         // Register file cleanup after jvm shutdown
         // Cassandra doesn't actually shut down until jvm shutdown so need to wait for that first.
@@ -153,8 +148,8 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
      * @param dir
      * @throws IOException
      */
-    private void mkdir(String dir) throws IOException {
-        FileUtils.createDirectory(dir);
+    private void mkdir(String dir) {
+        new File(dir).mkdirs();
     }
 
     /**
@@ -163,10 +158,15 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
      * @param dir
      * @throws IOException
      */
-    private void cleanDir(String dir) throws IOException {
-        File dirFile = new File(dir);
-        if (dirFile.exists() && dirFile.isDirectory()) {
-            FileUtils.deleteRecursive(dirFile);
+    private void cleanDir(String dir) {
+        Path directory = new File(dir).toPath();
+        try {
+            Files.walk(directory)
+                    .sorted(java.util.Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        } catch (IOException e) {
+            System.err.println("Error deleting directory: " + e.getMessage());
         }
     }
 

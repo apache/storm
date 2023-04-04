@@ -12,11 +12,11 @@
 
 package org.apache.storm.cassandra;
 
-import com.datastax.driver.core.exceptions.DriverException;
-import com.datastax.driver.core.exceptions.QueryValidationException;
-import com.datastax.driver.core.exceptions.ReadTimeoutException;
-import com.datastax.driver.core.exceptions.UnavailableException;
-import com.datastax.driver.core.exceptions.WriteTimeoutException;
+import com.datastax.oss.driver.api.core.DriverException;
+import com.datastax.oss.driver.api.core.servererrors.QueryValidationException;
+import com.datastax.oss.driver.api.core.servererrors.ReadTimeoutException;
+import com.datastax.oss.driver.api.core.servererrors.UnavailableException;
+import com.datastax.oss.driver.api.core.servererrors.WriteTimeoutException;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Simple {@link ExecutionResultHandler} which fail the incoming tuple when an
- * {@link com.datastax.driver.core.exceptions.DriverException} is thrown.
+ * {@link com.datastax.oss.driver.api.core.DriverException} is thrown.
  * The exception is then automatically report to storm.
  *
  */

@@ -12,10 +12,11 @@
 
 package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import com.google.common.util.concurrent.SettableFuture;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +45,8 @@ public class TridentAyncCQLResultSetValuesMapper implements AyncCQLResultSetValu
     }
 
     @Override
-    public List<List<Values>> map(Session session, List<Statement> statements, final List<ITuple> tuples) {
-        AsyncExecutor<Integer> executor = AsyncExecutorProvider.getLocal(session, AsyncResultHandler.NO_OP_HANDLER);
+    public List<List<Values>> map(CqlSession cqlSession, List<Statement> statements, final List<ITuple> tuples) {
+        AsyncExecutor<Integer> executor = AsyncExecutorProvider.getLocal(cqlSession, AsyncResultHandler.NO_OP_HANDLER);
         final List<Integer> indexes = new ArrayList<>();
         final List<List<Values>> results = new ArrayList<>();
         for (int i = 0; i < statements.size(); i++) {
@@ -54,10 +55,10 @@ public class TridentAyncCQLResultSetValuesMapper implements AyncCQLResultSetValu
         }
         SettableFuture<List<Integer>> result = executor.execAsync(statements, indexes, throttle, new AsyncResultSetHandler<Integer>() {
             @Override
-            public void success(Integer index, ResultSet resultSet) {
+            public void success(Integer index, AsyncResultSet resultSet) {
                 if (outputDeclaredFields != null) {
                     List<Values> thisResult = new ArrayList<>();
-                    for (Row row : resultSet) {
+                    for (Row row : resultSet.currentPage()) {
                         final Values values = new Values();
                         for (String field : outputDeclaredFields) {
                             ITuple tuple = tuples.get(index);

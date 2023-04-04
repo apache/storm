@@ -12,7 +12,7 @@
 
 package org.apache.storm.cassandra.client;
 
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
 
 public interface SimpleClient {
 
@@ -20,12 +20,11 @@ public interface SimpleClient {
      * Creates a new session on this cluster.
      * *
      * @return a new session on this cluster.
-     * @throws com.datastax.driver.core.exceptions.NoHostAvailableException if we cannot reach any cassandra contact points.
      */
-    Session connect();
+    CqlSession connect();
 
     /**
-     * Close the underlying {@link com.datastax.driver.core.Cluster} instance.
+     * Close the underlying connection(s).
      */
     void close();
 

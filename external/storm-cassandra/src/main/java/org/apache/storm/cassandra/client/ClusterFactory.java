@@ -12,62 +12,31 @@
 
 package org.apache.storm.cassandra.client;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.PlainTextAuthProvider;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.session.Session;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.cassandra.context.BaseBeanFactory;
 
 /**
  * Default interface to build cassandra Cluster from the a Storm Topology configuration.
  */
-public class ClusterFactory extends BaseBeanFactory<Cluster> {
+public class ClusterFactory extends BaseBeanFactory<CqlSession> {
+
+    CqlSessionBuilder cqlSessionBuilder;
 
     /**
      * Creates a new Cluster based on the specified configuration.
      * @param topoConf the storm configuration.
-     * @return a new a new {@link com.datastax.driver.core.Cluster} instance.
+     * @return a new a new {@link Session} instance.
      */
     @Override
-    protected Cluster make(Map<String, Object> topoConf) {
-        CassandraConf cassandraConf = new CassandraConf(topoConf);
+    protected CqlSession make(Map<String, Object> topoConf) {
+        cqlSessionBuilder = new CqlSessionBuilderFactory().make(topoConf);
+        return cqlSessionBuilder.build();
+    }
 
-        Cluster.Builder cluster = Cluster.builder()
-                                         .withoutJMXReporting()
-                                         .withoutMetrics()
-                                         .addContactPoints(cassandraConf.getNodes())
-                                         .withPort(cassandraConf.getPort())
-                                         .withRetryPolicy(cassandraConf.getRetryPolicy())
-                                         .withReconnectionPolicy(new ExponentialReconnectionPolicy(
-                                             cassandraConf.getReconnectionPolicyBaseMs(),
-                                             cassandraConf.getReconnectionPolicyMaxMs()))
-                                         .withLoadBalancingPolicy(cassandraConf.getLoadBalancingPolicy());
-        cluster.getConfiguration().getSocketOptions().setReadTimeoutMillis((int) cassandraConf.getSocketReadTimeoutMillis());
-        cluster.getConfiguration().getSocketOptions().setConnectTimeoutMillis((int) cassandraConf.getSocketConnectTimeoutMillis());
-
-        final String username = cassandraConf.getUsername();
-        final String password = cassandraConf.getPassword();
-
-        if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
-            cluster.withAuthProvider(new PlainTextAuthProvider(username, password));
-        }
-
-        QueryOptions options = new QueryOptions()
-            .setConsistencyLevel(cassandraConf.getConsistencyLevel());
-        cluster.withQueryOptions(options);
-
-        PoolingOptions poolOps = new PoolingOptions();
-        poolOps.setMaxQueueSize(cassandraConf.getPoolMaxQueueSize());
-        poolOps.setHeartbeatIntervalSeconds(cassandraConf.getHeartbeatIntervalSeconds());
-        poolOps.setIdleTimeoutSeconds(cassandraConf.getIdleTimeoutSeconds());
-        poolOps.setMaxRequestsPerConnection(HostDistance.LOCAL, cassandraConf.getMaxRequestPerConnectionLocal());
-        poolOps.setMaxRequestsPerConnection(HostDistance.REMOTE, cassandraConf.getMaxRequestPerConnectionRemote());
-        cluster.withPoolingOptions(poolOps);
-
-        return cluster.build();
+    protected CqlSessionBuilder getCqlSessionBuilder() {
+        return cqlSessionBuilder; // only available after make() call
     }
 }

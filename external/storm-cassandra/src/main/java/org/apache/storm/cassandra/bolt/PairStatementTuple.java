@@ -12,7 +12,7 @@
 
 package org.apache.storm.cassandra.bolt;
 
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import org.apache.storm.tuple.Tuple;
 
 /**
