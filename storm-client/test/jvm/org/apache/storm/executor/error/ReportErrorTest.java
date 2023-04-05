@@ -23,6 +23,7 @@ import org.apache.storm.utils.Time.SimulatedTime;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.eq;
@@ -43,7 +44,7 @@ public class ReportErrorTest {
 
         IStormClusterState state = mock(IStormClusterState.class);
         doAnswer((invocation) -> errorCount.incrementAndGet())
-            .when(state).reportError(eq(topo), eq(comp), any(String.class), eq(port), any(Throwable.class));
+            .when(state).reportError(eq(topo), eq(comp), anyString(), eq(port), any(Throwable.class));
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_ERROR_THROTTLE_INTERVAL_SECS, 10);
         conf.put(Config.TOPOLOGY_MAX_ERROR_REPORT_PER_INTERVAL, 4);

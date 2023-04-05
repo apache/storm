@@ -80,7 +80,7 @@ public class RedisKeyValueStateTest {
                    return hget(mockMap, (byte[]) args[0], (byte[]) args[1]);
                });
 
-        Mockito.when(mockCommands.hdel(Mockito.any(byte[].class), Mockito.<byte[]>anyVararg()))
+        Mockito.when(mockCommands.hdel(Mockito.any(byte[].class), Mockito.<byte[]>any()))
                .thenAnswer((Answer<Long>) invocation -> {
                    Object[] args = invocation.getArguments();
                    int argsSize = args.length;

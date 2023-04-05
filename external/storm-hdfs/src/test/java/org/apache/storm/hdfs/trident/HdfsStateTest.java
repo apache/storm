@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -76,7 +76,7 @@ public class HdfsStateTest {
 
     private List<TridentTuple> createMockTridentTuples(int count) {
         TridentTuple tuple = mock(TridentTuple.class);
-        when(tuple.getValueByField(any(String.class))).thenReturn("data");
+        when(tuple.getValueByField(anyString())).thenReturn("data");
         List<TridentTuple> tuples = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             tuples.add(tuple);

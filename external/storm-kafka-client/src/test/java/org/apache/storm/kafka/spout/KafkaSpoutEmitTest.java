@@ -19,7 +19,6 @@ import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutC
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -50,17 +49,8 @@ import org.apache.storm.utils.Time.SimulatedTime;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
-import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyObject;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 
-import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
-import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -190,7 +180,7 @@ public class KafkaSpoutEmitTest {
             
             spout.nextTuple();
             
-            verify(collectorMock, times(1)).emit(anyObject(), anyObject(), anyObject());
+            verify(collectorMock, times(1)).emit(anyString(), anyList(), any());
             
             InOrder inOrder = inOrder(consumerMock);
             inOrder.verify(consumerMock).seek(partition, failedMessageIdPartitionOne.get().offset());
@@ -205,7 +195,7 @@ public class KafkaSpoutEmitTest {
             //Now also check that no more tuples are polled for, since both partitions are at their limits
             spout.nextTuple();
 
-            verify(collectorMock, never()).emit(anyObject(), anyObject(), anyObject());
+            verify(collectorMock, never()).emit(anyString(), anyList(), any());
         }
     }
 
