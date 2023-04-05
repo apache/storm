@@ -25,6 +25,8 @@ import org.apache.cassandra.service.CassandraDaemon;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -46,14 +48,17 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  */
 
 public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCallback {
+    private static final Logger LOG = LoggerFactory.getLogger(EmbeddedCassandraResource.class);
     private final String host;
     private final Integer nativeTransportPort;
     CassandraDaemon cassandraDaemon;
 
     public EmbeddedCassandraResource() {
         try {
+            DatabaseDescriptor.daemonInitialization();
             prepare();
             cassandraDaemon = new CassandraDaemon();
+            cassandraDaemon.completeSetup();
             cassandraDaemon.activate();
             host = DatabaseDescriptor.getRpcAddress().getHostName();
             nativeTransportPort = DatabaseDescriptor.getNativeTransportPort();
@@ -64,7 +69,8 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
 
     @Override
     public void beforeAll(ExtensionContext arg0) {
-        cassandraDaemon.start();
+
+        // cassandraDaemon.start();
     }
 
     @Override
@@ -119,7 +125,13 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
      */
     public void makeDirsIfNotExist() throws IOException {
         for (String s : getDataDirs()) {
-            mkdir(s);
+            File dir = new File(s);
+            if (dir.exists()) {
+                LOG.info("Skipping existing directory {}", dir.getCanonicalPath());
+            } else {
+                LOG.info("Creating missing directory {}", dir.getCanonicalPath());
+                mkdir(s);
+            }
         }
     }
 
@@ -129,16 +141,22 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
      * @return
      */
     private Set<String> getDataDirs() {
-        Set<String> dirs = new HashSet<String>();
+        Set<String> dirs = new HashSet<>();
         try {
-            for (String s : DatabaseDescriptor.getAllDataFileLocations()) {
-                dirs.add(s);
+            if (DatabaseDescriptor.getAllDataFileLocations() != null) {
+                for (String s : DatabaseDescriptor.getAllDataFileLocations()) {
+                    if (s != null) {
+                        dirs.add(s);
+                    }
+                }
             }
-            dirs.add(DatabaseDescriptor.getCommitLogLocation());
-            dirs.add(DatabaseDescriptor.getSavedCachesLocation());
         } catch (Throwable ex) {
+            LOG.error("Cannot extract all DatabaseDescriptor.getAllDataFileLocations()", ex);
             ex.printStackTrace();
         }
+        dirs.add(DatabaseDescriptor.getHintsDirectory().absolutePath());
+        dirs.add(DatabaseDescriptor.getCommitLogLocation());
+        dirs.add(DatabaseDescriptor.getSavedCachesLocation());
         return dirs;
     }
 

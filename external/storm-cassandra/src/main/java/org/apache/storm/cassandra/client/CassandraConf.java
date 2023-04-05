@@ -14,7 +14,6 @@ package org.apache.storm.cassandra.client;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
-import com.google.common.base.Objects;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -296,24 +295,25 @@ public class CassandraConf implements Serializable {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                      .add("username", username)
-                      .add("password", password)
-                      .add("keyspace", keyspace)
-                      .add("nodes", nodes)
-                      .add("port", port)
-                      .add("consistencyLevel", consistencyLevel)
-                      .add("batchSizeRows", batchSizeRows)
-                      .add("retryPolicyName", retryPolicyName)
-                      .add("reconnectionPolicyBaseMs", reconnectionPolicyBaseMs)
-                      .add("reconnectionPolicyMaxMs", reconnectionPolicyMaxMs)
-                      .add("poolMaxQueueSize", poolMaxQueueSize)
-                      .add("datacenterName", datacenterName)
-                      .add("maxRequestPerConnectionLocal", maxRequestPerConnectionLocal)
-                      .add("maxRequestPerConnectionRemote", maxRequestPerConnectionRemote)
-                      .add("heartbeatIntervalSeconds", heartbeatIntervalSeconds)
-                      .add("idleTimeoutSeconds", idleTimeoutSeconds)
-                      .add("socketReadTimeoutMillis", socketReadTimeoutMillis)
-                      .toString();
+        return java.util.Objects.toString(this).toString();
+        //return Objects.toStringHelper(this)
+        //              .add("username", username)
+        //              .add("password", password)
+        //              .add("keyspace", keyspace)
+        //              .add("nodes", nodes)
+        //              .add("port", port)
+        //              .add("consistencyLevel", consistencyLevel)
+        //              .add("batchSizeRows", batchSizeRows)
+        //              .add("retryPolicyName", retryPolicyName)
+        //              .add("reconnectionPolicyBaseMs", reconnectionPolicyBaseMs)
+        //              .add("reconnectionPolicyMaxMs", reconnectionPolicyMaxMs)
+        //              .add("poolMaxQueueSize", poolMaxQueueSize)
+        //              .add("datacenterName", datacenterName)
+        //              .add("maxRequestPerConnectionLocal", maxRequestPerConnectionLocal)
+        //              .add("maxRequestPerConnectionRemote", maxRequestPerConnectionRemote)
+        //              .add("heartbeatIntervalSeconds", heartbeatIntervalSeconds)
+        //              .add("idleTimeoutSeconds", idleTimeoutSeconds)
+        //              .add("socketReadTimeoutMillis", socketReadTimeoutMillis)
+        //              .toString();
     }
 }

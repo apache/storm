@@ -32,9 +32,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <org.slf4j.version>1.7.6</org.slf4j.version>
-        <guava.version>16.0.1</guava.version>
-        <commons-lang3.version>3.3</commons-lang3.version>
+        <org.slf4j.version>1.7.25</org.slf4j.version>
+        <commons-lang3.version>3.11</commons-lang3.version>
         <cassandra.version>4.1.1</cassandra.version>
         <cassandra.driver.core.version>4.15.0</cassandra.driver.core.version>
     </properties>
