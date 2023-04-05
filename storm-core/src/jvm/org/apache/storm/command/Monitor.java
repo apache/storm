@@ -13,7 +13,6 @@
 package org.apache.storm.command;
 
 import java.util.Map;
-import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.NimbusClient;
 
 public class Monitor {
@@ -47,11 +46,6 @@ public class Monitor {
             monitor.setTopology(topologyName);
         }
 
-        NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
-            @Override
-            public void run(Nimbus.Iface nimbus) throws Exception {
-                monitor.metrics(nimbus);
-            }
-        });
+        NimbusClient.withConfiguredClient(nimbus -> monitor.metrics(nimbus));
     }
 }
