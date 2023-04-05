@@ -10,6 +10,7 @@ List of third-party dependencies grouped by their license type.
     Apache-2.0
 
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
+        * config (com.typesafe:config:1.4.1 - https://github.com/lightbend/config)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
 
     Apache License
@@ -31,6 +32,7 @@ List of third-party dependencies grouped by their license type.
         * Aether :: Utilities (org.sonatype.aether:aether-util:1.7 - http://aether.sonatype.org/aether-util/)
         * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
         * aircompressor (io.airlift:aircompressor:0.8 - http://github.com/airlift/aircompressor)
+        * An implementation of the Apache Cassandra® native protocol (com.datastax.oss:native-protocol:1.5.1 - https://github.com/datastax/native-protocol)
         * Annotation 1.0 (org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-annotation_1.0_spec)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.0.5 - http://metrics.dropwizard.io/metrics-annotation)
         * An open source Java toolkit for Amazon S3 (net.java.dev.jets3t:jets3t:0.9.0 - http://www.jets3t.org)
@@ -50,6 +52,7 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons CSV (org.apache.commons:commons-csv:1.4 - http://commons.apache.org/proper/commons-csv/)
         * Apache Commons Exec (org.apache.commons:commons-exec:1.3 - http://commons.apache.org/proper/commons-exec/)
         * Apache Commons IO (commons-io:commons-io:2.11.0 - https://commons.apache.org/proper/commons-io/)
+        * Apache Commons Lang (org.apache.commons:commons-lang3:3.11 - https://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.2 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.3 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.4 - http://commons.apache.org/proper/commons-lang/)
@@ -240,8 +243,9 @@ List of third-party dependencies grouped by their license type.
         * DataNucleus Core (org.datanucleus:datanucleus-core:4.1.17 - http://www.datanucleus.org/#/datanucleus-core)
         * DataNucleus JDO API plugin (org.datanucleus:datanucleus-api-jdo:4.2.4 - http://www.datanucleus.org/#/datanucleus-api-jdo)
         * DataNucleus RDBMS plugin (org.datanucleus:datanucleus-rdbms:4.1.19 - http://www.datanucleus.org/#/datanucleus-rdbms)
-        * DataStax Java Driver for Apache Cassandra - Core (com.datastax.cassandra:cassandra-driver-core:3.1.2 - https://github.com/datastax/java-driver)
-        * DataStax Java Driver for Apache Cassandra - Object Mapping (com.datastax.cassandra:cassandra-driver-mapping:3.1.2 - https://github.com/datastax/java-driver)
+        * DataStax Java driver for Apache Cassandra(R) - core (com.datastax.oss:java-driver-core:4.15.0 - https://github.com/datastax/java-driver/java-driver-core)
+        * DataStax Java driver for Apache Cassandra(R) - object mapper runtime (com.datastax.oss:java-driver-mapper-runtime:4.15.0 - https://github.com/datastax/java-driver/java-driver-mapper-runtime)
+        * DataStax Java driver for Apache Cassandra(R) - query builder (com.datastax.oss:java-driver-query-builder:4.15.0 - https://github.com/datastax/java-driver/java-driver-query-builder)
         * Digester (commons-digester:commons-digester:1.8 - http://jakarta.apache.org/commons/digester/)
         * Disruptor Framework (com.lmax:disruptor:3.3.6 - http://lmax-exchange.github.com/disruptor)
         * Dropwizard (io.dropwizard:dropwizard-core:1.3.19 - http://www.dropwizard.io/1.3.19/dropwizard-core)
@@ -267,6 +271,7 @@ List of third-party dependencies grouped by their license type.
         * fastjson (com.alibaba:fastjson:1.2.29 - https://github.com/alibaba/fastjson)
         * fastutil (it.unimi.dsi:fastutil:6.5.6 - http://fasutil.dsi.unimi.it/)
         * Findbugs Annotations under Apache License (com.github.stephenc.findbugs:findbugs-annotations:1.3.9-1 - http://stephenc.github.com/findbugs-annotations)
+        * FindBugs-jsr305 (com.google.code.findbugs:jsr305:2.0.2 - http://findbugs.sourceforge.net/)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.1 - http://findbugs.sourceforge.net/)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * fst (de.ruedigermoeller:fst:2.50 - http://ruedigermoeller.github.io/fast-serialization/)
@@ -319,6 +324,7 @@ List of third-party dependencies grouped by their license type.
         * J2EE Management 1.1 (org.apache.geronimo.specs:geronimo-j2ee-management_1.1_spec:1.0.1 - http://geronimo.apache.org/specs/geronimo-j2ee-management_1.1_spec)
         * j2html (com.j2html:j2html:1.0.0 - http://j2html.com)
         * J2ObjC Annotations (com.google.j2objc:j2objc-annotations:1.1 - https://github.com/google/j2objc/)
+        * J2ObjC Annotations (com.google.j2objc:j2objc-annotations:1.3 - https://github.com/google/j2objc/)
         * Jackson (org.codehaus.jackson:jackson-core-asl:1.9.13 - http://jackson.codehaus.org)
         * Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.10.5 - http://github.com/FasterXML/jackson)
         * Jackson-core (com.fasterxml.jackson.core:jackson-core:2.10.5 - https://github.com/FasterXML/jackson-core)
@@ -355,10 +361,11 @@ List of third-party dependencies grouped by their license type.
         * JDO API (org.datanucleus:javax.jdo:3.2.0-m3 - http://www.datanucleus.org/#/javax.jdo)
         * Jettison (org.codehaus.jettison:jettison:1.1 - no url defined)
         * Jetty SSLEngine (org.mortbay.jetty:jetty-sslengine:6.1.26 - http://jetty.mortbay.org)
-        * jffi (com.github.jnr:jffi:1.2.10 - http://github.com/jnr/jffi)
+        * jffi (com.github.jnr:jffi:1.3.9 - http://github.com/jnr/jffi)
         * JMS 1.1 (org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-jms_1.1_spec)
-        * jnr-constants (com.github.jnr:jnr-constants:0.9.0 - http://github.com/jnr/jnr-constants)
-        * jnr-ffi (com.github.jnr:jnr-ffi:2.0.7 - http://github.com/jnr/jnr-ffi)
+        * jnr-a64asm (com.github.jnr:jnr-a64asm:1.0.0 - http://nexus.sonatype.org/oss-repository-hosting.html/jnr-a64asm)
+        * jnr-constants (com.github.jnr:jnr-constants:0.10.3 - http://github.com/jnr/jnr-constants)
+        * jnr-ffi (com.github.jnr:jnr-ffi:2.2.11 - http://github.com/jnr/jnr-ffi)
         * Joda-Time (joda-time:joda-time:2.3 - http://www.joda.org/joda-time/)
         * jOOL (org.jooq:jool:0.9.12 - http://nexus.sonatype.org/oss-repository-hosting.html/jool)
         * JPam (net.sf.jpam:jpam:1.1 - http://jpam.sf.net)
@@ -463,6 +470,7 @@ List of third-party dependencies grouped by their license type.
         * rocketmq-client 4.2.0 (org.apache.rocketmq:rocketmq-client:4.2.0 - http://rocketmq.apache.org/rocketmq-client/)
         * rocketmq-common 4.2.0 (org.apache.rocketmq:rocketmq-common:4.2.0 - http://rocketmq.apache.org/rocketmq-common/)
         * rocketmq-remoting 4.2.0 (org.apache.rocketmq:rocketmq-remoting:4.2.0 - http://rocketmq.apache.org/rocketmq-remoting/)
+        * Shaded Guava artifact for use in the DataStax Java driver for Apache Cassandra® (com.datastax.oss:java-driver-shaded-guava:25.1-jre-graal-sub-1 - https://github.com/datastax/java-driver-shaded-guava)
         * sigar (org.fusesource:sigar:1.6.4 - http://fusesource.com/sigar/)
         * Sisu - Guice (org.sonatype.sisu:sisu-guice:2.1.7 - http://forge.sonatype.com/sisu-guice/)
         * Sisu - Inject (JSR330 bean support) (org.sonatype.sisu:sisu-inject-bean:1.4.2 - http://sisu.sonatype.org/sisu-inject/guice-bean/sisu-inject-bean/)
@@ -562,6 +570,14 @@ List of third-party dependencies grouped by their license type.
 
         * HdrHistogram (org.hdrhistogram:HdrHistogram:2.1.10 - http://hdrhistogram.github.io/HdrHistogram/)
 
+    BSD-3-Clause
+
+        * asm (org.ow2.asm:asm:9.1 - http://asm.ow2.io/)
+        * asm-analysis (org.ow2.asm:asm-analysis:9.2 - http://asm.ow2.io/)
+        * asm-commons (org.ow2.asm:asm-commons:9.2 - http://asm.ow2.io/)
+        * asm-tree (org.ow2.asm:asm-tree:9.2 - http://asm.ow2.io/)
+        * asm-util (org.ow2.asm:asm-util:9.2 - http://asm.ow2.io/)
+
     BSD 3-Clause License
 
         * ASM Commons (asm:asm-commons:3.1 - http://asm.objectweb.org/asm-commons/)
@@ -586,16 +602,11 @@ List of third-party dependencies grouped by their license type.
 
     BSD License
 
-        * ASM Analysis (org.ow2.asm:asm-analysis:5.0.3 - http://asm.objectweb.org/asm-analysis/)
         * ASM Analysis (org.ow2.asm:asm-analysis:6.0_BETA - http://asm.objectweb.org/asm-analysis/)
-        * ASM Commons (org.ow2.asm:asm-commons:5.0.3 - http://asm.objectweb.org/asm-commons/)
         * ASM Commons (org.ow2.asm:asm-commons:6.0 - http://asm.objectweb.org/asm-commons/)
-        * ASM Core (org.ow2.asm:asm:5.0.3 - http://asm.objectweb.org/asm/)
         * ASM Core (org.ow2.asm:asm:5.0.4 - http://asm.objectweb.org/asm/)
         * ASM Core (org.ow2.asm:asm:6.0 - http://asm.objectweb.org/asm/)
-        * ASM Tree (org.ow2.asm:asm-tree:5.0.3 - http://asm.objectweb.org/asm-tree/)
         * ASM Tree (org.ow2.asm:asm-tree:6.0 - http://asm.objectweb.org/asm-tree/)
-        * ASM Util (org.ow2.asm:asm-util:5.0.3 - http://asm.objectweb.org/asm-util/)
         * ASM Util (org.ow2.asm:asm-util:6.0_BETA - http://asm.objectweb.org/asm-util/)
         * Javolution (javolution:javolution:5.5.1 - http://javolution.org)
         * JLine (jline:jline:0.9.94 - http://jline.sourceforge.net)
@@ -603,6 +614,10 @@ List of third-party dependencies grouped by their license type.
         * ParaNamer Core (com.thoughtworks.paranamer:paranamer:2.7 - http://paranamer.codehaus.org/paranamer)
         * Stax2 API (org.codehaus.woodstox:stax2-api:3.1.4 - http://wiki.fasterxml.com/WoodstoxStax2)
         * xmlenc Library (xmlenc:xmlenc:0.52 - http://xmlenc.sourceforge.net)
+
+    CC0
+
+        * reactive-streams (org.reactivestreams:reactive-streams:1.0.3 - http://www.reactive-streams.org/)
 
     CC0 1.0 Universal
 
@@ -642,10 +657,6 @@ List of third-party dependencies grouped by their license type.
         * jersey-guice (com.sun.jersey.contribs:jersey-guice:1.9 - https://jersey.java.net/jersey-contribs/jersey-guice/)
         * jersey-json (com.sun.jersey:jersey-json:1.9 - https://jersey.java.net/jersey-json/)
         * jersey-server (com.sun.jersey:jersey-server:1.9 - https://jersey.java.net/jersey-server/)
-
-    Common Public License Version 1.0, GNU General Public License Version 2, GNU Lesser General Public License (LGPL), Version 2.1
-
-        * jnr-posix (com.github.jnr:jnr-posix:3.0.27 - http://nexus.sonatype.org/oss-repository-hosting.html/jnr-posix)
 
     Eclipse Distribution License, Version 1.0
 
@@ -692,9 +703,17 @@ List of third-party dependencies grouped by their license type.
 
         * jms (jakarta.jms:jakarta.jms-api:2.0.2 - https://projects.eclipse.org/projects/ee4j.jms)
 
+    Eclipse Public License - v 2.0, GNU General Public License Version 2, GNU Lesser General Public License (LGPL), Version 2.1
+
+        * jnr-posix (com.github.jnr:jnr-posix:3.1.15 - http://nexus.sonatype.org/oss-repository-hosting.html/jnr-posix)
+
     GNU General Public License (GPL), version 2, with the Classpath exception
 
         * Java Object Layout: Core (org.openjdk.jol:jol-core:0.2 - http://maven.apache.org)
+
+    GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1
+
+        * SpotBugs Annotations (com.github.spotbugs:spotbugs-annotations:3.1.12 - https://spotbugs.github.io/)
 
     MIT License
 
@@ -711,8 +730,8 @@ List of third-party dependencies grouped by their license type.
         * Joni (org.jruby.joni:joni:2.1.11 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.26 - http://www.slf4j.org)
         * Microsoft JDBC Driver for SQL Server (com.microsoft.sqlserver:mssql-jdbc:6.2.1.jre7 - https://github.com/Microsoft/mssql-jdbc)
+        * SLF4J API Module (org.slf4j:slf4j-api:1.7.25 - http://www.slf4j.org)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.36 - http://www.slf4j.org)
-        * SLF4J API Module (org.slf4j:slf4j-api:1.7.6 - http://www.slf4j.org)
         * SLF4J Reload4j Binding (org.slf4j:slf4j-reload4j:1.7.36 - http://reload4j.qos.ch)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
 
