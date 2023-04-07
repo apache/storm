@@ -51,17 +51,17 @@ public class StringMetadataCache implements LruMap.CacheEvictionCallback<String,
     }
 
     /**
-     * Initializes the cache instance.
+     * Initializes the cache instance. Should be called only once in the JVM, subsequent calls
+     * will be ignored unless preceded by {@link #init(RocksDbMetricsWriter, int)}.
      *
      * @param dbWriter   the RocksDB writer instance to handle writing evicted cache data
      * @param capacity   the number of StringMetadata instances to hold in memory
-     * @throws MetricException   if creating multiple cache instances
      */
-    static void init(RocksDbMetricsWriter dbWriter, int capacity) throws MetricException {
+    static void init(RocksDbMetricsWriter dbWriter, int capacity) {
         if (instance == null) {
             instance = new StringMetadataCache(dbWriter, capacity);
         } else {
-            throw new MetricException("StringMetadataCache already created");
+            LOG.error("Ignoring call to init() since StringMetadataCache already created");
         }
     }
 
