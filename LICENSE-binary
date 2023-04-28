@@ -936,7 +936,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * JAX-RS provider for JSON content type (org.codehaus.jackson:jackson-jaxrs:1.9.13 - http://jackson.codehaus.org)
         * Xml Compatibility extensions for Jackson (org.codehaus.jackson:jackson-xc:1.9.13 - http://jackson.codehaus.org)
         * Javassist (org.javassist:javassist:3.24.1-GA - http://www.javassist.org/)
-        * RocksDB JNI (org.rocksdb:rocksdbjni:6.27.3 - https://rocksdb.org)
+        * RocksDB JNI (org.rocksdb:rocksdbjni:8.1.1 - https://rocksdb.org)
         * JCTools Core (org.jctools:jctools-core:2.0.1 - http://jctools.github.io/JCTools/)
         * Bean Validation API (javax.validation:validation-api:2.0.1.Final - http://beanvalidation.org)
         * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
