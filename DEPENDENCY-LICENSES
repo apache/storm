@@ -14,6 +14,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License
 
+        * carbonite (org.clojars.bipinprasad:carbonite:1.6.0 - https://github.com/bipinprasad/carbonite)
         * HttpClient (commons-httpclient:commons-httpclient:3.1 - http://jakarta.apache.org/httpcomponents/httpclient-3.x/)
         * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.36 - http://www.slf4j.org)
 
@@ -215,9 +216,8 @@ List of third-party dependencies grouped by their license type.
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:2.3.5 - https://github.com/ben-manes/caffeine)
         * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
         * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.14.0 - https://calcite.apache.org/calcite-linq4j)
-        * carbonite (com.twitter:carbonite:1.5.0 - no url defined)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
-        * chill-java (com.twitter:chill-java:0.8.0 - https://github.com/twitter/chill)
+        * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.3.1 - http://github.com/cowtowncoder/java-classmate)
         * CloudWatch Metrics for AWS Java SDK (com.amazonaws:aws-java-sdk-cloudwatchmetrics:1.10.77 - https://aws.amazon.com/sdkforjava)
         * Codec (commons-codec:commons-codec:1.3 - http://jakarta.apache.org/commons/codec/)

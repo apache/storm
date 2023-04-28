@@ -56,8 +56,9 @@
             <version>${kryo.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.twitter</groupId>
+            <groupId>org.clojars.bipinprasad</groupId>
             <artifactId>carbonite</artifactId>
+            <version>${carbonite.version}</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
