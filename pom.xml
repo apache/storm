@@ -361,7 +361,7 @@
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jaxb-version>2.3.0</jaxb-version>
         <activation-version>1.1.1</activation-version>
-        <rocksdb-version>6.27.3</rocksdb-version>
+        <rocksdb-version>8.1.1</rocksdb-version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
