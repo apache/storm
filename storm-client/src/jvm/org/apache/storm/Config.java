@@ -859,9 +859,11 @@ public class Config extends HashMap<String, Object> {
     @IsString
     public static final String STORM_DO_AS_USER = "storm.doAsUser";
     /**
-     * The number of machines that should be used by this topology to isolate it from all others. Set storm.scheduler to
-     * org.apache.storm.scheduler.multitenant.MultitenantScheduler
-     */
+     * The number of machines that should be used by this topology to isolate it from all others.
+     * Set storm.scheduler to {@link org.apache.storm.scheduler.multitenant.MultitenantScheduler}
+     * Alternatively set storm.scheduler to {@link org.apache.storm.scheduler.resource.ResourceAwareScheduler}
+     * using {@link #TOPOLOGY_SCHEDULER_STRATEGY} set to
+     * {@link org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy}     */
     @IsInteger
     @IsPositiveNumber
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";
