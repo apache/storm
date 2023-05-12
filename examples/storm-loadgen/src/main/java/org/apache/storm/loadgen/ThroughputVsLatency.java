@@ -261,7 +261,6 @@ public class ThroughputVsLatency {
         }
         conf.put(Config.TOPOLOGY_WORKER_METRICS, workerMetrics);
         conf.put(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 10);
-        conf.put(Config.TOPOLOGY_WORKER_CHILDOPTS, "-Xmx2g");
 
         TopologyBuilder builder = new TopologyBuilder();
 
