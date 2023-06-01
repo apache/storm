@@ -75,7 +75,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
             options.useCappedPrefixExtractor(RocksDbKey.KEY_SIZE);
 
             String path = getRocksDbAbsoluteDir(config);
-            LOG.info("Opening RocksDB from {}", path);
+            LOG.info("Opening RocksDB from {}, {}={}", path, DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING, createIfMissing);
             db = RocksDB.open(options, path);
         } catch (RocksDBException e) {
             String message = "Error opening RockDB database";

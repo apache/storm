@@ -300,7 +300,7 @@
         <json-simple.version>1.1</json-simple.version>
         <jetty.version>9.4.45.v20220203</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
-        <carbonite.version>1.5.0</carbonite.version>
+        <carbonite.version>1.6.0</carbonite.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <httpclient.version>4.5.13</httpclient.version>
         <jctools.version>2.0.1</jctools.version>
@@ -361,7 +361,7 @@
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jaxb-version>2.3.0</jaxb-version>
         <activation-version>1.1.1</activation-version>
-        <rocksdb-version>6.27.3</rocksdb-version>
+        <rocksdb-version>8.1.1</rocksdb-version>
         <json-smart.version>2.3</json-smart.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
@@ -907,7 +907,7 @@
                 <version>${clojure.tools.logging.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.twitter</groupId>
+                <groupId>org.clojars.bipinprasad</groupId>
                 <artifactId>carbonite</artifactId>
                 <version>${carbonite.version}</version>
             </dependency>

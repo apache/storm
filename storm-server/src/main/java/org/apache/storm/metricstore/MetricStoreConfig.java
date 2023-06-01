@@ -27,13 +27,19 @@ public class MetricStoreConfig {
      */
     public static MetricStore configure(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) throws MetricException {
 
+        String storeClass = "None";
         try {
-            String storeClass = (String) conf.get(DaemonConfig.STORM_METRIC_STORE_CLASS);
+            storeClass = (String) conf.get(DaemonConfig.STORM_METRIC_STORE_CLASS);
             MetricStore store = (MetricStore) (Class.forName(storeClass)).newInstance();
             store.prepare(conf, metricsRegistry);
             return store;
         } catch (Exception e) {
-            throw new MetricException("Failed to create metric store", e);
+            String rocksdbSpecificMsg = "";
+            if (storeClass.contains("rocksdb")
+                && System.getenv("ROCKSDB_SHAREDLIB_DIR") == null) {
+                rocksdbSpecificMsg = ", missing env var ROCKSDB_SHAREDLIB_DIR required to load JNI library in org.rocksdb.RocksDB class";
+            }
+            throw new MetricException("Failed to create metric store using store class " + storeClass + rocksdbSpecificMsg, e);
         }
     }
 
