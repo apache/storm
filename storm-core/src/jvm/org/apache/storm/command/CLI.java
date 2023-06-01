@@ -28,7 +28,7 @@ public class CLI {
     /**
      * Parse function to return an Integer.
      */
-    public static final Parse AS_INT = value -> Integer.valueOf(value);
+    public static final Parse AS_INT = Integer::valueOf;
 
     /**
      * Noop parse function, returns the String.

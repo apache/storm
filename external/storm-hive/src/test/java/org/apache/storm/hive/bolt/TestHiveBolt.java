@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 public class TestHiveBolt {
     final static String dbName = "testdb";
@@ -311,7 +311,7 @@ public class TestHiveBolt {
         Tuple tuple2 = generateTestTuple(2, "SFO", "San Jose", "CA");
 
         bolt.execute(tuple1);
-        verifyZeroInteractions(collector);
+        verifyNoInteractions(collector);
 
         bolt.execute(tuple2);
         verify(collector).ack(tuple1);
@@ -389,7 +389,7 @@ public class TestHiveBolt {
         //The tick should NOT cause any acks since the batch was empty except for acking itself
         Tuple mockTick = MockTupleHelpers.mockTickTuple();
         bolt.execute(mockTick);
-        verifyZeroInteractions(collector);
+        verifyNoInteractions(collector);
 
         bolt.cleanup();
     }

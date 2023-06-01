@@ -20,7 +20,7 @@ set -x
 
 STORM_SRC_ROOT_DIR=$1
 
-TRAVIS_SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+THIS_SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 cd "${STORM_SRC_ROOT_DIR}" || (echo "Cannot cd to ${STORM_SRC_ROOT_DIR}"; exit 1)
 
@@ -50,8 +50,8 @@ then
 fi
 # We should be concerned that Travis CI could be very slow because it uses VM
 export STORM_TEST_TIMEOUT_MS=150000
-# Travis only has 3GB of memory, lets use 1GB for build, and 1.5GB for forked JVMs
-export MAVEN_OPTS="-Xmx1024m"
+# Github Action Runner only has 7GB of memory, lets use 1.5GB for build, with enough stack to run tests
+export MAVEN_OPTS="-Xmx1536m"
 
 mvn --batch-mode test -fae -Pnative,all-tests,examples,externals -Prat -pl "$TEST_MODULES"
 BUILD_RET_VAL=$?
@@ -59,7 +59,7 @@ BUILD_RET_VAL=$?
 for dir in $(find . -type d -and -wholename \*/target/\*-reports)
 do
   echo "Looking for errors in ${dir}"
-  python3 "${TRAVIS_SCRIPT_DIR}"/print-errors-from-test-reports.py "${dir}"
+  python3 "${THIS_SCRIPT_DIR}"/print-errors-from-test-reports.py "${dir}"
 done
 
 exit ${BUILD_RET_VAL}

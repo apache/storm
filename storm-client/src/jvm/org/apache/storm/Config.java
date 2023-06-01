@@ -1443,6 +1443,7 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_MESSAGING_TRANSPORT = "storm.messaging.transport";
     /**
      * Netty based messaging: Is authentication required for Netty messaging from client worker process to server worker process.
+     * See https://issues.apache.org/jira/browse/STORM-348 for more details
      */
     @IsBoolean
     public static final String STORM_MESSAGING_NETTY_AUTHENTICATION = "storm.messaging.netty.authentication";

@@ -645,6 +645,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Apache License
 
+        * carbonite (org.clojars.bipinprasad:carbonite:1.6.0 - https://github.com/bipinprasad/carbonite)
         * HttpClient (commons-httpclient:commons-httpclient:3.1 - http://jakarta.apache.org/httpcomponents/httpclient-3.x/)
 
     Apache License, Version 2.0
@@ -692,7 +693,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Commons Crypto (org.apache.commons:commons-crypto:1.0.0 - http://commons.apache.org/proper/commons-crypto/)
         * Apache Commons CSV (org.apache.commons:commons-csv:1.4 - http://commons.apache.org/proper/commons-csv/)
         * Apache Commons Exec (org.apache.commons:commons-exec:1.3 - http://commons.apache.org/proper/commons-exec/)
-        * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.3.3 - http://commons.apache.org/proper/commons-fileupload/)
+        * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * Apache Commons IO (commons-io:commons-io:2.11.0 - http://commons.apache.org/proper/commons-io/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.2 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.6 - http://commons.apache.org/proper/commons-lang/)
@@ -773,8 +774,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * BoneCP :: Core Library (com.jolbox:bonecp:0.8.0.RELEASE - http://jolbox.com/bonecp)
         * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
         * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.14.0 - https://calcite.apache.org/calcite-linq4j)
-        * carbonite (com.twitter:carbonite:1.5.0 - no url defined)
-        * chill-java (com.twitter:chill-java:0.8.0 - https://github.com/twitter/chill)
+        * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.3.1 - http://github.com/cowtowncoder/java-classmate)
         * com.papertrail:profiler (com.papertrail:profiler:1.0.2 - https://github.com/papertrail/profiler)
         * Commons Configuration (commons-configuration:commons-configuration:1.6 - http://commons.apache.org/${pom.artifactId.substring(8)}/)
@@ -936,7 +936,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * JAX-RS provider for JSON content type (org.codehaus.jackson:jackson-jaxrs:1.9.13 - http://jackson.codehaus.org)
         * Xml Compatibility extensions for Jackson (org.codehaus.jackson:jackson-xc:1.9.13 - http://jackson.codehaus.org)
         * Javassist (org.javassist:javassist:3.24.1-GA - http://www.javassist.org/)
-        * RocksDB JNI (org.rocksdb:rocksdbjni:6.29.5 - https://rocksdb.org)
+        * RocksDB JNI (org.rocksdb:rocksdbjni:8.1.1 - https://rocksdb.org)
         * JCTools Core (org.jctools:jctools-core:2.0.1 - http://jctools.github.io/JCTools/)
         * Bean Validation API (javax.validation:validation-api:2.0.1.Final - http://beanvalidation.org)
         * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:2.29 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)

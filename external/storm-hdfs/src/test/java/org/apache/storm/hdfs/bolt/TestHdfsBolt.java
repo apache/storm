@@ -55,7 +55,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -135,7 +135,7 @@ public class TestHdfsBolt {
         bolt.prepare(new Config(), topologyContext, collector);
         bolt.execute(tuple1);
 
-        verifyZeroInteractions(collector);
+        verifyNoInteractions(collector);
 
         bolt.execute(tuple2);
         verify(collector).ack(tuple1);

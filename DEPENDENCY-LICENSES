@@ -10,10 +10,12 @@ List of third-party dependencies grouped by their license type.
 
     Apache-2.0
 
+        * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
 
     Apache License
 
+        * carbonite (org.clojars.bipinprasad:carbonite:1.6.0 - https://github.com/bipinprasad/carbonite)
         * HttpClient (commons-httpclient:commons-httpclient:3.1 - http://jakarta.apache.org/httpcomponents/httpclient-3.x/)
         * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.36 - http://www.slf4j.org)
 
@@ -49,7 +51,6 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Crypto (org.apache.commons:commons-crypto:1.0.0 - http://commons.apache.org/proper/commons-crypto/)
         * Apache Commons CSV (org.apache.commons:commons-csv:1.4 - http://commons.apache.org/proper/commons-csv/)
         * Apache Commons Exec (org.apache.commons:commons-exec:1.3 - http://commons.apache.org/proper/commons-exec/)
-        * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.3.3 - http://commons.apache.org/proper/commons-fileupload/)
         * Apache Commons IO (commons-io:commons-io:2.11.0 - https://commons.apache.org/proper/commons-io/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.2 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.3 - http://commons.apache.org/proper/commons-lang/)
@@ -216,9 +217,8 @@ List of third-party dependencies grouped by their license type.
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:2.3.5 - https://github.com/ben-manes/caffeine)
         * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
         * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.14.0 - https://calcite.apache.org/calcite-linq4j)
-        * carbonite (com.twitter:carbonite:1.5.0 - no url defined)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
-        * chill-java (com.twitter:chill-java:0.8.0 - https://github.com/twitter/chill)
+        * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.3.1 - http://github.com/cowtowncoder/java-classmate)
         * CloudWatch Metrics for AWS Java SDK (com.amazonaws:aws-java-sdk-cloudwatchmetrics:1.10.77 - https://aws.amazon.com/sdkforjava)
         * Codec (commons-codec:commons-codec:1.3 - http://jakarta.apache.org/commons/codec/)
@@ -476,15 +476,15 @@ List of third-party dependencies grouped by their license type.
         * snappy-java (org.xerial.snappy:snappy-java:1.1.1.3 - https://github.comm/xerial/snappy-java)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.2.6 - https://github.com/xerial/snappy-java)
         * Spatial4J (com.spatial4j:spatial4j:0.5 - http://nexus.sonatype.org/oss-repository-hosting.html/spatial4j)
-        * Spring AOP (org.springframework:spring-aop:5.3.20 - https://github.com/spring-projects/spring-framework)
-        * Spring Beans (org.springframework:spring-beans:5.3.20 - https://github.com/spring-projects/spring-framework)
-        * Spring Commons Logging Bridge (org.springframework:spring-jcl:5.3.20 - https://github.com/spring-projects/spring-framework)
-        * Spring Context (org.springframework:spring-context:5.3.20 - https://github.com/spring-projects/spring-framework)
-        * Spring Core (org.springframework:spring-core:5.3.20 - https://github.com/spring-projects/spring-framework)
-        * Spring Expression Language (SpEL) (org.springframework:spring-expression:5.3.20 - https://github.com/spring-projects/spring-framework)
-        * Spring JMS (org.springframework:spring-jms:5.3.20 - https://github.com/spring-projects/spring-framework)
-        * Spring Messaging (org.springframework:spring-messaging:5.3.20 - https://github.com/spring-projects/spring-framework)
-        * Spring Transaction (org.springframework:spring-tx:5.3.20 - https://github.com/spring-projects/spring-framework)
+        * Spring AOP (org.springframework:spring-aop:5.3.26 - https://github.com/spring-projects/spring-framework)
+        * Spring Beans (org.springframework:spring-beans:5.3.26 - https://github.com/spring-projects/spring-framework)
+        * Spring Commons Logging Bridge (org.springframework:spring-jcl:5.3.26 - https://github.com/spring-projects/spring-framework)
+        * Spring Context (org.springframework:spring-context:5.3.26 - https://github.com/spring-projects/spring-framework)
+        * Spring Core (org.springframework:spring-core:5.3.26 - https://github.com/spring-projects/spring-framework)
+        * Spring Expression Language (SpEL) (org.springframework:spring-expression:5.3.26 - https://github.com/spring-projects/spring-framework)
+        * Spring JMS (org.springframework:spring-jms:5.3.26 - https://github.com/spring-projects/spring-framework)
+        * Spring Messaging (org.springframework:spring-messaging:5.3.26 - https://github.com/spring-projects/spring-framework)
+        * Spring Transaction (org.springframework:spring-tx:5.3.26 - https://github.com/spring-projects/spring-framework)
         * StAX API (stax:stax-api:1.0.1 - http://stax.codehaus.org/)
         * T-Digest (com.tdunning:t-digest:3.0 - https://github.com/tdunning/t-digest)
         * Tephra API (co.cask.tephra:tephra-api:0.6.0 - https://github.com/caskdata/tephra/tephra-api)
@@ -542,7 +542,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, GNU General Public License, version 2
 
-        * RocksDB JNI (org.rocksdb:rocksdbjni:6.29.5 - https://rocksdb.org)
+        * RocksDB JNI (org.rocksdb:rocksdbjni:8.1.1 - https://rocksdb.org)
 
     Apache License, Version 2.0, GNU Lesser General Public License (LGPL), Version 2.1
 
