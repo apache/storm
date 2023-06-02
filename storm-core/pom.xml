@@ -228,6 +228,21 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <!--
+            This jar is pulled in as a transitive dependency from
+            org.apache.hadoop:hadoop-auth
+                -> com.nimbusds:nimbus-jose-jwt
+                -> com.github.stephenc.jcip:jcip-annotations
+            But is being downloaded from http://conjars.org/repo which is no longer active,
+
+            Download this directly from maven repository and avoid long build timeouts due to multiple failed attempts
+            to download from conjars.org
+            -->
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>${json-smart.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
