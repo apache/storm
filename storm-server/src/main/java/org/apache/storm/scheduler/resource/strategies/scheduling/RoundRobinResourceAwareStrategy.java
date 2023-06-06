@@ -80,7 +80,7 @@ public class RoundRobinResourceAwareStrategy extends BaseResourceAwareStrategy {
      * For each component try to schedule executors in sequence on the nodes.
      *
      * @param orderedExecutors Executors sorted in the preferred order cannot be null
-     * @param sortedNodesIterable Node iterable which cannot be null, relies on behavior when {@link #isSortNodesForEachExecutor()} is false
+     * @param sortedNodesIterable Node iterable which cannot be null, relies on behavior when {@link #sortNodesForEachExecutor} is false
      * @return SchedulingResult with success attribute set to true or false indicting whether ALL executors were assigned. @{#}
      */
     @Override

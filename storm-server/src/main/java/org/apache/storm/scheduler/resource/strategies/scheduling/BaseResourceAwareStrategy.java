@@ -123,10 +123,6 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         this.nodeSortType = nodeSortType;
     }
 
-    public boolean isSortNodesForEachExecutor() {
-        return sortNodesForEachExecutor;
-    }
-
     @Override
     public void prepare(Map<String, Object> config) {
         this.config = config;
