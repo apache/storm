@@ -527,7 +527,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             if (execIndex == 0) {
                 break;
             } else {
-                searcherState.backtrack(execToComp, nodeForExec[execIndex - 1], workerSlotForExec[execIndex - 1]);
+                searcherState.backtrack(execToComp, nodeForExec, workerSlotForExec);
                 progressIdxForExec[execIndex] = -1;
             }
         }
