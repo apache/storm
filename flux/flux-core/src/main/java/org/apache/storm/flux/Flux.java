@@ -39,6 +39,7 @@ import org.apache.storm.flux.model.ExecutionContext;
 import org.apache.storm.flux.model.SpoutDef;
 import org.apache.storm.flux.model.StreamDef;
 import org.apache.storm.flux.model.TopologyDef;
+import org.apache.storm.flux.model.WorkerHookDef;
 import org.apache.storm.flux.parser.FluxParser;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
@@ -209,6 +210,11 @@ public class Flux {
             print("--------------- STREAMS ---------------");
             for (StreamDef sd : t.getStreams()) {
                 printf("%s --%s--> %s", sd.getFrom(), sd.getGrouping().getType(), sd.getTo());
+            }
+
+            print("--------------- WORKER HOOKS ---------------");
+            for (WorkerHookDef whd : t.getWorkerHooks()) {
+                printf("%s (%s)", whd.getId(), whd.getClassName());
             }
             print("--------------------------------------");
         }
