@@ -771,9 +771,9 @@ The `override` property controls how includes affect the values defined in the c
 **N.B.:** Includes are not yet recursive. Includes from included files will be ignored.
 
 ## Worker Hooks
-Flux allows you to attach topology component that can be executed when a worker starts, and when a worker shuts down. It can be useful when you want to execute operations before topology processing starts, or cleanup operations before your workers shut down, e.g. managing application context. Worker Hooks should be an implementation of [IWorkerHook]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/hooks/IWorkerHook.java). Otherwise, follow similar Bean definition semantics as [Components](##Components) for declaration within yaml file.
+Flux allows you to attach topology component that can be executed when a worker starts, and when a worker shuts down. It can be useful when you want to execute operations before topology processing starts, or cleanup operations before your workers shut down, e.g. managing application context. Worker Hooks should be an implementation of [IWorkerHook]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/hooks/IWorkerHook.java). Other than that, they follow similar Bean definition semantics as [Components](##Components) for declaration within yaml file.
 
-Worker Hooks are specified as a list of maps:
+Worker Hooks are specified as a map of bean definitions:
 
 ```yaml
 workerHooks:
