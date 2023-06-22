@@ -297,7 +297,7 @@ public class WorkerState {
     public CountDownLatch getIsWorkerActive() {
         return isWorkerActive;
     }
-    
+
     public AtomicBoolean getIsTopologyActive() {
         return isTopologyActive;
     }
@@ -654,9 +654,9 @@ public class WorkerState {
     }
 
     public void runWorkerStartHooks() {
-        WorkerTopologyContext workerContext = getWorkerTopologyContext();
+        WorkerUserContext workerUserContext = getWorkerUserContext();
         for (IWorkerHook hook : getDeserializedWorkerHooks()) {
-            hook.start(topologyConf, workerContext);
+            hook.start(topologyConf, workerUserContext);
         }
     }
 

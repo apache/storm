@@ -31,7 +31,7 @@ public interface IWorkerHook extends Serializable {
      * @deprecated see {@link IWorkerHook#start(Map, WorkerUserContext)}
      */
     default void start(Map<String, Object> topoConf, WorkerTopologyContext context) {
-
+        // NOOP
     }
 
     /**
