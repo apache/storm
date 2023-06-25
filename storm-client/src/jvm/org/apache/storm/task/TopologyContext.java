@@ -270,7 +270,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Sets the executor-level data for the given name. This data is shared amongst tasks and corresponding task hooks managed by the given executor.
+     * Sets the executor-level data for the given name. This data is shared amongst tasks and corresponding task hooks managed by the
+     * given executor.
      *
      * @param name  name of the executor-level data to be set
      * @param data  executor-level data
@@ -280,7 +281,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Fetches the executor-level data for the given name. This data is shared across tasks and corresponding task hook managed by the given executor.
+     * Fetches the executor-level data for the given name. This data is shared across tasks and corresponding task hook managed by the
+     * given executor.
      *
      * @param name  name of the executor-level data to be fetched
      * @return Associated executor-level data
