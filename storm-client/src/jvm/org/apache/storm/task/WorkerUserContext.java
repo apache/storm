@@ -41,6 +41,13 @@ public class WorkerUserContext extends WorkerTopologyContext {
                 workerTasks, defaultResources, userResources, taskToNodePort, assignmentId, nodeToHost);
     }
 
+    /**
+     * Sets the worker-level data for the given name. This data can then be read by all components running on the same worker,
+     * i.e. tasks (spouts, bolts), task hooks and worker hooks.
+     *
+     * @param name  name of the worker-level data to be set
+     * @param data  worker-level data
+     */
     public void setResource(String name, Object data) {
         userResources.put(name, data);
     }
