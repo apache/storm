@@ -247,7 +247,7 @@ public class BlobStoreAPIWordCountTopology {
     public static class SplitSentence extends ShellBolt implements IRichBolt {
 
         public SplitSentence() {
-            super("python", "splitsentence.py");
+            super("python3", "splitsentence.py");
         }
 
         @Override
