@@ -41,7 +41,7 @@ majversion=`$PYTHON -V 2>&1 | awk '{print $2}' | cut -d'.' -f1`
 minversion=`$PYTHON -V 2>&1 | awk '{print $2}' | cut -d'.' -f2`
 numversion=$(( 10 * $majversion + $minversion))
 if (( $numversion < 30 )); then
-  echo "Need python version > 3.0"
+  echo "Need Python version > 3.0"
   exit 1
 fi
 
