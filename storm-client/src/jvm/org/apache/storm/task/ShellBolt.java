@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * topology that use other languages. For example:
  *
  *
- * <p>```java public class MyBolt extends ShellBolt implements IRichBolt { public MyBolt() { super("python", "mybolt.py"); }
+ * <p>```java public class MyBolt extends ShellBolt implements IRichBolt { public MyBolt() { super("python3", "mybolt.py"); }
  *
  * <p>public void declareOutputFields(OutputFieldsDeclarer declarer) { declarer.declare(new Fields("field1", "field2")); } } ```
  */

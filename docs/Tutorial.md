@@ -251,7 +251,7 @@ Here's the definition of the `SplitSentence` bolt from `WordCountTopology`:
 ```java
 public static class SplitSentence extends ShellBolt implements IRichBolt {
     public SplitSentence() {
-        super("python", "splitsentence.py");
+        super("python3", "splitsentence.py");
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -260,7 +260,7 @@ public static class SplitSentence extends ShellBolt implements IRichBolt {
 }
 ```
 
-`SplitSentence` overrides `ShellBolt` and declares it as running using `python` with the arguments `splitsentence.py`. Here's the implementation of `splitsentence.py`:
+`SplitSentence` overrides `ShellBolt` and declares it as running using `python3` with the arguments `splitsentence.py`. Here's the implementation of `splitsentence.py`:
 
 ```python
 import storm
@@ -282,7 +282,7 @@ Earlier on in this tutorial, we skipped over a few aspects of how tuples are emi
 
 ## Trident
 
-Storm guarantees that every message will be played through the topology at least once. A common question asked is "how do you do things like counting on top of Storm? Won't you overcount?" Storm has a higher level API called Trudent that let you achieve exactly-once messaging semantics for most computations. Read more about Trident [here](Trident-tutorial.html). 
+Storm guarantees that every message will be played through the topology at least once. A common question asked is "how do you do things like counting on top of Storm? Won't you overcount?" Storm has a higher level API called Trident that let you achieve exactly-once messaging semantics for most computations. Read more about Trident [here](Trident-tutorial.html). 
 
 ## Distributed RPC
 
