@@ -23,7 +23,7 @@ If you get certificate error when running on Mac,
 (https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org)
 Go to Macintosh HD 
     > Applications 
-    > Python3.9 folder (or whatever version of python you're using) 
+    > Python3.9 folder (or whatever version of Python you're using) 
     > double click on "Install Certificates.command" file. 
     
 """

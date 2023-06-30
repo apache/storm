@@ -13,8 +13,7 @@ This page assumes that Apache Zookeeper, Apache Storm and Apache Kafka are insta
 For convenience, this page assumes that Apache Kafka 0.10.0 is installed via `brew`.
 
 We'll use below tools to prepare the JSON data which will be fed to the input data source. 
-Since they're Python projects, this page assumes Python 2.7 with `pip`, `virtualenv` is installed locally. 
-If you're using Python 3, you may need to convert some places to be compatible with 3 manually while feeding data.  
+Since they're Python projects, this page assumes Python 3.0.x with `pip3`, `virtualenv` is installed locally. 
 
 * https://github.com/kiritbasu/Fake-Apache-Log-Generator
 * https://github.com/rory/apache-log-parser
@@ -92,10 +91,10 @@ For convenience, you can skip cloning project and download modified file from he
 `apache-log-parser` can be installed via `pip`.
 
 ```
-$ pip install apache-log-parser
+$ pip3 install apache-log-parser
 ```
 
-Since apache-log-parser is a library, in order to parse fake log we need to write small python script.
+Since apache-log-parser is a library, in order to parse fake log we need to write small Python script.
 Let's create file `parse-fake-log-gen-to-json-with-incrementing-id.py` with below content: 
 
 ```
@@ -115,9 +114,8 @@ while True:
   parsed_dict['id'] = auto_incr_id
   auto_incr_id += 1
 
-  # works only python 2, but I don't care cause it's just a test module :)
   parsed_dict = {k.upper(): v for k, v in parsed_dict.iteritems() if not k.endswith('datetimeobj')}
-  print json.dumps(parsed_dict)
+  print(json.dumps(parsed_dict))
 ```
 
 ### Feed parsed JSON Apache Log to Kafka
@@ -125,7 +123,7 @@ while True:
 OK! We're prepared to feed the data to Kafka topic. Let's use `kafka-console-producer` to feed parsed JSON.
 
 ```
-$ python apache-fake-log-gen.py -n 0 | python parse-fake-log-gen-to-json-with-incrementing-id.py | kafka-console-producer --broker-list localhost:9092 --topic apache-logs
+$ python3 apache-fake-log-gen.py -n 0 | python3 parse-fake-log-gen-to-json-with-incrementing-id.py | kafka-console-producer --broker-list localhost:9092 --topic apache-logs
 ```
 
 and execute below to another terminal session to confirm data is being fed.
