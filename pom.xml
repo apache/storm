@@ -267,8 +267,8 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:apache/storm.git</connection>
-        <developerConnection>scm:git:git@github.com:apache/storm.git</developerConnection>
+        <connection>git@github.com:apache/storm.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</developerConnection>
         <url>https://github.com/apache/storm</url>
     </scm>
 
