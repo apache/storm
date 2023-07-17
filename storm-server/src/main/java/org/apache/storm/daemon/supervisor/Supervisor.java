@@ -508,7 +508,10 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             if (thriftServer != null) {
                 this.thriftServer.stop();
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
+            LOG.error("Error closing asyncLocalizer", e);
+        }
+        catch (Exception e) {
             LOG.error("Error Shutting down", e);
         }
     }
