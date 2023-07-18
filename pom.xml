@@ -222,7 +222,7 @@
             <id>Ethanlm</id>
             <name>Ethan Li</name>
             <email>ethanli@apache.org</email>
-            <roles>	
+            <roles>
                 <role>Committer</role>
             </roles>
             <timezone>-6</timezone>
@@ -703,6 +703,20 @@
     </profiles>
 
     <distributionManagement>
+        <repository>
+            <id>apache.staging</id>
+            <url>https://repository.apache.org/content/groups/staging/</url>
+        </repository>
+        <!-- Do not use apache.release as apache.staging artifacts will be promoted to release after votes
+        <repository>
+            <id>apache.releases</id>
+            <url>https://repository.apache.org/content/groups/public/</url>
+        </repository>
+        -->
+        <snapshotRepository>
+            <id>apache.snapshots</id>
+            <url>https://repository.apache.org/content/groups/snapshots/</url>
+        </snapshotRepository>
         <site>
             <id>storm.maven.website</id>
             <name>Storm Website</name>
