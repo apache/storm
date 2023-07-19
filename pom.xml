@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>21</version>
+        <version>30</version>
     </parent>
 
     <groupId>org.apache.storm</groupId>
@@ -701,28 +701,6 @@
             </modules>
         </profile>
     </profiles>
-
-    <distributionManagement>
-        <repository>
-            <id>apache.staging</id>
-            <url>https://repository.apache.org/content/groups/staging/</url>
-        </repository>
-        <!-- Do not use apache.release as apache.staging artifacts will be promoted to release after votes
-        <repository>
-            <id>apache.releases</id>
-            <url>https://repository.apache.org/content/groups/public/</url>
-        </repository>
-        -->
-        <snapshotRepository>
-            <id>apache.snapshots</id>
-            <url>https://repository.apache.org/content/groups/snapshots/</url>
-        </snapshotRepository>
-        <site>
-            <id>storm.maven.website</id>
-            <name>Storm Website</name>
-            <url>file:///tmp/site</url>
-        </site>
-    </distributionManagement>
 
     <dependencyManagement>
         <dependencies>
