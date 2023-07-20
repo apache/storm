@@ -38,9 +38,9 @@
 		          <execution>
 		            <phase>package</phase>
 		            <configuration>
-		              <tasks>
+		              <target>
 		                <copy file="src/main/resources/config.properties" tofile="target/eventhubs-config.properties" />
-                    </tasks>
+                    </target>
 		            </configuration>
 		            <goals>
 		              <goal>run</goal>

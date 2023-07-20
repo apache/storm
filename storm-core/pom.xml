@@ -459,9 +459,9 @@
                                 <id>pre-test-jacoco-clean</id>
                                 <phase>process-test-classes</phase>
                                 <configuration>
-                                    <tasks>
+                                    <target>
                                         <delete file="target\jacoco.exec" />
-                                    </tasks>
+                                    </target>
                                 </configuration>
                                 <goals>
                                     <goal>run</goal>
