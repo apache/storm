@@ -41,6 +41,14 @@
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-mqtt</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <!-- required to bypass failure in mvn deploy -->
+          <groupId>org.apache.activemq</groupId>
+          <artifactId>activemq-protobuf</artifactId>
+        </exclusion>
+      </exclusions>
+
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
