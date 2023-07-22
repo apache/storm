@@ -44,7 +44,7 @@
       <exclusions>
         <exclusion>
           <!-- required to bypass failure in mvn deploy -->
-          <groupId>org.apache.activemq</groupId>
+          <groupId>org.apache.activemq.protobuf</groupId>
           <artifactId>activemq-protobuf</artifactId>
         </exclusion>
       </exclusions>
@@ -67,10 +67,24 @@
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-mqtt</artifactId>
+      <exclusions>
+        <exclusion>
+          <!-- required to bypass failure in mvn deploy -->
+          <groupId>org.apache.activemq.protobuf</groupId>
+          <artifactId>activemq-protobuf</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-kahadb-store</artifactId>
+      <exclusions>
+        <exclusion>
+          <!-- required to bypass failure in mvn deploy -->
+          <groupId>org.apache.activemq.protobuf</groupId>
+          <artifactId>activemq-protobuf</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
         <groupId>com.google.guava</groupId>
