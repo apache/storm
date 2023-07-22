@@ -524,6 +524,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 } else {
                     k.cleanUp();
                 }
+            } catch (InterruptedException e) {
+                LOG.error("Error closing asyncLocalizer", e);
             } catch (Exception e) {
                 LOG.error("Error trying to kill {}", workerId, e);
             }
