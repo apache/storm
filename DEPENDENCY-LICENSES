@@ -25,7 +25,6 @@ List of third-party dependencies grouped by their license type.
         * ActiveMQ :: KahaDB Store (org.apache.activemq:activemq-kahadb-store:5.16.5 - http://activemq.apache.org/activemq-kahadb-store)
         * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.16.5 - http://activemq.apache.org/activemq-mqtt)
         * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.16.5 - http://activemq.apache.org/activemq-openwire-legacy)
-        * ActiveMQ Protocol Buffers Implementation and Compiler (org.apache.activemq.protobuf:activemq-protobuf:1.1 - http://activemq.apache.org/activemq-protobuf)
         * Aether :: API (org.sonatype.aether:aether-api:1.7 - http://aether.sonatype.org/aether-api/)
         * Aether :: Implementation (org.sonatype.aether:aether-impl:1.7 - http://aether.sonatype.org/aether-impl/)
         * Aether :: SPI (org.sonatype.aether:aether-spi:1.7 - http://aether.sonatype.org/aether-spi/)
