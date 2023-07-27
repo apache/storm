@@ -158,6 +158,18 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- remove this when Cassandra does not use reflection in
+                     at org.apache.cassandra.utils.FBUtilities.classForName(FBUtilities.java:454)
+                     that is called indirectly
+                     by org.apache.storm.cassandra.testtools.EmbeddedCassandraResource.getDataDirs(EmbeddedCassandraResource.java:138)
+                    -->
+                    <argLine>${test.argLine}</argLine>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

@@ -420,7 +420,9 @@
                 <jdk>[17,)</jdk> <!-- This activates the profile for JDK 17 and higher -->
             </activation>
             <properties>
-                <test.argLine>--add-opens java.base/java.lang=ALL-UNNAMED</test.argLine>
+                <!-- note that java.lang reflection is currently used in storm-server test,
+                and java.math/util/util.concurrent etc reflection is used by storm-cassandra test -->
+                <test.argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED</test.argLine>
             </properties>
         </profile>
         <profile>
