@@ -283,6 +283,7 @@
         <maven.compiler.source>${maven.compiler.target}</maven.compiler.source>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
+        <test.argLine></test.argLine>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <test.extra.args>-Djava.net.preferIPv4Stack=true</test.extra.args>
@@ -410,6 +411,16 @@
             <id>intellij</id>
             <properties>
                 <provided.scope>compile</provided.scope>
+            </properties>
+        </profile>
+        <profile>
+            <!-- Conditionally override the argLine for JDK 17 or higher -->
+            <id>java-17-or-higher</id>
+            <activation>
+                <jdk>[17,)</jdk> <!-- This activates the profile for JDK 17 and higher -->
+            </activation>
+            <properties>
+                <test.argLine>--add-opens java.base/java.lang=ALL-UNNAMED</test.argLine>
             </properties>
         </profile>
         <profile>
