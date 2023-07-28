@@ -195,7 +195,7 @@
                 <configuration>
                     <forkCount>1</forkCount>
                     <!-- remove this when ServerUtilsTest.getPidOfPosixProcess() returns p.pid() as allowed in JDK11 and above -->
-                    <argLine>${storm-server.test.introspection.argLine}</argLine>
+                    <argLine>${storm-server.test.introspection.argLine} -Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
                 </configuration>
             </plugin>
             <plugin>

@@ -192,7 +192,7 @@
                      that is called indirectly
                      by org.apache.storm.cassandra.testtools.EmbeddedCassandraResource.getDataDirs(EmbeddedCassandraResource.java:138)
                     -->
-                    <argLine>${storm-cassandra.test.introspection.argLine} -Xmx2g -XX:+HeapDumpOnOutOfMemoryError</argLine>
+                    <argLine>${storm-cassandra.test.introspection.argLine} -Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <excludedGroups>IntegrationTest | ${java.unit.test.exclude.groups}</excludedGroups>
                     <trimStackTrace>false</trimStackTrace>
