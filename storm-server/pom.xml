@@ -28,6 +28,31 @@
 
     <artifactId>storm-server</artifactId>
 
+    <properties>
+        <storm-server.test.introspection.argLine></storm-server.test.introspection.argLine>
+    </properties>
+
+    <profiles>
+        <profile>
+            <id>java-17-or-higher</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <properties>
+                <storm-server.test.introspection.argLine>--add-opens java.base/java.lang=ALL-UNNAMED</storm-server.test.introspection.argLine>
+            </properties>
+        </profile>
+        <profile>
+            <id>java-11-to-below-17</id>
+            <activation>
+                <jdk>[11,17)</jdk>
+            </activation>
+            <properties>
+                <storm-server.test.introspection.argLine>--illegal-access=warn</storm-server.test.introspection.argLine>
+            </properties>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -170,7 +195,7 @@
                 <configuration>
                     <forkCount>1</forkCount>
                     <!-- remove this when ServerUtilsTest.getPidOfPosixProcess() returns p.pid() as allowed in JDK11 and above -->
-                    <argLine>${test.argLine}</argLine>
+                    <argLine>${storm-server.test.introspection.argLine}</argLine>
                 </configuration>
             </plugin>
             <plugin>
