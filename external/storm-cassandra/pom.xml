@@ -36,7 +36,31 @@
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
         <cassandra.driver.core.version>3.1.2</cassandra.driver.core.version>
+        <storm-cassandra.test.introspection.argLine></storm-cassandra.test.introspection.argLine>
     </properties>
+
+    <profiles>
+        <profile>
+            <!-- if jdk17 or higher then allow introspection on specific packages -->
+            <id>java-17-or-higher</id>
+            <activation>
+                <jdk>[17,)</jdk> <!-- This activates the profile for JDK 17 and higher -->
+            </activation>
+            <properties>
+                <!-- note that java.lang reflection is currently used in storm-server test -->
+                <storm-cassandra.test.introspection.argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED</storm-cassandra.test.introspection.argLine>
+            </properties>
+        </profile>
+        <profile>
+            <id>java-11-to-below-17</id>
+            <activation>
+                <jdk>[11,17)</jdk>
+            </activation>
+            <properties>
+                <storm-cassandra.test.introspection.argLine>--illegal-access=warn</storm-cassandra.test.introspection.argLine>
+            </properties>
+        </profile>
+    </profiles>
 
     <developers>
         <developer>
@@ -147,6 +171,7 @@
         </dependency>
 
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -157,6 +182,26 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- remove this when Cassandra does not use reflection in
+                     at org.apache.cassandra.utils.FBUtilities.classForName(FBUtilities.java:454)
+                     that is called indirectly
+                     by org.apache.storm.cassandra.testtools.EmbeddedCassandraResource.getDataDirs(EmbeddedCassandraResource.java:138)
+                    -->
+                    <argLine>${storm-cassandra.test.introspection.argLine} -Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <excludedGroups>IntegrationTest | ${java.unit.test.exclude.groups}</excludedGroups>
+                    <trimStackTrace>false</trimStackTrace>
+                    <forkCount>1.0C</forkCount>
+                    <reuseForks>true</reuseForks>
+                    <systemPropertyVariables>
+                        <storm.home>${project.basedir}/target/testhome</storm.home>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>
