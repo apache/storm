@@ -1,0 +1,33 @@
+## Licensed under the terms of http://www.apache.org/licenses/LICENSE-2.0
+
+## See https://s.apache.org/asfyaml
+
+github:
+  description: "Apache Storm"
+  homepage: https://storm.apache.org/
+  protected_branches:
+    # Prevent force pushes to primary branches
+    master: {}
+  custom_subjects:
+    new_pr: "[PR] {title} ({repository})"
+    close_pr: "Re: [PR] {title} ({repository})"
+    comment_pr: "Re: [PR] {title} ({repository})"
+    diffcomment: "Re: [PR] {title} ({repository})"
+    merge_pr: "Re: [PR] {title} ({repository})"
+    new_issue: "[I] {title} ({repository})"
+    comment_issue: "Re: [I] {title} ({repository})"
+    close_issue: "Re: [I] {title} ({repository})"
+    catchall: "[GH] {title} ({repository})"
+    new_discussion: "[D] {title} ({repository})"
+    edit_discussion: "Re: [D] {title} ({repository})"
+    close_discussion: "Re: [D] {title} ({repository})"
+    close_discussion_with_comment: "Re: [D] {title} ({repository})"
+    reopen_discussion: "Re: [D] {title} ({repository})"
+    new_comment_discussion: "Re: [D] {title} ({repository})"
+    edit_comment_discussion: "Re: [D] {title} ({repository})"
+    delete_comment_discussion: "Re: [D] {title} ({repository})"
+  labels:
+    - apache
+    - storm
+    - streaming
+    - distributed
