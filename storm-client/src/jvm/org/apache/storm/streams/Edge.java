@@ -18,6 +18,7 @@ import java.io.Serializable;
  * An edge connects source and target nodes.
  */
 class Edge implements Serializable {
+    private static final long serialVersionUID = -3513386663240618317L;
     private final Node source;
     private final Node target;
 

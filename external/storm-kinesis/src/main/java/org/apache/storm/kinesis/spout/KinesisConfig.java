@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 public class KinesisConfig implements Serializable {
+    private static final long serialVersionUID = -2660946324365967869L;
     // kinesis stream name to read from
     private final String streamName;
     // shard iterator type based on kinesis api - beginning of time, latest, at timestamp are only supported

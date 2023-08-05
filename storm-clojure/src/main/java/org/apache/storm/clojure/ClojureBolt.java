@@ -39,6 +39,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
 public class ClojureBolt implements IRichBolt, FinishedCallback {
+    private static final long serialVersionUID = -4068516907026595916L;
     Map<String, StreamInfo> fields;
     List<String> fnSpec;
     List<String> confSpec;

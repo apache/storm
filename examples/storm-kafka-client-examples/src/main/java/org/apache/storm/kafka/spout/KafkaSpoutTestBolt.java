@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class KafkaSpoutTestBolt extends BaseRichBolt {
+    private static final long serialVersionUID = -2971714387602762051L;
     protected static final Logger LOG = LoggerFactory.getLogger(KafkaSpoutTestBolt.class);
     private OutputCollector collector;
 

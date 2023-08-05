@@ -251,6 +251,7 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
      * Holds a count value for count based windows and sliding intervals.
      */
     public static class Count implements Serializable {
+        private static final long serialVersionUID = 9114210038049010086L;
         public final int value;
 
         public Count(int value) {
@@ -299,6 +300,7 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
      * Holds a Time duration for time based windows and sliding intervals.
      */
     public static class Duration implements Serializable {
+        private static final long serialVersionUID = 3955475965882882440L;
         public final int value;
 
         public Duration(int value, TimeUnit timeUnit) {

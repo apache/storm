@@ -38,6 +38,7 @@ public class ComboList extends AbstractList<Object> {
     }
 
     public static class Factory implements Serializable {
+        private static final long serialVersionUID = 7678133970735030418L;
         Pointer[] index;
         int[] sizes;
 

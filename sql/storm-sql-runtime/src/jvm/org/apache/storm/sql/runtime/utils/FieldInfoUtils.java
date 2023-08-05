@@ -33,6 +33,8 @@ public final class FieldInfoUtils {
     }
 
     private static class FieldNameExtractor implements Function<FieldInfo, String>, Serializable {
+        private static final long serialVersionUID = 4583343283211678104L;
+
         @Override
         public String apply(FieldInfo fieldInfo) {
             return fieldInfo.name();

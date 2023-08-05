@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
  * it does not emit any tuples.
  */
 public class JmsBolt extends BaseTickTupleAwareRichBolt {
+    private static final long serialVersionUID = -6203834510835411472L;
     private static Logger LOG = LoggerFactory.getLogger(JmsBolt.class);
 
     private boolean autoAck = true;

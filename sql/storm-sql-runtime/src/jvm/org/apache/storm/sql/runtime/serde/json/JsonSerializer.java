@@ -32,6 +32,7 @@ import java.util.List;
 import org.apache.storm.sql.runtime.IOutputSerializer;
 
 public class JsonSerializer implements IOutputSerializer, Serializable {
+    private static final long serialVersionUID = -2471613552079329240L;
     private final List<String> fieldNames;
     private final JsonFactory jsonFactory;
 

@@ -19,6 +19,7 @@ import java.util.List;
  * MQTT Configuration Options.
  */
 public class MqttOptions implements Serializable {
+    private static final long serialVersionUID = -2409024469662835162L;
     private String url = "tcp://localhost:1883";
     private List<String> topics = null;
     private boolean cleanConnection = false;

@@ -16,6 +16,7 @@ import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
 
 public class FieldType implements Serializable {
+    private static final long serialVersionUID = -6343099689002231640L;
     private String name;
     @SerializedName("class")
     private String clazz;

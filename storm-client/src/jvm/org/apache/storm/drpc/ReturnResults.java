@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public class ReturnResults extends BaseRichBolt {
     public static final Logger LOG = LoggerFactory.getLogger(ReturnResults.class);
     //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
-    static final long serialVersionUID = -774882142710631591L;
+    private static final long serialVersionUID = -774882142710631591L;
     OutputCollector collector;
     boolean local;
     Map<String, Object> conf;

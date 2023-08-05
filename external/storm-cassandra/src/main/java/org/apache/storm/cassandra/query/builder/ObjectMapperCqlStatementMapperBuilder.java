@@ -31,6 +31,7 @@ import org.apache.storm.lambda.SerializableCallable;
  * </p>
  */
 public class ObjectMapperCqlStatementMapperBuilder implements CQLStatementBuilder<ObjectMapperCqlStatementMapper>, Serializable {
+    private static final long serialVersionUID = 7678503881511207283L;
     private final String operationField;
     private final String valueField;
     private final Collection<Class<?>> udtClasses = new ArrayList<>();

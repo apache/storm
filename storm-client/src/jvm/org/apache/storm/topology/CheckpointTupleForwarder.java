@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
  * </p>
  */
 public class CheckpointTupleForwarder extends BaseStatefulBoltExecutor {
+    private static final long serialVersionUID = 6928873206476858535L;
     private static final Logger LOG = LoggerFactory.getLogger(CheckpointTupleForwarder.class);
     private final IRichBolt bolt;
 

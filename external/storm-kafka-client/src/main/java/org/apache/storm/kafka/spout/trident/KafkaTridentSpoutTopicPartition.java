@@ -26,6 +26,7 @@ import org.apache.storm.trident.spout.ISpoutPartition;
  * {@link ISpoutPartition} that wraps {@link TopicPartition} information.
  */
 public class KafkaTridentSpoutTopicPartition implements ISpoutPartition, Serializable {
+    private static final long serialVersionUID = -4695977965301783511L;
     private final TopicPartition topicPartition;
 
     public KafkaTridentSpoutTopicPartition(String topic, int partition) {

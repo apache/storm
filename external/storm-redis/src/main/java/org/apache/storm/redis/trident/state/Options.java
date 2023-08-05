@@ -25,6 +25,7 @@ import org.apache.storm.trident.state.Serializer;
 public class Options<T> implements Serializable {
     private static final RedisDataTypeDescription DEFAULT_REDIS_DATATYPE =
         new RedisDataTypeDescription(RedisDataTypeDescription.RedisDataType.STRING);
+    private static final long serialVersionUID = -619623100301074803L;
 
     public int localCacheSize = 1000;
     public String globalKey = "$REDIS-MAP-STATE-GLOBAL";

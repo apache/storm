@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BasicBoltExecutor implements IRichBolt {
+    private static final long serialVersionUID = 5192919356606205780L;
     public static final Logger LOG = LoggerFactory.getLogger(BasicBoltExecutor.class);
 
     private IBasicBolt bolt;
