@@ -19,9 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class HashMapSerializer extends MapSerializer {
+public class HashMapSerializer extends MapSerializer<HashMap> {
     @Override
-    public Map<String, Object> create(Kryo kryo, Input input, Class<Map> type) {
-        return new HashMap<>();
+    protected HashMap<String, Object> create(Kryo kryo, Input input, Class<? extends HashMap> type, int length) {
+        return new HashMap<>(length);
     }
 }

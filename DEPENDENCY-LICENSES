@@ -4,9 +4,10 @@ List of third-party dependencies grouped by their license type.
 
     3-Clause BSD License
 
-        * Kryo (com.esotericsoftware:kryo:4.0.2 - https://github.com/EsotericSoftware/kryo/kryo)
-        * Kryo Shaded (com.esotericsoftware:kryo-shaded:4.0.2 - https://github.com/EsotericSoftware/kryo/kryo-shaded)
+        * Kryo (com.esotericsoftware:kryo:5.4.0 - https://github.com/EsotericSoftware/kryo/kryo)
+        * MinLog (com.esotericsoftware:minlog:1.3.1 - https://github.com/EsotericSoftware/minlog)
         * Protocol Buffers [Core] (com.google.protobuf:protobuf-java:3.3.0 - https://developers.google.com/protocol-buffers/protobuf-java/)
+        * ReflectASM (com.esotericsoftware:reflectasm:1.11.9 - https://github.com/EsotericSoftware/reflectasm)
 
     Apache-2.0
 
@@ -441,7 +442,6 @@ List of third-party dependencies grouped by their license type.
         * Netty (io.netty:netty:3.10.6.Final - http://netty.io/)
         * Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:7.9 - https://bitbucket.org/connect2id/nimbus-jose-jwt)
         * Noggit (org.noggit:noggit:0.6 - http://github.com/yonik/noggit)
-        * Objenesis (org.objenesis:objenesis:2.5.1 - http://objenesis.org)
         * Objenesis (org.objenesis:objenesis:3.3 - http://objenesis.org/objenesis)
         * OkHttp (com.squareup.okhttp:okhttp:2.7.5 - https://github.com/square/okhttp/okhttp)
         * Okio (com.squareup.okio:okio:1.6.0 - https://github.com/square/okio/okio)
@@ -576,9 +576,7 @@ List of third-party dependencies grouped by their license type.
         * JPMML model (org.jpmml:pmml-model:1.0.22 - http://www.jpmml.org/pmml-model)
         * JPMML schema (org.jpmml:pmml-schema:1.0.22 - http://www.jpmml.org/pmml-schema)
         * leveldbjni-all (org.fusesource.leveldbjni:leveldbjni-all:1.8 - http://leveldbjni.fusesource.org/leveldbjni-all)
-        * MinLog (com.esotericsoftware:minlog:1.3.0 - https://github.com/EsotericSoftware/minlog)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
-        * ReflectASM (com.esotericsoftware:reflectasm:1.11.3 - https://github.com/EsotericSoftware/reflectasm)
 
     BSD licence
 

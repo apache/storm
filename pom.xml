@@ -325,7 +325,7 @@
         <hadoop.version>2.10.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
         <hbase.version>2.1.3</hbase.version>
-        <kryo.version>4.0.2</kryo.version>
+        <kryo.version>5.4.0</kryo.version>
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>
         <thrift.version>0.13.0</thrift.version>
