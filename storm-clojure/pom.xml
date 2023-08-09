@@ -51,11 +51,6 @@
             <version>${kryo.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.esotericsoftware</groupId>
-            <artifactId>kryo-shaded</artifactId>
-            <version>${kryo.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.clojars.bipinprasad</groupId>
             <artifactId>carbonite</artifactId>
             <version>${carbonite.version}</version>
@@ -64,10 +59,6 @@
                 <exclusion>
                     <groupId>com.esotericsoftware</groupId>
                     <artifactId>kryo</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.esotericsoftware</groupId>
-                    <artifactId>kryo-shaded</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
