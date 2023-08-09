@@ -439,7 +439,6 @@ List of third-party dependencies grouped by their license type.
         * Netty (io.netty:netty:3.10.6.Final - http://netty.io/)
         * Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:7.9 - https://bitbucket.org/connect2id/nimbus-jose-jwt)
         * Noggit (org.noggit:noggit:0.6 - http://github.com/yonik/noggit)
-        * Objenesis (org.objenesis:objenesis:2.6 - http://objenesis.org)
         * Objenesis (org.objenesis:objenesis:3.3 - http://objenesis.org/objenesis)
         * OkHttp (com.squareup.okhttp:okhttp:2.7.5 - https://github.com/square/okhttp/okhttp)
         * Okio (com.squareup.okio:okio:1.6.0 - https://github.com/square/okio/okio)
