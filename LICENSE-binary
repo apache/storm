@@ -778,7 +778,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * ClassMate (com.fasterxml:classmate:1.3.1 - http://github.com/cowtowncoder/java-classmate)
         * com.papertrail:profiler (com.papertrail:profiler:1.0.2 - https://github.com/papertrail/profiler)
         * com.yahoo.datasketches:memory (com.yahoo.datasketches:memory:0.9.0 - https://datasketches.github.io/memory/)
-        * com.yahoo.datasketches:sketches-core (com.yahoo.datasketches:sketches-core:0.9.0 - https://datasketches.gith
+        * com.yahoo.datasketches:sketches-core (com.yahoo.datasketches:sketches-core:0.9.0 - https://datasketches.github.io/sketches-core/)
         * Commons Configuration (commons-configuration:commons-configuration:1.6 - http://commons.apache.org/${pom.artifactId.substring(8)}/)
         * Commons Daemon (commons-daemon:commons-daemon:1.0.13 - http://commons.apache.org/daemon/)
         * Commons DBCP (commons-dbcp:commons-dbcp:1.4 - http://commons.apache.org/dbcp/)
