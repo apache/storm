@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
-import org.apache.storm.shade.org.apache.curator.ensemble.exhibitor.ExhibitorEnsembleProvider;
 import org.apache.storm.shade.org.apache.curator.ensemble.fixed.FixedEnsembleProvider;
 import org.apache.storm.shade.org.apache.curator.framework.AuthInfo;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
@@ -56,13 +55,6 @@ public class CuratorUtilsTest {
     }
 
     @Test
-    public void givenExhibitorServersBuilderUsesExhibitorProviderTest() {
-        CuratorFrameworkFactory.Builder builder = setupBuilder(true /*with exhibitor*/);
-        assertEquals(builder.getEnsembleProvider().getConnectionString(), "");
-        assertEquals(builder.getEnsembleProvider().getClass(), ExhibitorEnsembleProvider.class);
-    }
-
-    @Test
     public void givenNoExhibitorServersBuilderUsesFixedProviderTest() {
         CuratorFrameworkFactory.Builder builder = setupBuilder(false /*without exhibitor*/);
         assertEquals(builder.getEnsembleProvider().getConnectionString(), "zk_connection_string");
@@ -71,30 +63,16 @@ public class CuratorUtilsTest {
 
     @Test
     public void givenSchemeAndPayloadBuilderUsesAuthTest() {
-        CuratorFrameworkFactory.Builder builder = setupBuilder(false /*without exhibitor*/, true /*with auth*/);
+        CuratorFrameworkFactory.Builder builder = setupBuilder(true /*with auth*/);
         List<AuthInfo> authInfos = builder.getAuthInfos();
         AuthInfo authInfo = authInfos.get(0);
         assertEquals(authInfo.getScheme(), "scheme");
         assertArrayEquals(authInfo.getAuth(), "abc".getBytes());
     }
 
-
-    private CuratorFrameworkFactory.Builder setupBuilder(boolean withExhibitor) {
-        return setupBuilder(withExhibitor, false /*without Auth*/);
-    }
-
-    private CuratorFrameworkFactory.Builder setupBuilder(boolean withExhibitor, boolean withAuth) {
+    private CuratorFrameworkFactory.Builder setupBuilder(boolean withAuth) {
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
         Map<String, Object> conf = new HashMap<>();
-        if (withExhibitor) {
-            conf.put(Config.STORM_EXHIBITOR_SERVERS, "foo");
-            conf.put(Config.STORM_EXHIBITOR_PORT, 0);
-            conf.put(Config.STORM_EXHIBITOR_URIPATH, "/exhibitor");
-            conf.put(Config.STORM_EXHIBITOR_POLL, 0);
-            conf.put(Config.STORM_EXHIBITOR_RETRY_INTERVAL, 0);
-            conf.put(Config.STORM_EXHIBITOR_RETRY_INTERVAL_CEILING, 0);
-            conf.put(Config.STORM_EXHIBITOR_RETRY_TIMES, 0);
-        }
         conf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 0);
         conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 0);
         conf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 0);

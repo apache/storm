@@ -647,6 +647,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * carbonite (org.clojars.bipinprasad:carbonite:1.6.0 - https://github.com/bipinprasad/carbonite)
         * HttpClient (commons-httpclient:commons-httpclient:3.1 - http://jakarta.apache.org/httpcomponents/httpclient-3.x/)
+        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.3 - https://github.com/xerial/snappy-java)
 
     Apache License, Version 2.0
 
@@ -767,9 +768,10 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Twill discovery service implementations (org.apache.twill:twill-discovery-core:0.6.0-incubating - http://twill.incubator.apache.org/twill-discovery-core)
         * Apache Twill ZooKeeper client library (org.apache.twill:twill-zookeeper:0.6.0-incubating - http://twill.incubator.apache.org/twill-zookeeper)
         * Apache Velocity (org.apache.velocity:velocity:1.5 - http://velocity.apache.org/engine/releases/velocity-1.5/)
+        * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.5.0 - https://yetus.apache.org/audience-annotations)
-        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.5.9 - http://zookeeper.apache.org/zookeeper-jute)
-        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.5.9 - http://zookeeper.apache.org/zookeeper)
+        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.8.2 - http://zookeeper.apache.org/zookeeper-jute)
+        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.8.2 - http://zookeeper.apache.org/zookeeper)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:1.2 - http://www.minidev.net/)
         * BoneCP :: Core Library (com.jolbox:bonecp:0.8.0.RELEASE - http://jolbox.com/bonecp)
         * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
@@ -784,9 +786,9 @@ The license texts of these dependencies can be found in the licenses directory.
         * Commons Logging (commons-logging:commons-logging:1.1.3 - http://commons.apache.org/proper/commons-logging/)
         * Commons Net (commons-net:commons-net:3.1 - http://commons.apache.org/net/)
         * Commons Pool (commons-pool:commons-pool:1.5.4 - http://commons.apache.org/pool/)
-        * Curator Client (org.apache.curator:curator-client:4.3.0 - http://curator.apache.org/curator-client)
-        * Curator Framework (org.apache.curator:curator-framework:4.3.0 - http://curator.apache.org/curator-framework)
-        * Curator Recipes (org.apache.curator:curator-recipes:4.3.0 - http://curator.apache.org/curator-recipes)
+        * Curator Client (org.apache.curator:curator-client:5.5.0 - https://curator.apache.org/curator-client)
+        * Curator Framework (org.apache.curator:curator-framework:5.5.0 - https://curator.apache.org/curator-framework)
+        * Curator Recipes (org.apache.curator:curator-recipes:5.5.0 - https://curator.apache.org/curator-recipes)
         * Data Mapper for Jackson (org.codehaus.jackson:jackson-mapper-asl:1.9.13 - http://jackson.codehaus.org)
         * DataNucleus Core (org.datanucleus:datanucleus-core:4.1.17 - http://www.datanucleus.org/#/datanucleus-core)
         * DataNucleus JDO API plugin (org.datanucleus:datanucleus-api-jdo:4.2.4 - http://www.datanucleus.org/#/datanucleus-api-jdo)
@@ -910,8 +912,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * slice (io.airlift:slice:0.29 - https://github.com/airlift/slice)
         * Slider Core (org.apache.slider:slider-core:0.90.2-incubating - http://slider.incubator.apache.org/slider-core/)
         * SnakeYAML (org.yaml:snakeyaml:2.0 - https://bitbucket.org/snakeyaml/snakeyaml)
-        * Snappy for Java (org.xerial.snappy:snappy-java:1.0.5 - http://github.com/xerial/snappy-java/)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.2.6 - https://github.com/xerial/snappy-java)
         * StAX API (stax:stax-api:1.0.1 - http://stax.codehaus.org/)
         * Tephra API (co.cask.tephra:tephra-api:0.6.0 - https://github.com/caskdata/tephra/tephra-api)
         * Tephra Core (co.cask.tephra:tephra-core:0.6.0 - https://github.com/caskdata/tephra/tephra-core)
@@ -1016,7 +1016,12 @@ The license texts of these dependencies can be found in the licenses directory.
         * core.specs.alpha (org.clojure:core.specs.alpha:0.2.44 - https://github.com/clojure/build.poms/core.specs.alpha)
         * spec.alpha (org.clojure:spec.alpha:0.2.176 - https://github.com/clojure/build.poms/spec.alpha)
         * JGraphT (org.jgrapht:jgrapht-core:0.9.0 - https://jgrapht.org/)
-        
+
+    Eclipse Public License, Version 1.0, GNU Lesser General Public License
+
+        * Logback Classic Module (ch.qos.logback:logback-classic:1.2.10 - http://logback.qos.ch/logback-classic)
+        * Logback Core Module (ch.qos.logback:logback-core:1.2.10 - http://logback.qos.ch/logback-core)
+
     Eclipse Public License, Version 2.0
     
         * jakarta.annotation API (jakarta.annotation:jakarta.annotation-api:1.3.4 - https://projects.eclipse.org/projects/ee4j.ca)

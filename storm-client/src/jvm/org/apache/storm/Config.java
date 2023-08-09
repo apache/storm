@@ -1670,11 +1670,6 @@ public class Config extends HashMap<String, Object> {
      * A list of hosts of Exhibitor servers used to discover/maintain connection to ZooKeeper cluster. Any configured ZooKeeper servers will
      * be used for the curator/exhibitor backup connection string.
      */
-    @IsStringList
-    public static final String STORM_EXHIBITOR_SERVERS = "storm.exhibitor.servers";
-    /**
-     * The port Storm will use to connect to each of the exhibitor servers.
-     */
     @IsInteger
     @IsPositiveNumber
     public static final String STORM_EXHIBITOR_PORT = "storm.exhibitor.port";

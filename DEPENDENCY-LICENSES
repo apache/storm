@@ -11,6 +11,7 @@ List of third-party dependencies grouped by their license type.
 
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
+        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.3 - https://github.com/xerial/snappy-java)
 
     Apache License
 
@@ -140,9 +141,10 @@ List of third-party dependencies grouped by their license type.
         * Apache Twill ZooKeeper client library (org.apache.twill:twill-zookeeper:0.6.0-incubating - http://twill.incubator.apache.org/twill-zookeeper)
         * Apache Velocity (org.apache.velocity:velocity:1.5 - http://velocity.apache.org/engine/releases/velocity-1.5/)
         * Apache XBean :: Spring (org.apache.xbean:xbean-spring:4.8 - http://geronimo.apache.org/maven/xbean/4.8/xbean-spring)
+        * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.5.0 - https://yetus.apache.org/audience-annotations)
-        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.5.9 - http://zookeeper.apache.org/zookeeper-jute)
-        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.5.9 - http://zookeeper.apache.org/zookeeper)
+        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.8.2 - http://zookeeper.apache.org/zookeeper-jute)
+        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.8.2 - http://zookeeper.apache.org/zookeeper)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:1.2 - http://www.minidev.net/)
         * Auto Common Libraries (com.google.auto:auto-common:0.8 - https://github.com/google/auto/auto-common)
         * AutoService (com.google.auto.service:auto-service:1.0-rc4 - https://github.com/google/auto/auto-service)
@@ -232,9 +234,9 @@ List of third-party dependencies grouped by their license type.
         * Commons Net (commons-net:commons-net:3.1 - http://commons.apache.org/net/)
         * Commons Pool (commons-pool:commons-pool:1.5.4 - http://commons.apache.org/pool/)
         * Compress-LZF (com.ning:compress-lzf:1.0.2 - http://github.com/ning/compress)
-        * Curator Client (org.apache.curator:curator-client:4.3.0 - http://curator.apache.org/curator-client)
-        * Curator Framework (org.apache.curator:curator-framework:4.3.0 - http://curator.apache.org/curator-framework)
-        * Curator Recipes (org.apache.curator:curator-recipes:4.3.0 - http://curator.apache.org/curator-recipes)
+        * Curator Client (org.apache.curator:curator-client:5.5.0 - https://curator.apache.org/curator-client)
+        * Curator Framework (org.apache.curator:curator-framework:5.5.0 - https://curator.apache.org/curator-framework)
+        * Curator Recipes (org.apache.curator:curator-recipes:5.5.0 - https://curator.apache.org/curator-recipes)
         * Data Mapper for Jackson (org.codehaus.jackson:jackson-mapper-asl:1.9.13 - http://jackson.codehaus.org)
         * DataNucleus Core (org.datanucleus:datanucleus-core:4.1.17 - http://www.datanucleus.org/#/datanucleus-core)
         * DataNucleus JDO API plugin (org.datanucleus:datanucleus-api-jdo:4.2.4 - http://www.datanucleus.org/#/datanucleus-api-jdo)
@@ -470,9 +472,6 @@ List of third-party dependencies grouped by their license type.
         * Slider Core (org.apache.slider:slider-core:0.90.2-incubating - http://slider.incubator.apache.org/slider-core/)
         * SnakeYAML (org.yaml:snakeyaml:1.33 - https://bitbucket.org/snakeyaml/snakeyaml)
         * SnakeYAML (org.yaml:snakeyaml:2.0 - https://bitbucket.org/snakeyaml/snakeyaml)
-        * Snappy for Java (org.xerial.snappy:snappy-java:1.0.5 - http://github.com/xerial/snappy-java/)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.1.3 - https://github.comm/xerial/snappy-java)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.2.6 - https://github.com/xerial/snappy-java)
         * Spatial4J (com.spatial4j:spatial4j:0.5 - http://nexus.sonatype.org/oss-repository-hosting.html/spatial4j)
         * Spring AOP (org.springframework:spring-aop:5.3.27 - https://github.com/spring-projects/spring-framework)
         * Spring Beans (org.springframework:spring-beans:5.3.27 - https://github.com/spring-projects/spring-framework)
@@ -661,6 +660,11 @@ List of third-party dependencies grouped by their license type.
         * org.eclipse.sisu.plexus (org.eclipse.sisu:org.eclipse.sisu.plexus:0.3.3 - http://www.eclipse.org/sisu/org.eclipse.sisu.plexus/)
         * spec.alpha (org.clojure:spec.alpha:0.2.176 - https://github.com/clojure/build.poms/spec.alpha)
         * tools.logging (org.clojure:tools.logging:0.2.3 - http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/tools.logging)
+
+    Eclipse Public License, Version 1.0, GNU Lesser General Public License
+
+        * Logback Classic Module (ch.qos.logback:logback-classic:1.2.10 - http://logback.qos.ch/logback-classic)
+        * Logback Core Module (ch.qos.logback:logback-core:1.2.10 - http://logback.qos.ch/logback-core)
 
     Eclipse Public License, Version 2.0
 
