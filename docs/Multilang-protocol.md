@@ -30,10 +30,10 @@ program via the shell using Java's ProcessBuilder class.
 
 By default the ShellProcess assumes that your code is packaged inside of your topology jar under the resources subdirectory of your jar and by default will change the current working directory of
 the executable process to be that resources directory extracted from the jar.
-A jar file does not store permissions of the files in it.  This includes the execute bit that would allow a shell script to be laoded and run by the operating systme. 
-As such in most examples the scripts are of the form `python mybolt.py` because the python executable is already on the supervisor and mybolt is packaged in the resources directory of the jar.
+A jar file does not store permissions of the files in it.  This includes the execute bit that would allow a shell script to be loaded and run by the operating systme. 
+As such in most examples the scripts are of the form `python3 mybolt.py` because the Python executable is already on the supervisor and mybolt is packaged in the resources directory of the jar.
 
-If you want to package something more complicated, like a new version of python itself, you need to instead use the blob store for this and a `.tgz` archive that does support permissions.
+If you want to package something more complicated, like a new version of Python itself, you need to instead use the blob store for this and a `.tgz` archive that does support permissions.
 
 See the docs on the [Blob Store](distcache-blobstore.html) for more details on how to ship a jar.
 
@@ -49,7 +49,7 @@ So if I shipped python with a symlink named `newPython` and a python ShellSpout 
 
 ```
 public MyShellSpout() {
-    super("./newPython/bin/python", "./shell_spout.py");
+    super("./newPython/bin/python3", "./shell_spout.py");
     changeChildCWD(false);
 }
 ```

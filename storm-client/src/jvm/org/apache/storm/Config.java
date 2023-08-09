@@ -859,9 +859,17 @@ public class Config extends HashMap<String, Object> {
     @IsString
     public static final String STORM_DO_AS_USER = "storm.doAsUser";
     /**
-     * The number of machines that should be used by this topology to isolate it from all others. Set storm.scheduler to
-     * org.apache.storm.scheduler.multitenant.MultitenantScheduler
-     */
+     * The maximum number of machines that should be used by this topology. This configuration can
+     * be used to isolate topologies from each other. See {@link org.apache.storm.scheduler.multitenant.MultitenantScheduler}.
+     * Round Robin Strategy uses this value to avoid spreading a topology too
+     * thinly over a large number of machines - avoiding the the extreme case where the topology would be spread over
+     * all workers and thus deny scheduling of other topologies. Round Robin scheduling will occupy all the workers on
+     * this limited number of machines, forcing other topologies to be scheduled on other machines; thus isolating the
+     * topology from other topologies.
+     * Set storm.scheduler to {@link org.apache.storm.scheduler.multitenant.MultitenantScheduler}
+     * Alternatively set storm.scheduler to {@link org.apache.storm.scheduler.resource.ResourceAwareScheduler}
+     * using {@link #TOPOLOGY_SCHEDULER_STRATEGY} set to
+     * {@link org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy}     */
     @IsInteger
     @IsPositiveNumber
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";

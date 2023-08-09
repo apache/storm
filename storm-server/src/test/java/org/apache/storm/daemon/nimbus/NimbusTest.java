@@ -29,6 +29,8 @@ import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
+import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.ServerUtils;
@@ -41,10 +43,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class NimbusTest {
-    protected Class getDefaultResourceAwareStrategyClass() {
-        return DefaultResourceAwareStrategy.class;
-    }
-
     @Test
     public void testMemoryLoadLargerThanMaxHeapSize() {
         // Topology will not be able to be successfully scheduled: Config TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB=128.0 < 129.0,
@@ -56,18 +54,25 @@ public class NimbusTest {
         config1.put(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN, "org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping");
         config1.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, DefaultSchedulingPriorityStrategy.class.getName());
 
-        config1.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
         config1.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10.0);
         config1.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
         config1.put(Config.TOPOLOGY_PRIORITY, 0);
         config1.put(Config.TOPOLOGY_SUBMITTER_USER, "zhuo");
         config1.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 128.0);
         config1.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 129.0);
-        try {
-            ServerUtils.validateTopologyWorkerMaxHeapSizeConfigs(config1, stormTopology1, 768.0);
-            fail("Expected exception not thrown");
-        } catch (InvalidTopologyException e) {
-            //Expected...
+        Class[] strategyClasses = {
+                DefaultResourceAwareStrategy.class,
+                RoundRobinResourceAwareStrategy.class,
+                GenericResourceAwareStrategyOld.class};
+        for (Class strategyClass: strategyClasses) {
+            String strategyClassName = strategyClass.getName();
+            config1.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, strategyClassName);
+            try {
+                ServerUtils.validateTopologyWorkerMaxHeapSizeConfigs(config1, stormTopology1, 768.0);
+                fail("Expected exception not thrown when using Strategy " + strategyClassName);
+            } catch (InvalidTopologyException e) {
+                //Expected...
+            }
         }
     }
 
