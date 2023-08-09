@@ -32,6 +32,10 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
+import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +55,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestBlacklistScheduler {
@@ -59,10 +64,6 @@ public class TestBlacklistScheduler {
 
     private int currentTime = 1468216504;
     private IScheduler scheduler = null;
-
-    protected Class getDefaultResourceAwareStrategyClass() {
-        return DefaultResourceAwareStrategy.class;
-    }
 
     @AfterEach
     public void cleanup() {
@@ -244,39 +245,56 @@ public class TestBlacklistScheduler {
         config.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 0.0);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 0);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0);
-        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
         config.put(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, true);
 
-        Map<String, TopologyDetails> topoMap = new HashMap<>();
+        Class[] strategyClasses = {
+                DefaultResourceAwareStrategy.class,
+                DefaultResourceAwareStrategyOld.class,
+                RoundRobinResourceAwareStrategy.class,
+                GenericResourceAwareStrategy.class,
+                GenericResourceAwareStrategyOld.class,
+        };
+        for (Class strategyClass: strategyClasses) {
+            String strategyClassName = strategyClass.getName();
+            config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, strategyClassName);
+            {
+                Map<String, TopologyDetails> topoMap = new HashMap<>();
 
-        TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 1, 1, 1, 1, currentTime - 2, true);
-        TopologyDetails topo2 = TestUtilsForBlacklistScheduler.getTopology("topo-2", config, 1, 1, 1, 1, currentTime - 8, true);
-        Topologies topologies = new Topologies(topoMap);
+                TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 1, 1, 1, 1, currentTime - 2, true);
+                TopologyDetails topo2 = TestUtilsForBlacklistScheduler.getTopology("topo-2", config, 1, 1, 1, 1, currentTime - 8, true);
+                Topologies topologies = new Topologies(topoMap);
 
-        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
-        Cluster cluster = new Cluster(iNimbus, resourceMetrics, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
-        scheduler = new BlacklistScheduler(new ResourceAwareScheduler());
+                StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+                ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
+                Cluster cluster = new Cluster(iNimbus, resourceMetrics, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
+                scheduler = new BlacklistScheduler(new ResourceAwareScheduler());
 
-        scheduler.prepare(config, metricsRegistry);
-        scheduler.schedule(topologies, cluster);
-        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap, "sup-0"), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
-        scheduler.schedule(topologies, cluster);
-        cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap, "sup-0"), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
-        scheduler.schedule(topologies, cluster);
-        cluster = new Cluster(iNimbus, resourceMetrics, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
-        scheduler.schedule(topologies, cluster);
-        assertEquals(Collections.singleton("host-0"), cluster.getBlacklistedHosts(), "blacklist");
+                scheduler.prepare(config, metricsRegistry);
+                scheduler.schedule(topologies, cluster);
+                cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap, "sup-0"), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+                scheduler.schedule(topologies, cluster);
+                cluster = new Cluster(iNimbus, resourceMetrics, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap, "sup-0"), TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+                scheduler.schedule(topologies, cluster);
+                cluster = new Cluster(iNimbus, resourceMetrics, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+                scheduler.schedule(topologies, cluster);
+                assertEquals(Collections.singleton("host-0"), cluster.getBlacklistedHosts(), "blacklist");
 
-        topoMap.put(topo1.getId(), topo1);
-        topoMap.put(topo2.getId(), topo2);
-        topologies = new Topologies(topoMap);
-        cluster = new Cluster(iNimbus, resourceMetrics, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
-        scheduler.schedule(topologies, cluster);
-        assertEquals(Collections.emptySet(), cluster.getBlacklistedHosts(), "blacklist");
-        assertEquals(Collections.singletonList("sup-0"), cluster.getGreyListedSupervisors(), "greylist");
-        LOG.debug("Now only these slots remain available: {}", cluster.getAvailableSlots());
-        assertTrue(cluster.getAvailableSlots(supMap.get("sup-0")).containsAll(cluster.getAvailableSlots()));
+                topoMap.put(topo1.getId(), topo1);
+                topoMap.put(topo2.getId(), topo2);
+                topologies = new Topologies(topoMap);
+                cluster = new Cluster(iNimbus, resourceMetrics, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+                scheduler.schedule(topologies, cluster);
+                assertEquals(Collections.emptySet(), cluster.getBlacklistedHosts(), "blacklist using " + strategyClassName);
+                assertEquals(Collections.singletonList("sup-0"), cluster.getGreyListedSupervisors(), "greylist using" +  strategyClassName);
+                LOG.debug("{}: Now only these slots remain available: {}", strategyClassName, cluster.getAvailableSlots());
+                if (strategyClass == RoundRobinResourceAwareStrategy.class) {
+                    // available slots will be across supervisors
+                    assertFalse(cluster.getAvailableSlots(supMap.get("sup-0")).containsAll(cluster.getAvailableSlots()), "using " + strategyClassName);
+                } else {
+                    assertTrue(cluster.getAvailableSlots(supMap.get("sup-0")).containsAll(cluster.getAvailableSlots()), "using " + strategyClassName);
+                }
+            }
+        }
     }
 
     @Test

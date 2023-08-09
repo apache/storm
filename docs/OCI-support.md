@@ -46,7 +46,7 @@ Docker does not need to be installed on each node, nor is there a dependency on 
 by an admin before containers can be launched. All that is required to be present on each node is an OCI-compatible runtime like
 `runc`.
 
-##### Leverages Distributed File Sytems For Scale
+##### Leverages Distributed File Systems For Scale
 
 Image can be fetched via HDFS or other distributed file systems instead of the Docker registry. This prevents a large cluster from
 overwhelming a Docker registry when a big topology causes all of the nodes to request an image at once. This also allows large clusters
@@ -66,7 +66,7 @@ localization is also faster, as the layers no longer need to be unpacked into a 
 First you need to use the`docker-to-squash.py` script to download docker images and configs, convert layers to squashfs files and put them to a directory in HDFS, for example
 
 ```bash
-python docker-to-squash.py pull-build-push-update --hdfs-root hdfs://hostname:port/containers \
+python3 docker-to-squash.py pull-build-push-update --hdfs-root hdfs://hostname:port/containers \
                       docker.xxx.com:4443/hadoop-user-images/storm/rhel7:20201202-232133,storm/rhel7:dev_current --log DEBUG --bootstrap
 ```
 

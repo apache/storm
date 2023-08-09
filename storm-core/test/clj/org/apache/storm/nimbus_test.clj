@@ -29,7 +29,7 @@
   (:import [org.apache.storm.testing.staticmocking MockedZookeeper])
   (:import [org.apache.storm.testing TmpPath])
   (:import [org.apache.storm.scheduler INimbus])
-  (:import [org.mockito Mockito Matchers])
+  (:import [org.mockito Mockito ArgumentMatchers])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:import [org.apache.storm.nimbus ILeaderElector NimbusInfo])
   (:import [org.apache.storm.testing.staticmocking MockedCluster])
@@ -536,7 +536,7 @@
                                                       NIMBUS-TASK-TIMEOUT-SECS 30
                                                       NIMBUS-MONITOR-FREQ-SECS 10
                                                       TOPOLOGY-ACKER-EXECUTORS 0})))]
-      (.thenReturn (Mockito/when (.getGroups group-mapper (Mockito/anyObject))) #{"alice-group"})
+      (.thenReturn (Mockito/when (.getGroups group-mapper (ArgumentMatchers/any))) #{"alice-group"})
       (letlocals
         (bind conf (.getDaemonConf cluster))
         (bind topology (Thrift/buildTopology
@@ -1437,8 +1437,8 @@
           expected-conf {TOPOLOGY-NAME expected-name
                          "foo" "bar"}]
       (.thenReturn (Mockito/when (.getTopoId cluster-state topology-name)) (Optional/of topology-id))
-      (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) expected-conf)
-      (.thenReturn (Mockito/when (.readTopology tc (Mockito/any String) (Mockito/anyObject))) nil)
+      (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (ArgumentMatchers/any))) expected-conf)
+      (.thenReturn (Mockito/when (.readTopology tc (Mockito/any String) (ArgumentMatchers/any))) nil)
       (testing "getTopologyConf calls check-authorization! with the correct parameters."
       (let [expected-operation "getTopologyConf"]
           (try
@@ -1464,8 +1464,8 @@
               (finally
                 (.checkAuthorization (Mockito/verify nimbus) (Mockito/eq topology-name) (Mockito/any Map) (Mockito/eq expected-operation))
                 (. (Mockito/verify common-spy)
-                  (systemTopologyImpl (Matchers/any Map)
-                                      (Matchers/any))))))))
+                  (systemTopologyImpl (ArgumentMatchers/any Map)
+                                      (ArgumentMatchers/any))))))))
 
       (testing "getUserTopology calls check-authorization with the correct parameters."
         (let [expected-operation "getUserTopology"]
@@ -1475,7 +1475,7 @@
             (finally
               (.checkAuthorization (Mockito/verify nimbus) (Mockito/eq topology-name) (Mockito/any Map) (Mockito/eq expected-operation))
               ;;One for this time and one for getTopology call
-              (.readTopology (Mockito/verify tc (Mockito/times 2)) (Mockito/eq topology-id) (Mockito/anyObject))))))))))
+              (.readTopology (Mockito/verify tc (Mockito/times 2)) (Mockito/eq topology-id) (ArgumentMatchers/any))))))))))
 
 (deftest test-check-authorization-getSupervisorPageInfo
   (let [cluster-state (Mockito/mock IStormClusterState)
@@ -1598,7 +1598,7 @@
                      (.set_bolts {})
                      (.set_state_spouts {}))
         ]
-      (.thenReturn (Mockito/when (.stormBase cluster-state (Mockito/any String) (Mockito/anyObject))) storm-base)
+      (.thenReturn (Mockito/when (.stormBase cluster-state (Mockito/any String) (ArgumentMatchers/any))) storm-base)
       (.thenReturn (Mockito/when (.topologyBases cluster-state)) bogus-bases)
       (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/any Subject))) topo-conf)
       (.thenReturn (Mockito/when (.readTopology tc (Mockito/any String) (Mockito/any Subject))) topology)
@@ -1775,8 +1775,8 @@
             (.set_target_log_level "ERROR")
             (.set_action LogLevelAction/UNCHANGED)))
 
-        (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
-        (.thenReturn (Mockito/when (.topologyLogConfig cluster-state (Mockito/any String) (Mockito/anyObject))) previous-config)
+        (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (ArgumentMatchers/any))) {})
+        (.thenReturn (Mockito/when (.topologyLogConfig cluster-state (Mockito/any String) (ArgumentMatchers/any))) previous-config)
 
         (.setLogConfig nimbus "foo" mock-config)
         (.setTopologyLogConfig (Mockito/verify cluster-state) (Mockito/any String) (Mockito/eq expected-config) (Mockito/any Map))))))
@@ -1824,8 +1824,8 @@
             (.set_target_log_level "DEBUG")
             (.set_action LogLevelAction/UNCHANGED)))
 
-        (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
-        (.thenReturn (Mockito/when (.topologyLogConfig cluster-state (Mockito/any String) (Mockito/anyObject))) previous-config)
+        (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (ArgumentMatchers/any))) {})
+        (.thenReturn (Mockito/when (.topologyLogConfig cluster-state (Mockito/any String) (ArgumentMatchers/any))) previous-config)
 
         (.setLogConfig nimbus "foo" mock-config)
         (.setTopologyLogConfig (Mockito/verify cluster-state) (Mockito/any String) (Mockito/eq expected-config) (Mockito/any Map))))))
@@ -1928,8 +1928,8 @@
 
           (.teardownHeartbeats (Mockito/verify mock-state (Mockito/never)) (Mockito/any))
           (.teardownTopologyErrors (Mockito/verify mock-state (Mockito/never)) (Mockito/any))
-          (.forceDeleteTopoDistDir (Mockito/verify nimbus (Mockito/times 0)) (Mockito/anyObject))
-          (.rmTopologyKeys (Mockito/verify nimbus (Mockito/times 0)) (Mockito/anyObject))
+          (.forceDeleteTopoDistDir (Mockito/verify nimbus (Mockito/times 0)) (ArgumentMatchers/any))
+          (.rmTopologyKeys (Mockito/verify nimbus (Mockito/times 0)) (ArgumentMatchers/any))
 
           ;; hb-cache goes down to 1 because only one topo was inactive
           (is (= (.getNumToposCached (.getHeartbeatsCache nimbus)) 2))
@@ -1969,8 +1969,8 @@
         mock-blob-store (Mockito/mock BlobStore)
         mock-tc (Mockito/mock TopoCache)
         nimbus (Nimbus. {NIMBUS-MONITOR-FREQ-SECS 10} nil mock-state nil mock-blob-store mock-tc (MockLeaderElector. ) nil (StormMetricsRegistry.))]
-    (.thenReturn (Mockito/when (.readTopoConf mock-tc (Mockito/eq "authorized") (Mockito/anyObject))) {TOPOLOGY-NAME "authorized"})
-    (.thenReturn (Mockito/when (.readTopoConf mock-tc (Mockito/eq "topo1") (Mockito/anyObject))) {TOPOLOGY-NAME "topo1"})
+    (.thenReturn (Mockito/when (.readTopoConf mock-tc (Mockito/eq "authorized") (ArgumentMatchers/any))) {TOPOLOGY-NAME "authorized"})
+    (.thenReturn (Mockito/when (.readTopoConf mock-tc (Mockito/eq "topo1") (ArgumentMatchers/any))) {TOPOLOGY-NAME "topo1"})
     (.setAuthorizationHandler nimbus (reify IAuthorizer (permit [this context operation topo-conf] (= "authorized" (get topo-conf TOPOLOGY-NAME)))))
     (let [supervisor-topologies (clojurify-structure (Nimbus/topologiesOnSupervisor assignments "super1"))
           user-topologies (clojurify-structure (.filterAuthorized nimbus "getTopology" supervisor-topologies))]

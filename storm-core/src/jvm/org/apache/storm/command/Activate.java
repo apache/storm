@@ -12,7 +12,6 @@
 
 package org.apache.storm.command;
 
-import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.NimbusClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +22,9 @@ public class Activate {
     public static void main(String[] args) throws Exception {
         final String name = args[0];
 
-        NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
-            @Override
-            public void run(Nimbus.Iface nimbus) throws Exception {
-                nimbus.activate(name);
-                LOG.info("Activated topology: {}", name);
-            }
+        NimbusClient.withConfiguredClient(nimbus -> {
+            nimbus.activate(name);
+            LOG.info("Activated topology: {}", name);
         });
     }
 }

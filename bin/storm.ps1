@@ -23,12 +23,12 @@ while((Get-Item $PRG).LinkType -eq "SymbolicLink") {
 }
 
 # Check for Python version
-$PythonVersion = (& python -V 2>&1).Split(" ")[1];
+$PythonVersion = (& python3 -V 2>&1).Split(" ")[1];
 $PythonMajor = [int]$PythonVersion.Split(".")[0];
 $PythonMinor = [int]$PythonVersion.Split(".")[1];
 $PythonNumVersion = $PythonMajor * 10 + $PythonMinor;
-if($PythonNumVersion -le 26) {
-  Write-Output "Need python version > 2.6";
+if($PythonNumVersion -le 30) {
+  Write-Output "Need Python version > 3.0";
   exit 1;
 }
 
@@ -64,6 +64,6 @@ if(Test-Path $StormEnvPath) {
 }
 
 $ArgsForProcess = @(([io.path]::combine("$STORM_BIN_DIR", "storm.py"))) + $args
-Start-Process -FilePath python -ArgumentList $ArgsForProcess -Wait -NoNewWindow
+Start-Process -FilePath python3 -ArgumentList $ArgsForProcess -Wait -NoNewWindow
 
 exit $LastExitCode

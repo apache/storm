@@ -47,7 +47,7 @@ The easiest way to use Flux, is to add it as a Maven dependency in you project a
 If you would like to build Flux from source and run the unit/integration tests, you will need the following installed
 on your system:
 
-* Python 2.7.x or later
+* Python 3.0.x or later
 * Node.js 0.10.x or later
 
 #### Building with unit tests enabled:
@@ -649,7 +649,7 @@ bolts:
     className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
     constructorArgs:
       # command line
-      - ["python", "splitsentence.py"]
+      - ["python3", "splitsentence.py"]
       # output fields
       - ["word"]
     parallelism: 1
@@ -796,7 +796,7 @@ bolts:
     className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
     constructorArgs:
       # command line
-      - ["python", "splitsentence.py"]
+      - ["python3", "splitsentence.py"]
       # output fields
       - ["word"]
     parallelism: 1

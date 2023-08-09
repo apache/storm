@@ -24,7 +24,7 @@ import static org.apache.storm.Config.TOPOLOGY_USERS;
 import static org.apache.storm.DaemonConfig.LOGS_USERS;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;

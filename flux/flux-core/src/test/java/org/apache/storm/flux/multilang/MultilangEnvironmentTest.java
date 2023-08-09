@@ -36,9 +36,9 @@ public class MultilangEnvironmentTest {
 
     @Test
     public void testInvokePython() throws Exception {
-        String[] command = new String[]{"python", "--version"};
+        String[] command = new String[]{"python3", "--version"};
         int exitVal = invokeCommand(command);
-        assertEquals(0, exitVal, "Exit value for python is 0.");
+        assertEquals(0, exitVal, "Exit value for python3 is 0.");
     }
 
     @Test

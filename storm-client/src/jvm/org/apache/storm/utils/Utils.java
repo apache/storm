@@ -101,6 +101,7 @@ import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.data.Id;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import org.apache.storm.shade.org.yaml.snakeyaml.LoaderOptions;
 import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.shade.org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.apache.storm.thrift.TBase;
@@ -175,7 +176,7 @@ public class Utils {
         try {
             in = getConfigFileInputStream(name);
             if (null != in) {
-                Yaml yaml = new Yaml(new SafeConstructor());
+                Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
                 @SuppressWarnings("unchecked")
                 Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(in));
                 if (null != ret) {
@@ -1438,7 +1439,7 @@ public class Utils {
 
     public static Object readYamlFile(String yamlFile) {
         try (FileReader reader = new FileReader(yamlFile)) {
-            return new Yaml(new SafeConstructor()).load(reader);
+            return new Yaml(new SafeConstructor(new LoaderOptions())).load(reader);
         } catch (Exception ex) {
             LOG.error("Failed to read yaml file.", ex);
         }
@@ -1686,7 +1687,7 @@ public class Utils {
         if (cp == null || cp.isEmpty()) {
             return conf;
         }
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map<String, Object> defaultsConf = null;
         Map<String, Object> stormConf = null;
 

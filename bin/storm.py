@@ -95,7 +95,6 @@ def confvalue(name, storm_config_opts, extrapaths, overriding_conf_file=None, da
         "-cp", get_classpath(extrajars=extrapaths, daemon=daemon), "org.apache.storm.command.ConfigValue", name
     ]
     output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
-    # python 3
     if not isinstance(output, str):
         output = output.decode('utf-8')
     lines = output.split(os.linesep)
@@ -905,7 +904,7 @@ def initialize_admin_subcommand(subparsers):
 def initialize_shell_subcommand(subparsers):
     command_help = """
     Archives resources to jar and uploads jar to Nimbus, and executes following arguments on "local". Useful for non JVM languages.
-    eg: `storm shell resources/ python topology.py arg1 arg2`"""
+    eg: `storm shell resources/ python3 topology.py arg1 arg2`"""
 
     sub_parser = subparsers.add_parser("shell", help=command_help, formatter_class=SortingHelpFormatter)
 

@@ -38,8 +38,8 @@ import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -211,10 +211,10 @@ public class ContainerTest {
         mc.cleanUp();
         verify(iso).cleanup(user, workerId, port);
 
-        verify(ops).deleteIfExists(eq(new File(workerRoot, "pids")), eq(user), any(String.class));
-        verify(ops).deleteIfExists(eq(new File(workerRoot, "tmp")), eq(user), any(String.class));
-        verify(ops).deleteIfExists(eq(new File(workerRoot, "heartbeats")), eq(user), any(String.class));
-        verify(ops).deleteIfExists(eq(workerRoot), eq(user), any(String.class));
+        verify(ops).deleteIfExists(eq(new File(workerRoot, "pids")), eq(user), anyString());
+        verify(ops).deleteIfExists(eq(new File(workerRoot, "tmp")), eq(user), anyString());
+        verify(ops).deleteIfExists(eq(new File(workerRoot, "heartbeats")), eq(user), anyString());
+        verify(ops).deleteIfExists(eq(workerRoot), eq(user), anyString());
         verify(ops).deleteIfExists(workerUserFile);
     }
 

@@ -242,6 +242,7 @@ storm.messaging.netty.transfer.batch.size: 262144
 storm.messaging.netty.socket.backlog: 500
 
 # By default, the Netty SASL authentication is set to false.  Users can override and set it true for a specific topology.
+# see https://issues.apache.org/jira/browse/STORM-348 for more details
 storm.messaging.netty.authentication: false
 
 # Default plugin to use for automatic network topology discovery

@@ -26,7 +26,7 @@
   <parent>
     <artifactId>storm</artifactId>
     <groupId>org.apache.storm</groupId>
-    <version>2.5.0-SNAPSHOT</version>
+    <version>2.6.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   
@@ -41,6 +41,14 @@
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-mqtt</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <!-- required to bypass failure in mvn deploy -->
+          <groupId>org.apache.activemq.protobuf</groupId>
+          <artifactId>activemq-protobuf</artifactId>
+        </exclusion>
+      </exclusions>
+
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
@@ -59,10 +67,24 @@
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-mqtt</artifactId>
+      <exclusions>
+        <exclusion>
+          <!-- required to bypass failure in mvn deploy -->
+          <groupId>org.apache.activemq.protobuf</groupId>
+          <artifactId>activemq-protobuf</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-kahadb-store</artifactId>
+      <exclusions>
+        <exclusion>
+          <!-- required to bypass failure in mvn deploy -->
+          <groupId>org.apache.activemq.protobuf</groupId>
+          <artifactId>activemq-protobuf</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
         <groupId>com.google.guava</groupId>
