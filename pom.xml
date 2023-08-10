@@ -302,7 +302,7 @@
         <commons-fileupload.version>1.5</commons-fileupload.version>
         <commons-codec.version>1.11</commons-codec.version>
         <commons-cli.version>1.4</commons-cli.version>
-        <curator.version>4.3.0</curator.version>
+        <curator.version>5.5.0</curator.version>
         <json-simple.version>1.1</json-simple.version>
         <jetty.version>9.4.45.v20220203</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
@@ -319,13 +319,14 @@
         <slf4j.version>1.7.36</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
         <mockito.version>4.11.0</mockito.version>
-        <zookeeper.version>3.5.9</zookeeper.version>
+        <zookeeper.version>3.9.0</zookeeper.version>
+        <snappy.version>1.1.10.3</snappy.version>
         <jline.version>0.9.94</jline.version>
         <hive.version>2.3.9</hive.version>
         <hadoop.version>2.10.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
         <hbase.version>2.1.3</hbase.version>
-        <kryo.version>4.0.2</kryo.version>
+        <kryo.version>5.4.0</kryo.version>
         <servlet.version>3.1.0</servlet.version>
         <joda-time.version>2.3</joda-time.version>
         <thrift.version>0.13.0</thrift.version>
@@ -336,7 +337,7 @@
         <hamcrest.version>2.2</hamcrest.version>
         <cassandra.version>2.1.7</cassandra.version>
         <elasticsearch.version>5.2.2</elasticsearch.version>
-        <calcite.version>1.14.0</calcite.version>
+        <calcite.version>1.16.0</calcite.version>
         <mongodb.version>3.2.0</mongodb.version>
         <solr.version>5.2.1</solr.version>
         <jpmml.version>1.0.22</jpmml.version>
@@ -833,6 +834,11 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper-jute</artifactId>
                 <version>${zookeeper.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${snappy.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.servlet</groupId>

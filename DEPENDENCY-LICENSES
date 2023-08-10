@@ -4,14 +4,17 @@ List of third-party dependencies grouped by their license type.
 
     3-Clause BSD License
 
-        * Kryo (com.esotericsoftware:kryo:4.0.2 - https://github.com/EsotericSoftware/kryo/kryo)
-        * Kryo Shaded (com.esotericsoftware:kryo-shaded:4.0.2 - https://github.com/EsotericSoftware/kryo/kryo-shaded)
+        * Kryo (com.esotericsoftware:kryo:5.4.0 - https://github.com/EsotericSoftware/kryo/kryo)
+        * MinLog (com.esotericsoftware:minlog:1.3.1 - https://github.com/EsotericSoftware/minlog)
+        * Protocol Buffers [Core] (com.google.protobuf:protobuf-java:3.3.0 - https://developers.google.com/protocol-buffers/protobuf-java/)
+        * ReflectASM (com.esotericsoftware:reflectasm:1.11.9 - https://github.com/EsotericSoftware/reflectasm)
 
     Apache-2.0
 
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * config (com.typesafe:config:1.4.1 - https://github.com/lightbend/config)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
+        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.3 - https://github.com/xerial/snappy-java)
 
     Apache License
 
@@ -41,8 +44,8 @@ List of third-party dependencies grouped by their license type.
         * Apache Ant Launcher (org.apache.ant:ant-launcher:1.9.1 - http://ant.apache.org/)
         * Apache Avro (org.apache.avro:avro:1.7.7 - http://avro.apache.org)
         * Apache Avro (org.apache.avro:avro:1.8.2 - http://avro.apache.org)
-        * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.10.0 - https://calcite.apache.org/avatica/avatica-core)
-        * Apache Calcite Avatica Metrics (org.apache.calcite.avatica:avatica-metrics:1.10.0 - https://calcite.apache.org/avatica/avatica-metrics)
+        * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
+        * Apache Calcite Avatica Metrics (org.apache.calcite.avatica:avatica-metrics:1.11.0 - https://calcite.apache.org/avatica/avatica-metrics)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.4 - http://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.11 - http://commons.apache.org/proper/commons-codec/)
@@ -143,9 +146,10 @@ List of third-party dependencies grouped by their license type.
         * Apache Twill ZooKeeper client library (org.apache.twill:twill-zookeeper:0.6.0-incubating - http://twill.incubator.apache.org/twill-zookeeper)
         * Apache Velocity (org.apache.velocity:velocity:1.5 - http://velocity.apache.org/engine/releases/velocity-1.5/)
         * Apache XBean :: Spring (org.apache.xbean:xbean-spring:4.8 - http://geronimo.apache.org/maven/xbean/4.8/xbean-spring)
+        * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.5.0 - https://yetus.apache.org/audience-annotations)
-        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.5.9 - http://zookeeper.apache.org/zookeeper-jute)
-        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.5.9 - http://zookeeper.apache.org/zookeeper)
+        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.0 - http://zookeeper.apache.org/zookeeper-jute)
+        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.0 - http://zookeeper.apache.org/zookeeper)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:1.2 - http://www.minidev.net/)
         * Auto Common Libraries (com.google.auto:auto-common:0.8 - https://github.com/google/auto/auto-common)
         * AutoService (com.google.auto.service:auto-service:1.0-rc4 - https://github.com/google/auto/auto-service)
@@ -216,14 +220,16 @@ List of third-party dependencies grouped by their license type.
         * Bean Validation API (javax.validation:validation-api:2.0.1.Final - http://beanvalidation.org)
         * BoneCP :: Core Library (com.jolbox:bonecp:0.8.0.RELEASE - http://jolbox.com/bonecp)
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:2.3.5 - https://github.com/ben-manes/caffeine)
-        * Calcite Core (org.apache.calcite:calcite-core:1.14.0 - https://calcite.apache.org/calcite-core)
-        * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.14.0 - https://calcite.apache.org/calcite-linq4j)
+        * Calcite Core (org.apache.calcite:calcite-core:1.16.0 - https://calcite.apache.org/calcite-core)
+        * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.16.0 - https://calcite.apache.org/calcite-linq4j)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
         * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.3.1 - http://github.com/cowtowncoder/java-classmate)
         * CloudWatch Metrics for AWS Java SDK (com.amazonaws:aws-java-sdk-cloudwatchmetrics:1.10.77 - https://aws.amazon.com/sdkforjava)
         * Codec (commons-codec:commons-codec:1.3 - http://jakarta.apache.org/commons/codec/)
         * com.papertrail:profiler (com.papertrail:profiler:1.0.2 - https://github.com/papertrail/profiler)
+        * com.yahoo.datasketches:memory (com.yahoo.datasketches:memory:0.9.0 - https://datasketches.github.io/memory/)
+        * com.yahoo.datasketches:sketches-core (com.yahoo.datasketches:sketches-core:0.9.0 - https://datasketches.github.io/sketches-core/)
         * Commons Configuration (commons-configuration:commons-configuration:1.6 - http://commons.apache.org/${pom.artifactId.substring(8)}/)
         * Commons Daemon (commons-daemon:commons-daemon:1.0.13 - http://commons.apache.org/daemon/)
         * Commons DBCP (commons-dbcp:commons-dbcp:1.4 - http://commons.apache.org/dbcp/)
@@ -235,9 +241,9 @@ List of third-party dependencies grouped by their license type.
         * Commons Net (commons-net:commons-net:3.1 - http://commons.apache.org/net/)
         * Commons Pool (commons-pool:commons-pool:1.5.4 - http://commons.apache.org/pool/)
         * Compress-LZF (com.ning:compress-lzf:1.0.2 - http://github.com/ning/compress)
-        * Curator Client (org.apache.curator:curator-client:4.3.0 - http://curator.apache.org/curator-client)
-        * Curator Framework (org.apache.curator:curator-framework:4.3.0 - http://curator.apache.org/curator-framework)
-        * Curator Recipes (org.apache.curator:curator-recipes:4.3.0 - http://curator.apache.org/curator-recipes)
+        * Curator Client (org.apache.curator:curator-client:5.5.0 - https://curator.apache.org/curator-client)
+        * Curator Framework (org.apache.curator:curator-framework:5.5.0 - https://curator.apache.org/curator-framework)
+        * Curator Recipes (org.apache.curator:curator-recipes:5.5.0 - https://curator.apache.org/curator-recipes)
         * Data Mapper for Jackson (org.codehaus.jackson:jackson-mapper-asl:1.9.13 - http://jackson.codehaus.org)
         * DataNucleus Core (org.datanucleus:datanucleus-core:4.1.17 - http://www.datanucleus.org/#/datanucleus-core)
         * DataNucleus JDO API plugin (org.datanucleus:datanucleus-api-jdo:4.2.4 - http://www.datanucleus.org/#/datanucleus-api-jdo)
@@ -439,13 +445,14 @@ List of third-party dependencies grouped by their license type.
         * Netty/Common (io.netty:netty-common:4.1.30.Final - http://netty.io/netty-common/)
         * Netty/Handler (io.netty:netty-handler:4.1.30.Final - http://netty.io/netty-handler/)
         * Netty/Resolver (io.netty:netty-resolver:4.1.30.Final - http://netty.io/netty-resolver/)
+        * Netty/TomcatNative [BoringSSL - Static] (io.netty:netty-tcnative-boringssl-static:2.0.61.Final - https://github.com/netty/netty-tcnative/netty-tcnative-boringssl-static/)
+        * Netty/TomcatNative [OpenSSL - Classes] (io.netty:netty-tcnative-classes:2.0.61.Final - https://github.com/netty/netty-tcnative/netty-tcnative-classes/)
         * Netty/Transport/Native/Epoll (io.netty:netty-transport-native-epoll:4.1.30.Final - http://netty.io/netty-transport-native-epoll/)
         * Netty/Transport/Native/Unix/Common (io.netty:netty-transport-native-unix-common:4.1.30.Final - http://netty.io/netty-transport-native-unix-common/)
         * Netty/Transport (io.netty:netty-transport:4.1.30.Final - http://netty.io/netty-transport/)
         * Netty (io.netty:netty:3.10.6.Final - http://netty.io/)
         * Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:7.9 - https://bitbucket.org/connect2id/nimbus-jose-jwt)
         * Noggit (org.noggit:noggit:0.6 - http://github.com/yonik/noggit)
-        * Objenesis (org.objenesis:objenesis:2.5.1 - http://objenesis.org)
         * Objenesis (org.objenesis:objenesis:3.3 - http://objenesis.org/objenesis)
         * OkHttp (com.squareup.okhttp:okhttp:2.7.5 - https://github.com/square/okhttp/okhttp)
         * Okio (com.squareup.okio:okio:1.6.0 - https://github.com/square/okio/okio)
@@ -478,9 +485,6 @@ List of third-party dependencies grouped by their license type.
         * Slider Core (org.apache.slider:slider-core:0.90.2-incubating - http://slider.incubator.apache.org/slider-core/)
         * SnakeYAML (org.yaml:snakeyaml:1.33 - https://bitbucket.org/snakeyaml/snakeyaml)
         * SnakeYAML (org.yaml:snakeyaml:2.0 - https://bitbucket.org/snakeyaml/snakeyaml)
-        * Snappy for Java (org.xerial.snappy:snappy-java:1.0.5 - http://github.com/xerial/snappy-java/)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.1.3 - https://github.comm/xerial/snappy-java)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.2.6 - https://github.com/xerial/snappy-java)
         * Spatial4J (com.spatial4j:spatial4j:0.5 - http://nexus.sonatype.org/oss-repository-hosting.html/spatial4j)
         * Spring AOP (org.springframework:spring-aop:5.3.27 - https://github.com/spring-projects/spring-framework)
         * Spring Beans (org.springframework:spring-beans:5.3.27 - https://github.com/spring-projects/spring-framework)
@@ -589,10 +593,7 @@ List of third-party dependencies grouped by their license type.
         * JPMML model (org.jpmml:pmml-model:1.0.22 - http://www.jpmml.org/pmml-model)
         * JPMML schema (org.jpmml:pmml-schema:1.0.22 - http://www.jpmml.org/pmml-schema)
         * leveldbjni-all (org.fusesource.leveldbjni:leveldbjni-all:1.8 - http://leveldbjni.fusesource.org/leveldbjni-all)
-        * MinLog (com.esotericsoftware:minlog:1.3.0 - https://github.com/EsotericSoftware/minlog)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
-        * Protocol Buffers [Core] (com.google.protobuf:protobuf-java:3.1.0 - https://developers.google.com/protocol-buffers/protobuf-java/)
-        * ReflectASM (com.esotericsoftware:reflectasm:1.11.3 - https://github.com/EsotericSoftware/reflectasm)
 
     BSD licence
 
@@ -672,6 +673,11 @@ List of third-party dependencies grouped by their license type.
         * org.eclipse.sisu.plexus (org.eclipse.sisu:org.eclipse.sisu.plexus:0.3.3 - http://www.eclipse.org/sisu/org.eclipse.sisu.plexus/)
         * spec.alpha (org.clojure:spec.alpha:0.2.176 - https://github.com/clojure/build.poms/spec.alpha)
         * tools.logging (org.clojure:tools.logging:0.2.3 - http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/tools.logging)
+
+    Eclipse Public License, Version 1.0, GNU Lesser General Public License
+
+        * Logback Classic Module (ch.qos.logback:logback-classic:1.2.10 - http://logback.qos.ch/logback-classic)
+        * Logback Core Module (ch.qos.logback:logback-core:1.2.10 - http://logback.qos.ch/logback-core)
 
     Eclipse Public License, Version 2.0
 
