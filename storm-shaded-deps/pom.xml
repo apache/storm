@@ -91,6 +91,11 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <optional>true</optional>
@@ -203,6 +208,7 @@
                             <include>org.apache.thrift:*</include>
                             <include>org.apache.zookeeper:zookeeper</include>
                             <include>org.apache.zookeeper:zookeeper-jute</include>
+                            <include>org.xerial.snappy:*</include>
                             <include>org.jctools:jctools-core</include>
                             <include>org.jgrapht:jgrapht-core</include>
                             <include>org.yaml:snakeyaml</include>
