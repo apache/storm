@@ -141,7 +141,7 @@ public class LocalizedResource extends LocallyCachedBlob {
         if (!Files.exists(userCacheDir)) {
             return Collections.emptyList();
         }
-        try (Stream<Path> stream = Files.list(userCacheDir)){
+        try (Stream<Path> stream = Files.list(userCacheDir)) {
             return stream.map((p) -> p.getFileName().toString()).collect(Collectors.toList());
         }
     }
