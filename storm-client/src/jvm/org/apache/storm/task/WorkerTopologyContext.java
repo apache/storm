@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.hooks.IWorkerHook;
 import org.apache.storm.tuple.Fields;
 
 public class WorkerTopologyContext extends GeneralTopologyContext {
@@ -138,6 +139,13 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         return pidDir;
     }
 
+    /**
+     * Fetches the worker-level data for the given name. The corresponding data needs to be first set in an implementation of
+     * {@link IWorkerHook#start(Map, WorkerUserContext)} via {@link WorkerUserContext#setResource(String, Object)}
+     *
+     * @param name  name of the worker-level data to be fetched
+     * @return Associated worker-level data
+     */
     public Object getResource(String name) {
         return userResources.get(name);
     }
