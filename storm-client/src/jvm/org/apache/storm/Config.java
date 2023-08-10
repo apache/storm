@@ -1667,38 +1667,6 @@ public class Config extends HashMap<String, Object> {
     @IsString
     public static final String STORM_WORKERS_ARTIFACTS_DIR = "storm.workers.artifacts.dir";
     /**
-     * A list of hosts of Exhibitor servers used to discover/maintain connection to ZooKeeper cluster. Any configured ZooKeeper servers will
-     * be used for the curator/exhibitor backup connection string.
-     */
-    @IsInteger
-    @IsPositiveNumber
-    public static final String STORM_EXHIBITOR_PORT = "storm.exhibitor.port";
-    /*
-     * How often to poll Exhibitor cluster in millis.
-     */
-    @IsString
-    public static final String STORM_EXHIBITOR_URIPATH = "storm.exhibitor.poll.uripath";
-    /**
-     * How often to poll Exhibitor cluster in millis.
-     */
-    @IsInteger
-    public static final String STORM_EXHIBITOR_POLL = "storm.exhibitor.poll.millis";
-    /**
-     * The number of times to retry an Exhibitor operation.
-     */
-    @IsInteger
-    public static final String STORM_EXHIBITOR_RETRY_TIMES = "storm.exhibitor.retry.times";
-    /*
-     * The interval between retries of an Exhibitor operation.
-     */
-    @IsInteger
-    public static final String STORM_EXHIBITOR_RETRY_INTERVAL = "storm.exhibitor.retry.interval";
-    /**
-     * The ceiling of the interval between retries of an Exhibitor operation.
-     */
-    @IsInteger
-    public static final String STORM_EXHIBITOR_RETRY_INTERVAL_CEILING = "storm.exhibitor.retry.intervalceiling.millis";
-    /**
      * The connection timeout for clients to ZooKeeper.
      */
     @IsInteger

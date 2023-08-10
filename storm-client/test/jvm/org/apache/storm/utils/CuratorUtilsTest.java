@@ -56,7 +56,7 @@ public class CuratorUtilsTest {
 
     @Test
     public void givenNoExhibitorServersBuilderUsesFixedProviderTest() {
-        CuratorFrameworkFactory.Builder builder = setupBuilder(false /*without exhibitor*/);
+        CuratorFrameworkFactory.Builder builder = setupBuilder(false);
         assertEquals(builder.getEnsembleProvider().getConnectionString(), "zk_connection_string");
         assertEquals(builder.getEnsembleProvider().getClass(), FixedEnsembleProvider.class);
     }
