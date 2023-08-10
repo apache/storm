@@ -82,8 +82,9 @@ public class BlowfishTupleSerializerTest {
                           " lower plate, which are used for crushing the shells of crustaceans and" +
                           " mollusks, their natural prey.";
         Kryo kryo = new Kryo();
-        BlowfishTupleSerializer writerBTS = new BlowfishTupleSerializer(kryo, topoConf);
-        BlowfishTupleSerializer readerBTS = new BlowfishTupleSerializer(kryo, topoConf);
+        kryo.setRegistrationRequired(false);
+        BlowfishTupleSerializer writerBTS = new BlowfishTupleSerializer(null, topoConf);
+        BlowfishTupleSerializer readerBTS = new BlowfishTupleSerializer(null, topoConf);
         int bufferSize = 1024;
         Output output = new Output(bufferSize, bufferSize);
         Input input = new Input(bufferSize);
