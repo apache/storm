@@ -201,8 +201,7 @@
                             <include>commons-io:commons-io</include>
                             <include>commons-lang:commons-lang</include>
                             <!-- Pulled in by Zookeeper -->
-                            <include>io.netty:netty</include>
-                            <include>io.netty:netty-all</include>
+                            <include>io.netty:*</include>
                             <include>org.apache.curator:*</include>
                             <include>org.apache.httpcomponents:httpclient</include>
                             <include>org.apache.thrift:*</include>
