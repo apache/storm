@@ -53,8 +53,6 @@ public class MapStateTest {
     public static final EmbeddedCassandraResource cassandra= new EmbeddedCassandraResource(20000);
 
     private static final Logger logger = LoggerFactory.getLogger(MapStateTest.class);
-    private CqlSession cqlSession;
-
     protected static Column column(String name, DataType type) {
         Column column = new Column();
         column.name = name;
@@ -130,7 +128,7 @@ public class MapStateTest {
         int count;
         do {
             Thread.sleep(2000);
-            count = cqlSession.execute(QueryBuilder.selectFrom("words_ks", "words_table").all().asCql())
+            count = cassandra.getSession().execute(QueryBuilder.selectFrom("words_ks", "words_table").all().asCql())
                            .getAvailableWithoutFetching();
             logger.info("Found {} records", count);
         } while (count < 24);
@@ -148,7 +146,6 @@ public class MapStateTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        cqlSession = cassandra.getSession();
         createKeyspace("words_ks");
         createTable("words_ks", "words_table",
                     column("word", DataTypes.TEXT),
@@ -166,8 +163,7 @@ public class MapStateTest {
                                 + keyspace
                                 + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };";
         logger.info(createKeyspace);
-        if (!cqlSession.execute(createKeyspace)
-                    .wasApplied()) {
+        if (!cassandra.getSession().execute(createKeyspace).wasApplied()) {
             throw new Exception("Did not create keyspace " + keyspace);
         }
     }
@@ -182,7 +178,7 @@ public class MapStateTest {
 
     protected void truncateTable(String keyspace, String table) {
         Truncate truncate = QueryBuilder.truncate(keyspace, table);
-        cqlSession.execute(truncate.asCql());
+        cassandra.getSession().execute(truncate.asCql());
     }
 
     protected void createTable(String keyspace, String table, Column key, Column... fields) {
@@ -193,7 +189,7 @@ public class MapStateTest {
             createTable.withColumn(field.name, field.type);
         }
         logger.info(createTable.toString());
-        cqlSession.execute(createTable.asCql());
+        cassandra.getSession().execute(createTable.asCql());
     }
 
     protected static class Column {

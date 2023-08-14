@@ -232,7 +232,7 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
     }
 
     private synchronized void initSession() {
-        if (session == null) {
+        if (session == null || session.isClosed()) {
             CqlSessionBuilder cqlSessionBuilder =
                     CqlSession.builder()
                             .withLocalDatacenter("datacenter1")
