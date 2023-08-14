@@ -1179,6 +1179,17 @@
             <id>clojars</id>
             <url>https://clojars.org/repo/</url>
         </repository>
+        <!--
+            STORM-3948: This repository is declared by hive-2.3.9 (parent pom). As of today (08/14/23) this Maven Repository isn't available anymore.
+            hive-2.3.10 already removed it, so we only need to wait for a 2.3.10 release here. As long is that didn't happen,
+            we work around by overriding the repository with the same id targeting to maven central.
+            TODO: Remove this repository declaration after hive-2.3.10 is available.
+         -->
+        <repository>
+            <id>conjars</id>
+            <name>STORM-3948-Workaround-Offline-Conjars-Repo</name>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
     </repositories>
 
     <build>
