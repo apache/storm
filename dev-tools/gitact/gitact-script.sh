@@ -41,9 +41,10 @@ then
     TEST_MODULES=storm-core
 elif [ "$2" == "External" ]
 then
-    if [ "$JDK_VERSION" == "11" ]
+    if [ "$JDK_VERSION" == "17" ]
     then
-        TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp,!storm-shaded-deps,!external/storm-cassandra,!external/storm-hive,!external/storm-hdfs,!external/storm-hbase,!sql/storm-sql-external/storm-sql-hdfs,!external/storm-hdfs-blobstore'
+        # Java 17 isn't supported in Cassandra 4, see https://issues.apache.org/jira/browse/CASSANDRA-16895 (it comes with Cassandra 5, late 2023)
+        TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp,!storm-shaded-deps,!external/storm-cassandra'
     else
         TEST_MODULES='!storm-client,!storm-server,!storm-core,!storm-webapp,!storm-shaded-deps'
     fi
