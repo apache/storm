@@ -44,6 +44,7 @@ import org.apache.storm.tuple.Values;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,11 +52,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MapStateTest {
 
-    //@RegisterExtension
-    //public static final
-    // EmbeddedCassandraResource cassandra= new EmbeddedCassandraResource();
-
-    EmbeddedCassandraResource cassandra;
+    @RegisterExtension
+    public static final
+     EmbeddedCassandraResource cassandra= new EmbeddedCassandraResource();
 
     private static final Logger logger = LoggerFactory.getLogger(MapStateTest.class);
     private CqlSession cqlSession;
@@ -154,13 +153,11 @@ public class MapStateTest {
     @BeforeEach
     public void setUp() throws Exception {
 
-        cassandra = new EmbeddedCassandraResource();
-
-        ///////
         InetSocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getByName(
                 cassandra.getHost()),
                 cassandra.getNativeTransportPort());
-        CqlSessionBuilder cqlSessionBuilder = CqlSession.builder().addContactPoint(inetSocketAddress);
+        CqlSessionBuilder cqlSessionBuilder = CqlSession.builder().withLocalDatacenter("datacenter1").addContactPoint(inetSocketAddress);
+
 
         // Build cluster and connect
         cqlSession = cqlSessionBuilder.build();

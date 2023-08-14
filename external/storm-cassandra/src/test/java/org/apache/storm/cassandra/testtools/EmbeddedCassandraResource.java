@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.service.CassandraDaemon;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -58,8 +59,6 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
             DatabaseDescriptor.daemonInitialization();
             prepare();
             cassandraDaemon = new CassandraDaemon();
-            cassandraDaemon.completeSetup();
-            cassandraDaemon.activate();
             host = DatabaseDescriptor.getRpcAddress().getHostName();
             nativeTransportPort = DatabaseDescriptor.getNativeTransportPort();
         } catch (Exception e) {
@@ -69,8 +68,7 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
 
     @Override
     public void beforeAll(ExtensionContext arg0) {
-
-        // cassandraDaemon.start();
+        cassandraDaemon.activate();
     }
 
     @Override
