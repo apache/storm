@@ -12,12 +12,9 @@
 
 package org.apache.storm.cassandra.trident;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
@@ -53,8 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class MapStateTest {
 
     @RegisterExtension
-    public static final
-     EmbeddedCassandraResource cassandra= new EmbeddedCassandraResource();
+    public static final EmbeddedCassandraResource cassandra= new EmbeddedCassandraResource(20000);
 
     private static final Logger logger = LoggerFactory.getLogger(MapStateTest.class);
     private CqlSession cqlSession;
@@ -152,16 +148,7 @@ public class MapStateTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getByName(
-                cassandra.getHost()),
-                cassandra.getNativeTransportPort());
-        CqlSessionBuilder cqlSessionBuilder = CqlSession.builder().withLocalDatacenter("datacenter1").addContactPoint(inetSocketAddress);
-
-
-        // Build cluster and connect
-        cqlSession = cqlSessionBuilder.build();
-
+        cqlSession = cassandra.getSession();
         createKeyspace("words_ks");
         createTable("words_ks", "words_table",
                     column("word", DataTypes.TEXT),
@@ -171,7 +158,6 @@ public class MapStateTest {
     @AfterEach
     public void tearDown() {
         truncateTable("words_ks", "words_table");
-        cqlSession.close();
     }
 
     protected void createKeyspace(String keyspace) throws Exception {

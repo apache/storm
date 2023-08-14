@@ -16,11 +16,22 @@ package org.apache.storm.cassandra.testtools;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.service.CassandraDaemon;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -28,6 +39,9 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.apache.storm.cassandra.trident.MapStateTest.cassandra;
 
 /**
  *
@@ -50,25 +64,47 @@ import org.slf4j.LoggerFactory;
 
 public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCallback {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedCassandraResource.class);
-    private final String host;
-    private final Integer nativeTransportPort;
-    CassandraDaemon cassandraDaemon;
+    private final int timeout;
+    private String host;
+    private Integer nativeTransportPort;
+    private CassandraDaemon cassandraDaemon;
+    private CqlSession session;
 
-    public EmbeddedCassandraResource() {
-        try {
-            DatabaseDescriptor.daemonInitialization();
-            prepare();
-            cassandraDaemon = new CassandraDaemon();
-            host = DatabaseDescriptor.getRpcAddress().getHostName();
-            nativeTransportPort = DatabaseDescriptor.getNativeTransportPort();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
+
+    public EmbeddedCassandraResource(int timeout) {
+        this.timeout = timeout;
     }
 
     @Override
     public void beforeAll(ExtensionContext arg0) {
-        cassandraDaemon.activate();
+        if (cassandraDaemon == null) {
+            final CountDownLatch startupLatch = new CountDownLatch(1);
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                try {
+                    DatabaseDescriptor.daemonInitialization();
+                    prepare();
+                    cassandraDaemon = new CassandraDaemon(true);
+                    cassandraDaemon.activate();
+                    host = DatabaseDescriptor.getRpcAddress().getHostName();
+                    nativeTransportPort = DatabaseDescriptor.getNativeTransportPort();
+                    startupLatch.countDown();
+                } catch (Exception e) {
+                    throw new RuntimeException(e.getMessage(), e);
+                }
+            });
+            try {
+                if (!startupLatch.await(timeout, MILLISECONDS)) {
+                    LOG.error("Cassandra daemon did not start after " + timeout + " ms. Consider increasing the timeout");
+                    throw new AssertionError("Cassandra daemon did not start within timeout");
+                }
+            } catch (InterruptedException e) {
+                LOG.error("Interrupted waiting for Cassandra daemon to start:", e);
+                throw new AssertionError(e);
+            } finally {
+                executor.shutdown();
+            }
+        }
     }
 
     @Override
@@ -76,19 +112,7 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
 
         // Cassandra daemon calls System.exit() on windows, which kills the test.
         // Stop services without killing the process instead.
-        cassandraDaemon.stop();
-
-        // Register file cleanup after jvm shutdown
-        // Cassandra doesn't actually shut down until jvm shutdown so need to wait for that first.
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // Sleep before cleaning up files
-            try {
-                Thread.sleep(3000L);
-                cleanupDataDirectories();
-            } catch (Exception e) {
-                throw new RuntimeException(e.getMessage(), e);
-            }
-        }));
+        cassandraDaemon.deactivate();
 
     }
 
@@ -200,5 +224,20 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
      */
     public String getHost() {
         return host;
+    }
+
+    public CqlSession getSession() {
+        initSession();
+        return session;
+    }
+
+    private synchronized void initSession() {
+        if (session == null) {
+            CqlSessionBuilder cqlSessionBuilder =
+                    CqlSession.builder()
+                            .withLocalDatacenter("datacenter1")
+                            .addContactPoint(new InetSocketAddress(getHost(), getNativeTransportPort())); //will use autodiscovery, see https://docs.datastax.com/en/developer/java-driver/4.2/manual/core/load_balancing/
+            session = cqlSessionBuilder.build();
+        }
     }
 }
