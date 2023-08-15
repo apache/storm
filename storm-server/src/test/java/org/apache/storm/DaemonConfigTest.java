@@ -12,7 +12,6 @@
 
 package org.apache.storm;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -21,15 +20,16 @@ import java.util.Map;
 
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.validation.ConfigValidation;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DaemonConfigTest {
 
     private void stringOrStringListTest(String key) {
-        Map<String, Object> conf = new HashMap<String, Object>();
-        Collection<Object> passCases = new LinkedList<Object>();
-        Collection<Object> failCases = new LinkedList<Object>();
+        Map<String, Object> conf = new HashMap<>();
+        Collection<Object> passCases = new LinkedList<>();
+        Collection<Object> failCases = new LinkedList<>();
 
         passCases.add(null);
         passCases.add("some string");
@@ -47,48 +47,38 @@ public class DaemonConfigTest {
         }
 
         for (Object value : failCases) {
-            try {
-                conf.put(key, value);
-                ConfigValidation.validateFields(conf);
-                Assert.fail("Expected Exception not Thrown for value: " + value);
-            } catch (IllegalArgumentException Ex) {
-            }
+            conf.put(key, value);
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
         }
     }
 
     @Test
-    public void testNimbusChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
-        InstantiationException, IllegalAccessException {
+    public void testNimbusChildoptsIsStringOrStringList() {
         stringOrStringListTest(DaemonConfig.NIMBUS_CHILDOPTS);
     }
 
     @Test
-    public void testLogviewerChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
-        InstantiationException, IllegalAccessException {
+    public void testLogviewerChildoptsIsStringOrStringList() {
         stringOrStringListTest(DaemonConfig.LOGVIEWER_CHILDOPTS);
     }
 
     @Test
-    public void testUiChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
-        InstantiationException, IllegalAccessException {
+    public void testUiChildoptsIsStringOrStringList() {
         stringOrStringListTest(DaemonConfig.UI_CHILDOPTS);
     }
 
     @Test
-    public void testPacemakerChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
-        InstantiationException, IllegalAccessException {
+    public void testPacemakerChildoptsIsStringOrStringList() {
         stringOrStringListTest(DaemonConfig.PACEMAKER_CHILDOPTS);
     }
 
     @Test
-    public void testDrpcChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
-        InstantiationException, IllegalAccessException {
+    public void testDrpcChildoptsIsStringOrStringList() {
         stringOrStringListTest(DaemonConfig.DRPC_CHILDOPTS);
     }
 
     @Test
-    public void testSupervisorChildoptsIsStringOrStringList() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException,
-        InstantiationException, IllegalAccessException {
+    public void testSupervisorChildoptsIsStringOrStringList() {
         stringOrStringListTest(DaemonConfig.SUPERVISOR_CHILDOPTS);
     }
 
@@ -97,8 +87,8 @@ public class DaemonConfigTest {
         Map<String, Object> conf = new HashMap<>();
         conf.put(DaemonConfig.LOGVIEWER_HTTPS_KEY_PASSWORD, "pass1");
         conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100);
-        Map result = ConfigUtils.maskPasswords(conf);
-        Assert.assertEquals("*****", result.get(DaemonConfig.LOGVIEWER_HTTPS_KEY_PASSWORD));
-        Assert.assertEquals(100, result.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
+        Map<String, Object> result = ConfigUtils.maskPasswords(conf);
+        assertEquals("*****", result.get(DaemonConfig.LOGVIEWER_HTTPS_KEY_PASSWORD));
+        assertEquals(100, result.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
     }
 }

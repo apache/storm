@@ -90,6 +90,7 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
 
     @Override
     @SuppressWarnings("unchecked")
+    @Override
     public T addResource(String resourceName, Number resourceValue) {
         Map<String, Double> resourcesMap = (Map<String, Double>) getComponentConfiguration()
                 .computeIfAbsent(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP,

@@ -18,7 +18,7 @@
 
 package org.apache.storm.assignments;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,28 +28,29 @@ import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.shade.org.apache.commons.collections.map.HashedMap;
 import org.apache.storm.utils.ConfigUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 
 public class LocalAssignmentsBackendTest {
 
     @Test
     public void testLocalAssignment() {
-        Map<String, Assignment> stormToAssignment = new HashMap<>();
         String storm1 = "storm1";
         String storm2 = "storm2";
         Assignment ass1 = mockedAssignment(1);
         Assignment ass2 = mockedAssignment(2);
 
         ILocalAssignmentsBackend backend = LocalAssignmentsBackendFactory.getBackend(ConfigUtils.readStormConfig());
-        assertEquals(null, backend.getAssignment(storm1));
+        assertNull(backend.getAssignment(storm1));
         backend.keepOrUpdateAssignment(storm1, ass1);
         backend.keepOrUpdateAssignment(storm2, ass2);
         assertEquals(ass1, backend.getAssignment(storm1));
         assertEquals(ass2, backend.getAssignment(storm2));
         backend.clearStateForStorm(storm1);
-        assertEquals(null, backend.getAssignment(storm1));
+        assertNull(backend.getAssignment(storm1));
         backend.keepOrUpdateAssignment(storm1, ass1);
         backend.keepOrUpdateAssignment(storm1, ass2);
         assertEquals(ass2, backend.getAssignment(storm1));
@@ -66,15 +67,15 @@ public class LocalAssignmentsBackendTest {
         String id3 = "id3";
 
         ILocalAssignmentsBackend backend = LocalAssignmentsBackendFactory.getBackend(ConfigUtils.readStormConfig());
-        assertEquals(null, backend.getStormId(name3));
+        assertNull(backend.getStormId(name3));
         backend.keepStormId(name1, id1);
         backend.keepStormId(name2, id2);
         assertEquals(id1, backend.getStormId(name1));
         assertEquals(id2, backend.getStormId(name2));
         backend.deleteStormId(name1);
-        assertEquals(null, backend.getStormId(name1));
+        assertNull(backend.getStormId(name1));
         backend.clearStateForStorm(id2);
-        assertEquals(null, backend.getStormId(name2));
+        assertNull(backend.getStormId(name2));
         backend.keepStormId(name1, id1);
         backend.keepStormId(name1, id3);
         assertEquals(id3, backend.getStormId(name1));
@@ -83,16 +84,16 @@ public class LocalAssignmentsBackendTest {
     private Assignment mockedAssignment(int i) {
         Assignment ass = new Assignment();
         ass.set_master_code_dir("master_code_dir" + i);
-        HashMap node_to_host = new HashMap();
+        HashMap<String, String> node_to_host = new HashMap<>();
         node_to_host.put("node" + i, "host" + i);
         ass.set_node_host(node_to_host);
         Map<List<Long>, NodeInfo> executor_node_port = new HashMap<>();
         Set<Long> nodePorts = new HashSet<>();
         nodePorts.add(9723L);
-        executor_node_port.put(Arrays.asList(i + 0L), new NodeInfo("node" + i, nodePorts));
+        executor_node_port.put(Collections.singletonList(i + 0L), new NodeInfo("node" + i, nodePorts));
         ass.set_executor_node_port(executor_node_port);
         Map<List<Long>, Long> executor_start_time_secs = new HashMap<>();
-        executor_start_time_secs.put(Arrays.asList(1L), 12345L);
+        executor_start_time_secs.put(Collections.singletonList(1L), 12345L);
         ass.set_executor_start_time_secs(executor_start_time_secs);
         ass.set_worker_resources(new HashedMap());
         ass.set_total_shared_off_heap(new HashedMap());

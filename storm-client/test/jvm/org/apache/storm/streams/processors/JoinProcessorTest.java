@@ -18,24 +18,24 @@ import java.util.List;
 import java.util.Set;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.operations.PairValueJoiner;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JoinProcessorTest {
     JoinProcessor<Integer, Pair<Integer, Integer>, Integer, Integer> joinProcessor;
     String leftStream = "left";
     String rightStream = "right";
-    List<Pair<Integer, List<Pair<Integer, Integer>>>> res = new ArrayList<>();
+    List<Pair<Integer, Pair<Integer, Integer>>> res = new ArrayList<>();
 
-    ProcessorContext context = new ProcessorContext() {
+    ProcessorContext<Pair<Integer, Pair<Integer, Integer>>> context = new ProcessorContext<Pair<Integer, Pair<Integer, Integer>>>() {
         @Override
-        public <T> void forward(T input) {
-            res.add((Pair<Integer, List<Pair<Integer, Integer>>>) input);
+        public void forward(Pair<Integer, Pair<Integer, Integer>> input) {
+            res.add(input);
         }
 
         @Override
-        public <T> void forward(T input, String stream) {
+        public void forward(Pair<Integer, Pair<Integer, Integer>> input, String stream) {
         }
 
         @Override
@@ -49,7 +49,7 @@ public class JoinProcessorTest {
         }
     };
 
-    List<Pair<Integer, Integer>> leftKeyValeus = Arrays.asList(
+    List<Pair<Integer, Integer>> leftKeyValues = Arrays.asList(
         Pair.of(2, 4),
         Pair.of(5, 25),
         Pair.of(7, 49)
@@ -63,7 +63,7 @@ public class JoinProcessorTest {
     );
 
     @Test
-    public void testInnerJoin() throws Exception {
+    public void testInnerJoin() {
         joinProcessor = new JoinProcessor<>(leftStream, rightStream, new PairValueJoiner<>());
         processValues();
         assertEquals(Pair.of(2, Pair.of(4, 8)), res.get(0));
@@ -71,7 +71,7 @@ public class JoinProcessorTest {
     }
 
     @Test
-    public void testLeftOuterJoin() throws Exception {
+    public void testLeftOuterJoin() {
         joinProcessor = new JoinProcessor<>(leftStream, rightStream, new PairValueJoiner<>(),
                                             JoinProcessor.JoinType.OUTER, JoinProcessor.JoinType.INNER);
         processValues();
@@ -81,7 +81,7 @@ public class JoinProcessorTest {
     }
 
     @Test
-    public void testRightOuterJoin() throws Exception {
+    public void testRightOuterJoin() {
         joinProcessor = new JoinProcessor<>(leftStream, rightStream, new PairValueJoiner<>(),
                                             JoinProcessor.JoinType.INNER, JoinProcessor.JoinType.OUTER);
         processValues();
@@ -92,7 +92,7 @@ public class JoinProcessorTest {
     }
 
     @Test
-    public void testFullOuterJoin() throws Exception {
+    public void testFullOuterJoin() {
         joinProcessor = new JoinProcessor<>(leftStream, rightStream, new PairValueJoiner<>(),
                                             JoinProcessor.JoinType.OUTER, JoinProcessor.JoinType.OUTER);
         processValues();
@@ -106,7 +106,7 @@ public class JoinProcessorTest {
     private void processValues() {
         res.clear();
         joinProcessor.init(context);
-        for (Pair<Integer, Integer> kv : leftKeyValeus) {
+        for (Pair<Integer, Integer> kv : leftKeyValues) {
             joinProcessor.execute(kv, leftStream);
         }
         for (Pair<Integer, Integer> kv : rightKeyValues) {

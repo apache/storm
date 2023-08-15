@@ -35,8 +35,9 @@ import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests local cluster with nimbus and a plugin for {@link Config#STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN}.
@@ -72,13 +73,13 @@ public class LocalNimbusTest {
 
             List<TopologyDetails> topologyNames = new ArrayList<>();
             for (int i = 0; i < 4; i++) {
-                final String topologyName = "word-count-" + UUID.randomUUID().toString();
+                final String topologyName = "word-count-" + UUID.randomUUID();
                 final StormTopology stormTopology = createTestTopology();
                 topologyNames.add(new TopologyDetails(topologyName, stormTopology));
                 localCluster.submitTopology(topologyName, topoConf, stormTopology);
             }
 
-            Assert.assertEquals(InmemoryTopologySubmitterHook.submittedTopologies, topologyNames);
+            assertEquals(InmemoryTopologySubmitterHook.submittedTopologies, topologyNames);
         }
     }
 
@@ -86,7 +87,7 @@ public class LocalNimbusTest {
         public static final List<TopologyDetails> submittedTopologies = new ArrayList<>();
 
         @Override
-        public void notify(TopologyInfo topologyInfo, Map<String, Object> topoConf, StormTopology topology) throws IllegalAccessException {
+        public void notify(TopologyInfo topologyInfo, Map<String, Object> topoConf, StormTopology topology) {
             submittedTopologies.add(new TopologyDetails(topologyInfo.get_name(), topology));
         }
     }

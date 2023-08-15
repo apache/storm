@@ -18,24 +18,26 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import org.apache.storm.streams.Pair;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CoGroupByKeyProcessorTest {
     private CoGroupByKeyProcessor<Integer, Integer, Integer> coGroupByKeyProcessor;
-    private String firstStream = "first";
-    private String secondStream = "second";
-    private List<Pair<Integer, Pair<List<Integer>, List<Integer>>>> res = new ArrayList<>();
+    private final String firstStream = "first";
+    private final String secondStream = "second";
+    private final List<Pair<Integer, Pair<List<Integer>, List<Integer>>>> res = new ArrayList<>();
 
-    private ProcessorContext context = new ProcessorContext() {
+    private final ProcessorContext<Pair<Integer, Pair<List<Integer>, List<Integer>>>> context =
+        new ProcessorContext<Pair<Integer, Pair<List<Integer>, List<Integer>>>>() {
+
         @Override
-        public <T> void forward(T input) {
-            res.add((Pair<Integer, Pair<List<Integer>, List<Integer>>>) input);
+        public void forward(Pair<Integer, Pair<List<Integer>, List<Integer>>> input) {
+            res.add(input);
         }
 
         @Override
-        public <T> void forward(T input, String stream) {
+        public void forward(Pair<Integer, Pair<List<Integer>, List<Integer>>> input, String stream) {
         }
 
         @Override
@@ -49,14 +51,14 @@ public class CoGroupByKeyProcessorTest {
         }
     };
 
-    private List<Pair<Integer, Integer>> firstKeyValues = Arrays.asList(
+    private final List<Pair<Integer, Integer>> firstKeyValues = Arrays.asList(
         Pair.of(2, 4),
         Pair.of(5, 25),
         Pair.of(7, 49),
         Pair.of(7, 87)
     );
 
-    private List<Pair<Integer, Integer>> secondKeyValues = Arrays.asList(
+    private final List<Pair<Integer, Integer>> secondKeyValues = Arrays.asList(
         Pair.of(1, 1),
         Pair.of(2, 8),
         Pair.of(5, 125),
@@ -66,7 +68,7 @@ public class CoGroupByKeyProcessorTest {
     );
 
     @Test
-    public void testCoGroupByKey() throws Exception {
+    public void testCoGroupByKey() {
         coGroupByKeyProcessor = new CoGroupByKeyProcessor<>(firstStream, secondStream);
         processValues();
         List<Pair<Integer, Pair<Collection<Integer>, Collection<Integer>>>> expected = new ArrayList<>();

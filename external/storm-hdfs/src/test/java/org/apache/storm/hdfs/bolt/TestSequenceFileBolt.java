@@ -31,7 +31,7 @@ import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.apache.storm.hdfs.testing.MiniDFSClusterExtension;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -40,28 +40,28 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class TestSequenceFileBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestSequenceFileBolt.class);
     private static final String testRoot = "/unittest";
-    @Rule
-    public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule(() -> {
+    @RegisterExtension
+    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension(() -> {
         Configuration conf = new Configuration();
         conf.set("fs.trash.interval", "10");
         conf.setBoolean("dfs.permissions", true);
@@ -70,8 +70,7 @@ public class TestSequenceFileBolt {
         conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
         return conf;
     });
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+
     Tuple tuple1 = generateTestTuple(1l, "first tuple");
     Tuple tuple2 = generateTestTuple(2l, "second tuple");
     private String hdfsURI;
@@ -81,13 +80,13 @@ public class TestSequenceFileBolt {
     @Mock
     private TopologyContext topologyContext;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
-        fs = dfsClusterRule.getDfscluster().getFileSystem();
-        hdfsURI = "hdfs://localhost:" + dfsClusterRule.getDfscluster().getNameNodePort() + "/";
+        fs = DFS_CLUSTER_EXTENSION.getDfscluster().getFileSystem();
+        hdfsURI = "hdfs://localhost:" + DFS_CLUSTER_EXTENSION.getDfscluster().getNameNodePort() + "/";
     }
 
-    @After
+    @AfterEach
     public void shutDown() throws IOException {
         fs.close();
     }
@@ -103,7 +102,7 @@ public class TestSequenceFileBolt {
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(2, countNonZeroLengthFiles(testRoot));
+        assertEquals(2, countNonZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -112,13 +111,13 @@ public class TestSequenceFileBolt {
         bolt.prepare(new Config(), topologyContext, collector);
         bolt.execute(tuple1);
 
-        verifyZeroInteractions(collector);
+        verifyNoInteractions(collector);
 
         bolt.execute(tuple2);
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -129,8 +128,7 @@ public class TestSequenceFileBolt {
 
         fs.setSafeMode(SafeModeAction.SAFEMODE_ENTER);
         // All writes/syncs will fail so this should cause a RuntimeException
-        thrown.expect(RuntimeException.class);
-        bolt.execute(tuple1);
+        assertThrows(RuntimeException.class, () -> bolt.execute(tuple1));
     }
 
     private SequenceFileBolt makeSeqBolt(String nameNodeAddr, int countSync, float rotationSizeMB) {

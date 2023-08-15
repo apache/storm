@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -14,7 +14,6 @@ package org.apache.storm.daemon.supervisor;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,12 +31,12 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.SimpleVersion;
 import org.apache.storm.utils.Utils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -83,10 +82,12 @@ public class BasicContainerTest {
         }
         int commonLen = Math.min(a.size(), b.size());
         for (int i = 0; i < commonLen; i++) {
-            assertEquals("at index " + i + "\n" + a + " !=\n" + b + "\n", a.get(i), b.get(i));
+            assertEquals(a.get(i), b.get(i),
+                "at index " + i + "\n" + a + " !=\n" + b + "\n");
         }
 
-        assertEquals("size of lists don't match \n" + a + " !=\n" + b, a.size(), b.size());
+        assertEquals(a.size(), b.size(),
+            "size of lists don't match \n" + a + " !=\n" + b);
     }
 
     @Test
@@ -112,7 +113,7 @@ public class BasicContainerTest {
 
         assertNotNull(mc.workerId);
         verify(ls).getApprovedWorkers();
-        Map<String, Integer> expectedNewState = new HashMap<String, Integer>();
+        Map<String, Integer> expectedNewState = new HashMap<>();
         expectedNewState.put(mc.workerId, port);
         verify(ls).setApprovedWorkers(expectedNewState);
     }
@@ -126,7 +127,7 @@ public class BasicContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
 
-        Map<String, Integer> workerState = new HashMap<String, Integer>();
+        Map<String, Integer> workerState = new HashMap<>();
         workerState.put(workerId, port);
 
         LocalState ls = mock(LocalState.class);
@@ -153,14 +154,14 @@ public class BasicContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
 
-        Map<String, Integer> workerState = new HashMap<String, Integer>();
+        Map<String, Integer> workerState = new HashMap<>();
         workerState.put("somethingelse", port + 1);
 
         LocalState ls = mock(LocalState.class);
         when(ls.getApprovedWorkers()).thenReturn(workerState);
 
         try {
-            new MockBasicContainer(ContainerType.RECOVER_FULL, new HashMap<String, Object>(),
+            new MockBasicContainer(ContainerType.RECOVER_FULL, new HashMap<>(),
                 "SUPERVISOR", supervisorPort, port, la, null, ls, null, new StormMetricsRegistry(),
                 new HashMap<>(), null, "profile");
             fail("Container recovered worker incorrectly");
@@ -182,7 +183,7 @@ public class BasicContainerTest {
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
         when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
 
-        Map<String, Integer> workerState = new HashMap<String, Integer>();
+        Map<String, Integer> workerState = new HashMap<>();
         workerState.put(workerId, port);
 
         LocalState ls = mock(LocalState.class);
@@ -198,7 +199,7 @@ public class BasicContainerTest {
 
         assertNull(mc.workerId);
         verify(ls).getApprovedWorkers();
-        Map<String, Integer> expectedNewState = new HashMap<String, Integer>();
+        Map<String, Integer> expectedNewState = new HashMap<>();
         verify(ls).setApprovedWorkers(expectedNewState);
     }
 
@@ -244,7 +245,7 @@ public class BasicContainerTest {
         assertEquals(Arrays.asList("profile", String.valueOf(pid), "jmap", topoRoot), cmd.cmd);
         assertEquals(new File(topoRoot), cmd.pwd);
 
-        //JSTACK DUMP
+        // JSTACK DUMP
         req.set_action(ProfileAction.JSTACK_DUMP);
 
         mc.runProfiling(req, false);
@@ -684,7 +685,7 @@ public class BasicContainerTest {
         }
 
         @Override
-        protected Map<String, Object> readTopoConf() throws IOException {
+        protected Map<String, Object> readTopoConf() {
             return new HashMap<>();
         }
 
@@ -708,7 +709,7 @@ public class BasicContainerTest {
         protected List<String> frameworkClasspath(SimpleVersion version) {
             //We are not really running anything so make this
             // simple to check for
-            return Arrays.asList("FRAMEWORK_CP");
+            return Collections.singletonList("FRAMEWORK_CP");
         }
 
         @Override

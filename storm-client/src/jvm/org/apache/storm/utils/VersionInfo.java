@@ -32,6 +32,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,12 +170,11 @@ public final class VersionInfo {
                 }
             } else if (p.endsWith("*")) {
                 //for a path like /<parent-path>/*
-                try {
-                    Path parent = p.getParent();
-                    List<String> children = new ArrayList<>();
-                    Files.list(parent)
-                        //avoid infinite recursion
-                        .filter(path -> !path.endsWith("*"))
+                Path parent = p.getParent();
+                List<String> children = new ArrayList<>();
+                try (Stream<Path> stream = Files.list(parent)) {
+                    //avoid infinite recursion
+                    stream.filter(path -> !path.endsWith("*"))
                         .forEach(path -> children.add(path.toString()));
                     IVersionInfo resFromChildren = getFromClasspath(children, propFileName);
                     if (resFromChildren != null) {

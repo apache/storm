@@ -20,12 +20,12 @@ package org.apache.storm.sql;
 import com.google.common.collect.Lists;
 import org.apache.storm.sql.runtime.serde.csv.CsvScheme;
 import org.apache.storm.sql.runtime.serde.csv.CsvSerializer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class TestCsvSerializer {
 

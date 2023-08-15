@@ -20,6 +20,7 @@ package org.apache.storm.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,33 +38,32 @@ import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UtilsTest {
     public static final Logger LOG = LoggerFactory.getLogger(UtilsTest.class);
 
     @Test
     public void isZkAuthenticationConfiguredTopologyTest() {
-        Assert.assertFalse(
-            "Returns null if given null config",
-            Utils.isZkAuthenticationConfiguredTopology(null));
+        assertFalse(
+            Utils.isZkAuthenticationConfiguredTopology(null),
+            "Returns null if given null config");
 
-        Assert.assertFalse(
-            "Returns false if scheme key is missing",
-            Utils.isZkAuthenticationConfiguredTopology(emptyMockMap()));
+        assertFalse(
+            Utils.isZkAuthenticationConfiguredTopology(emptyMockMap()),
+            "Returns false if scheme key is missing");
 
-        Assert.assertFalse(
-            "Returns false if scheme value is null",
-            Utils.isZkAuthenticationConfiguredTopology(topologyMockMap(null)));
+        assertFalse(
+            Utils.isZkAuthenticationConfiguredTopology(topologyMockMap(null)),
+            "Returns false if scheme value is null");
 
-        Assert.assertTrue(
-            "Returns true if scheme value is string",
-            Utils.isZkAuthenticationConfiguredTopology(topologyMockMap("foobar")));
+        assertTrue(
+            Utils.isZkAuthenticationConfiguredTopology(topologyMockMap("foobar")),
+            "Returns true if scheme value is string");
     }
 
     private Map<String, Object> topologyMockMap(String value) {
@@ -85,11 +85,11 @@ public class UtilsTest {
     }
 
     private void doParseJvmHeapMemByChildOptsTest(String message, String opt, double expected) {
-        doParseJvmHeapMemByChildOptsTest(message, Arrays.asList(opt), expected);
+        doParseJvmHeapMemByChildOptsTest(message, Collections.singletonList(opt), expected);
     }
 
     private void doParseJvmHeapMemByChildOptsTest(String message, List<String> opts, double expected) {
-        Assert.assertEquals(message, expected, Utils.parseJvmHeapMemByChildOpts(opts, 123.0), 0);
+        assertEquals(expected, Utils.parseJvmHeapMemByChildOpts(opts, 123.0), 0, message);
     }
 
     @Test
@@ -144,33 +144,27 @@ public class UtilsTest {
         Map<String, Object> config = ConfigUtils.readStormConfig();
         config.put(Config.STORM_NIMBUS_RETRY_TIMES, 0);
 
-        try {
-            new NimbusClient(config, "", 65535);
-            Assert.fail("Expected exception to be thrown");
-        } catch (RuntimeException e) {
-            Assert.assertTrue(
-                "Cause is not TTransportException " + e,
-                Utils.exceptionCauseIsInstanceOf(TTransportException.class, e));
-        }
+        Exception e = assertThrows(RuntimeException.class, () -> new NimbusClient(config, "", 65535));
+        assertEquals(TTransportException.class, e.getCause(), "Cause is not TTransportException " + e);
     }
 
     @Test
     public void isZkAuthenticationConfiguredStormServerTest() {
-        Assert.assertFalse(
-            "Returns false if given null config",
-            Utils.isZkAuthenticationConfiguredStormServer(null));
+        assertFalse(
+            Utils.isZkAuthenticationConfiguredStormServer(null),
+            "Returns false if given null config");
 
-        Assert.assertFalse(
-            "Returns false if scheme key is missing",
-            Utils.isZkAuthenticationConfiguredStormServer(emptyMockMap()));
+        assertFalse(
+            Utils.isZkAuthenticationConfiguredStormServer(emptyMockMap()),
+            "Returns false if scheme key is missing");
 
-        Assert.assertFalse(
-            "Returns false if scheme value is null",
-            Utils.isZkAuthenticationConfiguredStormServer(serverMockMap(null)));
+        assertFalse(
+            Utils.isZkAuthenticationConfiguredStormServer(serverMockMap(null)),
+            "Returns false if scheme value is null");
 
-        Assert.assertTrue(
-            "Returns true if scheme value is string",
-            Utils.isZkAuthenticationConfiguredStormServer(serverMockMap("foobar")));
+        assertTrue(
+            Utils.isZkAuthenticationConfiguredStormServer(serverMockMap("foobar")),
+            "Returns true if scheme value is string");
     }
 
     @Test
@@ -179,7 +173,7 @@ public class UtilsTest {
         String oldValue = System.getProperty(key);
         try {
             System.setProperty("java.security.auth.login.config", "anything");
-            Assert.assertTrue(Utils.isZkAuthenticationConfiguredStormServer(emptyMockMap()));
+            assertTrue(Utils.isZkAuthenticationConfiguredStormServer(emptyMockMap()));
         } finally {
             // reset property
             if (oldValue == null) {
@@ -193,14 +187,14 @@ public class UtilsTest {
     @Test
     public void testIsValidConfEmpty() {
         Map<String, Object> map0 = ImmutableMap.of();
-        Assert.assertTrue(Utils.isValidConf(map0, map0));
+        assertTrue(Utils.isValidConf(map0, map0));
     }
 
     @Test
     public void testIsValidConfIdentical() {
         Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
                                                    "k2", "as");
-        Assert.assertTrue(Utils.isValidConf(map1, map1));
+        assertTrue(Utils.isValidConf(map1, map1));
     }
 
     @Test
@@ -209,7 +203,7 @@ public class UtilsTest {
                                                    "k2", "as");
         Map<String, Object> map2 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
                                                    "k2", "as");
-        Assert.assertTrue(Utils.isValidConf(map1, map2)); // test deep equal
+        assertTrue(Utils.isValidConf(map1, map2)); // test deep equal
     }
 
     @Test
@@ -218,21 +212,21 @@ public class UtilsTest {
                                                    "k2", "as");
         Map<String, Object> map3 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 't'),
                                                    "k2", "as");
-        Assert.assertFalse(Utils.isValidConf(map1, map3));
+        assertFalse(Utils.isValidConf(map1, map3));
     }
 
     @Test
     public void testIsValidConfPrimitiveNotEqual() {
         Map<String, Object> map4 = ImmutableMap.of("k0", 2L);
         Map<String, Object> map5 = ImmutableMap.of("k0", 3L);
-        Assert.assertFalse(Utils.isValidConf(map4, map5));
+        assertFalse(Utils.isValidConf(map4, map5));
     }
 
     @Test
     public void testIsValidConfEmptyNotEqual() {
         Map<String, Object> map0 = ImmutableMap.of();
         Map<String, Object> map5 = ImmutableMap.of("k0", 3L);
-        Assert.assertFalse(Utils.isValidConf(map0, map5));
+        assertFalse(Utils.isValidConf(map0, map5));
     }
 
     @Test

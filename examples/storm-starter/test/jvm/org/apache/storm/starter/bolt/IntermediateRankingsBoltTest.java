@@ -25,11 +25,11 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class IntermediateRankingsBoltTest {
@@ -97,7 +97,7 @@ public class IntermediateRankingsBoltTest {
         bolt.execute(tickTuple, collector);
 
         // then
-        // verifyZeroInteractions(collector);
+        // verifyNoInteractions(collector);
         verify(collector).emit(any(Values.class));
     }
 
@@ -112,7 +112,7 @@ public class IntermediateRankingsBoltTest {
         bolt.execute(normalTuple, collector);
 
         // then
-        verifyZeroInteractions(collector);
+        verifyNoInteractions(collector);
     }
 
     @Test

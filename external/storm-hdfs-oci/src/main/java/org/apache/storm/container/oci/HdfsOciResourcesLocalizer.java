@@ -47,6 +47,7 @@ public class HdfsOciResourcesLocalizer implements OciResourcesLocalizerInterface
      * @param conf the storm conf.
      * @throws IOException on I/O exception
      */
+    @Override
     public void init(Map<String, Object> conf) throws IOException {
         //login to hdfs
         HadoopLoginUtil.loginHadoop(conf);
@@ -66,6 +67,7 @@ public class HdfsOciResourcesLocalizer implements OciResourcesLocalizerInterface
      * @return the destination of the oci resource
      * @throws IOException on I/O exception
      */
+    @Override
     public synchronized String localize(OciResource ociResource) throws IOException {
         if (ociResource == null) {
             return null;

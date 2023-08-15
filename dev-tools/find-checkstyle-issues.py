@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,17 +12,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import sys
 import os
 from optparse import OptionParser
 import subprocess
+
 
 def getCheckstyleFor(f, check_result):
     f = os.path.abspath(f)
     check_result = os.path.abspath(check_result)
     ret = subprocess.check_output(['xsltproc', '--stringparam', 'target', f, './dev-tools/checkstyle.xslt', check_result])
     if not ret.isspace():
-        print ret
+        print(ret)
+
 
 def main():
     parser = OptionParser(usage="usage: %prog [options]")
@@ -33,6 +34,7 @@ def main():
 
     for f in args:
         getCheckstyleFor(f, options.check_result)
+
 
 if __name__ == "__main__":
     main()

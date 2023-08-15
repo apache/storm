@@ -24,14 +24,14 @@ import org.apache.storm.utils.ShellCommandRunner;
 import org.apache.storm.utils.ShellUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +47,7 @@ public class ShellBasedGroupsMappingTest {
     private ShellBasedGroupsMapping groupsMapping;
     private Map<String, Object> topoConf;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         mockShell = mock(ShellCommandRunner.class);
         groupsMapping = new ShellBasedGroupsMapping(mockShell);
@@ -58,7 +58,7 @@ public class ShellBasedGroupsMappingTest {
 
     @Test
     public void testCanGetGroups() throws Exception {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             groupsMapping.prepare(topoConf);
             when(mockShell.execCommand(ShellUtils.getGroupsForUserCommand(TEST_USER_1))).thenReturn(TEST_TWO_GROUPS);
 
@@ -70,7 +70,7 @@ public class ShellBasedGroupsMappingTest {
 
     @Test
     public void testWillCacheGroups() throws Exception {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             groupsMapping.prepare(topoConf);
             when(mockShell.execCommand(ShellUtils.getGroupsForUserCommand(TEST_USER_1))).thenReturn(TEST_TWO_GROUPS, TEST_NO_GROUPS);
 
@@ -83,7 +83,7 @@ public class ShellBasedGroupsMappingTest {
 
     @Test
     public void testWillExpireCache() throws Exception {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             groupsMapping.prepare(topoConf);
             when(mockShell.execCommand(ShellUtils.getGroupsForUserCommand(TEST_USER_1))).thenReturn(TEST_TWO_GROUPS, TEST_NO_GROUPS);
 

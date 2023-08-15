@@ -16,10 +16,10 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UtilTest {
 
@@ -46,20 +46,9 @@ public class UtilTest {
 
     @Test
     public void testError() {
-        //This test is rather ugly, but it is the only way to see if the error messages are working correctly.
-        try {
-            Util.getJavaType(Types.REF);
-            fail("didn't throw like expected");
-        } catch (Exception e) {
-            assertEquals("We do not support tables with SqlType: REF", e.getMessage());
-        }
-
-        try {
-            Util.getJavaType(-1000);
-            fail("didn't throw like expected");
-        } catch (Exception e) {
-            assertEquals("Unknown sqlType -1000", e.getMessage());
-        }
-
+        Exception e = assertThrows(Exception.class, () -> Util.getJavaType(Types.REF));
+        assertEquals("We do not support tables with SqlType: REF", e.getMessage());
+        e = assertThrows(Exception.class, () -> Util.getJavaType(-1000));
+        assertEquals("Unknown sqlType -1000", e.getMessage());
     }
 }

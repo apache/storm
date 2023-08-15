@@ -17,6 +17,7 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 
 import org.apache.storm.elasticsearch.common.EsConfig;
@@ -24,14 +25,12 @@ import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.tuple.Tuple;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.TermQueryBuilder;
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
 public class EsIndexBoltTest extends AbstractEsBoltIntegrationTest<EsIndexBolt> {
 
     @Test
-    public void testEsIndexBolt()
-            throws Exception {
+    public void testEsIndexBolt() {
         Tuple tuple = createTestTuple(index, type);
 
         bolt.execute(tuple);
@@ -44,12 +43,11 @@ public class EsIndexBoltTest extends AbstractEsBoltIntegrationTest<EsIndexBolt> 
                 .setSize(0)
                 .execute().actionGet();
 
-        Assert.assertEquals(1, resp.getHits().getTotalHits());
+        assertEquals(1, resp.getHits().getTotalHits());
     }
 
     @Test
-    public void indexMissing()
-            throws Exception {
+    public void indexMissing() {
         String index = "missing";
 
         Tuple tuple = createTestTuple(index, type);
@@ -64,7 +62,7 @@ public class EsIndexBoltTest extends AbstractEsBoltIntegrationTest<EsIndexBolt> 
                 .setSize(0)
                 .execute().actionGet();
 
-        Assert.assertEquals(1, resp.getHits().getTotalHits());
+        assertEquals(1, resp.getHits().getTotalHits());
     }
 
     private Tuple createTestTuple(String index, String type) {

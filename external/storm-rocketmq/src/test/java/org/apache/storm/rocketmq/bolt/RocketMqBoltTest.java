@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -25,8 +25,8 @@ import org.apache.storm.rocketmq.TestUtils;
 import org.apache.storm.rocketmq.common.mapper.FieldNameBasedTupleToMessageMapper;
 import org.apache.storm.rocketmq.common.selector.DefaultTopicSelector;
 import org.apache.storm.tuple.Tuple;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -37,8 +37,8 @@ public class RocketMqBoltTest {
     private RocketMqBolt rocketMqBolt;
     private DefaultMQProducer producer;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp() {
         rocketMqBolt = new RocketMqBolt();
         rocketMqBolt.withSelector(new DefaultTopicSelector("tpc"));
         rocketMqBolt.withMapper(new FieldNameBasedTupleToMessageMapper("f1", "f2"));
@@ -60,7 +60,7 @@ public class RocketMqBoltTest {
     }
 
     @Test
-    public void cleanup() throws Exception {
+    public void cleanup() {
         rocketMqBolt.cleanup();
         verify(producer).shutdown();
     }

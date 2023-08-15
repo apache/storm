@@ -1,0 +1,8 @@
+AWS Binaries
+
+These require Python version 3. AWS credentials must already be set under ${HOME}/.aws
+
+aws_kafka.py: Is a commandline processor for interacting with the AWS Kafka. It contains a subset of functionality
+              supported by boto3 for Kafka. Run the list_clusters command and then select_cluster, which sets the
+              current cluster. Some commands work on the currently selected cluster. Other commands accept a
+              cluster name (or apply the same command on all the clusters.

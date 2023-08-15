@@ -20,11 +20,11 @@ import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class PartialKeyGroupingTest {
 
     @Test
-    public void testGroupingIsSerializable() throws Exception {
+    public void testGroupingIsSerializable() {
         PartialKeyGrouping grouping = new PartialKeyGrouping(new Fields("some_field"));
         Utils.javaSerialize(grouping);
     }

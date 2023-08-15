@@ -22,15 +22,15 @@ import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.anyObject;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -67,7 +67,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testLogResetShouldNotTriggerForFutureTime() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long theFuture = Time.currentTimeMillis() + 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("foo", ll(theFuture));
@@ -81,7 +81,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testLogResetTriggersForPastTime() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("foo", ll("INFO", "WARN", past));
@@ -101,12 +101,12 @@ public class LogConfigManagerTest {
         LogConfigManager underTest = spy(new LogConfigManagerUnderTest(atomConf));
         underTest.resetLogLevels();
         assertEquals(new TreeMap<>(), atomConf.get());
-        verify(underTest, never()).setLoggerLevel(anyObject(), anyObject(), anyObject());
+        verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), anyString(), anyString());
     }
 
     @Test
     public void testLogResetResetsRootLoggerIfSet() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put(LogManager.ROOT_LOGGER_NAME, ll("DEBUG", "WARN", past));
@@ -115,13 +115,13 @@ public class LogConfigManagerTest {
             LogConfigManager underTest = spy(new LogConfigManagerUnderTest(atomConf));
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
-            verify(underTest).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
         }
     }
 
     @Test
-    public void testLogResetProperlyResetLogLevelAfterTimeout() throws InterruptedException {
-        try (SimulatedTime t = new SimulatedTime()) {
+    public void testLogResetProperlyResetLogLevelAfterTimeout() {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long inThirtySeconds = Time.currentTimeMillis() + 30_000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put(LogManager.ROOT_LOGGER_NAME, ll("DEBUG", "WARN", inThirtySeconds));
@@ -138,31 +138,31 @@ public class LogConfigManagerTest {
 
             underTest.resetLogLevels();
             assertEquals(expected, atomConf.get());
-            verify(underTest, never()).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), anyString());
 
             // 11 seconds passed by, not timing out
             Time.advanceTimeSecs(11);
             underTest.resetLogLevels();
             assertEquals(expected, atomConf.get());
-            verify(underTest, never()).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), anyString());
 
             // 22 seconds passed by, still not timing out
             Time.advanceTimeSecs(11);
             underTest.resetLogLevels();
             assertEquals(expected, atomConf.get());
-            verify(underTest, never()).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), anyString());
 
             // 33 seconds passed by, timed out
             Time.advanceTimeSecs(11);
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
-            verify(underTest).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
         }
     }
 
     @Test
     public void testLogResetsNamedLoggersWithPastTimeout() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("my_debug_logger", ll("DEBUG", "INFO", past));
@@ -173,15 +173,15 @@ public class LogConfigManagerTest {
             LogConfigManager underTest = spy(new LogConfigManagerUnderTest(atomConf));
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
-            verify(underTest).setLoggerLevel(anyObject(), eq("my_debug_logger"), eq("INFO"));
-            verify(underTest).setLoggerLevel(anyObject(), eq("my_info_logger"), eq("WARN"));
-            verify(underTest).setLoggerLevel(anyObject(), eq("my_error_logger"), eq("INFO"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_debug_logger"), eq("INFO"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_info_logger"), eq("WARN"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_error_logger"), eq("INFO"));
         }
     }
 
     @Test
     public void testProcessRootLogLevelToDebugSetsLoggerAndTimeout2() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             LogConfig mockConfig = new LogConfig();
             AtomicReference<TreeMap<String, LogLevel>> mockConfigAtom = new AtomicReference<>(null);
 
@@ -192,7 +192,7 @@ public class LogConfigManagerTest {
             underTest.processLogConfigChange(mockConfig);
             // test that the set-logger-level function was not called
             LOG.info("Tests {}", mockConfigAtom.get());
-            verify(underTest).setLoggerLevel(anyObject(), eq(""), eq("DEBUG"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq(""), eq("DEBUG"));
 
             LogLevel rootResult = mockConfigAtom.get().get(LogManager.ROOT_LOGGER_NAME);
             assertNotNull(rootResult);
@@ -232,7 +232,7 @@ public class LogConfigManagerTest {
 
     @Test
     public void testProcessRootLogLevelToDebugSetsLoggerAndTimeout() {
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             LogConfig mockConfig = new LogConfig();
             AtomicReference<TreeMap<String, LogLevel>> mockConfigAtom = new AtomicReference<>(null);
             long inThirtySeconds = Time.currentTimeMillis() + 30_000;
@@ -246,18 +246,14 @@ public class LogConfigManagerTest {
             LogConfigManager underTest = spy(new LogConfigManagerUnderTest(mockConfigAtom));
             underTest.processLogConfigChange(mockConfig);
 
-            verify(underTest).setLoggerLevel(anyObject(), eq(""), eq("DEBUG"));
-            verify(underTest).setLoggerLevel(anyObject(), eq("my_debug_logger"), eq("DEBUG"));
-            verify(underTest).setLoggerLevel(anyObject(), eq("my_info_logger"), eq("INFO"));
-            verify(underTest).setLoggerLevel(anyObject(), eq("my_error_logger"), eq("ERROR"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq(""), eq("DEBUG"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_debug_logger"), eq("DEBUG"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_info_logger"), eq("INFO"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_error_logger"), eq("ERROR"));
         }
     }
 
     public static class LogConfigManagerUnderTest extends LogConfigManager {
-        public LogConfigManagerUnderTest() {
-            super();
-        }
-
         public LogConfigManagerUnderTest(AtomicReference<TreeMap<String, LogLevel>> latestLogConfig) {
             super(latestLogConfig);
         }

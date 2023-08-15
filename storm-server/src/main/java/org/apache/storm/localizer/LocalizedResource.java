@@ -42,6 +42,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -139,7 +141,9 @@ public class LocalizedResource extends LocallyCachedBlob {
         if (!Files.exists(userCacheDir)) {
             return Collections.emptyList();
         }
-        return Files.list(userCacheDir).map((p) -> p.getFileName().toString()).collect(Collectors.toList());
+        try (Stream<Path> stream = Files.list(userCacheDir)) {
+            return stream.map((p) -> p.getFileName().toString()).collect(Collectors.toList());
+        }
     }
 
     static void completelyRemoveUnusedUser(Path localBaseDir, String user) throws IOException {
@@ -172,8 +176,8 @@ public class LocalizedResource extends LocallyCachedBlob {
         if (!Files.exists(dir)) {
             return Collections.emptyList();
         }
-        return Files.list(dir)
-                    .map((p) -> p.getFileName().toString())
+        try (Stream<Path> stream = Files.list(dir)) {
+            return stream.map((p) -> p.getFileName().toString())
                     .filter((name) -> name.toLowerCase().endsWith(CURRENT_BLOB_SUFFIX))
                     .map((key) -> {
                         int p = key.lastIndexOf('.');
@@ -183,6 +187,7 @@ public class LocalizedResource extends LocallyCachedBlob {
                         return key;
                     })
                     .collect(Collectors.toList());
+        }
     }
 
     // baseDir/supervisor/usercache/

@@ -20,22 +20,19 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runners.model.MultipleFailureException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JdbcClientTest {
 
     private static final String tableName = "user_details";
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
     private JdbcClient client;
 
-    @Before
+    @BeforeEach
     public void setup() {
         Map<String, Object> map = Maps.newHashMap();
         map.put("dataSourceClassName", "org.hsqldb.jdbc.JDBCDataSource");//com.mysql.jdbc.jdbc2.optional.MysqlDataSource
@@ -60,10 +57,10 @@ public class JdbcClientTest {
         client.insert(tableName, rows);
 
         List<List<Column>> selectedRows =
-            client.select("select * from user_details where id = ?", Lists.newArrayList(new Column("id", 1, Types.INTEGER)));
+                client.select("select * from user_details where id = ?", Lists.newArrayList(new Column("id", 1, Types.INTEGER)));
         List<List<Column>> expectedRows = Lists.newArrayList();
         expectedRows.add(row1);
-        Assert.assertEquals(expectedRows, selectedRows);
+        assertEquals(expectedRows, selectedRows);
 
         List<Column> row3 = createRow(3, "frank");
         List<List<Column>> moreRows = new ArrayList<List<Column>>();
@@ -73,12 +70,13 @@ public class JdbcClientTest {
         selectedRows = client.select("select * from user_details where id = ?", Lists.newArrayList(new Column("id", 3, Types.INTEGER)));
         expectedRows = Lists.newArrayList();
         expectedRows.add(row3);
-        Assert.assertEquals(expectedRows, selectedRows);
+        assertEquals(expectedRows, selectedRows);
 
 
         selectedRows = client.select("select * from user_details order by id", Lists.<Column>newArrayList());
         rows.add(row3);
-        Assert.assertEquals(rows, selectedRows);
+        assertEquals(rows, selectedRows);
+        client.executeSql("drop table " + tableName);
     }
 
     @Test
@@ -88,24 +86,19 @@ public class JdbcClientTest {
         this.client = new JdbcClient(connectionProvider, 60);
 
         List<Column> row = createRow(1, "frank");
-        List<List<Column>> rows = new ArrayList<List<Column>>();
+        List<List<Column>> rows = new ArrayList<>();
         rows.add(row);
         String query = "insert into user_details values(?,?,?)";
 
-        thrown.expect(MultipleFailureException.class);
-        client.executeInsertQuery(query, rows);
+        assertThrows(RuntimeException.class, () -> client.executeInsertQuery(query, rows));
+        assertThrows(RuntimeException.class, () -> client.executeSql("drop table " + tableName));
     }
 
     private List<Column> createRow(int id, String name) {
         return Lists.newArrayList(
-            new Column("ID", id, Types.INTEGER),
-            new Column("USER_NAME", name, Types.VARCHAR),
-            new Column("CREATED_TIMESTAMP", new Timestamp(System.currentTimeMillis()), Types.TIMESTAMP));
-    }
-
-    @After
-    public void cleanup() {
-        client.executeSql("drop table " + tableName);
+                new Column<>("ID", id, Types.INTEGER),
+                new Column<>("USER_NAME", name, Types.VARCHAR),
+                new Column<>("CREATED_TIMESTAMP", new Timestamp(System.currentTimeMillis()), Types.TIMESTAMP));
     }
 }
 

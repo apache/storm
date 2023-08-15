@@ -36,6 +36,7 @@ import org.apache.storm.flux.model.SpoutDef;
 import org.apache.storm.flux.model.TopologyDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -200,7 +201,7 @@ public class FluxParser {
         topologyDescription.putListPropertyType("bolts", BoltDef.class);
         topologyDescription.putListPropertyType("includes", IncludeDef.class);
 
-        Constructor constructor = new Constructor(TopologyDef.class);
+        Constructor constructor = new Constructor(TopologyDef.class, new LoaderOptions());
         constructor.addTypeDescription(topologyDescription);
 
         return new Yaml(constructor);
