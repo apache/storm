@@ -100,6 +100,14 @@
         </dependency>
 
         <dependency>
+            <!-- This old version is required by Cassandra 2, so we need to override our modern library version here-->
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <version>0.9.3</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
