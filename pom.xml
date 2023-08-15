@@ -342,7 +342,7 @@
         <solr.version>5.2.1</solr.version>
         <jpmml.version>1.0.22</jpmml.version>
         <jedis.version>2.9.0</jedis.version>
-        <activemq.version>5.17.0</activemq.version>
+        <activemq.version>5.18.2</activemq.version>
         <rocketmq.version>4.2.0</rocketmq.version>
 
         <jackson.version>2.10.5</jackson.version>
@@ -1182,7 +1182,7 @@
         <!--
             STORM-3948: This repository is declared by hive-2.3.9 (parent pom). As of today (08/14/23) this Maven Repository isn't available anymore.
             hive-2.3.10 already removed it, so we only need to wait for a 2.3.10 release here. As long is that didn't happen,
-            we work around by overriding the repository with the same id targeting to maven central.
+            we work around by overriding the repository with the same id targeting Maven Central.
             TODO: Remove this repository declaration after hive-2.3.10 is available.
          -->
         <repository>
