@@ -784,7 +784,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Log4j Web (org.apache.logging.log4j:log4j-web:2.17.1 - https://logging.apache.org/log4j/2.x/log4j-web/)
         * Apache Parquet Hadoop Bundle (org.apache.parquet:parquet-hadoop-bundle:1.8.1 - https://parquet.apache.org)
         * Apache Thrift (org.apache.thrift:libfb303:0.9.3 - http://thrift.apache.org)
-        * Apache Thrift (org.apache.thrift:libthrift:0.13.0 - http://thrift.apache.org)
+        * Apache Thrift (org.apache.thrift:libthrift:0.18.1 - http://thrift.apache.org)
         * Plexus Interpolation API (org.codehaus.plexus:plexus-interpolation:1.25 - http://codehaus-plexus.github.io/plexus-interpolation/)
         * Apache Twill API (org.apache.twill:twill-api:0.6.0-incubating - http://twill.incubator.apache.org/twill-api)
         * Apache Twill common library (org.apache.twill:twill-common:0.6.0-incubating - http://twill.incubator.apache.org/twill-common)

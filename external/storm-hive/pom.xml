@@ -207,7 +207,7 @@
         <artifactId>hamcrest</artifactId>
     </dependency>
     <dependency>
-        <!-- Needed in this version by hive -->
+      <!-- This exact version is required by Hive, so we need to override our modern library version here-->
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>0.9.3</version>
