@@ -674,6 +674,7 @@ public class NodeSorterHostProximity implements INodeSorter {
      *
      * @return an iterable of sorted racks
      */
+    @Override
     public Iterable<ObjectResourcesItem> getSortedRacks() {
 
         final ObjectResourcesSummary clusterResourcesSummary = createClusterSummarizedResources();

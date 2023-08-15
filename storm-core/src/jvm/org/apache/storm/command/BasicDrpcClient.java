@@ -27,7 +27,7 @@ public class BasicDrpcClient {
 
     private static void runAndPrint(DRPCClient drpc, String func, String arg) throws Exception {
         String result = drpc.execute(func, arg);
-        System.out.println(String.format("%s \"%s\" => \"%s\"", func, arg, result));
+        System.out.printf("%s \"%s\" => \"%s\"%n", func, arg, result);
     }
 
     /**

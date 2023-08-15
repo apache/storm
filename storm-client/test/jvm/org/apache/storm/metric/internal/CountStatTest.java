@@ -14,13 +14,14 @@ package org.apache.storm.metric.internal;
 
 import java.util.HashMap;
 import java.util.Map;
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit test for CountStat
  */
-public class CountStatTest extends TestCase {
+public class CountStatTest {
     final long TEN_MIN = 10 * 60 * 1000;
     final long THIRTY_SEC = 30 * 1000;
     final long THREE_HOUR = 3 * 60 * 60 * 1000;
@@ -28,10 +29,10 @@ public class CountStatTest extends TestCase {
 
     @Test
     public void testBasic() {
-        long time = 0l;
+        long time = 0L;
         CountStat count = new CountStat(10, time);
         while (time < TEN_MIN) {
-            //For this part of the test we interleve the differnt rotation types.
+            //For this part of the test we interleave the different rotation types.
             count.incBy(50);
             time += THIRTY_SEC / 2;
             count.rotateSched(time);
@@ -40,7 +41,7 @@ public class CountStatTest extends TestCase {
         }
 
         long val = 100 * TEN_MIN / THIRTY_SEC;
-        Map<String, Long> expected = new HashMap<String, Long>();
+        Map<String, Long> expected = new HashMap<>();
         expected.put("600", val);
         expected.put("10800", val);
         expected.put("86400", val);
@@ -53,7 +54,7 @@ public class CountStatTest extends TestCase {
         }
 
         val = 100 * THREE_HOUR / THIRTY_SEC;
-        expected = new HashMap<String, Long>();
+        expected = new HashMap<>();
         expected.put("600", 100 * TEN_MIN / THIRTY_SEC);
         expected.put("10800", val);
         expected.put("86400", val);
@@ -66,7 +67,7 @@ public class CountStatTest extends TestCase {
         }
 
         val = 100 * ONE_DAY / THIRTY_SEC;
-        expected = new HashMap<String, Long>();
+        expected = new HashMap<>();
         expected.put("600", 100 * TEN_MIN / THIRTY_SEC);
         expected.put("10800", 100 * THREE_HOUR / THIRTY_SEC);
         expected.put("86400", val);

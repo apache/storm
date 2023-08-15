@@ -33,17 +33,17 @@ import javax.jms.TextMessage;
 import org.apache.storm.Config;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.spout.SpoutOutputCollector;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class JmsSpoutTest {
-    private static final Logger LOG =
-        LoggerFactory.getLogger(JmsSpoutTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JmsSpoutTest.class);
 
     @Test
-    public void testFailure() throws JMSException, Exception {
+    public void testFailure() throws Exception {
         JmsSpout spout = new JmsSpout();
         try {
             JmsProvider mockProvider = new MockJmsProvider();
@@ -60,14 +60,14 @@ public class JmsSpoutTest {
             Thread.sleep(100);
             LOG.info("Calling nextTuple on the spout...");
             spout.nextTuple(); // Pretend to be storm.
-            Assert.assertTrue(mockCollector.emitted);
+            assertTrue(mockCollector.emitted);
 
             mockCollector.reset();
             spout.fail(msg.getJMSMessageID()); // Mock failure
             Thread.sleep(5000);
             spout.nextTuple(); // Pretend to be storm.
             Thread.sleep(5000);
-            Assert.assertTrue(mockCollector.emitted); // Should have been re-emitted
+            assertTrue(mockCollector.emitted); // Should have been re-emitted
         } finally {
             spout.close();
         }
@@ -80,7 +80,7 @@ public class JmsSpoutTest {
         ObjectOutputStream oos = new ObjectOutputStream(out);
         oos.writeObject(spout);
         oos.close();
-        Assert.assertTrue(out.toByteArray().length > 0);
+        assertTrue(out.toByteArray().length > 0);
     }
 
     /**
@@ -93,7 +93,7 @@ public class JmsSpoutTest {
         try {
             spout.setJmsProvider(new MockJmsProvider());
             spout.setJmsTupleProducer(new MockTupleProducer());
-            Map<String, Object> configuration = new HashMap<String, Object>();
+            Map<String, Object> configuration = new HashMap<>();
             MockSpoutOutputCollector delegateCollector =
                 new MockSpoutOutputCollector();
             SpoutOutputCollector collector =

@@ -16,8 +16,11 @@ import java.util.Collections;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue.Consumer;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JCQueueBackpressureTest {
     
@@ -26,7 +29,7 @@ public class JCQueueBackpressureTest {
     }
 
     @Test
-    public void testNoReOrderingUnderBackPressure() throws Exception {
+    public void testNoReOrderingUnderBackPressure() {
         final int MESSAGES = 100;
         final int CAPACITY = 64;
 
@@ -34,20 +37,20 @@ public class JCQueueBackpressureTest {
 
         for (int i = 0; i < MESSAGES; i++) {
             if (!queue.tryPublish(i)) {
-                Assert.assertTrue(queue.tryPublishToOverflow(i));
+                assertTrue(queue.tryPublishToOverflow(i));
             }
         }
 
         TestConsumer consumer = new TestConsumer();
         queue.consume(consumer);
-        Assert.assertEquals(MESSAGES, consumer.lastMsg);
+        assertEquals(MESSAGES, consumer.lastMsg);
         
         queue.close();
     }
 
     // check that tryPublish() & tryOverflowPublish() work as expected
     @Test
-    public void testBasicBackPressure() throws Exception {
+    public void testBasicBackPressure() {
         final int MESSAGES = 100;
         final int CAPACITY = 64;
 
@@ -56,20 +59,20 @@ public class JCQueueBackpressureTest {
         // pump more msgs than Q size & verify msg count is as expexted
         for (int i = 0; i < MESSAGES; i++) {
             if (i >= CAPACITY) {
-                Assert.assertFalse(queue.tryPublish(i));
+                assertFalse(queue.tryPublish(i));
             } else {
-                Assert.assertTrue(queue.tryPublish(i));
+                assertTrue(queue.tryPublish(i));
             }
         }
-        Assert.assertEquals(CAPACITY, queue.size());
+        assertEquals(CAPACITY, queue.size());
 
-        Assert.assertEquals(0, queue.getOverflowCount());
+        assertEquals(0, queue.getOverflowCount());
 
         // drain 1 element and ensure BP is relieved (i.e tryPublish() succeeds)
         final MutableLong consumeCount = new MutableLong(0);
         queue.consume(new TestConsumer(), () -> consumeCount.increment() <= 1);
-        Assert.assertEquals(CAPACITY - 1, queue.size());
-        Assert.assertTrue(queue.tryPublish(0));
+        assertEquals(CAPACITY - 1, queue.size());
+        assertTrue(queue.tryPublish(0));
         
         queue.close();
     }
@@ -80,7 +83,7 @@ public class JCQueueBackpressureTest {
         @Override
         public void accept(Object o) {
             Integer i = (Integer) o;
-            Assert.assertEquals(lastMsg++, i.intValue());
+            assertEquals(lastMsg++, i.intValue());
             System.err.println(i);
         }
 

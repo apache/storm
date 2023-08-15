@@ -12,14 +12,14 @@
 
 package org.apache.storm.container.docker;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DockerRunCommandTest {
     private DockerRunCommand dockerRunCommand;
@@ -28,7 +28,7 @@ public class DockerRunCommandTest {
     private static final String USER_INFO = "user_id:group_id";
     private static final String IMAGE_NAME = "image_name";
 
-    @Before
+    @BeforeEach
     public void setUp() {
         dockerRunCommand = new DockerRunCommand(CONTAINER_NAME, USER_INFO, IMAGE_NAME);
     }

@@ -18,31 +18,30 @@ package org.apache.storm.scheduler.resource.normalization;
 
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import org.apache.storm.Constants;
 import org.apache.storm.metric.StormMetricsRegistry;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NormalizedResourcesTest {
-    
-    @Rule
-    public NormalizedResourcesRule normalizedResourcesRule = new NormalizedResourcesRule();
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
     
     private final String gpuResourceName = "gpu";
     
     private Map<String, Double> normalize(Map<String, ? extends Number> resources) {
         return NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resources);
     }
-    
+
+    @BeforeEach
+    public void reset() {
+        NormalizedResources.resetResourceNames();
+    }
+
     @Test
     public void testAddCpu() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 1)));
@@ -251,18 +250,18 @@ public class NormalizedResourcesTest {
     public void testCalculateAvgThrowsIfTotalIsMissingCpu() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 2)));
         NormalizedResources usedResources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 5)));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.calculateAveragePercentageUsedBy(usedResources, 0, 0);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                resources.calculateAveragePercentageUsedBy(usedResources, 0, 0));
     }
     
     @Test
     public void testCalculateAvgThrowsIfTotalIsMissingMemory() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 2)));
         NormalizedResources usedResources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 1)));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.calculateAveragePercentageUsedBy(usedResources, 100, 500);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                resources.calculateAveragePercentageUsedBy(usedResources, 100, 500));
     }
     
     @Test
@@ -275,8 +274,8 @@ public class NormalizedResourcesTest {
         usedResourcesMap.put(gpuResourceName, 1.0);
         NormalizedResources usedResources = new NormalizedResources(normalize(usedResourcesMap));
         
-        expectedException.expect(IllegalArgumentException.class);
-        resources.calculateAveragePercentageUsedBy(usedResources, 4, 1);        
+        assertThrows(IllegalArgumentException.class, () ->
+                resources.calculateAveragePercentageUsedBy(usedResources, 4, 1));
     }
     
     @Test
@@ -289,9 +288,9 @@ public class NormalizedResourcesTest {
         usedResourcesMap.put(Constants.COMMON_CPU_RESOURCE_NAME, 1.0);
         usedResourcesMap.put(gpuResourceName, 5.0);
         NormalizedResources usedResources = new NormalizedResources(normalize(usedResourcesMap));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.calculateAveragePercentageUsedBy(usedResources, 4, 1);        
+
+        assertThrows(IllegalArgumentException.class, () ->
+                resources.calculateAveragePercentageUsedBy(usedResources, 4, 1));
     }
     
     @Test
@@ -360,18 +359,18 @@ public class NormalizedResourcesTest {
     public void testCalculateMinThrowsIfTotalIsMissingCpu() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 2)));
         NormalizedResources usedResources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 5)));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.calculateMinPercentageUsedBy(usedResources, 0, 0);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                resources.calculateMinPercentageUsedBy(usedResources, 0, 0));
     }
     
     @Test
     public void testCalculateMinThrowsIfTotalIsMissingMemory() {
         NormalizedResources resources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 2)));
         NormalizedResources usedResources = new NormalizedResources(normalize(Collections.singletonMap(Constants.COMMON_CPU_RESOURCE_NAME, 1)));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.calculateMinPercentageUsedBy(usedResources, 100, 500);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                resources.calculateMinPercentageUsedBy(usedResources, 100, 500));
     }
     
     @Test
@@ -383,9 +382,9 @@ public class NormalizedResourcesTest {
         usedResourcesMap.put(Constants.COMMON_CPU_RESOURCE_NAME, 1.0);
         usedResourcesMap.put(gpuResourceName, 1.0);
         NormalizedResources usedResources = new NormalizedResources(normalize(usedResourcesMap));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.calculateMinPercentageUsedBy(usedResources, 4, 1);        
+
+        assertThrows(IllegalArgumentException.class, () ->
+                resources.calculateMinPercentageUsedBy(usedResources, 4, 1));
     }
     
     @Test
@@ -398,8 +397,7 @@ public class NormalizedResourcesTest {
         usedResourcesMap.put(Constants.COMMON_CPU_RESOURCE_NAME, 1.0);
         usedResourcesMap.put(gpuResourceName, 5.0);
         NormalizedResources usedResources = new NormalizedResources(normalize(usedResourcesMap));
-        
-        expectedException.expect(IllegalArgumentException.class);
-        resources.calculateMinPercentageUsedBy(usedResources, 4, 1);        
+
+        assertThrows(IllegalArgumentException.class, () -> resources.calculateMinPercentageUsedBy(usedResources, 4, 1));
     }
 }

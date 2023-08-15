@@ -48,6 +48,7 @@ import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.Answer;
 
 public class SpoutWithMockedConsumerSetupHelper {
 
@@ -81,7 +82,9 @@ public class SpoutWithMockedConsumerSetupHelper {
             listener.onPartitionsAssigned(assignedPartitionsSet);
             return null;
         }).when(assigner).assignPartitions(any(), any(), any());
-        when(consumerMock.assignment()).thenReturn(assignedPartitionsSet);
+
+        final Answer<Object> set = invocation -> assignedPartitionsSet;
+        doAnswer(set).when(consumerMock).assignment();
         
         ConsumerFactory<K, V> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
         KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory, assigner);

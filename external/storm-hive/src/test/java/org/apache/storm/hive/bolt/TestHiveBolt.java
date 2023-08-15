@@ -41,9 +41,8 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.MockTupleHelpers;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -52,10 +51,11 @@ import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 public class TestHiveBolt {
     final static String dbName = "testdb";
@@ -91,7 +91,7 @@ public class TestHiveBolt {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
@@ -127,7 +127,7 @@ public class TestHiveBolt {
             verify(collector).ack(t);
         }
 
-        Assert.assertEquals(4, bolt.getRecordWritten(partVals).size());
+        assertEquals(4, bolt.getRecordWritten(partVals).size());
 
         bolt.cleanup();
     }
@@ -162,8 +162,8 @@ public class TestHiveBolt {
         }
 
         List<byte[]> recordWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordWritten);
-        Assert.assertEquals(4, recordWritten.size());
+        assertNotNull(recordWritten);
+        assertEquals(4, recordWritten.size());
 
         bolt.cleanup();
     }
@@ -203,13 +203,13 @@ public class TestHiveBolt {
         List<String> partVals = Lists.newArrayList(today);
 
         List<byte[]> recordsWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordsWritten);
-        Assert.assertEquals(2, recordsWritten.size());
+        assertNotNull(recordsWritten);
+        assertEquals(2, recordsWritten.size());
 
         byte[] mapped = generateDelimiteredRecord(Lists.newArrayList(id, msg), mapper.getFieldDelimiter());
 
         for (byte[] record : recordsWritten) {
-            Assert.assertArrayEquals(mapped, record);
+            assertArrayEquals(mapped, record);
         }
 
         bolt.cleanup();
@@ -241,11 +241,11 @@ public class TestHiveBolt {
         List<String> partVals = Lists.newArrayList(city, state);
 
         List<byte[]> recordsWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordsWritten);
-        Assert.assertEquals(1, recordsWritten.size());
+        assertNotNull(recordsWritten);
+        assertEquals(1, recordsWritten.size());
 
         byte[] mapped = generateDelimiteredRecord(Lists.newArrayList(id, msg), mapper.getFieldDelimiter());
-        Assert.assertArrayEquals(mapped, recordsWritten.get(0));
+        assertArrayEquals(mapped, recordsWritten.get(0));
 
         bolt.cleanup();
     }
@@ -278,8 +278,8 @@ public class TestHiveBolt {
         List<String> partVals = Lists.newArrayList(city, state);
 
         List<byte[]> recordsWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordsWritten);
-        Assert.assertEquals(1, recordsWritten.size());
+        assertNotNull(recordsWritten);
+        assertEquals(1, recordsWritten.size());
 
         byte[] written = recordsWritten.get(0);
 
@@ -290,7 +290,7 @@ public class TestHiveBolt {
         expected.put(COL1, id);
         expected.put(COL2, msg);
 
-        Assert.assertEquals(expected, writtenMap);
+        assertEquals(expected, writtenMap);
 
         bolt.cleanup();
     }
@@ -311,7 +311,7 @@ public class TestHiveBolt {
         Tuple tuple2 = generateTestTuple(2, "SFO", "San Jose", "CA");
 
         bolt.execute(tuple1);
-        verifyZeroInteractions(collector);
+        verifyNoInteractions(collector);
 
         bolt.execute(tuple2);
         verify(collector).ack(tuple1);
@@ -389,7 +389,7 @@ public class TestHiveBolt {
         //The tick should NOT cause any acks since the batch was empty except for acking itself
         Tuple mockTick = MockTupleHelpers.mockTickTuple();
         bolt.execute(mockTick);
-        verifyZeroInteractions(collector);
+        verifyNoInteractions(collector);
 
         bolt.cleanup();
     }
@@ -426,14 +426,14 @@ public class TestHiveBolt {
         List<String> partVals = Lists.newArrayList(city, state);
 
         List<byte[]> recordsWritten = bolt.getRecordWritten(partVals);
-        Assert.assertNotNull(recordsWritten);
-        Assert.assertEquals(100, recordsWritten.size());
+        assertNotNull(recordsWritten);
+        assertEquals(100, recordsWritten.size());
 
 
         byte[] mapped = generateDelimiteredRecord(Lists.newArrayList(id, msg), mapper.getFieldDelimiter());
 
         for (byte[] record : recordsWritten) {
-            Assert.assertArrayEquals(mapped, record);
+            assertArrayEquals(mapped, record);
         }
 
         bolt.cleanup();

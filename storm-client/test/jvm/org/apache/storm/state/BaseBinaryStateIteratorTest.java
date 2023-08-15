@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -18,12 +18,12 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link BaseBinaryStateIterator}.
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class BaseBinaryStateIteratorTest {
     private DefaultStateEncoder<byte[], byte[]> encoder;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Serializer<byte[]> keySerializer = new DefaultStateSerializer<>();
         Serializer<byte[]> valueSerializer = new DefaultStateSerializer<>();
@@ -138,7 +138,7 @@ public class BaseBinaryStateIteratorTest {
 }
 
 class MockBinaryStateIterator extends BaseBinaryStateIterator<byte[], byte[]> {
-    private DefaultStateEncoder<byte[], byte[]> encoder;
+    private final DefaultStateEncoder<byte[], byte[]> encoder;
 
     /**
      * Constructor.

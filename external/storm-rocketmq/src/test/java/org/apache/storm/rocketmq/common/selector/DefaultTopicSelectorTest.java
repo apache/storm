@@ -19,15 +19,14 @@
 package org.apache.storm.rocketmq.common.selector;
 
 import org.apache.storm.tuple.Tuple;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DefaultTopicSelectorTest {
 
     @Test
-    public void getTopic() throws Exception {
+    public void getTopic() {
         DefaultTopicSelector topicSelector = new DefaultTopicSelector("tpc", "tg");
         Tuple tuple = null;
         assertEquals("tpc", topicSelector.getTopic(tuple));

@@ -16,8 +16,8 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -157,7 +157,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
     }
 
     @Test
-    public void testEmitEmptyBatches() throws Exception {
+    public void testEmitEmptyBatches() {
         //Check that the emitter can handle emitting empty batches on a new partition.
         //If the spout is configured to seek to LATEST, or the partition is empty, the initial batches may be empty
         KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(FirstPollOffsetStrategy.LATEST);
@@ -220,7 +220,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
 
     @Test
     public void testEmitEmptyFirstBatch() {
-        /**
+        /*
          * Check that when the first batch after a redeploy is empty, the emitter does not restart at the pre-redeploy offset. STORM-3279.
          */
         long firstEmittedOffset = 50;
@@ -254,7 +254,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
     @ParameterizedTest
     @EnumSource(value = FirstPollOffsetStrategy.class, names = {"EARLIEST", "LATEST", "TIMESTAMP"})
     public void testUnconditionalStrategyWhenSpoutWorkerIsRestarted(FirstPollOffsetStrategy firstPollOffsetStrategy) {
-        /**
+        /*
          * EARLIEST/LATEST/TIMESTAMP should act like UNCOMMITTED_EARLIEST/LATEST/TIMESTAMP if the emitter is new but the
          * topology has not restarted (storm id has not changed)
          */
@@ -280,7 +280,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
 
     @Test
     public void testEarliestStrategyWhenTopologyIsRedeployed() {
-        /**
+        /*
          * EARLIEST should be applied if the emitter is new and the topology has been redeployed (storm id has changed)
          */
         long preRestartEmittedOffset = 20;
@@ -302,7 +302,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
 
     @Test
     public void testLatestStrategyWhenTopologyIsRedeployed() {
-        /**
+        /*
          * EARLIEST should be applied if the emitter is new and the topology has been redeployed (storm id has changed)
          */
         long preRestartEmittedOffset = 20;
@@ -318,7 +318,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
 
     @Test
     public void testTimeStampStrategyWhenTopologyIsRedeployed() {
-        /**
+        /*
          * TIMESTAMP strategy should be applied if the emitter is new and the topology has been redeployed (storm id has changed)
          * Offset should be reset according to the offset corresponding to startTimeStamp
          */

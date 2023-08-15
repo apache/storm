@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -18,8 +18,10 @@ import org.apache.storm.Config;
 import org.apache.storm.security.serialization.BlowfishTupleSerializer;
 import org.apache.storm.utils.ListDelegate;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SerializationFactoryTest {
 
@@ -29,14 +31,16 @@ public class SerializationFactoryTest {
         String className = (String) conf.get(Config.TOPOLOGY_TUPLE_SERIALIZER);
         Class configuredClass = Class.forName(className);
         Kryo kryo = SerializationFactory.getKryo(conf);
-        Assert.assertEquals(configuredClass, kryo.getSerializer(ListDelegate.class).getClass());
+        assertEquals(configuredClass, kryo.getSerializer(ListDelegate.class).getClass());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void test_throws_runtimeexception_when_no_such_class() {
-        Map<String, Object> conf = Utils.readDefaultConfig();
-        conf.put(Config.TOPOLOGY_TUPLE_SERIALIZER, "null.this.class.does.not.exist");
-        SerializationFactory.getKryo(conf);
+        assertThrows(RuntimeException.class, () -> {
+            Map<String, Object> conf = Utils.readDefaultConfig();
+            conf.put(Config.TOPOLOGY_TUPLE_SERIALIZER, "null.this.class.does.not.exist");
+            SerializationFactory.getKryo(conf);
+        });
     }
 
     @Test
@@ -47,7 +51,7 @@ public class SerializationFactoryTest {
         conf.put(Config.TOPOLOGY_TUPLE_SERIALIZER, arbitraryClass.getName());
         conf.put(BlowfishTupleSerializer.SECRET_KEY, secretKey);
         Kryo kryo = SerializationFactory.getKryo(conf);
-        Assert.assertEquals(arbitraryClass, kryo.getSerializer(ListDelegate.class).getClass());
+        assertEquals(arbitraryClass, kryo.getSerializer(ListDelegate.class).getClass());
 
     }
 

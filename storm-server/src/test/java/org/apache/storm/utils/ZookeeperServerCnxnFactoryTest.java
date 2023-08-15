@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -12,14 +12,16 @@
 
 package org.apache.storm.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ZookeeperServerCnxnFactoryTest {
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void test_Exception_In_Constructor_If_Port_Too_Large() {
-        new ZookeeperServerCnxnFactory(65536, 42);
+        assertThrows(RuntimeException.class, () -> new ZookeeperServerCnxnFactory(65536, 42));
     }
 
     @Test
@@ -28,6 +30,6 @@ public class ZookeeperServerCnxnFactoryTest {
         ZookeeperServerCnxnFactory zkcfNegative = new ZookeeperServerCnxnFactory(-42, arbitraryTestClients);
         int nextPort = zkcfNegative.port() + 1;
         ZookeeperServerCnxnFactory zkcfNext = new ZookeeperServerCnxnFactory(nextPort, arbitraryTestClients);
-        Assert.assertEquals(zkcfNext.factory().getMaxClientCnxnsPerHost(), arbitraryTestClients);
+        assertEquals(zkcfNext.factory().getMaxClientCnxnsPerHost(), arbitraryTestClients);
     }
 }

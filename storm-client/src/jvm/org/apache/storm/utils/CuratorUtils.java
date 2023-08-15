@@ -23,9 +23,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
-import org.apache.storm.shade.org.apache.curator.ensemble.exhibitor.DefaultExhibitorRestClient;
-import org.apache.storm.shade.org.apache.curator.ensemble.exhibitor.ExhibitorEnsembleProvider;
-import org.apache.storm.shade.org.apache.curator.ensemble.exhibitor.Exhibitors;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.shade.org.apache.curator.framework.api.ACLProvider;
@@ -75,29 +72,7 @@ public class CuratorUtils {
 
     protected static void setupBuilder(CuratorFrameworkFactory.Builder builder, final String zkStr, Map<String, Object> conf,
                                        ZookeeperAuthInfo auth) {
-        List<String> exhibitorServers = ObjectReader.getStrings(conf.get(Config.STORM_EXHIBITOR_SERVERS));
-        if (!exhibitorServers.isEmpty()) {
-            // use exhibitor servers
-            builder.ensembleProvider(new ExhibitorEnsembleProvider(
-                new Exhibitors(exhibitorServers,
-                        ObjectReader.getInt(conf.get(Config.STORM_EXHIBITOR_PORT)),
-                        new Exhibitors.BackupConnectionStringProvider() {
-                            @Override
-                            public String getBackupConnectionString() throws Exception {
-                                // use zk servers as backup if they exist
-                                return zkStr;
-                            }
-                        }),
-                new DefaultExhibitorRestClient(),
-                ObjectReader.getString(conf.get(Config.STORM_EXHIBITOR_URIPATH)),
-                ObjectReader.getInt(conf.get(Config.STORM_EXHIBITOR_POLL)),
-                new StormBoundedExponentialBackoffRetry(
-                        ObjectReader.getInt(conf.get(Config.STORM_EXHIBITOR_RETRY_INTERVAL)),
-                        ObjectReader.getInt(conf.get(Config.STORM_EXHIBITOR_RETRY_INTERVAL_CEILING)),
-                        ObjectReader.getInt(conf.get(Config.STORM_EXHIBITOR_RETRY_TIMES)))));
-        } else {
-            builder.connectString(zkStr);
-        }
+        builder.connectString(zkStr);
         builder
                 .connectionTimeoutMs(ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
                 .sessionTimeoutMs(ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)))

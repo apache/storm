@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -27,13 +27,13 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit tests for {@link StatefulProcessorBolt}
@@ -47,7 +47,7 @@ public class StatefulProcessorBoltTest {
     Multimap<String, ProcessorNode> mockStreamToProcessors;
     KeyValueState<String, Long> mockKeyValueState;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mockTopologyContext = Mockito.mock(TopologyContext.class);
         mockOutputCollector = Mockito.mock(OutputCollector.class);
@@ -58,7 +58,7 @@ public class StatefulProcessorBoltTest {
     }
 
     @Test
-    public void testEmitAndAck() throws Exception {
+    public void testEmitAndAck() {
         setUpStatefulProcessorBolt(new UpdateStateByKeyProcessor<>(new StateUpdater<Object, Long>() {
             @Override
             public Long init() {

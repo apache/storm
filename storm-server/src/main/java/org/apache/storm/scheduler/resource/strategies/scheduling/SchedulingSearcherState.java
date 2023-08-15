@@ -162,10 +162,6 @@ public class SchedulingSearcherState {
         return execIndex;
     }
 
-    public int getAckersPerWorker() {
-        return ackersPerWorker;
-    }
-
     public LinkedList<ExecutorDetails> getUnassignedAckers() {
         return unassignedAckers;
     }
@@ -180,10 +176,6 @@ public class SchedulingSearcherState {
 
     public Set<ExecutorDetails> getExecsWithBoundAckers() {
         return execsWithBoundAckers;
-    }
-
-    public Map<WorkerSlot, List<ExecutorDetails>> getWorkerSlotToBoundAckers() {
-        return workerSlotToBoundAckers;
     }
 
     public boolean areSearchLimitsExceeded() {
@@ -282,9 +274,34 @@ public class SchedulingSearcherState {
         return 0;
     }
 
-    public void backtrack(Map<ExecutorDetails, String> execToComp, RasNode node, WorkerSlot workerSlot) {
+    /**
+     * Backtrack to prior executor that was directly assigned. This excludes bound-ackers.
+     *
+     * @param execToComp map from executor to component.
+     * @param nodesForExec array of nodes for all execIndex - has null values for bound-acker indices.
+     * @param workerSlotForExec array of workerSlots for all execIndex - has null values for bound-acker indices.
+     */
+    public void backtrack(Map<ExecutorDetails, String> execToComp, RasNode[] nodesForExec, WorkerSlot[] workerSlotForExec) {
         execIndex--;
-        // when backtrack, we need to skip over the bound ackers
+        /*
+          After decrementing execIndex, it is expected to point to the target executor to backtrack to.
+          However, due to the way assignment occurs, this is not the case. Executors are ordered in the following
+          sequence
+                   - Non-Acker-Executor
+                   - Bound-Ackers
+                   - Unbound-Ackers
+          However, Assignment is in the following order:
+                   - repeated sequence of:
+                       - Non-Acker-Executor
+                       - Its-Bound-Ackers
+                   - Unbound-Ackers (if any left over)
+          Additionally, execIndex is only updated when Non-Acker-Executor and Unbound-Executors are assigned.
+          To ensure that the counting is correct, the execIndex is incremented when Bound-Ackers are encountered.
+          However, nodesForExec and workerSlotForExec are not set for bound-ackers, and the execIndex value gets in sync
+          after all the bound-ackers are skipped.
+         */
+
+        // back over any executors that were not assigned directly - i.e. bound-ackers
         while (execIndex >= 0 && boundAckers.contains(execs.get(execIndex))) {
             execIndex--;
         }
@@ -294,6 +311,8 @@ public class SchedulingSearcherState {
         numBacktrack++;
         ExecutorDetails exec = currentExec();
         String comp = execToComp.get(exec);
+        RasNode node = nodesForExec[execIndex];
+        WorkerSlot workerSlot = workerSlotForExec[execIndex];
         LOG.trace("Topology {} Backtracking {} {} from {}", topoName, exec, comp, workerSlot);
         if (okToRemoveFromWorker[execIndex]) {
             Map<String, Integer> compToAssignmentCount = workerCompAssignmentCnts.get(workerSlot);
@@ -316,6 +335,7 @@ public class SchedulingSearcherState {
         // If this exec has bound ackers, we need to backtrack them as well
         if (execsWithBoundAckers.remove(exec)) {
             if (workerSlotToBoundAckers.containsKey(workerSlot)) {
+                // Note that bound-ackers for this (and only this) executor are on the workerSlot
                 freeWorkerSlotWithBoundAckers(node, workerSlot);
             }
         }
@@ -351,10 +371,11 @@ public class SchedulingSearcherState {
     }
 
     /**
-     * Free a given workerSlot and all the assigned bound ackers already there.
+     * Free the bound-ackers for the given node and workerSlot.
+     * All the bound-ackers for an executor (and only that executor) are on the same workerSlot.
      *
-     * @param node          RasNode which to be freed.
-     * @param workerSlot    WorkerSlot on which to schedule.
+     * @param node          RasNode to be freed.
+     * @param workerSlot    WorkerSlot to be freed.
      */
     public void freeWorkerSlotWithBoundAckers(RasNode node, WorkerSlot workerSlot) {
         List<ExecutorDetails> ackers = workerSlotToBoundAckers.get(workerSlot);
@@ -378,6 +399,7 @@ public class SchedulingSearcherState {
                     nodeToAssignmentCount.remove(ackerCompId);
                 }
             }
+            // Note: all the bound-ackers for the same executor (and no other) are on one workerSlot
             workerSlotToBoundAckers.remove(workerSlot);
             node.free(workerSlot);
         }

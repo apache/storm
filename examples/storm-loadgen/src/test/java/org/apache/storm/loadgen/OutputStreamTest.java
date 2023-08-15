@@ -18,13 +18,13 @@
 
 package org.apache.storm.loadgen;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OutputStreamTest {
     @Test
-    public void scaleThroughput() throws Exception {
+    public void scaleThroughput() {
         OutputStream orig = new OutputStream("ID", new NormalDistStats(100.0, 1.0, 99.0, 101.0), false);
         OutputStream scaled = orig.scaleThroughput(2.0);
         assertEquals(orig.id, scaled.id);

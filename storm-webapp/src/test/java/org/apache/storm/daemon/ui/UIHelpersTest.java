@@ -486,6 +486,22 @@ class UIHelpersTest {
     }
 
     /**
+     * Tests that santizeStreamName() does the expected manipulations
+     */
+    @Test
+    public void testSanitizeStreamName() {
+        // replaces the expected characters with underscores (everything except A-Z, a-z, dot, dash, and underscore)
+        assertEquals("my-stream_with.all_characterClasses____",
+                UIHelpers.sanitizeStreamName("my-stream:with.all_characterClasses1/\\2"));
+
+        // has the expected effect when streamName begins with a non-alpha character
+        assertEquals("_s_foo", UIHelpers.sanitizeStreamName("3foo"));
+
+        // handles empty string, though that's not an expected stream name
+        assertEquals("_s", UIHelpers.sanitizeStreamName(""));
+    }
+
+    /**
      * Add an AggregateStats entry to the TopologyPageInfo instance.
      * @param boltId Id of the bolt to add the entry for.
      * @param aggregateStats Defines the entry.

@@ -71,6 +71,7 @@ import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.task.WorkerUserContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
@@ -296,7 +297,7 @@ public class WorkerState {
     public CountDownLatch getIsWorkerActive() {
         return isWorkerActive;
     }
-    
+
     public AtomicBoolean getIsTopologyActive() {
         return isTopologyActive;
     }
@@ -627,6 +628,19 @@ public class WorkerState {
         }
     }
 
+    public final WorkerUserContext getWorkerUserContext() {
+        try {
+            String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
+            String pidDir = ConfigUtils.workerPidsRoot(conf, topologyId);
+            return new WorkerUserContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
+                    componentToStreamToFields, topologyId, codeDir, pidDir, port, localTaskIds,
+                    defaultSharedResources,
+                    userSharedResources, cachedTaskToNodePort, assignmentId, cachedNodeToHost);
+        } catch (IOException e) {
+            throw Utils.wrapInRuntime(e);
+        }
+    }
+
     private List<IWorkerHook> deserializeWorkerHooks() {
         List<IWorkerHook> myHookList = new ArrayList<>();
         if (topology.is_set_worker_hooks()) {
@@ -640,9 +654,9 @@ public class WorkerState {
     }
 
     public void runWorkerStartHooks() {
-        WorkerTopologyContext workerContext = getWorkerTopologyContext();
+        WorkerUserContext workerUserContext = getWorkerUserContext();
         for (IWorkerHook hook : getDeserializedWorkerHooks()) {
-            hook.start(topologyConf, workerContext);
+            hook.start(topologyConf, workerUserContext);
         }
     }
 
@@ -744,11 +758,6 @@ public class WorkerState {
     }
 
     private Map<String, Object> makeUserResources() {
-        /* TODO: need to invoke a hook provided by the topology, giving it a chance to create user resources.
-         * this would be part of the initialization hook
-         * need to separate workertopologycontext into WorkerContext and WorkerUserContext.
-         * actually just do it via interfaces. just need to make sure to hide setResource from tasks
-         */
         return new HashMap<>();
     }
 

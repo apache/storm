@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 import sys
 import re
 
-p = re.compile('Unapproved licenses:\s*([^\s\*]*).*\*\*\*')
+p = re.compile(r'Unapproved licenses:\s*([^\s\*]*).*\*\*\*')
 
 with open (sys.argv[1]) as ratfile:
-  rat = ratfile.read().replace('\n','')
+    rat = ratfile.read().replace('\n', '')
 
 matches = p.search(rat)
-failed =  matches.group(1)
+failed = matches.group(1)
 
-if re.search('\S', failed):
-  print failed
+if re.search(r'\S', failed):
+    print(failed)

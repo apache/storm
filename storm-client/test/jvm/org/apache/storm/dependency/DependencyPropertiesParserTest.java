@@ -17,15 +17,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.shade.org.json.simple.JSONValue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DependencyPropertiesParserTest {
-    private DependencyPropertiesParser sut = new DependencyPropertiesParser();
+    private final DependencyPropertiesParser sut = new DependencyPropertiesParser();
 
     @Test
-    public void parseJarsProperties() throws Exception {
+    public void parseJarsProperties() {
         List<File> parsed = sut.parseJarsProperties("storm-core-1.0.0.jar,json-simple-1.1.jar");
         assertEquals(2, parsed.size());
         assertEquals("storm-core-1.0.0.jar", parsed.get(0).getName());
@@ -33,13 +34,13 @@ public class DependencyPropertiesParserTest {
     }
 
     @Test
-    public void parseEmptyJarsProperties() throws Exception {
+    public void parseEmptyJarsProperties() {
         List<File> parsed = sut.parseJarsProperties("");
         assertEquals(0, parsed.size());
     }
 
     @Test
-    public void parsePackagesProperties() throws Exception {
+    public void parsePackagesProperties() {
         Map<String, String> testInputMap = new HashMap<>();
         testInputMap.put("org.apache.storm:storm-core:1.0.0", "storm-core-1.0.0.jar");
         testInputMap.put("com.googlecode.json-simple:json-simple:1.1", "json-simple-1.1.jar");
@@ -53,14 +54,15 @@ public class DependencyPropertiesParserTest {
     }
 
     @Test
-    public void parseEmptyPackagesProperties() throws Exception {
+    public void parseEmptyPackagesProperties() {
         Map<String, File> parsed = sut.parseArtifactsProperties("{}");
         assertEquals(0, parsed.size());
     }
 
-    @Test(expected = RuntimeException.class)
-    public void parsePackagesPropertiesWithBrokenJSON() throws Exception {
-        sut.parseArtifactsProperties("{\"group:artifact:version\": \"a.jar\"");
+    @Test
+    public void parsePackagesPropertiesWithBrokenJSON() {
+        assertThrows(RuntimeException.class,
+            () -> sut.parseArtifactsProperties("{\"group:artifact:version\": \"a.jar\""));
     }
 
 }

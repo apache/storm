@@ -17,8 +17,8 @@
 package org.apache.storm.messaging.netty;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertThat;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.utils.Utils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +68,7 @@ public class NettyTest {
         int maxWaitMs = 5000;
         int waitedMs = 0;
         while (true) {
-            if (Arrays.asList(connections).stream()
+            if (Arrays.stream(connections)
                 .allMatch(WorkerState::isConnectionReady)) {
                 LOG.info("All Netty connections are ready");
                 break;
@@ -82,9 +82,7 @@ public class NettyTest {
     }
 
     private IConnectionCallback mkConnectionCallback(Consumer<TaskMessage> myFn) {
-        return (batch) -> {
-            batch.forEach(myFn::accept);
-        };
+        return (batch) -> batch.forEach(myFn::accept);
     }
 
     private Runnable sleep() {
@@ -334,9 +332,7 @@ public class NettyTest {
                         sleep().run();
                     });
                 IntStream.range(1, numMessages)
-                    .forEach(i -> {
-                        assertThat(new String(responses.get(i - 1).message(), StandardCharsets.UTF_8), is(String.valueOf(i)));
-                    });
+                    .forEach(i -> assertThat(new String(responses.get(i - 1).message(), StandardCharsets.UTF_8), is(String.valueOf(i))));
             }
         } finally {
             context.term();

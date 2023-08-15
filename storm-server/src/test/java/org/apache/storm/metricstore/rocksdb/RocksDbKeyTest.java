@@ -19,8 +19,10 @@
 package org.apache.storm.metricstore.rocksdb;
 
 import org.apache.storm.metricstore.AggLevel;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RocksDbKeyTest {
 
@@ -35,18 +37,18 @@ public class RocksDbKeyTest {
         RocksDbKey rawKey = new RocksDbKey(raw);
 
         RocksDbKey metadataKey = new RocksDbKey(KeyType.COMPONENT_STRING, 0x01020304);
-        Assert.assertEquals(0, metadataKey.compareTo(rawKey));
-        Assert.assertEquals(KeyType.COMPONENT_STRING, metadataKey.getType());
+        assertEquals(0, metadataKey.compareTo(rawKey));
+        assertEquals(KeyType.COMPONENT_STRING, metadataKey.getType());
 
         metadataKey = new RocksDbKey(KeyType.TOPOLOGY_STRING, 0x01020304);
-        Assert.assertTrue(metadataKey.compareTo(rawKey) < 0);
-        Assert.assertEquals(KeyType.TOPOLOGY_STRING, metadataKey.getType());
+        assertTrue(metadataKey.compareTo(rawKey) < 0);
+        assertEquals(KeyType.TOPOLOGY_STRING, metadataKey.getType());
 
         metadataKey = new RocksDbKey(KeyType.COMPONENT_STRING, 0x01020305);
-        Assert.assertTrue(metadataKey.compareTo(rawKey) > 0);
+        assertTrue(metadataKey.compareTo(rawKey) > 0);
 
-        Assert.assertEquals(0x01020304, rawKey.getTopologyId());
-        Assert.assertEquals(KeyType.COMPONENT_STRING, rawKey.getType());
+        assertEquals(0x01020304, rawKey.getTopologyId());
+        assertEquals(KeyType.COMPONENT_STRING, rawKey.getType());
     }
 
     @Test
@@ -62,13 +64,13 @@ public class RocksDbKeyTest {
         int streamId = 0x84221956;
         RocksDbKey key = RocksDbKey.createMetricKey(aggLevel, topologyId, timestamp, metricId,
                 componentId, executorId, hostId, port, streamId);
-        Assert.assertEquals(topologyId, key.getTopologyId());
-        Assert.assertEquals(timestamp, key.getTimestamp());
-        Assert.assertEquals(metricId, key.getMetricId());
-        Assert.assertEquals(componentId, key.getComponentId());
-        Assert.assertEquals(executorId, key.getExecutorId());
-        Assert.assertEquals(hostId, key.getHostnameId());
-        Assert.assertEquals(port, key.getPort());
-        Assert.assertEquals(streamId, key.getStreamId());
+        assertEquals(topologyId, key.getTopologyId());
+        assertEquals(timestamp, key.getTimestamp());
+        assertEquals(metricId, key.getMetricId());
+        assertEquals(componentId, key.getComponentId());
+        assertEquals(executorId, key.getExecutorId());
+        assertEquals(hostId, key.getHostnameId());
+        assertEquals(port, key.getPort());
+        assertEquals(streamId, key.getStreamId());
     }
 }

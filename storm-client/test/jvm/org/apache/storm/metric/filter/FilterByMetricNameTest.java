@@ -17,13 +17,14 @@ import java.util.Map;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.com.google.common.collect.Maps;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FilterByMetricNameTest {
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
     }
@@ -58,11 +59,13 @@ public class FilterByMetricNameTest {
         assertTests(sut, testMetricNamesAndExpected);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBothWhitelistAndBlacklistAreSpecified() {
-        List<String> whitelistPattern = Lists.newArrayList("^metric\\.", "test\\.hello\\.[0-9]+");
-        List<String> blacklistPattern = Lists.newArrayList("^__", "test\\.");
-        new FilterByMetricName(whitelistPattern, blacklistPattern);
+        assertThrows(IllegalArgumentException.class, () -> {
+            List<String> whitelistPattern = Lists.newArrayList("^metric\\.", "test\\.hello\\.[0-9]+");
+            List<String> blacklistPattern = Lists.newArrayList("^__", "test\\.");
+            new FilterByMetricName(whitelistPattern, blacklistPattern);
+        });
     }
 
     @Test
@@ -81,8 +84,8 @@ public class FilterByMetricNameTest {
 
     private void assertTests(FilterByMetricName sut, Map<String, Boolean> testMetricNamesAndExpected) {
         for (Map.Entry<String, Boolean> testEntry : testMetricNamesAndExpected.entrySet()) {
-            assertEquals("actual filter result is not same: " + testEntry.getKey(),
-                         testEntry.getValue(), sut.apply(new IMetricsConsumer.DataPoint(testEntry.getKey(), 1)));
+            assertEquals(testEntry.getValue(), sut.apply(new IMetricsConsumer.DataPoint(testEntry.getKey(), 1)),
+                "actual filter result is not same: " + testEntry.getKey());
         }
     }
 }

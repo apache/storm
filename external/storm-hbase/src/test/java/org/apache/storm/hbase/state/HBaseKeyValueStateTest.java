@@ -24,11 +24,12 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.state.DefaultStateSerializer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Unit tests for {@link HBaseKeyValueState}
@@ -41,38 +42,38 @@ public class HBaseKeyValueStateTest {
     HBaseKeyValueState<String, String> keyValueState;
     ConcurrentNavigableMap<byte[], NavigableMap<byte[], NavigableMap<byte[], byte[]>>> mockMap;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mockMap = new ConcurrentSkipListMap<>(UnsignedBytes.lexicographicalComparator());
         mockClient = HBaseClientTestUtil.mockedHBaseClient(mockMap);
         keyValueState = new HBaseKeyValueState<>(mockClient, COLUMN_FAMILY, NAMESPACE,
-                                                 new DefaultStateSerializer<String>(), new DefaultStateSerializer<String>());
+                                                 new DefaultStateSerializer<>(), new DefaultStateSerializer<>());
     }
 
     @Test
-    public void testPutAndGet() throws Exception {
+    public void testPutAndGet() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         assertEquals("1", keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
-        assertEquals(null, keyValueState.get("c"));
+        assertNull(keyValueState.get("c"));
     }
 
     @Test
-    public void testPutAndDelete() throws Exception {
+    public void testPutAndDelete() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         assertEquals("1", keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
-        assertEquals(null, keyValueState.get("c"));
+        assertNull(keyValueState.get("c"));
         assertEquals("1", keyValueState.delete("a"));
-        assertEquals(null, keyValueState.get("a"));
+        assertNull(keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
-        assertEquals(null, keyValueState.get("c"));
+        assertNull(keyValueState.get("c"));
     }
 
     @Test
-    public void testPrepareCommitRollback() throws Exception {
+    public void testPrepareCommitRollback() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(1);
