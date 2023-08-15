@@ -18,7 +18,7 @@
 
 package org.apache.storm.daemon.drpc;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -39,13 +39,13 @@ import org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer;
 import org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer.AclFunctionEntry;
 import org.apache.storm.security.auth.authorizer.DenyAuthorizer;
 import org.apache.storm.utils.Time;
-import org.junit.AfterClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.storm.metric.StormMetricsRegistry;
 
@@ -57,11 +57,11 @@ public class DRPCTest {
             t.run();
             fail("Expected " + t + " to throw " + expected + " didn't throw at all...");
         } catch (Exception e) {
-            assertTrue("Expected " + t + " to throw " + expected + " but threw " + e, expected.isInstance(e));
+            assertTrue(expected.isInstance(e), "Expected " + t + " to throw " + expected + " but threw " + e);
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void close() {
         exec.shutdownNow();
     }
@@ -137,7 +137,7 @@ public class DRPCTest {
     }
 
     @Test
-    public void testDeny() throws Exception {
+    public void testDeny() {
         try (DRPC server = new DRPC(new StormMetricsRegistry(), new DenyAuthorizer(), 100)) {
             assertThrows(() -> server.executeBlocking("testing", "test"), AuthorizationException.class);
             assertThrows(() -> server.fetchRequest("testing"), AuthorizationException.class);
@@ -159,7 +159,7 @@ public class DRPCTest {
         other.subject().getPrincipals().add(otherUser);
 
         Map<String, AclFunctionEntry> acl = new HashMap<>();
-        acl.put("jump", new AclFunctionEntry(Arrays.asList(jumpClient.getName()), jumpTopo.getName()));
+        acl.put("jump", new AclFunctionEntry(Collections.singletonList(jumpClient.getName()), jumpTopo.getName()));
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.DRPC_AUTHORIZER_ACL_STRICT, true);
         conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
@@ -212,7 +212,7 @@ public class DRPCTest {
         other.subject().getPrincipals().add(otherUser);
 
         Map<String, AclFunctionEntry> acl = new HashMap<>();
-        acl.put("jump", new AclFunctionEntry(Arrays.asList(jumpClient.getName()), jumpTopo.getName()));
+        acl.put("jump", new AclFunctionEntry(Collections.singletonList(jumpClient.getName()), jumpTopo.getName()));
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.DRPC_AUTHORIZER_ACL_STRICT, false);
         conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
@@ -250,7 +250,7 @@ public class DRPCTest {
         DRPC.checkAuthorization(other, auth, "execute", "not_jump");
     }
 
-    public static interface ThrowStuff {
-        public void run() throws Exception;
+    public interface ThrowStuff {
+        void run() throws Exception;
     }
 }

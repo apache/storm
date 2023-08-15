@@ -13,7 +13,8 @@
 
 import getpass
 import base64
-import urllib2
+import urllib
+import urllib.request
 from datetime import datetime
 import re
 
@@ -21,12 +22,6 @@ try:
     import json
 except ImportError:
     import simplejson as json
-
-
-def mstr(obj):
-    if obj is None:
-        return ""
-    return unicode(obj)
 
 
 def git_time(obj):
@@ -61,13 +56,13 @@ class GitPullRequest:
         # TODO def review_comments
 
     def user(self):
-        return mstr(self.data["user"]["login"])
+        return self.data["user"]["login"]
 
     def from_branch(self):
-        return mstr(self.data["head"]["ref"])
+        return self.data["head"]["ref"]
 
     def from_repo(self):
-        return mstr(self.data["head"]["repo"]["clone_url"])
+        return self.data["head"]["repo"]["clone_url"]
 
     def merged(self):
         return self.data["merged_at"] is not None
@@ -111,11 +106,10 @@ class GitHub:
         page = 1
         ret = []
         while True:
-            url = "https://api.github.com/repos/" + user + "/" + repo + "/pulls?state=" + type + "&page=" + str(page)
-
-            req = urllib2.Request(url, None, self.headers)
-            result = urllib2.urlopen(req)
-            contents = result.read()
+            url = f"https://api.github.com/repos/{user}/{repo}/pulls?state={type}&page={page}"
+            req = urllib.request.Request(url, None, self.headers)
+            result = urllib.request.urlopen(req)
+            contents = result.read().decode()
             if result.getcode() != 200:
                 raise Exception(result.getcode() + " != 200 " + contents)
             got = json.loads(contents)
@@ -129,10 +123,10 @@ class GitHub:
         return self.pulls(user, repo, "open")
 
     def pull(self, user, repo, number):
-        url = "https://api.github.com/repos/" + user + "/" + repo + "/pulls/" + number
-        req = urllib2.Request(url, None, self.headers)
-        result = urllib2.urlopen(req)
-        contents = result.read()
+        url = f"https://api.github.com/repos/{user}/{repo}/pulls/{number}"
+        req = urllib.request.Request(url, None, self.headers)
+        result = urllib.request.urlopen(req)
+        contents = result.read().decode()
         if result.getcode() != 200:
             raise Exception(result.getcode() + " != 200 " + contents)
         got = json.loads(contents)

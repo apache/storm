@@ -151,47 +151,40 @@ public class Blobstore {
     }
 
     private static void deleteCli(final String[] args) throws Exception {
-        ClientBlobStore.withConfiguredClient(new ClientBlobStore.WithBlobstore() {
-            @Override
-            public void run(ClientBlobStore blobStore) throws Exception {
-                for (String key : args) {
-                    blobStore.deleteBlob(key);
-
-                    LOG.info("deleted {}", key);
-                }
+        ClientBlobStore.withConfiguredClient(blobStore -> {
+            for (String key : args) {
+                blobStore.deleteBlob(key);
+                LOG.info("deleted {}", key);
             }
         });
     }
 
     private static void listCli(final String[] args) throws Exception {
-        ClientBlobStore.withConfiguredClient(new ClientBlobStore.WithBlobstore() {
-            @Override
-            public void run(ClientBlobStore blobStore) throws Exception {
-                Iterator<String> keys;
-                boolean isArgsEmpty = (args == null || args.length == 0);
-                if (isArgsEmpty) {
-                    keys = blobStore.listKeys();
-                } else {
-                    keys = Arrays.asList(args).iterator();
-                }
+        ClientBlobStore.withConfiguredClient(blobStore -> {
+            Iterator<String> keys;
+            boolean isArgsEmpty = (args == null || args.length == 0);
+            if (isArgsEmpty) {
+                keys = blobStore.listKeys();
+            } else {
+                keys = Arrays.asList(args).iterator();
+            }
 
-                while (keys.hasNext()) {
-                    String key = keys.next();
+            while (keys.hasNext()) {
+                String key = keys.next();
 
-                    try {
-                        ReadableBlobMeta meta = blobStore.getBlobMeta(key);
-                        long version = meta.get_version();
-                        List<AccessControl> acl = meta.get_settable().get_acl();
+                try {
+                    ReadableBlobMeta meta = blobStore.getBlobMeta(key);
+                    long version = meta.get_version();
+                    List<AccessControl> acl = meta.get_settable().get_acl();
 
-                        LOG.info("{} {} {}", key, version, generateAccessControlsInfo(acl));
-                    } catch (AuthorizationException ae) {
-                        if (!isArgsEmpty) {
-                            LOG.error("ACCESS DENIED to key: {}", key);
-                        }
-                    } catch (KeyNotFoundException knf) {
-                        if (!isArgsEmpty) {
-                            LOG.error("{} NOT FOUND", key);
-                        }
+                    LOG.info("{} {} {}", key, version, generateAccessControlsInfo(acl));
+                } catch (AuthorizationException ae) {
+                    if (!isArgsEmpty) {
+                        LOG.error("ACCESS DENIED to key: {}", key);
+                    }
+                } catch (KeyNotFoundException knf) {
+                    if (!isArgsEmpty) {
+                        LOG.error("{} NOT FOUND", key);
                     }
                 }
             }
@@ -206,22 +199,19 @@ public class Blobstore {
         final String key = (String) cl.get("key");
         final List<AccessControl> setAcl = (List<AccessControl>) cl.get("s");
 
-        ClientBlobStore.withConfiguredClient(new ClientBlobStore.WithBlobstore() {
-            @Override
-            public void run(ClientBlobStore blobStore) throws Exception {
-                ReadableBlobMeta meta = blobStore.getBlobMeta(key);
-                List<AccessControl> acl = meta.get_settable().get_acl();
-                List<AccessControl> newAcl;
-                if (setAcl != null && !setAcl.isEmpty()) {
-                    newAcl = setAcl;
-                } else {
-                    newAcl = acl;
-                }
-
-                SettableBlobMeta newMeta = new SettableBlobMeta(newAcl);
-                LOG.info("Setting ACL for {} to {}", key, generateAccessControlsInfo(newAcl));
-                blobStore.setBlobMeta(key, newMeta);
+        ClientBlobStore.withConfiguredClient(blobStore -> {
+            ReadableBlobMeta meta = blobStore.getBlobMeta(key);
+            List<AccessControl> acl = meta.get_settable().get_acl();
+            List<AccessControl> newAcl;
+            if (setAcl != null && !setAcl.isEmpty()) {
+                newAcl = setAcl;
+            } else {
+                newAcl = acl;
             }
+
+            SettableBlobMeta newMeta = new SettableBlobMeta(newAcl);
+            LOG.info("Setting ACL for {} to {}", key, generateAccessControlsInfo(newAcl));
+            blobStore.setBlobMeta(key, newMeta);
         });
     }
 
@@ -283,33 +273,24 @@ public class Blobstore {
 
     private static final class BlobStoreSupport {
         static void readBlob(final String key, final OutputStream os) throws Exception {
-            ClientBlobStore.withConfiguredClient(new ClientBlobStore.WithBlobstore() {
-                @Override
-                public void run(ClientBlobStore blobStore) throws Exception {
-                    try (InputStreamWithMeta is = blobStore.getBlob(key)) {
-                        IOUtils.copy(is, os);
-                    }
+            ClientBlobStore.withConfiguredClient(blobStore -> {
+                try (InputStreamWithMeta is = blobStore.getBlob(key)) {
+                    IOUtils.copy(is, os);
                 }
             });
         }
 
         static void createBlobFromStream(final String key, final InputStream is, final SettableBlobMeta meta) throws Exception {
-            ClientBlobStore.withConfiguredClient(new ClientBlobStore.WithBlobstore() {
-                @Override
-                public void run(ClientBlobStore blobStore) throws Exception {
-                    AtomicOutputStream os = blobStore.createBlob(key, meta);
-                    copyInputStreamToBlobOutputStream(is, os);
-                }
+            ClientBlobStore.withConfiguredClient(blobStore -> {
+                AtomicOutputStream os = blobStore.createBlob(key, meta);
+                copyInputStreamToBlobOutputStream(is, os);
             });
         }
 
         static void updateBlobFromStream(final String key, final InputStream is) throws Exception {
-            ClientBlobStore.withConfiguredClient(new ClientBlobStore.WithBlobstore() {
-                @Override
-                public void run(ClientBlobStore blobStore) throws Exception {
-                    AtomicOutputStream os = blobStore.updateBlob(key);
-                    copyInputStreamToBlobOutputStream(is, os);
-                }
+            ClientBlobStore.withConfiguredClient(blobStore -> {
+                AtomicOutputStream os = blobStore.updateBlob(key);
+                copyInputStreamToBlobOutputStream(is, os);
             });
         }
 

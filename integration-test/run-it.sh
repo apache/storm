@@ -30,11 +30,6 @@ function list_storm_processes() {
     (ps -ef | grep -i -e zookeeper | grep -v grep) && (ps -ef | grep -i -e storm.home  | grep -v grep)
 }
 
-if [[ "$TRAVIS_JDK_VERSION" == "openjdk11" ]]
-then
-  #Work around https://github.com/travis-ci/travis-ci/issues/9784
-  chmod o+rx /home/travis
-fi
 list_storm_processes || true
 if [ "$(uname -m)" != aarch64 ]; then
   # increasing swap space so we can run lots of workers
@@ -64,8 +59,7 @@ if [[ "${USER}" == "vagrant" ]]; then # install oracle jdk8 or openjdk11
     mvn --version
     export MAVEN_OPTS="-Xmx3000m"
 else
-    ( while true; do echo "heartbeat"; sleep 300; done ) & #heartbeat needed by travis ci
-    if [[ "${USER}" == "travis" ]]; then
+    if [[ "${USER}" == "github" ]]; then
         ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
     fi
     (( $(find "${STORM_SRC_DIR}/storm-dist/binary" -iname 'apache-storm*.zip' | wc -l) == 1 )) || die "expected exactly one zip file, did you run: cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"

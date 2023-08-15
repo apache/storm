@@ -18,7 +18,7 @@
 
 package org.apache.storm.daemon.logviewer.testsupport;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.function.Consumer;
 import org.mockito.ArgumentCaptor;

@@ -24,8 +24,9 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.windowing.TupleWindow;
 import org.apache.storm.windowing.TupleWindowImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestJoinBolt {
     String[] userFields = { "userId", "name", "city" };
@@ -150,7 +151,7 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(orderStream.size(), collector.actualResults.size());
+        assertEquals(orderStream.size(), collector.actualResults.size());
     }
 
     @Test
@@ -163,7 +164,7 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(userStream.size(), collector.actualResults.size());
+        assertEquals(userStream.size(), collector.actualResults.size());
     }
 
     @Test
@@ -182,12 +183,12 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(storeStream.size() + 1, collector.actualResults.size());
+        assertEquals(storeStream.size() + 1, collector.actualResults.size());
         // ensure 5 fields per tuple and no null fields
         for (List<Object> tuple : collector.actualResults) {
-            Assert.assertEquals(5, tuple.size());
+            assertEquals(5, tuple.size());
             for (Object o : tuple) {
-                Assert.assertNotNull(o);
+                assertNotNull(o);
             }
         }
     }
@@ -206,7 +207,7 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(orders.length, collector.actualResults.size());
+        assertEquals(orders.length, collector.actualResults.size());
     }
 
     @Test
@@ -223,7 +224,7 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(12, collector.actualResults.size());
+        assertEquals(12, collector.actualResults.size());
     }
 
     @Test
@@ -243,7 +244,7 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(6, collector.actualResults.size());
+        assertEquals(6, collector.actualResults.size());
 
     }
 
@@ -264,7 +265,7 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(users.length, collector.actualResults.size());
+        assertEquals(users.length, collector.actualResults.size());
     }
 
     @Test
@@ -284,7 +285,7 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(stores.length + 1, collector.actualResults.size()); // stores.length+1 as 2 users in Bengaluru
+        assertEquals(stores.length + 1, collector.actualResults.size()); // stores.length+1 as 2 users in Bengaluru
     }
 
     @Test
@@ -304,7 +305,7 @@ public class TestJoinBolt {
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        Assert.assertEquals(stores.length + 1, collector.actualResults.size()); // stores.length+1 as 2 users in Bengaluru
+        assertEquals(stores.length + 1, collector.actualResults.size()); // stores.length+1 as 2 users in Bengaluru
     }
 
     static class MockCollector extends OutputCollector {

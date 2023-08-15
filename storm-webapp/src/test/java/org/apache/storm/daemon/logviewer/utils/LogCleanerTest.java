@@ -23,25 +23,22 @@ import static org.apache.storm.Config.SUPERVISOR_WORKER_TIMEOUT_SECS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -101,8 +98,8 @@ public class LogCleanerTest {
 
             Predicate<Path> fileFilter = logCleaner.mkFileFilterForLogCleanup(nowMillis);
 
-            matchingFiles.forEach(p -> assertTrue("Missing " + p.getFileName(), fileFilter.test(p)));
-            excludedFiles.forEach(p -> assertFalse("Not excluded " + p.getFileName(), fileFilter.test(p)));
+            matchingFiles.forEach(p -> assertTrue(fileFilter.test(p), "Missing " + p.getFileName()));
+            excludedFiles.forEach(p -> assertFalse(fileFilter.test(p), "Not excluded " + p.getFileName()));
         }
     }
 
@@ -156,11 +153,11 @@ public class LogCleanerTest {
             Path port3Dir = createDir(topo2Dir, "port3");
 
             Seq.range(0, 10)
-                .forEach(idx -> createFile(port1Dir, "A" + idx, nowMillis + 100 * idx, 200));
+                .forEach(idx -> createFile(port1Dir, "A" + idx, nowMillis + 100L * idx, 200));
             Seq.range(0, 10)
-                .forEach(idx -> createFile(port2Dir, "B" + idx, nowMillis + 100 * idx, 200));
+                .forEach(idx -> createFile(port2Dir, "B" + idx, nowMillis + 100L * idx, 200));
             Seq.range(0, 10)
-                .forEach(idx -> createFile(port3Dir, "C" + idx, nowMillis + 100 * idx, 200));
+                .forEach(idx -> createFile(port3Dir, "C" + idx, nowMillis + 100L * idx, 200));
 
             Map<String, Object> conf = Utils.readStormConfig();
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
@@ -192,11 +189,11 @@ public class LogCleanerTest {
             Path port3Dir = createDir(topo2Dir, "port3");
 
             Seq.range(0, 10)
-                .forEach(idx -> createFile(port1Dir, "A" + idx + ".log", nowMillis + 100 * idx, 200));
+                .forEach(idx -> createFile(port1Dir, "A" + idx + ".log", nowMillis + 100L * idx, 200));
             Seq.range(0, 10)
-                .forEach(idx -> createFile(port2Dir, "B" + idx, nowMillis + 100 * idx, 200));
+                .forEach(idx -> createFile(port2Dir, "B" + idx, nowMillis + 100L * idx, 200));
             Seq.range(0, 10)
-                .forEach(idx -> createFile(port3Dir, "C" + idx, nowMillis + 100 * idx, 200));
+                .forEach(idx -> createFile(port3Dir, "C" + idx, nowMillis + 100L * idx, 200));
 
             Map<String, Object> conf = Utils.readStormConfig();
             StormMetricsRegistry metricRegistry = new StormMetricsRegistry();
@@ -283,7 +280,7 @@ public class LogCleanerTest {
                 }
 
                 @Override
-                SortedSet<Path> getDeadWorkerDirs(int nowSecs, Set<Path> logDirs) throws Exception {
+                SortedSet<Path> getDeadWorkerDirs(int nowSecs, Set<Path> logDirs) {
                     SortedSet<Path> dirs = new TreeSet<>();
                     dirs.add(dir1.getFile().toPath());
                     dirs.add(dir2.getFile().toPath());
@@ -291,7 +288,7 @@ public class LogCleanerTest {
                 }
 
                 @Override
-                void cleanupEmptyTopoDirectory(Path dir) throws IOException {
+                void cleanupEmptyTopoDirectory(Path dir) {
                 }
             };
 

@@ -5,7 +5,7 @@ documentation: true
 ---
 ###Connecting to JMS Using Spring's JMS Support
 
-Create a Spring applicationContext.xml file that defines one or more destination (topic/queue) beans, as well as a connecton factory.
+Create a Spring applicationContext.xml file that defines one or more destination (topic/queue) beans, as well as a connection factory.
 
 	<?xml version="1.0" encoding="UTF-8"?>
 	<beans 

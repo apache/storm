@@ -15,10 +15,11 @@ package org.apache.storm.command;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestCLI {
 
@@ -36,10 +37,10 @@ public class TestCLI {
                                                "-d1", "-d2", "-d3"
                                             , "-f", "key1=value1", "-f", "key2=value2");
         assertEquals(8, values.size());
-        assertEquals("200", (String) values.get("a"));
+        assertEquals("200", values.get("a"));
         assertEquals((Integer) 40, (Integer) values.get("b"));
         assertEquals((Integer) 2, (Integer) values.get("c"));
-        assertEquals(null, values.get("e"));
+        assertNull(values.get("e"));
 
         List<String> d = (List<String>) values.get("d");
         assertEquals(3, d.size());
@@ -76,7 +77,7 @@ public class TestCLI {
             .parse();
 
         assertEquals(1, values.size());
-        assertEquals(null, values.get("A"));
+        assertNull(values.get("A"));
 
 
         values = CLI.optionalArg("A", CLI.LAST_WINS)
@@ -95,7 +96,7 @@ public class TestCLI {
     }
 
     @Test
-    public void argAfterOptional() throws Exception {
+    public void argAfterOptional() {
         try {
             CLI.optionalArg("A", CLI.LAST_WINS)
                 .arg("B");

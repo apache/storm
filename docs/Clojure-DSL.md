@@ -77,7 +77,7 @@ Here's an example `shell-bolt-spec`:
 
 ```clojure
 (shell-bolt-spec {"1" :shuffle "2" ["id"]}
-                 "python"
+                 "python3"
                  "mybolt.py"
                  ["outfield1" "outfield2"]
                  :p 25)

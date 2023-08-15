@@ -21,7 +21,6 @@ import java.util.Properties;
 import java.util.Set;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.utils.NimbusClient;

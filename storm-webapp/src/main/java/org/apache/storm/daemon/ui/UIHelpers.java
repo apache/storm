@@ -1577,9 +1577,8 @@ public class UIHelpers {
             temp.put("emitted", emittedStatDisplayMap.get(window));
             temp.put("transferred", transferred.get(window));
             temp.put("completeLatency", StatsUtil.floatStr(completeLatency.get(getWindowHint(window))));
-            temp.put("acked", acked.get(window));
-            temp.put("failed", failed.get(window));
-
+            temp.put("acked", acked.getOrDefault(window, 0L));
+            temp.put("failed", failed.getOrDefault(window, 0L));
 
             result.add(temp);
         }
@@ -1747,19 +1746,18 @@ public class UIHelpers {
     }
 
     /**
-     * sanitizeStreamName.
-     * @param streamName streamName
-     * @return sanitizeStreamName
+     * Sanitizes streamName for use as an identifier in the visualization.  Replaces all characters except A-Z, a-z,
+     * '.', '-', and '_' with '_'.  If streamName does not start with A-Z or a-z, adds '_s' prefix.
+     * @param streamName non-null streamName
+     * @return sanitized stream name
      */
     public static String sanitizeStreamName(String streamName) {
-        Pattern pattern = Pattern.compile("(?![A-Za-z_\\-:\\.]).");
-        Pattern pattern2 = Pattern.compile("^[A-Za-z]");
-        Matcher matcher = pattern2.matcher(streamName);
-        Matcher matcher2 = pattern.matcher("\\s" + streamName);
-        if (matcher.find()) {
-            matcher2 = pattern.matcher(streamName);
+        Matcher problemCharacterMatcher = Pattern.compile("(?![A-Za-z_\\-\\.]).").matcher(streamName);
+        if (streamName.length() > 0 && Character.isLetter(streamName.charAt(0))) {
+            return problemCharacterMatcher.replaceAll("_");
+        } else {
+            return "_s" + problemCharacterMatcher.replaceAll("_");
         }
-        return matcher2.replaceAll("_");
     }
 
     /**

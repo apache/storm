@@ -179,10 +179,12 @@ public class SerializationFactory {
                 }
             }
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Unable to create serializer \""
-                                               + serializerClass.getName()
-                                               + "\" for class: "
-                                               + superClass.getName(), ex);
+            throw new IllegalArgumentException(
+                    "Unable to create serializer \""
+                            + serializerClass.getName()
+                            + "\" for class: "
+                            + (superClass == null ? "NoSuperClass" : superClass.getName()),
+                    ex);
         }
     }
 

@@ -30,12 +30,12 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.windowing.TupleWindow;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit test for {@link WindowedProcessorBolt}
@@ -50,7 +50,7 @@ public class WindowedProcessorBoltTest {
     DirectedGraph<Node, Edge> graph;
     Multimap<String, ProcessorNode> mockStreamToProcessors;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mockTopologyContext = Mockito.mock(TopologyContext.class);
         mockOutputCollector = Mockito.mock(OutputCollector.class);

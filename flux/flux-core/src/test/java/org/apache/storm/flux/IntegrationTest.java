@@ -17,7 +17,7 @@
  */
 package org.apache.storm.flux;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class IntegrationTest {
 

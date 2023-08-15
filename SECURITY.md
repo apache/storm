@@ -414,6 +414,17 @@ min.user.id=$(min_user_id)
 where `worker_launcher_group` is the same group the supervisor user is a part of, and `min.user.id` is set to the first real user id on the system.
 This config file also needs to be owned by root and *not* have world nor group write permissions.
 
+
+### Storm‐Netty Authentication
+
+The authentication for Netty connections between workers by default is disabled. 
+It can either be set for your cluster or on a per topology basis. This setting will prevent any 
+unauthorized messages from getting processed. The config for enabling the
+Storm‐Netty authentication is as follows:
+```yaml
+storm.messaging.netty.authentication: true
+```
+
 ### Impersonating a user
 A storm client may submit requests on behalf of another user. For example, if a `userX` submits an oozie workflow and as part of workflow execution if user `oozie` wants to submit a topology on behalf of `userX`
 it can do so by leveraging the impersonation feature. In order to submit a topology as some other user, you can use the `StormSubmitter.submitTopologyAs` API. Alternatively you can use `NimbusClient.getConfiguredClientAs`
@@ -498,5 +509,3 @@ nimbus.groups:
 
 ### DRPC
 Hopefully more on this soon
-
-

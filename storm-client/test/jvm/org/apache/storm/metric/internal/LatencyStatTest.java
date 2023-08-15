@@ -13,64 +13,65 @@
 package org.apache.storm.metric.internal;
 
 import java.util.Map;
-import junit.framework.TestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit test for LatencyStat
  */
-public class LatencyStatTest extends TestCase {
-    final long TEN_MIN = 10 * 60 * 1000;
-    final long THIRTY_SEC = 30 * 1000;
-    final long THREE_HOUR = 3 * 60 * 60 * 1000;
-    final long ONE_DAY = 24 * 60 * 60 * 1000;
+public class LatencyStatTest {
+    final long TEN_MIN_IN_MS = 10 * 60 * 1000;
+    final long THIRTY_SEC_IN_MS = 30 * 1000;
+    final double THREE_HOUR_IN_MS = 3 * 60 * 60 * 1000;
+    final double ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
     @Test
     public void testBasic() {
-        long time = 0l;
+        long time = 0L;
         LatencyStat lat = new LatencyStat(10, time);
-        while (time < TEN_MIN) {
+        while (time < TEN_MIN_IN_MS) {
             lat.record(100);
-            time += THIRTY_SEC;
-            assertEquals(100.0, ((Double) lat.getValueAndReset(time)).doubleValue(), 0.01);
+            time += THIRTY_SEC_IN_MS;
+            assertEquals(100.0, (Double) lat.getValueAndReset(time), 0.01);
         }
 
         Map<String, Double> found = lat.getTimeLatAvg(time);
         assertEquals(4, found.size());
-        assertEquals(100.0, found.get("600").doubleValue(), 0.01);
-        assertEquals(100.0, found.get("10800").doubleValue(), 0.01);
-        assertEquals(100.0, found.get("86400").doubleValue(), 0.01);
-        assertEquals(100.0, found.get(":all-time").doubleValue(), 0.01);
+        assertEquals(100.0, found.get("600"), 0.01);
+        assertEquals(100.0, found.get("10800"), 0.01);
+        assertEquals(100.0, found.get("86400"), 0.01);
+        assertEquals(100.0, found.get(":all-time"), 0.01);
 
-        while (time < THREE_HOUR) {
+        while (time < THREE_HOUR_IN_MS) {
             lat.record(200);
-            time += THIRTY_SEC;
-            assertEquals(200.0, ((Double) lat.getValueAndReset(time)).doubleValue(), 0.01);
+            time += THIRTY_SEC_IN_MS;
+            assertEquals(200.0, (Double) lat.getValueAndReset(time), 0.01);
         }
 
-        double expected = ((100.0 * TEN_MIN / THIRTY_SEC) + (200.0 * (THREE_HOUR - TEN_MIN) / THIRTY_SEC)) /
-                          (THREE_HOUR / THIRTY_SEC);
+        double expected = ((100.0 * TEN_MIN_IN_MS / THIRTY_SEC_IN_MS) + (200.0 * (THREE_HOUR_IN_MS - TEN_MIN_IN_MS) / THIRTY_SEC_IN_MS)) /
+                          (THREE_HOUR_IN_MS / THIRTY_SEC_IN_MS);
         found = lat.getTimeLatAvg(time);
         assertEquals(4, found.size());
-        assertEquals(200.0, found.get("600").doubleValue(), 0.01); //flushed the buffers completely
-        assertEquals(expected, found.get("10800").doubleValue(), 0.01);
-        assertEquals(expected, found.get("86400").doubleValue(), 0.01);
-        assertEquals(expected, found.get(":all-time").doubleValue(), 0.01);
+        assertEquals(200.0, found.get("600"), 0.01); //flushed the buffers completely
+        assertEquals(expected, found.get("10800"), 0.01);
+        assertEquals(expected, found.get("86400"), 0.01);
+        assertEquals(expected, found.get(":all-time"), 0.01);
 
-        while (time < ONE_DAY) {
+        while (time < ONE_DAY_IN_MS) {
             lat.record(300);
-            time += THIRTY_SEC;
-            assertEquals(300.0, ((Double) lat.getValueAndReset(time)).doubleValue(), 0.01);
+            time += THIRTY_SEC_IN_MS;
+            assertEquals(300.0, (Double) lat.getValueAndReset(time), 0.01);
         }
 
-        expected = ((100.0 * TEN_MIN / THIRTY_SEC) + (200.0 * (THREE_HOUR - TEN_MIN) / THIRTY_SEC) +
-                    (300.0 * (ONE_DAY - THREE_HOUR) / THIRTY_SEC)) /
-                   (ONE_DAY / THIRTY_SEC);
+        expected = ((100.0 * TEN_MIN_IN_MS / THIRTY_SEC_IN_MS) + (200.0 * (THREE_HOUR_IN_MS - TEN_MIN_IN_MS) / THIRTY_SEC_IN_MS) +
+                    (300.0 * (ONE_DAY_IN_MS - THREE_HOUR_IN_MS) / THIRTY_SEC_IN_MS)) /
+                   (ONE_DAY_IN_MS / THIRTY_SEC_IN_MS);
         found = lat.getTimeLatAvg(time);
         assertEquals(4, found.size());
-        assertEquals(300.0, found.get("600").doubleValue(), 0.01); //flushed the buffers completely
-        assertEquals(300.0, found.get("10800").doubleValue(), 0.01);
-        assertEquals(expected, found.get("86400").doubleValue(), 0.01);
-        assertEquals(expected, found.get(":all-time").doubleValue(), 0.01);
+        assertEquals(300.0, found.get("600"), 0.01); //flushed the buffers completely
+        assertEquals(300.0, found.get("10800"), 0.01);
+        assertEquals(expected, found.get("86400"), 0.01);
+        assertEquals(expected, found.get(":all-time"), 0.01);
     }
 }

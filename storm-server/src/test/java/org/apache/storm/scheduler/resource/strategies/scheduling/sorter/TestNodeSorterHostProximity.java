@@ -41,7 +41,6 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResource
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.ObjectResourcesItem;
 import org.apache.storm.topology.TopologyBuilder;
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -65,11 +64,12 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith({NormalizedResourcesExtension.class})
 public class TestNodeSorterHostProximity {
@@ -233,14 +233,14 @@ public class TestNodeSorterHostProximity {
                         x.availableResources.getTotalCpu(),
                         x.availableResources.getTotalMemoryMb()))
                 .collect(Collectors.joining("\n\t"));
-        Assert.assertEquals(rackSummaries + "\n# of racks sorted", 6, sortedRacks.size());
+        assertEquals(6, sortedRacks.size(), rackSummaries + "\n# of racks sorted");
         Iterator<ObjectResourcesItem> it = sortedRacks.iterator();
-        Assert.assertEquals(rackSummaries + "\nrack-000 should be ordered first since it has the most balanced set of resources", "rack-000", it.next().id);
-        Assert.assertEquals(rackSummaries + "\nrack-001 should be ordered second since it has a balanced set of resources but less than rack-000", "rack-001", it.next().id);
-        Assert.assertEquals(rackSummaries + "\nrack-004 should be ordered third since it has a lot of cpu but not a lot of memory", "rack-004", it.next().id);
-        Assert.assertEquals(rackSummaries + "\nrack-003 should be ordered fourth since it has a lot of memory but not cpu", "rack-003", it.next().id);
-        Assert.assertEquals(rackSummaries + "\nrack-002 should be ordered fifth since it has not cpu resources", "rack-002", it.next().id);
-        Assert.assertEquals(rackSummaries + "\nRack-005 should be ordered sixth since it has neither CPU nor memory available", "rack-005", it.next().id);
+        assertEquals("rack-000", it.next().id, rackSummaries + "\nrack-000 should be ordered first since it has the most balanced set of resources");
+        assertEquals("rack-001", it.next().id, rackSummaries + "\nrack-001 should be ordered second since it has a balanced set of resources but less than rack-000");
+        assertEquals("rack-004", it.next().id, rackSummaries + "\nrack-004 should be ordered third since it has a lot of cpu but not a lot of memory");
+        assertEquals("rack-003", it.next().id, rackSummaries + "\nrack-003 should be ordered fourth since it has a lot of memory but not cpu");
+        assertEquals("rack-002", it.next().id, rackSummaries + "\nrack-002 should be ordered fifth since it has not cpu resources");
+        assertEquals("rack-005", it.next().id, rackSummaries + "\nRack-005 should be ordered sixth since it has neither CPU nor memory available");
     }
 
     /**
@@ -337,15 +337,15 @@ public class TestNodeSorterHostProximity {
 
         Iterator<ObjectResourcesItem> it = sortedRacks.iterator();
         // Ranked first since rack-000 has the most balanced set of resources
-        Assert.assertEquals("rack-000 should be ordered first", "rack-000", it.next().id);
+        assertEquals("rack-000", it.next().id, "rack-000 should be ordered first");
         // Ranked second since rack-1 has a balanced set of resources but less than rack-0
-        Assert.assertEquals("rack-001 should be ordered second", "rack-001", it.next().id);
+        assertEquals("rack-001", it.next().id, "rack-001 should be ordered second");
         // Ranked third since rack-4 has a lot of cpu but not a lot of memory
-        Assert.assertEquals("rack-004 should be ordered third", "rack-004", it.next().id);
+        assertEquals("rack-004", it.next().id, "rack-004 should be ordered third");
         // Ranked fourth since rack-3 has alot of memory but not cpu
-        Assert.assertEquals("rack-003 should be ordered fourth", "rack-003", it.next().id);
+        assertEquals("rack-003", it.next().id, "rack-003 should be ordered fourth");
         //Ranked last since rack-2 has not cpu resources
-        Assert.assertEquals("rack-00s2 should be ordered fifth", "rack-002", it.next().id);
+        assertEquals("rack-002", it.next().id, "rack-00s2 should be ordered fifth");
     }
 
     /**
@@ -439,7 +439,7 @@ public class TestNodeSorterHostProximity {
             errLines.add(String.format("\tnodeId:%s, host:%s", nodeId, host));
             if (!host.equals(prevHost) && seenHosts.contains(host)) {
                 String err = String.format("Host %s for node %s is out of order:\n\t%s", host, nodeId, String.join("\n\t", errLines));
-                Assert.fail(err);
+                fail(err);
             }
             seenHosts.add(host);
             prevHost = host;
@@ -529,12 +529,12 @@ public class TestNodeSorterHostProximity {
         NormalizedResourceRequest topoResourceRequest = topo1.getApproximateTotalResources();
         String topoRequest = String.format("Topo %s, approx-requested-resources %s", topo1.getId(), topoResourceRequest.toString());
         Iterator<ObjectResourcesItem> it = sortedRacks.iterator();
-        Assert.assertEquals(topoRequest + "\n\t" + rackSummaries + "\nRack-000 should be ordered first since it has the largest capacity", "rack-000", it.next().id);
-        Assert.assertEquals(topoRequest + "\n\t" + rackSummaries + "\nrack-001 should be ordered second since it smaller than rack-000", "rack-001", it.next().id);
-        Assert.assertEquals(topoRequest + "\n\t" + rackSummaries + "\nrack-002 should be ordered third since it is smaller than rack-001", "rack-002", it.next().id);
-        Assert.assertEquals(topoRequest + "\n\t" + rackSummaries + "\nrack-003 should be ordered fourth since it since it is smaller than rack-002", "rack-003", it.next().id);
-        Assert.assertEquals(topoRequest + "\n\t" + rackSummaries + "\nrack-004 should be ordered fifth since it since it is smaller than rack-003", "rack-004", it.next().id);
-        Assert.assertEquals(topoRequest + "\n\t" + rackSummaries + "\nrack-005 should be ordered last since it since it is has smallest capacity", "rack-005", it.next().id);
+        assertEquals("rack-000", it.next().id, topoRequest + "\n\t" + rackSummaries + "\nRack-000 should be ordered first since it has the largest capacity");
+        assertEquals("rack-001", it.next().id, topoRequest + "\n\t" + rackSummaries + "\nrack-001 should be ordered second since it smaller than rack-000");
+        assertEquals("rack-002", it.next().id, topoRequest + "\n\t" + rackSummaries + "\nrack-002 should be ordered third since it is smaller than rack-001");
+        assertEquals("rack-003", it.next().id, topoRequest + "\n\t" + rackSummaries + "\nrack-003 should be ordered fourth since it since it is smaller than rack-002");
+        assertEquals("rack-004", it.next().id, topoRequest + "\n\t" + rackSummaries + "\nrack-004 should be ordered fifth since it since it is smaller than rack-003");
+        assertEquals("rack-005", it.next().id, topoRequest + "\n\t" + rackSummaries + "\nrack-005 should be ordered last since it since it is has smallest capacity");
     }
 
     /**
@@ -580,9 +580,9 @@ public class TestNodeSorterHostProximity {
                         .collect(Collectors.joining("\n\t"));
                 NormalizedResourceRequest topoResourceRequest = tdSimple.getApproximateTotalResources();
                 String topoRequest = String.format("Topo %s, approx-requested-resources %s", tdSimple.getId(), topoResourceRequest.toString());
-                Assert.assertEquals(rackSummaries + "\n# of racks sorted", 2, sortedRacks.size());
-                Assert.assertEquals(rackSummaries + "\nFirst rack sorted", "rack-000", sortedRacks.get(0).id);
-                Assert.assertEquals(rackSummaries + "\nSecond rack sorted", "rack-001", sortedRacks.get(1).id);
+                assertEquals(2, sortedRacks.size(), rackSummaries + "\n# of racks sorted");
+                assertEquals("rack-000", sortedRacks.get(0).id, rackSummaries + "\nFirst rack sorted");
+                assertEquals("rack-001", sortedRacks.get(1).id, rackSummaries + "\nSecond rack sorted");
             }
         }
 
@@ -613,13 +613,13 @@ public class TestNodeSorterHostProximity {
                         .collect(Collectors.joining("\n\t"));
                 NormalizedResourceRequest topoResourceRequest = tdSimple.getApproximateTotalResources();
                 String topoRequest = String.format("Topo %s, approx-requested-resources %s", tdSimple.getId(), topoResourceRequest.toString());
-                Assert.assertEquals(rackSummaries + "\n# of racks sorted", 2, sortedRacks.size());
+                assertEquals(2, sortedRacks.size(), rackSummaries + "\n# of racks sorted");
                 if (comp.equals("gpu-bolt")) {
-                    Assert.assertEquals(rackSummaries + "\nFirst rack sorted for " + comp, "rack-001", sortedRacks.get(0).id);
-                    Assert.assertEquals(rackSummaries + "\nSecond rack sorted for " + comp, "rack-000", sortedRacks.get(1).id);
+                    assertEquals("rack-001", sortedRacks.get(0).id, rackSummaries + "\nFirst rack sorted for " + comp);
+                    assertEquals("rack-000", sortedRacks.get(1).id, rackSummaries + "\nSecond rack sorted for " + comp);
                 } else {
-                    Assert.assertEquals(rackSummaries + "\nFirst rack sorted for " + comp, "rack-000", sortedRacks.get(0).id);
-                    Assert.assertEquals(rackSummaries + "\nSecond rack sorted for " + comp, "rack-001", sortedRacks.get(1).id);
+                    assertEquals("rack-000", sortedRacks.get(0).id, rackSummaries + "\nFirst rack sorted for " + comp);
+                    assertEquals("rack-001", sortedRacks.get(1).id, rackSummaries + "\nSecond rack sorted for " + comp);
                 }
             }
         }
@@ -720,7 +720,7 @@ public class TestNodeSorterHostProximity {
 
         scheduler.schedule(topologies, cluster);
         Set<String> assignedRacks = cluster.getAssignedRacks(td1.getId());
-        assertEquals("Racks for topology=" + td1.getId() + " is " + assignedRacks, 2, assignedRacks.size());
+        assertEquals(2, assignedRacks.size(), "Racks for topology=" + td1.getId() + " is " + assignedRacks);
     }
 
     /**
@@ -784,7 +784,7 @@ public class TestNodeSorterHostProximity {
 
         scheduler.schedule(topologies, cluster);
         Set<String> assignedRacks = cluster.getAssignedRacks(td1.getId());
-        assertEquals("Racks for topology=" + td1.getId() + " is " + assignedRacks, 1, assignedRacks.size());
+        assertEquals(1, assignedRacks.size(), "Racks for topology=" + td1.getId() + " is " + assignedRacks);
 
         TopologyBuilder builder = topologyBuilder(topo2NumSpouts, topo2NumBolts, topo2SpoutParallelism, topo2BoltParallelism);
         TopologyDetails td2 = topoToTopologyDetails(topoName2, config, builder.createTopology(), 0, 0,"user", topo2MaxHeapSize);
@@ -795,31 +795,33 @@ public class TestNodeSorterHostProximity {
         scheduler.schedule(topologies, cluster);
 
         assignedRacks = cluster.getAssignedRacks(td1.getId(), td2.getId());
-        assertEquals("Racks for topologies=" + td1.getId() + "/" + td2.getId() + " is " + assignedRacks, 2, assignedRacks.size());
+        assertEquals(2, assignedRacks.size(), "Racks for topologies=" + td1.getId() + "/" + td2.getId() + " is " + assignedRacks);
 
         // topo2 gets scheduled on its own rack because it is empty and available
         assignedRacks = cluster.getAssignedRacks(td2.getId());
-        assertEquals("Racks for topologies=" + td2.getId() + " is " + assignedRacks, 1, assignedRacks.size());
+        assertEquals(1, assignedRacks.size(), "Racks for topologies=" + td2.getId() + " is " + assignedRacks);
 
         // now unassign topo2, expect only one rack to be in use; free some slots and reschedule topo1 some topo1 executors
         cluster.unassign(td2.getId());
         assignedRacks = cluster.getAssignedRacks(td2.getId());
-        assertEquals("After unassigning topology " + td2.getId() + ", racks for topology=" + td2.getId() + " is " + assignedRacks,
-                0, assignedRacks.size());
+        assertEquals(0, assignedRacks.size(),
+            "After unassigning topology " + td2.getId() + ", racks for topology=" + td2.getId() + " is " + assignedRacks);
         assignedRacks = cluster.getAssignedRacks(td1.getId());
-        assertEquals("After unassigning topology " + td2.getId() + ", racks for topology=" + td1.getId() + " is " + assignedRacks,
-                1, assignedRacks.size());
-        assertFalse("Topology " + td1.getId() + " should be fully assigned before freeing slots", cluster.needsSchedulingRas(td1));
+        assertEquals(1, assignedRacks.size(),
+            "After unassigning topology " + td2.getId() + ", racks for topology=" + td1.getId() + " is " + assignedRacks);
+        assertFalse(cluster.needsSchedulingRas(td1),
+            "Topology " + td1.getId() + " should be fully assigned before freeing slots");
         freeSomeWorkerSlots(cluster);
-        assertTrue("Topology " + td1.getId() + " should need scheduling after freeing slots", cluster.needsSchedulingRas(td1));
+        assertTrue(cluster.needsSchedulingRas(td1),
+            "Topology " + td1.getId() + " should need scheduling after freeing slots");
 
         // then reschedule executors
         scheduler.schedule(topologies, cluster);
 
         // only one rack should be in use by topology1
         assignedRacks = cluster.getAssignedRacks(td1.getId());
-        assertEquals("After reassigning topology " + td2.getId() + ", racks for topology=" + td1.getId() + " is " + assignedRacks,
-                1, assignedRacks.size());
+        assertEquals(1, assignedRacks.size(),
+            "After reassigning topology " + td2.getId() + ", racks for topology=" + td1.getId() + " is " + assignedRacks);
     }
 
     /**
@@ -873,8 +875,8 @@ public class TestNodeSorterHostProximity {
         cluster.setNetworkTopography(testDNSToSwitchMapping.getRackToHosts());
 
         Map<String, List<String>> networkTopography = cluster.getNetworkTopography();
-        assertEquals("Expecting " + numRacks + " racks found " + networkTopography.size(), numRacks, networkTopography.size());
-        assertTrue("Expecting racks count to be >= 3, found " + networkTopography.size(), networkTopography.size() >= 3);
+        assertEquals(numRacks, networkTopography.size(), "Expecting " + numRacks + " racks found " + networkTopography.size());
+        assertTrue(networkTopography.size() >= 3, "Expecting racks count to be >= 3, found " + networkTopography.size());
 
         // Impair cluster.networkTopography and set one rack to have zero hosts, getSortedRacks should exclude this rack.
         // Keep, the supervisorDetails unchanged - confirm that these nodes are not lost even with incomplete networkTopography
@@ -888,9 +890,9 @@ public class TestNodeSorterHostProximity {
         {
             Set<String> seenRacks = new HashSet<>();
             nodeSorterHostProximity.getSortedRacks().forEach(x -> seenRacks.add(x.id));
-            assertEquals("Expecting rack cnt to be still " + numRacks, numRacks, seenRacks.size());
-            assertTrue("Expecting to see default-rack=" + DNSToSwitchMapping.DEFAULT_RACK + " in sortedRacks",
-                seenRacks.contains(DNSToSwitchMapping.DEFAULT_RACK));
+            assertEquals(numRacks, seenRacks.size(), "Expecting rack cnt to be still " + numRacks);
+            assertTrue(seenRacks.contains(DNSToSwitchMapping.DEFAULT_RACK),
+                "Expecting to see default-rack=" + DNSToSwitchMapping.DEFAULT_RACK + " in sortedRacks");
         }
 
         // now check if node/supervisor is missing when sorting all nodes
@@ -898,7 +900,7 @@ public class TestNodeSorterHostProximity {
         Set<String> seenNodes = new HashSet<>();
         nodeSorterHostProximity.prepare(null);
         nodeSorterHostProximity.sortAllNodes().forEach( n -> seenNodes.add(n));
-        assertEquals("Expecting see all supervisors ", expectedNodes, seenNodes);
+        assertEquals(expectedNodes, seenNodes, "Expecting see all supervisors ");
 
         // Now fully impair the cluster - confirm no default rack
         {
@@ -912,10 +914,10 @@ public class TestNodeSorterHostProximity {
             String dumpOfRacks = rackIdToHosts.entrySet().stream()
                 .map(x -> String.format("rack %s -> hosts [%s]", x.getKey(), String.join(",", x.getValue())))
                 .collect(Collectors.joining("\n\t"));
-            assertEquals("Expecting rack cnt to be " + (numRacks - 1) + " but found " + seenRacks.size() + "\n\t" + dumpOfRacks,
-                numRacks - 1, seenRacks.size());
-            assertFalse("Found default-rack=" + DNSToSwitchMapping.DEFAULT_RACK + " in \n\t" + dumpOfRacks,
-                seenRacks.contains(DNSToSwitchMapping.DEFAULT_RACK));
+            assertEquals(numRacks - 1, seenRacks.size(),
+                "Expecting rack cnt to be " + (numRacks - 1) + " but found " + seenRacks.size() + "\n\t" + dumpOfRacks);
+            assertFalse(seenRacks.contains(DNSToSwitchMapping.DEFAULT_RACK),
+                "Found default-rack=" + DNSToSwitchMapping.DEFAULT_RACK + " in \n\t" + dumpOfRacks);
         }
     }
 
@@ -963,8 +965,8 @@ public class TestNodeSorterHostProximity {
         cluster.setNetworkTopography(testDNSToSwitchMapping.getRackToHosts());
 
         Map<String, List<String>> networkTopography = cluster.getNetworkTopography();
-        assertEquals("Expecting " + numRacks + " racks found " + networkTopography.size(), numRacks, networkTopography.size());
-        assertTrue("Expecting racks count to be >= 3, found " + networkTopography.size(), networkTopography.size() >= 3);
+        assertEquals(numRacks, networkTopography.size(), "Expecting " + numRacks + " racks found " + networkTopography.size());
+        assertTrue(networkTopography.size() >= 3, "Expecting racks count to be >= 3, found " + networkTopography.size());
 
         Set<String> blackListedHosts = new HashSet<>();
         List<SupervisorDetails> supArray = new ArrayList<>(supMap.values());
@@ -993,7 +995,7 @@ public class TestNodeSorterHostProximity {
             Set<String> seenHosts = new HashSet<>();
             nodeSorterHostProximity.getRackIdToHosts().forEach((k,v) -> seenHosts.addAll(v));
             allHosts.removeAll(seenHosts);
-            assertEquals("Expecting only blacklisted hosts removed", allHosts, blackListedHosts);
+            assertEquals(allHosts, blackListedHosts, "Expecting only blacklisted hosts removed");
         }
 
         // now check if sortAllNodes still works
@@ -1004,7 +1006,7 @@ public class TestNodeSorterHostProximity {
         Set<String> seenNodes = new HashSet<>();
             nodeSorterHostProximity.prepare(null);
             nodeSorterHostProximity.sortAllNodes().forEach( n -> seenNodes.add(n));
-        assertEquals("Expecting see all supervisors ", expectedNodes, seenNodes);
+        assertEquals(expectedNodes, seenNodes, "Expecting see all supervisors ");
     }
 
     /**

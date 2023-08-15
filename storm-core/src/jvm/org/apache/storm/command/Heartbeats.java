@@ -56,7 +56,7 @@ public class Heartbeats {
         try {
             cluster.close();
         } catch (Exception e) {
-            LOG.info("Caught exception: {} on close.", e);
+            LOG.info("Caught exception: {} on close.", e.getMessage(), e);
         }
 
         // force process to be terminated

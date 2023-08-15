@@ -35,8 +35,6 @@ storm.zookeeper.retry.interval: 1000
 storm.zookeeper.retry.intervalceiling.millis: 30000
 storm.zookeeper.auth.user: null
 storm.zookeeper.auth.password: null
-storm.exhibitor.port: 8080
-storm.exhibitor.poll.uripath: "/exhibitor/v1/cluster/list"
 storm.cluster.mode: "distributed" # can be distributed or local
 storm.local.mode.zmq: false
 storm.thrift.transport: "org.apache.storm.security.auth.SimpleTransportPlugin"
@@ -192,7 +190,7 @@ supervisor.thrift.socket.timeout.ms: 5000
 
 ### worker.* configs are for task workers
 worker.heap.memory.mb: 768
-worker.childopts: "-Xmx%HEAP-MEM%m -XX:+PrintGCDetails -Xloggc:artifacts/gc.log -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
+worker.childopts: "-Xmx%HEAP-MEM%m -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGCDetails -Xloggc:artifacts/gc.log -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
 worker.gc.childopts: ""
 
 # Unlocking commercial features requires a special license from Oracle.
@@ -242,6 +240,7 @@ storm.messaging.netty.transfer.batch.size: 262144
 storm.messaging.netty.socket.backlog: 500
 
 # By default, the Netty SASL authentication is set to false.  Users can override and set it true for a specific topology.
+# see https://issues.apache.org/jira/browse/STORM-348 for more details
 storm.messaging.netty.authentication: false
 
 # Default plugin to use for automatic network topology discovery
@@ -268,7 +267,7 @@ topology.max.spout.pending: null    # ideally should be larger than topology.pro
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60
-topology.fall.back.on.java.serialization: true
+topology.fall.back.on.java.serialization: false
 topology.worker.childopts: null
 topology.worker.logwriter.childopts: "-Xmx64m"
 topology.tick.tuple.freq.secs: null

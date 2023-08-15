@@ -16,8 +16,8 @@
 
 package org.apache.storm.kafka.spout.subscription;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,14 +31,14 @@ import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PatternTopicFilterTest {
 
     private KafkaConsumer<?, ?> consumerMock;
     
-    @Before
+    @BeforeEach
     public void setUp(){
         consumerMock = mock(KafkaConsumer.class);
     }

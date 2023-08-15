@@ -20,14 +20,14 @@ import org.apache.storm.state.StateFactory;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import static org.apache.storm.spout.CheckPointState.Action;
 import static org.apache.storm.spout.CheckPointState.State.COMMITTED;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit test for {@link CheckpointSpout}
@@ -37,7 +37,7 @@ public class CheckpointSpoutTest {
     TopologyContext mockTopologyContext;
     SpoutOutputCollector mockOutputCollector;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         mockTopologyContext = Mockito.mock(TopologyContext.class);
         Mockito.when(mockTopologyContext.getThisComponentId()).thenReturn("test");
@@ -47,7 +47,7 @@ public class CheckpointSpoutTest {
 
     @Test
     public void testInitState() throws Exception {
-        spout.open(new HashMap(), mockTopologyContext, mockOutputCollector);
+        spout.open(new HashMap<>(), mockTopologyContext, mockOutputCollector);
 
         spout.nextTuple();
         Values expectedTuple = new Values(-1L, Action.INITSTATE);
@@ -76,8 +76,8 @@ public class CheckpointSpoutTest {
     }
 
     @Test
-    public void testPrepare() throws Exception {
-        spout.open(new HashMap(), mockTopologyContext, mockOutputCollector);
+    public void testPrepare() {
+        spout.open(new HashMap<>(), mockTopologyContext, mockOutputCollector);
         ArgumentCaptor<String> stream = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Values> values = ArgumentCaptor.forClass(Values.class);
         ArgumentCaptor<Object> msgId = ArgumentCaptor.forClass(Object.class);
@@ -97,7 +97,7 @@ public class CheckpointSpoutTest {
     }
 
     @Test
-    public void testPrepareWithFail() throws Exception {
+    public void testPrepareWithFail() {
         Map<String, Object> topoConf = new HashMap<>();
         KeyValueState<String, CheckPointState> state =
             (KeyValueState<String, CheckPointState>) StateFactory.getState("__state", topoConf, mockTopologyContext);
@@ -143,8 +143,8 @@ public class CheckpointSpoutTest {
     }
 
     @Test
-    public void testCommit() throws Exception {
-        Map<String, Object> topoConf = new HashMap();
+    public void testCommit() {
+        Map<String, Object> topoConf = new HashMap<>();
         topoConf.put(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL, 0);
         spout.open(topoConf, mockTopologyContext, mockOutputCollector);
         ArgumentCaptor<String> stream = ArgumentCaptor.forClass(String.class);
@@ -172,8 +172,8 @@ public class CheckpointSpoutTest {
     }
 
     @Test
-    public void testRecoveryRollback() throws Exception {
-        Map<String, Object> topoConf = new HashMap();
+    public void testRecoveryRollback() {
+        Map<String, Object> topoConf = new HashMap<>();
 
         KeyValueState<String, CheckPointState> state =
             (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);
@@ -198,8 +198,8 @@ public class CheckpointSpoutTest {
     }
 
     @Test
-    public void testRecoveryRollbackAck() throws Exception {
-        Map<String, Object> topoConf = new HashMap();
+    public void testRecoveryRollbackAck() {
+        Map<String, Object> topoConf = new HashMap<>();
 
         KeyValueState<String, CheckPointState> state =
             (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);
@@ -228,8 +228,8 @@ public class CheckpointSpoutTest {
     }
 
     @Test
-    public void testRecoveryCommit() throws Exception {
-        Map<String, Object> topoConf = new HashMap();
+    public void testRecoveryCommit() {
+        Map<String, Object> topoConf = new HashMap<>();
 
         KeyValueState<String, CheckPointState> state =
             (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);

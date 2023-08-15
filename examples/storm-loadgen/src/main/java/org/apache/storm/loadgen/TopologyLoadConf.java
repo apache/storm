@@ -38,6 +38,7 @@ import org.apache.storm.Config;
 import org.apache.storm.generated.GlobalStreamId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -87,7 +88,7 @@ public class TopologyLoadConf {
      * @throws IOException if there is an issue reading the file.
      */
     public static TopologyLoadConf fromConf(File file) throws IOException {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(new FileReader(file));
         return TopologyLoadConf.fromConf(yamlConf);
     }
@@ -133,7 +134,7 @@ public class TopologyLoadConf {
      * @throws IOException if there is an error writing to the file.
      */
     public void writeTo(File file) throws IOException {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         try (FileWriter writer = new FileWriter(file)) {
             yaml.dump(toConf(), writer);
         }
@@ -144,7 +145,7 @@ public class TopologyLoadConf {
      * @return this as a YAML String.
      */
     public String toYamlString() {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         StringWriter writer = new StringWriter();
         yaml.dump(toConf(), writer);
         return writer.toString();

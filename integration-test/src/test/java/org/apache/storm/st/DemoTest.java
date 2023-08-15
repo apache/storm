@@ -17,27 +17,26 @@
 
 package org.apache.storm.st;
 
+import org.apache.storm.ExclamationTopology;
 import org.apache.storm.st.helper.AbstractTest;
 import org.apache.storm.st.wrapper.TopoWrap;
-import org.apache.storm.ExclamationTopology;
-import org.apache.storm.generated.TopologyInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
-import org.apache.storm.st.utils.TimeUtil;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class DemoTest extends AbstractTest {
     private static final Logger log = LoggerFactory.getLogger(DemoTest.class);
     private static final List<String> exclaim2Output = ExclamationTopology.FixedOrderWordSpout.WORDS.stream()
         .map(word -> word + "!!!!!!")
         .collect(Collectors.toList());
-    protected final String topologyName = this.getClass().getSimpleName();
+    private final String topologyName = this.getClass().getSimpleName();
     private TopoWrap topo;
 
     @Test
@@ -45,14 +44,14 @@ public final class DemoTest extends AbstractTest {
         topo = new TopoWrap(cluster, topologyName, ExclamationTopology.getStormTopology());
         topo.submitSuccessfully();
         final int minExclaim2Emits = 500;
-        final int minSpountEmits = 10000;
-        topo.assertProgress(minSpountEmits, ExclamationTopology.SPOUT_EXECUTORS, ExclamationTopology.WORD, 180);
+        final int minSpoutEmits = 10000;
+        topo.assertProgress(minSpoutEmits, ExclamationTopology.SPOUT_EXECUTORS, ExclamationTopology.WORD, 180);
         topo.assertProgress(minExclaim2Emits, ExclamationTopology.EXCLAIM_2_EXECUTORS, ExclamationTopology.EXCLAIM_2, 180);
         Set<TopoWrap.ExecutorURL> boltUrls = topo.getLogUrls(ExclamationTopology.WORD);
         log.info(boltUrls.toString());
         final String actualOutput = topo.getLogs(ExclamationTopology.EXCLAIM_2);
         for (String oneExpectedOutput : exclaim2Output) {
-            Assert.assertTrue(actualOutput.contains(oneExpectedOutput), "Couldn't find " + oneExpectedOutput + " in urls");
+            assertTrue(actualOutput.contains(oneExpectedOutput), "Couldn't find " + oneExpectedOutput + " in urls");
         }
     }
 

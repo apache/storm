@@ -21,11 +21,11 @@ package org.apache.storm.hbase.state;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link HBaseKeyValueStateProvider}
@@ -33,48 +33,39 @@ import static org.junit.Assert.fail;
 public class HBaseKeyValueStateProviderTest {
 
     @Test
-    public void testConfigHBaseConfigKeyIsEmpty() throws Exception {
+    public void testConfigHBaseConfigKeyIsEmpty() {
         HBaseKeyValueStateProvider provider = new HBaseKeyValueStateProvider();
         Map<String, String> stormConf = new HashMap<>();
         stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
                                                              " \"tableName\": \"table\", \"columnFamily\": \"cf\"}");
 
-        try {
-            HBaseKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
-            fail("IllegalArgumentException is expected here.");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("hbaseConfigKey"));
-        }
+        IllegalArgumentException e =
+            assertThrows(IllegalArgumentException.class, () -> provider.getStateConfig(stormConf));
+        assertTrue(e.getMessage().contains("hbaseConfigKey"));
     }
 
     @Test
-    public void testConfigTableNameIsEmpty() throws Exception {
+    public void testConfigTableNameIsEmpty() {
         HBaseKeyValueStateProvider provider = new HBaseKeyValueStateProvider();
         Map<String, String> stormConf = new HashMap<>();
         stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
                                                              " \"hbaseConfigKey\": \"hbaseConfKey\", \"columnFamily\": \"cf\"}");
 
-        try {
-            HBaseKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
-            fail("IllegalArgumentException is expected here.");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("tableName"));
-        }
+        IllegalArgumentException e =
+            assertThrows(IllegalArgumentException.class, () -> provider.getStateConfig(stormConf));
+        assertTrue(e.getMessage().contains("tableName"));
     }
 
     @Test
-    public void testConfigColumnFamilyIsEmpty() throws Exception {
+    public void testConfigColumnFamilyIsEmpty() {
         HBaseKeyValueStateProvider provider = new HBaseKeyValueStateProvider();
         Map<String, String> stormConf = new HashMap<>();
         stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
                                                              " \"hbaseConfigKey\": \"hbaseConfKey\", \"tableName\": \"table\"}");
 
-        try {
-            HBaseKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
-            fail("IllegalArgumentException is expected here.");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("columnFamily"));
-        }
+        IllegalArgumentException e =
+            assertThrows(IllegalArgumentException.class, () -> provider.getStateConfig(stormConf));
+        assertTrue(e.getMessage().contains("columnFamily"));
     }
 
     @Test
