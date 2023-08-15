@@ -12,12 +12,12 @@
 
 package org.apache.storm;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 public class TestStormTimer {
 
@@ -36,10 +36,10 @@ public class TestStormTimer {
     public void testSchedule() {
         StormTimer stormTimer = new StormTimer("testSchedule", (x,y) -> {});
         int threadCnt = 100;
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.IMMEDIATE));
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_1_SECOND));
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.IMMEDIATE_WITH_JITTER));
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS_WITH_JITTER));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.IMMEDIATE));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_1_SECOND));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.IMMEDIATE_WITH_JITTER));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS_WITH_JITTER));
         close(stormTimer);
     }
 
@@ -51,8 +51,8 @@ public class TestStormTimer {
     public void testScheduleMs() {
         StormTimer stormTimer = new StormTimer("testScheduleMs", (x,y) -> {});
         int threadCnt = 100;
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS));
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS_WITH_JITTER));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS_WITH_JITTER));
         close(stormTimer);
     }
 
@@ -63,7 +63,7 @@ public class TestStormTimer {
     public void scheduleRecurring() {
         StormTimer stormTimer = new StormTimer("testScheduleMs", (x,y) -> {});
         int threadCnt = 10;
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING));
         close(stormTimer);
     }
 
@@ -74,7 +74,7 @@ public class TestStormTimer {
     public void testScheduleRecurringMs() {
         StormTimer stormTimer = new StormTimer("testScheduleRecurringMs", (x,y) -> {});
         int threadCnt = 10;
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING_MS));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING_MS));
         close(stormTimer);
     }
 
@@ -86,7 +86,7 @@ public class TestStormTimer {
     public void testScheduleRecurringWithJitter() {
         StormTimer stormTimer = new StormTimer("testScheduleRecurringWithJitter", (x,y) -> {});
         int threadCnt = 10;
-        Assert.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING_WITH_JITTER));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING_WITH_JITTER));
         close(stormTimer);
     }
 
@@ -205,7 +205,7 @@ public class TestStormTimer {
                         runnable.runnableNum, runnable.runnableNum, runnable.counterValueBeforeIncrement));
                 }
             }
-            Assert.assertTrue(String.join(",\n\t", errs), errs.isEmpty());
+            Assertions.assertTrue(errs.isEmpty(), String.join(",\n\t", errs));
             return errs.isEmpty();
         } else {
             // this weaker guarantee of total number of executions should succeed except for recurring schedule
@@ -218,7 +218,7 @@ public class TestStormTimer {
                         scheduleType, expectedCounterAtCheck, actualCounter);
                 }
             } else {
-                Assert.assertEquals("Number of runnables completed", expectedCounterAtCheck, actualCounter);
+                Assertions.assertEquals(expectedCounterAtCheck, actualCounter, "Number of runnables completed");
             }
             return true;
         }
