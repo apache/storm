@@ -83,7 +83,7 @@
         <dependency>
             <groupId>org.fusesource.mqtt-client</groupId>
             <artifactId>mqtt-client</artifactId>
-            <version>1.10</version>
+            <version>1.16</version>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -96,11 +96,6 @@
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
         </dependency>
     </dependencies>
     <build>
