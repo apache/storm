@@ -36,15 +36,18 @@ public class TopicAssigner implements Serializable {
      * @param consumer The Kafka consumer to assign partitions to
      * @param newAssignment The partitions to assign.
      * @param listener The rebalance listener to call back on when the assignment changes
+     * @return a boolean value indicating whether the partition assignment changed
      */
-    public <K, V> void assignPartitions(Consumer<K, V> consumer, Set<TopicPartition> newAssignment,
+    public <K, V> boolean assignPartitions(Consumer<K, V> consumer, Set<TopicPartition> newAssignment,
         ConsumerRebalanceListener listener) {
         Set<TopicPartition> currentAssignment = consumer.assignment();
         if (!newAssignment.equals(currentAssignment)) {
             listener.onPartitionsRevoked(currentAssignment);
             consumer.assign(newAssignment);
             listener.onPartitionsAssigned(newAssignment);
+            return true;
         }
+        return false;
     }
     
 }

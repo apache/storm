@@ -53,7 +53,7 @@ import org.apache.storm.kafka.spout.internal.ConsumerFactory;
 import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
 import org.apache.storm.kafka.spout.internal.Timer;
-import org.apache.storm.kafka.spout.metrics.KafkaOffsetMetric;
+import org.apache.storm.kafka.spout.metrics2.KafkaOffsetMetricManager;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -102,7 +102,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient Timer refreshAssignmentTimer;
     private transient TopologyContext context;
     private transient CommitMetadataManager commitMetadataManager;
-    private transient KafkaOffsetMetric<K, V> kafkaOffsetMetric;
+    private transient KafkaOffsetMetricManager<K, V> kafkaOffsetMetricManager;
     private transient KafkaSpoutConsumerRebalanceListener rebalanceListener;
 
     public KafkaSpout(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
@@ -147,17 +147,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         consumer = kafkaConsumerFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
 
         tupleListener.open(conf, context);
-        if (canRegisterMetrics()) {
-            registerMetric();
-        }
+        this.kafkaOffsetMetricManager
+            = new KafkaOffsetMetricManager<>(() -> Collections.unmodifiableMap(offsetManagers), () -> consumer, context);
 
         LOG.info("Kafka Spout opened with the following configuration: {}", kafkaSpoutConfig);
-    }
-
-    private void registerMetric() {
-        LOG.info("Registering Spout Metrics");
-        kafkaOffsetMetric = new KafkaOffsetMetric<>(() -> Collections.unmodifiableMap(offsetManagers), () -> consumer);
-        context.registerMetric("kafkaOffset", kafkaOffsetMetric, kafkaSpoutConfig.getMetricsTimeBucketSizeInSecs());
     }
 
     private boolean canRegisterMetrics() {
@@ -632,7 +625,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         Collections.sort(allPartitionsSorted, TopicPartitionComparator.INSTANCE);
         Set<TopicPartition> assignedPartitions = kafkaSpoutConfig.getTopicPartitioner()
             .getPartitionsForThisTask(allPartitionsSorted, context);
-        topicAssigner.assignPartitions(consumer, assignedPartitions, rebalanceListener);
+        boolean partitionChanged = topicAssigner.assignPartitions(consumer, assignedPartitions, rebalanceListener);
+        if (partitionChanged && canRegisterMetrics()) {
+            LOG.info("Partitions assignments has changed, updating metrics.");
+            kafkaOffsetMetricManager.registerMetricsForNewTopicPartitions(assignedPartitions);
+        }
     }
 
     @Override
@@ -741,7 +738,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     }
 
     @VisibleForTesting
-    KafkaOffsetMetric<K, V> getKafkaOffsetMetric() {
-        return kafkaOffsetMetric;
+    KafkaOffsetMetricManager<K, V> getKafkaOffsetMetricManager() {
+        return kafkaOffsetMetricManager;
     }
 }

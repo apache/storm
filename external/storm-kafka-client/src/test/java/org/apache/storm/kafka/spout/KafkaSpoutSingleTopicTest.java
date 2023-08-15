@@ -20,8 +20,6 @@ package org.apache.storm.kafka.spout;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -36,7 +34,6 @@ import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Time;
@@ -391,49 +388,5 @@ public class KafkaSpoutSingleTopicTest extends KafkaSpoutAbstractTest {
         //The new partition should be discovered and the message should be emitted
         spout.nextTuple();
         verify(collectorMock).emit(anyString(), anyList(), any(KafkaSpoutMessageId.class));
-    }
-
-    @Test
-    public void testOffsetMetrics() throws Exception {
-        final int messageCount = 10;
-        prepareSpout(messageCount);
-
-        Map<String, Long> offsetMetric  = (Map<String, Long>) spout.getKafkaOffsetMetric().getValueAndReset();
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalEarliestTimeOffset").longValue(), 0);
-        // the offset of the last available message + 1.
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalLatestTimeOffset").longValue(), 10);
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalRecordsInPartitions").longValue(), 10);
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalLatestEmittedOffset").longValue(), 0);
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalLatestCompletedOffset").longValue(), 0);
-        //totalSpoutLag = totalLatestTimeOffset-totalLatestCompletedOffset
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalSpoutLag").longValue(), 10);
-
-        //Emit all messages and check that they are emitted. Ack the messages too
-        for (int i = 0; i < messageCount; i++) {
-            nextTuple_verifyEmitted_ack_resetCollector(i);
-        }
-
-        commitAndVerifyAllMessagesCommitted(messageCount);
-
-        offsetMetric  = (Map<String, Long>) spout.getKafkaOffsetMetric().getValueAndReset();
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalEarliestTimeOffset").longValue(), 0);
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalLatestTimeOffset").longValue(), 10);
-        //latest offset
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalLatestEmittedOffset").longValue(), 9);
-        // offset where processing will resume upon spout restart
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalLatestCompletedOffset").longValue(), 10);
-        assertEquals(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC+"/totalSpoutLag").longValue(), 0);
-    }
-
-    @Test
-    public void testOffsetMetricsReturnsNullWhenRetriableExceptionThrown() throws Exception {
-        final int messageCount = 10;
-        prepareSpout(messageCount);
-
-        // Ensure a timeout exception results in the return value being null
-        when(getKafkaConsumer().beginningOffsets(anyCollection())).thenThrow(TimeoutException.class);
-
-        Map<String, Long> offsetMetric  = (Map<String, Long>) spout.getKafkaOffsetMetric().getValueAndReset();
-        assertNull(offsetMetric);
     }
 }
