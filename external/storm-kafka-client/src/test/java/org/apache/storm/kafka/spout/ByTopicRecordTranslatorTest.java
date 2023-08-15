@@ -17,14 +17,17 @@
  */
 package org.apache.storm.kafka.spout;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ByTopicRecordTranslatorTest {
 
@@ -42,11 +45,11 @@ public class ByTopicRecordTranslatorTest {
 
         ConsumerRecord<String, String> cr1 = new ConsumerRecord<>("TOPIC OTHER", 100, 100, "THE KEY", "THE VALUE");
         assertEquals(new Fields("key"), trans.getFieldsFor("default"));
-        assertEquals(Arrays.asList("THE KEY"), trans.apply(cr1));
+        assertEquals(Collections.singletonList("THE KEY"), trans.apply(cr1));
         
         ConsumerRecord<String, String> cr2 = new ConsumerRecord<>("TOPIC 1", 100, 100, "THE KEY", "THE VALUE");
         assertEquals(new Fields("value"), trans.getFieldsFor("value-stream"));
-        assertEquals(Arrays.asList("THE VALUE"), trans.apply(cr2));
+        assertEquals(Collections.singletonList("THE VALUE"), trans.apply(cr2));
         
         ConsumerRecord<String, String> cr3 = new ConsumerRecord<>("TOPIC 2", 100, 100, "THE KEY", "THE VALUE");
         assertEquals(new Fields("key", "value"), trans.getFieldsFor("key-value-stream"));
@@ -58,22 +61,26 @@ public class ByTopicRecordTranslatorTest {
         ByTopicRecordTranslator<String, String> trans =
                 new ByTopicRecordTranslator<>((r) -> null, new Fields("key"));
         ConsumerRecord<String, String> cr = new ConsumerRecord<>("TOPIC 1", 100, 100, "THE KEY", "THE VALUE");
-        assertEquals(null, trans.apply(cr));
+        assertNull(trans.apply(cr));
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFieldCollision() {
-        ByTopicRecordTranslator<String, String> trans = 
+        assertThrows(IllegalArgumentException.class, () -> {
+            ByTopicRecordTranslator<String, String> trans =
                 new ByTopicRecordTranslator<>((r) -> new Values(r.key()), new Fields("key"));
-        trans.forTopic("foo", (r) -> new Values(r.value()), new Fields("value"));
+            trans.forTopic("foo", (r) -> new Values(r.value()), new Fields("value"));
+        });
     }
     
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testTopicCollision() {
-        ByTopicRecordTranslator<String, String> trans = 
+        assertThrows(IllegalStateException.class, () -> {
+            ByTopicRecordTranslator<String, String> trans =
                 new ByTopicRecordTranslator<>((r) -> new Values(r.key()), new Fields("key"));
-        trans.forTopic("foo", (r) -> new Values(r.value()), new Fields("value"), "foo1");
-        trans.forTopic("foo", (r) -> new Values(r.key(), r.value()), new Fields("key", "value"), "foo2");
+            trans.forTopic("foo", (r) -> new Values(r.value()), new Fields("value"), "foo1");
+            trans.forTopic("foo", (r) -> new Values(r.key(), r.value()), new Fields("key", "value"), "foo2");
+        });
     }
 
 }

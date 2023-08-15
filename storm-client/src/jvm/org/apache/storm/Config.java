@@ -278,6 +278,19 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_ENABLE_V2_METRICS_TICK = "topology.enable.v2.metrics.tick";
 
     /**
+     * Topology configuration to specify the V2 metrics tick interval in seconds.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    public static final String TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS = "topology.v2.metrics.tick.interval.seconds";
+
+    /**
+     * This config allows a topology to enable/disable reporting of __send-iconnection metrics.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_ENABLE_SEND_ICONNECTION_METRICS = "topology.enable.send.iconnection.metrics";
+
+    /**
      * The class name of the {@link org.apache.storm.state.StateProvider} implementation. If not specified defaults to {@link
      * org.apache.storm.state.InMemoryKeyValueStateProvider}. This can be overridden at the component level.
      */
@@ -575,7 +588,7 @@ public class Config extends HashMap<String, Object> {
     @IsInteger
     public static final String TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS = "topology.builtin.metrics.bucket.size.secs";
     /**
-     * Whether or not to use Java serialization in a topology.
+     * Whether or not to use Java serialization in a topology. Default is set false for security reasons.
      */
     @IsBoolean
     public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION = "topology.fall.back.on.java.serialization";
@@ -846,9 +859,17 @@ public class Config extends HashMap<String, Object> {
     @IsString
     public static final String STORM_DO_AS_USER = "storm.doAsUser";
     /**
-     * The number of machines that should be used by this topology to isolate it from all others. Set storm.scheduler to
-     * org.apache.storm.scheduler.multitenant.MultitenantScheduler
-     */
+     * The maximum number of machines that should be used by this topology. This configuration can
+     * be used to isolate topologies from each other. See {@link org.apache.storm.scheduler.multitenant.MultitenantScheduler}.
+     * Round Robin Strategy uses this value to avoid spreading a topology too
+     * thinly over a large number of machines - avoiding the the extreme case where the topology would be spread over
+     * all workers and thus deny scheduling of other topologies. Round Robin scheduling will occupy all the workers on
+     * this limited number of machines, forcing other topologies to be scheduled on other machines; thus isolating the
+     * topology from other topologies.
+     * Set storm.scheduler to {@link org.apache.storm.scheduler.multitenant.MultitenantScheduler}
+     * Alternatively set storm.scheduler to {@link org.apache.storm.scheduler.resource.ResourceAwareScheduler}
+     * using {@link #TOPOLOGY_SCHEDULER_STRATEGY} set to
+     * {@link org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy}     */
     @IsInteger
     @IsPositiveNumber
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";
@@ -1209,6 +1230,12 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_METRICS_REPORTERS = "topology.metrics.reporters";
 
     /**
+     * A list of system metrics reporters that will get added to each topology.
+     */
+    @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
+    public static final String STORM_TOPOLOGY_METRICS_SYSTEM_REPORTERS = "storm.topology.metrics.system.reporters";
+
+    /**
      * Configure the topology metrics reporters to be used on workers.
      * @deprecated Use {@link Config#TOPOLOGY_METRICS_REPORTERS} instead.
      */
@@ -1424,6 +1451,7 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_MESSAGING_TRANSPORT = "storm.messaging.transport";
     /**
      * Netty based messaging: Is authentication required for Netty messaging from client worker process to server worker process.
+     * See https://issues.apache.org/jira/browse/STORM-348 for more details
      */
     @IsBoolean
     public static final String STORM_MESSAGING_NETTY_AUTHENTICATION = "storm.messaging.netty.authentication";
@@ -1638,43 +1666,6 @@ public class Config extends HashMap<String, Object> {
      */
     @IsString
     public static final String STORM_WORKERS_ARTIFACTS_DIR = "storm.workers.artifacts.dir";
-    /**
-     * A list of hosts of Exhibitor servers used to discover/maintain connection to ZooKeeper cluster. Any configured ZooKeeper servers will
-     * be used for the curator/exhibitor backup connection string.
-     */
-    @IsStringList
-    public static final String STORM_EXHIBITOR_SERVERS = "storm.exhibitor.servers";
-    /**
-     * The port Storm will use to connect to each of the exhibitor servers.
-     */
-    @IsInteger
-    @IsPositiveNumber
-    public static final String STORM_EXHIBITOR_PORT = "storm.exhibitor.port";
-    /*
-     * How often to poll Exhibitor cluster in millis.
-     */
-    @IsString
-    public static final String STORM_EXHIBITOR_URIPATH = "storm.exhibitor.poll.uripath";
-    /**
-     * How often to poll Exhibitor cluster in millis.
-     */
-    @IsInteger
-    public static final String STORM_EXHIBITOR_POLL = "storm.exhibitor.poll.millis";
-    /**
-     * The number of times to retry an Exhibitor operation.
-     */
-    @IsInteger
-    public static final String STORM_EXHIBITOR_RETRY_TIMES = "storm.exhibitor.retry.times";
-    /*
-     * The interval between retries of an Exhibitor operation.
-     */
-    @IsInteger
-    public static final String STORM_EXHIBITOR_RETRY_INTERVAL = "storm.exhibitor.retry.interval";
-    /**
-     * The ceiling of the interval between retries of an Exhibitor operation.
-     */
-    @IsInteger
-    public static final String STORM_EXHIBITOR_RETRY_INTERVAL_CEILING = "storm.exhibitor.retry.intervalceiling.millis";
     /**
      * The connection timeout for clients to ZooKeeper.
      */

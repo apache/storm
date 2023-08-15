@@ -33,7 +33,7 @@ HiveBolt hiveBolt = new HiveBolt(hiveOptions);
 
 ### RecordHiveMapper
    This class maps Tuple field names to Hive table column names.
-   There are two implementaitons available
+   There are two implementations available
  
    
    + DelimitedRecordHiveMapper (org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper)

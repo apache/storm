@@ -18,9 +18,11 @@
 
 package org.apache.storm.daemon.drpc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import org.junit.jupiter.api.AfterAll;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -40,8 +42,7 @@ import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.SimpleTransportPlugin;
 import org.apache.storm.utils.DRPCClient;
-import org.junit.AfterClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ public class DRPCServerTest {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCServerTest.class);
     private static final ExecutorService exec = Executors.newCachedThreadPool();
     
-    @AfterClass
+    @AfterAll
     public static void close() {
         exec.shutdownNow();
     }

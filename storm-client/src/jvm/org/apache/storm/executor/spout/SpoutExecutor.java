@@ -123,7 +123,6 @@ public class SpoutExecutor extends Executor {
             }
         });
 
-        this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0) - idToTaskBase).getUserContext());
         this.outputCollectors = new ArrayList<>();
         for (int i = 0; i < idToTask.size(); ++i) {
             Task taskData = idToTask.get(i);

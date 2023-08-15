@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -17,9 +17,10 @@ import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.task.TopologyContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ShellUtilsTest {
 
@@ -32,9 +33,9 @@ public class ShellUtilsTest {
     /**
      * A null config will throw IllegalArgumentException.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getLogHandler_nullConf() {
-        ShellUtils.getLogHandler(null);
+        assertThrows(IllegalArgumentException.class, () -> ShellUtils.getLogHandler(null));
     }
 
     /**
@@ -43,8 +44,8 @@ public class ShellUtilsTest {
      */
     @Test
     public void getLogHandler_notConfigured() {
-        ShellLogHandler logHandler = ShellUtils.getLogHandler(new HashMap<String, Object>());
-        assertTrue(logHandler.getClass() == DefaultShellLogHandler.class);
+        ShellLogHandler logHandler = ShellUtils.getLogHandler(new HashMap<>());
+        assertSame(logHandler.getClass(), DefaultShellLogHandler.class);
     }
 
     /**
@@ -81,13 +82,12 @@ public class ShellUtilsTest {
     public void getLogHandler_customHandler() {
         Map<String, Object> conf = configureLogHandler("org.apache.storm.utils.ShellUtilsTest$CustomShellLogHandler");
         ShellLogHandler logHandler = ShellUtils.getLogHandler(conf);
-        assertTrue(logHandler.getClass() == CustomShellLogHandler.class);
+        assertSame(logHandler.getClass(), CustomShellLogHandler.class);
     }
 
     public static class CustomShellLogHandler implements ShellLogHandler {
         @Override
-        public void setUpContext(Class<?> owner, ShellProcess process,
-                                 TopologyContext context) {
+        public void setUpContext(Class<?> owner, ShellProcess process, TopologyContext context) {
         }
 
         @Override

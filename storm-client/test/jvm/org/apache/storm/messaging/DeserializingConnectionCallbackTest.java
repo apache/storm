@@ -17,12 +17,12 @@ import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.task.GeneralTopologyContext;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,7 +30,7 @@ public class DeserializingConnectionCallbackTest {
     private static final byte[] messageBytes = new byte[3];
     private static TaskMessage message;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // Setup a test message
         message = mock(TaskMessage.class);
@@ -66,7 +66,7 @@ public class DeserializingConnectionCallbackTest {
         // Starting empty
         Object metrics = withMetrics.getValueAndReset();
         assertTrue(metrics instanceof Map);
-        assertTrue(((Map) metrics).isEmpty());
+        assertTrue(((Map<?,?>) metrics).isEmpty());
 
         // Add messages
         withMetrics.updateMetrics(123, message);
@@ -75,6 +75,6 @@ public class DeserializingConnectionCallbackTest {
         // Verify recorded messages size metrics 
         metrics = withMetrics.getValueAndReset();
         assertTrue(metrics instanceof Map);
-        assertEquals(6L, ((Map) metrics).get("123-456"));
+        assertEquals(6L, ((Map<?, ?>) metrics).get("123-456"));
     }
 }

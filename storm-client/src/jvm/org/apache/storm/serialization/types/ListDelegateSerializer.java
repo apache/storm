@@ -19,9 +19,9 @@ import java.util.Collection;
 import org.apache.storm.utils.ListDelegate;
 
 
-public class ListDelegateSerializer extends CollectionSerializer {
+public class ListDelegateSerializer extends CollectionSerializer<ListDelegate> {
     @Override
-    public Collection create(Kryo kryo, Input input, Class<Collection> type) {
+    public ListDelegate create(Kryo kryo, Input input, Class<? extends ListDelegate> type, int length) {
         return new ListDelegate();
     }
 }

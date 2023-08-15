@@ -247,9 +247,9 @@ To pull in a merge request you should generally follow the command line instruct
 
 ## Prerequisites
 
-In order to build `storm` you need `python`, `ruby` and `nodejs`. In order to avoid an overfull page we don't provide platform/OS specific installation instructions for those here. Please refer to you platform's/OS' documentation for support.
+In order to build `storm` you need `python3`, `ruby` and `nodejs`. In order to avoid an overfull page we don't provide platform/OS specific installation instructions for those here. Please refer to you platform's/OS' documentation for support.
 
-The `ruby` package manager `rvm` and `nodejs` package manager `nvm` are for convenience and are used in the tests which run on [travis](https://travis-ci.org/apache/storm). They can be installed using `curl -L https://get.rvm.io | bash -s stable --autolibs=enabled && source ~/.profile` (see the [rvm installation instructions](https://github.com/rvm/rvm) for details) and `wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.26.1/install.sh | bash && source ~/.bashrc` (see the [nvm installation instructions](https://github.com/creationix/nvm) for details).
+The `ruby` package manager `rvm` and `nodejs` package manager `nvm` are for convenience and are used in the tests which run on [GitHub actions](https://github.com/apache/storm/actions). They can be installed using `curl -L https://get.rvm.io | bash -s stable --autolibs=enabled && source ~/.profile` (see the [rvm installation instructions](https://github.com/rvm/rvm) for details) and `wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.26.1/install.sh | bash && source ~/.bashrc` (see the [nvm installation instructions](https://github.com/creationix/nvm) for details).
 
 With `rvm` and `nvm` installed you can run
 
@@ -261,10 +261,12 @@ nvm use 8.9.3
 
 in order to get started as fast as possible. Users can still install a specific version of `ruby` and/or `node` manually.
 
-You will also need the [mock](https://docs.python.org/3/library/unittest.mock.html) Python testing library (as well as [Python 2.7.x and Python 3.x](https://github.com/pyenv/pyenv)). With [pip](https://pip.pypa.io/en/stable/installing/) installed you can run
-
+You will also need the [mock](https://docs.python.org/3/library/unittest.mock.html) 
+python testing library (as well as [Python 3.x](https://github.com/pyenv/pyenv)). 
+With [pip3](https://pip.pypa.io/en/stable/installation/) installed you can run
+(python 2.7.x is not supported).
 ```
-pip install mock
+pip3 install mock
 ```
 
 ## Building
@@ -277,7 +279,7 @@ If you wish to skip the unit tests you can do this by adding `-DskipTests` to th
 
 If you wish to skip the examples and external modules, you can do this by adding `-P '!examples,!externals'` to the command line.
 
-In case you modified `storm.thrift`, you have to regenerate thrift code as java and python code before compiling whole project.
+In case you modified `storm.thrift`, you have to regenerate thrift code as Java and Python code before compiling whole project.
 
 ```sh
 cd storm-client/src

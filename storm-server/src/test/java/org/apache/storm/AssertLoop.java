@@ -18,7 +18,7 @@ package org.apache.storm;
 
 import static org.apache.storm.utils.PredicateMatcher.matchesPredicate;
 import static org.hamcrest.CoreMatchers.everyItem;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;

@@ -15,6 +15,7 @@ package org.apache.storm.hdfs.bolt;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -33,7 +34,7 @@ import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 import org.apache.storm.hdfs.common.Partitioner;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.apache.storm.hdfs.testing.MiniDFSClusterExtension;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -43,26 +44,24 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.MockTupleHelpers;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class TestHdfsBolt {
-
-    private static final String testRoot = "/unittest";
-    @Rule
-    public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule(() -> {
+    @RegisterExtension
+    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension(() -> {
         Configuration conf = new Configuration();
         conf.set("fs.trash.interval", "10");
         conf.setBoolean("dfs.permissions", true);
@@ -71,8 +70,7 @@ public class TestHdfsBolt {
         conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
         return conf;
     });
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    private static final String testRoot = "/unittest";
     Tuple tuple1 = generateTestTuple(1, "First Tuple", "SFO", "CA");
     Tuple tuple2 = generateTestTuple(1, "Second Tuple", "SJO", "CA");
     private String hdfsURI;
@@ -82,13 +80,13 @@ public class TestHdfsBolt {
     @Mock
     private TopologyContext topologyContext;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
-        fs = dfsClusterRule.getDfscluster().getFileSystem();
-        hdfsURI = "hdfs://localhost:" + dfsClusterRule.getDfscluster().getNameNodePort() + "/";
+        fs = DFS_CLUSTER_EXTENSION.getDfscluster().getFileSystem();
+        hdfsURI = "hdfs://localhost:" + DFS_CLUSTER_EXTENSION.getDfscluster().getNameNodePort() + "/";
     }
 
-    @After
+    @AfterEach
     public void shutDown() throws IOException {
         fs.close();
     }
@@ -104,7 +102,7 @@ public class TestHdfsBolt {
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(2, countNonZeroLengthFiles(testRoot));
+        assertEquals(2, countNonZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -127,8 +125,8 @@ public class TestHdfsBolt {
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot + "/SFO"));
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot + "/SJO"));
+        assertEquals(1, countNonZeroLengthFiles(testRoot + "/SFO"));
+        assertEquals(1, countNonZeroLengthFiles(testRoot + "/SJO"));
     }
 
     @Test
@@ -137,13 +135,13 @@ public class TestHdfsBolt {
         bolt.prepare(new Config(), topologyContext, collector);
         bolt.execute(tuple1);
 
-        verifyZeroInteractions(collector);
+        verifyNoInteractions(collector);
 
         bolt.execute(tuple2);
         verify(collector).ack(tuple1);
         verify(collector).ack(tuple2);
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -155,8 +153,7 @@ public class TestHdfsBolt {
         fs.setSafeMode(SafeModeAction.SAFEMODE_ENTER);
 
         // All writes/syncs will fail so this should cause a RuntimeException
-        thrown.expect(RuntimeException.class);
-        bolt.execute(tuple1);
+        assertThrows(RuntimeException.class, () -> bolt.execute(tuple1));
 
     }
 
@@ -185,8 +182,8 @@ public class TestHdfsBolt {
             //
         }
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
-        Assert.assertEquals(0, countZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(0, countZeroLengthFiles(testRoot));
     }
 
     @Test
@@ -197,12 +194,12 @@ public class TestHdfsBolt {
         bolt.execute(tuple1);
 
         //Should not have flushed to file system yet
-        Assert.assertEquals(0, countNonZeroLengthFiles(testRoot));
+        assertEquals(0, countNonZeroLengthFiles(testRoot));
 
         bolt.execute(MockTupleHelpers.mockTickTuple());
 
         //Tick should have flushed it
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
     }
     
     @Test

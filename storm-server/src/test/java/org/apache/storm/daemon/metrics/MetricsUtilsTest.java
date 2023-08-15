@@ -12,11 +12,11 @@
 
 package org.apache.storm.daemon.metrics;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +29,7 @@ import org.apache.storm.daemon.metrics.reporters.ConsolePreparableReporter;
 import org.apache.storm.daemon.metrics.reporters.CsvPreparableReporter;
 import org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter;
 import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MetricsUtilsTest {
 

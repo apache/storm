@@ -180,11 +180,13 @@ Metrics associated with the supervisor, which launches the workers for a topolog
 | supervisor:blob-localization-duration | timer | Approximately how long it takes to get the blob we want after it is requested. |
 | supervisor:current-reserved-memory-mb | gauge | total amount of memory reserved for workers on the supervisor (MB) |
 | supervisor:current-used-memory-mb | gauge | memory currently used as measured by the supervisor (this typically requires cgroups) (MB) |
+| supervisor:health-check-timeouts | meter | tracks timeouts executing health check scripts |
 | supervisor:local-resource-file-not-found-when-releasing-slot | meter | number of times file-not-found exception happens when reading local blobs upon releasing slots |
 | supervisor:num-blob-update-version-changed | meter | number of times a version of a blob changes. |
 | supervisor:num-cleanup-exceptions | meter | exceptions thrown during container cleanup. |
 | supervisor:num-force-kill-exceptions | meter | exceptions thrown during force kill. |
 | supervisor:num-kill-exceptions | meter | exceptions thrown during kill. |
+| supervisor:num-kill-worker-errors | meter | errors killing workers. |
 | supervisor:num-launched | meter | number of times the supervisor is launched. |
 | supervisor:num-shell-exceptions | meter | number of exceptions calling shell commands. |
 | supervisor:num-slots-used-gauge | gauge | number of slots used on the supervisor. |
@@ -218,6 +220,7 @@ Metrics associated with the supervisor, which launches the workers for a topolog
 | supervisor:worker-launch-duration | timer | Time taken for a worker to launch. |
 | supervisor:worker-per-call-clean-up-duration-ns | meter | how long it takes to cleanup a worker (ns). |
 | supervisor:worker-shutdown-duration-ns | meter | how long it takes to shutdown a worker (ns). |
+| supervisor:workerTokenAuthorizer-get-password-failures | meter | Failures getting password for user in WorkerTokenAuthorizer |
 
 
 ## UI Metrics

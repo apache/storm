@@ -15,67 +15,73 @@ package org.apache.storm.tuple;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FieldsTest {
 
     @Test
     public void fieldsConstructorDoesNotThrowWithValidArgsTest() {
-        Assert.assertEquals(new Fields("foo", "bar").size(), 2);
-        Assert.assertEquals(new Fields(new String[]{ "foo", "bar" }).size(), 2);
+        assertEquals(new Fields("foo", "bar").size(), 2);
+        assertEquals(new Fields("foo", "bar").size(), 2);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void duplicateFieldsNotAllowedWhenConstructingWithVarArgsTest() {
-        new Fields("foo", "bar", "foo");
+        assertThrows(IllegalArgumentException.class, () -> new Fields("foo", "bar", "foo"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void duplicateFieldsNotAllowedTestWhenConstructingFromListTest() {
-        new Fields(new String[]{ "foo", "bar", "foo" });
+        assertThrows(IllegalArgumentException.class, () -> new Fields("foo", "bar", "foo"));
     }
 
     @Test
     public void getDoesNotThrowWithValidIndexTest() {
         Fields fields = new Fields("foo", "bar");
-        Assert.assertEquals(fields.get(0), "foo");
-        Assert.assertEquals(fields.get(1), "bar");
+        assertEquals(fields.get(0), "foo");
+        assertEquals(fields.get(1), "bar");
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void getThrowsWhenOutOfBoundsTest() {
-        Fields fields = new Fields("foo", "bar");
-        fields.get(2);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            Fields fields = new Fields("foo", "bar");
+            fields.get(2);
+        });
     }
 
     @Test
     public void fieldIndexTest() {
         Fields fields = new Fields("foo", "bar");
-        Assert.assertEquals(fields.fieldIndex("foo"), 0);
-        Assert.assertEquals(fields.fieldIndex("bar"), 1);
+        assertEquals(fields.fieldIndex("foo"), 0);
+        assertEquals(fields.fieldIndex("bar"), 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void fieldIndexThrowsWhenOutOfBoundsTest() {
-        new Fields("foo").fieldIndex("baz");
+        assertThrows(IllegalArgumentException.class, () -> new Fields("foo").fieldIndex("baz"));
     }
 
     @Test
     public void containsTest() {
         Fields fields = new Fields("foo", "bar");
-        Assert.assertTrue(fields.contains("foo"));
-        Assert.assertTrue(fields.contains("bar"));
-        Assert.assertFalse(fields.contains("baz"));
+        assertTrue(fields.contains("foo"));
+        assertTrue(fields.contains("bar"));
+        assertFalse(fields.contains("baz"));
     }
 
     @Test
     public void toListTest() {
         Fields fields = new Fields("foo", "bar");
         List<String> fieldList = fields.toList();
-        Assert.assertEquals(fieldList.size(), 2);
-        Assert.assertEquals(fieldList.get(0), "foo");
-        Assert.assertEquals(fieldList.get(1), "bar");
+        assertEquals(fieldList.size(), 2);
+        assertEquals(fieldList.get(0), "foo");
+        assertEquals(fieldList.get(1), "bar");
     }
 
     @Test
@@ -83,19 +89,13 @@ public class FieldsTest {
         Fields fields = new Fields("foo", "bar");
         Iterator<String> fieldIter = fields.iterator();
 
-        Assert.assertTrue(
-            "First item is foo",
-            fieldIter.hasNext());
-        Assert.assertEquals(fieldIter.next(), "foo");
+        assertTrue(fieldIter.hasNext(), "First item is foo");
+        assertEquals(fieldIter.next(), "foo");
 
-        Assert.assertTrue(
-            "Second item is bar",
-            fieldIter.hasNext());
-        Assert.assertEquals(fieldIter.next(), "bar");
+        assertTrue(fieldIter.hasNext(), "Second item is bar");
+        assertEquals(fieldIter.next(), "bar");
 
-        Assert.assertFalse(
-            "At end. hasNext should return false",
-            fieldIter.hasNext());
+        assertFalse(fieldIter.hasNext(), "At end. hasNext should return false");
     }
 
     @Test
@@ -104,16 +104,18 @@ public class FieldsTest {
         List<Object> second = Arrays.asList(new Object[]{ "b" });
         List<Object> tuple = Arrays.asList(new Object[]{ "a", "b", "c" });
         List<Object> pickSecond = fields.select(new Fields("bar"), tuple);
-        Assert.assertTrue(pickSecond.equals(second));
+        assertEquals(pickSecond, second);
 
         List<Object> secondAndFirst = Arrays.asList(new Object[]{ "b", "a" });
         List<Object> pickSecondAndFirst = fields.select(new Fields("bar", "foo"), tuple);
-        Assert.assertTrue(pickSecondAndFirst.equals(secondAndFirst));
+        assertEquals(pickSecondAndFirst, secondAndFirst);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void selectingUnknownFieldThrowsTest() {
-        Fields fields = new Fields("foo", "bar");
-        fields.select(new Fields("bar", "baz"), Arrays.asList(new Object[]{ "a", "b", "c" }));
+        assertThrows(IllegalArgumentException.class, () -> {
+            Fields fields = new Fields("foo", "bar");
+            fields.select(new Fields("bar", "baz"), Arrays.asList(new Object[]{ "a", "b", "c" }));
+        });
     }
 }

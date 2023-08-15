@@ -25,7 +25,7 @@
   (:import [org.apache.storm.shade.org.apache.curator.framework CuratorFramework])
   (:import [org.apache.storm.shade.org.apache.curator.framework.api CreateBuilder ProtectACLCreateModeStatPathAndBytesable])
   (:import [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids])
-  (:import [org.mockito Matchers Mockito])
+  (:import [org.mockito ArgumentMatchers Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:use [org.apache.storm config]))
 
@@ -116,7 +116,7 @@
           expectedAcls ZooDefs$Ids/CREATOR_ALL_ACL]
       (. (Mockito/when (.create curator)) (thenReturn builder0))
       (. (Mockito/when (.creatingParentsIfNeeded builder0)) (thenReturn builder1))
-      (. (Mockito/when (.withMode builder1 (Matchers/isA CreateMode))) (thenReturn builder1))
+      (. (Mockito/when (.withMode builder1 (ArgumentMatchers/isA CreateMode))) (thenReturn builder1))
       (. (Mockito/when (.withACL builder1 (Mockito/anyList))) (thenReturn builder1))
       (TestTransactionalState/createNode curator "" (byte-array 0) expectedAcls nil)
       (is (nil?

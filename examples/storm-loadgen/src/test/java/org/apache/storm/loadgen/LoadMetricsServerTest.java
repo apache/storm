@@ -19,17 +19,18 @@
 package org.apache.storm.loadgen;
 
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.apache.storm.loadgen.LoadMetricsServer.convert;
 
 public class LoadMetricsServerTest {
     @Test
-    public void convertTest() throws Exception {
+    public void convertTest() {
         for (TimeUnit from : TimeUnit.values()) {
             for (TimeUnit to : TimeUnit.values()) {
-                assertEquals(from + " to " + to + " and back", 1.0, convert(convert(1.0, from, to), to, from), 0.0001);
+                assertEquals(1.0, convert(convert(1.0, from, to), to, from), 0.0001,
+                    from + " to " + to + " and back");
             }
         }
     }

@@ -12,7 +12,6 @@
 
 package org.apache.storm.starter;
 
-import java.io.Serializable;
 import java.util.UUID;
 import org.apache.storm.Config;
 import org.apache.storm.topology.ConfigurableTopology;

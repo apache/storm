@@ -180,16 +180,19 @@ public class SimpleWindowPartitionCache<K, V> implements WindowPartitionCache<K,
         private long maximumSize;
         private RemovalListener<K, V> removalListener;
 
+        @Override
         public SimpleWindowPartitionCacheBuilder<K, V> maximumSize(long size) {
             maximumSize = size;
             return this;
         }
 
+        @Override
         public SimpleWindowPartitionCacheBuilder<K, V> removalListener(RemovalListener<K, V> listener) {
             removalListener = listener;
             return this;
         }
 
+        @Override
         public SimpleWindowPartitionCache<K, V> build(CacheLoader<K, V> loader) {
             return new SimpleWindowPartitionCache<>(maximumSize, removalListener, loader);
         }

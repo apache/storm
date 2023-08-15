@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @IntegrationTest
 public class NettyIntegrationTest {
@@ -91,8 +91,12 @@ public class NettyIntegrationTest {
             completeTopologyParams.setMockedSources(mockedSources);
 
             Map<String, List<FixedTuple>> results = Testing.completeTopology(cluster, topology, completeTopologyParams);
-
-            assertEquals(6 * 4, Testing.readTuples(results, "2").size());
+            List<List<Object>> tuplesRead = Testing.readTuples(results, "2");
+            String errMsg = "Tuples Read:\n\t"
+                    + String.join("\n\t", tuplesRead.stream().map(Object::toString).collect(Collectors.toList()))
+                    + "\nTuples Expected:\n\t"
+                    + String.join("\n\t", testTuples.stream().map(FixedTuple::toString).collect(Collectors.toList()));
+            assertEquals(6 * 4, tuplesRead.size(), errMsg);
         }
     }
 }

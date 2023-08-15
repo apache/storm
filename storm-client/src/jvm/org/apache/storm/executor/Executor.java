@@ -49,7 +49,6 @@ import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.GrouperFactory;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
-import org.apache.storm.daemon.metrics.ErrorReportingMetrics;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.bolt.BoltExecutor;
 import org.apache.storm.executor.error.IReportError;
@@ -66,6 +65,8 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.metrics2.PerReporterGauge;
+import org.apache.storm.metrics2.RateCounter;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.org.jctools.queues.MpscChunkedArrayQueue;
@@ -119,7 +120,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final Boolean isDebug;
     protected final Boolean hasEventLoggers;
     protected final boolean ackingEnabled;
-    protected final ErrorReportingMetrics errorReportingMetrics;
     protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits = new MpscChunkedArrayQueue<>(1024, (int) Math.pow(2, 30));
     private final AddressedTuple flushTuple;
     protected ExecutorTransfer executorTransfer;
@@ -128,6 +128,9 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected String hostname;
     private static final double msDurationFactor = 1.0 / TimeUnit.MILLISECONDS.toNanos(1);
     private AtomicBoolean needToRefreshCreds = new AtomicBoolean(false);
+    private final RateCounter reportedErrorCount;
+    private final boolean enableV2MetricsDataPoints;
+    private final Integer v2MetricsTickInterval;
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -180,8 +183,12 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         } catch (UnknownHostException ignored) {
             this.hostname = "";
         }
-        this.errorReportingMetrics = new ErrorReportingMetrics();
         flushTuple = AddressedTuple.createFlushTuple(workerTopologyContext);
+        this.reportedErrorCount = workerData.getMetricRegistry().rateCounter("__reported-error-count", componentId,
+                taskIds.get(0));
+
+        enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
+        v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -336,7 +343,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                     }
                 }
             }
-            addV2Metrics(taskId, dataPoints);
+            addV2Metrics(taskId, dataPoints, interval);
 
             if (!dataPoints.isEmpty()) {
                 IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
@@ -352,11 +359,16 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     // updates v1 metric dataPoints with v2 metric API data
-    private void addV2Metrics(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
-        boolean enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
+    private void addV2Metrics(int taskId, List<IMetricsConsumer.DataPoint> dataPoints, int interval) {
         if (!enableV2MetricsDataPoints) {
             return;
         }
+
+        // only report v2 metric on the proper metrics tick interval
+        if (interval != v2MetricsTickInterval) {
+            return;
+        }
+
         processGauges(taskId, dataPoints);
         processCounters(taskId, dataPoints);
         processHistograms(taskId, dataPoints);
@@ -367,7 +379,13 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private void processGauges(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
         Map<String, Gauge> gauges = workerData.getMetricRegistry().getTaskGauges(taskId);
         for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
-            Object v = entry.getValue().getValue();
+            Gauge gauge = entry.getValue();
+            Object v;
+            if (gauge instanceof PerReporterGauge) {
+                v = ((PerReporterGauge) gauge).getValueForReporter(this);
+            } else {
+                v = gauge.getValue();
+            }
             if (v instanceof Number) {
                 IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), v);
                 dataPoints.add(dataPoint);
@@ -413,27 +431,29 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private void addMeteredDatapoints(String baseName, Metered metered, List<IMetricsConsumer.DataPoint> dataPoints) {
         IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + ".count", metered.getCount());
         dataPoints.add(dataPoint);
-        addConvertedMetric(baseName, ".m1_rate", metered.getOneMinuteRate(), dataPoints);
-        addConvertedMetric(baseName, ".m5_rate", metered.getFiveMinuteRate(), dataPoints);
-        addConvertedMetric(baseName, ".m15_rate", metered.getFifteenMinuteRate(), dataPoints);
-        addConvertedMetric(baseName, ".mean_rate", metered.getMeanRate(), dataPoints);
+        addConvertedMetric(baseName, ".m1_rate", metered.getOneMinuteRate(), dataPoints, false);
+        addConvertedMetric(baseName, ".m5_rate", metered.getFiveMinuteRate(), dataPoints, false);
+        addConvertedMetric(baseName, ".m15_rate", metered.getFifteenMinuteRate(), dataPoints, false);
+        addConvertedMetric(baseName, ".mean_rate", metered.getMeanRate(), dataPoints, false);
     }
 
     private void addSnapshotDatapoints(String baseName, Snapshot snapshot, List<IMetricsConsumer.DataPoint> dataPoints) {
-        addConvertedMetric(baseName, ".max", snapshot.getMax(), dataPoints);
-        addConvertedMetric(baseName, ".mean", snapshot.getMean(), dataPoints);
-        addConvertedMetric(baseName, ".min", snapshot.getMin(), dataPoints);
-        addConvertedMetric(baseName, ".stddev", snapshot.getStdDev(), dataPoints);
-        addConvertedMetric(baseName, ".p50", snapshot.getMedian(), dataPoints);
-        addConvertedMetric(baseName, ".p75", snapshot.get75thPercentile(), dataPoints);
-        addConvertedMetric(baseName, ".p95", snapshot.get95thPercentile(), dataPoints);
-        addConvertedMetric(baseName, ".p98", snapshot.get98thPercentile(), dataPoints);
-        addConvertedMetric(baseName, ".p99", snapshot.get99thPercentile(), dataPoints);
-        addConvertedMetric(baseName, ".p999", snapshot.get999thPercentile(), dataPoints);
+        addConvertedMetric(baseName, ".max", snapshot.getMax(), dataPoints, true);
+        addConvertedMetric(baseName, ".mean", snapshot.getMean(), dataPoints, true);
+        addConvertedMetric(baseName, ".min", snapshot.getMin(), dataPoints, true);
+        addConvertedMetric(baseName, ".stddev", snapshot.getStdDev(), dataPoints, true);
+        addConvertedMetric(baseName, ".p50", snapshot.getMedian(), dataPoints, true);
+        addConvertedMetric(baseName, ".p75", snapshot.get75thPercentile(), dataPoints, true);
+        addConvertedMetric(baseName, ".p95", snapshot.get95thPercentile(), dataPoints, true);
+        addConvertedMetric(baseName, ".p98", snapshot.get98thPercentile(), dataPoints, true);
+        addConvertedMetric(baseName, ".p99", snapshot.get99thPercentile(), dataPoints, true);
+        addConvertedMetric(baseName, ".p999", snapshot.get999thPercentile(), dataPoints, true);
     }
 
-    private void addConvertedMetric(String baseName, String suffix, double value, List<IMetricsConsumer.DataPoint> dataPoints) {
-        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + suffix, convertDuration(value));
+    private void addConvertedMetric(String baseName, String suffix, double value,
+                                    List<IMetricsConsumer.DataPoint> dataPoints, boolean needConversion) {
+        IMetricsConsumer.DataPoint dataPoint
+            = new IMetricsConsumer.DataPoint(baseName + suffix, needConversion ? convertDuration(value) : value);
         dataPoints.add(dataPoint);
     }
 
@@ -443,25 +463,38 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     protected void setupMetrics() {
+        boolean v2TickScheduled = !enableV2MetricsDataPoints;
         for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
-            StormTimer timerTask = workerData.getUserTimer();
-            timerTask.scheduleRecurring(interval, interval,
-                () -> {
-                    TupleImpl tuple =
-                        new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
-                                      (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                    AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                    try {
-                        receiveQueue.publish(metricsTickTuple);
-                        receiveQueue.flush();  // avoid buffering
-                    } catch (InterruptedException e) {
-                        LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                }
-            );
+            scheduleMetricsTick(interval);
+            if (interval == v2MetricsTickInterval) {
+                v2TickScheduled = true;
+            }
         }
+
+        if (!v2TickScheduled) {
+            LOG.info("Scheduling v2 metrics tick for interval {}", v2MetricsTickInterval);
+            scheduleMetricsTick(v2MetricsTickInterval);
+        }
+    }
+
+    private void scheduleMetricsTick(int interval) {
+        StormTimer timerTask = workerData.getUserTimer();
+        timerTask.scheduleRecurring(interval, interval,
+            () -> {
+                TupleImpl tuple =
+                        new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
+                                (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
+                AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                try {
+                    receiveQueue.publish(metricsTickTuple);
+                    receiveQueue.flush();  // avoid buffering
+                } catch (InterruptedException e) {
+                    LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        );
     }
 
     protected void setupTicks(boolean isSpout) {
@@ -636,10 +669,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         return reportError;
     }
 
-    public ErrorReportingMetrics getErrorReportingMetrics() {
-        return errorReportingMetrics;
-    }
-
     public WorkerTopologyContext getWorkerTopologyContext() {
         return workerTopologyContext;
     }
@@ -679,5 +708,9 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     @VisibleForTesting
     public void setLocalExecutorTransfer(ExecutorTransfer executorTransfer) {
         this.executorTransfer = executorTransfer;
+    }
+
+    public void incrementReportedErrorCount() {
+        reportedErrorCount.inc(1L);
     }
 }

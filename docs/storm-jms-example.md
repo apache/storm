@@ -16,8 +16,8 @@ information about the tuples it receives and emits).
 
 Grey arrows represent JMS messages, while black arrows represent the flow of Storm tuple objects.
 
-### JMS Transactions and Gauranteed Processing
-The example is set up to be "transactional," meaning the JMS Spout will use Storm's guranteed 
+### JMS Transactions and Guaranteed Processing
+The example is set up to be "transactional," meaning the JMS Spout will use Storm's guaranteed 
 processing capabilities to determine if a JMS Message should be acknowledged. Each bolt in the 
 topology will anchor to each tuple it receives. If every bolt successfully processes and acks
 each tuple in the chain, the original JMS Message will be acknowledged, and the underlying
@@ -34,12 +34,12 @@ another originating from a JMS Spout connected to a Topic.
 1. The "JMS Queue Spout" receives a JMS Message object from the queue, and emits a
 tuple to the "Intermediate Bolt"
 2. The "Intermediate Bolt" emits a tuple to the "Final Bolt" and the "JMS Topic Bolt", and acks
-the tuple it recieved.
+the tuple it received.
 3. The "Final Bolt" receives the tuple and simply acks it, it does not emit anything.
 4. The "JMS Topic Bolt" receives a tuple, constructs a JMS Message from the tuple's values, 
 and publishes the message to a JMS Topic.
 5. If the "JMS Topic Bolt" successfully publishes the JMS message, it will ack the tuple.
-6. The "JMS Queue Spout" will recieve notification if all bolts in the chain have acked 
+6. The "JMS Queue Spout" will receive notification if all bolts in the chain have acked 
 and acknowledge the original JMS Message. If one or more bolts in the chain fail to ack a tuple, the 
 "JMS Queue Spout" will not acknowledge the JMS message.
 
