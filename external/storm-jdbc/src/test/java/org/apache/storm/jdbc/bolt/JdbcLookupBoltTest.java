@@ -34,13 +34,13 @@ public class JdbcLookupBoltTest {
         ConnectionProvider provider = new HikariCPConnectionProvider(new HashMap<>());
         JdbcLookupMapper mapper = new SimpleJdbcLookupMapper(new Fields("test"), Lists.newArrayList(new Column<String>("test", 0)));
         String selectQuery = "select * from dual";
-        expectIllegalArgs(null, selectQuery, mapper);
-        expectIllegalArgs(provider, null, mapper);
-        expectIllegalArgs(provider, selectQuery, null);
+        expectNullPointerException(null, selectQuery, mapper);
+        expectNullPointerException(provider, null, mapper);
+        expectNullPointerException(provider, selectQuery, null);
     }
 
-    private void expectIllegalArgs(ConnectionProvider provider, String selectQuery, JdbcLookupMapper mapper) {
-        assertThrows(IllegalArgumentException.class, () -> new JdbcLookupBolt(provider, selectQuery, mapper));
+    private void expectNullPointerException(ConnectionProvider provider, String selectQuery, JdbcLookupMapper mapper) {
+        assertThrows(NullPointerException.class, () -> new JdbcLookupBolt(provider, selectQuery, mapper));
     }
 
 }

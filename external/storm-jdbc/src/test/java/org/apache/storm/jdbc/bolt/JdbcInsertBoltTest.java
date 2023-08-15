@@ -32,8 +32,8 @@ public class JdbcInsertBoltTest {
     public void testValidation() {
         ConnectionProvider provider = new HikariCPConnectionProvider(new HashMap<>());
         JdbcMapper mapper = new SimpleJdbcMapper(Lists.newArrayList(new Column<String>("test", 0)));
-        expectIllegalArgs(null, mapper);
-        expectIllegalArgs(provider, null);
+        expectNullPointerException(null, mapper);
+        expectNullPointerException(provider, null);
 
         assertThrows(IllegalArgumentException.class, () -> {
             JdbcInsertBolt bolt = new JdbcInsertBolt(provider, mapper);
@@ -48,8 +48,8 @@ public class JdbcInsertBoltTest {
         });
     }
 
-    private void expectIllegalArgs(ConnectionProvider provider, JdbcMapper mapper) {
-        assertThrows(IllegalArgumentException.class, () -> new JdbcInsertBolt(provider, mapper));
+    private void expectNullPointerException(ConnectionProvider provider, JdbcMapper mapper) {
+        assertThrows(NullPointerException.class, () -> new JdbcInsertBolt(provider, mapper));
     }
 
 }

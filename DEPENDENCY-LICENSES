@@ -17,6 +17,7 @@ List of third-party dependencies grouped by their license type.
         * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.18.2 - http://activemq.apache.org/activemq-mqtt)
         * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.18.2 - http://activemq.apache.org/activemq-openwire-legacy)
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
+        * Apache Commons Lang (org.apache.commons:commons-lang3:3.13.0 - https://commons.apache.org/proper/commons-lang/)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.3 - https://github.com/xerial/snappy-java)
 
@@ -292,8 +293,8 @@ List of third-party dependencies grouped by their license type.
         * hawtdispatch-transport (org.fusesource.hawtdispatch:hawtdispatch-transport:1.22 - http://hawtdispatch.fusesource.org/hawtdispatch-transport/)
         * Hibernate Validator Engine (org.hibernate:hibernate-validator:5.4.3.Final - http://hibernate.org/validator/hibernate-validator)
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:6.0.17.Final - http://hibernate.org/validator/hibernate-validator)
-        * HikariCP (com.zaxxer:HikariCP:2.4.7 - https://github.com/brettwooldridge/HikariCP)
         * HikariCP (com.zaxxer:HikariCP:2.5.1 - https://github.com/brettwooldridge/HikariCP)
+        * HikariCP (com.zaxxer:HikariCP:5.0.1 - https://github.com/brettwooldridge/HikariCP)
         * HikariCP (com.zaxxer:HikariCP-java7:2.4.12 - https://github.com/brettwooldridge/HikariCP)
         * Hive CLI (org.apache.hive:hive-cli:2.3.9 - https://hive.apache.org/hive-cli)
         * Hive Common (org.apache.hive:hive-common:2.3.9 - https://hive.apache.org/hive-common)

@@ -15,8 +15,8 @@ package org.apache.storm.jdbc.bolt;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.mapper.JdbcMapper;
@@ -24,8 +24,6 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Basic bolt for writing to any Database table.
@@ -33,7 +31,6 @@ import org.slf4j.LoggerFactory;
  * Note: Each JdbcInsertBolt defined in a topology is tied to a specific table.
  */
 public class JdbcInsertBolt extends AbstractJdbcBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(JdbcInsertBolt.class);
 
     private String tableName;
     private String insertQuery;

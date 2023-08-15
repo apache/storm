@@ -14,7 +14,7 @@ package org.apache.storm.jdbc.bolt;
 
 import java.sql.DriverManager;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.apache.storm.Config;
 import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.JdbcClient;

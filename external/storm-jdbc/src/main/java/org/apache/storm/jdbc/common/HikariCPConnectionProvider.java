@@ -43,8 +43,8 @@ public class HikariCPConnectionProvider implements ConnectionProvider {
             } else if (config.getJdbcUrl() != null) {
                 LOG.info("JDBC Url: " + config.getJdbcUrl());
             }
+            config.setAutoCommit(false);
             this.dataSource = new HikariDataSource(config);
-            this.dataSource.setAutoCommit(false);
         }
     }
 
