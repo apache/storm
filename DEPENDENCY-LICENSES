@@ -358,7 +358,6 @@ List of third-party dependencies grouped by their license type.
         * Jettison (org.codehaus.jettison:jettison:1.1 - no url defined)
         * Jetty SSLEngine (org.mortbay.jetty:jetty-sslengine:6.1.26 - http://jetty.mortbay.org)
         * jffi (com.github.jnr:jffi:1.2.10 - http://github.com/jnr/jffi)
-        * JMS 1.1 (org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-jms_1.1_spec)
         * jnr-constants (com.github.jnr:jnr-constants:0.9.0 - http://github.com/jnr/jnr-constants)
         * jnr-ffi (com.github.jnr:jnr-ffi:2.0.7 - http://github.com/jnr/jnr-ffi)
         * Joda-Time (joda-time:joda-time:2.3 - http://www.joda.org/joda-time/)
