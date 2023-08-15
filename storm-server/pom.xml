@@ -172,6 +172,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <reuseForks>false</reuseForks>
                     <forkCount>1</forkCount>
                     <argLine>${storm-server.test.introspection.argLine} -Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
                 </configuration>
