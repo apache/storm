@@ -18,9 +18,12 @@ import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metrics2.PerReporterGauge;
+import org.apache.storm.metrics2.WorkerMetricRegistrant;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -62,31 +65,44 @@ public class SystemBolt implements IBolt {
             }
         });
 
-        // newWorkerEvent: 1 when a worker is first started and 0 all other times.
-        // This can be used to tell when a worker has crashed and is restarted.
-        final IMetric newWorkerEvent = new IMetric() {
-            boolean doEvent = true;
 
-            @Override
-            public Object getValueAndReset() {
-                if (doEvent) {
-                    doEvent = false;
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
-        };
-        context.registerGauge("newWorkerEvent", new Gauge<Integer>() {
-            @Override
-            public Integer getValue() {
-                return (Integer) newWorkerEvent.getValueAndReset();
-            }
-        });
+        context.registerGauge("newWorkerEvent", new NewWorkerGauge());
 
         int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.WORKER_METRICS), bucketSize, topoConf);
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize, topoConf);
+    }
+
+    // newWorkerEvent: 1 when a worker is first started and 0 all other times.
+    // This can be used to tell when a worker has crashed and is restarted.
+    private class NewWorkerMetric {
+        boolean newWorker = true;
+
+        public int getValueAndReset() {
+            if (newWorker) {
+                newWorker = false;
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    // allow reporting new worker metric for multiple reporters if they support getValueForReporter().
+    private class NewWorkerGauge extends PerReporterGauge<Integer> {
+        private final NewWorkerMetric defaultValue = new NewWorkerMetric();
+        private final Map<Object, NewWorkerMetric> reporterValues = new HashMap<>();
+
+        // reporting this value will not be accurate for multiple reporters
+        @Override
+        public Integer getValue() {
+            return (Integer) defaultValue.getValueAndReset();
+        }
+
+        @Override
+        public Integer getValueForReporter(Object reporter) {
+            return (Integer) reporterValues.computeIfAbsent(reporter, (rep) -> new NewWorkerMetric()).getValueAndReset();
+        }
     }
 
     private void registerMetrics(TopologyContext context, Map<String, String> metrics, int bucketSize, Map<String, Object> conf) {
@@ -95,7 +111,14 @@ public class SystemBolt implements IBolt {
         }
         for (Map.Entry<String, String> metric : metrics.entrySet()) {
             try {
-                context.registerMetric(metric.getKey(), (IMetric) ReflectionUtils.newInstance(metric.getValue(), conf), bucketSize);
+                Object workerMetric = ReflectionUtils.newInstance(metric.getValue(), conf);
+                if (workerMetric instanceof IMetric) {
+                    context.registerMetric(metric.getKey(), (IMetric) workerMetric, bucketSize);
+                } else if (workerMetric instanceof WorkerMetricRegistrant) {
+                    ((WorkerMetricRegistrant) workerMetric).registerMetrics(context);
+                } else {
+                    throw new RuntimeException("Invalid worker metric " + workerMetric);
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

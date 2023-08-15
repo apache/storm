@@ -27,9 +27,9 @@ import java.util.Map;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.WorkerResources;
-import org.junit.Test;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EquivalenceUtilsTest {
 
@@ -84,23 +84,23 @@ public class EquivalenceUtilsTest {
         WorkerResources resourcesREmpty = mkWorkerResources(100.0, 100.0, 100.0, Maps.newHashMap());
         assertTrue(EquivalenceUtils.customWorkerResourcesEquality(resourcesRNull,resourcesREmpty));
 
-        Map resources = new HashMap<String, Double>();
+        Map<String, Double> resources = new HashMap<>();
         resources.put("network.resource.units", 0.0);
         WorkerResources resourcesRNetwork = mkWorkerResources(100.0, 100.0, 100.0,resources);
         assertTrue(EquivalenceUtils.customWorkerResourcesEquality(resourcesREmpty, resourcesRNetwork));
 
 
-        Map resourcesNetwork = new HashMap<String, Double>();
+        Map<String, Double> resourcesNetwork = new HashMap<>();
         resourcesNetwork.put("network.resource.units", 50.0);
         WorkerResources resourcesRNetworkNonZero = mkWorkerResources(100.0, 100.0, 100.0,resourcesNetwork);
         assertFalse(EquivalenceUtils.customWorkerResourcesEquality(resourcesREmpty, resourcesRNetworkNonZero));
 
-        Map resourcesNetworkOne = new HashMap<String, Double>();
+        Map<String, Double> resourcesNetworkOne = new HashMap<>();
         resourcesNetworkOne.put("network.resource.units", 50.0);
         WorkerResources resourcesRNetworkOne = mkWorkerResources(100.0, 100.0, 100.0,resourcesNetworkOne);
         assertTrue(EquivalenceUtils.customWorkerResourcesEquality(resourcesRNetworkOne, resourcesRNetworkNonZero));
 
-        Map resourcesNetworkTwo = new HashMap<String, Double>();
+        Map<String, Double> resourcesNetworkTwo = new HashMap<>();
         resourcesNetworkTwo.put("network.resource.units", 100.0);
         WorkerResources resourcesRNetworkTwo = mkWorkerResources(100.0, 100.0, 100.0,resourcesNetworkTwo);
         assertFalse(EquivalenceUtils.customWorkerResourcesEquality(resourcesRNetworkOne, resourcesRNetworkTwo));

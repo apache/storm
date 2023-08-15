@@ -47,7 +47,7 @@ topology.metrics.consumer.register:
     argument: "http://example.com:8080/metrics/my-topology/"
 ```
 
-Storm adds a MetricsConsumerBolt to your topolology for each class in the `topology.metrics.consumer.register` list. Each MetricsConsumerBolt subscribes to receive metrics from all tasks in the topology. The parallelism for each Bolt is set to `parallelism.hint` and `component id` for that Bolt is set to `__metrics_<metrics consumer class name>`. If you register the same class name more than once, postfix `#<sequence number>` is appended to component id.
+Storm adds a MetricsConsumerBolt to your topology for each class in the `topology.metrics.consumer.register` list. Each MetricsConsumerBolt subscribes to receive metrics from all tasks in the topology. The parallelism for each Bolt is set to `parallelism.hint` and `component id` for that Bolt is set to `__metrics_<metrics consumer class name>`. If you register the same class name more than once, postfix `#<sequence number>` is appended to component id.
 
 Storm provides some built-in metrics consumers for you to try out to see which metrics are provided in your topology.
 
@@ -199,6 +199,10 @@ This metric records how much time a spout was idle because more tuples than `top
 
 This metric records how much time a spout was idle because back-pressure indicated that downstream queues in the topology were too full.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled. This is similar to skipped-throttle-ms in Storm 1.x.
 
+##### `__backpressure-last-overflow-count`
+
+This metric indicates the overflow count last time BP status was sent, with a minimum value of 1 if a task has backpressure on.
+
 ##### `skipped-inactive-ms`
 
 This metric records how much time a spout was idle because the topology was deactivated.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled.
@@ -213,37 +217,33 @@ This metric records how many errors were reported by a spout/bolt. It is the tot
 
 #### Queue Metrics
 
-Each bolt or spout instance in a topology has a receive queue and a send queue.  Each worker also has a queue for sending messages to other workers.  All of these have metrics that are reported.
+Each bolt or spout instance in a topology has a receive queue.  Each worker also has a worker transfer queue for sending messages to other workers.  All of these have metrics that are reported.
 
-The receive queue metrics are reported under the `__receive` name and send queue metrics are reported under the `__sendqueue` for the given bolt/spout they are a part of.  The metrics for the queue that sends messages to other workers is under the `__transfer` metric name for the system bolt (`__system`).
+The receive queue metrics are reported under the `receive_queue` name.  The metrics for the queue that sends messages to other workers is under the `worker-transfer-queue` metric name for the system bolt (`__system`).
 
-They all have the form.
+These queues report the following metrics:
 
 ```
 {
     "arrival_rate_secs": 1229.1195171893523,
     "overflow": 0,
-    "read_pos": 103445,
-    "write_pos": 103448,
     "sojourn_time_ms": 2.440771591407277,
     "capacity": 1024,
-    "population": 19
-    "tuple_population": 200
+    "population": 19,
+    "pct_full": "0.018".
+    "insert_failures": "0",
+    "dropped_messages": "0"
 }
 ```
-In storm we sometimes batch multiple tuples into a single entry in the disruptor queue. This batching is an optimization that has been in storm in some form since the beginning, but the metrics did not always reflect this so be careful with how you interpret the metrics and pay attention to which metrics are for tuples and which metrics are for entries in the disruptor queue. The `__receive` and `__transfer` queues can have batching but the `__sendqueue` should not.
 
 `arrival_rate_secs` is an estimation of the number of tuples that are inserted into the queue in one second, although it is actually the dequeue rate.
 The `sojourn_time_ms` is calculated from the arrival rate and is an estimate of how many milliseconds each tuple sits in the queue before it is processed.
-Prior to STORM-2621 (v1.1.1, v1.2.0, and v2.0.0) these were the rate of entries, not of tuples.
 
-A disruptor queue has a set maximum number of entries.  If the regular queue fills up an overflow queue takes over.  The number of tuple batches stored in this overflow section are represented by the `overflow` metric.  Storm also does some micro batching of tuples for performance/efficiency reasons so you may see the overflow with a very small number in it even if the queue is not full.
+The queue has a set maximum number of entries.  If the regular queue fills up an overflow queue takes over.  The number of tuples stored in this overflow section are represented by the `overflow` metric.  Note that an overflow queue is only used for executors to receive tuples from remote workers. It doesn't apply to intra-worker tuple transfer.
 
-`read_pos` and `write_pos` are internal disruptor accounting numbers.  You can think of them almost as the total number of entries written (`write_pos`) or read (`read_pos`) since the queue was created.  They allow for integer overflow so if you use them please take that into account.
+`capacity` is the maximum number of entries in the queue. `population` is the number of entries currently filled in the queue. 'pct_full' tracks the percentage of capacity in use.
 
-`capacity` is the maximum number of entries in the disruptor queue. `population` is the number of entries currently filled in the queue.
-
-`tuple_population` is the number of tuples currently in the queue as opposed to the number of entries.  This was added at the same time as STORM-2621 (v1.1.1, v1.2.0, and v2.0.0)
+'insert_failures' tracks the number of failures inserting into the queue. 'dropped_messages' tracks messages dropped due to the overflow queue being full.
 
 #### System Bolt (Worker) Metrics
 
@@ -269,7 +269,7 @@ Be aware that the `__system` bolt is an actual bolt so regular bolt metrics desc
 ##### Send (Netty Client)
 
 The `__send-iconnection` metrics report information about all of the clients for this worker.  They are named __send-iconnection-METRIC_TYPE-HOST:PORT for a given Client that is
-connected to a worker with the given host/port.
+connected to a worker with the given host/port.  These metrics can be disabled by setting topology.enable.send.iconnection.metrics to false.
 
 The metric types reported for each client are:
 

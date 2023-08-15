@@ -66,6 +66,7 @@ import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
+import org.apache.storm.security.auth.workertoken.WorkerTokenAuthorizer;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.thrift.TProcessor;
@@ -186,7 +187,6 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.workerHeartbeatTimer = new StormTimer("WorkerHBTimer", new DefaultUncaughtExceptionHandler());
 
         this.eventTimer = new StormTimer("EventTimer", new DefaultUncaughtExceptionHandler());
-        
         this.supervisorThriftInterface = createSupervisorIface();
     }
 
@@ -324,6 +324,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         ReportWorkerHeartbeats reportWorkerHeartbeats = new ReportWorkerHeartbeats(conf, this);
         Integer workerHeartbeatFrequency = ObjectReader.getInt(conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS));
         workerHeartbeatTimer.scheduleRecurring(0, workerHeartbeatFrequency, reportWorkerHeartbeats);
+
         LOG.info("Starting supervisor with id {} at host {}.", getId(), getHostName());
     }
 
@@ -345,6 +346,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             metricsRegistry.registerMeter("supervisor:num-shell-exceptions", ShellUtils.numShellExceptions);
             metricsRegistry.registerMeter(Constants.SUPERVISOR_HEALTH_CHECK_TIMEOUTS);
             killErrorMeter = metricsRegistry.registerMeter("supervisor:num-kill-worker-errors");
+            metricsRegistry.registerMeter("supervisor:workerTokenAuthorizer-get-password-failures",
+                    WorkerTokenAuthorizer.getPasswordFailuresMeter());
             metricsRegistry.startMetricsReporters(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(() -> {
                 metricsRegistry.stopMetricsReporters();

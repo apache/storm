@@ -18,13 +18,13 @@
 
 package org.apache.storm.rocketmq;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class DefaultMessageBodySerializerTest {
     @Test
-    public void serialize() throws Exception {
+    public void serialize() {
         DefaultMessageBodySerializer messageBodySerializer = new DefaultMessageBodySerializer();
         String body = "this is message body data";
         assertArrayEquals(body.getBytes(), messageBodySerializer.serialize(body));

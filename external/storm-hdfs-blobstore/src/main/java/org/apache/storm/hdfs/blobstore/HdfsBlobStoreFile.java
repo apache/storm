@@ -141,6 +141,11 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
             if (!fileSystem.mkdirs(path.getParent(), dirperms)) {
                 LOG.warn("error creating parent dir: " + path.getParent());
             }
+            if (!fileSystem.getFileStatus(path.getParent()).getPermission().equals(dirperms)) {
+                LOG.warn("Directory {} created with unexpected permission {}.Set permission {} for this directory.",
+                    path.getParent(), fileSystem.getFileStatus(path.getParent()).getPermission(), dirperms);
+                fileSystem.setPermission(path.getParent(), dirperms);
+            }
             out = fileSystem.create(path, (short) this.getMetadata().get_replication_factor());
             fileSystem.setPermission(path, dirperms);
             fileSystem.setReplication(path, (short) this.getMetadata().get_replication_factor());

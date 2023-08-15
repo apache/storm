@@ -73,18 +73,18 @@ void free_configurations() {
  */
 static int is_only_root_writable(const char *file) {
   struct stat file_stat;
-  if (stat(file, &file_stat) != 0) {
-    fprintf(ERRORFILE, "Can't stat file %s - %s\n", file, strerror(errno));
+  if (stat(file, &file_stat)) {
+    fprintf(ERRORFILE, "ERROR: Can't stat file %s - %s\n", file, strerror(errno));
     return 0;
   }
-  if (file_stat.st_uid != 0) {
-    fprintf(ERRORFILE, "File %s must be owned by root, but is owned by %d\n",
-            file, file_stat.st_uid);
+  if (file_stat.st_uid) {
+    fprintf(ERRORFILE, "ERROR: File %s must be owned by root, but is owned by %d\n",
+      file, file_stat.st_uid);
     return 0;
   }
-  if ((file_stat.st_mode & (S_IWGRP | S_IWOTH)) != 0) {
+  if (file_stat.st_mode & (S_IWGRP | S_IWOTH)) {
     fprintf(ERRORFILE, 
-	    "File %s must not be world or group writable, but is %03o\n",
+	    "ERROR: File %s must not be world or group writable, but is %03o\n",
 	    file, file_stat.st_mode & (~S_IFMT));
     return 0;
   }
@@ -124,7 +124,7 @@ void read_config(const char* file_name) {
   int size_read = 0;
 
   if (file_name == NULL) {
-    fprintf(ERRORFILE, "Null configuration filename passed in\n");
+    fprintf(ERRORFILE, "ERROR: Null configuration filename passed in\n");
     exit(INVALID_CONFIG_FILE);
   }
 
@@ -136,19 +136,19 @@ void read_config(const char* file_name) {
   config.confdetails = (struct confentry **) malloc(sizeof(struct confentry *)
       * MAX_SIZE);
   if (config.confdetails == NULL) {
-      fprintf(ERRORFILE, "malloc failed while reading configuration file.\n");
+      fprintf(ERRORFILE, "ERROR: malloc failed while reading configuration file - 1.\n");
       exit(OUT_OF_MEMORY);
   }
   config.size = 0;
   conf_file = fopen(file_name, "r");
   if (conf_file == NULL) {
-    fprintf(ERRORFILE, "Invalid conf file provided : %s \n", file_name);
+    fprintf(ERRORFILE, "ERROR: Invalid conf file provided : %s \n", file_name);
     exit(INVALID_CONFIG_FILE);
   }
   while(!feof(conf_file)) {
     line = (char *) malloc(linesize);
     if(line == NULL) {
-      fprintf(ERRORFILE, "malloc failed while reading configuration file.\n");
+      fprintf(ERRORFILE, "ERROR: malloc failed while reading configuration file - 2.\n");
       exit(OUT_OF_MEMORY);
     }
     size_read = getline(&line,&linesize,conf_file);
@@ -256,7 +256,7 @@ void read_config(const char* file_name) {
   fclose(conf_file);
 
   if (config.size == 0) {
-    fprintf(ERRORFILE, "Invalid configuration provided in %s\n", file_name);
+    fprintf(ERRORFILE, "ERROR: Invalid configuration provided in %s\n", file_name);
     exit(INVALID_CONFIG_FILE);
   }
 
@@ -297,7 +297,6 @@ char ** get_values(const char * key) {
   char *value = get_value(key);
   return extract_values_delim(value, ",");
 }
-
 
 /**
  * Extracts array of values from the delim separated list of values.

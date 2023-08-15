@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Reports the current memory limit of the cgroup for this worker.
  */
+@Deprecated
 public class CGroupMemoryLimit extends CGroupMetricsBase<Long> {
     private static final Logger LOG = LoggerFactory.getLogger(CGroupMemoryLimit.class);
     private static final long BYTES_PER_MB = 1024 * 1024;

@@ -26,7 +26,7 @@ enum errorcodes {
   INVALID_USER_NAME, //2
   INVALID_COMMAND_PROVIDED, //3
   // SUPER_USER_NOT_ALLOWED_TO_RUN_TASKS (NOT USED) 4
-  INVALID_NM_ROOT_DIRS = 5,
+  INVALID_WL_ROOT_DIRS = 5,
   SETUID_OPER_FAILED, //6
   UNABLE_TO_EXECUTE_CONTAINER_SCRIPT, //7
   UNABLE_TO_SIGNAL_CONTAINER, //8
@@ -55,7 +55,9 @@ enum errorcodes {
   DOCKER_IMAGE_INVALID = 40,
   DOCKER_CONTAINER_NAME_INVALID = 41,
   ERROR_COMPILING_REGEX = 42,
-  ERROR_CHANGING_USER = 43
+  ERROR_CHANGING_USER = 43,
+  ERROR_OCI_RUN_FAILED = 44,
+  ERROR_OCI_REAP_LAYER_MOUNTS_FAILED = 45
 };
 
 #define LAUNCHER_GROUP_KEY "storm.worker-launcher.group"
@@ -80,6 +82,9 @@ extern struct passwd *user_detail;
 extern FILE *LOGFILE;
 // the log file for error messages
 extern FILE *ERRORFILE;
+
+//for debugging purpose: print real, effective and saved userid;
+void print_res_uid_gid(char* log_prefix);
 
 int setup_dir_permissions(const char* local_dir, int for_blob_permission, boolean setgid_on_dir);
 
@@ -148,7 +153,32 @@ int set_user(const char *user);
 
 char *get_container_launcher_file(const char* work_dir);
 
+/**
+ * Ensure that the given path and all of the parent directories are created
+ * with the desired permissions.
+ */
+int mkdirs(const char* path, mode_t perm);
+
+int check_dir(const char* npath, mode_t st_mode, mode_t desired,
+   int finalComponent);
+
+int create_validate_dir(const char* npath, mode_t perm, const char* path,
+   int finalComponent);
+
+int setup_container_paths(const char* user, const char *container_id,
+        const char* work_dir, const char* script_path);
+
 int change_user(uid_t user, gid_t group);
+
+/**
+ * Change the effective user to the launcher user
+ */
+int change_effective_user_to_wl();
+
+/**
+ * Change the effective user id to limit damage.
+ */
+int change_effective_user(uid_t user, gid_t group);
 
 /**
  * Get the docker binary path.

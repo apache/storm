@@ -18,18 +18,16 @@ package org.apache.storm.kafka.spout;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class KafkaSpoutRetryExponentialBackoffTest {
     
@@ -64,7 +62,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
 
     @Test
     public void testCanRescheduleRetry() {
-        try (SimulatedTime time = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
 
             KafkaSpoutRetryExponentialBackoff retryService = createOneSecondWaitRetryService();
             long offset = 0;
@@ -91,7 +89,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
     
     @Test
     public void testCannotContainMultipleSchedulesForId() {
-        try (SimulatedTime time = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
 
             KafkaSpoutRetryExponentialBackoff retryService = createOneSecondWaitRetryService();
             long offset = 0;
@@ -128,7 +126,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
 
     @Test
     public void testCanHandleMultipleTopics() {
-        try (SimulatedTime time = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             //Tests that isScheduled, isReady and earliestRetriableOffsets are mutually consistent when there are messages from multiple partitions scheduled
             KafkaSpoutRetryExponentialBackoff retryService = createOneSecondWaitRetryService();
             long offset = 0;
@@ -174,7 +172,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
 
     @Test
     public void testCanHandleMultipleMessagesOnPartition() {
-        try (SimulatedTime time = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             //Tests that isScheduled, isReady and earliestRetriableOffsets are mutually consistent when there are multiple messages scheduled on a partition
             KafkaSpoutRetryExponentialBackoff retryService = createOneSecondWaitRetryService();
             long offset = 0;
@@ -208,7 +206,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
 
     @Test
     public void testMaxRetries() {
-        try (SimulatedTime time = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             int maxRetries = 3;
             KafkaSpoutRetryExponentialBackoff retryService = new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.seconds(0), maxRetries, TimeInterval.seconds(0));
             long offset = 0;
@@ -235,7 +233,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
 
     @Test
     public void testMaxDelay() {
-        try (SimulatedTime time = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             int maxDelaySecs = 2;
             KafkaSpoutRetryExponentialBackoff retryService = new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(500), TimeInterval.seconds(0), 1, TimeInterval.seconds(maxDelaySecs));
             long offset = 0;
@@ -250,16 +248,9 @@ public class KafkaSpoutRetryExponentialBackoffTest {
         }
     }
 
-    private void validateBackoff(int expectedBackoffSeconds, KafkaSpoutMessageId msgId, KafkaSpoutRetryExponentialBackoff retryService) {
-        Time.advanceTimeSecs(expectedBackoffSeconds - 1);
-        assertThat("The message should not be ready for retry until the backoff has expired", retryService.isReady(msgId), is(false));
-        Time.advanceTimeSecs(1);
-        assertThat(retryService.isReady(msgId), is(true));
-    }
-
     @Test
     public void testExponentialBackoff() {
-        try (SimulatedTime time = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             KafkaSpoutRetryExponentialBackoff retryService = new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.seconds(4), Integer.MAX_VALUE, TimeInterval.seconds(Integer.MAX_VALUE));
             long offset = 0;
 
@@ -268,7 +259,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
             msgId.incrementNumFails(); //First failure is the initial delay, so not interesting
 
             //Expecting 4*2^(failCount-1)
-            List<Integer> expectedBackoffsSecs = Arrays.asList(new Integer[]{8, 16, 32});
+            Integer[] expectedBackoffsSecs = new Integer[]{8, 16, 32};
             
             for (Integer expectedBackoffSecs : expectedBackoffsSecs) {
                 retryService.schedule(msgId);

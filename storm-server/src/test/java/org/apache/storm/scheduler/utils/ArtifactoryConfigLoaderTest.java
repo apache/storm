@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -22,20 +22,20 @@ import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ArtifactoryConfigLoaderTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ArtifactoryConfigLoaderTest.class);
     private static final String ARTIFACTORY_HTTP_SCHEME_PREFIX = "artifactory+http://";
     private Path tmpDirPath;
 
-    @Before
+    @BeforeEach
     public void createTempDir() throws Exception {
         tmpDirPath = Files.createTempDirectory("TestArtifactoryConfigLoader");
         File f = tmpDirPath.toFile();
@@ -44,9 +44,7 @@ public class ArtifactoryConfigLoaderTest {
         dir.mkdir();
     }
 
-    ;
-
-    @After
+    @AfterEach
     public void removeTempDir() throws Exception {
         FileUtils.deleteDirectory(tmpDirPath.toFile());
     }
@@ -56,7 +54,7 @@ public class ArtifactoryConfigLoaderTest {
         Config conf = new Config();
         ArtifactoryConfigLoaderMock loaderMock = new ArtifactoryConfigLoaderMock(conf);
         Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-        Assert.assertNull("Unexpectedly returned not null", ret);
+        assertNull(ret, "Unexpectedly returned not null");
     }
 
     @Test
@@ -75,21 +73,21 @@ public class ArtifactoryConfigLoaderTest {
             .setData(null, null, "{ \"" + DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS + "\": {one: 1, two: 2, three: 3, four : 4}}");
 
         Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-        Assert.assertNotNull("Unexpectedly returned null", ret);
-        Assert.assertEquals(1, ret.get("one"));
-        Assert.assertEquals(2, ret.get("two"));
-        Assert.assertEquals(3, ret.get("three"));
-        Assert.assertEquals(4, ret.get("four"));
+        assertNotNull(ret, "Unexpectedly returned null");
+        assertEquals(1, ret.get("one"));
+        assertEquals(2, ret.get("two"));
+        assertEquals(3, ret.get("three"));
+        assertEquals(4, ret.get("four"));
 
         // Now let's load w/o setting up gets and we should still get valid map back
         ArtifactoryConfigLoaderMock tc2 = new ArtifactoryConfigLoaderMock(conf);
 
         Map<String, Object> ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-        Assert.assertNotNull("Unexpectedly returned null", ret2);
-        Assert.assertEquals(1, ret2.get("one"));
-        Assert.assertEquals(2, ret2.get("two"));
-        Assert.assertEquals(3, ret2.get("three"));
-        Assert.assertEquals(4, ret2.get("four"));
+        assertNotNull(ret2, "Unexpectedly returned null");
+        assertEquals(1, ret2.get("one"));
+        assertEquals(2, ret2.get("two"));
+        assertEquals(3, ret2.get("three"));
+        assertEquals(4, ret2.get("four"));
     }
 
     @Test
@@ -100,7 +98,7 @@ public class ArtifactoryConfigLoaderTest {
                  ARTIFACTORY_HTTP_SCHEME_PREFIX + "bogushost.yahoo.com:9999/location/of/test/dir");
         conf.put(Config.STORM_LOCAL_DIR, tmpDirPath.toString());
 
-        try (SimulatedTime t = new SimulatedTime()) {
+        try (SimulatedTime ignored = new SimulatedTime()) {
             ArtifactoryConfigLoaderMock loaderMock = new ArtifactoryConfigLoaderMock(conf);
 
             loaderMock.setData("Anything", "/location/of/test/dir",
@@ -108,20 +106,20 @@ public class ArtifactoryConfigLoaderTest {
             loaderMock.setData(null, null, "{ \"" + DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS + "\": {one: 1, two: 2, three: 3}}");
             Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
 
-            Assert.assertNotNull("Unexpectedly returned null", ret);
-            Assert.assertEquals(1, ret.get("one"));
-            Assert.assertEquals(2, ret.get("two"));
-            Assert.assertEquals(3, ret.get("three"));
-            Assert.assertNull("Unexpectedly contained \"four\"", ret.get("four"));
+            assertNotNull(ret, "Unexpectedly returned null");
+            assertEquals(1, ret.get("one"));
+            assertEquals(2, ret.get("two"));
+            assertEquals(3, ret.get("three"));
+            assertNull(ret.get("four"), "Unexpectedly contained \"four\"");
 
-            // Now let's load w/o setting up gets and we should still get valid map back
+            // Now let's load w/o setting up gets, and we should still get valid map back
             ArtifactoryConfigLoaderMock tc2 = new ArtifactoryConfigLoaderMock(conf);
             Map<String, Object> ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-            Assert.assertNotNull("Unexpectedly returned null", ret2);
-            Assert.assertEquals(1, ret2.get("one"));
-            Assert.assertEquals(2, ret2.get("two"));
-            Assert.assertEquals(3, ret2.get("three"));
-            Assert.assertNull("Unexpectedly did not return null", ret2.get("four"));
+            assertNotNull(ret2, "Unexpectedly returned null");
+            assertEquals(1, ret2.get("one"));
+            assertEquals(2, ret2.get("two"));
+            assertEquals(3, ret2.get("three"));
+            assertNull(ret2.get("four"), "Unexpectedly did not return null");
 
             // Now let's update it, but not advance time.  Should get old map again.
             loaderMock.setData("Anything", "/location/of/test/dir",
@@ -129,37 +127,37 @@ public class ArtifactoryConfigLoaderTest {
             loaderMock
                 .setData(null, null, "{ \"" + DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS + "\": {one: 1, two: 2, three: 3, four : 4}}");
             ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-            Assert.assertNotNull("Unexpectedly returned null", ret);
-            Assert.assertEquals(1, ret.get("one"));
-            Assert.assertEquals(2, ret.get("two"));
-            Assert.assertEquals(3, ret.get("three"));
-            Assert.assertNull("Unexpectedly did not return null, not enough time passed!", ret.get("four"));
+            assertNotNull(ret, "Unexpectedly returned null");
+            assertEquals(1, ret.get("one"));
+            assertEquals(2, ret.get("two"));
+            assertEquals(3, ret.get("three"));
+            assertNull(ret.get("four"), "Unexpectedly did not return null, not enough time passed!");
 
             // Re-load from cached' file.
             ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-            Assert.assertNotNull("Unexpectedly returned null", ret2);
-            Assert.assertEquals(1, ret2.get("one"));
-            Assert.assertEquals(2, ret2.get("two"));
-            Assert.assertEquals(3, ret2.get("three"));
-            Assert.assertNull("Unexpectedly did not return null, last cached result should not have \"four\"", ret2.get("four"));
+            assertNotNull(ret2, "Unexpectedly returned null");
+            assertEquals(1, ret2.get("one"));
+            assertEquals(2, ret2.get("two"));
+            assertEquals(3, ret2.get("three"));
+            assertNull(ret2.get("four"), "Unexpectedly did not return null, last cached result should not have \"four\"");
 
             // Now, let's advance time.
             Time.advanceTime(11 * 60 * 1000);
 
             ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-            Assert.assertNotNull("Unexpectedly returned null", ret);
-            Assert.assertEquals(1, ret.get("one"));
-            Assert.assertEquals(2, ret.get("two"));
-            Assert.assertEquals(3, ret.get("three"));
-            Assert.assertEquals(4, ret.get("four"));
+            assertNotNull(ret, "Unexpectedly returned null");
+            assertEquals(1, ret.get("one"));
+            assertEquals(2, ret.get("two"));
+            assertEquals(3, ret.get("three"));
+            assertEquals(4, ret.get("four"));
 
             // Re-load from cached' file.
             ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-            Assert.assertNotNull("Unexpectedly returned null", ret2);
-            Assert.assertEquals(1, ret2.get("one"));
-            Assert.assertEquals(2, ret2.get("two"));
-            Assert.assertEquals(3, ret2.get("three"));
-            Assert.assertEquals(4, ret2.get("four"));
+            assertNotNull(ret2, "Unexpectedly returned null");
+            assertEquals(1, ret2.get("one"));
+            assertEquals(2, ret2.get("two"));
+            assertEquals(3, ret2.get("three"));
+            assertEquals(4, ret2.get("four"));
         }
     }
 
@@ -177,22 +175,22 @@ public class ArtifactoryConfigLoaderTest {
         loaderMock.setData(null, null, "{ \"" + DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS + "\": {one: 1, two: 2, three: 3}}");
         Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
 
-        Assert.assertNotNull("Unexpectedly returned null", ret);
-        Assert.assertEquals(1, ret.get("one"));
-        Assert.assertEquals(2, ret.get("two"));
-        Assert.assertEquals(3, ret.get("three"));
+        assertNotNull(ret, "Unexpectedly returned null");
+        assertEquals(1, ret.get("one"));
+        assertEquals(2, ret.get("two"));
+        assertEquals(3, ret.get("three"));
 
         // Now let's load w/o setting up gets and we should still get valid map back
         ArtifactoryConfigLoaderMock tc2 = new ArtifactoryConfigLoaderMock(conf);
         Map<String, Object> ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-        Assert.assertNotNull("Unexpectedly returned null", ret2);
-        Assert.assertEquals(1, ret2.get("one"));
-        Assert.assertEquals(2, ret2.get("two"));
-        Assert.assertEquals(3, ret2.get("three"));
+        assertNotNull(ret2, "Unexpectedly returned null");
+        assertEquals(1, ret2.get("one"));
+        assertEquals(2, ret2.get("two"));
+        assertEquals(3, ret2.get("three"));
     }
 
     @Test
-    public void testMalformedYaml() throws Exception {
+    public void testMalformedYaml() {
         // This is a test where we are configured to point right at a single artifact
         Config conf = new Config();
         conf.put(DaemonConfig.SCHEDULER_CONFIG_LOADER_URI,
@@ -204,10 +202,10 @@ public class ArtifactoryConfigLoaderTest {
         loaderMock.setData(null, null, "ThisIsNotValidYaml");
 
         Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-        Assert.assertNull("Unexpectedly returned a map", ret);
+        assertNull(ret, "Unexpectedly returned a map");
     }
 
-    private class ArtifactoryConfigLoaderMock extends ArtifactoryConfigLoader {
+    private static class ArtifactoryConfigLoaderMock extends ArtifactoryConfigLoader {
         String getData;
         HashMap<String, String> getDataMap = new HashMap<>();
 

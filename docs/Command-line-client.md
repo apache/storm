@@ -313,7 +313,7 @@ Syntax: `storm shell resourcesdir command args`
 
 Makes constructing jar and uploading to nimbus for using non JVM languages
 
-eg: `storm shell resources/ python topology.py arg1 arg2`
+eg: `storm shell resources/ python3 topology.py arg1 arg2`
 
 ### upload-credentials
 

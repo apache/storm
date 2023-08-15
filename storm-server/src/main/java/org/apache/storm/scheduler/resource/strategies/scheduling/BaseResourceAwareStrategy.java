@@ -164,6 +164,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
         //order executors to be scheduled
         List<ExecutorDetails> orderedExecutors = execSorter.sortExecutors(unassignedExecutors);
+        isolateAckersToEnd(orderedExecutors);
         Iterable<String> sortedNodes = null;
         if (!this.sortNodesForEachExecutor) {
             nodeSorter.prepare(null);
@@ -404,19 +405,25 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     }
 
     /**
+     * Modify the collection, and place unassigned ackers to the end of the list.
+     *
+     * @param orderedExecutors List of executors that are presumed to be sorted.
+     */
+    private void isolateAckersToEnd(List<ExecutorDetails> orderedExecutors) {
+        orderedExecutors.removeAll(searcherState.getUnassignedAckers());
+        orderedExecutors.addAll(searcherState.getUnassignedAckers());
+        LOG.debug("For topology: {}, we have sorted execs: {} and unassigned ackers: {}",
+                topoName, orderedExecutors, searcherState.getUnassignedAckers());
+    }
+
+    /**
      * Try to schedule till successful or till limits (backtrack count or time) have been exceeded.
      *
-     * @param orderedExecutors Executors sorted in the preferred order cannot be null.
+     * @param orderedExecutors Executors sorted in the preferred order cannot be null - note that ackers are isolated at the end.
      * @param sortedNodesIter Node iterable which may be null.
      * @return SchedulingResult with success attribute set to true or false indicting whether ALL executors were assigned.
      */
     protected SchedulingResult scheduleExecutorsOnNodes(List<ExecutorDetails> orderedExecutors, Iterable<String> sortedNodesIter) {
-        // isolate ackers and put it to the end of orderedExecutors
-        // the order of unassigned ackers in orderedExecutors and searcherState.getUnassignedAckers() are same
-        orderedExecutors.removeAll(searcherState.getUnassignedAckers());
-        orderedExecutors.addAll(searcherState.getUnassignedAckers());
-        LOG.debug("For topology: {}, we have sorted execs: {} and unassigned ackers: {}",
-                    topoName, orderedExecutors, searcherState.getUnassignedAckers());
 
         long         startTimeMilli     = Time.currentTimeMillis();
         searcherState.setSortedExecs(orderedExecutors);
@@ -487,7 +494,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
                     if (!isExecAssignmentToWorkerValid(exec, workerSlot)) {
                         // exec can't fit in this workerSlot, try next workerSlot
-                        LOG.debug("Failed to assign exec={}, comp={}, topo={} to worker={} on node=({}, availCpu={}, availMem={}).",
+                        LOG.trace("Failed to assign exec={}, comp={}, topo={} to worker={} on node=({}, availCpu={}, availMem={}).",
                             exec, comp, topoName, workerSlot,
                             node.getId(), node.getAvailableCpuResources(), node.getAvailableMemoryResources());
                         continue;
@@ -504,7 +511,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                     if (searcherState.areAllExecsScheduled()) {
                         //Everything is scheduled correctly, so no need to search any more.
                         LOG.info("scheduleExecutorsOnNodes: Done at loopCnt={} in {}ms, state.elapsedtime={}, backtrackCnt={}, topo={}",
-                                loopCnt, System.currentTimeMillis() - startTimeMilli,
+                                loopCnt, Time.currentTimeMillis() - startTimeMilli,
                                 Time.currentTimeMillis() - searcherState.startTimeMillis,
                                 searcherState.getNumBacktrack(),
                                 topoName);
@@ -527,13 +534,13 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             if (execIndex == 0) {
                 break;
             } else {
-                searcherState.backtrack(execToComp, nodeForExec[execIndex - 1], workerSlotForExec[execIndex - 1]);
+                searcherState.backtrack(execToComp, nodeForExec, workerSlotForExec);
                 progressIdxForExec[execIndex] = -1;
             }
         }
         boolean success = searcherState.areAllExecsScheduled();
         LOG.info("scheduleExecutorsOnNodes: Scheduled={} in {} milliseconds, state.elapsedtime={}, backtrackCnt={}, topo={}",
-                success, System.currentTimeMillis() - startTimeMilli, Time.currentTimeMillis() - searcherState.startTimeMillis,
+                success, Time.currentTimeMillis() - startTimeMilli, Time.currentTimeMillis() - searcherState.startTimeMillis,
                 searcherState.getNumBacktrack(),
                 topoName);
         return searcherState.createSchedulingResult(success, this.getClass().getSimpleName());
@@ -556,7 +563,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * @param workerSlot        WorkerSlot on which to schedule.
      * @return                  Number of ackers assigned.
      */
-    private int assignBoundAckersForNewWorkerSlot(ExecutorDetails exec, RasNode node, WorkerSlot workerSlot) {
+    protected int assignBoundAckersForNewWorkerSlot(ExecutorDetails exec, RasNode node, WorkerSlot workerSlot) {
         int numOfAckersToBind = searcherState.getNumOfAckersToBind(exec, workerSlot);
         if (numOfAckersToBind > 0) {
             for (int i = 0; i < numOfAckersToBind; i++) {

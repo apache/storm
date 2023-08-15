@@ -20,19 +20,20 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.junit.Assert;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WeatherSpout extends BaseRichSpout {
 
     private SpoutOutputCollector spoutOutputCollector;
 
-    private String stationID;
+    private final String stationID;
 
-    private AtomicLong maxQueries;
+    private final AtomicLong maxQueries;
 
-    private AtomicLong acks = new AtomicLong(0);
+    private final AtomicLong acks = new AtomicLong(0);
 
-    private AtomicLong emit = new AtomicLong(0);
+    private final AtomicLong emit = new AtomicLong(0);
 
     /**
      * Creates a new {@link WeatherSpout} instance.
@@ -60,12 +61,12 @@ public class WeatherSpout extends BaseRichSpout {
 
     @Override
     public void fail(Object msgId) {
-        Assert.fail("Must never get fail tuple : " + msgId);
+        throw new RuntimeException("Must never get fail tuple : " + msgId);
     }
 
     @Override
     public void close() {
-        Assert.assertEquals(acks.get(), emit.get());
+        assertEquals(acks.get(), emit.get());
     }
 
     @Override

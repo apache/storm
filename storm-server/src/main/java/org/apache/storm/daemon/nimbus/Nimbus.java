@@ -985,6 +985,33 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return isTopologyActive(state, topoName) || state.activeStorms().contains(topoName);
     }
 
+    /**
+     * Returns the topologyId of the topology using this blob.
+     * @param state the cluster state
+     * @param topoCache the topology cache
+     * @param key the blob key
+     * @return null or id
+     */
+    private static String topologyUsingThisBlob(IStormClusterState state, TopoCache topoCache, String key) {
+        for (String topologyId : state.activeStorms()) {
+            Map<String, Object> topoConf = null;
+            try {
+                topoConf = readTopoConfAsNimbus(topologyId, topoCache);
+            } catch (KeyNotFoundException | AuthorizationException | IOException e) {
+                continue;
+            }
+            if (topoConf == null) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+            if (blobstoreMap != null && blobstoreMap.containsKey(key)) {
+                return topologyId;
+            }
+        }
+        return null;
+    }
+
     private static Map<String, Object> tryReadTopoConf(String topoId, TopoCache tc)
         throws NotAliveException, AuthorizationException, IOException {
         try {
@@ -1105,7 +1132,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      * @param topoConf initial topology conf
      * @param topology  the Storm topology
      */
-    private static Map<String, Object> normalizeConf(Map<String, Object> conf, Map<String, Object> topoConf, StormTopology topology) {
+    static Map<String, Object> normalizeConf(Map<String, Object> conf, Map<String, Object> topoConf, StormTopology topology) {
+
+        // clear any values from the topoConf that it should not be setting.
+        topoConf.remove(Config.STORM_WORKERS_ARTIFACTS_DIR);
+
         //ensure that serializations are same for all tasks no matter what's on
         // the supervisors. this also allows you to declare the serializations as a sequence
         List<Map<String, Object>> allConfs = new ArrayList<>();
@@ -1150,6 +1181,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         if (!mergedConf.containsKey(Config.TOPOLOGY_METRICS_REPORTERS) && mergedConf.containsKey(Config.STORM_METRICS_REPORTERS)) {
             ret.put(Config.TOPOLOGY_METRICS_REPORTERS, mergedConf.get(Config.STORM_METRICS_REPORTERS));
+        }
+
+        // add any system metrics reporters to the topology metrics reporters
+        if (conf.containsKey(Config.STORM_TOPOLOGY_METRICS_SYSTEM_REPORTERS)) {
+            List<Map<String, Object>> reporters = (List<Map<String, Object>>)
+                    ret.computeIfAbsent(Config.TOPOLOGY_METRICS_REPORTERS, (key) -> new ArrayList<>());
+            List<Map<String, Object>> systemReporters = (List<Map<String, Object>>)
+                    conf.get(Config.STORM_TOPOLOGY_METRICS_SYSTEM_REPORTERS);
+            reporters.addAll(systemReporters);
         }
 
         // Don't allow topoConf to override various cluster-specific properties.
@@ -2281,10 +2321,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         scheduler.schedule(topologies, cluster);
         //Get and set the start time before getting current time in order to avoid potential race with the longest-scheduling-time-ms gauge
         final Long startTime = schedulingStartTimeNs.getAndSet(null);
-        long elapsed = Time.nanoTime() - startTime;
-        longestSchedulingTime.accumulateAndGet(elapsed, Math::max);
-        schedulingDuration.update(elapsed, TimeUnit.NANOSECONDS);
-        LOG.debug("Scheduling took {} ms for {} topologies", elapsed, topologies.getTopologies().size());
+        long elapsedNs = Time.nanoTime() - startTime;
+        longestSchedulingTime.accumulateAndGet(elapsedNs, Math::max);
+        schedulingDuration.update(elapsedNs, TimeUnit.NANOSECONDS);
+        LOG.debug("Scheduling took {} ms for {} topologies", TimeUnit.NANOSECONDS.toMillis(elapsedNs), topologies.getTopologies().size());
 
         //merge with existing statuses
         idToSchedStatus.set(Utils.merge(idToSchedStatus.get(), cluster.getStatusMap()));
@@ -3611,12 +3651,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             getComponentPendingProfileActionsCalls.mark();
             CommonTopoInfo info = getCommonTopoInfo(id, "getComponentPendingProfileActions");
-            Map<String, String> nodeToHost = info.assignment.get_node_host();
             Map<List<? extends Number>, List<Object>> exec2hostPort = new HashMap<>();
-            for (Entry<List<Long>, NodeInfo> entry : info.assignment.get_executor_node_port().entrySet()) {
-                NodeInfo ni = entry.getValue();
-                List<Object> hostPort = Arrays.asList(nodeToHost.get(ni.get_node()), ni.get_port_iterator().next().intValue());
-                exec2hostPort.put(entry.getKey(), hostPort);
+            if (info.assignment != null) {
+                Map<String, String> nodeToHost = info.assignment.get_node_host();
+                for (Entry<List<Long>, NodeInfo> entry : info.assignment.get_executor_node_port().entrySet()) {
+                    NodeInfo ni = entry.getValue();
+                    List<Object> hostPort = Arrays.asList(nodeToHost.get(ni.get_node()), ni.get_port_iterator().next().intValue());
+                    exec2hostPort.put(entry.getKey(), hostPort);
+                }
             }
             List<Map<String, Object>> nodeInfos =
                 StatsUtil.extractNodeInfosFromHbForComp(exec2hostPort, info.taskToComponent, false, componentId);
@@ -3896,8 +3938,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     throw new WrappedIllegalStateException(message);
                 }
             }
+            String topoId = topologyUsingThisBlob(stormClusterState, topoCache,  key);
+            if (topoId != null) {
+                String message = "Attempting to delete active blob " + key + " used by topology " + topoId;
+                LOG.warn(message);
+                throw new WrappedIllegalStateException(message);
+            }
             blobStore.deleteBlob(key, getSubject());
-            LOG.info("Deleted blob for key {}", key);
+            LOG.info("Deleted blob for key {} with {}", key, ReqContext.context());
         } catch (Exception e) {
             LOG.warn("delete blob exception.", e);
             if (e instanceof TException) {

@@ -77,7 +77,6 @@ import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.GlobalStreamId;
@@ -102,6 +101,7 @@ import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.data.Id;
 import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import org.apache.storm.shade.org.yaml.snakeyaml.LoaderOptions;
 import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.shade.org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.apache.storm.thrift.TBase;
@@ -176,7 +176,7 @@ public class Utils {
         try {
             in = getConfigFileInputStream(name);
             if (null != in) {
-                Yaml yaml = new Yaml(new SafeConstructor());
+                Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
                 @SuppressWarnings("unchecked")
                 Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(in));
                 if (null != ret) {
@@ -387,6 +387,7 @@ public class Utils {
                                         int priority, final boolean isFactory, boolean startImmediately,
                                         String threadName) {
         SmartThread thread = new SmartThread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     final Callable<Long> fn = isFactory ? (Callable<Long>) afn.call() : afn;
@@ -417,6 +418,7 @@ public class Utils {
             thread.setUncaughtExceptionHandler(eh);
         } else {
             thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                @Override
                 public void uncaughtException(Thread t, Throwable e) {
                     LOG.error("Async loop died!", e);
                     Utils.exitProcess(1, "Async loop died!");
@@ -1233,9 +1235,18 @@ public class Utils {
      */
     public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, NimbusBlobStore client)
         throws InvalidTopologyException, AuthorizationException {
-        Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        Map<String, Map<String, Object>> blobStoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
             for (String key : blobStoreMap.keySet()) {
+
+                Map<String, Object> blobConf = blobStoreMap.get(key);
+                try {
+                    ObjectReader.getBoolean(blobConf.get("uncompress"), false);
+                    ObjectReader.getBoolean(blobConf.get("workerRestart"), false);
+                } catch (IllegalArgumentException e) {
+                    throw new WrappedInvalidTopologyException("Invalid blob conf option: " + e.getMessage());
+                }
+
                 // try to get BlobMeta
                 // This will check if the key exists and if the subject has authorization
                 try {
@@ -1428,7 +1439,7 @@ public class Utils {
 
     public static Object readYamlFile(String yamlFile) {
         try (FileReader reader = new FileReader(yamlFile)) {
-            return new Yaml(new SafeConstructor()).load(reader);
+            return new Yaml(new SafeConstructor(new LoaderOptions())).load(reader);
         } catch (Exception ex) {
             LOG.error("Failed to read yaml file.", ex);
         }
@@ -1676,7 +1687,7 @@ public class Utils {
         if (cp == null || cp.isEmpty()) {
             return conf;
         }
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map<String, Object> defaultsConf = null;
         Map<String, Object> stormConf = null;
 

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -36,7 +36,7 @@ import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.apache.storm.hdfs.testing.MiniDFSClusterExtension;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -45,17 +45,18 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@ExtendWith(MockitoExtension.class)
 public class AvroGenericRecordBoltTest {
 
     private static final String testRoot = "/unittest";
@@ -72,8 +73,9 @@ public class AvroGenericRecordBoltTest {
     private static Schema schema2;
     private static Tuple tuple1;
     private static Tuple tuple2;
-    @Rule
-    public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule(() -> {
+
+    @RegisterExtension
+    public static final MiniDFSClusterExtension DFS_CLUSTER_EXTENSION = new MiniDFSClusterExtension(() -> {
         Configuration conf = new Configuration();
         conf.set("fs.trash.interval", "10");
         conf.setBoolean("dfs.permissions", true);
@@ -89,7 +91,7 @@ public class AvroGenericRecordBoltTest {
     private DistributedFileSystem fs;
     private String hdfsURI;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() {
         Schema.Parser parser = new Schema.Parser();
         schema1 = parser.parse(schemaV1);
@@ -110,8 +112,9 @@ public class AvroGenericRecordBoltTest {
 
     private static Tuple generateTestTuple(GenericRecord record) {
         TopologyBuilder builder = new TopologyBuilder();
-        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(),
-                                                                            new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+        GeneralTopologyContext topologyContext =
+            new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap(), new HashMap<>(),
+                new HashMap<>(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
                 return new Fields("record");
@@ -120,13 +123,13 @@ public class AvroGenericRecordBoltTest {
         return new TupleImpl(topologyContext, new Values(record), topologyContext.getComponentId(1), 1, "");
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
-        fs = dfsClusterRule.getDfscluster().getFileSystem();
+        fs = DFS_CLUSTER_EXTENSION.getDfscluster().getFileSystem();
         hdfsURI = fs.getUri() + "/";
     }
 
-    @After
+    @AfterEach
     public void shutDown() throws IOException {
         fs.close();
     }
@@ -141,12 +144,12 @@ public class AvroGenericRecordBoltTest {
         bolt.execute(tuple1);
         bolt.execute(tuple1);
 
-        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
+        assertEquals(1, countNonZeroLengthFiles(testRoot));
         verifyAllAvroFiles(testRoot);
     }
 
     @Test
-    public void multipleTuplesMutliplesFiles() throws IOException {
+    public void multipleTuplesMultiplesFiles() throws IOException {
         AvroGenericRecordBolt bolt = makeAvroBolt(hdfsURI, 1, .0001f, schemaV1);
 
         bolt.prepare(new Config(), topologyContext, collector);
@@ -155,7 +158,7 @@ public class AvroGenericRecordBoltTest {
         bolt.execute(tuple1);
         bolt.execute(tuple1);
 
-        Assert.assertEquals(4, countNonZeroLengthFiles(testRoot));
+        assertEquals(4, countNonZeroLengthFiles(testRoot));
         verifyAllAvroFiles(testRoot);
     }
 
@@ -168,7 +171,7 @@ public class AvroGenericRecordBoltTest {
         bolt.execute(tuple2);
 
         //Schema change should have forced a rotation
-        Assert.assertEquals(2, countNonZeroLengthFiles(testRoot));
+        assertEquals(2, countNonZeroLengthFiles(testRoot));
 
         verifyAllAvroFiles(testRoot);
     }
@@ -182,7 +185,7 @@ public class AvroGenericRecordBoltTest {
         bolt.execute(tuple2);
 
         //Schema changes should have forced file rotations
-        Assert.assertEquals(2, countNonZeroLengthFiles(testRoot));
+        assertEquals(2, countNonZeroLengthFiles(testRoot));
         verifyAllAvroFiles(testRoot);
     }
 
@@ -201,7 +204,7 @@ public class AvroGenericRecordBoltTest {
         bolt.execute(tuple2);
 
         //Two distinct schema should result in only two files
-        Assert.assertEquals(2, countNonZeroLengthFiles(testRoot));
+        assertEquals(2, countNonZeroLengthFiles(testRoot));
         verifyAllAvroFiles(testRoot);
     }
 

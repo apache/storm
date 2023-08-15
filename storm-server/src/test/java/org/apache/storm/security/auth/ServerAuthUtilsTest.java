@@ -18,13 +18,14 @@
 
 package org.apache.storm.security.auth;
 
+import org.apache.storm.DaemonConfig;
+import org.junit.jupiter.api.Test;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.storm.DaemonConfig;
-import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class ServerAuthUtilsTest {
 
@@ -54,9 +55,7 @@ public class ServerAuthUtilsTest {
         conf.put(
             DaemonConfig.DRPC_HTTP_CREDS_PLUGIN, AuthUtilsTestMock.class.getName());
 
-        assertTrue(
-            ServerAuthUtils.getUiHttpCredentialsPlugin(conf).getClass() == AuthUtilsTestMock.class);
-        assertTrue(
-            ServerAuthUtils.getDrpcHttpCredentialsPlugin(conf).getClass() == AuthUtilsTestMock.class);
+        assertSame(ServerAuthUtils.getUiHttpCredentialsPlugin(conf).getClass(), AuthUtilsTestMock.class);
+        assertSame(ServerAuthUtils.getDrpcHttpCredentialsPlugin(conf).getClass(), AuthUtilsTestMock.class);
     }
 }

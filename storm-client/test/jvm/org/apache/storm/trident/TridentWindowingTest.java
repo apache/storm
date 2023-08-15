@@ -24,8 +24,10 @@ import org.apache.storm.trident.windowing.strategy.SlidingDurationWindowStrategy
 import org.apache.storm.trident.windowing.strategy.TumblingCountWindowStrategy;
 import org.apache.storm.trident.windowing.strategy.TumblingDurationWindowStrategy;
 import org.apache.storm.trident.windowing.strategy.WindowStrategy;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -33,52 +35,52 @@ import org.junit.Test;
 public class TridentWindowingTest {
 
     @Test
-    public void testWindowStrategyInstances() throws Exception {
+    public void testWindowStrategyInstances() {
 
         WindowStrategy<Object> tumblingCountStrategy = TumblingCountWindow.of(10).getWindowStrategy();
-        Assert.assertTrue(tumblingCountStrategy instanceof TumblingCountWindowStrategy);
+        assertTrue(tumblingCountStrategy instanceof TumblingCountWindowStrategy);
 
         WindowStrategy<Object> slidingCountStrategy = SlidingCountWindow.of(100, 10).getWindowStrategy();
-        Assert.assertTrue(slidingCountStrategy instanceof SlidingCountWindowStrategy);
+        assertTrue(slidingCountStrategy instanceof SlidingCountWindowStrategy);
 
         WindowStrategy<Object> tumblingDurationStrategy = TumblingDurationWindow.of(
             new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS))
                                                                                 .getWindowStrategy();
-        Assert.assertTrue(tumblingDurationStrategy instanceof TumblingDurationWindowStrategy);
+        assertTrue(tumblingDurationStrategy instanceof TumblingDurationWindowStrategy);
 
         WindowStrategy<Object> slidingDurationStrategy = SlidingDurationWindow.of(
             new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS),
             new BaseWindowedBolt.Duration(2, TimeUnit.SECONDS))
                                                                               .getWindowStrategy();
-        Assert.assertTrue(slidingDurationStrategy instanceof SlidingDurationWindowStrategy);
+        assertTrue(slidingDurationStrategy instanceof SlidingDurationWindowStrategy);
     }
 
     @Test
     public void testWindowConfig() {
         int windowLength = 9;
         TumblingCountWindow tumblingCountWindow = TumblingCountWindow.of(windowLength);
-        Assert.assertTrue(tumblingCountWindow.getWindowLength() == windowLength);
-        Assert.assertTrue(tumblingCountWindow.getSlidingLength() == windowLength);
+        assertTrue(tumblingCountWindow.getWindowLength() == windowLength);
+        assertTrue(tumblingCountWindow.getSlidingLength() == windowLength);
 
         windowLength = 10;
         int slidingLength = 2;
         SlidingCountWindow slidingCountWindow = SlidingCountWindow.of(10, 2);
-        Assert.assertTrue(slidingCountWindow.getWindowLength() == windowLength);
-        Assert.assertTrue(slidingCountWindow.getSlidingLength() == slidingLength);
+        assertTrue(slidingCountWindow.getWindowLength() == windowLength);
+        assertTrue(slidingCountWindow.getSlidingLength() == slidingLength);
 
         windowLength = 20;
         TumblingDurationWindow tumblingDurationWindow =
             TumblingDurationWindow.of(new BaseWindowedBolt.Duration(windowLength, TimeUnit.SECONDS));
-        Assert.assertTrue(tumblingDurationWindow.getWindowLength() == windowLength * 1000);
-        Assert.assertTrue(tumblingDurationWindow.getSlidingLength() == windowLength * 1000);
+        assertTrue(tumblingDurationWindow.getWindowLength() == windowLength * 1000);
+        assertTrue(tumblingDurationWindow.getSlidingLength() == windowLength * 1000);
 
         windowLength = 50;
         slidingLength = 10;
         SlidingDurationWindow slidingDurationWindow =
             SlidingDurationWindow.of(new BaseWindowedBolt.Duration(windowLength, TimeUnit.SECONDS),
                                      new BaseWindowedBolt.Duration(slidingLength, TimeUnit.SECONDS));
-        Assert.assertTrue(slidingDurationWindow.getWindowLength() == windowLength * 1000);
-        Assert.assertTrue(slidingDurationWindow.getSlidingLength() == slidingLength * 1000);
+        assertTrue(slidingDurationWindow.getWindowLength() == windowLength * 1000);
+        assertTrue(slidingDurationWindow.getSlidingLength() == slidingLength * 1000);
     }
 
     @Test
@@ -93,11 +95,11 @@ public class TridentWindowingTest {
         }
 
         for (int i = 0; i < ct; i++) {
-            Assert.assertTrue((valuePrefix + i).equals(store.get(keyPrefix + i)));
+            assertTrue((valuePrefix + i).equals(store.get(keyPrefix + i)));
         }
 
         store.remove(keyPrefix + 1);
-        Assert.assertNull(store.get(keyPrefix + 1));
+        assertNull(store.get(keyPrefix + 1));
 
     }
 

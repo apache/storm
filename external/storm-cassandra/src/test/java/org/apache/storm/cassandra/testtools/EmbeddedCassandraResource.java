@@ -22,7 +22,9 @@ import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.service.CassandraDaemon;
 import org.apache.cassandra.utils.FBUtilities;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
  *
@@ -43,7 +45,7 @@ import org.junit.rules.ExternalResource;
  *
  */
 
-public class EmbeddedCassandraResource extends ExternalResource {
+public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCallback {
     private final String host;
     private final Integer nativeTransportPort;
     CassandraDaemon cassandraDaemon;
@@ -61,12 +63,12 @@ public class EmbeddedCassandraResource extends ExternalResource {
     }
 
     @Override
-    protected void before() throws Throwable {
+    public void beforeAll(ExtensionContext arg0) {
         cassandraDaemon.start();
     }
 
     @Override
-    protected void after() {
+    public void afterAll(ExtensionContext arg0) {
 
         // Cassandra daemon calls System.exit() on windows, which kills the test.
         // Stop services without killing the process instead.

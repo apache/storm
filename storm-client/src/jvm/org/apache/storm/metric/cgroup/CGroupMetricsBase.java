@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Base class for checking if CGroups are enabled, etc.
  */
+@Deprecated
 public abstract class CGroupMetricsBase<T> implements IMetric {
     private static final Logger LOG = LoggerFactory.getLogger(CGroupMetricsBase.class);
     private boolean enabled;

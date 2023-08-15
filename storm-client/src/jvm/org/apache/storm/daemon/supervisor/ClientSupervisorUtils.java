@@ -61,10 +61,15 @@ public class ClientSupervisorUtils {
     }
 
     public static int processLauncherAndWait(Map<String, Object> conf, String user, List<String> args,
-                                             final Map<String, String> environment, final String logPreFix)
+                                             final Map<String, String> environment, final String logPreFix) throws IOException {
+        return processLauncherAndWait(conf, user, args, environment, logPreFix, null);
+    }
+
+    public static int processLauncherAndWait(Map<String, Object> conf, String user, List<String> args,
+                                             final Map<String, String> environment, final String logPreFix, File dir)
         throws IOException {
         int ret = 0;
-        Process process = processLauncher(conf, user, null, args, environment, null, null, null);
+        Process process = processLauncher(conf, user, null, args, environment, null, null, dir);
         if (StringUtils.isNotBlank(logPreFix)) {
             Utils.readAndLogStream(logPreFix, process.getInputStream());
         }

@@ -12,18 +12,18 @@
 
 package org.apache.storm.container.docker;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DockerExecCommandTest {
 
     private DockerExecCommand dockerExecCommand;
     private static final String CONTAINER_NAME = "container_name";
 
-    @Before
+    @BeforeEach
     public void setup() {
         dockerExecCommand = new DockerExecCommand(CONTAINER_NAME);
     }

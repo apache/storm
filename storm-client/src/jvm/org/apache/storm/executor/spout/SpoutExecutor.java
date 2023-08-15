@@ -23,12 +23,12 @@ import org.apache.storm.ICredentialsListener;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
-import org.apache.storm.daemon.metrics.SpoutThrottlingMetrics;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.executor.TupleInfo;
 import org.apache.storm.hooks.info.SpoutAckInfo;
 import org.apache.storm.hooks.info.SpoutFailInfo;
+import org.apache.storm.metrics2.RateCounter;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.IWaitStrategy.WaitSituation;
 import org.apache.storm.spout.ISpout;
@@ -56,7 +56,6 @@ public class SpoutExecutor extends Executor {
     private final AtomicBoolean lastActive;
     private final MutableLong emittedCount;
     private final MutableLong emptyEmitStreak;
-    private final SpoutThrottlingMetrics spoutThrottlingMetrics;
     private final boolean hasAckers;
     private final SpoutExecutorStats stats;
     SpoutOutputCollectorImpl spoutOutputCollector;
@@ -65,6 +64,9 @@ public class SpoutExecutor extends Executor {
     private List<SpoutOutputCollector> outputCollectors;
     private RotatingMap<Long, TupleInfo> pending;
     private long threadId = 0;
+    private final RateCounter skippedMaxSpoutMs;
+    private final RateCounter skippedInactiveMs;
+    private final RateCounter skippedBackpressureMs;
 
     public SpoutExecutor(final WorkerState workerData, final List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials, ClientStatsUtil.SPOUT);
@@ -77,9 +79,14 @@ public class SpoutExecutor extends Executor {
         this.hasAckers = StormCommon.hasAckers(topoConf);
         this.emittedCount = new MutableLong(0);
         this.emptyEmitStreak = new MutableLong(0);
-        this.spoutThrottlingMetrics = new SpoutThrottlingMetrics();
         this.stats = new SpoutExecutorStats(
             ConfigUtils.samplingRate(this.getTopoConf()), ObjectReader.getInt(this.getTopoConf().get(Config.NUM_STAT_BUCKETS)));
+        this.skippedMaxSpoutMs = workerData.getMetricRegistry().rateCounter("__skipped-max-spout-ms", componentId,
+                taskIds.get(0));
+        this.skippedInactiveMs = workerData.getMetricRegistry().rateCounter("__skipped-inactive-ms", componentId,
+                taskIds.get(0));
+        this.skippedBackpressureMs = workerData.getMetricRegistry().rateCounter("__skipped-backpressure-ms", componentId,
+                taskIds.get(0));
     }
 
     @Override
@@ -116,8 +123,6 @@ public class SpoutExecutor extends Executor {
             }
         });
 
-        this.spoutThrottlingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0) - idToTaskBase).getUserContext());
-        this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0) - idToTaskBase).getUserContext());
         this.outputCollectors = new ArrayList<>();
         for (int i = 0; i < idToTask.size(); ++i) {
             Task taskData = idToTask.get(i);
@@ -224,7 +229,7 @@ public class SpoutExecutor extends Executor {
                     LOG.debug("Experiencing Back Pressure from downstream components. Entering BackPressure Wait.");
                 }
                 bpIdleCount = backPressureWaitStrategy.idle(bpIdleCount);
-                spoutThrottlingMetrics.skippedBackPressureMs(Time.currentTimeMillis() - start);
+                skippedBackpressureMs.inc(Time.currentTimeMillis() - start);
             }
 
             private void spoutWaitStrategy(boolean reachedMaxSpoutPending, long emptyStretch) throws InterruptedException {
@@ -232,7 +237,7 @@ public class SpoutExecutor extends Executor {
                 long start = Time.currentTimeMillis();
                 swIdleCount = spoutWaitStrategy.idle(swIdleCount);
                 if (reachedMaxSpoutPending) {
-                    spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
+                    skippedMaxSpoutMs.inc(Time.currentTimeMillis() - start);
                 } else {
                     if (emptyStretch > 0) {
                         LOG.debug("Ending Spout Wait Stretch of {}", emptyStretch);
@@ -275,7 +280,7 @@ public class SpoutExecutor extends Executor {
         }
         long start = Time.currentTimeMillis();
         Time.sleep(100);
-        spoutThrottlingMetrics.skippedInactiveMs(Time.currentTimeMillis() - start);
+        skippedInactiveMs.inc(Time.currentTimeMillis() - start);
     }
 
     @Override

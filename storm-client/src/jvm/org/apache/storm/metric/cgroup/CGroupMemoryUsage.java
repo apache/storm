@@ -20,6 +20,7 @@ import org.apache.storm.container.cgroup.core.MemoryCore;
 /**
  * Reports the current memory usage of the cgroup for this worker.
  */
+@Deprecated
 public class CGroupMemoryUsage extends CGroupMetricsBase<Long> {
 
     public CGroupMemoryUsage(Map<String, Object> conf) {

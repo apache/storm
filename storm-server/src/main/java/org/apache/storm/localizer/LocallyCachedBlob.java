@@ -15,6 +15,7 @@ package org.apache.storm.localizer;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
+
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.generated.AuthorizationException;
@@ -61,7 +64,7 @@ public abstract class LocallyCachedBlob {
      * Create a new LocallyCachedBlob.
      *
      * @param blobDescription a description of the blob this represents.  Typically it should at least be the blob key, but ideally also
-     *     include if it is an archive or not, what user or topology it is for, or if it is a storm.jar etc.
+     *                        include if it is an archive or not, what user or topology it is for, or if it is a storm.jar etc.
      */
     protected LocallyCachedBlob(String blobDescription, String blobKey, StormMetricsRegistry metricsRegistry) {
         this.blobDescription = blobDescription;
@@ -73,15 +76,16 @@ public abstract class LocallyCachedBlob {
 
     /**
      * Helper function to download blob from blob store.
-     * @param store Blob store to fetch blobs from
-     * @param key Key to retrieve blobs
-     * @param pathSupplier A function that supplies the download destination of a blob. It guarantees the validity
-     *                     of path or throws {@link IOException}
+     *
+     * @param store             Blob store to fetch blobs from
+     * @param key               Key to retrieve blobs
+     * @param pathSupplier      A function that supplies the download destination of a blob. It guarantees the validity
+     *                          of path or throws {@link IOException}
      * @param outStreamSupplier A function that supplies the {@link OutputStream} object
      * @return The metadata of the download session, including blob's version and download destination
-     * @throws KeyNotFoundException Thrown if key to retrieve blob is invalid
+     * @throws KeyNotFoundException   Thrown if key to retrieve blob is invalid
      * @throws AuthorizationException Thrown if the retrieval is not under security authorization
-     * @throws IOException Thrown if any IO error occurs
+     * @throws IOException            Thrown if any IO error occurs
      */
     protected DownloadMeta fetch(ClientBlobStore store, String key,
                                  IOFunction<Long, Path> pathSupplier,
@@ -149,6 +153,7 @@ public abstract class LocallyCachedBlob {
      * Commit the new version and make it available for the end user.
      * PRECONDITION: uncompressToTempLocationIfNeeded will have been called.
      * PRECONDITION: this can only be called with a lock on this instance held.
+     *
      * @param version the version of the blob to commit.
      */
     protected abstract void commitNewVersion(long version) throws IOException;
@@ -176,6 +181,7 @@ public abstract class LocallyCachedBlob {
 
     /**
      * Get the size of p in bytes.
+     *
      * @param p the path to read.
      * @return the size of p in bytes.
      */
@@ -186,16 +192,18 @@ public abstract class LocallyCachedBlob {
             return Files.size(p);
         } else {
             //We will not follow sym links
-            return Files.walk(p)
-                    .filter((subp) -> Files.isRegularFile(subp, LinkOption.NOFOLLOW_LINKS))
-                    .mapToLong((subp) -> {
-                        try {
-                            return Files.size(subp);
-                        } catch (IOException e) {
-                            LOG.warn("Could not get the size of {}", subp);
-                        }
-                        return 0;
-                    }).sum();
+            try (Stream<Path> stream = Files.walk(p)) {
+                return
+                        stream.filter((subp) -> Files.isRegularFile(subp, LinkOption.NOFOLLOW_LINKS))
+                                .mapToLong((subp) -> {
+                                    try {
+                                        return Files.size(subp);
+                                    } catch (IOException e) {
+                                        LOG.warn("Could not get the size of {}", subp);
+                                    }
+                                    return 0;
+                                }).sum();
+            }
         }
     }
 
@@ -223,8 +231,9 @@ public abstract class LocallyCachedBlob {
 
     /**
      * Mark that a given port and assignment are using this.
+     *
      * @param pna the slot and assignment that are using this blob.
-     * @param cb an optional callback indicating that they want to know/synchronize when a blob is updated.
+     * @param cb  an optional callback indicating that they want to know/synchronize when a blob is updated.
      */
     public void addReference(final PortAndAssignment pna, BlobChangingCallback cb) {
         touch();
@@ -239,6 +248,7 @@ public abstract class LocallyCachedBlob {
 
     /**
      * Removes a reservation for this blob from a given slot and assignemnt.
+     *
      * @param pna the slot + assignment that no longer needs this blob.
      * @return false if a reference was failed to be removed
      */
@@ -272,11 +282,11 @@ public abstract class LocallyCachedBlob {
         commitNewVersion(newVersion);
         doneUpdating.complete(null);
     }
-    
+
     /**
      * Inform all of the callbacks that a change is going to happen and then wait for
      * them to all get back that it is OK to make that change.
-     * 
+     *
      * @return A future to complete when the change is committed
      */
     private CompletableFuture<Void> informAllOfChangeAndWaitForConsensus() {
@@ -319,11 +329,10 @@ public abstract class LocallyCachedBlob {
     /**
      * Checks to see if the local blob requires update with respect to a remote blob.
      *
-     * @param blobStore the client blobstore
+     * @param blobStore                 the client blobstore
      * @param remoteBlobstoreUpdateTime last update time of remote blobstore
      * @return true of the local blob requires update, false otherwise.
-     *
-     * @throws KeyNotFoundException if the remote blob is missing
+     * @throws KeyNotFoundException   if the remote blob is missing
      * @throws AuthorizationException if authorization is failed
      */
     boolean requiresUpdate(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime) throws KeyNotFoundException, AuthorizationException {
@@ -357,12 +366,11 @@ public abstract class LocallyCachedBlob {
     /**
      * Downloads a blob locally.
      *
-     * @param blobStore the client blobstore
+     * @param blobStore                 the client blobstore
      * @param remoteBlobstoreUpdateTime last modification time of remote blobstore
-     *
-     * @throws KeyNotFoundException if the remote blob is missing
+     * @throws KeyNotFoundException   if the remote blob is missing
      * @throws AuthorizationException if authorization is failed
-     * @throws IOException on errors
+     * @throws IOException            on errors
      */
     private void download(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime)
             throws AuthorizationException, IOException, KeyNotFoundException {
@@ -384,12 +392,11 @@ public abstract class LocallyCachedBlob {
     /**
      * Checks and downloads a blob locally as necessary.
      *
-     * @param blobStore the client blobstore
+     * @param blobStore                 the client blobstore
      * @param remoteBlobstoreUpdateTime last update time of remote blobstore
-     *
-     * @throws KeyNotFoundException if the remote blob is missing
+     * @throws KeyNotFoundException   if the remote blob is missing
      * @throws AuthorizationException if authorization is failed
-     * @throws IOException on errors
+     * @throws IOException            on errors
      */
     public void update(ClientBlobStore blobStore, long remoteBlobstoreUpdateTime)
             throws KeyNotFoundException, AuthorizationException, IOException {

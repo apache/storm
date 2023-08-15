@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -29,9 +29,13 @@ import org.apache.storm.generated.WorkerTokenInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.utils.Time;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 public class WorkerTokenTest {
@@ -45,7 +49,7 @@ public class WorkerTokenTest {
         final WorkerTokenServiceType type = WorkerTokenServiceType.NIMBUS;
         final long versionNumber = 0L;
         //Simulate time starts out at 0, so we are going to just leave it here.
-        try (Time.SimulatedTime sim = new Time.SimulatedTime()) {
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime()) {
             IStormClusterState mockState = mock(IStormClusterState.class);
             Map<String, Object> conf = new HashMap<>();
             WorkerTokenManager wtm = new WorkerTokenManager(conf, mockState);
@@ -97,7 +101,7 @@ public class WorkerTokenTest {
         final WorkerTokenServiceType type = WorkerTokenServiceType.NIMBUS;
         final long versionNumber = 5L;
         //Simulate time starts out at 0, so we are going to just leave it here.
-        try (Time.SimulatedTime sim = new Time.SimulatedTime()) {
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime()) {
             IStormClusterState mockState = mock(IStormClusterState.class);
             Map<String, Object> conf = new HashMap<>();
             WorkerTokenManager wtm = new WorkerTokenManager(conf, mockState);
@@ -149,7 +153,7 @@ public class WorkerTokenTest {
             //Verify if WorkerTokenManager recognizes the expired WorkerToken.
             Map<String, String> creds = new HashMap<>();
             ClientAuthUtils.setWorkerToken(creds, wt);
-            assertTrue("Expired WorkerToken should be eligible for renewal", wtm.shouldRenewWorkerToken(creds, type));
+            assertTrue(wtm.shouldRenewWorkerToken(creds, type), "Expired WorkerToken should be eligible for renewal");
         }
     }
 }

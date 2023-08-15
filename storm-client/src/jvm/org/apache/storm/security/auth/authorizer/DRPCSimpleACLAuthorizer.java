@@ -52,25 +52,28 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
             Map<String, AclFunctionEntry> acl = new HashMap<>();
             Map<String, Object> conf = Utils.findAndReadConfigFile(aclFileName);
             if (conf.containsKey(Config.DRPC_AUTHORIZER_ACL)) {
-                Map<String, Map<String, ?>> confAcl =
-                    (Map<String, Map<String, ?>>)
-                        conf.get(Config.DRPC_AUTHORIZER_ACL);
+                Map<String, Map<String, ?>> confAcl = (Map<String, Map<String, ?>>) conf.get(Config.DRPC_AUTHORIZER_ACL);
 
-                for (Map.Entry<String, Map<String, ?>> entry : confAcl.entrySet()) {
-                    Map<String, ?> val = entry.getValue();
-                    Collection<String> clientUsers = val.containsKey(CLIENT_USERS_KEY)
-                            ? (Collection<String>) val.get(CLIENT_USERS_KEY)
-                            : null;
-                    String invocationUser = val.containsKey(INVOCATION_USER_KEY)
-                            ? (String) val.get(INVOCATION_USER_KEY)
-                            : null;
-                    acl.put(entry.getKey(),
-                            new AclFunctionEntry(clientUsers, invocationUser));
+                if (confAcl != null) {
+                    for (Map.Entry<String, Map<String, ?>> entry : confAcl.entrySet()) {
+                        Map<String, ?> val = entry.getValue();
+                        Collection<String> clientUsers = val.containsKey(CLIENT_USERS_KEY)
+                                ? (Collection<String>) val.get(CLIENT_USERS_KEY)
+                                : null;
+                        String invocationUser = val.containsKey(INVOCATION_USER_KEY)
+                                ? (String) val.get(INVOCATION_USER_KEY)
+                                : null;
+                        acl.put(entry.getKey(),
+                                new AclFunctionEntry(clientUsers, invocationUser));
+                    }
                 }
-            } else if (!permitWhenMissingFunctionEntry) {
+            }
+
+            this.acl = acl;
+            if (this.acl.isEmpty() && !permitWhenMissingFunctionEntry) {
                 LOG.warn("Requiring explicit ACL entries, but none given. Therefore, all operations will be denied.");
             }
-            this.acl = acl;
+
             lastUpdate = System.currentTimeMillis();
         }
         return acl;

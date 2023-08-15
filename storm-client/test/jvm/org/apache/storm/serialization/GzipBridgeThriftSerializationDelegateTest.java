@@ -13,22 +13,22 @@
 package org.apache.storm.serialization;
 
 import org.apache.storm.generated.GlobalStreamId;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class GzipBridgeThriftSerializationDelegateTest {
     SerializationDelegate testDelegate;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         testDelegate = new GzipBridgeThriftSerializationDelegate();
     }
 
     @Test
-    public void testDeserialize_readingFromGzip() throws Exception {
+    public void testDeserialize_readingFromGzip() {
         GlobalStreamId id = new GlobalStreamId("first", "second");
 
         byte[] serialized = new GzipThriftSerializationDelegate().serialize(id);
@@ -40,7 +40,7 @@ public class GzipBridgeThriftSerializationDelegateTest {
     }
 
     @Test
-    public void testDeserialize_readingFromGzipBridge() throws Exception {
+    public void testDeserialize_readingFromGzipBridge() {
         GlobalStreamId id = new GlobalStreamId("first", "second");
 
         byte[] serialized = new GzipBridgeThriftSerializationDelegate().serialize(id);
@@ -52,7 +52,7 @@ public class GzipBridgeThriftSerializationDelegateTest {
     }
 
     @Test
-    public void testDeserialize_readingFromDefault() throws Exception {
+    public void testDeserialize_readingFromDefault() {
         GlobalStreamId id = new GlobalStreamId("A", "B");
 
         byte[] serialized = new ThriftSerializationDelegate().serialize(id);

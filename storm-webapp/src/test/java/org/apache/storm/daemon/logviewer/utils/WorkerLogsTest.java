@@ -18,12 +18,11 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,7 +36,7 @@ import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Utils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class WorkerLogsTest {
 
@@ -59,7 +58,7 @@ public class WorkerLogsTest {
             Map<String, Object> stormConf = Utils.readStormConfig();
             WorkerLogs workerLogs = new WorkerLogs(stormConf, port1Dir, new StormMetricsRegistry()) {
                 @Override
-                public Optional<Path> getMetadataFileForWorkerLogDir(Path logDir) throws IOException {
+                public Optional<Path> getMetadataFileForWorkerLogDir(Path logDir) {
                     return Optional.of(metaFile);
                 }
 

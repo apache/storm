@@ -20,7 +20,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>2.6.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -39,9 +39,20 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>${kryo.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-clojure</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.esotericsoftware</groupId>
+                    <artifactId>kryo</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -58,17 +69,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!--Hadoop Mini Cluster cannot use log4j2 bridge,
-        Surefire has a way to exclude the conflicting log4j API jar
-        from the classpath, classpathDependencyExcludes, but it didn't work in practice.
-        This is here as a work around to place it at the beginning of the classpath
-        even though maven does not officially support ordering of the classpath.-->
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-            <scope>test</scope>
-        </dependency>
         <!--clojure-->
         <dependency>
             <groupId>org.clojure</groupId>
@@ -149,7 +149,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>java-hamcrest</artifactId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -218,6 +218,21 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <!--
+            This jar is pulled in as a transitive dependency from
+            org.apache.hadoop:hadoop-auth
+                -> com.nimbusds:nimbus-jose-jwt
+                -> com.github.stephenc.jcip:jcip-annotations
+            But is being downloaded from http://conjars.org/repo which is no longer active,
+
+            Download this directly from maven repository and avoid long build timeouts due to multiple failed attempts
+            to download from conjars.org
+            -->
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>${json-smart.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -435,9 +450,9 @@
                                 <id>pre-test-jacoco-clean</id>
                                 <phase>process-test-classes</phase>
                                 <configuration>
-                                    <tasks>
+                                    <target>
                                         <delete file="target\jacoco.exec" />
-                                    </tasks>
+                                    </target>
                                 </configuration>
                                 <goals>
                                     <goal>run</goal>
