@@ -11,6 +11,11 @@ List of third-party dependencies grouped by their license type.
 
     Apache-2.0
 
+        * ActiveMQ :: Broker (org.apache.activemq:activemq-broker:5.18.2 - http://activemq.apache.org/activemq-broker)
+        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.18.2 - http://activemq.apache.org/activemq-client)
+        * ActiveMQ :: KahaDB Store (org.apache.activemq:activemq-kahadb-store:5.18.2 - http://activemq.apache.org/activemq-kahadb-store)
+        * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.18.2 - http://activemq.apache.org/activemq-mqtt)
+        * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.18.2 - http://activemq.apache.org/activemq-openwire-legacy)
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.3 - https://github.com/xerial/snappy-java)
@@ -23,11 +28,6 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0
 
-        * ActiveMQ :: Broker (org.apache.activemq:activemq-broker:5.16.5 - http://activemq.apache.org/activemq-broker)
-        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.16.5 - http://activemq.apache.org/activemq-client)
-        * ActiveMQ :: KahaDB Store (org.apache.activemq:activemq-kahadb-store:5.16.5 - http://activemq.apache.org/activemq-kahadb-store)
-        * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.16.5 - http://activemq.apache.org/activemq-mqtt)
-        * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.16.5 - http://activemq.apache.org/activemq-openwire-legacy)
         * Aether :: API (org.sonatype.aether:aether-api:1.7 - http://aether.sonatype.org/aether-api/)
         * Aether :: Implementation (org.sonatype.aether:aether-impl:1.7 - http://aether.sonatype.org/aether-impl/)
         * Aether :: SPI (org.sonatype.aether:aether-spi:1.7 - http://aether.sonatype.org/aether-spi/)
@@ -60,7 +60,6 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.8.1 - http://commons.apache.org/proper/commons-lang/)
         * Apache Commons Logging (commons-logging:commons-logging:1.2 - http://commons.apache.org/proper/commons-logging/)
         * Apache Commons Math (org.apache.commons:commons-math3:3.6.1 - http://commons.apache.org/proper/commons-math/)
-        * Apache Commons Net (commons-net:commons-net:3.8.0 - https://commons.apache.org/proper/commons-net/)
         * Apache Commons Pool (org.apache.commons:commons-pool2:2.4.2 - http://commons.apache.org/proper/commons-pool/)
         * Apache Commons Text (org.apache.commons:commons-text:1.2 - http://commons.apache.org/proper/commons-text/)
         * Apache Curator (org.apache.curator:apache-curator:2.7.1 - http://curator.apache.org)
@@ -288,7 +287,6 @@ List of third-party dependencies grouped by their license type.
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.1 - https://github.com/google/guava/failureaccess)
         * Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)
         * Hadoop Metrics2 Reporter for Dropwizard Metrics (com.github.joshelser:dropwizard-metrics-hadoop-metrics2-reporter:0.1.2 - https://github.com/joshelser/dropwizard-hadoop-metrics2)
-        * hawtbuf (org.fusesource.hawtbuf:hawtbuf:1.10 - http://hawtbuf.fusesource.org/hawtbuf)
         * hawtbuf (org.fusesource.hawtbuf:hawtbuf:1.11 - http://hawtbuf.fusesource.org/hawtbuf)
         * hawtdispatch (org.fusesource.hawtdispatch:hawtdispatch:1.22 - http://hawtdispatch.fusesource.org/hawtdispatch/)
         * hawtdispatch-transport (org.fusesource.hawtdispatch:hawtdispatch-transport:1.22 - http://hawtdispatch.fusesource.org/hawtdispatch-transport/)
@@ -321,7 +319,6 @@ List of third-party dependencies grouped by their license type.
         * HPPC Collections (com.carrotsearch:hppc:0.7.1 - http://labs.carrotsearch.com/hppc.html/hppc)
         * htrace-core4 (org.apache.htrace:htrace-core4:4.1.0-incubating - http://incubator.apache.org/projects/htrace.html)
         * htrace-core4 (org.apache.htrace:htrace-core4:4.2.0-incubating - http://incubator.apache.org/projects/htrace.html)
-        * J2EE Management 1.1 (org.apache.geronimo.specs:geronimo-j2ee-management_1.1_spec:1.0.1 - http://geronimo.apache.org/specs/geronimo-j2ee-management_1.1_spec)
         * j2html (com.j2html:j2html:1.0.0 - http://j2html.com)
         * J2ObjC Annotations (com.google.j2objc:j2objc-annotations:1.1 - https://github.com/google/j2objc/)
         * Jackson (org.codehaus.jackson:jackson-core-asl:1.9.13 - http://jackson.codehaus.org)
@@ -361,7 +358,6 @@ List of third-party dependencies grouped by their license type.
         * Jettison (org.codehaus.jettison:jettison:1.1 - no url defined)
         * Jetty SSLEngine (org.mortbay.jetty:jetty-sslengine:6.1.26 - http://jetty.mortbay.org)
         * jffi (com.github.jnr:jffi:1.2.10 - http://github.com/jnr/jffi)
-        * JMS 1.1 (org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-jms_1.1_spec)
         * jnr-constants (com.github.jnr:jnr-constants:0.9.0 - http://github.com/jnr/jnr-constants)
         * jnr-ffi (com.github.jnr:jnr-ffi:2.0.7 - http://github.com/jnr/jnr-ffi)
         * Joda-Time (joda-time:joda-time:2.3 - http://www.joda.org/joda-time/)
@@ -430,8 +426,7 @@ List of third-party dependencies grouped by their license type.
         * Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.0.5 - http://metrics.dropwizard.io/metrics-jmx)
         * Metrics Utility Servlets (io.dropwizard.metrics:metrics-servlets:4.0.5 - http://metrics.dropwizard.io/metrics-servlets)
         * MongoDB Java Driver (org.mongodb:mongo-java-driver:3.2.0 - http://www.mongodb.org)
-        * mqtt-client (org.fusesource.mqtt-client:mqtt-client:1.10 - http://mqtt-client.fusesource.org/mqtt-client/)
-        * mqtt-client (org.fusesource.mqtt-client:mqtt-client:1.14 - http://mqtt-client.fusesource.org/mqtt-client/)
+        * mqtt-client (org.fusesource.mqtt-client:mqtt-client:1.16 - http://mqtt-client.fusesource.org/mqtt-client/)
         * Netty/All-in-One (io.netty:netty-all:4.1.96.Final - https://netty.io/netty-all/)
         * Netty/Buffer (io.netty:netty-buffer:4.1.96.Final - https://netty.io/netty-buffer/)
         * Netty/Codec/DNS (io.netty:netty-codec-dns:4.1.96.Final - https://netty.io/netty-codec-dns/)
@@ -714,6 +709,10 @@ List of third-party dependencies grouped by their license type.
     Eclipse Public License (EPL) 1.0, GNU Lesser General Public License Version 2.1, February 1999
 
         * JGraphT - Core (org.jgrapht:jgrapht-core:0.9.0 - http://www.jgrapht.org/jgrapht-core)
+
+    Eclipse Public License 2.0, GNU General Public License, version 2 with the GNU Classpath Exception
+
+        * Jakarta Messaging API (jakarta.jms:jakarta.jms-api:2.0.3 - https://projects.eclipse.org/projects/ee4j.jms)
 
     Eclipse Public License v. 2.0, GNU General Public License, version 2 with the GNU Classpath Exception
 
