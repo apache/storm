@@ -273,7 +273,7 @@ public class HdfsBlobStoreImplTest {
         }
 
         Map<String, Object> conf = new HashMap<>();
-        try (TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(concurrentTestBlobDir, conf, DFS_CLUSTER_RULE.getHadoopConf())) {
+        try (TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(concurrentTestBlobDir, conf, DFS_CLUSTER_EXTENSION.getHadoopConf())) {
             // test write again
             for (int i = 0 ; i < keyCount ; i++) {
                 String key = CONCURRENT_TEST_KEY_PREFIX + i;
@@ -301,16 +301,16 @@ public class HdfsBlobStoreImplTest {
                 threads[i].join();
             }
             List<String> keys = runnables[0].keys;
-            Assert.assertEquals("Number of keys (values=" + keys + ")", keyCount, keys.size());
+            assertEquals(keyCount, keys.size(), "Number of keys (values=" + keys + ")");
             for (int i = 1 ; i < concurrency ; i++) {
                 ConcurrentListerRunnable otherRunnable = runnables[i];
-                Assert.assertEquals(keys, otherRunnable.keys);
+                assertEquals(keys, otherRunnable.keys);
             }
             for (int i = 0 ; i < keyCount ; i++) {
                 String key = CONCURRENT_TEST_KEY_PREFIX + i;
                 hbs.deleteKey(key);
             }
-            System.out.printf("All %d threads have %d keys=[%s]\n", concurrency, keys.size(), String.join(",", keys));
+           LOG.info("All %d threads have %d keys=[%s]\n", concurrency, keys.size(), String.join(",", keys));
         }
     }
 }
