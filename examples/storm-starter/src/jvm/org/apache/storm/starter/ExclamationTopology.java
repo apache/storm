@@ -33,6 +33,7 @@ public class ExclamationTopology extends ConfigurableTopology {
         ConfigurableTopology.start(new ExclamationTopology(), args);
     }
 
+    @Override
     protected int run(String[] args) {
         TopologyBuilder builder = new TopologyBuilder();
 

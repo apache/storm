@@ -50,7 +50,7 @@ gpg --print-md SHA512 apache-storm-2.2.0.tar.gz > apache-storm-2.2.0.tar.gz.sha5
 
 6. Run `dev-tools/release_notes.py` for the release version, piping the output to a RELEASE_NOTES.html file. Move that file to the svn release directory, sign it, and generate checksums, e.g.
 ```bash
-python dev-tools/release_notes.py 2.2.0 > RELEASE_NOTES.html
+python3 dev-tools/release_notes.py 2.2.0 > RELEASE_NOTES.html
 gpg --armor --output RELEASE_NOTES.html.asc --detach-sig RELEASE_NOTES.html
 gpg --print-md SHA512 RELEASE_NOTES.html > RELEASE_NOTES.html.sha512
 ```
@@ -61,7 +61,7 @@ gpg --print-md SHA512 RELEASE_NOTES.html > RELEASE_NOTES.html.sha512
 
 ## Releasing if the vote succeeds
 
-1. `svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx https://dist.apache.org/repos/release/dev/storm/apache-storm-x.x.x`. This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
+1. `svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx https://dist.apache.org/repos/dist/release/storm/apache-storm-x.x.x`. This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
 
 2. Go to http://repository.apache.org and release the staging repository
 

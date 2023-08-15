@@ -1,5 +1,5 @@
 Master Branch:  
-[![Travis CI](https://travis-ci.org/apache/storm.svg?branch=master)](https://travis-ci.org/apache/storm)
+[![Java CI with Maven](https://github.com/apache/storm/actions/workflows/maven.yaml/badge.svg)](https://github.com/apache/storm/actions/workflows/maven.yaml)
 [![Maven Version](https://maven-badges.herokuapp.com/maven-central/org.apache.storm/storm-core/badge.svg)](http://search.maven.org/#search|gav|1|g:"org.apache.storm"%20AND%20a:"storm-core")
  
 Storm is a distributed realtime computation system. Similar to how Hadoop provides a set of general primitives for doing batch processing, Storm provides a set of general primitives for doing realtime computation. Storm is simple, can be used with any programming language, [is used by many companies](http://storm.apache.org/Powered-By.html), and is a lot of fun to use!
@@ -53,9 +53,6 @@ If you are committers and/or PMCs, or contributors looking for following up and 
 All existing messages will remain archived there, and can be accessed/searched [here](https://groups.google.com/forum/#!forum/storm-user).
 
 New messages sent to storm-user@googlegroups.com will either be rejected/bounced or replied to with a message to direct the email to the appropriate Apache-hosted group.
-
-### IRC
-You can also come to the #storm-user room on [freenode](http://freenode.net/). You can usually find a Storm developer there to help you out.
 
 ## License
 

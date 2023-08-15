@@ -16,24 +16,28 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MultiCountMetric implements IMetric {
-    Map<String, CountMetric> value = new HashMap<>();
+    final Map<String, CountMetric> value = new HashMap<>();
 
     public MultiCountMetric() {
     }
 
     public CountMetric scope(String key) {
-        CountMetric val = value.get(key);
-        if (val == null) {
-            value.put(key, val = new CountMetric());
+        synchronized (value) {
+            CountMetric val = value.get(key);
+            if (val == null) {
+                value.put(key, val = new CountMetric());
+            }
+            return val;
         }
-        return val;
     }
 
     @Override
     public Map<String, Object> getValueAndReset() {
         Map<String, Object> ret = new HashMap<>();
-        for (Map.Entry<String, CountMetric> e : value.entrySet()) {
-            ret.put(e.getKey(), e.getValue().getValueAndReset());
+        synchronized (value) {
+            for (Map.Entry<String, CountMetric> e : value.entrySet()) {
+                ret.put(e.getKey(), e.getValue().getValueAndReset());
+            }
         }
         return ret;
     }

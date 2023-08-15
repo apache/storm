@@ -1185,6 +1185,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             this.slotMetrics = slotMetrics;
         }
 
+        @Override
         public String toString() {
             StringBuffer sb = new StringBuffer();
             sb.append(state);

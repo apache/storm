@@ -46,9 +46,11 @@ public interface ResourceIsolationInterface {
      * This function will be called when the worker needs to shutdown. This function should include logic to clean up
      * after a worker is shutdown.
      *
+     * @param user the user of the worker
      * @param workerId worker id to shutdown and clean up after
+     * @param port the port of the worker
      */
-    void releaseResourcesForWorker(String workerId);
+    void cleanup(String user, String workerId, int port) throws IOException;
 
     /**
      * After reserving resources for the worker (i.e. calling reserveResourcesForWorker),
@@ -127,9 +129,6 @@ public interface ResourceIsolationInterface {
      */
     boolean runProfilingCommand(String user, String workerId, List<String> command, Map<String, String> env,
                                 String logPrefix, File targetDir) throws IOException, InterruptedException;
-
-
-    void cleanup(String user, String workerId, int port) throws IOException;
 
     /**
      * Return true if resources are being managed.

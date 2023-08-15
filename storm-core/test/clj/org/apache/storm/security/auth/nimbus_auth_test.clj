@@ -27,7 +27,7 @@
             AuthorizationException SubmitOptions TopologyInitialStatus KillOptions])
   (:import [org.apache.storm.utils ConfigUtils NimbusClient Utils])
   (:import [org.apache.storm.cluster IStormClusterState])
-  (:import [org.mockito Mockito Matchers])
+  (:import [org.mockito Mockito ArgumentMatchers])
   (:use [org.apache.storm util config daemon-config log])
   (:require [conjure.core])
   (:use [conjure core]))
@@ -99,7 +99,7 @@
         topo-name "topo-name"
         topo-id "topo-name-1"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
-    (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
+    (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (ArgumentMatchers/any))) {})
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder.)
                             (.withClusterState cluster-state)
@@ -163,7 +163,7 @@
         topo-name "topo-name"
         topo-id "topo-name-1"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
-    (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
+    (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (ArgumentMatchers/any))) {})
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder.)
                             (.withClusterState cluster-state)

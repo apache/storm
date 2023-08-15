@@ -13,12 +13,13 @@
 package org.apache.storm.hive.common;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import junit.framework.Assert;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -38,10 +39,10 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestHiveWriter {
     public static final String PART1_NAME = "city";
@@ -54,8 +55,6 @@ public class TestHiveWriter {
     private final int port;
     private final String metaStoreURI;
     private final HiveConf conf;
-    @Rule
-    public TemporaryFolder dbFolder = new TemporaryFolder();
     int timeout = 10000; // msec
     UserGroupInformation ugi = null;
     private ExecutorService callTimeoutPool;
@@ -113,11 +112,11 @@ public class TestHiveWriter {
         writer.write(mapper.mapRecord(tuple));
         tuple = generateTestTuple("2", "def");
         writer.write(mapper.mapRecord(tuple));
-        Assert.assertEquals(writer.getTotalRecords(), 2);
+        assertEquals(writer.getTotalRecords(), 2);
         Mockito.verify(writer.getMockedTxBatch(), Mockito.times(2)).write(Mockito.any(byte[].class));
         Mockito.verify(writer.getMockedTxBatch(), Mockito.never()).commit();
         writer.flush(true);
-        Assert.assertEquals(writer.getTotalRecords(), 0);
+        assertEquals(writer.getTotalRecords(), 0);
         Mockito.verify(writer.getMockedTxBatch(), Mockito.atLeastOnce()).commit();
 
         tuple = generateTestTuple("3", "ghi");

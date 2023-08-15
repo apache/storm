@@ -17,7 +17,6 @@
 package org.apache.storm.st.tests.window;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.storm.st.topology.TestableTopology;
@@ -30,10 +29,10 @@ import org.apache.storm.st.wrapper.TopoWrap;
 import org.apache.storm.thrift.TException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.Assert;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WindowVerifier {
 
@@ -44,7 +43,7 @@ public class WindowVerifier {
      * once the spout and bolt have emitted sufficient tuples.
      * The spout and bolt are required to log exactly one log line per emit/window using {@link StringDecorator}
      */
-    public void runAndVerifyCount(int windowSize, int slideSize, TestableTopology testable, TopoWrap topo) throws IOException, TException, MalformedURLException {
+    public void runAndVerifyCount(int windowSize, int slideSize, TestableTopology testable, TopoWrap topo) throws IOException, TException {
         topo.submitSuccessfully();
         final int minBoltEmits = 5;
         //Sliding windows should produce one window every slideSize tuples
@@ -60,7 +59,7 @@ public class WindowVerifier {
         final List<DecoratedLogLine> allDecoratedBoltLogs = topo.getDecoratedLogLines(boltName);
         final List<DecoratedLogLine> allDecoratedSpoutLogs = topo.getDecoratedLogLines(spoutName);
         //We expect the bolt to log exactly one decorated line per emit
-        Assert.assertTrue(allDecoratedBoltLogs.size() >= minBoltEmits,
+        assertTrue(allDecoratedBoltLogs.size() >= minBoltEmits,
                 "Expecting min " + minBoltEmits + " bolt emits, found: " + allDecoratedBoltLogs.size() + " \n\t" + allDecoratedBoltLogs);
         
         final int numberOfWindows = allDecoratedBoltLogs.size();
@@ -73,7 +72,7 @@ public class WindowVerifier {
             final String actualString = allDecoratedBoltLogs.get(i).toString();
             for (DecoratedLogLine windowData : expectedWindowContents) {
                 final String logStr = windowData.getData();
-                Assertions.assertTrue(actualString.contains(logStr),
+                assertTrue(actualString.contains(logStr),
                         () -> String.format("Missing: '%s' \nActual: '%s' \nCalculated window: '%s'", logStr, actualString, expectedWindowContents));
             }
         }
@@ -84,7 +83,7 @@ public class WindowVerifier {
      * once the spout and bolt have emitted sufficient tuples.
      * The spout and bolt are required to log exactly one log line per emit/window using {@link StringDecorator}
      */
-    public void runAndVerifyTime(int windowSec, int slideSec, TestableTopology testable, TopoWrap topo) throws IOException, TException, java.net.MalformedURLException {
+    public void runAndVerifyTime(int windowSec, int slideSec, TestableTopology testable, TopoWrap topo) throws IOException, TException {
         topo.submitSuccessfully();
         final int minSpoutEmits = 100;
         final int minBoltEmits = 5;
@@ -99,7 +98,7 @@ public class WindowVerifier {
         
         final List<TimeData> allSpoutLogLines = topo.getDeserializedDecoratedLogLines(spoutName, TimeData::fromJson);
         final List<TimeDataWindow> allBoltLogLines = topo.getDeserializedDecoratedLogLines(boltName, TimeDataWindow::fromJson);
-        Assert.assertTrue(allBoltLogLines.size() >= minBoltEmits,
+        assertTrue(allBoltLogLines.size() >= minBoltEmits,
                 "Expecting min " + minBoltEmits + " bolt emits, found: " + allBoltLogLines.size() + " \n\t" + allBoltLogLines);
         
         final DateTime firstWindowEndTime = TimeUtil.ceil(new DateTime(allSpoutLogLines.get(0).getDate()).withZone(DateTimeZone.UTC), slideSec);
@@ -126,11 +125,11 @@ public class WindowVerifier {
             LOG.info("Actual window: " + actualWindow.getDescription());
             LOG.info("Expected window: " + expectedWindow.getDescription());
             for (TimeData oneLog : expectedWindow.getTimeData()) {
-                Assertions.assertTrue(actualWindow.getTimeData().contains(oneLog),
+                assertTrue(actualWindow.getTimeData().contains(oneLog),
                         () -> String.format("Missing: '%s' \n\tActual: '%s' \n\tComputed window: '%s'", oneLog, actualWindow, expectedWindow));
             }
             for (TimeData oneLog : actualWindow.getTimeData()) {
-                Assertions.assertTrue(expectedWindow.getTimeData().contains(oneLog),
+                assertTrue(expectedWindow.getTimeData().contains(oneLog),
                         () -> String.format("Extra: '%s' \n\tActual: '%s' \n\tComputed window: '%s'", oneLog, actualWindow, expectedWindow));
             }
         }

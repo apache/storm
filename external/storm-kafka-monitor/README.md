@@ -1,4 +1,4 @@
-#Storm Kafka Monitor 
+# Storm Kafka Monitor 
 
 Tool to query kafka spout lags and show in Storm UI
 
@@ -12,6 +12,14 @@ line without any options to see usage.
 ```java
 $STORM_HOME_DIR/bin/storm-kafka-monitor
 ```
+This script runs ```org.apache.storm.kafka.monitor.KafkaOffsetLagUtil``` with the passed in
+parameters. The following parameters are supported:
+
+- ```required``` -t or --topics \<comma-separated-topics>
+- ```required``` -b or --bootstrap-brokers \<brokers>
+- ```required``` -g or --groupid \<groupid>
+- ```optional``` -s or --security-protocol \<security-protocol>
+- ```optional``` -c or --consumer-config \<config-properties-file>
 
 ## Future Work 
 The offset lag calculation support for trident kafka spouts will be added soon.

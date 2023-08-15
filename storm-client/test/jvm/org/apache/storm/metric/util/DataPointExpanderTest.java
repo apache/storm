@@ -18,10 +18,10 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.shade.com.google.common.collect.Lists;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DataPointExpanderTest {
 
@@ -99,5 +99,4 @@ public class DataPointExpanderTest {
         value.put("d", "hello"); // yes it's just a test purpose
         return value;
     }
-
 }

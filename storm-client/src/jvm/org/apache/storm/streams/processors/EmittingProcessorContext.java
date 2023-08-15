@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A context that emits the results to downstream processors which are in another bolt.
  */
-public class EmittingProcessorContext implements ProcessorContext {
+public class EmittingProcessorContext<T> implements ProcessorContext<T> {
     private static final Logger LOG = LoggerFactory.getLogger(EmittingProcessorContext.class);
     private final ProcessorNode processorNode;
     private final String outputStreamId;
@@ -55,7 +55,7 @@ public class EmittingProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public <T> void forward(T input) {
+    public void forward(T input) {
         if (PUNCTUATION.equals(input)) {
             emit(punctuation, punctuationStreamId);
             maybeAck();
@@ -68,7 +68,7 @@ public class EmittingProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public <T> void forward(T input, String stream) {
+    public void forward(T input, String stream) {
         if (stream.equals(outputStreamId)) {
             forward(input);
         }

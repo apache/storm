@@ -29,12 +29,14 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
+import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.utils.Time;
-import org.junit.After;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,12 +55,14 @@ import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareSched
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
 
 public class TestGenericResourceAwareSchedulingPriorityStrategy {
-
-    private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareSchedulingPriorityStrategy.class);
-    private int currentTime = Time.currentTimeSecs();
+    private static final Class[] strategyClasses = {
+            GenericResourceAwareStrategy.class,
+            GenericResourceAwareStrategyOld.class,
+    };
+    private final int currentTime = Time.currentTimeSecs();
     private IScheduler scheduler = null;
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (scheduler != null) {
             scheduler.cleanup();
@@ -66,14 +70,10 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         }
     }
 
-    protected Class getGenericResourceAwareStrategyClass() {
-        return GenericResourceAwareStrategy.class;
-    }
-
-    private Config createGrasClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+    private Config createGrasClusterConfig(Class strategyClass, double compPcore, double compOnHeap, double compOffHeap,
                                                  Map<String, Map<String, Number>> pools, Map<String, Double> genericResourceMap) {
         Config config = TestUtilsForResourceAwareScheduler.createGrasClusterConfig(compPcore, compOnHeap, compOffHeap, pools, genericResourceMap);
-        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getGenericResourceAwareStrategyClass().getName());
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, strategyClass.getName());
         return config;
     }
 
@@ -85,36 +85,38 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
     */
     @Test
     public void testDefaultSchedulingPriorityStrategyNotEvicting() {
-        Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
-        requestedgenericResourcesMap.put("generic.resource.1", 40.0);
-        // Use full memory and cpu of the cluster capacity
-        Config ruiConf = createGrasClusterConfig(20, 50, 50, null, requestedgenericResourcesMap);
-        Config ethanConf = createGrasClusterConfig(80, 400, 500, null, Collections.emptyMap());
-        Topologies topologies = new Topologies(
-            genTopology("ethan-topo-1", ethanConf, 1, 0, 1, 0, currentTime - 2, 10, "ethan"),
-            genTopology("ethan-topo-2", ethanConf, 1, 0, 1, 0, currentTime - 2, 20, "ethan"),
-            genTopology("ethan-topo-3", ethanConf, 1, 0, 1, 0, currentTime - 2, 28, "ethan"),
-            genTopology("ethan-topo-4", ethanConf, 1, 0, 1, 0, currentTime - 2, 29, "ethan"));
+        for (Class strategyClass: strategyClasses) {
+            Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
+            requestedgenericResourcesMap.put("generic.resource.1", 40.0);
+            // Use full memory and cpu of the cluster capacity
+            Config ruiConf = createGrasClusterConfig(strategyClass, 20, 50, 50, null, requestedgenericResourcesMap);
+            Config ethanConf = createGrasClusterConfig(strategyClass, 80, 400, 500, null, Collections.emptyMap());
+            Topologies topologies = new Topologies(
+                    genTopology("ethan-topo-1", ethanConf, 1, 0, 1, 0, currentTime - 2, 10, "ethan"),
+                    genTopology("ethan-topo-2", ethanConf, 1, 0, 1, 0, currentTime - 2, 20, "ethan"),
+                    genTopology("ethan-topo-3", ethanConf, 1, 0, 1, 0, currentTime - 2, 28, "ethan"),
+                    genTopology("ethan-topo-4", ethanConf, 1, 0, 1, 0, currentTime - 2, 29, "ethan"));
 
-        Topologies withNewTopo = addTopologies(topologies,
-            genTopology("rui-topo-1", ruiConf, 1, 0, 4, 0, currentTime - 2, 10, "rui"));
+            Topologies withNewTopo = addTopologies(topologies,
+                    genTopology("rui-topo-1", ruiConf, 1, 0, 4, 0, currentTime - 2, 10, "rui"));
 
-        Config config = mkClusterConfig(DefaultSchedulingPriorityStrategy.class.getName());
-        Cluster cluster = mkTestCluster(topologies, config);
-        scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config, new StormMetricsRegistry());
+            Config config = mkClusterConfig(strategyClass, DefaultSchedulingPriorityStrategy.class.getName());
+            Cluster cluster = mkTestCluster(topologies, config);
+            scheduler = new ResourceAwareScheduler();
+            scheduler.prepare(config, new StormMetricsRegistry());
 
-        scheduler.schedule(topologies, cluster);
+            scheduler.schedule(topologies, cluster);
 
-        assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesFullyScheduled(cluster, strategyClass, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
 
-        cluster = new Cluster(cluster, withNewTopo);
-        scheduler.schedule(withNewTopo, cluster);
-        Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
+            cluster = new Cluster(cluster, withNewTopo);
+            scheduler.schedule(withNewTopo, cluster);
+            Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
 
-        assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesNotBeenEvicted(cluster, collectMapValues(evictedTopos), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesFullyScheduled(cluster, "rui-topo-1");
+            assertTopologiesFullyScheduled(cluster, strategyClass, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesNotBeenEvicted(cluster, strategyClass, collectMapValues(evictedTopos), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesFullyScheduled(cluster, strategyClass, "rui-topo-1");
+        }
     }
 
     /*
@@ -128,34 +130,36 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      */
     @Test
     public void testDefaultSchedulingPriorityStrategyEvicting() {
-        Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
-        requestedgenericResourcesMap.put("generic.resource.1", 40.0);
-        Config ruiConf = createGrasClusterConfig(10, 10, 10, null, requestedgenericResourcesMap);
-        Config ethanConf = createGrasClusterConfig(60, 200, 300, null, Collections.emptyMap());
-        Topologies topologies = new Topologies(
-            genTopology("ethan-topo-1", ethanConf, 1, 0, 1, 0, currentTime - 2, 10, "ethan"),
-            genTopology("ethan-topo-2", ethanConf, 1, 0, 1, 0, currentTime - 2, 20, "ethan"),
-            genTopology("ethan-topo-3", ethanConf, 1, 0, 1, 0, currentTime - 2, 28, "ethan"),
-            genTopology("ethan-topo-4", ethanConf, 1, 0, 1, 0, currentTime - 2, 29, "ethan"));
+        for (Class strategyClass: strategyClasses) {
+            Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
+            requestedgenericResourcesMap.put("generic.resource.1", 40.0);
+            Config ruiConf = createGrasClusterConfig(strategyClass, 10, 10, 10, null, requestedgenericResourcesMap);
+            Config ethanConf = createGrasClusterConfig(strategyClass, 60, 200, 300, null, Collections.emptyMap());
+            Topologies topologies = new Topologies(
+                    genTopology("ethan-topo-1", ethanConf, 1, 0, 1, 0, currentTime - 2, 10, "ethan"),
+                    genTopology("ethan-topo-2", ethanConf, 1, 0, 1, 0, currentTime - 2, 20, "ethan"),
+                    genTopology("ethan-topo-3", ethanConf, 1, 0, 1, 0, currentTime - 2, 28, "ethan"),
+                    genTopology("ethan-topo-4", ethanConf, 1, 0, 1, 0, currentTime - 2, 29, "ethan"));
 
-        Topologies withNewTopo = addTopologies(topologies,
-            genTopology("rui-topo-1", ruiConf, 1, 0, 5, 0, currentTime - 2, 10, "rui"));
+            Topologies withNewTopo = addTopologies(topologies,
+                    genTopology("rui-topo-1", ruiConf, 1, 0, 5, 0, currentTime - 2, 10, "rui"));
 
-        Config config = mkClusterConfig(DefaultSchedulingPriorityStrategy.class.getName());
-        Cluster cluster = mkTestCluster(topologies, config);
-        scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config, new StormMetricsRegistry());
-        scheduler.schedule(topologies, cluster);
+            Config config = mkClusterConfig(strategyClass, DefaultSchedulingPriorityStrategy.class.getName());
+            Cluster cluster = mkTestCluster(topologies, config);
+            scheduler = new ResourceAwareScheduler();
+            scheduler.prepare(config, new StormMetricsRegistry());
+            scheduler.schedule(topologies, cluster);
 
-        assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesFullyScheduled(cluster, strategyClass, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
 
-        cluster = new Cluster(cluster, withNewTopo);
-        scheduler.schedule(withNewTopo, cluster);
-        Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
+            cluster = new Cluster(cluster, withNewTopo);
+            scheduler.schedule(withNewTopo, cluster);
+            Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
 
-        assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesBeenEvicted(cluster, collectMapValues(evictedTopos), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesNotScheduled(cluster, "rui-topo-1");
+            assertTopologiesFullyScheduled(cluster, strategyClass, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesBeenEvicted(cluster, strategyClass, collectMapValues(evictedTopos), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesNotScheduled(cluster, strategyClass, "rui-topo-1");
+        }
     }
 
     /*
@@ -167,39 +171,41 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
      */
     @Test
     public void testGenericSchedulingPriorityStrategyEvicting() {
-        Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
-        requestedgenericResourcesMap.put("generic.resource.1", 40.0);
-        Config ruiConf = createGrasClusterConfig(10, 10, 10, null, requestedgenericResourcesMap);
-        Config ethanConf = createGrasClusterConfig(60, 200, 300, null, Collections.emptyMap());
-        Topologies topologies = new Topologies(
-            genTopology("ethan-topo-1", ethanConf, 1, 0, 1, 0, currentTime - 2, 10, "ethan"),
-            genTopology("ethan-topo-2", ethanConf, 1, 0, 1, 0, currentTime - 2, 20, "ethan"),
-            genTopology("ethan-topo-3", ethanConf, 1, 0, 1, 0, currentTime - 2, 28, "ethan"),
-            genTopology("ethan-topo-4", ethanConf, 1, 0, 1, 0, currentTime - 2, 29, "ethan"));
+        for (Class strategyClass: strategyClasses) {
+            Map<String, Double> requestedgenericResourcesMap = new HashMap<>();
+            requestedgenericResourcesMap.put("generic.resource.1", 40.0);
+            Config ruiConf = createGrasClusterConfig(strategyClass, 10, 10, 10, null, requestedgenericResourcesMap);
+            Config ethanConf = createGrasClusterConfig(strategyClass, 60, 200, 300, null, Collections.emptyMap());
+            Topologies topologies = new Topologies(
+                    genTopology("ethan-topo-1", ethanConf, 1, 0, 1, 0, currentTime - 2, 10, "ethan"),
+                    genTopology("ethan-topo-2", ethanConf, 1, 0, 1, 0, currentTime - 2, 20, "ethan"),
+                    genTopology("ethan-topo-3", ethanConf, 1, 0, 1, 0, currentTime - 2, 28, "ethan"),
+                    genTopology("ethan-topo-4", ethanConf, 1, 0, 1, 0, currentTime - 2, 29, "ethan"));
 
-        Topologies withNewTopo = addTopologies(topologies,
-            genTopology("rui-topo-1", ruiConf, 1, 0, 5, 0, currentTime - 2, 10, "rui"));
+            Topologies withNewTopo = addTopologies(topologies,
+                    genTopology("rui-topo-1", ruiConf, 1, 0, 5, 0, currentTime - 2, 10, "rui"));
 
 
-        Config config = mkClusterConfig(GenericResourceAwareSchedulingPriorityStrategy.class.getName());
-        Cluster cluster = mkTestCluster(topologies, config);
-        scheduler = new ResourceAwareScheduler();
-        scheduler.prepare(config, new StormMetricsRegistry());
-        scheduler.schedule(topologies, cluster);
+            Config config = mkClusterConfig(strategyClass, GenericResourceAwareSchedulingPriorityStrategy.class.getName());
+            Cluster cluster = mkTestCluster(topologies, config);
+            scheduler = new ResourceAwareScheduler();
+            scheduler.prepare(config, new StormMetricsRegistry());
+            scheduler.schedule(topologies, cluster);
 
-        assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesFullyScheduled(cluster, strategyClass, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
 
-        cluster = new Cluster(cluster, withNewTopo);
-        scheduler.schedule(withNewTopo, cluster);
-        Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
+            cluster = new Cluster(cluster, withNewTopo);
+            scheduler.schedule(withNewTopo, cluster);
+            Map<String, Set<String>> evictedTopos = ((ResourceAwareScheduler) scheduler).getEvictedTopologiesMap();
 
-        assertTopologiesFullyScheduled(cluster, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesNotBeenEvicted(cluster, collectMapValues(evictedTopos),"ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
-        assertTopologiesNotScheduled(cluster, "rui-topo-1");
+            assertTopologiesFullyScheduled(cluster, strategyClass, "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesNotBeenEvicted(cluster, strategyClass, collectMapValues(evictedTopos), "ethan-topo-1", "ethan-topo-2", "ethan-topo-3", "ethan-topo-4");
+            assertTopologiesNotScheduled(cluster, strategyClass, "rui-topo-1");
+        }
     }
 
 
-    private Config mkClusterConfig(String SchedulingPriorityStrategy) {
+    private Config mkClusterConfig(Class strategyClass, String SchedulingPriorityStrategy) {
         Map<String, Map<String, Number>> resourceUserPool = userResourcePool(
             userRes("rui", 200, 2000),
             userRes("ethan", 200, 2000));
@@ -207,7 +213,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
         Map<String, Double> genericResourcesOfferedMap = new HashMap<>();
         genericResourcesOfferedMap.put("generic.resource.1", 50.0);
 
-        Config config = createGrasClusterConfig(100, 500, 500, resourceUserPool, genericResourcesOfferedMap);
+        Config config = createGrasClusterConfig(strategyClass, 100, 500, 500, resourceUserPool, genericResourcesOfferedMap);
         config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, SchedulingPriorityStrategy);
         config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_TOPOLOGY_SCHEDULING_ATTEMPTS, 2);    // allow 1 round of evictions
 
@@ -229,7 +235,7 @@ public class TestGenericResourceAwareSchedulingPriorityStrategy {
 
     private Set<String> collectMapValues(Map<String, Set<String>> map) {
         Set<String> set = new HashSet<>();
-        map.values().forEach((s) -> set.addAll(s));
+        map.values().forEach(set::addAll);
         return set;
     }
 }

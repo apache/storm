@@ -19,7 +19,8 @@
 package org.apache.storm.daemon.logviewer.handler;
 
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -40,7 +41,6 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
@@ -58,9 +57,9 @@ import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
 import org.jooq.lambda.tuple.Tuple3;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -81,10 +80,10 @@ public class LogviewerLogSearchHandlerTest {
          */
         private final Function<Integer, Integer> expOffsetFn = arg -> (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2 - arg);
 
-        @Test(expected = RuntimeException.class)
+        @Test
         public void testSearchViaRestApiThrowsIfBogusFileIsGiven() throws InvalidRequestException {
             LogviewerLogSearchHandler handler = getSearchHandler();
-            handler.substringSearch(null, "a string");
+            assertThrows(RuntimeException.class, () -> handler.substringSearch(null, "a string"));
         }
 
         @Test
@@ -635,7 +634,7 @@ public class LogviewerLogSearchHandlerTest {
         /**
          * Setup test environment for each test.
          */
-        @Before
+        @BeforeEach
         public void setUp() throws IOException {
             logFiles = new ArrayList<>();
             logFiles.add(Paths.get("src/test/resources/logviewer-search-context-tests.log.test"));
@@ -651,7 +650,7 @@ public class LogviewerLogSearchHandlerTest {
         /**
          * Clean up test environment.
          */
-        @After
+        @AfterEach
         public void tearDown() {
             if (topoPath != null) {
                 try {

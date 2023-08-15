@@ -126,6 +126,8 @@ And the reported metrics are
   - `nr.throttled-percentage`: (`nr.throttled-count` / `nr.period-count`)
   - `throttled.time-ms`: the difference of `throttled_time` in milliseconds between two consecutive reporting cycles
 
+Note: when `org.apache.storm.container.docker.DockerManager` or `org.apache.storm.container.oci.RuncLibContainerManager` is used as `storm.resource.isolation.plugin`, use `org.apache.storm.metric.cgroup.CGroupCpuGuaranteeByCfsQuota` instead.
+
 ## CGroupMemory
 
 org.apache.storm.metrics2.cgroup.CGroupMemoryUsage reports the current memory usage of all processes in the cgroup in bytes

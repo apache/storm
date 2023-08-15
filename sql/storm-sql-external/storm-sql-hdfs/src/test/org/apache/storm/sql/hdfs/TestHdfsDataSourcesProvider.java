@@ -26,16 +26,18 @@ import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.topology.IRichBolt;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestHdfsDataSourcesProvider {
 
@@ -53,7 +55,7 @@ public class TestHdfsDataSourcesProvider {
         TBL_PROPERTIES.put("hdfs.rotation.time.seconds", "120");
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         Configuration conf = new Configuration();
         conf.set("fs.trash.interval", "10");
@@ -67,7 +69,7 @@ public class TestHdfsDataSourcesProvider {
         hdfsURI = "hdfs://localhost:" + hdfsCluster.getNameNodePort() + "/";
     }
 
-    @After
+    @AfterEach
     public void shutDown() throws IOException {
         hdfsCluster.shutdown();
     }
@@ -77,10 +79,10 @@ public class TestHdfsDataSourcesProvider {
     public void testHdfsSink() throws Exception {
         ISqlStreamsDataSource ds = DataSourcesRegistry.constructStreamsDataSource(
             URI.create(hdfsURI), null, null, TBL_PROPERTIES, FIELDS);
-        Assert.assertNotNull(ds);
+        assertNotNull(ds);
 
         IRichBolt consumer = ds.getConsumer();
 
-        Assert.assertEquals(HdfsBolt.class, consumer.getClass());
+        assertEquals(HdfsBolt.class, consumer.getClass());
     }
 }

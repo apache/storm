@@ -65,9 +65,8 @@ public class RankableObjectWithFieldsTest {
     @DataProvider
     public Object[][] otherClassesData() {
         return new Object[][]{
-            { new String("foo") }, { new Object() }, { Integer.valueOf(4) }, {
-            Lists.newArrayList(7, 8,
-                               9)
+            {"foo"}, { new Object() }, {4}, {
+            Lists.newArrayList(7, 8, 9)
         }
         };
     }
@@ -157,7 +156,7 @@ public class RankableObjectWithFieldsTest {
 
     @DataProvider
     public Object[][] toStringData() {
-        return new Object[][]{ { new String("foo"), 0L }, { new String("BAR"), 8L } };
+        return new Object[][]{ {"foo", 0L }, {"BAR", 8L } };
     }
 
     @Test(dataProvider = "toStringData")
@@ -242,7 +241,7 @@ public class RankableObjectWithFieldsTest {
         // then
         assertThat(r.getObject()).isEqualTo(ANY_OBJECT);
         assertThat(r.getCount()).isEqualTo(ANY_COUNT);
-        List<Object> fields = new ArrayList<Object>();
+        List<Object> fields = new ArrayList<>();
         fields.add(ANY_FIELD);
         assertThat(r.getFields()).isEqualTo(fields);
 

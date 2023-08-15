@@ -14,7 +14,9 @@ package org.apache.storm.sql.parser;
 
 import org.apache.calcite.sql.SqlNode;
 import org.apache.storm.sql.parser.impl.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestSqlParser {
     private static SqlNode parse(String sql) throws Exception {
@@ -34,10 +36,10 @@ public class TestSqlParser {
         parse(sql);
     }
 
-    @Test(expected = ParseException.class)
+    @Test
     public void testCreateTableWithoutLocation() throws Exception {
         String sql = "CREATE EXTERNAL TABLE foo (bar INT)";
-        parse(sql);
+        assertThrows(ParseException.class, () -> parse(sql));
     }
 
     @Test

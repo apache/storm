@@ -17,7 +17,7 @@
 package org.apache.storm.kafka.spout.subscription;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,7 +29,7 @@ import java.util.Set;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.task.TopologyContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RoundRobinManualPartitionerTest {
 
@@ -39,8 +39,8 @@ public class RoundRobinManualPartitionerTest {
     
     private Set<TopicPartition> partitionsToTps(int[] expectedPartitions) {
         Set<TopicPartition> expectedTopicPartitions = new HashSet<>();
-        for(int i = 0; i < expectedPartitions.length; i++) {
-            expectedTopicPartitions.add(createTp(expectedPartitions[i]));
+        for (int expectedPartition : expectedPartitions) {
+            expectedTopicPartitions.add(createTp(expectedPartition));
         }
         return expectedTopicPartitions;
     }
@@ -53,7 +53,7 @@ public class RoundRobinManualPartitionerTest {
         }
         List<TopologyContext> contextMocks = new ArrayList<>();
         String thisComponentId = "A spout";
-        List<Integer> allTasks = Arrays.asList(new Integer[]{0, 1, 2});
+        List<Integer> allTasks = Arrays.asList(0, 1, 2);
         for(int i = 0; i < 3; i++) {
             TopologyContext contextMock = mock(TopologyContext.class);
             when(contextMock.getThisTaskIndex()).thenReturn(i);

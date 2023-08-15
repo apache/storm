@@ -115,8 +115,8 @@ public class LogCleaner implements Runnable, Closeable {
     }
     
     private long sizeOfDir(Path dir) {
-        try {
-            return Files.walk(dir)
+        try (Stream<Path> stream = Files.walk(dir)) {
+            return stream
                 .filter(Files::isRegularFile)
                 .mapToLong(p -> p.toFile().length())
                 .sum();

@@ -38,12 +38,13 @@ import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link StreamBuilder}
@@ -91,21 +92,23 @@ public class StreamBuilderTest {
         };
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         streamBuilder = new StreamBuilder();
         UniqueIdGen.getInstance().reset();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSpoutNoDefaultStream() throws Exception {
-        Stream<Tuple> stream = streamBuilder.newStream(newSpout("test"));
-        stream.filter(x -> true);
-        streamBuilder.build();
+    @Test
+    public void testSpoutNoDefaultStream() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            Stream<Tuple> stream = streamBuilder.newStream(newSpout("test"));
+            stream.filter(x -> true);
+            streamBuilder.build();
+        });
     }
 
     @Test
-    public void testSpoutToBolt() throws Exception {
+    public void testSpoutToBolt() {
         Stream<Tuple> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID));
         stream.to(newBolt());
         StormTopology topology = streamBuilder.build();
@@ -118,7 +121,7 @@ public class StreamBuilderTest {
     }
 
     @Test
-    public void testBranch() throws Exception {
+    public void testBranch() {
         Stream<Tuple> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID));
         Stream<Tuple>[] streams = stream.branch(x -> true);
         StormTopology topology = streamBuilder.build();
@@ -139,7 +142,7 @@ public class StreamBuilderTest {
     }
 
     @Test
-    public void testJoin() throws Exception {
+    public void testJoin() {
         Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
         Stream<Integer>[] streams = stream.branch(x -> x % 2 == 0, x -> x % 3 == 0);
         PairStream<Integer, Integer> s1 = streams[0].mapToPair(x -> Pair.of(x, 1));
@@ -150,7 +153,7 @@ public class StreamBuilderTest {
     }
 
     @Test
-    public void testGroupBy() throws Exception {
+    public void testGroupBy() {
         PairStream<String, String> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new PairValueMapper<>(0, 1), 2);
 
         stream.window(TumblingWindows.of(BaseWindowedBolt.Count.of(10))).aggregateByKey(new Count<>());
@@ -164,7 +167,7 @@ public class StreamBuilderTest {
     }
 
     @Test
-    public void testGlobalAggregate() throws Exception {
+    public void testGlobalAggregate() {
         Stream<String> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0), 2);
 
         stream.aggregate(new Count<>());
@@ -184,7 +187,7 @@ public class StreamBuilderTest {
     }
 
     @Test
-    public void testRepartition() throws Exception {
+    public void testRepartition() {
         Stream<String> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
         stream.repartition(3).filter(x -> true).repartition(2).filter(x -> true).aggregate(new Count<>());
         StormTopology topology = streamBuilder.build();
@@ -203,7 +206,7 @@ public class StreamBuilderTest {
     }
 
     @Test
-    public void testBranchAndJoin() throws Exception {
+    public void testBranchAndJoin() {
         TopologyContext mockContext = Mockito.mock(TopologyContext.class);
         OutputCollector mockCollector = Mockito.mock(OutputCollector.class);
         Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0), 2);

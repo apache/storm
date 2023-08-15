@@ -15,9 +15,9 @@ package org.apache.storm.hdfs.spout;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.validation.ConfigValidation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConfigsTest {
 

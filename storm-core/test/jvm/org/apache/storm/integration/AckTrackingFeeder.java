@@ -17,7 +17,7 @@
 package org.apache.storm.integration;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
 import org.apache.storm.testing.AckTracker;

@@ -17,28 +17,30 @@
  */
 package org.apache.storm.kafka.spout;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class SimpleRecordTranslatorTest {
     @Test
     public void testBasic() {
         SimpleRecordTranslator<String, String> trans =
                 new SimpleRecordTranslator<>((r) -> new Values(r.value()), new Fields("value"));
-        assertEquals(Arrays.asList("default"), trans.streams());
+        assertEquals(Collections.singletonList("default"), trans.streams());
         ConsumerRecord<String, String> cr = new ConsumerRecord<>("TOPIC", 100, 100, "THE KEY", "THE VALUE");
-        assertEquals(Arrays.asList("THE VALUE"), trans.apply(cr));
+        assertEquals(Collections.singletonList("THE VALUE"), trans.apply(cr));
     }
 
     @Test
     public void testNullTranslation() {
         SimpleRecordTranslator<String, String> trans =
                 new SimpleRecordTranslator<>((r) -> null, new Fields("key"));
-        assertEquals(null, trans.apply(null));
+        assertNull(trans.apply(null));
     }
 }

@@ -12,14 +12,15 @@
 
 package org.apache.storm.hdfs.bolt;
 
-import java.io.IOException;
 import org.apache.hadoop.fs.Path;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.common.AbstractHDFSWriter;
 import org.apache.storm.tuple.Tuple;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestWritersMap {
 
@@ -39,16 +40,16 @@ public class TestWritersMap {
         //Add an element and bar should drop out
         map.put("BAZ", baz);
 
-        Assert.assertTrue(map.keySet().contains("FOO"));
-        Assert.assertTrue(map.keySet().contains("BAZ"));
+        assertTrue(map.keySet().contains("FOO"));
+        assertTrue(map.keySet().contains("BAZ"));
 
-        Assert.assertFalse(map.keySet().contains("BAR"));
+        assertFalse(map.keySet().contains("BAR"));
 
         // The removed writer should have been closed
-        Assert.assertTrue(bar.isClosed);
+        assertTrue(bar.isClosed);
 
-        Assert.assertFalse(foo.isClosed);
-        Assert.assertFalse(baz.isClosed);
+        assertFalse(foo.isClosed);
+        assertFalse(baz.isClosed);
     }
 
     public static final class AbstractHDFSWriterMock extends AbstractHDFSWriter {
@@ -60,17 +61,17 @@ public class TestWritersMap {
         }
 
         @Override
-        protected void doWrite(Tuple tuple) throws IOException {
+        protected void doWrite(Tuple tuple) {
 
         }
 
         @Override
-        protected void doSync() throws IOException {
+        protected void doSync() {
 
         }
 
         @Override
-        protected void doClose() throws IOException {
+        protected void doClose() {
             isClosed = true;
         }
     }

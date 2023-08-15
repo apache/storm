@@ -12,7 +12,7 @@
 
 package org.apache.storm;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,26 +65,22 @@ public class TestingTest {
         List<List<Object>> spoutTuples = Testing.readTuples(results, "spout");
         List<List<Object>> expectedSpoutTuples = Arrays.asList(Arrays.asList("nathan"), Arrays.asList("bob"), Arrays.asList("joey"),
                                                                Arrays.asList("nathan"));
-        assertTrue(expectedSpoutTuples + " expected, but found " + spoutTuples,
-                   Testing.multiseteq(expectedSpoutTuples, spoutTuples));
+        assertTrue(Testing.multiseteq(expectedSpoutTuples, spoutTuples), expectedSpoutTuples + " expected, but found " + spoutTuples);
 
         List<List<Object>> twoTuples = Testing.readTuples(results, "2");
         List<List<Object>> expectedTwoTuples = Arrays.asList(Arrays.asList("nathan", 1), Arrays.asList("nathan", 2),
                                                              Arrays.asList("bob", 1), Arrays.asList("joey", 1));
-        assertTrue(expectedTwoTuples + " expected, but found " + twoTuples,
-                   Testing.multiseteq(expectedTwoTuples, twoTuples));
+        assertTrue(Testing.multiseteq(expectedTwoTuples, twoTuples), expectedTwoTuples + " expected, but found " + twoTuples);
 
         List<List<Object>> threeTuples = Testing.readTuples(results, "3");
         List<List<Object>> expectedThreeTuples = Arrays.asList(Arrays.asList(1), Arrays.asList(2),
                                                                Arrays.asList(3), Arrays.asList(4));
-        assertTrue(expectedThreeTuples + " expected, but found " + threeTuples,
-                   Testing.multiseteq(expectedThreeTuples, threeTuples));
+        assertTrue(Testing.multiseteq(expectedThreeTuples, threeTuples), expectedThreeTuples + " expected, but found " + threeTuples);
 
         List<List<Object>> fourTuples = Testing.readTuples(results, "4");
         List<List<Object>> expectedFourTuples = Arrays.asList(Arrays.asList(1), Arrays.asList(2),
                                                               Arrays.asList(3), Arrays.asList(4));
-        assertTrue(expectedFourTuples + " expected, but found " + fourTuples,
-                   Testing.multiseteq(expectedFourTuples, fourTuples));
+        assertTrue(Testing.multiseteq(expectedFourTuples, fourTuples), expectedFourTuples + " expected, but found " + fourTuples);
     };
 
     @Test

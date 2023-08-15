@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,15 +37,17 @@ import org.apache.storm.pacemaker.PacemakerClient;
 import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.pacemaker.PacemakerConnectionException;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@ExtendWith(MockitoExtension.class)
 public class PaceMakerStateStorageFactoryTest {
     
     @Captor
@@ -65,19 +68,20 @@ public class PaceMakerStateStorageFactoryTest {
     @Test
     public void testSetWorkerHb() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.SEND_PULSE_RESPONSE, null);
-        stateStorage.set_worker_hb("/foo", "data".getBytes("UTF-8"), null);
+        stateStorage.set_worker_hb("/foo", "data".getBytes(StandardCharsets.UTF_8), null);
         verify(clientMock).send(hbMessageCaptor.capture());
         HBMessage sent = hbMessageCaptor.getValue();
         HBPulse pulse = sent.get_data().get_pulse();
-        Assert.assertEquals(HBServerMessageType.SEND_PULSE, sent.get_type());
-        Assert.assertEquals("/foo", pulse.get_id());
-        Assert.assertEquals("data", new String(pulse.get_details(), "UTF-8"));
+        assertEquals(HBServerMessageType.SEND_PULSE, sent.get_type());
+        assertEquals("/foo", pulse.get_id());
+        assertEquals("data", new String(pulse.get_details(), StandardCharsets.UTF_8));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testSetWorkerHbResponseType() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.SEND_PULSE, null);
-        stateStorage.set_worker_hb("/foo", "data".getBytes("UTF-8"), null);
+        assertThrows(RuntimeException.class,
+            () -> stateStorage.set_worker_hb("/foo", "data".getBytes(StandardCharsets.UTF_8), null));
     }
 
     @Test
@@ -86,40 +90,43 @@ public class PaceMakerStateStorageFactoryTest {
         stateStorage.delete_worker_hb("/foo/bar");
         verify(clientMock).send(hbMessageCaptor.capture());
         HBMessage sent = hbMessageCaptor.getValue();
-        Assert.assertEquals(HBServerMessageType.DELETE_PATH, sent.get_type());
-        Assert.assertEquals("/foo/bar", sent.get_data().get_path());
+        assertEquals(HBServerMessageType.DELETE_PATH, sent.get_type());
+        assertEquals("/foo/bar", sent.get_data().get_path());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testDeleteWorkerHbResponseType() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.DELETE_PATH, null);
-        stateStorage.delete_worker_hb("/foo/bar");
+        assertThrows(RuntimeException.class,
+            () -> stateStorage.delete_worker_hb("/foo/bar"));
     }
 
     @Test
     public void testGetWorkerHb() throws Exception {
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id("/foo");
-        ClusterWorkerHeartbeat cwh = new ClusterWorkerHeartbeat("some-storm-id", new HashMap(), 1, 1);
+        ClusterWorkerHeartbeat cwh = new ClusterWorkerHeartbeat("some-storm-id", new HashMap<>(), 1, 1);
         hbPulse.set_details(Utils.serialize(cwh));
         createPaceMakerStateStorage(HBServerMessageType.GET_PULSE_RESPONSE, HBMessageData.pulse(hbPulse));
         stateStorage.get_worker_hb("/foo", false);
         verify(clientMock).send(hbMessageCaptor.capture());
         HBMessage sent = hbMessageCaptor.getValue();
-        Assert.assertEquals(HBServerMessageType.GET_PULSE, sent.get_type());
-        Assert.assertEquals("/foo", sent.get_data().get_path());
+        assertEquals(HBServerMessageType.GET_PULSE, sent.get_type());
+        assertEquals("/foo", sent.get_data().get_path());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testGetWorkerHbBadResponse() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.GET_PULSE, null);
-        stateStorage.get_worker_hb("/foo", false);
+        assertThrows(RuntimeException.class,
+            () -> stateStorage.get_worker_hb("/foo", false));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testGetWorkerHbBadData() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.GET_PULSE_RESPONSE, null);
-        stateStorage.get_worker_hb("/foo", false);
+        assertThrows(RuntimeException.class,
+            () -> stateStorage.get_worker_hb("/foo", false));
     }
 
     @Test
@@ -128,23 +135,20 @@ public class PaceMakerStateStorageFactoryTest {
         stateStorage.get_worker_hb_children("/foo", false);
         verify(clientMock).send(hbMessageCaptor.capture());
         HBMessage sent = hbMessageCaptor.getValue();
-        Assert.assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH, sent.get_type());
-        Assert.assertEquals("/foo", sent.get_data().get_path());
+        assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH, sent.get_type());
+        assertEquals("/foo", sent.get_data().get_path());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testGetWorkerHbChildrenBadData() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, null);
-        stateStorage.get_worker_hb_children("/foo", false);
+        assertThrows(RuntimeException.class,
+            () -> stateStorage.get_worker_hb_children("/foo", false));
     }
 
     private class PacemakerClientPoolProxy extends PacemakerClientPool {
         public PacemakerClientPoolProxy() {
             super(new HashMap<>());
-        }
-
-        public PacemakerClient getWriteClient() {
-            return clientMock;
         }
 
         @Override

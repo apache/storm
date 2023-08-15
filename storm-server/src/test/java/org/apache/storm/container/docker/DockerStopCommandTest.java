@@ -12,18 +12,18 @@
 
 package org.apache.storm.container.docker;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DockerStopCommandTest {
 
     private DockerStopCommand dockerStopCommand;
     private static final String CONTAINER_NAME = "container_name";
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         dockerStopCommand = new DockerStopCommand(CONTAINER_NAME);
     }

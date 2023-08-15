@@ -16,8 +16,8 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -69,7 +69,7 @@ public class KafkaTridentSpoutEmitterPartitioningTest {
             allPartitions.add(new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, i));
         }
         List<Map<String, Object>> serializedPartitions = allPartitions.stream()
-            .map(tp -> tpSerializer.toMap(tp))
+            .map(tpSerializer::toMap)
             .collect(Collectors.toList());
         
         List<KafkaTridentSpoutTopicPartition> orderedPartitions = emitter.getOrderedPartitions(serializedPartitions);

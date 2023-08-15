@@ -14,9 +14,10 @@ package org.apache.storm.utils;
 
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.multilang.ShellMsg.ShellLogLevel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,7 +26,7 @@ public class DefaultShellLogHandlerTest {
 
     private DefaultShellLogHandler logHandler;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         logHandler = new DefaultShellLogHandler();
     }
@@ -67,9 +68,9 @@ public class DefaultShellLogHandlerTest {
     /**
      * A null {@link ShellMsg} will throw IllegalArgumentException.
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void handleLog_nullShellMsg() {
-        logHandler.log(null);
+        assertThrows(IllegalArgumentException.class, () -> logHandler.log(null));
     }
 
     /**

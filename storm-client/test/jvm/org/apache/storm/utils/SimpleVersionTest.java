@@ -19,51 +19,52 @@
 
 package org.apache.storm.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SimpleVersionTest {
 
     @Test
     public void testParseStorm2x() {
         SimpleVersion version = new SimpleVersion("2.1.2");
-        Assert.assertEquals(2, version.getMajor());
-        Assert.assertEquals(1, version.getMinor());
+        assertEquals(2, version.getMajor());
+        assertEquals(1, version.getMinor());
     }
 
     @Test
     public void testParseStorm2xSnapshot() {
         SimpleVersion version = new SimpleVersion("2.1.2-SNAPSHOT");
-        Assert.assertEquals(2, version.getMajor());
-        Assert.assertEquals(1, version.getMinor());
+        assertEquals(2, version.getMajor());
+        assertEquals(1, version.getMinor());
     }
 
     @Test
     public void testParseStorm1x() {
         SimpleVersion version = new SimpleVersion("1.0.4");
-        Assert.assertEquals(1, version.getMajor());
-        Assert.assertEquals(0, version.getMinor());
+        assertEquals(1, version.getMajor());
+        assertEquals(0, version.getMinor());
     }
 
     @Test
     public void testParseStorm1xSnapshot() {
         SimpleVersion version = new SimpleVersion("1.0.4-SNAPSHOT");
-        Assert.assertEquals(1, version.getMajor());
-        Assert.assertEquals(0, version.getMinor());
+        assertEquals(1, version.getMajor());
+        assertEquals(0, version.getMinor());
     }
 
     @Test
     public void testParseStorm0x() {
         SimpleVersion version = new SimpleVersion("0.10.3");
-        Assert.assertEquals(0, version.getMajor());
-        Assert.assertEquals(10, version.getMinor());
+        assertEquals(0, version.getMajor());
+        assertEquals(10, version.getMinor());
     }
 
     @Test
     public void testParseStorm0xSnapshot() {
         SimpleVersion version = new SimpleVersion("0.10.3-SNAPSHOT");
-        Assert.assertEquals(0, version.getMajor());
-        Assert.assertEquals(10, version.getMinor());
+        assertEquals(0, version.getMajor());
+        assertEquals(10, version.getMinor());
     }
 
 }

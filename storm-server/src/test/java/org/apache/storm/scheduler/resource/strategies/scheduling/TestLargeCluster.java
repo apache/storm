@@ -39,7 +39,6 @@ import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesExte
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,9 +63,17 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @ExtendWith({NormalizedResourcesExtension.class})
 public class TestLargeCluster {
     private static final Logger LOG = LoggerFactory.getLogger(TestLargeCluster.class);
+    private static final Class[] strategyClasses = {
+            DefaultResourceAwareStrategy.class,
+            RoundRobinResourceAwareStrategy.class,
+            GenericResourceAwareStrategy.class,
+    };
 
     public enum TEST_CLUSTER_NAME {
         TEST_CLUSTER_01("largeCluster01"),
@@ -300,7 +307,7 @@ public class TestLargeCluster {
         for (TEST_CLUSTER_NAME testClusterName: TEST_CLUSTER_NAME.values()) {
             String resourcePath = testClusterName.getResourcePath();
             List<String> resources = getResourceFiles(resourcePath);
-            Assert.assertFalse("No resource files found in " + resourcePath, resources.isEmpty());
+            assertFalse(resources.isEmpty(), "No resource files found in " + resourcePath);
             createTopoDetailsArray(resourcePath, true);
         }
     }
@@ -381,65 +388,67 @@ public class TestLargeCluster {
      */
     @Test
     public void testLargeCluster() throws Exception {
-        for (TEST_CLUSTER_NAME testClusterName: TEST_CLUSTER_NAME.values()) {
-            LOG.info("********************************************");
-            LOG.info("testLargeCluster: Start Processing cluster {}", testClusterName.getClusterName());
+        for (Class strategyClass: strategyClasses) {
+            for (TEST_CLUSTER_NAME testClusterName : TEST_CLUSTER_NAME.values()) {
+                LOG.info("********************************************");
+                LOG.info("testLargeCluster: Start Processing cluster {} using ", testClusterName.getClusterName(), strategyClass.getName());
 
-            String resourcePath = testClusterName.getResourcePath();
-            Map<String, SupervisorDetails> supervisors = createSupervisors(testClusterName, 0);
+                String resourcePath = testClusterName.getResourcePath();
+                Map<String, SupervisorDetails> supervisors = createSupervisors(testClusterName, 0);
 
-            TopologyDetails[] topoDetailsArray = createTopoDetailsArray(resourcePath, false);
-            Assert.assertTrue("No topologies found for cluster " + testClusterName.getClusterName(), topoDetailsArray.length > 0);
-            Topologies topologies = new Topologies(topoDetailsArray);
+                TopologyDetails[] topoDetailsArray = createTopoDetailsArray(resourcePath, false);
+                assertTrue(topoDetailsArray.length > 0, "No topologies found for cluster " + testClusterName.getClusterName());
+                Topologies topologies = new Topologies(topoDetailsArray);
 
-            Config confWithDefaultStrategy = new Config();
-            confWithDefaultStrategy.putAll(topoDetailsArray[0].getConf());
-            confWithDefaultStrategy.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, DefaultResourceAwareStrategy.class.getName());
-            confWithDefaultStrategy.put(
-                Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN,
-                TestUtilsForResourceAwareScheduler.GenSupervisorsDnsToSwitchMapping.class.getName());
+                Config confWithDefaultStrategy = new Config();
+                confWithDefaultStrategy.putAll(topoDetailsArray[0].getConf());
+                confWithDefaultStrategy.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, strategyClass.getName());
+                confWithDefaultStrategy.put(
+                        Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN,
+                        TestUtilsForResourceAwareScheduler.GenSupervisorsDnsToSwitchMapping.class.getName());
 
-            INimbus iNimbus = new INimbusTest();
-            Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supervisors, new HashMap<>(),
-                topologies, confWithDefaultStrategy);
+                INimbus iNimbus = new INimbusTest();
+                Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supervisors, new HashMap<>(),
+                        topologies, confWithDefaultStrategy);
 
-            scheduler = new ResourceAwareScheduler();
+                scheduler = new ResourceAwareScheduler();
 
-            List<Class> classesToDebug = Arrays.asList(DefaultResourceAwareStrategy.class,
-                GenericResourceAwareStrategy.class, ResourceAwareScheduler.class,
-                Cluster.class
-            );
-            Level logLevel = Level.INFO ; // switch to Level.DEBUG for verbose otherwise Level.INFO
-            classesToDebug.forEach(x -> Configurator.setLevel(x.getName(), logLevel));
-            long startTime = System.currentTimeMillis();
-            scheduler.prepare(confWithDefaultStrategy, new StormMetricsRegistry());
-            scheduler.schedule(topologies, cluster);
-            long endTime = System.currentTimeMillis();
-            LOG.info("Cluster={} Scheduling Time: {} topologies in {} seconds",
-                testClusterName.getClusterName(), topoDetailsArray.length, (endTime - startTime) / 1000.0);
+                List<Class> classesToDebug = Arrays.asList(DefaultResourceAwareStrategy.class,
+                        GenericResourceAwareStrategy.class, ResourceAwareScheduler.class,
+                        Cluster.class
+                );
+                Level logLevel = Level.INFO; // switch to Level.DEBUG for verbose otherwise Level.INFO
+                classesToDebug.forEach(x -> Configurator.setLevel(x.getName(), logLevel));
+                long startTime = System.currentTimeMillis();
+                scheduler.prepare(confWithDefaultStrategy, new StormMetricsRegistry());
+                scheduler.schedule(topologies, cluster);
+                long endTime = System.currentTimeMillis();
+                LOG.info("Cluster={} Scheduling Time: {} topologies in {} seconds",
+                        testClusterName.getClusterName(), topoDetailsArray.length, (endTime - startTime) / 1000.0);
 
-            for (TopologyDetails td : topoDetailsArray) {
-                TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled(cluster, td.getName());
+                for (TopologyDetails td : topoDetailsArray) {
+                    TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled(cluster, strategyClass, td.getName());
+                }
+
+                // Remove topology and reschedule it
+                for (int i = 0; i < topoDetailsArray.length; i++) {
+                    startTime = System.currentTimeMillis();
+                    TopologyDetails topoDetails = topoDetailsArray[i];
+                    cluster.unassign(topoDetails.getId());
+                    LOG.info("Cluster={},  ({}) Removed topology {}", testClusterName.getClusterName(), i, topoDetails.getName());
+                    IScheduler rescheduler = new ResourceAwareScheduler();
+                    rescheduler.prepare(confWithDefaultStrategy, new StormMetricsRegistry());
+                    rescheduler.schedule(topologies, cluster);
+                    TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled(cluster, strategyClass, topoDetails.getName());
+                    endTime = System.currentTimeMillis();
+                    LOG.info("Cluster={}, ({}) Scheduling Time: Removed topology {} and rescheduled in {} seconds",
+                            testClusterName.getClusterName(), i, topoDetails.getName(), (endTime - startTime) / 1000.0);
+                }
+                classesToDebug.forEach(x -> Configurator.setLevel(x.getName(), Level.INFO));
+
+                LOG.info("testLargeCluster: End Processing cluster {}", testClusterName.getClusterName());
+                LOG.info("********************************************");
             }
-
-            // Remove topology and reschedule it
-            for (int i = 0 ; i < topoDetailsArray.length ; i++) {
-                startTime = System.currentTimeMillis();
-                TopologyDetails topoDetails = topoDetailsArray[i];
-                cluster.unassign(topoDetails.getId());
-                LOG.info("Cluster={},  ({}) Removed topology {}", testClusterName.getClusterName(), i, topoDetails.getName());
-                IScheduler rescheduler = new ResourceAwareScheduler();
-                rescheduler.prepare(confWithDefaultStrategy, new StormMetricsRegistry());
-                rescheduler.schedule(topologies, cluster);
-                TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled(cluster, topoDetails.getName());
-                endTime = System.currentTimeMillis();
-                LOG.info("Cluster={}, ({}) Scheduling Time: Removed topology {} and rescheduled in {} seconds",
-                    testClusterName.getClusterName(), i, topoDetails.getName(), (endTime - startTime) / 1000.0);
-            }
-            classesToDebug.forEach(x -> Configurator.setLevel(x.getName(), Level.INFO));
-
-            LOG.info("testLargeCluster: End Processing cluster {}", testClusterName.getClusterName());
-            LOG.info("********************************************");
         }
     }
 

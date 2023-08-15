@@ -377,6 +377,7 @@ The metrics with -1:__system are generally metrics for the entire worker.  In th
 The Memory usage is similar but look at the usedBytes.  offHeap is 64621728 or about 62MB, and onHeap is 83857888 or about 80MB, but you should know what you set your heap to in each of your workers already.  How do you divide this up per bolt/spout?  That is a bit harder and may require some trial and error from your end.
 
 <div id='Enhancements-on-original-DefaultResourceAwareStrategy'/>
+
 ## Enhancements on original DefaultResourceAwareStrategy
 
 The default resource aware scheduling strategy as described in the paper above has two main scheduling phases:

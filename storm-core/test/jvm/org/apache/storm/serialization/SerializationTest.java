@@ -26,8 +26,9 @@ import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.testing.TestSerObject;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 // FIXME: it should be moved to storm-client when serialization-test.clj can be removed
 public class SerializationTest {
@@ -42,15 +43,11 @@ public class SerializationTest {
             put("org.apache.storm.testing.TestSerObject", null);
         }});
         conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, false);
-        try {
-            roundtrip(vals, conf);
-            Assert.fail("Expected Exception not Thrown for config: " + conf);
-        } catch (Exception e) {
-        }
+        assertThrows(Exception.class, () -> roundtrip(vals, conf));
 
         conf.clear();
         conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, true);
-        Assert.assertEquals(vals, roundtrip(vals, conf));
+        assertEquals(vals, roundtrip(vals, conf));
     }
 
     @Test
@@ -60,14 +57,11 @@ public class SerializationTest {
 
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, false);
-        try {
-            roundtrip(vals, conf);
-            Assert.fail("Expected Exception not Thrown for config: " + conf);
-        } catch (Exception e) {
-        }
+        assertThrows(Exception.class, () -> roundtrip(vals, conf),
+            "Expected Exception not Thrown for config: " + conf);
 
         conf.put(Config.TOPOLOGY_KRYO_DECORATORS, Lists.newArrayList("org.apache.storm.testing.TestKryoDecorator"));
-        Assert.assertEquals(vals, roundtrip(vals, conf));
+        assertEquals(vals, roundtrip(vals, conf));
     }
 
     @Test
@@ -84,12 +78,12 @@ public class SerializationTest {
         return config;
     }
 
-    private byte[] serialize(List<Object> vals, Map<String, Object> conf) throws IOException {
+    private byte[] serialize(List<Object> vals, Map<String, Object> conf) {
         KryoValuesSerializer serializer = new KryoValuesSerializer(mkConf(conf));
         return serializer.serialize(vals);
     }
 
-    private List<Object> deserialize(byte[] bytes, Map<String, Object> conf) throws IOException {
+    private List<Object> deserialize(byte[] bytes, Map<String, Object> conf) {
         KryoValuesDeserializer deserializer = new KryoValuesDeserializer(mkConf(conf));
         return deserializer.deserialize(bytes);
     }
@@ -98,7 +92,7 @@ public class SerializationTest {
         return roundtrip(vals, new HashMap<>());
     }
 
-    private List<Object> roundtrip(List<Object> vals, Map<String, Object> conf) throws IOException {
+    private List<Object> roundtrip(List<Object> vals, Map<String, Object> conf) {
         return deserialize(serialize(vals, conf), conf);
     }
 
@@ -111,6 +105,6 @@ public class SerializationTest {
     }
 
     public void isRoundtrip(List vals) throws IOException {
-        Assert.assertEquals(vals, roundtrip(vals));
+        assertEquals(vals, roundtrip(vals));
     }
 }

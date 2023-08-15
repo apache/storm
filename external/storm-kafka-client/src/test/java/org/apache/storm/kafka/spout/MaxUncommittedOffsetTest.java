@@ -26,9 +26,6 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -48,17 +45,24 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+
+@ExtendWith(MockitoExtension.class)
 public class MaxUncommittedOffsetTest {
 
     @RegisterExtension
     public KafkaUnitExtension kafkaUnitExtension = new KafkaUnitExtension();
 
-    private final TopologyContext topologyContext = mock(TopologyContext.class);
+    @Mock
+    private TopologyContext topologyContext;
     private final Map<String, Object> conf = new HashMap<>();
-    private final SpoutOutputCollector collector = mock(SpoutOutputCollector.class);
+    @Mock
+    private SpoutOutputCollector collector;
     private final long commitOffsetPeriodMs = 2_000;
     private final int numMessages = 100;
     private final int maxUncommittedOffsets = 10;
