@@ -212,6 +212,17 @@
       <artifactId>libthrift</artifactId>
       <version>0.9.3</version>
       <scope>compile</scope>
+      <exclusions>
+        <!-- We already include a more modern version of httpclient / httpcore -->
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
