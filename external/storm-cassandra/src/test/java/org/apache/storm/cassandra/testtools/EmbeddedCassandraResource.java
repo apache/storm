@@ -16,12 +16,9 @@ package org.apache.storm.cassandra.testtools;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -30,8 +27,6 @@ import java.util.concurrent.Executors;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
-import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
-import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.service.CassandraDaemon;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -41,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.apache.storm.cassandra.trident.MapStateTest.cassandra;
 
 /**
  *
@@ -69,7 +63,6 @@ public class EmbeddedCassandraResource implements BeforeAllCallback, AfterAllCal
     private Integer nativeTransportPort;
     private CassandraDaemon cassandraDaemon;
     private CqlSession session;
-
 
     public EmbeddedCassandraResource(int timeout) {
         this.timeout = timeout;
