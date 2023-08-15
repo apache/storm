@@ -88,7 +88,6 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
         return (T) this;
     }
 
-    @Override
     @SuppressWarnings("unchecked")
     @Override
     public T addResource(String resourceName, Number resourceValue) {
