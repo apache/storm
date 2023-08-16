@@ -66,10 +66,73 @@ sha512sum RELEASE_NOTES.html > RELEASE_NOTES.html.sha512
 7. Move the release files from Step 4 and 6 to the svn directory from Step 5. Add and commit the files. 
 This makes them available in the Apache staging repo.
 
-8. Start the VOTE thread. The vote should follow the [ASF voting process](https://www.apache.org/foundation/voting.html).
+8. Start the VOTE thread. The vote should follow the [ASF voting process](https://www.apache.org/foundation/voting.html). 
+Sample Template sent to dev@storm.apache.org
+
+```
+Subject: [VOTE] Release Apache Storm [VERSION]] (rcN)
+
+Hi folks,
+
+I have posted a [Nth] release candidate for the Apache Storm [VERSION] release and it is ready for testing.
+
+The Nexus staging repository is here:
+    https://repository.apache.org/content/repositories/orgapachestorm-[REPO_NUM]
+
+Storm Source and Binary Release with sha512 signature files are here:
+    https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/
+The release artifacts are signed with the following key:
+    https://keyserver.ubuntu.com/pks/lookup?op=index&fingerprint=on&search=[KEY]
+    in this file https://www.apache.org/dist/storm/KEYS
+
+The release was made from the Apache Storm [VERSION] tag at:
+    https://github.com/apache/storm/tree/v[VERSION]
+
+Full list of changes in this release: 
+    https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/RELEASE_NOTES.html
+
+To use it in a maven build set the version for Storm to [VERSION] and add the following URL to your settings.xml file:
+https://repository.apache.org/content/repositories/orgapachestorm-[REPO_NUM]
+
+The release was made using the Storm release process, documented on the GitHub repository:
+https://github.com/apache/storm/blob/master/RELEASING.md
+
+Please vote on releasing these packages as Apache Storm [VERSION]. The vote is open for at least the next 72 hours.
+"How to vote" is described here: https://github.com/apache/storm/blob/master/RELEASING.md#how-to-vote-on-a-release-candidate
+When voting, please list the actions taken to verify the release.
+
+Only votes from the Storm PMC are binding, but everyone is welcome to check the release candidate and vote.
+The vote passes if at least three binding +1 votes are cast.
+
+[ ] +1 Release this package as Apache Storm [VERSION]
+[ ]  0 No opinion
+[ ] -1 Do not release this package because...
+
+Thanks to everyone who contributed to this release.
+
+Thanks!
+[Release Manager Name]
+```
+
 
 ## Releasing if the vote succeeds
 
+0. Announce the results. Use the following template.
+```agsl
+Subject: [VOTE][RESULT] Storm [VERSION] Release Candidate [N]
+
+Storm [VERSION] RC-N was approved for release with [m] binding +1 and [n] non-binding +1.
+
+Storm [VERSION] release artifacts are available in Maven Central Repository.
+
+ Release is available here https://dist.apache.org/repos/dist/release/storm/apache-storm-[VERSION]
+ Release notes are here: https://dist.apache.org/repos/dist/release/storm/apache-storm-[VERSION]/RELEASE_NOTES.html
+ Also see: https://storm.apache.org for updated information on this [VERSION] and prior releases.
+
+Thanks to everyone who contributed to this release.
+
+[RELEASE MANAGER NAME]
+```
 1. `svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx https://dist.apache.org/repos/dist/release/storm/apache-storm-x.x.x`. This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
 
 2. Go to http://repository.apache.org and release the staging repository
@@ -86,9 +149,49 @@ the site as described in the storm-site README to publish the site.
 
 7. Delete any outdated releases from the storm-site releases directory, and republish the site.
 
-8. Tweet, promote, celebrate. ;)
+8. Tweet, promote, celebrate. ;) Annoucement email can be sent to announce@apache.org using the following template:
+```agsl
+Subject: [ANNOUNCE] Apache Storm [VERSION] Released
+
+The Apache Storm community is pleased to announce the release of Apache
+Storm version [VERSION].
+
+Apache Storm is a distributed, fault-tolerant, and high-performance
+realtime computation system that provides strong guarantees on the
+processing of data. You can read more about Apache Storm on the project
+website:
+
+https://storm.apache.org/
+
+Downloads of source and binary distributions are listed in our download
+section:
+
+https://storm.apache.org/downloads.html
+
+You can read more about this release in the following blog post:
+
+https://storm.apache.org/[YEAR]/[MONTH]/[DAY]/storm[VERSION]-released.html
+
+Distribution artifacts are available in Maven Central at the following
+coordinates:
+
+groupId: org.apache.storm
+artifactId: storm-{component}
+version: [VERSION]
+
+The full list of changes is available here[1]. Please let us know [2] if
+you encounter any problems.
+
+Regards,
+The Apache Storm Team
+
+[1] https://downloads.apache.org/storm/apache-storm-[VERSION]/RELEASE_NOTES.html
+[2] https://issues.apache.org/jira/browse/STORM
+```
 
 ## Cleaning up if the vote fails
+
+0. Sent email to dev@storm.apache.org 
 
 1. Go to http://repository.apache.org and drop the staging repository.
 
@@ -96,7 +199,15 @@ the site as described in the storm-site README to publish the site.
 
 3. Delete the git tag.
 
-4. Send a [VOTE][CANCELED] message.
+4. Send a [VOTE][CANCELED] message using the following format:
+```agsl
+Subject: [VOTE][CANCELED] Storm [VERSION] Release Candidate [N]
+
+This release candidate Storm Release candidate [VERSION] rcN https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/ has been canceled.
+New vote request will be sent out on RC[N+1] with further updates.
+
+[RELEASE MANAGER NAME]
+```
 
 # How to vote on a release candidate
 
