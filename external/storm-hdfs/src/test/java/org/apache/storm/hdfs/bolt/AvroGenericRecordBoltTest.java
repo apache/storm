@@ -69,8 +69,6 @@ public class AvroGenericRecordBoltTest {
                                            + "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"},"
                                            + "{ \"name\":\"bar\", \"type\":\"string\", \"default\":\"baz\" },"
                                            + "{ \"name\":\"int1\", \"type\":\"int\" }]}";
-    private static Schema schema1;
-    private static Schema schema2;
     private static Tuple tuple1;
     private static Tuple tuple2;
 
@@ -94,10 +92,10 @@ public class AvroGenericRecordBoltTest {
     @BeforeAll
     public static void setupClass() {
         Schema.Parser parser = new Schema.Parser();
-        schema1 = parser.parse(schemaV1);
+        Schema schema1 = parser.parse(schemaV1);
 
         parser = new Schema.Parser();
-        schema2 = parser.parse(schemaV2);
+        Schema schema2 = parser.parse(schemaV2);
 
         GenericRecordBuilder builder1 = new GenericRecordBuilder(schema1);
         builder1.set("foo1", "bar1");
@@ -113,7 +111,8 @@ public class AvroGenericRecordBoltTest {
     private static Tuple generateTestTuple(GenericRecord record) {
         TopologyBuilder builder = new TopologyBuilder();
         GeneralTopologyContext topologyContext =
-            new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap(), new HashMap<>(),
+            new GeneralTopologyContext(builder.createTopology(), new Config(),
+            new HashMap<>(), new HashMap<>(),
                 new HashMap<>(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {

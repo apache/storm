@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *******************************************************************************/
+ */
 
 package org.apache.storm.eventhubs.bolt;
 
@@ -38,23 +38,22 @@ import org.slf4j.LoggerFactory;
  */
 public class EventHubBolt extends BaseRichBolt {
     private static final long serialVersionUID = 1L;
-    private static final Logger logger = LoggerFactory
-        .getLogger(EventHubBolt.class);
+    private static final Logger logger = LoggerFactory.getLogger(EventHubBolt.class);
 
     protected OutputCollector collector;
     protected PartitionSender sender;
     protected EventHubClient ehClient;
     protected EventHubBoltConfig boltConfig;
 
-    public EventHubBolt(String connectionString, String entityPath) {
-        boltConfig = new EventHubBoltConfig(connectionString, entityPath);
-    }
-
-    public EventHubBolt(String userName, String password, String namespace,
-                        String entityPath, boolean partitionMode) {
-        boltConfig = new EventHubBoltConfig(userName, password, namespace,
-                                            entityPath, partitionMode);
-    }
+    //public EventHubBolt(String connectionString, String entityPath) {
+    //    boltConfig = new EventHubBoltConfig(connectionString, entityPath);
+    //}
+    //
+    //public EventHubBolt(String userName, String password, String namespace,
+    //                    String entityPath, boolean partitionMode) {
+    //    boltConfig = new EventHubBoltConfig(userName, password, namespace,
+    //                                        entityPath, partitionMode);
+    //}
 
     public EventHubBolt(EventHubBoltConfig config) {
         boltConfig = config;
@@ -97,11 +96,8 @@ public class EventHubBolt extends BaseRichBolt {
                 throw new EventHubException("ehclient is null");
             }
             collector.ack(tuple);
-        } catch (EventHubException ex) {
+        } catch (EventHubException | ServiceBusException ex) {
             collector.reportError(ex);
-            collector.fail(tuple);
-        } catch (ServiceBusException e) {
-            collector.reportError(e);
             collector.fail(tuple);
         }
     }
@@ -113,17 +109,15 @@ public class EventHubBolt extends BaseRichBolt {
                 sender.close().whenComplete((voidargs, error) -> {
                     try {
                         if (error != null) {
-                            logger.error("Exception during sender cleanup phase" + error.toString());
+                            logger.error("Exception during sender cleanup phase" + error);
                         }
                         ehClient.closeSync();
                     } catch (Exception e) {
-                        logger.error("Exception during ehclient cleanup phase" + e.toString());
+                        logger.error("Exception during ehclient cleanup phase" + e);
                     }
                 }).get();
-            } catch (InterruptedException e) {
-                logger.error("Exception occured during cleanup phase" + e.toString());
-            } catch (ExecutionException e) {
-                logger.error("Exception occured during cleanup phase" + e.toString());
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error("Exception occurred during cleanup phase" + e);
             }
             logger.info("Eventhub Bolt cleaned up");
             sender = null;

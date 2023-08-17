@@ -76,7 +76,7 @@ public class TestConstraintSolverStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestConstraintSolverStrategy.class);
     private static final int MAX_TRAVERSAL_DEPTH = 2000;
     private static final int NORMAL_BOLT_PARALLEL = 11;
-    //Dropping the parallelism of the bolts to 3 instead of 11 so we can find a solution in a reasonable amount of work when backtracking.
+    //Dropping the parallelism of the bolts to 3 instead of 11, so we can find a solution in a reasonable amount of work when backtracking.
     private static final int BACKTRACK_BOLT_PARALLEL = 3;
     private static final int CO_LOCATION_CNT = 2;
 
@@ -183,7 +183,7 @@ public class TestConstraintSolverStrategy {
                             e.getKey()));
                 }
             }
-            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, new ArrayList(spreads.keySet()));
+            config.put(Config.TOPOLOGY_SPREAD_COMPONENTS, new ArrayList<>(spreads.keySet()));
         }
     }
 
@@ -324,16 +324,12 @@ public class TestConstraintSolverStrategy {
         Object jsonValue = JSONValue.parse(s);
         Map<String, Object> config = Utils.readDefaultConfig();
         config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, jsonValue);
-        Set<String> allComps = new HashSet<>();
-        allComps.addAll(Arrays.asList("comp-1", "comp-2", "comp-3", "comp-4", "comp-5"));
+        Set<String> allComps = new HashSet<>(Arrays.asList("comp-1", "comp-2", "comp-3", "comp-4", "comp-5"));
         ConstraintSolverConfig constraintSolverConfig = new ConstraintSolverConfig("test-topoid-1", config, allComps);
 
-        Set<String> expectedSetComp1 = new HashSet<>();
-        expectedSetComp1.addAll(Arrays.asList("comp-2", "comp-3"));
-        Set<String> expectedSetComp2 = new HashSet<>();
-        expectedSetComp2.addAll(Arrays.asList("comp-1", "comp-4"));
-        Set<String> expectedSetComp3 = new HashSet<>();
-        expectedSetComp3.addAll(Arrays.asList("comp-1", "comp-5"));
+        Set<String> expectedSetComp1 = new HashSet<>(Arrays.asList("comp-2", "comp-3"));
+        Set<String> expectedSetComp2 = new HashSet<>(Arrays.asList("comp-1", "comp-4"));
+        Set<String> expectedSetComp3 = new HashSet<>(Arrays.asList("comp-1", "comp-5"));
         assertEquals(expectedSetComp1, constraintSolverConfig.getIncompatibleComponentSets().get("comp-1"), "comp-1 incompatible components");
         assertEquals(expectedSetComp2, constraintSolverConfig.getIncompatibleComponentSets().get("comp-2"), "comp-2 incompatible components");
         assertEquals(expectedSetComp3, constraintSolverConfig.getIncompatibleComponentSets().get("comp-3"), "comp-3 incompatible components");
@@ -523,7 +519,7 @@ public class TestConstraintSolverStrategy {
         addConstraints("bolt-1", "bolt-1", constraints);
         addConstraints("bolt-1", "bolt-2", constraints);
 
-        Map<String, Integer> spreads = new HashMap<String, Integer>();
+        Map<String, Integer> spreads = new HashMap<>();
         spreads.put("spout-0", 1);
         spreads.put("bolt-1", 10);
 
@@ -583,7 +579,7 @@ public class TestConstraintSolverStrategy {
         Cluster cluster = makeCluster(new Topologies(topo));
         cs.schedule(cluster, topo);
         LOG.info("********************* Scheduling Zero Unassigned Executors *********************");
-        cs.schedule(cluster, topo); // reschedule a fully schedule topology
+        cs.schedule(cluster, topo); // reschedule a fully scheduled topology
         LOG.info("********************* End of Scheduling Zero Unassigned Executors *********************");
     }
 

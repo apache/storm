@@ -65,7 +65,7 @@ public class JpmmlRunnerTestTopology {
     private String blobKey;           // PMML Model downloaded from Blobstore - null if using File
     private String tplgyName = "test";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         try {
             JpmmlRunnerTestTopology testTopology = new JpmmlRunnerTestTopology();
             testTopology.parseArgs(args);
@@ -77,10 +77,10 @@ public class JpmmlRunnerTestTopology {
     }
 
     private void parseArgs(String[] args) {
-        if (Arrays.stream(args).anyMatch(option -> option.equals("-h"))) {
+        if (Arrays.asList(args).contains("-h")) {
             printUsage();
-        } else if (Arrays.stream(args).anyMatch(option -> option.equals("-f"))
-                && Arrays.stream(args).anyMatch(option -> option.equals("-b"))) {
+        } else if (Arrays.asList(args).contains("-f")
+                && Arrays.asList(args).contains("-b")) {
             System.out.println("Please specify only one option of [-b, -f]");
             printUsage();
         } else {
@@ -116,12 +116,12 @@ public class JpmmlRunnerTestTopology {
     private void setDefaults() {
         if (blobKey == null) {  // blob key not specified, use file
             if (pmml == null) {
-                pmml = loadExample(pmml, PMML_MODEL_FILE);
+                pmml = loadExample(PMML_MODEL_FILE);
             }
         }
 
         if (rawInputs == null) {
-            rawInputs = loadExample(rawInputs, RAW_INPUTS_FILE);
+            rawInputs = loadExample(RAW_INPUTS_FILE);
         }
 
         if (tplgyName == null) {
@@ -129,8 +129,12 @@ public class JpmmlRunnerTestTopology {
         }
     }
 
-    private File loadExample(File file, String example) {
+    private File loadExample(String example) {
+        File file;
         try (InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(example)) {
+            if (stream == null) {
+                throw new RuntimeException("Error loading example=" + example + ", stream is null");
+            }
             file = File.createTempFile("pmml-example", ".tmp");
             IOUtils.copy(stream, new FileOutputStream(file));
         } catch (IOException e) {
@@ -147,8 +151,8 @@ public class JpmmlRunnerTestTopology {
     }
 
     private void run() throws Exception {
-        System.out.println(String.format("Running topology using PMML model loaded from [%s] and raw input data loaded from [%s]",
-                blobKey != null ? "Blobstore with blob key [" + blobKey + "]" : pmml.getAbsolutePath(), rawInputs.getAbsolutePath()));
+        System.out.printf("Running topology using PMML model loaded from [%s] and raw input data loaded from [%s]%n",
+                blobKey != null ? "Blobstore with blob key [" + blobKey + "]" : pmml.getAbsolutePath(), rawInputs.getAbsolutePath());
         submitTopologyRemoteCluster(newTopology(), newConfig());
     }
 
@@ -171,7 +175,7 @@ public class JpmmlRunnerTestTopology {
         return config;
     }
 
-    private IRichBolt newBolt() throws Exception {
+    private IRichBolt newBolt() {
         final List<String> streams = Lists.newArrayList(Utils.DEFAULT_STREAM_ID, NON_DEFAULT_STREAM_ID);
         if (blobKey != null) {  // Load PMML Model from Blob store
             final ModelOutputs outFields = JpmmlModelOutputs.toStreams(blobKey, streams);

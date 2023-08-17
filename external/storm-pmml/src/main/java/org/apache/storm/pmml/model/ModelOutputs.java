@@ -38,7 +38,7 @@ public interface ModelOutputs extends Serializable {
 
     /**
      * Convenience method that returns a set with all the streams declared by the {@link PMMLPredictorBolt}.
-     * By default this this method calls {@link #streamFields()}{@code .keySet()}.
+     * By default, this method calls {@link #streamFields()}{@code .keySet()}.
      * @return The set with all declared streams
      */
     default Set<String> streams() {

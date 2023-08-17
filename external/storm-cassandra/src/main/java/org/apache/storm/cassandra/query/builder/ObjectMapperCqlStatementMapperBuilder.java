@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -60,29 +60,29 @@ public class ObjectMapperCqlStatementMapperBuilder implements CQLStatementBuilde
                                                   codecs, udtClasses);
     }
 
-    public ObjectMapperCqlStatementMapperBuilder withCodecs(List<SerializableCallable<TypeCodec<?>>> codecProducer) {
-        this.codecProducers.addAll(codecProducer);
-        return this;
-    }
-
-    public ObjectMapperCqlStatementMapperBuilder withUdtCodecs(List<Class<?>> udtClass) {
-        this.udtClasses.addAll(udtClass);
-        return this;
-    }
-
-    public ObjectMapperCqlStatementMapperBuilder withTimestampField(String timestampField) {
-        this.timestampField = timestampField;
-        return this;
-    }
-
-    public ObjectMapperCqlStatementMapperBuilder withTtlField(String ttlField) {
-        this.ttlField = ttlField;
-        return this;
-    }
-
-    public ObjectMapperCqlStatementMapperBuilder withConsistencyLevelField(String consistencyLevelField) {
-        this.consistencyLevelField = consistencyLevelField;
-        return this;
-    }
+    //public ObjectMapperCqlStatementMapperBuilder withCodecs(List<SerializableCallable<TypeCodec<?>>> codecProducer) {
+    //    this.codecProducers.addAll(codecProducer);
+    //    return this;
+    //}
+    //
+    //public ObjectMapperCqlStatementMapperBuilder withUdtCodecs(List<Class<?>> udtClass) {
+    //    this.udtClasses.addAll(udtClass);
+    //    return this;
+    //}
+    //
+    //public ObjectMapperCqlStatementMapperBuilder withTimestampField(String timestampField) {
+    //    this.timestampField = timestampField;
+    //    return this;
+    //}
+    //
+    //public ObjectMapperCqlStatementMapperBuilder withTtlField(String ttlField) {
+    //    this.ttlField = ttlField;
+    //    return this;
+    //}
+    //
+    //public ObjectMapperCqlStatementMapperBuilder withConsistencyLevelField(String consistencyLevelField) {
+    //    this.consistencyLevelField = consistencyLevelField;
+    //    return this;
+    //}
 }
 

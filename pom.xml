@@ -1291,6 +1291,7 @@
                             <exclude>org/apache/storm/generated/**</exclude>
                             <exclude>org/apache/storm/sql/parser/impl/**</exclude>
                         </excludes>
+                        <targetJdk>1.8</targetJdk>
                     </configuration>
                     <executions>
                         <execution>
