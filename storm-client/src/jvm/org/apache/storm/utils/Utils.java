@@ -723,12 +723,16 @@ public class Utils {
     }
 
     private static TDeserializer getDes() {
-        TDeserializer des = threadDes.get();
-        if (des == null) {
-            des = new TDeserializer();
-            threadDes.set(des);
+        try {
+            TDeserializer des = threadDes.get();
+            if (des == null) {
+                des = new TDeserializer();
+                threadDes.set(des);
+            }
+            return des;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return des;
     }
 
     public static void sleepNoSimulation(long millis) {
