@@ -31,8 +31,6 @@ public class TopicAssigner implements Serializable {
     
     /**
      * Assign partitions to the KafkaConsumer.
-     * @param <K> The consumer key type
-     * @param <V> The consumer value type
      * @param consumer The Kafka consumer to assign partitions to
      * @param newAssignment The partitions to assign.
      * @param listener The rebalance listener to call back on when the assignment changes
