@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
+import net.minidev.json.parser.JSONParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -35,7 +38,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.storm.Config;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.BoltStats;
-import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ExecutorSummary;
 import org.apache.storm.generated.GlobalStreamId;
@@ -50,9 +52,6 @@ import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ObjectReader;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -419,7 +418,7 @@ public class CaptureLoad {
                 }
                 LOG.debug("Topology Resources {}", topologyResources);
             }
-        } catch (org.json.simple.parser.ParseException e) {
+        } catch (net.minidev.json.parser.ParseException e) {
             LOG.error("Failed to parse component resources is:" + e.toString(), e);
             return null;
         }

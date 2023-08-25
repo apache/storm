@@ -18,7 +18,6 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
-import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,10 +52,8 @@ import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.streams.tuple.Tuple3;
 import org.apache.storm.utils.Utils;
-import org.jooq.lambda.Seq;
-import org.jooq.lambda.Unchecked;
-import org.jooq.lambda.tuple.Tuple3;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -282,7 +279,7 @@ public class LogviewerLogSearchHandlerTest {
                 List<Map<String, Object>> matches = new ArrayList<>();
 
                 matches.add(buildMatchData(3066,
-                    Seq.range(0, 128).map(x -> ".").collect(joining()),
+                    ".".repeat(128),
                     "",
                     pattern,
                     "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
@@ -333,11 +330,16 @@ public class LogviewerLogSearchHandlerTest {
                 dataAndExpected.add(new Tuple3<>(12, 12, null));
                 dataAndExpected.add(new Tuple3<>(13, 12, null));
 
-                dataAndExpected.forEach(Unchecked.consumer(data -> {
-                    Map<String, Object> result = handler.substringSearch(file.toPath(), pattern, data.v1());
-                    assertEquals(data.v3(), result.get("nextByteOffset"));
-                    assertEquals(data.v2().intValue(), ((List) result.get("matches")).size());
-                }));
+                dataAndExpected.forEach(data -> {
+                    Map<String, Object> result;
+                    try {
+                        result = handler.substringSearch(file.toPath(), pattern, data.value1);
+                        assertEquals(data.value3, result.get("nextByteOffset"));
+                        assertEquals(data.value2.intValue(), ((List) result.get("matches")).size());
+                    } catch (InvalidRequestException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -468,7 +470,7 @@ public class LogviewerLogSearchHandlerTest {
                 final File file = new File(String.join(File.separator, "src", "test", "resources"),
                     "test-worker.log.test");
 
-                String pattern = Seq.range(0, 1024).map(x -> "X").collect(joining());
+                String pattern = "X".repeat(1024);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");

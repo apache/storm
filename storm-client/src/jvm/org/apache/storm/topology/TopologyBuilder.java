@@ -44,7 +44,7 @@ import org.apache.storm.lambda.LambdaSpout;
 import org.apache.storm.lambda.SerializableBiConsumer;
 import org.apache.storm.lambda.SerializableConsumer;
 import org.apache.storm.lambda.SerializableSupplier;
-import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.state.State;
 import org.apache.storm.task.OutputCollector;

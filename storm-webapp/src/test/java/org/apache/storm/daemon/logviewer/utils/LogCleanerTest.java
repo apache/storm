@@ -46,6 +46,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
+
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -53,7 +55,6 @@ import org.apache.storm.shade.io.netty.util.internal.ThreadLocalRandom;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
 
@@ -152,11 +153,11 @@ public class LogCleanerTest {
             Path port2Dir = createDir(topo1Dir, "port2");
             Path port3Dir = createDir(topo2Dir, "port3");
 
-            Seq.range(0, 10)
+            IntStream.range(0, 10)
                 .forEach(idx -> createFile(port1Dir, "A" + idx, nowMillis + 100L * idx, 200));
-            Seq.range(0, 10)
+            IntStream.range(0, 10)
                 .forEach(idx -> createFile(port2Dir, "B" + idx, nowMillis + 100L * idx, 200));
-            Seq.range(0, 10)
+            IntStream.range(0, 10)
                 .forEach(idx -> createFile(port3Dir, "C" + idx, nowMillis + 100L * idx, 200));
 
             Map<String, Object> conf = Utils.readStormConfig();
@@ -188,11 +189,11 @@ public class LogCleanerTest {
             Path port2Dir = createDir(topo1Dir, "port2");
             Path port3Dir = createDir(topo2Dir, "port3");
 
-            Seq.range(0, 10)
+            IntStream.range(0, 10)
                 .forEach(idx -> createFile(port1Dir, "A" + idx + ".log", nowMillis + 100L * idx, 200));
-            Seq.range(0, 10)
+            IntStream.range(0, 10)
                 .forEach(idx -> createFile(port2Dir, "B" + idx, nowMillis + 100L * idx, 200));
-            Seq.range(0, 10)
+            IntStream.range(0, 10)
                 .forEach(idx -> createFile(port3Dir, "C" + idx, nowMillis + 100L * idx, 200));
 
             Map<String, Object> conf = Utils.readStormConfig();

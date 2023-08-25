@@ -22,7 +22,7 @@
             TrackedTopology CompleteTopologyParam MockedSources])
   (:import [org.apache.storm Thrift Testing Testing$Condition])
   (:import [org.apache.storm.testing MockLeaderElector])
-  (:import [org.json.simple JSONValue])
+  (:import [net.minidev.json JSONValue])
   (:use [org.apache.storm util config log])
   (:use [org.apache.storm thrift]))
 

@@ -38,6 +38,7 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
 import com.codahale.metrics.Meter;
+import j2html.attributes.Attr;
 import j2html.tags.DomContent;
 
 import java.io.ByteArrayOutputStream;
@@ -78,7 +79,6 @@ import org.apache.storm.daemon.utils.UrlBuilder;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
-import org.jooq.lambda.Unchecked;
 
 public class LogviewerLogPageHandler {
     private final Meter numPageRead;
@@ -213,7 +213,13 @@ public class LogviewerLogPageHandler {
                 SortedSet<Path> logFiles;
                 try {
                     logFiles = Arrays.stream(topoDir.toFile().listFiles())
-                        .flatMap(Unchecked.function(portDir -> directoryCleaner.getFilesForDir(portDir.toPath()).stream()))
+                        .flatMap(portDir -> {
+                            try {
+                                return directoryCleaner.getFilesForDir(portDir.toPath()).stream();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
                         .filter(Files::isRegularFile)
                             .collect(toCollection(TreeSet::new));
                 } catch (UncheckedIOException e) {
@@ -404,7 +410,7 @@ public class LogviewerLogPageHandler {
         List<DomContent> options = logFiles.stream()
                 .map(file -> option(file).condAttr(file.equals(selectedFile), "selected", "selected"))
                 .collect(toList());
-        return select(options.toArray(new DomContent[]{})).withName(name).withId(name).withValue(selectedFile);
+        return select(options.toArray(new DomContent[]{})).withName(name).withId(name).attr(Attr.VALUE, selectedFile);
     }
 
     private DomContent searchFileForm(String fileName, String isDaemonValue) {

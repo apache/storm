@@ -44,7 +44,7 @@
            [org.apache.storm.utils.staticmocking ServerConfigUtilsInstaller ReflectionUtilsInstaller UtilsInstaller])
   (:import [org.apache.storm.zookeeper Zookeeper])
   (:import [org.apache.commons.io FileUtils])
-  (:import [org.json.simple JSONValue])
+  (:import [net.minidev.json JSONValue])
   (:import [org.apache.storm.daemon StormCommon])
   (:import [org.apache.storm.cluster IStormClusterState StormClusterStateImpl ClusterStateContext ClusterUtils]
            [org.apache.storm.assignments LocalAssignmentsBackendFactory])

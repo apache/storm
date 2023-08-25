@@ -16,7 +16,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.storm.shade.org.json.simple.JSONValue;
+
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

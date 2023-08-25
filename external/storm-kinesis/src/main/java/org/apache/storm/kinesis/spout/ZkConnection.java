@@ -20,12 +20,12 @@ package org.apache.storm.kinesis.spout;
 
 import java.nio.charset.Charset;
 import java.util.Map;
+import net.minidev.json.JSONValue;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.zookeeper.CreateMode;
-import org.json.simple.JSONValue;
 
 class ZkConnection {
 

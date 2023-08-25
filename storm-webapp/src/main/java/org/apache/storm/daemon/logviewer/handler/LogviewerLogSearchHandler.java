@@ -56,6 +56,8 @@ import java.util.zip.GZIPInputStream;
 
 import javax.ws.rs.core.Response;
 
+import net.minidev.json.JSONAware;
+
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -75,8 +77,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
-import org.jooq.lambda.Unchecked;
-import org.json.simple.JSONAware;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -431,7 +432,13 @@ public class LogviewerLogSearchHandler {
 
             return workerLogs.stream()
                 .filter(log -> resourceAuthorizer.isUserAllowedToAccessFile(user, WorkerLogs.getTopologyPortWorkerLog(log)))
-                .map(Unchecked.function(p -> Pair.of(p, Files.getLastModifiedTime(p))))
+                .map(p -> {
+                    try {
+                        return Pair.of(p, Files.getLastModifiedTime(p));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .sorted(Comparator.comparing((Pair<Path, FileTime> p) -> p.getRight()).reversed())
                 .map(p -> p.getLeft())
                 .collect(toList());

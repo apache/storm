@@ -39,13 +39,8 @@
             <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-            <scope>compile</scope>
-        </dependency> 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -108,11 +103,6 @@
             <groupId>com.j2html</groupId>
             <artifactId>j2html</artifactId>
             <version>${j2html.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jooq</groupId>
-            <artifactId>jool</artifactId>
-            <version>${jool.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>

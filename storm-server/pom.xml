@@ -119,8 +119,8 @@
             <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
