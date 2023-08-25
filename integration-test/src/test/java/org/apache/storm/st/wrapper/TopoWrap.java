@@ -17,8 +17,6 @@
 
 package org.apache.storm.st.wrapper;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -226,7 +224,7 @@ public class TopoWrap {
         long emitCount = getAllTimeEmittedCount(componentName);
         assertTrue(emitCount >= minEmits, "Emit count for component '" + componentName + "' is " + emitCount + ", min is " + minEmits);
         long executorCount = getComponentExecutorCount(componentName);
-        assertThat(executorCount, is((long)expectedExecutors));
+        assertEquals(executorCount, expectedExecutors);
     }
 
     public static class ExecutorURL {
