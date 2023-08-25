@@ -22,7 +22,7 @@ import org.apache.storm.tuple.Values;
 
 /**
  * A list of Values in a tuple that can be routed 
- * to a given stream. {@see org.apache.storm.kafka.spout.RecordTranslator#apply}
+ * to a given stream: {@link org.apache.storm.kafka.spout.RecordTranslator#apply}.
  */
 public class KafkaTuple extends Values {
     private static final long serialVersionUID = 4803794470450587992L;
