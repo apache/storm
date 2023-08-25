@@ -855,7 +855,6 @@ public class Utils {
      *
      * @param str   the encoded string.
      * @param clazz the thrift class we are expecting.
-     * @param <T>   The type of clazz
      * @return the decoded object
      */
     public static <T> T deserializeFromString(String str, Class<T> clazz) {

@@ -18,8 +18,7 @@ import org.apache.storm.generated.SharedMemory;
 
 /**
  * This interface is implemented by various Trident classes in order to gather and propogate resources that have been set on them.
- *
- * @see ResourceDeclarer
+ * See {@link org.apache.storm.topology.ResourceDeclarer}
  */
 public interface ITridentResource {
     /**

@@ -69,6 +69,8 @@ public class LeaderListenerCallback {
     private final int requeueDelayMs;
 
     /**
+     * Creates a {@link LeaderListenerCallback}.
+     *
      * @param conf config
      * @param zk zookeeper CuratorFramework client
      * @param blobStore BlobStore

@@ -14,10 +14,6 @@ package org.apache.storm.streams.operations;
 
 /**
  * Interface for aggregating values.
- *
- * @param <T> the original value type
- * @param <A> the accumulator type
- * @param <R> the result type
  */
 public interface CombinerAggregator<T, A, R> extends Operation {
     /**
@@ -26,8 +22,6 @@ public interface CombinerAggregator<T, A, R> extends Operation {
      * @param initialValue the initial value of the result to start with
      * @param accumulator  a function that accumulates values into a partial result
      * @param combiner     a function that combines partially accumulated results
-     * @param <T>          the value type
-     * @param <R>          the result type
      * @return the {@link CombinerAggregator}
      */
     static <T, R> CombinerAggregator<T, R, R> of(R initialValue,

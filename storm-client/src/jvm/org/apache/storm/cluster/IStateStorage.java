@@ -64,7 +64,6 @@ public interface IStateStorage extends Closeable {
      *
      * @param path The path to create, along with all its parents.
      * @param acls The acls to apply to the path. May be null.
-     * @return path
      */
     void mkdirs(String path, List<ACL> acls);
 

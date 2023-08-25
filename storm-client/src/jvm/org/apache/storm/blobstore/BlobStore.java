@@ -256,7 +256,6 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * Filters keys based on the KeyFilter passed as the argument.
      *
      * @param filter KeyFilter
-     * @param <R>    Type
      * @return Set of filtered keys
      */
     public <R> Set<R> filterAndListKeys(KeyFilter<R> filter) {
