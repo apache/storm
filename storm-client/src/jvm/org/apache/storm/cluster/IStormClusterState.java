@@ -61,14 +61,15 @@ public interface IStormClusterState {
     Map<String, Assignment> assignmentsInfo();
 
     /**
-     * Sync the remote state store assignments to local backend, used when master gains leadership, see {@link LeaderListenerCallback}.
+     * Sync the remote state store assignments to local backend, used when master gains leadership,
+     * see {@code org.apache.storm.nimbus.LeaderListenerCallback}.
      *
      * @param remote assigned assignments for a specific {@link IStormClusterState} instance, usually a supervisor/node.
      */
     void syncRemoteAssignments(Map<String, byte[]> remote);
 
     /**
-     * Flag to indicate if the assignments synced successfully, see {@link #syncRemoteAssignments(Map)}.
+     * Flag to indicate if the assignments synced successfully, see {@link IStormClusterState#syncRemoteAssignments(Map)}.
      *
      * @return true if is synced successfully
      */
@@ -82,7 +83,7 @@ public interface IStormClusterState {
     boolean isPacemakerStateStore();
 
     /**
-     * Mark the assignments as synced successfully, see {@link #isAssignmentsBackendSynchronized()}.
+     * Mark the assignments as synced successfully, see {@link IStormClusterState#isAssignmentsBackendSynchronized()}.
      */
     void setAssignmentsBackendSynchronized();
 
@@ -150,9 +151,9 @@ public interface IStormClusterState {
 
     /**
      * Get backpressure topologies.
-     * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
+     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.0.0")
     List<String> backpressureTopologies();
 
     /**
@@ -178,30 +179,30 @@ public interface IStormClusterState {
 
     /**
      * Get topoloy backpressure.
-     * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
+     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.0.0")
     boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback);
 
     /**
      * Setup backpressure.
-     * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
+     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.0.0")
     void setupBackpressure(String stormId, Map<String, Object> topoConf);
 
     /**
      * Remove backpressure.
-     * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
+     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.0.0")
     void removeBackpressure(String stormId);
 
     /**
      * Remove worker backpressure.
-     * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
+     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.0.0")
     void removeWorkerBackpressure(String stormId, String node, Long port);
 
     void activateStorm(String stormId, StormBase stormBase, Map<String, Object> topoConf);

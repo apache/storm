@@ -16,9 +16,6 @@ import java.io.Serializable;
 
 /**
  * A pair of values.
- *
- * @param <T1> the type of the first value
- * @param <T2> the type of the second value
  */
 public final class Pair<T1, T2> implements Serializable {
     /**

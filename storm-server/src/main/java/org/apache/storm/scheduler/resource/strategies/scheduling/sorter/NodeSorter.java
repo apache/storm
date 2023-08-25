@@ -160,7 +160,8 @@ public class NodeSorter implements INodeSorter {
      *     above will be ranked after racks that have more balanced resource availability and nodes or racks that have
      *     resources that are not requested will be ranked below . So we will be less likely to pick a rack that
      *     have a lot of one resource but a low amount of another and have a lot of resources that are not requested by the executor.
-     *     This is similar to logic used in {@code #sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
+     *     This is similar to logic used in
+     *     {@link NodeSorter#sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
      * </li>
      *
      * <li>

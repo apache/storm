@@ -28,7 +28,7 @@ public class VersionedStore {
     /**
      * Creates a store at the given path.
      *
-     * @param The path for the store
+     * @param path The path for the store
      * @param createRootDir option to create the path directory
      */
     public VersionedStore(String path, boolean createRootDir) throws IOException {

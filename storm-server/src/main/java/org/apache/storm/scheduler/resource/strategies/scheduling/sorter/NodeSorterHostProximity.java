@@ -169,13 +169,14 @@ public class NodeSorterHostProximity implements INodeSorter {
      *     above will be ranked after racks that have more balanced resource availability and nodes or racks that have
      *     resources that are not requested will be ranked below . So we will be less likely to pick a rack that
      *     have a lot of one resource but a low amount of another and have a lot of resources that are not requested by the executor.
-     *     This is similar to logic used in {@code #sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
+     *     This is similar to logic used in
+     *     {@link NodeSorterHostProximity#sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
      * </li>
      *
      * <li>
      *     The tie between two nodes with same resource availability is broken by using the node with lower minimum
      *     percentage used. This comparison was used in {@link #sortObjectResourcesDefault(ObjectResourcesSummary, ExistingScheduleFunc)}
-     *     but here it is made subservient to modified resource availbility used in
+     *     but here it is made subservient to modified resource availability used in
      *     {@code #sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
      *
      * </li>

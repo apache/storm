@@ -131,10 +131,9 @@ public class Config extends HashMap<String, Object> {
     public static final String TASK_CREDENTIALS_POLL_SECS = "task.credentials.poll.secs";
     /**
      * Whether to enable backpressure in for a certain topology.
-     *
-     * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
+     * Note: Retained for enabling transition from 1.x. Will be removed soon.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.0.0")
     @IsBoolean
     public static final String TOPOLOGY_BACKPRESSURE_ENABLE = "topology.backpressure.enable";
     /**
@@ -860,16 +859,17 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_DO_AS_USER = "storm.doAsUser";
     /**
      * The maximum number of machines that should be used by this topology. This configuration can
-     * be used to isolate topologies from each other. See {@link org.apache.storm.scheduler.multitenant.MultitenantScheduler}.
+     * be used to isolate topologies from each other. See {@code  org.apache.storm.scheduler.multitenant.MultitenantScheduler}.
      * Round Robin Strategy uses this value to avoid spreading a topology too
-     * thinly over a large number of machines - avoiding the the extreme case where the topology would be spread over
+     * thinly over a large number of machines - avoiding the extreme case where the topology would be spread over
      * all workers and thus deny scheduling of other topologies. Round Robin scheduling will occupy all the workers on
      * this limited number of machines, forcing other topologies to be scheduled on other machines; thus isolating the
      * topology from other topologies.
-     * Set storm.scheduler to {@link org.apache.storm.scheduler.multitenant.MultitenantScheduler}
-     * Alternatively set storm.scheduler to {@link org.apache.storm.scheduler.resource.ResourceAwareScheduler}
-     * using {@link #TOPOLOGY_SCHEDULER_STRATEGY} set to
-     * {@link org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy}     */
+     * Set {@code storm.scheduler} to {@code org.apache.storm.scheduler.multitenant.MultitenantScheduler}
+     * Alternatively set {@code storm.scheduler} to {@code org.apache.storm.scheduler.resource.ResourceAwareScheduler}
+     * using {@link Config#TOPOLOGY_SCHEDULER_STRATEGY} set to
+     * {@code org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy}
+     * */
     @IsInteger
     @IsPositiveNumber
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";
@@ -1237,9 +1237,9 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * Configure the topology metrics reporters to be used on workers.
-     * @deprecated Use {@link Config#TOPOLOGY_METRICS_REPORTERS} instead.
+     * Use {@link Config#TOPOLOGY_METRICS_REPORTERS} instead.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.0.0")
     @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
     public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
 
@@ -1268,9 +1268,9 @@ public class Config extends HashMap<String, Object> {
      * If the instance field of the principal is the string "_HOST", it will
      * be replaced with the host name of the server the daemon is running on
      * (by calling {@link #getBlobstoreHDFSPrincipal(Map conf)} method).
-     * @Deprecated Use {@link Config#STORM_HDFS_LOGIN_PRINCIPAL} instead.
+     * Note: Use {@link Config#STORM_HDFS_LOGIN_PRINCIPAL} instead.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.0.0")
     @IsString
     public static final String BLOBSTORE_HDFS_PRINCIPAL = "blobstore.hdfs.principal";
     /**
