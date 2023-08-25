@@ -65,7 +65,6 @@ public class LogviewerResponseBuilder {
      * @param entity entity object to represent it as JSON
      * @param callback callbackParameterName for JSONP
      * @param origin origin
-     * @see {@link JsonResponseBuilder}
      */
     public static Response buildSuccessJsonResponse(Object entity, String callback, String origin) {
         return new JsonResponseBuilder().setData(entity).setCallback(callback)

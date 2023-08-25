@@ -107,7 +107,6 @@ public class LogviewerProfileHandler {
      * @param fileName dump file name
      * @param user username
      * @return a Response which lets browsers download that file.
-     * @see {@link org.apache.storm.daemon.logviewer.utils.LogFileDownloader#downloadFile(String, String, String, boolean)}
      */
     public Response downloadDumpFile(String topologyId, String hostPort, String fileName, String user) throws IOException {
         String[] hostPortSplit = hostPort.split(":");
