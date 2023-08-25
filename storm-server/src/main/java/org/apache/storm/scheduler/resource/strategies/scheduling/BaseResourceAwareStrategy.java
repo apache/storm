@@ -75,7 +75,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
         /**
          * New and only node sorting type going forward.
-         * {@link NodeSorterHostProximity#NodeSorterHostProximity(Cluster, TopologyDetails)} for more details
+         * See {@link NodeSorterHostProximity} for more details.
          */
         COMMON,
     }
