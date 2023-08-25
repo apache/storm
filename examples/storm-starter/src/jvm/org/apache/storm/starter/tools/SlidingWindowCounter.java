@@ -12,6 +12,8 @@
 
 package org.apache.storm.starter.tools;
 
+import org.apache.storm.starter.bolt.RollingCountBolt;
+
 import java.io.Serializable;
 import java.util.Map;
 
@@ -19,7 +21,7 @@ import java.util.Map;
  * This class counts objects in a sliding window fashion.
  * <p/>
  * It is designed 1) to give multiple "producer" threads write access to the counter, i.e. being able to increment
- * counts of objects, and 2) to give a single "consumer" thread (e.g. {@link PeriodicSlidingWindowCounter}) read access
+ * counts of objects, and 2) to give a single "consumer" thread (e.g. {@link RollingCountBolt}) read access
  * to the counter. Whenever the consumer thread performs a read operation, this class will advance the head slot of the
  * sliding window counter. This means that the consumer thread indirectly controls where writes of the producer threads
  * will go to. Also, by itself this class will not advance the head slot.
