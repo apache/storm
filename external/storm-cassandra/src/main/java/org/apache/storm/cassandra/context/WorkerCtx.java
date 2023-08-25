@@ -66,9 +66,9 @@ public class WorkerCtx implements Serializable {
      *
      * @param clazz the class of the bean.
      * @param topoConf the storm configuration
-     * @param force if <code>true</code>= create a new instance even if one already exist.
+     * @param force if {@code true}, create a new instance even if one already exist.
      *
-     * @return a instance of type {@link T}.
+     * @return an instance of the given type {@code T}.
      */
     public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> topoConf, boolean force) {
         if (force) {
