@@ -21,7 +21,7 @@ public interface TimerDecorated extends AutoCloseable {
     long stopTiming();
 
     /**
-     * Stop the timer for measured object. (Copied from {@link Timer.Context#stop()})
+     * Stop the timer for measured object.
      * Call to this method will not reset the start time.
      * Multiple calls result in multiple updates.
      *
