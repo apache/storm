@@ -28,8 +28,18 @@
     <artifactId>storm-sql-hdfs</artifactId>
     
     <properties>
-        <!-- Required downgrade by calcite-core 1.14.0 -->
-        <guava.version>16.0.1</guava.version>
+        <!--
+             +- org.apache.storm:storm-hdfs:jar:2.6.0-SNAPSHOT:provided
+             |  +- org.apache.hadoop:hadoop-auth:jar:2.10.1:provided
+
+             to fix Illegal reflective access by org.apache.hadoop.security.authentication.util.KerberosUtil
+             (org.apache.hadoop:hadoop-auth:2.10.1)
+             to method sun.security.krb5.Config.getInstance() add
+             "add-opens java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+        -->
+        <storm-sql-hdfs.test.introspection.argLine>--add-opens java.security.jgss/sun.security.krb5=ALL-UNNAMED</storm-sql-hdfs.test.introspection.argLine>
+        <!-- Required downgrade by calcite-core 1.16.0 https://mvnrepository.com/artifact/org.apache.calcite/calcite-core/1.16.0 -->
+        <guava.version.downgrade>19.0</guava.version.downgrade>
     </properties>
 
     <developers>
@@ -109,7 +119,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
+            <version>${guava.version.downgrade}</version>
         </dependency>
     </dependencies>
     <build>
@@ -129,6 +139,21 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>${storm-sql-hdfs.test.introspection.argLine} -Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <excludedGroups>IntegrationTest | ${java.unit.test.exclude.groups}</excludedGroups>
+                    <trimStackTrace>false</trimStackTrace>
+                    <forkCount>1.0C</forkCount>
+                    <reuseForks>true</reuseForks>
+                    <systemPropertyVariables>
+                        <storm.home>${project.basedir}/target/testhome</storm.home>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>
