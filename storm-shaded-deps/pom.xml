@@ -124,8 +124,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -203,11 +203,13 @@
                     <artifactSet>
                         <includes>
                             <include>com.google.guava:*</include>
-                            <include>com.googlecode.json-simple:json-simple</include>
                             <include>commons-codec:commons-codec</include>
                             <include>commons-collections:commons-collections</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-lang:commons-lang</include>
+                            <!-- Pulled in by json-smart -->
+                            <include>net.minidev:*</include>
+                            <include>org.ow2.asm:*</include>
                             <!-- Pulled in by Zookeeper -->
                             <include>io.netty:*</include>
                             <include>org.apache.curator:*</include>
@@ -262,10 +264,6 @@
                             <shadedPattern>org.apache.storm.shade.org.jctools</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.json.simple</pattern>
-                            <shadedPattern>org.apache.storm.shade.org.json.simple</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>org.yaml.snakeyaml</pattern>
                             <shadedPattern>org.apache.storm.shade.org.yaml.snakeyaml</shadedPattern>
                         </relocation>
@@ -284,6 +282,22 @@
                         <relocation>
                             <pattern>org.apache.commons.codec</pattern>
                             <shadedPattern>org.apache.storm.shade.org.apache.commons.codec</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>net.minidev.json</pattern>
+                            <shadedPattern>org.apache.storm.shade.net.minidev.json</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>net.minidev.asm</pattern>
+                            <shadedPattern>org.apache.storm.shade.net.minidev.asm</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.objectweb.asm</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.objectweb.asm</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.xerial.snappy</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.xerial.snappy</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>uk.org.lidalia.sysoutslf4j</pattern>

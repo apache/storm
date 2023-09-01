@@ -43,7 +43,7 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.IExecSor
 import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.NodeSorterHostProximity;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONValue;
+import net.minidev.json.JSONValue;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;

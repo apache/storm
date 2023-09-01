@@ -14,13 +14,13 @@ package org.apache.storm.command;
 
 import com.google.common.base.Joiner;
 import java.util.Map;
+import net.minidev.json.JSONValue;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.generated.ClusterWorkerHeartbeat;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

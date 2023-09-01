@@ -12,11 +12,11 @@
 
 package org.apache.storm.trident.state;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.storm.shade.org.json.simple.JSONValue;
-import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
+import org.apache.storm.shade.net.minidev.json.parser.ParseException;
 
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class JSONOpaqueSerializer implements Serializer<OpaqueValue> {
@@ -27,20 +27,16 @@ public class JSONOpaqueSerializer implements Serializer<OpaqueValue> {
         toSer.add(obj.currTxid);
         toSer.add(obj.curr);
         toSer.add(obj.prev);
-        try {
-            return JSONValue.toJSONString(toSer).getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return JSONValue.toJSONString(toSer).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
     public OpaqueValue deserialize(byte[] b) {
         try {
-            String s = new String(b, "UTF-8");
+            String s = new String(b, StandardCharsets.UTF_8);
             List deser = (List) JSONValue.parseWithException(s);
-            return new OpaqueValue((Long) deser.get(0), deser.get(1), deser.get(2));
-        } catch (UnsupportedEncodingException | ParseException e) {
+            return new OpaqueValue(((Number) deser.get(0)).longValue(), deser.get(1), deser.get(2));
+        } catch (ParseException e) {
             throw new RuntimeException(e);
         }
     }

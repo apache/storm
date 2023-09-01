@@ -29,7 +29,7 @@ import org.apache.storm.generated.SpoutAggregateStats;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.utils.Time;
-import org.json.simple.JSONValue;
+import net.minidev.json.JSONValue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

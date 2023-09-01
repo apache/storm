@@ -14,6 +14,10 @@ package org.apache.storm;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.NotAliveException;
@@ -32,8 +36,7 @@ import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

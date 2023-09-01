@@ -61,6 +61,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 
+import net.minidev.json.JSONValue;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -225,7 +227,6 @@ import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.zookeeper.AclEnforcement;
 import org.apache.storm.zookeeper.ClientZookeeper;
 import org.apache.storm.zookeeper.Zookeeper;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

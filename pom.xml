@@ -297,13 +297,13 @@
         <commons-compress.version>1.21</commons-compress.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
         <commons-exec.version>1.3</commons-exec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
         <commons-codec.version>1.11</commons-codec.version>
         <commons-cli.version>1.4</commons-cli.version>
         <curator.version>5.5.0</curator.version>
-        <json-simple.version>1.1</json-simple.version>
         <jetty.version>9.4.45.v20220203</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.6.0</carbonite.version>
@@ -316,7 +316,7 @@
         <auto-service.version>1.0-rc4</auto-service.version>
         <netty.version>4.1.96.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j.version>2.17.1</log4j.version>
+        <log4j.version>2.20.0</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
         <mockito.version>4.11.0</mockito.version>
@@ -329,9 +329,9 @@
         <hbase.version>2.1.3</hbase.version>
         <kryo.version>5.4.0</kryo.version>
         <servlet.version>3.1.0</servlet.version>
-        <joda-time.version>2.3</joda-time.version>
+        <joda-time.version>2.12.5</joda-time.version>
         <thrift.version>0.18.1</thrift.version>
-        <junit.jupiter.version>5.5.1</junit.jupiter.version>
+        <junit.jupiter.version>5.10.0</junit.jupiter.version>
         <surefire.version>3.0.0-M5</surefire.version>
         <awaitility.version>3.1.0</awaitility.version>
         <hdrhistogram.version>2.1.10</hdrhistogram.version>
@@ -360,20 +360,21 @@
         <maven-resolver.version>1.3.3</maven-resolver.version>
         <maven.version>3.6.0</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
-        <jersey.version>2.29</jersey.version>
-        <dropwizard.version>1.3.19</dropwizard.version>
-        <j2html.version>1.0.0</j2html.version>
-        <jool.version>0.9.12</jool.version>
+        <!-- Jersey 3.x is jakarta.* namespace. We have too many javax.* dependencies atm-->
+        <jersey.version>2.40</jersey.version>
+        <dropwizard.version>1.3.29</dropwizard.version>
+        <j2html.version>1.6.0</j2html.version>
         <caffeine.version>2.3.5</caffeine.version>
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jaxb-version>2.3.0</jaxb-version>
         <activation-version>1.1.1</activation-version>
         <rocksdb-version>8.1.1</rocksdb-version>
-        <json-smart.version>2.3</json-smart.version>
+        <json-smart.version>2.5.0</json-smart.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
+        <jakarta-el.version>3.0.1-b12</jakarta-el.version>
     </properties>
 
     <modules>
@@ -855,6 +856,11 @@
                 <version>${servlet.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>javax.el</artifactId>
+                <version>${jakarta-el.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
@@ -870,6 +876,11 @@
                 <version>${jackson.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-fileupload</groupId>
@@ -903,9 +914,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>com.googlecode.json-simple</groupId>
-                <artifactId>json-simple</artifactId>
-                <version>${json-simple.version}</version>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json-smart.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -965,6 +976,16 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>log4j-over-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jcl-over-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jul-to-slf4j</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>

@@ -20,7 +20,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Map;
-import org.json.simple.JSONValue;
+import net.minidev.json.JSONValue;
 import org.junit.jupiter.api.Test;
 
 public class KafkaTridentSpoutBatchMetadataTest {

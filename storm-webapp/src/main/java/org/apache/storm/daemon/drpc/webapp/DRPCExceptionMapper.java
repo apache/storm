@@ -26,8 +26,9 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import net.minidev.json.JSONValue;
+
 import org.apache.storm.generated.DRPCExecutionException;
-import org.json.simple.JSONValue;
 
 @Provider
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
