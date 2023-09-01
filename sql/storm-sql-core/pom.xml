@@ -140,6 +140,7 @@
         <testSourceDirectory>src/test</testSourceDirectory>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
@@ -188,7 +189,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.2</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -238,6 +239,7 @@
                                 <artifactItem>
                                     <groupId>org.apache.calcite</groupId>
                                     <artifactId>calcite-core</artifactId>
+                                    <version>${calcite.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/</outputDirectory>
@@ -277,7 +279,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.5</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>add-generated-sources</id>
@@ -296,7 +298,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>javacc-maven-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
@@ -307,7 +309,7 @@
                         <configuration>
                             <sourceDirectory>${project.build.directory}/generated-sources/</sourceDirectory>
                             <includes>
-                                <include>**/Parser.jj</include>
+                                <include>**/*.jj</include>
                             </includes>
                             <lookAhead>2</lookAhead>
                             <isStatic>false</isStatic>
