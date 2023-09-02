@@ -41,7 +41,6 @@
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
-            <version>${kryo.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -199,7 +198,6 @@
             -->
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-auth</artifactId>
-            <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.directory.server</groupId>
@@ -306,9 +304,7 @@
                                 <testNamespace>${clojure.test.set}</testNamespace>
                             </testNamespaces>
                             <testDeclaredNamespaceOnly>${clojure.test.declared.namespace.only}</testDeclaredNamespaceOnly>
-                            <configuration>
-                                <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
-                            </configuration>
+                            <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
                         </configuration>
                     </execution>
                 </executions>
