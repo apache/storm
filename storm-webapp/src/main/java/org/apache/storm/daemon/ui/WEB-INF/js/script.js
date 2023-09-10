@@ -614,3 +614,13 @@ var makeOwnerSummaryTable = function(response, elId, parentId) {
 function getPageRenderedTimestamp(eId) {
     document.getElementById(eId).innerHTML = "Page rendered at: " + Date();
 };
+
+function setStormUITitle(uiTitle, clusterConfig) { 
+    title = clusterConfig["ui.title"]; 
+    $(document).prop('title', title); 
+    getStatic("/templates/title-template.html", function(template) { 
+        jsError(function() { 
+            uiTitle.append(Mustache.render($(template).filter("#title-template").html(),{title:title})); 
+        }); 
+    }); 
+};
