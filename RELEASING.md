@@ -117,7 +117,8 @@ Thanks!
 
 ## Releasing if the vote succeeds
 
-0. Announce the results. Use the following template.
+0. Announce the results. Use the following template:
+
 ```agsl
 Subject: [VOTE][RESULT] Storm [VERSION] Release Candidate [N]
 
@@ -133,6 +134,7 @@ Thanks to everyone who contributed to this release.
 
 [RELEASE MANAGER NAME]
 ```
+
 1. `svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx https://dist.apache.org/repos/dist/release/storm/apache-storm-x.x.x`. This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
 
 2. Go to http://repository.apache.org and release the staging repository
@@ -140,16 +142,19 @@ Thanks to everyone who contributed to this release.
 3. Wait at least 24 hrs. for the mirrors to catch up.
 
 4. Check out the [storm-site](https://github.com/apache/storm-site) repository, and follow the README to generate release specific documentation for 
-the site. Compose a new blog post announcement for the new release. Update the downloads page. Finally commit and push 
+the site. Compose a new blog post announcement for the new release. Update the downloads page. Finally, commit and push 
 the site as described in the storm-site README to publish the site.
 
-5. Announce the new release to dev@storm.apache.org, user@storm.apache.org, and announce@apache.org. You will need to use your @apache.org email to do this.
+5. Update `doap_Storm.rdf` with the new release version.
 
-6. Delete any outdated releases from the https://dist.apache.org/repos/dist/release/storm/ repository. See [when to archive](http://www.apache.org/legal/release-policy.html#when-to-archive). 
+6. Announce the new release to dev@storm.apache.org, user@storm.apache.org, and announce@apache.org. You will need to use your @apache.org email to do this.
 
-7. Delete any outdated releases from the storm-site releases directory, and republish the site.
+7. Delete any outdated releases from the https://dist.apache.org/repos/dist/release/storm/ repository. See [when to archive](http://www.apache.org/legal/release-policy.html#when-to-archive). 
 
-8. Tweet, promote, celebrate. ;) Annoucement email can be sent to announce@apache.org using the following template:
+8. Delete any outdated releases from the storm-site releases directory, and republish the site.
+
+9. Tweet, promote, celebrate. ;) Annoucement email can be sent to announce@apache.org using the following template:
+
 ```agsl
 Subject: [ANNOUNCE] Apache Storm [VERSION] Released
 
@@ -179,7 +184,7 @@ groupId: org.apache.storm
 artifactId: storm-{component}
 version: [VERSION]
 
-The full list of changes is available here[1]. Please let us know [2] if
+The full list of changes is available here [1]. Please let us know [2] if
 you encounter any problems.
 
 Regards,
@@ -191,15 +196,16 @@ The Apache Storm Team
 
 ## Cleaning up if the vote fails
 
-0. Sent email to dev@storm.apache.org 
+1. Sent email to dev@storm.apache.org 
 
-1. Go to http://repository.apache.org and drop the staging repository.
+2. Go to http://repository.apache.org and drop the staging repository.
 
-2. Delete the staged distribution files from https://dist.apache.org/repos/dist/dev/storm/
+3. Delete the staged distribution files from https://dist.apache.org/repos/dist/dev/storm/
 
-3. Delete the git tag.
+4. Delete the git tag.
 
-4. Send a [VOTE][CANCELED] message using the following format:
+5. Send a [VOTE][CANCELED] message using the following format:
+
 ```agsl
 Subject: [VOTE][CANCELED] Storm [VERSION] Release Candidate [N]
 
