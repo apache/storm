@@ -16,6 +16,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -175,7 +176,7 @@ public class DRPCSimpleACLAuthorizerTest {
     public void test_read_acl_no_values() throws IOException {
         DRPCSimpleACLAuthorizer authorizer = new DRPCSimpleACLAuthorizer();
 
-        File tempFile = File.createTempFile("drpcacl", ".yaml");
+        File tempFile = Files.createTempFile("drpcacl", ".yaml").toFile();
         tempFile.deleteOnExit();
         BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
         writer.write("drpc.authorizer.acl:");
@@ -197,7 +198,7 @@ public class DRPCSimpleACLAuthorizerTest {
     public void test_read_acl_empty_file() throws IOException {
         DRPCSimpleACLAuthorizer authorizer = new DRPCSimpleACLAuthorizer();
 
-        File tempFile = File.createTempFile("drpcacl", ".yaml");
+        File tempFile = Files.createTempFile("drpcacl", ".yaml").toFile();
         tempFile.deleteOnExit();
 
         authorizer.prepare(ImmutableMap

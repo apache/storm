@@ -21,6 +21,7 @@ import com.google.common.base.Strings;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -96,7 +97,7 @@ public class TopologySpoutLag {
         }
         if (!extraProperties.isEmpty()) {
             try {
-                file = File.createTempFile("kafka-consumer-extra", "props");
+                file = Files.createTempFile("kafka-consumer-extra", "props").toFile();
                 file.deleteOnExit();
                 Properties properties = new Properties();
                 properties.putAll(extraProperties);

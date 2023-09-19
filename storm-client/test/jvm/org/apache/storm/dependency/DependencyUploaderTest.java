@@ -301,7 +301,7 @@ public class DependencyUploaderTest {
     }
 
     private File createTemporaryDummyFile() throws IOException {
-        File tempFile = File.createTempFile("tempfile", ".tmp");
+        File tempFile = java.nio.file.Files.createTempFile("tempfile", ".tmp").toFile();
 
         BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile));
         bw.write("This is the temporary file content");
