@@ -14,6 +14,7 @@ package org.apache.storm.scheduler.utils;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -49,7 +50,7 @@ public class FileConfigLoaderTest {
     @Test
     public void testMalformedYaml() throws Exception {
 
-        File temp = File.createTempFile("FileLoader", ".yaml");
+        File temp = Files.createTempFile("FileLoader", ".yaml").toFile();
         temp.deleteOnExit();
 
         FileWriter fw = new FileWriter(temp);
@@ -69,7 +70,7 @@ public class FileConfigLoaderTest {
     @Test
     public void testValidFile() throws Exception {
 
-        File temp = File.createTempFile("FileLoader", ".yaml");
+        File temp = Files.createTempFile("FileLoader", ".yaml").toFile();
         temp.deleteOnExit();
 
         Map<String, Integer> testMap = new HashMap<>();

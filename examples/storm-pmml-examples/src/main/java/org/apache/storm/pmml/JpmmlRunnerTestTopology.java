@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 
@@ -131,7 +132,7 @@ public class JpmmlRunnerTestTopology {
 
     private File loadExample(File file, String example) {
         try (InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(example)) {
-            file = File.createTempFile("pmml-example", ".tmp");
+            file = Files.createTempFile("pmml-example", ".tmp").toFile();
             IOUtils.copy(stream, new FileOutputStream(file));
         } catch (IOException e) {
             throw new RuntimeException("Error loading example " + example, e);
