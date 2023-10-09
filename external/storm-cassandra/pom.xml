@@ -94,7 +94,7 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <!-- Override here as Cassandra version used isn't compatible with 2.0 -->
-            <version>1.33</version>
+            <version>2.0</version>
         </dependency>
 
         <dependency>
