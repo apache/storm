@@ -1000,6 +1000,11 @@
                 <artifactId>httpcore</artifactId>
                 <version>${httpclient.core.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>1.11.3</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
