@@ -16,6 +16,7 @@ List of third-party dependencies grouped by their license type.
         * ActiveMQ :: KahaDB Store (org.apache.activemq:activemq-kahadb-store:5.18.2 - http://activemq.apache.org/activemq-kahadb-store)
         * ActiveMQ :: MQTT Protocol (org.apache.activemq:activemq-mqtt:5.18.2 - http://activemq.apache.org/activemq-mqtt)
         * ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.18.2 - http://activemq.apache.org/activemq-openwire-legacy)
+        * Apache Avro (org.apache.avro:avro:1.11.3 - https://avro.apache.org)
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.13.0 - https://commons.apache.org/proper/commons-lang/)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
@@ -42,8 +43,6 @@ List of third-party dependencies grouped by their license type.
         * ant (ant:ant:1.6.5 - http://www.apache.org/ant/)
         * Apache Ant Core (org.apache.ant:ant:1.9.1 - http://ant.apache.org/)
         * Apache Ant Launcher (org.apache.ant:ant-launcher:1.9.1 - http://ant.apache.org/)
-        * Apache Avro (org.apache.avro:avro:1.7.7 - http://avro.apache.org)
-        * Apache Avro (org.apache.avro:avro:1.8.2 - http://avro.apache.org)
         * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
         * Apache Calcite Avatica Metrics (org.apache.calcite.avatica:avatica-metrics:1.11.0 - https://calcite.apache.org/avatica/avatica-metrics)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
@@ -615,8 +614,6 @@ List of third-party dependencies grouped by their license type.
         * ASM Util (org.ow2.asm:asm-util:6.0_BETA - http://asm.objectweb.org/asm-util/)
         * Javolution (javolution:javolution:5.5.1 - http://javolution.org)
         * JLine (jline:jline:0.9.94 - http://jline.sourceforge.net)
-        * ParaNamer Core (com.thoughtworks.paranamer:paranamer:2.3 - http://paranamer.codehaus.org/paranamer)
-        * ParaNamer Core (com.thoughtworks.paranamer:paranamer:2.7 - http://paranamer.codehaus.org/paranamer)
         * Stax2 API (org.codehaus.woodstox:stax2-api:3.1.4 - http://wiki.fasterxml.com/WoodstoxStax2)
         * Stax2 API (org.codehaus.woodstox:stax2-api:4.2.1 - http://github.com/FasterXML/stax2-api)
         * xmlenc Library (xmlenc:xmlenc:0.52 - http://xmlenc.sourceforge.net)
@@ -742,7 +739,6 @@ List of third-party dependencies grouped by their license type.
     Public Domain
 
         * AOP alliance (aopalliance:aopalliance:1.0 - http://aopalliance.sourceforge.net)
-        * XZ for Java (org.tukaani:xz:1.5 - http://tukaani.org/xz/java.html)
 
     Revised BSD
 
