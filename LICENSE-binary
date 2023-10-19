@@ -646,7 +646,7 @@ The license texts of these dependencies can be found in the licenses directory.
     Apache License
 
         * carbonite (org.clojars.bipinprasad:carbonite:1.6.0 - https://github.com/bipinprasad/carbonite)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.3 - https://github.com/xerial/snappy-java)
+        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.4 - https://github.com/xerial/snappy-java)
 
     Apache License, Version 2.0
 

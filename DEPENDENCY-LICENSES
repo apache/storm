@@ -20,7 +20,7 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.13.0 - https://commons.apache.org/proper/commons-lang/)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
         * Maven Plugin Tools Java Annotations (org.apache.maven.plugin-tools:maven-plugin-annotations:3.8.1 - https://maven.apache.org/plugin-tools/maven-plugin-annotations)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.3 - https://github.com/xerial/snappy-java)
+        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.4 - https://github.com/xerial/snappy-java)
 
     Apache License
 
