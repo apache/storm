@@ -493,7 +493,6 @@
                 <module>external/storm-jdbc</module>
                 <module>external/storm-redis</module>
                 <module>external/storm-elasticsearch</module>
-                <module>external/storm-solr</module>
                 <module>external/storm-metrics</module>
                 <module>external/storm-kafka-client</module>
                 <module>external/storm-kafka-migration</module>
@@ -516,7 +515,6 @@
                 <module>examples/storm-starter</module>
                 <module>examples/storm-loadgen</module>
                 <module>examples/storm-redis-examples</module>
-                <module>examples/storm-solr-examples</module>
                 <module>examples/storm-kafka-client-examples</module>
                 <module>examples/storm-jdbc-examples</module>
                 <module>examples/storm-hdfs-examples</module>
