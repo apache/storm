@@ -495,7 +495,6 @@
                 <module>external/storm-elasticsearch</module>
                 <module>external/storm-solr</module>
                 <module>external/storm-metrics</module>
-                <module>external/storm-mqtt</module>
                 <module>external/storm-kafka-client</module>
                 <module>external/storm-kafka-migration</module>
                 <module>external/storm-opentsdb</module>
@@ -527,7 +526,6 @@
                 <module>examples/storm-hdfs-examples</module>
                 <module>examples/storm-hive-examples</module>
                 <module>examples/storm-elasticsearch-examples</module>
-                <module>examples/storm-mqtt-examples</module>
                 <module>examples/storm-pmml-examples</module>
                 <module>examples/storm-jms-examples</module>
                 <module>examples/storm-rocketmq-examples</module>
