@@ -16,7 +16,7 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.13.0 - https://commons.apache.org/proper/commons-lang/)
         * Gson (com.google.code.gson:gson:2.8.9 - https://github.com/google/gson/gson)
         * Maven Plugin Tools Java Annotations (org.apache.maven.plugin-tools:maven-plugin-annotations:3.8.1 - https://maven.apache.org/plugin-tools/maven-plugin-annotations)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.3 - https://github.com/xerial/snappy-java)
+        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.4 - https://github.com/xerial/snappy-java)
 
     Apache License
 
@@ -132,8 +132,8 @@ List of third-party dependencies grouped by their license type.
         * Apache XBean :: Spring (org.apache.xbean:xbean-spring:4.8 - http://geronimo.apache.org/maven/xbean/4.8/xbean-spring)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.5.0 - https://yetus.apache.org/audience-annotations)
-        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.0 - http://zookeeper.apache.org/zookeeper-jute)
-        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.0 - http://zookeeper.apache.org/zookeeper)
+        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.1 - http://zookeeper.apache.org/zookeeper-jute)
+        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.1 - http://zookeeper.apache.org/zookeeper)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:2.5.0 - https://urielch.github.io/)
         * Auto Common Libraries (com.google.auto:auto-common:0.8 - https://github.com/google/auto/auto-common)
         * AutoService (com.google.auto.service:auto-service:1.0-rc4 - https://github.com/google/auto/auto-service)
