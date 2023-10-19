@@ -497,7 +497,6 @@
                 <module>external/storm-metrics</module>
                 <module>external/storm-kafka-client</module>
                 <module>external/storm-kafka-migration</module>
-                <module>external/storm-opentsdb</module>
                 <module>external/storm-kafka-monitor</module>
                 <module>external/storm-jms</module>
                 <module>external/storm-pmml</module>
@@ -519,7 +518,6 @@
                 <module>examples/storm-starter</module>
                 <module>examples/storm-loadgen</module>
                 <module>examples/storm-redis-examples</module>
-                <module>examples/storm-opentsdb-examples</module>
                 <module>examples/storm-solr-examples</module>
                 <module>examples/storm-kafka-client-examples</module>
                 <module>examples/storm-jdbc-examples</module>
