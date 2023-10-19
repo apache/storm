@@ -111,7 +111,7 @@
         <metrics.version>3.2.6</metrics.version>
         <mockito.version>4.11.0</mockito.version>
         <zookeeper.version>3.9.1</zookeeper.version>
-        <snappy.version>1.1.10.3</snappy.version>
+        <snappy.version>1.1.10.4</snappy.version>
         <jline.version>0.9.94</jline.version>
         <hive.version>2.3.9</hive.version>
         <hadoop.version>2.10.1</hadoop.version>
