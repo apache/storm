@@ -499,7 +499,6 @@
                 <module>external/storm-kafka-migration</module>
                 <module>external/storm-kafka-monitor</module>
                 <module>external/storm-jms</module>
-                <module>external/storm-rocketmq</module>
                 <module>external/storm-blobstore-migration</module>
                 <module>integration-test</module>
 
@@ -524,7 +523,6 @@
                 <module>examples/storm-hive-examples</module>
                 <module>examples/storm-elasticsearch-examples</module>
                 <module>examples/storm-jms-examples</module>
-                <module>examples/storm-rocketmq-examples</module>
                 <module>examples/storm-perf</module>
             </modules>
         </profile>
