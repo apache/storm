@@ -650,7 +650,6 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Apache License, Version 2.0
 
-        * reload4j (ch.qos.reload4j:reload4j:1.2.19 - https://reload4j.qos.ch)
         * Plexus Common Utilities (org.codehaus.plexus:plexus-utils:3.1.0 - http://codehaus-plexus.github.io/plexus-utils/)
         * Maven Artifact (org.apache.maven:maven-artifact:3.6.0 - https://maven.apache.org/ref/3.6.0/maven-artifact/)
         * Maven Builder Support (org.apache.maven:maven-builder-support:3.6.0 - https://maven.apache.org/ref/3.6.0/maven-builder-support/)
@@ -1071,7 +1070,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.36 - http://www.slf4j.org)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.36 - http://www.slf4j.org)
         * Sysout over SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
-        * SLF4J Reload4j Binding (org.slf4j:slf4j-reload4j:1.7.36 - http://reload4j.qos.ch)
 
     Mozilla Public License Version 2.0
 

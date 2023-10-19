@@ -480,7 +480,6 @@ List of third-party dependencies grouped by their license type.
         * Plexus Security Dispatcher Component (org.sonatype.plexus:plexus-sec-dispatcher:1.3 - http://spice.sonatype.org/plexus-sec-dispatcher)
         * Plexus Security Dispatcher Component (org.sonatype.plexus:plexus-sec-dispatcher:1.4 - http://spice.sonatype.org/plexus-sec-dispatcher)
         * Proton-J (org.apache.qpid:proton-j:0.18.0 - http://qpid.apache.org/proton/proton-j)
-        * reload4j (ch.qos.reload4j:reload4j:1.2.19 - https://reload4j.qos.ch)
         * rest (org.elasticsearch.client:rest:5.2.2 - https://github.com/elastic/elasticsearch)
         * rocketmq-client 4.2.0 (org.apache.rocketmq:rocketmq-client:4.2.0 - http://rocketmq.apache.org/rocketmq-client/)
         * rocketmq-common 4.2.0 (org.apache.rocketmq:rocketmq-common:4.2.0 - http://rocketmq.apache.org/rocketmq-common/)
@@ -730,7 +729,6 @@ List of third-party dependencies grouped by their license type.
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.36 - http://www.slf4j.org)
         * Microsoft JDBC Driver for SQL Server (com.microsoft.sqlserver:mssql-jdbc:6.2.1.jre7 - https://github.com/Microsoft/mssql-jdbc)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.36 - http://www.slf4j.org)
-        * SLF4J Reload4j Binding (org.slf4j:slf4j-reload4j:1.7.36 - http://reload4j.qos.ch)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
 
     Mozilla Public License Version 1.1
