@@ -496,7 +496,6 @@
                 <module>external/storm-solr</module>
                 <module>external/storm-metrics</module>
                 <module>external/storm-mqtt</module>
-                <module>external/storm-mongodb</module>
                 <module>external/storm-kafka-client</module>
                 <module>external/storm-kafka-migration</module>
                 <module>external/storm-opentsdb</module>
@@ -520,7 +519,6 @@
             <modules>
                 <module>examples/storm-starter</module>
                 <module>examples/storm-loadgen</module>
-                <module>examples/storm-mongodb-examples</module>
                 <module>examples/storm-redis-examples</module>
                 <module>examples/storm-opentsdb-examples</module>
                 <module>examples/storm-solr-examples</module>
