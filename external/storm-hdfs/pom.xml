@@ -27,11 +27,6 @@
 
     <artifactId>storm-hdfs</artifactId>
     
-    <properties>
-        <!-- Required downgrade by hadoop-hdfs 2.8.5 -->
-        <guava.version>16.0.1</guava.version>
-    </properties>
-
     <developers>
         <developer>
             <id>ptgoetz</id>
