@@ -96,7 +96,7 @@ and
 because they require learning about only an isolated portion of the codebase and are a relatively small amount of work.
 
 Please use idiomatic Clojure style, as explained in [this Clojure style guide][clj-SG]. Another useful reference is
-the [Clojure Library Coding Standards][clj-LCS]. Perhaps the most important is consistenly writing a clear docstring
+the [Clojure Library Coding Standards][clj-LCS]. Perhaps the most important is consistently writing a clear docstring
 for functions, explaining the return value and arguments. As of this writing, the Storm codebase would benefit from
 various style improvements.
 
@@ -193,9 +193,6 @@ _This section applies to committers only._
 
 **Important: A pull request must first be properly approved before you are allowed to merge it.**
 
-Committers that are integrating patches or pull requests should use the official Apache repository at
-[https://gitbox.apache.org/repos/asf/storm.git](https://gitbox.apache.org/repos/asf/storm.git).
-
 #### Via Github
 
 You can use the [Gitbox account linking utility](https://gitbox.apache.org/setup/) to link your Apache and Github accounts. This will allow you to merge pull requests using Github's UI. 
@@ -247,24 +244,26 @@ To pull in a merge request you should generally follow the command line instruct
 
 ## Prerequisites
 
-In order to build `storm` you need `python`, `ruby` and `nodejs`. In order to avoid an overfull page we don't provide platform/OS specific installation instructions for those here. Please refer to you platform's/OS' documentation for support.
+In order to build `storm` you need `python3`, `ruby` and `nodejs`. In order to avoid an overfull page we don't provide platform/OS specific installation instructions for those here. Please refer to you platform's/OS' documentation for support.
 
-The `ruby` package manager `rvm` and `nodejs` package manager `nvm` are for convenience and are used in the tests which run on [travis](https://travis-ci.org/apache/storm). They can be installed using `curl -L https://get.rvm.io | bash -s stable --autolibs=enabled && source ~/.profile` (see the [rvm installation instructions](https://github.com/rvm/rvm) for details) and `wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.26.1/install.sh | bash && source ~/.bashrc` (see the [nvm installation instructions](https://github.com/creationix/nvm) for details).
+The `ruby` version manager `rvm` and `nodejs` version manager `nvm` are for convenience and are used in the tests which run on [GitHub actions](https://github.com/apache/storm/actions). They can be installed using `curl -L https://get.rvm.io | bash -s stable --autolibs=enabled && source ~/.profile` (see the [rvm installation instructions](https://github.com/rvm/rvm) for details) and `wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash && source ~/.bashrc` (see the [nvm installation instructions](https://github.com/nvm-sh/nvm) for details).
 
 With `rvm` and `nvm` installed you can run
 
 ```sh
-rvm use 2.4.2 --install
-nvm install 8.9.3
-nvm use 8.9.3
+rvm use 2.7 --install
+nvm install 16
+nvm use 16
 ```
 
 in order to get started as fast as possible. Users can still install a specific version of `ruby` and/or `node` manually.
 
-You will also need the [mock](https://docs.python.org/3/library/unittest.mock.html) Python testing library (as well as [Python 2.7.x and Python 3.x](https://github.com/pyenv/pyenv)). With [pip](https://pip.pypa.io/en/stable/installing/) installed you can run
-
+You will also need the [mock](https://docs.python.org/3/library/unittest.mock.html) 
+python testing library (as well as [Python 3.x](https://github.com/pyenv/pyenv)). 
+With [pip3](https://pip.pypa.io/en/stable/installation/) installed you can run
+(Note: python 2.7.x is **not** supported).
 ```
-pip install mock
+pip3 install mock
 ```
 
 ## Building
@@ -277,7 +276,7 @@ If you wish to skip the unit tests you can do this by adding `-DskipTests` to th
 
 If you wish to skip the examples and external modules, you can do this by adding `-P '!examples,!externals'` to the command line.
 
-In case you modified `storm.thrift`, you have to regenerate thrift code as java and python code before compiling whole project.
+In case you modified `storm.thrift`, you have to regenerate thrift code as Java and Python code before compiling whole project.
 
 ```sh
 cd storm-client/src
@@ -313,7 +312,7 @@ You can also run tests selectively with `-Dtest=<test_name>`.  This works for bo
 
 Unfortunately you might experience failures in clojure tests which are wrapped in the `maven-clojure-plugin` and thus doesn't provide too much useful output at first sight - you might end up with a maven test failure with an error message as unhelpful as `Clojure failed.`. In this case it's recommended to look into `target/test-reports` of the failed project to see what actual tests have failed or scroll through the maven output looking for obvious issues like missing binaries.
 
-By default integration tests are not run in the test phase. To run Java and Clojure integration tests you must enable the profile `integration-tests-only`, or `all-tests`.
+By default, integration tests are not run in the test phase. To run Java and Clojure integration tests you must enable the profile `integration-tests-only`, or `all-tests`.
  
 ## Listing dependency licenses
 
@@ -372,7 +371,7 @@ You can verify whether the digital signatures match their corresponding files:
 ## Testing
 
 Tests should never rely on timing in order to pass.  Storm can properly test functionality that depends on time by
-simulating time, which means we do not have to worry about e.g. random delays failing our tests indeterministically.
+simulating time, which means we do not have to worry about e.g. random delays failing our tests non-deterministically.
 
 If you are testing topologies that do not do full tuple acking, then you should be testing using the "tracked
 topologies" utilities in `org.apache.storm.testing.clj`.  For example,
@@ -415,33 +414,22 @@ repository associated with Storm.
   user ID and password, i.e. the credentials you configured via [https://id.apache.org/](https://id.apache.org/) after
   you were [onboarded as a committer](http://www.apache.org/dev/new-committers-guide.html#account-creation).
 * **Everybody else:**
-  [https://github.com/apache/storm/](https://github.com/apache/storm/) is a read-only mirror of the
-  official git repository.  If you are not a Storm committer (most people) this is the repository you should work
-  against.  See _Development workflow_ above on how you can create a pull request, for instance.
-
-An automated bot (called _[ASF GitHub Bot](https://issues.apache.org/jira/secure/ViewProfile.jspa?name=githubbot)_ in
-[Storm JIRA](https://issues.apache.org/jira/browse/STORM)) runs periodically to merge changes in the
-[official Apache repo](https://gitbox.apache.org/repos/asf/storm.git) to the read-only
-[GitHub mirror repository](https://github.com/apache/storm/), and to merge comments in GitHub pull requests to
-the [Storm JIRA](https://issues.apache.org/jira/browse/STORM).
-
+  [https://github.com/apache/storm/](https://github.com/apache/storm/) is a mirror of the
+  ASF git repository. If you are not a Storm committer (most people) this is the repository you should work
+  against. See _Development workflow_ above on how you can create a pull request, for instance.
 
 <a name="issue-tracking"></a>
 
 ## Issue tracking (JIRA)
 
 Issue tracking includes tasks such as reporting bugs, requesting and collaborating on new features, and administrative
-activities for release management.  As an Apache software project we use JIRA as our issue tracking tool.
+activities for release management. As an Apache software project we use JIRA as our issue tracking tool.
 
 The Storm JIRA is available at:
 
 * [https://issues.apache.org/jira/browse/STORM](https://issues.apache.org/jira/browse/STORM)
 
-
 If you do not have a JIRA account yet, then you can create one via the link above (registration is free).
-
-<a name="code-search"></a>
-The storm codebase is available at [Codota](https://www.codota.com/xref/#/github_apache_storm_560da9ada8cb8703008bbfdc/findUsages) where you can semantically search it like in an IDE (e.g. find usages for a method). 
 
 <a name="questions"></a>
 

@@ -44,7 +44,7 @@ import org.apache.storm.lambda.LambdaSpout;
 import org.apache.storm.lambda.SerializableBiConsumer;
 import org.apache.storm.lambda.SerializableConsumer;
 import org.apache.storm.lambda.SerializableSupplier;
-import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.state.State;
 import org.apache.storm.task.OutputCollector;
@@ -330,8 +330,7 @@ public class TopologyBuilder {
      *                         outputs.
      * @param bolt             the stateful windowed bolt
      * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
-     *                         somwehere around the cluster.
-     * @param <T>              the type of the state (e.g. {@link org.apache.storm.state.KeyValueState})
+     *                         somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive

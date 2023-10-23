@@ -25,7 +25,7 @@ import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.topology.base.BaseWindowedBolt.Count;
 
 /**
- * An example that illustrates the usage of typed tuples (TupleN<..>) and {@link TupleValueMappers}.
+ * An example that illustrates the usage of typed tuples (TupleN&lt;..&gt;) and {@link TupleValueMappers}.
  */
 public class TypedTupleExample {
 

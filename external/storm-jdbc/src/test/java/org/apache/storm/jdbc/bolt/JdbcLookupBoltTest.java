@@ -20,8 +20,9 @@ import org.apache.storm.jdbc.common.HikariCPConnectionProvider;
 import org.apache.storm.jdbc.mapper.JdbcLookupMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
 import org.apache.storm.tuple.Fields;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Created by pbrahmbhatt on 10/29/15.
@@ -30,21 +31,16 @@ public class JdbcLookupBoltTest {
 
     @Test
     public void testValidation() {
-        ConnectionProvider provider = new HikariCPConnectionProvider(new HashMap<String, Object>());
-        JdbcLookupMapper mapper = new SimpleJdbcLookupMapper(new Fields("test"), Lists.newArrayList(new Column("test", 0)));
+        ConnectionProvider provider = new HikariCPConnectionProvider(new HashMap<>());
+        JdbcLookupMapper mapper = new SimpleJdbcLookupMapper(new Fields("test"), Lists.newArrayList(new Column<String>("test", 0)));
         String selectQuery = "select * from dual";
-        expectIllegaArgs(null, selectQuery, mapper);
-        expectIllegaArgs(provider, null, mapper);
-        expectIllegaArgs(provider, selectQuery, null);
+        expectNullPointerException(null, selectQuery, mapper);
+        expectNullPointerException(provider, null, mapper);
+        expectNullPointerException(provider, selectQuery, null);
     }
 
-    private void expectIllegaArgs(ConnectionProvider provider, String selectQuery, JdbcLookupMapper mapper) {
-        try {
-            JdbcLookupBolt bolt = new JdbcLookupBolt(provider, selectQuery, mapper);
-            Assert.fail("Should have thrown IllegalArgumentException.");
-        } catch (IllegalArgumentException ne) {
-            //expected
-        }
+    private void expectNullPointerException(ConnectionProvider provider, String selectQuery, JdbcLookupMapper mapper) {
+        assertThrows(NullPointerException.class, () -> new JdbcLookupBolt(provider, selectQuery, mapper));
     }
 
 }

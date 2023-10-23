@@ -20,7 +20,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.5.0-SNAPSHOT</version>
+        <version>2.6.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -39,9 +39,19 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-clojure</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.esotericsoftware</groupId>
+                    <artifactId>kryo</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -90,8 +100,8 @@
             <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -138,7 +148,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>java-hamcrest</artifactId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -188,7 +198,6 @@
             -->
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-auth</artifactId>
-            <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.directory.server</groupId>
@@ -206,7 +215,22 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>net.minidev</groupId>
+                    <artifactId>json-smart</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <!--
+            This dependency is required for the integration_test.clj
+            It seems that some implementation detail is assumed to parse drcp arguments
+            Removing it will require some investigation and effort here.
+        -->
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
@@ -280,9 +304,7 @@
                                 <testNamespace>${clojure.test.set}</testNamespace>
                             </testNamespaces>
                             <testDeclaredNamespaceOnly>${clojure.test.declared.namespace.only}</testDeclaredNamespaceOnly>
-                            <configuration>
-                                <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
-                            </configuration>
+                            <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
                         </configuration>
                     </execution>
                 </executions>
@@ -335,6 +357,7 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
@@ -424,9 +447,9 @@
                                 <id>pre-test-jacoco-clean</id>
                                 <phase>process-test-classes</phase>
                                 <configuration>
-                                    <tasks>
+                                    <target>
                                         <delete file="target\jacoco.exec" />
-                                    </tasks>
+                                    </target>
                                 </configuration>
                                 <goals>
                                     <goal>run</goal>

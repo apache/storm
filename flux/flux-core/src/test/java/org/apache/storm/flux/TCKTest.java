@@ -17,27 +17,20 @@
  */
 package org.apache.storm.flux;
 
-import static org.hamcrest.CoreMatchers.is;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.flux.model.ExecutionContext;
 import org.apache.storm.flux.model.TopologyDef;
 import org.apache.storm.flux.parser.FluxParser;
 import org.apache.storm.flux.test.TestBolt;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
-
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.Collections;
 import java.util.Properties;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
 public class TCKTest {
-    
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
     
     @Test
     public void testTCK() throws Exception {
@@ -64,11 +57,9 @@ public class TCKTest {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/bad_shell_test.yaml", false, true, null, false);
         Config conf = FluxBuilder.buildConfig(topologyDef);
         ExecutionContext context = new ExecutionContext(topologyDef, conf);
-        
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Unable to find configuration method");
-        
-        FluxBuilder.buildTopology(context);
+
+        IllegalArgumentException expectedException = assertThrows(IllegalArgumentException.class, () -> FluxBuilder.buildTopology(context));
+        assertTrue(expectedException.getMessage().contains("Unable to find configuration method"));
     }
 
     @Test
@@ -128,11 +119,9 @@ public class TCKTest {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/bad_hbase.yaml", false, true, null, false);
         Config conf = FluxBuilder.buildConfig(topologyDef);
         ExecutionContext context = new ExecutionContext(topologyDef, conf);
-        
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Couldn't find a suitable constructor");
-        
-        FluxBuilder.buildTopology(context);
+
+        IllegalArgumentException expectedException = assertThrows(IllegalArgumentException.class, () -> FluxBuilder.buildTopology(context));
+        assertTrue(expectedException.getMessage().contains("Couldn't find a suitable constructor"));
     }
 
     @Test
@@ -204,13 +193,12 @@ public class TCKTest {
         topology.validate();
     }
 
-    @Test(expected = IllegalArgumentException.class)
     public void testInvalidTopologySource() throws Exception {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/invalid-existing-topology.yaml", false, true, null, false);
-        assertFalse("Topology config is invalid.", topologyDef.validate());
+        assertFalse(topologyDef.validate(), "Topology config is invalid.");
         Config conf = FluxBuilder.buildConfig(topologyDef);
         ExecutionContext context = new ExecutionContext(topologyDef, conf);
-        StormTopology topology = FluxBuilder.buildTopology(context);
+        assertThrows(IllegalArgumentException.class, () -> FluxBuilder.buildTopology(context));
     }
 
 
@@ -259,16 +247,14 @@ public class TCKTest {
         topology.validate();
 
         // test basic substitution
-        assertEquals("Property not replaced.",
-                "substitution-topology",
-                context.getTopologyDef().getName());
+        assertEquals("substitution-topology",
+                context.getTopologyDef().getName(), "Property not replaced.");
 
         // test environment variable substitution
         // $PATH should be defined on most systems
         String envPath = System.getenv().get("PATH");
-        assertEquals("ENV variable not replaced.",
-                envPath,
-                context.getTopologyDef().getConfig().get("test.env.value"));
+        assertEquals(envPath,
+                context.getTopologyDef().getConfig().get("test.env.value"), "ENV variable not replaced.");
         
         //Test substitution where the target type is List
         assertThat("List property is not replaced by the expected value",
@@ -288,10 +274,21 @@ public class TCKTest {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/bad_static_factory_test.yaml", false, true, null, false);
         Config conf = FluxBuilder.buildConfig(topologyDef);
         ExecutionContext context = new ExecutionContext(topologyDef, conf);
-        
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Couldn't find a suitable static method");
-        
-        FluxBuilder.buildTopology(context);
+
+        IllegalArgumentException expectedException = assertThrows(IllegalArgumentException.class, () -> FluxBuilder.buildTopology(context));
+        assertTrue(expectedException.getMessage().contains("Couldn't find a suitable static method"));
+    }
+
+    @Test
+    public void testTopologyWithWorkerHook() throws Exception {
+        TopologyDef topologyDef = FluxParser.parseResource("/configs/worker_hook.yaml", false, true, null, false);
+        Config conf = FluxBuilder.buildConfig(topologyDef);
+        ExecutionContext context = new ExecutionContext(topologyDef, conf);
+        StormTopology topology = FluxBuilder.buildTopology(context);
+        assertNotNull(topology);
+        assertTrue(topologyDef.getName().equals("worker-hook-topology"));
+        assertTrue(topologyDef.getWorkerHooks().size() > 0);
+        assertTrue(topology.get_worker_hooks_size() > 0);
+        topology.validate();
     }
 }

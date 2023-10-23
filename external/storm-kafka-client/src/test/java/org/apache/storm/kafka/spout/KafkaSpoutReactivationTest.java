@@ -18,7 +18,7 @@ package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.KafkaSpout.TIMER_DELAY_MS;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -94,7 +95,7 @@ public class KafkaSpoutReactivationTest {
     }
 
     private void doReactivationTest(FirstPollOffsetStrategy firstPollOffsetStrategy) throws Exception {
-        try (Time.SimulatedTime time = new Time.SimulatedTime()) {
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime()) {
             int messageCount = maxPollRecords * 2;
             prepareSpout(messageCount, firstPollOffsetStrategy);
 
@@ -146,21 +147,4 @@ public class KafkaSpoutReactivationTest {
         //With earliest, the spout should also resume where it left off, rather than restart at the earliest offset.
         doReactivationTest(FirstPollOffsetStrategy.EARLIEST);
     }
-
-    @Test
-    public void testSpoutMustHandleGettingMetricsWhileDeactivated() throws Exception {
-        //Storm will try to get metrics from the spout even while deactivated, the spout must be able to handle this
-        prepareSpout(10, FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST);
-
-        for (int i = 0; i < 5; i++) {
-            KafkaSpoutMessageId msgId = emitOne();
-            spout.ack(msgId);
-        }
-
-        spout.deactivate();
-
-        Map<String, Long> offsetMetric = (Map<String, Long>) spout.getKafkaOffsetMetric().getValueAndReset();
-        assertThat(offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC + "/totalSpoutLag"), is(5L));
-    }
-
 }

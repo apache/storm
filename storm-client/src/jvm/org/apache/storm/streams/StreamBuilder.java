@@ -103,7 +103,6 @@ public class StreamBuilder {
      *
      * @param spout       the spout
      * @param valueMapper the value mapper
-     * @param <T>         the type of values in the resultant stream
      * @return the new stream
      */
     public <T> Stream<T> newStream(IRichSpout spout, TupleValueMapper<T> valueMapper) {
@@ -118,7 +117,6 @@ public class StreamBuilder {
      * @param spout       the spout
      * @param valueMapper the value mapper
      * @param parallelism the parallelism of the stream
-     * @param <T>         the type of values in the resultant stream
      * @return the new stream
      */
     public <T> Stream<T> newStream(IRichSpout spout, TupleValueMapper<T> valueMapper, int parallelism) {
@@ -131,8 +129,6 @@ public class StreamBuilder {
      *
      * @param spout           the spout
      * @param pairValueMapper the pair value mapper
-     * @param <K>             the key type
-     * @param <V>             the value type
      * @return the new stream of key-value pairs
      */
     public <K, V> PairStream<K, V> newStream(IRichSpout spout, PairValueMapper<K, V> pairValueMapper) {
@@ -146,8 +142,6 @@ public class StreamBuilder {
      * @param spout           the spout
      * @param pairValueMapper the pair value mapper
      * @param parallelism     the parallelism of the stream
-     * @param <K>             the key type
-     * @param <V>             the value type
      * @return the new stream of key-value pairs
      */
     public <K, V> PairStream<K, V> newStream(IRichSpout spout, PairValueMapper<K, V> pairValueMapper, int parallelism) {

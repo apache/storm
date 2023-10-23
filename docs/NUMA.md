@@ -18,14 +18,14 @@ documentation: true
 ## Introduction
 
 Non Uniform Memory Access ([NUMA](https://www.cc.gatech.edu/~echow/ipcc/hpc-course/HPC-numa.pdf)) is a new system architecture
-where the hosts resources are grouped by cores and memory in NUMA zones. Storm supports isolating/pinning worker prcesses to specific
+where the hosts resources are grouped by cores and memory in NUMA zones. Storm supports isolating/pinning worker processes to specific
 NUMA zones via the supervisor to take advantage of this resource isolation and avoid the penalty of using cross zone bus transfers
 <div id='Architecture'/>
 
 ## Architecture
 
-Once Storm supervisors are configured for NUMA (see section below) they now heartbeat multiple heartbeats - one for each NUMA zone.
-Each of these NUMA supervisors have a supervisor id with the same prefixed supervisor id with the NUMA id differentiating them.
+Once Storm supervisors are configured for NUMA (see the section below) they now heartbeat multiple heartbeats - one for each NUMA zone.
+Each of these NUMA supervisors has a supervisor id with the same prefixed supervisor id with the NUMA id differentiating them.
 Nimbus, and by extension the scheduler, see these heartbeats and views the supervisor as multiple supervisors - one per configured NUMA zone. 
 Nimbus schedules topologies and assignments accordingly. The supervisor reads all assignments with the prefixed assignments and then
 pins each worker to the NUMA zone according to the numa id in the assignment. The pinning depends on the Resource Isolation Interface used

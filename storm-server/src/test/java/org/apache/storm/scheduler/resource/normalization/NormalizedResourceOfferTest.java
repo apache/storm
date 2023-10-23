@@ -22,8 +22,9 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Constants;
 import org.apache.storm.metric.StormMetricsRegistry;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NormalizedResourceOfferTest {
     @Test
@@ -31,7 +32,7 @@ public class NormalizedResourceOfferTest {
         NormalizedResourceOffer availableResources = createOffer(100.0, 0.0);
         NormalizedResourceOffer scheduledResources = createOffer(110.0, 0.0);
         availableResources.remove(scheduledResources, new ResourceMetrics(new StormMetricsRegistry()));
-        Assert.assertEquals(0.0, availableResources.getTotalCpu(), 0.001);
+        assertEquals(0.0, availableResources.getTotalCpu(), 0.001);
     }
 
     @Test
@@ -39,7 +40,7 @@ public class NormalizedResourceOfferTest {
         NormalizedResourceOffer availableResources = createOffer(0.0, 5.0);
         NormalizedResourceOffer scheduledResources = createOffer(0.0, 10.0);
         availableResources.remove(scheduledResources, new ResourceMetrics(new StormMetricsRegistry()));
-        Assert.assertEquals(0.0, availableResources.getTotalMemoryMb(), 0.001);
+        assertEquals(0.0, availableResources.getTotalMemoryMb(), 0.001);
     }
 
     private NormalizedResourceOffer createOffer(Double cpu, Double memory) {

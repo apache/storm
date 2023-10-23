@@ -18,7 +18,7 @@
 
 package org.apache.storm.kafka.monitor;
 
-import org.json.simple.JSONAware;
+import net.minidev.json.JSONAware;
 
 /**
  * Class representing the log head offsets, spout offsets and the lag for a topic.

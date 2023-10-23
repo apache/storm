@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,7 @@
 # limitations under the License.
 
 from unittest import TestCase, main as test_main
-import mock
+from unittest import mock
 import sys
 import os
 

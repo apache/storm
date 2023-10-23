@@ -35,8 +35,8 @@ import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IReducer;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.metrics2.StormMetricRegistry;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.shade.org.apache.commons.lang.NotImplementedException;
-import org.apache.storm.shade.org.json.simple.JSONValue;
 import org.apache.storm.state.ISubscribedState;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
@@ -248,18 +248,44 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         return getTargets(getThisComponentId());
     }
 
+    /**
+     * Sets the task-level data for the given name. This data is shared amongst the task and its corresponding task hooks.
+     *
+     * @param name  name of the task-level data to be set
+     * @param data  task-level data
+     */
     public void setTaskData(String name, Object data) {
         taskData.put(name, data);
     }
 
+    /**
+     * Fetches the task-level data for the given name. This data is shared amongst the task and its corresponding task hooks.
+     *
+     * @param name  name of the task-level data to be fetched
+     * @return Associated task-level data
+     */
     public Object getTaskData(String name) {
         return taskData.get(name);
     }
 
+    /**
+     * Sets the executor-level data for the given name. This data is shared amongst tasks and corresponding task hooks managed by the
+     * given executor.
+     *
+     * @param name  name of the executor-level data to be set
+     * @param data  executor-level data
+     */
     public void setExecutorData(String name, Object data) {
         executorData.put(name, data);
     }
 
+    /**
+     * Fetches the executor-level data for the given name. This data is shared across tasks and corresponding task hook managed by the
+     * given executor.
+     *
+     * @param name  name of the executor-level data to be fetched
+     * @return Associated executor-level data
+     */
     public Object getExecutorData(String name) {
         return executorData.get(name);
     }

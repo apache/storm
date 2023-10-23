@@ -44,7 +44,7 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     private static final Logger LOG = LoggerFactory.getLogger(BlowfishTupleSerializer.class);
     private BlowfishSerializer serializer;
 
-    public BlowfishTupleSerializer(Kryo kryo, Map<String, Object> topoConf) {
+    public BlowfishTupleSerializer(Kryo unused, Map<String, Object> topoConf) {
         String encryptionkey;
         try {
             encryptionkey = (String) topoConf.get(SECRET_KEY);
@@ -94,7 +94,7 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     }
 
     @Override
-    public ListDelegate read(Kryo kryo, Input input, Class<ListDelegate> type) {
+    public ListDelegate read(Kryo kryo, Input input, Class<? extends ListDelegate> type) {
         return kryo.readObject(input, ListDelegate.class, serializer);
     }
 }

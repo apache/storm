@@ -19,7 +19,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.5.0-SNAPSHOT</version>
+        <version>2.6.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -77,6 +77,30 @@
                 <exclusion>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.microsoft.sqlserver</groupId>
+                    <artifactId>mssql-jdbc</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.zaxxer</groupId>
+                    <artifactId>HikariCP-java7</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.geronimo.specs</groupId>
+                    <artifactId>geronimo-jcache_1.0_spec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ehcache</groupId>
+                    <artifactId>ehcache</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.reload4j</groupId>
+                    <artifactId>reload4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -156,6 +180,10 @@
             <version>${hive.version}</version>
             <exclusions>
                 <exclusion>
+                    <groupId>org.pentaho</groupId>
+                    <artifactId>pentaho-aggdesigner-algorithm</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                 </exclusion>
@@ -183,6 +211,15 @@
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.aggregate</groupId>
+                    <artifactId>jetty-all</artifactId>
+                </exclusion>
+                <exclusion>
+                    <!-- Not needed for runtime ops -->
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>hive-cli</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -190,6 +227,10 @@
             <artifactId>hive-webhcat-java-client</artifactId>
             <version>${hive.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>org.pentaho</groupId>
+                    <artifactId>pentaho-aggdesigner-algorithm</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
@@ -210,6 +251,11 @@
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- Not needed for runtime ops -->
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>hive-cli</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -219,7 +265,6 @@
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.el</artifactId>
-            <version>3.0.1-b12</version>
         </dependency>
     </dependencies>
     <build>

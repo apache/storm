@@ -11,7 +11,9 @@
  */
 package org.apache.storm.utils;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -20,7 +22,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.WaitStrategyPark;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,7 @@ public class JCQueueTest {
     IWaitStrategy waitStrategy = new WaitStrategyPark(100);
 
     @Test
-    public void testFirstMessageFirst() throws InterruptedException {
+    public void testFirstMessageFirst() {
         Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
             JCQueue queue = createQueue("firstMessageOrder", 16);
 
@@ -57,13 +58,13 @@ public class JCQueueTest {
             });
 
             run(producer, consumer, queue);
-            Assert.assertEquals("We expect to receive first published message first, but received " + result.get(),
-                    "FIRST", result.get());
+            assertEquals("FIRST", result.get(),
+                "We expect to receive first published message first, but received " + result.get());
         });
     }
 
     @Test
-    public void testInOrder() throws InterruptedException {
+    public void testInOrder() {
         Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
             final AtomicBoolean allInOrder = new AtomicBoolean(true);
 
@@ -86,13 +87,12 @@ public class JCQueueTest {
                 }
             });
             run(producer, consumer, queue, 1000, 1);
-            Assert.assertTrue("Messages delivered out of order",
-                allInOrder.get());
+            assertTrue(allInOrder.get(), "Messages delivered out of order");
         });
     }
 
     @Test
-    public void testInOrderBatch() throws InterruptedException {
+    public void testInOrderBatch() {
         Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
             final AtomicBoolean allInOrder = new AtomicBoolean(true);
 
@@ -116,8 +116,7 @@ public class JCQueueTest {
             });
 
             run(producer, consumer, queue, 1000, 1);
-            Assert.assertTrue("Messages delivered out of order",
-                allInOrder.get());
+            assertTrue(allInOrder.get(), "Messages delivered out of order");
         });
     }
 
@@ -143,13 +142,13 @@ public class JCQueueTest {
         }
         for (int i = 0; i < producerNum; i++) {
             producerThreads[i].join(TIMEOUT);
-            assertFalse("producer " + i + " is still alive", producerThreads[i].isAlive());
+            assertFalse(producerThreads[i].isAlive(), "producer " + i + " is still alive");
         }
 
         queue.close();
         consumerThread.interrupt();
         consumerThread.join(TIMEOUT);
-        assertFalse("consumer is still alive", consumerThread.isAlive());
+        assertFalse(consumerThread.isAlive(), "consumer is still alive");
     }
 
     private JCQueue createQueue(String name, int queueSize) {

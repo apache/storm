@@ -20,14 +20,14 @@ import java.util.Map;
 
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
+import org.apache.storm.shade.net.minidev.json.parser.ParseException;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.api.PathAndBytesable;
 import org.apache.storm.shade.org.apache.curator.framework.api.ProtectACLCreateModePathAndBytesable;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
-import org.apache.storm.shade.org.json.simple.JSONValue;
-import org.apache.storm.shade.org.json.simple.parser.ParseException;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;

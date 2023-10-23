@@ -47,13 +47,13 @@ public class LogviewerLogDownloadHandler {
     }
 
     /**
-     * Download an worker log.
+     * Download a worker log.
      *
      * @param host host address
      * @param fileName file to download
      * @param user username
      * @return a Response which lets browsers download that file.
-     * @see {@link LogFileDownloader#downloadFile(String, String, String, boolean)}
+     *
      */
     public Response downloadLogFile(String host, String fileName, String user) throws IOException {
         workerLogs.setLogFilePermission(fileName);
@@ -67,7 +67,6 @@ public class LogviewerLogDownloadHandler {
      * @param fileName file to download
      * @param user username
      * @return a Response which lets browsers download that file.
-     * @see {@link LogFileDownloader#downloadFile(String, String, String, boolean)}
      */
     public Response downloadDaemonLogFile(String host, String fileName, String user) throws IOException {
         return logFileDownloadHelper.downloadFile(host, fileName, user, true);

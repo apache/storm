@@ -17,8 +17,9 @@
 
 package org.apache.storm.st.wrapper;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -105,7 +106,7 @@ public class TopoWrap {
     private static String getJarPath() {
         final String USER_DIR = "user.dir";
         String userDirVal = System.getProperty(USER_DIR);
-        Assert.assertNotNull(userDirVal, "property " + USER_DIR + " was not set.");
+        assertNotNull(userDirVal, "property " + USER_DIR + " was not set.");
         File projectDir = new File(userDirVal);
         AssertUtil.exists(projectDir);
         
@@ -125,7 +126,7 @@ public class TopoWrap {
                 break;
             }
         }
-        Assert.assertNotNull(jarFile, "Couldn't detect a suitable jar file for uploading.");
+        assertNotNull(jarFile, "Couldn't detect a suitable jar file for uploading.");
         LOG.info("jarFile = " + jarFile);
         return jarFile;
     }
@@ -133,7 +134,7 @@ public class TopoWrap {
     public void submitSuccessfully(ImmutableMap<String, Object> topoConf) throws TException {
         submit(topoConf);
         TopologySummary topologySummary = getSummary();
-        Assert.assertEquals(topologySummary.get_status().toLowerCase(), "active", "Topology must be active.");
+        assertEquals(topologySummary.get_status().toLowerCase(), "active", "Topology must be active.");
         id = topologySummary.get_id();
     }
 
@@ -221,9 +222,9 @@ public class TopoWrap {
     public void assertProgress(int minEmits, int expectedExecutors, String componentName, int maxWaitSec) throws TException {
         waitForProgress(minEmits, expectedExecutors, componentName, maxWaitSec);
         long emitCount = getAllTimeEmittedCount(componentName);
-        Assert.assertTrue(emitCount >= minEmits, "Emit count for component '" + componentName + "' is " + emitCount + ", min is " + minEmits);
+        assertTrue(emitCount >= minEmits, "Emit count for component '" + componentName + "' is " + emitCount + ", min is " + minEmits);
         long executorCount = getComponentExecutorCount(componentName);
-        assertThat(executorCount, is((long)expectedExecutors));
+        assertEquals(executorCount, expectedExecutors);
     }
 
     public static class ExecutorURL {
@@ -290,7 +291,7 @@ public class TopoWrap {
      * This method will recognize such lines, and deserialize the json data using the provided decoder.
      */
     public <T> List<T> getDeserializedDecoratedLogLines(final String componentId, final FromJson<T> jsonDeserializer) 
-            throws IOException, TException, MalformedURLException {
+            throws IOException, TException {
         final List<DecoratedLogLine> logData = getDecoratedLogLines(componentId);
         return deserializeLogData(logData, jsonDeserializer);
     }
@@ -307,7 +308,7 @@ public class TopoWrap {
      * Get the log lines that contain the unique {@link StringDecorator} string for the given component.
      * Test spouts and bolts can write logs containing the StringDecorator string, which can be fetched using this method.
      */
-    public List<DecoratedLogLine> getDecoratedLogLines(final String componentId) throws IOException, TException, MalformedURLException {
+    public List<DecoratedLogLine> getDecoratedLogLines(final String componentId) throws IOException, TException {
         final String logs = getLogs(componentId);
         final String dateRegex = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
         Pattern pattern = Pattern.compile("(?=\\n" + dateRegex + ")");
@@ -327,7 +328,7 @@ public class TopoWrap {
     public String getLogs(final String componentId) throws IOException, TException, MalformedURLException {
         LOG.info("Fetching logs for componentId = " + componentId);
         Set<ExecutorURL> componentLogUrls = getLogUrls(componentId);
-        LOG.info("Found " + componentLogUrls.size() + " urls: " + componentLogUrls.toString());
+        LOG.info("Found " + componentLogUrls.size() + " urls: " + componentLogUrls);
         List<String> urlContents = new ArrayList<>();
         for(ExecutorURL executorUrl : componentLogUrls) {
             if(executorUrl == null || executorUrl.getDownloadUrl() == null) {

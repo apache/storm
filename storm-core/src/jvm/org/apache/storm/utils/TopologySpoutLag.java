@@ -21,6 +21,7 @@ import com.google.common.base.Strings;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,12 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
+import net.minidev.json.JSONValue;
+import net.minidev.json.parser.ParseException;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +97,7 @@ public class TopologySpoutLag {
         }
         if (!extraProperties.isEmpty()) {
             try {
-                file = File.createTempFile("kafka-consumer-extra", "props");
+                file = Files.createTempFile("kafka-consumer-extra", "props").toFile();
                 file.deleteOnExit();
                 Properties properties = new Properties();
                 properties.putAll(extraProperties);

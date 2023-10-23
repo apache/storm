@@ -24,8 +24,9 @@ import org.apache.storm.testing.MockedSources;
 import org.apache.storm.testing.TestGlobalCount;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MessagingTest {
 
@@ -55,7 +56,7 @@ public class MessagingTest {
             CompleteTopologyParam completeTopologyParam = new CompleteTopologyParam();
             completeTopologyParam.setMockedSources(mockedSources);
             Map<String, List<FixedTuple>> results = Testing.completeTopology(cluster, stormTopology, completeTopologyParam);
-            Assert.assertEquals(6 * 4, Testing.readTuples(results, "2").size());
+            assertEquals(6 * 4, Testing.readTuples(results, "2").size());
         }
     }
     
@@ -89,7 +90,7 @@ public class MessagingTest {
             CompleteTopologyParam completeTopologyParam = new CompleteTopologyParam();
             completeTopologyParam.setMockedSources(mockedSources);
             Map<String, List<FixedTuple>> results = Testing.completeTopology(cluster, stormTopology, completeTopologyParam);
-            Assert.assertEquals(6 * 4, Testing.readTuples(results, "2").size());
+            assertEquals(6 * 4, Testing.readTuples(results, "2").size());
         }
     }
 }

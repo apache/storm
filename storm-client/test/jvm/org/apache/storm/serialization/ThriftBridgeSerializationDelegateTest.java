@@ -12,26 +12,25 @@
 
 package org.apache.storm.serialization;
 
-import java.io.Serializable;
 import org.apache.storm.generated.ErrorInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class ThriftBridgeSerializationDelegateTest {
 
     SerializationDelegate testDelegate;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         testDelegate = new ThriftSerializationDelegate();
         testDelegate.prepare(null);
     }
 
     @Test
-    public void testThriftInstance() throws Exception {
+    public void testThriftInstance() {
         ErrorInfo errorInfo = new ErrorInfo();
         errorInfo.set_error("error");
         errorInfo.set_error_time_secs(1);
@@ -45,10 +44,5 @@ public class ThriftBridgeSerializationDelegateTest {
         serialized = testDelegate.serialize(errorInfo);
         errorInfo2 = new ThriftSerializationDelegate().deserialize(serialized, ErrorInfo.class);
         assertEquals(errorInfo, errorInfo2);
-    }
-
-    static class TestPojo implements Serializable {
-        String name;
-        int age;
     }
 }

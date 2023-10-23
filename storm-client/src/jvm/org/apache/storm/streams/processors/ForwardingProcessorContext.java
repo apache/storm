@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A context that emits the results to downstream processors which are in the same bolt.
  */
-public class ForwardingProcessorContext implements ProcessorContext {
+public class ForwardingProcessorContext<T> implements ProcessorContext<T> {
     private static final Logger LOG = LoggerFactory.getLogger(ForwardingProcessorContext.class);
     private final ProcessorNode processorNode;
     private final Multimap<String, ProcessorNode> streamToChildren;
@@ -36,7 +36,7 @@ public class ForwardingProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public <T> void forward(T input) {
+    public void forward(T input) {
         if (PUNCTUATION.equals(input)) {
             finishAllStreams();
         } else {
@@ -45,7 +45,7 @@ public class ForwardingProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public <T> void forward(T input, String stream) {
+    public void forward(T input, String stream) {
         if (PUNCTUATION.equals(input)) {
             finish(stream);
         } else {

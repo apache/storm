@@ -61,6 +61,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 
+import net.minidev.json.JSONValue;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -225,7 +227,6 @@ import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.zookeeper.AclEnforcement;
 import org.apache.storm.zookeeper.ClientZookeeper;
 import org.apache.storm.zookeeper.Zookeeper;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -436,6 +437,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final UptimeComputer uptime;
     private final ITopologyValidator validator;
     private final StormTimer timer;
+    private final StormTimer cleanupTimer;
     private final IScheduler scheduler;
     private final IScheduler underlyingScheduler;
     //Metrics related
@@ -576,6 +578,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         this.timer = new StormTimer(null, (t, e) -> {
             LOG.error("Error while processing event", e);
             Utils.exitProcess(20, "Error while processing event");
+        });
+        this.cleanupTimer = new StormTimer("nimbus:cleanupTimer", (t, e) -> {
+            LOG.error("Error in cleanupTimer while processing event", e);
+            Utils.exitProcess(20, "Error in cleanupTimer while processing event");
         });
         this.underlyingScheduler = makeScheduler(conf, inimbus);
         this.scheduler = wrapAsBlacklistScheduler(conf, underlyingScheduler, metricsRegistry);
@@ -1071,15 +1077,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     @VisibleForTesting
     public static Set<String> topoIdsToClean(IStormClusterState state, BlobStore store, Map<String, Object> conf) {
-        Set<String> ret = new HashSet<>();
-        ret.addAll(Utils.OR(state.heartbeatStorms(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.OR(state.errorTopologies(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.OR(store.storedTopoIds(), EMPTY_STRING_SET));
-        ret.addAll(Utils.OR(state.backpressureTopologies(), EMPTY_STRING_LIST));
-        ret.addAll(Utils.OR(state.idsOfTopologiesWithPrivateWorkerKeys(), EMPTY_STRING_SET));
-        ret = getExpiredTopologyIds(ret, conf);
-        ret.removeAll(Utils.OR(state.activeStorms(), EMPTY_STRING_LIST));
-        return ret;
+        Set<String> cleanable = new HashSet<>();
+        cleanable.addAll(Utils.OR(state.heartbeatStorms(), EMPTY_STRING_LIST));
+        cleanable.addAll(Utils.OR(state.errorTopologies(), EMPTY_STRING_LIST));
+        cleanable.addAll(Utils.OR(store.storedTopoIds(), EMPTY_STRING_SET));
+        cleanable.addAll(Utils.OR(state.backpressureTopologies(), EMPTY_STRING_LIST));
+        cleanable.addAll(Utils.OR(state.idsOfTopologiesWithPrivateWorkerKeys(), EMPTY_STRING_SET));
+        Set<String> delayedCleanable = getExpiredTopologyIds(cleanable, conf);
+        delayedCleanable.removeAll(Utils.OR(state.activeStorms(), EMPTY_STRING_LIST));
+        return delayedCleanable;
     }
 
     private static String extractStatusStr(StormBase base) {
@@ -1426,12 +1432,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                         if (!doNotReassign) {
                             mkAssignments();
                         }
-                        doCleanup();
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 });
-
+            // Schedule topology cleanup
+            cleanupTimer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS)),
+                () -> {
+                    cleanupTimer.schedule(0, () -> doCleanup());
+                });
             // Schedule Nimbus inbox cleaner
             final int jarExpSecs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_INBOX_JAR_EXPIRATION_SECS));
             timer.scheduleRecurring(0, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_CLEANUP_INBOX_FREQ_SECS)),
@@ -2830,18 +2839,21 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         Utils.forceDelete(ServerConfigUtils.masterStormDistRoot(conf, topoId));
     }
 
+    /**
+     * Cleanup topologies and Jars.
+     */
     @VisibleForTesting
-    public void doCleanup() throws Exception {
-        if (!isLeader()) {
-            LOG.info("not a leader, skipping cleanup");
-            return;
-        }
-        IStormClusterState state = stormClusterState;
-        Set<String> toClean;
-        synchronized (submitLock) {
-            toClean = topoIdsToClean(state, blobStore, this.conf);
-        }
-        if (toClean != null) {
+    public void doCleanup() {
+        try {
+            if (!isLeader()) {
+                LOG.info("not a leader, skipping cleanup");
+                return;
+            }
+            IStormClusterState state = stormClusterState;
+            long cleanupStartMs = Time.currentTimeMillis();
+            Set<String> toClean = new HashSet<>(topoIdsToClean(state, blobStore, this.conf));
+            long topoIdSelectionDurationMs = Time.deltaMs(cleanupStartMs);
+
             for (String topoId : toClean) {
                 LOG.info("Cleaning up {}", topoId);
                 state.teardownHeartbeats(topoId);
@@ -2854,6 +2866,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 heartbeatsCache.removeTopo(topoId);
                 idToExecutors.getAndUpdate(new Dissoc<>(topoId));
             }
+
+            long cleanupDurationMs = Time.deltaMs(cleanupStartMs);
+            if (cleanupDurationMs > 10000) {
+                LOG.warn("doCleanup is taking too long, topoIdSelectionDurationMs={}, cleanupDurationMs={}",
+                    topoIdSelectionDurationMs, cleanupDurationMs);
+            }
+        } catch (Exception ex) {
+            LOG.error("Ignoring error in doCleanup()", ex);
         }
     }
 
@@ -5081,6 +5101,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             LOG.info("Shutting down master");
             timer.close();
+            cleanupTimer.close();
             stormClusterState.disconnect();
             downloaders.cleanup();
             uploaders.cleanup();

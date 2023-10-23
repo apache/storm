@@ -12,27 +12,24 @@
 
 package org.apache.storm.trident.state;
 
-import java.io.UnsupportedEncodingException;
-import org.apache.storm.shade.org.json.simple.JSONValue;
-import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.storm.shade.net.minidev.json.JSONValue;
+import org.apache.storm.shade.net.minidev.json.parser.ParseException;
 
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class JSONNonTransactionalSerializer implements Serializer {
 
     @Override
     public byte[] serialize(Object obj) {
-        try {
-            return JSONValue.toJSONString(obj).getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return JSONValue.toJSONString(obj).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
     public Object deserialize(byte[] b) {
         try {
-            return JSONValue.parseWithException(new String(b, "UTF-8"));
-        } catch (UnsupportedEncodingException | ParseException e) {
+            return JSONValue.parseWithException(new String(b, StandardCharsets.UTF_8));
+        } catch (ParseException e) {
             throw new RuntimeException(e);
         }
     }

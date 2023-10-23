@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
 import org.apache.storm.generated.WorkerToken;
@@ -138,7 +137,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         return kerberosConnect(transport, serverHost, asUser);
     }
 
-    private TTransport kerberosConnect(TTransport transport, String serverHost, String asUser) throws IOException {
+    private TTransport kerberosConnect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException {
         //login our user
         SortedMap<String, ?> authConf = ClientAuthUtils.pullConfig(conf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
         if (authConf == null) {

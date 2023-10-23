@@ -36,7 +36,7 @@ components:
   - id: "counterFields"
     className: "org.apache.storm.tuple.Fields"
     constructorArgs:
-      # !!! the following won't work, and should thow an IllegalArgumentException...
+      # !!! the following won't work, and should throw an IllegalArgumentException...
       - "count"
 
   - id: "mapper"

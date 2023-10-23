@@ -14,18 +14,22 @@ package org.apache.storm.utils;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ConfigUtilsTest {
 
     private Map<String, Object> mockMap(String key, Object value) {
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
         map.put(key, value);
         return map;
     }
@@ -33,36 +37,38 @@ public class ConfigUtilsTest {
     @Test
     public void getValueAsList_nullKeySupported() {
         String key = null;
-        List<String> value = Arrays.asList("test");
+        List<String> value = Collections.singletonList("test");
         Map<String, Object> map = mockMap(key, value);
-        Assert.assertEquals(value, ConfigUtils.getValueAsList(key, map));
+        assertEquals(value, ConfigUtils.getValueAsList(key, map));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void getValueAsList_nullKeyNotSupported() {
-        String key = null;
-        Map<String, Object> map = new Hashtable<>();
-        ConfigUtils.getValueAsList(key, map);
+        assertThrows(NullPointerException.class, () -> {
+            String key = null;
+            Map<String, Object> map = new Hashtable<>();
+            ConfigUtils.getValueAsList(key, map);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getValueAsList_nullConfig() {
-        ConfigUtils.getValueAsList(Config.WORKER_CHILDOPTS, null);
+        assertThrows(IllegalArgumentException.class, () -> ConfigUtils.getValueAsList(Config.WORKER_CHILDOPTS, null));
     }
 
     @Test
     public void getValueAsList_nullValue() {
         String key = Config.WORKER_CHILDOPTS;
         Map<String, Object> map = mockMap(key, null);
-        Assert.assertNull(ConfigUtils.getValueAsList(key, map));
+        assertNull(ConfigUtils.getValueAsList(key, map));
     }
 
     @Test
     public void getValueAsList_nonStringValue() {
         String key = Config.WORKER_CHILDOPTS;
-        List<String> expectedValue = Arrays.asList("1");
+        List<String> expectedValue = Collections.singletonList("1");
         Map<String, Object> map = mockMap(key, 1);
-        Assert.assertEquals(expectedValue, ConfigUtils.getValueAsList(key, map));
+        assertEquals(expectedValue, ConfigUtils.getValueAsList(key, map));
     }
 
     @Test
@@ -71,7 +77,7 @@ public class ConfigUtilsTest {
         String value = "-Xms1024m -Xmx1024m";
         List<String> expectedValue = Arrays.asList("-Xms1024m", "-Xmx1024m");
         Map<String, Object> map = mockMap(key, value);
-        Assert.assertEquals(expectedValue, ConfigUtils.getValueAsList(key, map));
+        assertEquals(expectedValue, ConfigUtils.getValueAsList(key, map));
     }
 
     @Test
@@ -79,7 +85,7 @@ public class ConfigUtilsTest {
         String key = Config.WORKER_CHILDOPTS;
         List<String> values = Arrays.asList("-Xms1024m", "-Xmx1024m");
         Map<String, Object> map = mockMap(key, values);
-        Assert.assertEquals(values, ConfigUtils.getValueAsList(key, map));
+        assertEquals(values, ConfigUtils.getValueAsList(key, map));
     }
 
     @Test
@@ -88,67 +94,67 @@ public class ConfigUtilsTest {
         List<Object> values = Arrays.asList(1, 2);
         List<String> expectedValue = Arrays.asList("1", "2");
         Map<String, Object> map = mockMap(key, values);
-        Assert.assertEquals(expectedValue, ConfigUtils.getValueAsList(key, map));
+        assertEquals(expectedValue, ConfigUtils.getValueAsList(key, map));
     }
 
     @Deprecated
     @Test
     public void getBlobstoreHDFSPrincipal() throws UnknownHostException {
         Map<String, Object> conf = mockMap(Config.BLOBSTORE_HDFS_PRINCIPAL, "primary/_HOST@EXAMPLE.COM");
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), "primary/" +  Utils.localHostname() + "@EXAMPLE.COM");
+        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), "primary/" +  Utils.localHostname() + "@EXAMPLE.COM");
 
         String principal = "primary/_HOST_HOST@EXAMPLE.COM";
         conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
 
         principal = "primary/_HOST2@EXAMPLE.COM";
         conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
 
         principal = "_HOST/instance@EXAMPLE.COM";
         conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
 
         principal = "primary/instance@_HOST.COM";
         conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
 
         principal = "_HOST@EXAMPLE.COM";
         conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
 
         principal = "primary/instance@EXAMPLE.COM";
         conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
+        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), principal);
     }
 
     @Test
     public void getHfdsPrincipal() throws UnknownHostException {
         Map<String, Object> conf = mockMap(Config.STORM_HDFS_LOGIN_PRINCIPAL, "primary/_HOST@EXAMPLE.COM");
-        Assert.assertEquals(Config.getHdfsPrincipal(conf), "primary/" +  Utils.localHostname() + "@EXAMPLE.COM");
+        assertEquals(Config.getHdfsPrincipal(conf), "primary/" +  Utils.localHostname() + "@EXAMPLE.COM");
 
         String principal = "primary/_HOST_HOST@EXAMPLE.COM";
         conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
+        assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "primary/_HOST2@EXAMPLE.COM";
         conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
+        assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "_HOST/instance@EXAMPLE.COM";
         conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
+        assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "primary/instance@_HOST.COM";
         conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
+        assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "_HOST@EXAMPLE.COM";
         conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
+        assertEquals(Config.getHdfsPrincipal(conf), principal);
 
         principal = "primary/instance@EXAMPLE.COM";
         conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
-        Assert.assertEquals(Config.getHdfsPrincipal(conf), principal);
+        assertEquals(Config.getHdfsPrincipal(conf), principal);
     }
 }

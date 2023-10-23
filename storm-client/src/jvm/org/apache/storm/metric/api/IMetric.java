@@ -18,9 +18,10 @@ package org.apache.storm.metric.api;
 public interface IMetric {
     /**
      * Get value and reset.
-     * @return an object that will be sent sent to {@link IMetricsConsumer#handleDataPoints(org.apache.storm.metric.api.IMetricsConsumer
-     * .TaskInfo,
-     *     java.util.Collection)}. If null is returned nothing will be sent. If this value can be reset, like with a counter, a side effect
+     *
+     * @return an object that will be sent to
+     *     {@link IMetricsConsumer#handleDataPoints(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo,java.util.Collection)}.
+     *     If {@code null} is returned nothing will be sent. If this value can be reset, like with a counter, a side effect
      *     of calling this should be that the value is reset.
      */
     Object getValueAndReset();

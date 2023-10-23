@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -18,6 +18,16 @@ from github import GitHub
 from jira_github import JiraRepo
 from report.report_builder import CompleteReportBuilder
 
+"""
+If you get certificate error when running on Mac, 
+(https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org)
+Go to Macintosh HD 
+    > Applications 
+    > Python3.9 folder (or whatever version of Python you're using) 
+    > double click on "Install Certificates.command" file. 
+    
+"""
+
 
 def main():
     parser = OptionParser(usage="usage: %prog [options]")
@@ -29,8 +39,9 @@ def main():
     jira_repo = JiraRepo("https://issues.apache.org/jira/rest/api/2")
     github_repo = GitHub(options)
 
-    print "Report generated on: %s (GMT)" % (datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"))
-
+    print("=" * 100)
+    print("Report generated on: %s (GMT)" % (datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S")))
+    print("-" * 100)
     report_builder = CompleteReportBuilder(jira_repo, github_repo)
     report_builder.report.print_all()
 

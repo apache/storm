@@ -32,7 +32,7 @@ import org.apache.storm.ILocalDRPC;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.generated.DistributedRPCInvocations;
-import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.thrift.TException;

@@ -16,21 +16,21 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.storm.metric.api.DataPoint;
 import org.apache.storm.metric.api.IClusterMetricsConsumer;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class ClusterMetricsConsumerExecutorTest {
 
-    @Before
+    @BeforeEach
     public void setUp() {
         MockFailingClusterMetricsConsumer.resetAllCounts();
     }
 
     @Test
-    public void testPrepareDoesNotThrowExceptionWhenInitializingClusterMetricsConsumerIsFailing() throws Exception {
+    public void testPrepareDoesNotThrowExceptionWhenInitializingClusterMetricsConsumerIsFailing() {
         ClusterMetricsConsumerExecutor sut = new ClusterMetricsConsumerExecutor(
             MockFailingClusterMetricsConsumer.class.getName(), 2);
 
@@ -38,37 +38,37 @@ public class ClusterMetricsConsumerExecutorTest {
         sut.prepare();
         sut.prepare();
 
-        Assert.assertEquals(2, MockFailingClusterMetricsConsumer.getPrepareCallCount());
+        assertEquals(2, MockFailingClusterMetricsConsumer.getPrepareCallCount());
     }
 
     @Test
-    public void testHandleDataPointsWithClusterMetricsShouldSkipHandlingMetricsIfFailedBefore() throws Exception {
+    public void testHandleDataPointsWithClusterMetricsShouldSkipHandlingMetricsIfFailedBefore() {
         ClusterMetricsConsumerExecutor sut = new ClusterMetricsConsumerExecutor(
             MockFailingClusterMetricsConsumer.class.getName(), 2);
 
         // below calls shouldn't propagate any exceptions
         sut.prepare();
 
-        // no specific reason to mock... this is one of easiest ways to make dummy instance
+        // no specific reason to mock... this is one of the easiest ways to make dummy instance
         sut.handleDataPoints(mock(IClusterMetricsConsumer.ClusterInfo.class), Collections.emptyList());
 
-        Assert.assertEquals(1, MockFailingClusterMetricsConsumer.getPrepareCallCount());
-        Assert.assertEquals(0, MockFailingClusterMetricsConsumer.getHandleDataPointsWithClusterInfoCallCount());
+        assertEquals(1, MockFailingClusterMetricsConsumer.getPrepareCallCount());
+        assertEquals(0, MockFailingClusterMetricsConsumer.getHandleDataPointsWithClusterInfoCallCount());
     }
 
     @Test
-    public void testHandleDataPointsWithSupervisorMetricsShouldRetryInitializingClusterMetricsConsumerIfFailedBefore() throws Exception {
+    public void testHandleDataPointsWithSupervisorMetricsShouldRetryInitializingClusterMetricsConsumerIfFailedBefore() {
         ClusterMetricsConsumerExecutor sut = new ClusterMetricsConsumerExecutor(
             MockFailingClusterMetricsConsumer.class.getName(), 2);
 
         // below calls shouldn't propagate any exceptions
         sut.prepare();
 
-        // no specific reason to mock... this is one of easiest ways to make dummy instance
+        // no specific reason to mock... this is one of the easiest ways to make dummy instance
         sut.handleDataPoints(mock(IClusterMetricsConsumer.SupervisorInfo.class), Collections.emptyList());
 
-        Assert.assertEquals(1, MockFailingClusterMetricsConsumer.getPrepareCallCount());
-        Assert.assertEquals(0, MockFailingClusterMetricsConsumer.getHandleDataPointsWithSupervisorInfoCallCount());
+        assertEquals(1, MockFailingClusterMetricsConsumer.getPrepareCallCount());
+        assertEquals(0, MockFailingClusterMetricsConsumer.getHandleDataPointsWithSupervisorInfoCallCount());
     }
 
     public static class MockFailingClusterMetricsConsumer implements IClusterMetricsConsumer {

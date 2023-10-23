@@ -93,14 +93,15 @@ import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.com.google.common.collect.MapDifference;
 import org.apache.storm.shade.com.google.common.collect.Maps;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
+import org.apache.storm.shade.net.minidev.json.parser.ParseException;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.shade.org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.data.Id;
-import org.apache.storm.shade.org.json.simple.JSONValue;
-import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import org.apache.storm.shade.org.yaml.snakeyaml.LoaderOptions;
 import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.shade.org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.apache.storm.thrift.TBase;
@@ -175,7 +176,7 @@ public class Utils {
         try {
             in = getConfigFileInputStream(name);
             if (null != in) {
-                Yaml yaml = new Yaml(new SafeConstructor());
+                Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
                 @SuppressWarnings("unchecked")
                 Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(in));
                 if (null != ret) {
@@ -722,12 +723,16 @@ public class Utils {
     }
 
     private static TDeserializer getDes() {
-        TDeserializer des = threadDes.get();
-        if (des == null) {
-            des = new TDeserializer();
-            threadDes.set(des);
+        try {
+            TDeserializer des = threadDes.get();
+            if (des == null) {
+                des = new TDeserializer();
+                threadDes.set(des);
+            }
+            return des;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return des;
     }
 
     public static void sleepNoSimulation(long millis) {
@@ -850,7 +855,6 @@ public class Utils {
      *
      * @param str   the encoded string.
      * @param clazz the thrift class we are expecting.
-     * @param <T>   The type of clazz
      * @return the decoded object
      */
     public static <T> T deserializeFromString(String str, Class<T> clazz) {
@@ -1438,7 +1442,7 @@ public class Utils {
 
     public static Object readYamlFile(String yamlFile) {
         try (FileReader reader = new FileReader(yamlFile)) {
-            return new Yaml(new SafeConstructor()).load(reader);
+            return new Yaml(new SafeConstructor(new LoaderOptions())).load(reader);
         } catch (Exception ex) {
             LOG.error("Failed to read yaml file.", ex);
         }
@@ -1686,7 +1690,7 @@ public class Utils {
         if (cp == null || cp.isEmpty()) {
             return conf;
         }
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map<String, Object> defaultsConf = null;
         Map<String, Object> stormConf = null;
 

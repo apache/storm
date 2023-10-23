@@ -12,17 +12,17 @@
 
 package org.apache.storm.container.docker;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DockerWaitCommandTest {
     private DockerWaitCommand dockerWaitCommand;
     private static final String CONTAINER_NAME = "container_name";
 
-    @Before
+    @BeforeEach
     public void setup() {
         dockerWaitCommand = new DockerWaitCommand(CONTAINER_NAME);
     }

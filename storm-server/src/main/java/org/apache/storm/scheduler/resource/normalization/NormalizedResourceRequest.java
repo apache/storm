@@ -20,15 +20,15 @@ package org.apache.storm.scheduler.resource.normalization;
 
 import java.util.HashMap;
 import java.util.Map;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.utils.ObjectReader;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

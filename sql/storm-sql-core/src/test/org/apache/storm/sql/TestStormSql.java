@@ -29,12 +29,13 @@ import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.tuple.Values;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(TestUtils.MockBoltExtension.class)
 @ExtendWith(TestUtils.MockInsertBoltExtension.class)
@@ -82,9 +83,9 @@ public class TestStormSql {
         List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> values.size() >= 2, WAIT_TIMEOUT_MS);
 
-        Assert.assertEquals(2, values.size());
-        Assert.assertEquals(4, values.get(0).getFirst());
-        Assert.assertEquals(5, values.get(1).getFirst());
+        assertEquals(2, values.size());
+        assertEquals(4, values.get(0).getFirst());
+        assertEquals(5, values.get(1).getFirst());
     }
 
     @Test
@@ -102,8 +103,8 @@ public class TestStormSql {
 
         Map<String, Integer> map = ImmutableMap.of("b", 2, "c", 4);
         Map<String, Map<String, Integer>> nestedMap = ImmutableMap.of("a", map);
-        Assert.assertEquals(2, values.get(0).getFirst());
-        Assert.assertEquals(new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300)), values.get(0).getSecond());
+        assertEquals(2, values.get(0).getFirst());
+        assertEquals(new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300)), values.get(0).getSecond());
     }
 
     @Test
@@ -120,7 +121,7 @@ public class TestStormSql {
         List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED);
 
-        Assert.assertEquals(0, values.size());
+        assertEquals(0, values.size());
     }
 
     @Test
@@ -137,7 +138,7 @@ public class TestStormSql {
         List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED);
 
-        Assert.assertEquals(0, values.size());
+        assertEquals(0, values.size());
     }
 
     @Test
@@ -153,7 +154,7 @@ public class TestStormSql {
         List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED);
 
-        Assert.assertEquals(0, values.size());
+        assertEquals(0, values.size());
     }
 
     @Test
@@ -169,7 +170,7 @@ public class TestStormSql {
         List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_NO_RECORDS_EXPECTED);
 
-        Assert.assertEquals(0, values.size());
+        assertEquals(0, values.size());
     }
 
     @Test
@@ -181,7 +182,7 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM MYPLUS(NAME, 1) FROM FOO WHERE ID = 0");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        Assertions.assertThrows(ValidationException.class,
+        assertThrows(ValidationException.class,
             () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 
@@ -195,7 +196,7 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM ID FROM FOO WHERE MYPLUS(ID, 1) = 'x'");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        Assertions.assertThrows(CompilingClassLoader.CompilerException.class,
+        assertThrows(CompilingClassLoader.CompilerException.class,
             () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 
@@ -211,9 +212,9 @@ public class TestStormSql {
         List<Pair<Object, Values>> values = TestUtils.MockInsertBolt.getCollectedValues();
         impl.runLocal(cluster, stmt, (__) -> values.size() >= 2, WAIT_TIMEOUT_MS);
 
-        Assert.assertEquals(2, values.size());
-        Assert.assertEquals(4, values.get(0).getFirst());
-        Assert.assertEquals(5, values.get(1).getFirst());
+        assertEquals(2, values.size());
+        assertEquals(4, values.get(0).getFirst());
+        assertEquals(5, values.get(1).getFirst());
     }
 
     @Test
@@ -225,7 +226,7 @@ public class TestStormSql {
         stmt.add("INSERT INTO BAR SELECT STREAM MYPLUS(ID, 1) FROM FOO WHERE ID > 2");
         StormSqlLocalClusterImpl impl = new StormSqlLocalClusterImpl();
 
-        Assertions.assertThrows(UnsupportedOperationException.class,
+        assertThrows(UnsupportedOperationException.class,
             () -> impl.runLocal(cluster, stmt, (__) -> true, WAIT_TIMEOUT_MS_ERROR_EXPECTED));
     }
 

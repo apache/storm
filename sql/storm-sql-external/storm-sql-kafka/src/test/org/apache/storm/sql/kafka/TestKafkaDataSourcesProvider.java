@@ -23,11 +23,13 @@ import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.ISqlStreamsDataSource;
 import org.apache.storm.topology.IRichBolt;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestKafkaDataSourcesProvider {
 
@@ -48,10 +50,10 @@ public class TestKafkaDataSourcesProvider {
     public void testKafkaSink() throws Exception {
         ISqlStreamsDataSource ds = DataSourcesRegistry.constructStreamsDataSource(
             URI.create("kafka://foo?bootstrap-servers=foo"), null, null, TBL_PROPERTIES, FIELDS);
-        Assert.assertNotNull(ds);
+        assertNotNull(ds);
 
         IRichBolt consumer = ds.getConsumer();
 
-        Assert.assertEquals(KafkaBolt.class, consumer.getClass());
+        assertEquals(KafkaBolt.class, consumer.getClass());
     }
 }

@@ -20,6 +20,10 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -33,12 +37,9 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -322,7 +323,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         }
 
         // Now parse it and return the map.
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map ret = null;
         try {
             ret = (Map) yaml.load(yamlConfig);
@@ -376,11 +377,13 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         }
     }
 
-    private class DirEntryCompare implements Comparator<JSONObject> {
+    private class DirEntryCompare implements Comparator<Object> {
 
         @Override
-        public int compare(JSONObject o1, JSONObject o2) {
-            return ((String) o1.get("uri")).compareTo((String) o2.get("uri"));
+        public int compare(Object o1, Object o2) {
+            final JSONObject j1 = (JSONObject) o1;
+            final JSONObject j2 = (JSONObject) o2;
+            return ((String) j1.get("uri")).compareTo((String) j2.get("uri"));
         }
     }
 }
