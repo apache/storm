@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.security.auth;
+package org.apache.storm.security.auth.kerberos;
 
 import org.apache.storm.security.auth.kerberos.AutoTGTKrb5LoginModule;
 import org.apache.storm.security.auth.kerberos.AutoTGTKrb5LoginModuleTest;
