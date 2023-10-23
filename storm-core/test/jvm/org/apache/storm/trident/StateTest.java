@@ -35,15 +35,14 @@ import org.apache.storm.trident.topology.state.TestTransactionalState;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class StateTest {
 
@@ -75,42 +74,42 @@ public class StateTest {
         OpaqueValue<String> opqval = new OpaqueValue<>(8L, "v1", "v0");
         OpaqueValue<String> upval0 = opqval.update(8L, "v2");
         OpaqueValue<String> upval1 = opqval.update(9L, "v2");
-        assertThat(opqval.get(null), is("v1"));
-        assertThat(opqval.get(100L), is("v1"));
-        assertThat(opqval.get(9L), is("v1"));
-        assertThat(opqval.get(8L), is("v0"));
+        assertEquals(opqval.get(null), "v1");
+        assertEquals(opqval.get(100L), "v1");
+        assertEquals(opqval.get(9L), "v1");
+        assertEquals(opqval.get(8L), "v0");
         Assertions.assertThrows(Exception.class, () -> opqval.get(7L));
-        assertThat(opqval.getPrev(), is("v0"));
-        assertThat(opqval.getCurr(), is("v1"));
+        assertEquals(opqval.getPrev(), "v0");
+        assertEquals(opqval.getCurr(), "v1");
         // update with current
-        assertThat(upval0.getPrev(), is("v0"));
-        assertThat(upval0.getCurr(), is("v2"));
-        Assertions.assertNotSame(opqval, upval0);
+        assertEquals(upval0.getPrev(), "v0");
+        assertEquals(upval0.getCurr(), "v2");
+        assertNotEquals(opqval, upval0);
         // update
-        assertThat(upval1.getPrev(), is("v1"));
-        assertThat(upval1.getCurr(), is("v2"));
-        Assertions.assertNotSame(opqval, upval1);
+        assertEquals(upval1.getPrev(), "v1");
+        assertEquals(upval1.getCurr(), "v2");
+        assertNotEquals(opqval, upval1);
     }
 
     @Test
     public void testOpaqueMap() {
         MapState<Object> map = OpaqueMap.build(new MemoryBackingMap<>());
         map.beginCommit(1L);
-        assertThat(singleGet(map, "a"), nullValue());
+        assertEquals(singleGet(map, "a"), null);
         // tests that intra-batch caching works
-        assertThat(singleUpdate(map, "a", 1L), is(1L));
-        assertThat(singleGet(map, "a"), is(1L));
-        assertThat(singleUpdate(map, "a", 2L), is(3L));
-        assertThat(singleGet(map, "a"), is(3L));
+        assertEquals(singleUpdate(map, "a", 1L), 1L);
+        assertEquals(singleGet(map, "a"), 1L);
+        assertEquals(singleUpdate(map, "a", 2L), 3L);
+        assertEquals(singleGet(map, "a"), 3L);
         map.commit(1L);
         map.beginCommit(1L);
-        assertThat(singleGet(map, "a"), nullValue());
-        assertThat(singleUpdate(map, "a", 2L), is(2L));
+        assertEquals(singleGet(map, "a"), null);
+        assertEquals(singleUpdate(map, "a", 2L), 2L);
         map.commit(1L);
         map.beginCommit(2L);
-        assertThat(singleGet(map, "a"), is(2L));
-        assertThat(singleUpdate(map, "a", 3L), is(5L));
-        assertThat(singleUpdate(map, "a", 1L), is(6L));
+        assertEquals(singleGet(map, "a"), 2L);
+        assertEquals(singleUpdate(map, "a", 3L), 5L);
+        assertEquals(singleUpdate(map, "a", 1L), 6L);
         map.commit(2L);
     }
 
@@ -118,21 +117,21 @@ public class StateTest {
     public void testTransactionalMap() {
         MapState<Object> map = TransactionalMap.build(new MemoryBackingMap<>());
         map.beginCommit(1L);
-        assertThat(singleGet(map, "a"), nullValue());
+        assertEquals(singleGet(map, "a"), null);
         // tests that intra-batch caching works
-        assertThat(singleUpdate(map, "a", 1L), is(1L));
-        assertThat(singleUpdate(map, "a", 2L), is(3L));
+        assertEquals(singleUpdate(map, "a", 1L), 1L);
+        assertEquals(singleUpdate(map, "a", 2L), 3L);
         map.commit(1L);
         map.beginCommit(1L);
-        assertThat(singleGet(map, "a"), is(3L));
+        assertEquals(singleGet(map, "a"), 3L);
         // tests that intra-batch caching has no effect if it's the same commit as previous commit
-        assertThat(singleUpdate(map, "a", 1L), is(3L));
-        assertThat(singleUpdate(map, "a", 2L), is(3L));
+        assertEquals(singleUpdate(map, "a", 1L), 3L);
+        assertEquals(singleUpdate(map, "a", 2L), 3L);
         map.commit(1L);
         map.beginCommit(2L);
-        assertThat(singleGet(map, "a"), is(3L));
-        assertThat(singleUpdate(map, "a", 3L), is(6L));
-        assertThat(singleUpdate(map, "a", 1L), is(7L));
+        assertEquals(singleGet(map, "a"), 3L);
+        assertEquals(singleUpdate(map, "a", 3L), 6L);
+        assertEquals(singleUpdate(map, "a", 1L), 7L);
         map.commit(2L);
     }
 
@@ -145,7 +144,7 @@ public class StateTest {
         List<ACL> expectedAcls = ZooDefs.Ids.CREATOR_ALL_ACL;
         Mockito.when(curator.create()).thenReturn(builder0);
         Mockito.when(builder0.creatingParentsIfNeeded()).thenReturn(builder1);
-        Mockito.when(builder1.withMode(Matchers.isA(CreateMode.class))).thenReturn(builder1);
+        Mockito.when(builder1.withMode(ArgumentMatchers.isA(CreateMode.class))).thenReturn(builder1);
         Mockito.when(builder1.withACL(Mockito.anyList())).thenReturn(builder1);
         TestTransactionalState.createNode(curator, "", new byte[0], expectedAcls, null);
         Mockito.verify(builder1).withACL(expectedAcls);
@@ -160,17 +159,17 @@ public class StateTest {
         map.commit(1L);
         map.beginCommit(2L);
         singleRemove(map, "a");
-        assertThat(singleGet(map, "a"), nullValue());
-        assertThat(singleGet(map, "b"), is(2));
+        assertEquals(singleGet(map, "a"), null);
+        assertEquals(singleGet(map, "b"), 2);
         map.commit(2L);
         map.beginCommit(2L);
-        assertThat(singleGet(map, "a"), is(1));
-        assertThat(singleGet(map, "b"), is(2));
+        assertEquals(singleGet(map, "a"), 1);
+        assertEquals(singleGet(map, "b"), 2);
         singleRemove(map, "a");
         map.commit(2L);
         map.beginCommit(3L);
-        assertThat(singleGet(map, "a"), nullValue());
-        assertThat(singleGet(map, "b"), is(2));
+        assertEquals(singleGet(map, "a"), null);
+        assertEquals(singleGet(map, "b"), 2);
         map.commit(3L);
     }
 }
