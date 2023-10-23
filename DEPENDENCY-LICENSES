@@ -390,7 +390,6 @@ List of third-party dependencies grouped by their license type.
         * Plexus Interpolation API (org.codehaus.plexus:plexus-interpolation:1.25 - http://codehaus-plexus.github.io/plexus-interpolation/)
         * Plexus Security Dispatcher Component (org.sonatype.plexus:plexus-sec-dispatcher:1.3 - http://spice.sonatype.org/plexus-sec-dispatcher)
         * Plexus Security Dispatcher Component (org.sonatype.plexus:plexus-sec-dispatcher:1.4 - http://spice.sonatype.org/plexus-sec-dispatcher)
-        * Proton-J (org.apache.qpid:proton-j:0.18.0 - http://qpid.apache.org/proton/proton-j)
         * rest (org.elasticsearch.client:rest:5.2.2 - https://github.com/elastic/elasticsearch)
         * sigar (org.fusesource:sigar:1.6.4 - http://fusesource.com/sigar/)
         * Sisu - Guice (org.sonatype.sisu:sisu-guice:2.1.7 - http://forge.sonatype.com/sisu-guice/)
@@ -506,7 +505,6 @@ List of third-party dependencies grouped by their license type.
         * ASM Util (org.ow2.asm:asm-util:6.0_BETA - http://asm.objectweb.org/asm-util/)
         * Javolution (javolution:javolution:5.5.1 - http://javolution.org)
         * JLine (jline:jline:0.9.94 - http://jline.sourceforge.net)
-        * Stax2 API (org.codehaus.woodstox:stax2-api:3.1.4 - http://wiki.fasterxml.com/WoodstoxStax2)
         * Stax2 API (org.codehaus.woodstox:stax2-api:4.2.1 - http://github.com/FasterXML/stax2-api)
         * xmlenc Library (xmlenc:xmlenc:0.52 - http://xmlenc.sourceforge.net)
 
