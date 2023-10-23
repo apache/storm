@@ -197,6 +197,7 @@ List of third-party dependencies grouped by their license type.
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:3.2.6 - http://metrics.dropwizard.io/metrics-graphite/)
         * Gson (com.google.code.gson:gson:2.2.4 - http://code.google.com/p/google-gson/)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:16.0.1 - http://code.google.com/p/guava-libraries/guava)
+        * Guava: Google Core Libraries for Java (com.google.guava:guava:19.0 - https://github.com/google/guava/guava)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:27.0.1-jre - https://github.com/google/guava/guava)
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.1 - https://github.com/google/guava/failureaccess)
         * Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)
