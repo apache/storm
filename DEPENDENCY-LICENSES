@@ -11,7 +11,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache-2.0
 
-        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.18.2 - http://activemq.apache.org/activemq-client)
+        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.18.3 - http://activemq.apache.org/activemq-client)
         * Apache Avro (org.apache.avro:avro:1.11.3 - https://avro.apache.org)
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.13.0 - https://commons.apache.org/proper/commons-lang/)
