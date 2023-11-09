@@ -157,6 +157,7 @@
         <activation-version>1.1.1</activation-version>
         <rocksdb-jni-version>8.5.4</rocksdb-jni-version>
         <json-smart.version>2.5.0</json-smart.version>
+        <byte-buddy.version>1.14.9</byte-buddy.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
@@ -1139,6 +1140,16 @@
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
                 <version>1.11.3</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${byte-buddy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>${byte-buddy.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
