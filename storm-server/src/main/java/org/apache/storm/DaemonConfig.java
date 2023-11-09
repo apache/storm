@@ -339,6 +339,12 @@ public class DaemonConfig implements Validated {
     @IsInteger
     @IsPositiveNumber
     public static final String UI_PORT = "ui.port";
+    
+    /**
+     * Storm UI's title.
+     */
+    @IsString
+    public static final String UI_TITLE = "ui.title";
 
     /**
      * This controls wheather Storm UI should bind to http port even if ui.port is > 0.

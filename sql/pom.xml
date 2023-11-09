@@ -41,7 +41,6 @@
         <module>storm-sql-runtime</module>
         <module>storm-sql-external/storm-sql-kafka</module>
         <module>storm-sql-external/storm-sql-redis</module>
-        <module>storm-sql-external/storm-sql-mongodb</module>
         <module>storm-sql-external/storm-sql-hdfs</module>
     </modules>
 

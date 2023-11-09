@@ -205,7 +205,7 @@ public class LogConfigManagerTest {
     }
 
     @Test
-    public void testProcessLogConfigChangeThrowsNullPointerExceptionWhenTargetLogLevelIsNotSet() {
+    public void testProcessLogConfigChangeThrowsIllegalArgumentExceptionWhenTargetLogLevelIsNotSet() {
         LogConfigManager logConfigManager = new LogConfigManager();
 
         LogConfig logConfig = new LogConfig();
@@ -214,7 +214,7 @@ public class LogConfigManagerTest {
         logLevel.set_reset_log_level("INFO");
         logConfig.put_to_named_logger_level("RESET_LOG", logLevel);
 
-        assertThrows(NullPointerException.class, () -> logConfigManager.processLogConfigChange(logConfig));
+        assertThrows(IllegalArgumentException.class, () -> logConfigManager.processLogConfigChange(logConfig));
     }
 
     @Test

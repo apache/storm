@@ -10,9 +10,9 @@ There are lots of metrics to help you monitor a running cluster.  Many of these 
 
 Also be aware that depending on the metrics system you use, the names are likely to be translated into a different format that is compatible with the system.  Typically this means that the ':' separating character will be replaced with a '.' character.
 
-Most metrics should have the units that they are reported in as a part of the description. For Timers often this is configured by the reporter that is uploading them to your system.  Pay attention because even if the metric name has a time unit in it, it may be false.
+Most metrics should have the units that they are reported as a part of the description. For Timers often this is configured by the reporter that is uploading them to your system.  Pay attention because even if the metric name has a time unit in it, it may be false.
 
-Also most metrics, except for gauges and counters, are a collection of numbers, and not a single value.  Often these result in multiple metrics being uploaded to a reporting system, such as percentiles for a histogram, or rates for a meter.  It is dependent on the configured metrics reporter how this happens, or how the name here corresponds to the metric in your reporting system.
+Also, most metrics, except for gauges and counters, are a collection of numbers, and not a single value.  Often these result in multiple metrics being uploaded to a reporting system, such as percentiles for a histogram, or rates for a meter.  It is dependent on the configured metrics reporter how this happens, or how the name here corresponds to the metric in your reporting system.
 
 ## Cluster Metrics (From Nimbus)
 
@@ -27,7 +27,7 @@ These are metrics that come from the active nimbus instance and report the state
 | cluster:num-total-used-workers | gauge | Number of used workers/slots. |
 | cluster:num-total-workers | gauge | Number of workers/slots. |
 | cluster:total-fragmented-cpu-non-negative | gauge | Total fragmented CPU (% of core).  This is CPU that the system thinks it cannot use because other resources on the node are used up. |
-| cluster:total-fragmented-memory-non-negative | gauge | Total fragmented memory (MB).  This is memory that the system thinks it cannot use because other resources on the node are used up.  |
+| cluster:total-fragmented-memory-non-negative | gauge | Total fragmented memory (MB).  This is the memory that the system thinks it cannot use because other resources on the node are used up.  |
 | topologies:assigned-cpu | histogram | CPU scheduled per topology (% of a core) |
 | topologies:assigned-mem-off-heap | histogram | Off heap memory scheduled per topology (MB) |
 | topologies:assigned-mem-on-heap | histogram | On heap memory scheduled per topology (MB) |
@@ -52,7 +52,7 @@ These are metrics that come from the active nimbus instance and report the state
 
 ## Nimbus Metrics
 
-These are metrics that are specific to a nimbus instance.  In many instances only the active nimbus will be reporting these metrics, but they could come from standby nimbus instances as well.
+These are metrics that are specific to a nimbus instance.  In many instances, only the active nimbus will be reporting these metrics, but they could come from standby nimbus instances as well.
 
 | Metric Name | Type | Description |
 |-------------|------|-------------|
@@ -204,7 +204,7 @@ Metrics associated with the supervisor, which launches the workers for a topolog
 | supervisor:num-workers-killed-blob-changed | meter | workers killed because the blob changed and they needed to be relaunched. |
 | supervisor:num-workers-killed-hb-null | meter | workers killed because there was no hb at all from the worker. This would typically only happen when a worker is launched for the first time. |
 | supervisor:num-workers-killed-hb-timeout | meter | workers killed because the hb from the worker was too old.  This often happens because of GC issues in the worker that prevents it from sending a heartbeat, but could also mean the worker process exited, and the supervisor is not the parent of the process to know that it exited. |
-| supervisor:num-workers-killed-memory-violation | meter | workers killed because the worker was using too much memory.  If the supervisor can monitor memory usage of the worker (typically through cgroups) and the worker goes over the limit it may be shot. |
+| supervisor:num-workers-killed-memory-violation | meter | workers killed because the worker was using too much memory.  If the supervisor can monitor the memory usage of the worker (typically through cgroups) and the worker goes over the limit it may be shot. |
 | supervisor:num-workers-killed-process-exit | meter | workers killed because the process exited and the supervisor was the parent process |
 | supervisor:num-workers-launched | meter | number of workers launched |
 | supervisor:single-blob-localization-duration | timer | how long it takes for a blob to be updated (downloaded, unzipped, inform slots, and make the move) |
@@ -253,7 +253,7 @@ Metrics associated with a single UI daemon.
 
 ## Pacemaker Metrics (Deprecated)
 
-The pacemaker process is deprecated and only still exists for backwards compatibility.
+The pacemaker process is deprecated and only still exists for backward compatibility.
 
 | Metric Name | Type | Description |
 |-------------|------|-------------|

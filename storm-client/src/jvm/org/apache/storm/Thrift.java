@@ -40,7 +40,7 @@ import org.apache.storm.generated.StateSpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.StormTopology._Fields;
 import org.apache.storm.generated.StreamInfo;
-import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.IBasicBolt;

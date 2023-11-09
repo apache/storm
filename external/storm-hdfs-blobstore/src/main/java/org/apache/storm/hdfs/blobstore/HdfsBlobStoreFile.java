@@ -147,7 +147,7 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
                 fileSystem.setPermission(path.getParent(), dirperms);
             }
             out = fileSystem.create(path, (short) this.getMetadata().get_replication_factor());
-            fileSystem.setPermission(path, dirperms);
+            fileSystem.setPermission(path, fileperms);
             fileSystem.setReplication(path, (short) this.getMetadata().get_replication_factor());
         }
         if (out == null) {

@@ -39,11 +39,11 @@ builder.setBolt("expand", new ExpandUrl(), parallelism)
   .fieldsGrouping("urls", new Fields("url"));
 ```
 
-The second approach will have vastly more effective caches, since the same URL will always go to the same task. This avoids having duplication across any of the caches in the tasks and makes it much more likely that a short URL will hit the cache.
+The second approach will have vastly more effective caches since the same URL will always go to the same task. This avoids having duplication across any of the caches in the tasks and makes it much more likely that a short URL will hit the cache.
 
 ### Streaming top N
 
-A common continuous computation done on Storm is a "streaming top N" of some sort. Suppose you have a bolt that emits tuples of the form ["value", "count"] and you want a bolt that emits the top N tuples based on count. The simplest way to do this is to have a bolt that does a global grouping on the stream and maintains a list in memory of the top N items.
+A common continuous computation done on Storm is a "streaming top N" of some sort. Suppose you have a bolt that emits tuples of the form ["value", "count"] and you want a bolt that emits the top N tuples based on the count. The simplest way to do this is to have a bolt that does a global grouping on the stream and maintains a list in memory of the top N items.
 
 This approach obviously doesn't scale to large streams since the entire stream has to go through one task. A better way to do the computation is to do many top N's in parallel across partitions of the stream, and then merge those top N's together to get the global top N. The pattern looks like this:
 
@@ -56,7 +56,7 @@ builder.setBolt("merge", new MergeObjects())
 
 This pattern works because of the fields grouping done by the first bolt which gives the partitioning you need for this to be semantically correct. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/RollingTopWords.java).
 
-If however you have a known skew in the data being processed it can be advantageous to use partialKeyGrouping instead of fieldsGrouping.  This will distribute the load for each key between two downstream bolts instead of a single one.
+If however, you have a known skew in the data being processed it can be advantageous to use partialKeyGrouping instead of fieldsGrouping.  This will distribute the load for each key between two downstream bolts instead of a single one.
 
 ```java
 builder.setBolt("count", new CountObjects(), parallelism)
@@ -67,11 +67,11 @@ builder.setBolt("merge", new MergeRanksObjects())
   .globalGrouping("rank");
 ``` 
 
-The topology needs an extra layer of processing to aggregate the partial counts from the upstream bolts but this only processes aggregated values now so the bolt it is not subject to the load caused by the skewed data. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/SkewedRollingTopWords.java).
+The topology needs an extra layer of processing to aggregate the partial counts from the upstream bolts but this only processes aggregated values now so the bolt is not subject to the load caused by the skewed data. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/SkewedRollingTopWords.java).
 
 ### TimeCacheMap for efficiently keeping a cache of things that have been recently updated
 
-You sometimes want to keep a cache in memory of items that have been recently "active" and have items that have been inactive for some time be automatically expires. [TimeCacheMap](javadocs/org/apache/storm/utils/TimeCacheMap.html) is an efficient data structure for doing this and provides hooks so you can insert callbacks whenever an item is expired.
+You sometimes want to keep a cache in memory of items that have been recently "active" and have items that have been inactive for some time automatically expire. [TimeCacheMap](javadocs/org/apache/storm/utils/TimeCacheMap.html) is an efficient data structure for doing this and provides hooks so you can insert callbacks whenever an item is expired.
 
 ### CoordinatedBolt and KeyedFairBolt for Distributed RPC
 

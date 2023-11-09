@@ -27,14 +27,16 @@ public class NewKafkaSpoutOffsetQuery {
     private final String consumerGroupId; // consumer group id for which the offset needs to be calculated
     private final String bootStrapBrokers; // bootstrap brokers
     private final String securityProtocol; // security protocol to connect to kafka
+    private final String saslMechanism; // Sasl mechanism to connect to kafka, default is GSSAPI
     private final String consumerPropertiesFileName; // properties file containing additional kafka consumer configs
 
     public NewKafkaSpoutOffsetQuery(String topics, String bootstrapBrokers, String consumerGroupId, String securityProtocol,
-        String consumerPropertiesFileName) {
+        String saslMechanism, String consumerPropertiesFileName) {
         this.topics = topics;
         this.bootStrapBrokers = bootstrapBrokers;
         this.consumerGroupId = consumerGroupId;
         this.securityProtocol = securityProtocol;
+        this.saslMechanism = saslMechanism;
         this.consumerPropertiesFileName = consumerPropertiesFileName;
     }
 
@@ -54,6 +56,10 @@ public class NewKafkaSpoutOffsetQuery {
         return this.securityProtocol;
     }
 
+    public String getSaslMechanism() {
+        return this.saslMechanism;
+    }
+
     public String getConsumerPropertiesFileName() {
         return this.consumerPropertiesFileName;
     }
@@ -65,6 +71,7 @@ public class NewKafkaSpoutOffsetQuery {
                 + ", consumerGroupId='" + consumerGroupId + '\''
                 + ", bootStrapBrokers='" + bootStrapBrokers + '\''
                 + ", securityProtocol='" + securityProtocol + '\''
+                + ", saslMechanism='" + saslMechanism + '\''
                 + ", consumerPropertiesFileName='" + consumerPropertiesFileName + '\''
                 + '}';
     }
@@ -95,6 +102,10 @@ public class NewKafkaSpoutOffsetQuery {
                                      : that.securityProtocol != null) {
             return false;
         }
+        if (saslMechanism != null ? !saslMechanism.equals(that.saslMechanism)
+                : that.saslMechanism != null) {
+            return false;
+        }
         return consumerPropertiesFileName != null ? consumerPropertiesFileName
             .equals(that.consumerPropertiesFileName) : that.consumerPropertiesFileName == null;
     }
@@ -105,6 +116,7 @@ public class NewKafkaSpoutOffsetQuery {
         result = 31 * result + (consumerGroupId != null ? consumerGroupId.hashCode() : 0);
         result = 31 * result + (bootStrapBrokers != null ? bootStrapBrokers.hashCode() : 0);
         result = 31 * result + (securityProtocol != null ? securityProtocol.hashCode() : 0);
+        result = 31 * result + (saslMechanism != null ? saslMechanism.hashCode() : 0);
         result = 31 * result + (consumerPropertiesFileName != null ? consumerPropertiesFileName.hashCode() : 0);
         return result;
     }

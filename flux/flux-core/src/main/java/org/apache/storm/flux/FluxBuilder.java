@@ -43,8 +43,10 @@ import org.apache.storm.flux.model.PropertyDef;
 import org.apache.storm.flux.model.SpoutDef;
 import org.apache.storm.flux.model.StreamDef;
 import org.apache.storm.flux.model.TopologyDef;
+import org.apache.storm.flux.model.WorkerHookDef;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.CustomStreamGrouping;
+import org.apache.storm.hooks.IWorkerHook;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.IBasicBolt;
 import org.apache.storm.topology.IRichBolt;
@@ -116,6 +118,9 @@ public class FluxBuilder {
 
             // process stream definitions
             buildStreamDefinitions(context, builder);
+
+            // create worker hooks
+            buildWorkerHooks(context, builder);
 
             topology = builder.createTopology();
         } else {
@@ -475,6 +480,18 @@ public class FluxBuilder {
             Class clazz = Class.forName(def.getClassName());
             Object bolt = buildObject(def, context);
             context.addBolt(def.getId(), bolt);
+        }
+    }
+
+    /**
+     * Given a list of worker hook definitions, build a Storm worker hook implementation by attempting to find a matching
+     * constructor in the given worker hook class and add them to the topology builder.
+     */
+    private static void buildWorkerHooks(ExecutionContext context, TopologyBuilder builder) throws ClassNotFoundException,
+            NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+        for (WorkerHookDef whDef: context.getTopologyDef().getWorkerHooks()) {
+            IWorkerHook workerHook = (IWorkerHook) buildObject(whDef, context);
+            builder.addWorkerHook(workerHook);
         }
     }
 

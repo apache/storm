@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -33,6 +33,7 @@ import org.apache.storm.thrift.TBase;
 import org.apache.storm.thrift.TDeserializer;
 import org.apache.storm.thrift.TSerializer;
 import org.apache.storm.thrift.protocol.TProtocolException;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,12 +69,16 @@ public class LocalState {
     }
 
     private Map<String, TBase> deserializeLatestVersion() throws IOException {
-        Map<String, TBase> result = new HashMap<>();
-        TDeserializer td = new TDeserializer();
-        for (Map.Entry<String, ThriftSerializedObject> ent : partialDeserializeLatestVersion(td).entrySet()) {
-            result.put(ent.getKey(), deserialize(ent.getValue(), td));
+        try {
+            Map<String, TBase> result = new HashMap<>();
+            TDeserializer td = new TDeserializer();
+            for (Map.Entry<String, ThriftSerializedObject> ent : partialDeserializeLatestVersion(td).entrySet()) {
+                result.put(ent.getKey(), deserialize(ent.getValue(), td));
+            }
+            return result;
+        } catch (TTransportException e) {
+            throw new RuntimeException(e);
         }
-        return result;
     }
 
     private TBase deserialize(ThriftSerializedObject obj, TDeserializer td) {
@@ -135,14 +140,18 @@ public class LocalState {
     }
 
     public TBase get(String key) {
-        TDeserializer td = new TDeserializer();
-        Map<String, ThriftSerializedObject> partial = partialSnapshot(td);
-        ThriftSerializedObject tso = partial.get(key);
-        TBase ret = null;
-        if (tso != null) {
-            ret = deserialize(tso, td);
+        try {
+            TDeserializer td = new TDeserializer();
+            Map<String, ThriftSerializedObject> partial = partialSnapshot(td);
+            ThriftSerializedObject tso = partial.get(key);
+            TBase ret = null;
+            if (tso != null) {
+                ret = deserialize(tso, td);
+            }
+            return ret;
+        } catch (TTransportException e) {
+            throw new RuntimeException(e);
         }
-        return ret;
     }
 
     public void put(String key, TBase val) {
@@ -150,10 +159,14 @@ public class LocalState {
     }
 
     public synchronized void put(String key, TBase val, boolean cleanup) {
-        Map<String, ThriftSerializedObject> curr = partialSnapshot(null);
-        TSerializer ser = new TSerializer();
-        curr.put(key, serialize(val, ser));
-        persistInternal(curr, ser, cleanup);
+        try {
+            Map<String, ThriftSerializedObject> curr = partialSnapshot(null);
+            TSerializer ser = new TSerializer();
+            curr.put(key, serialize(val, ser));
+            persistInternal(curr, ser, cleanup);
+        } catch (TTransportException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void remove(String key) {

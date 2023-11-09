@@ -20,17 +20,17 @@ public class CountShellMetric extends CountMetric implements IShellMetric {
      *
      * @param value should be null or long
      *     if value is null, it will call incr()
-     *     if value is long, it will call incrBy((long)params)
+     *     if value is {@link Number}, it will call incrBy((long)params)
      */
     @Override
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public void updateMetricFromRPC(Object value) {
         if (value == null) {
             incr();
-        } else if (value instanceof Long) {
-            incrBy((Long) value);
+        } else if (value instanceof Number) {
+            incrBy(((Number) value).longValue());
         } else {
-            throw new RuntimeException("CountShellMetric updateMetricFromRPC params should be null or Long");
+            throw new RuntimeException("CountShellMetric updateMetricFromRPC params should be null or number.");
         }
     }
 }

@@ -22,7 +22,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -42,6 +45,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.hooks.BaseTaskHook;
+import org.apache.storm.hooks.BaseWorkerHook;
 import org.apache.storm.hooks.info.BoltAckInfo;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
 import org.apache.storm.hooks.info.BoltFailInfo;
@@ -49,10 +53,12 @@ import org.apache.storm.hooks.info.EmitInfo;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.task.WorkerUserContext;
 import org.apache.storm.testing.AckFailMapTracker;
 import org.apache.storm.testing.CompleteTopologyParam;
 import org.apache.storm.testing.FeederSpout;
 import org.apache.storm.testing.FixedTuple;
+import org.apache.storm.testing.FixedTupleSpout;
 import org.apache.storm.testing.IntegrationTest;
 import org.apache.storm.testing.MockedSources;
 import org.apache.storm.testing.TestAggregatesCounter;
@@ -66,6 +72,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
@@ -817,4 +824,89 @@ public class TopologyIntegrationTest {
         }
     }
 
+    private static class TestUserResource implements Serializable {
+        String id;
+        String name;
+
+        TestUserResource(String id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TestUserResource that = (TestUserResource) o;
+            return Objects.equals(id, that.id) && Objects.equals(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, name);
+        }
+    }
+
+    private static class ResourceInitializingWorkerHook extends BaseWorkerHook {
+        private Map<String, String> resourceMap;
+
+        public ResourceInitializingWorkerHook(Map<String, String> resourceMap) {
+            this.resourceMap = resourceMap;
+        }
+
+        @Override
+        public void start(Map<String, Object> topoConf, WorkerUserContext context) {
+            resourceMap.forEach((resourceKey, resourceValue) ->
+                    context.setResource(resourceKey, new TestUserResource(resourceKey, resourceValue)));
+        }
+    }
+
+    private static class ResourceForwardingBolt extends BaseTickTupleAwareRichBolt {
+        private transient TopologyContext context;
+        private transient OutputCollector collector;
+
+        @Override
+        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+            this.context = context;
+            this.collector = collector;
+        }
+
+        @Override
+        public void process(Tuple input) {
+            String key = input.getStringByField("key");
+            collector.emit(new Values(key, context.getResource(key)));
+            collector.ack(input);
+        }
+
+        @Override
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+            declarer.declare(new Fields("key", "val"));
+        }
+    }
+
+    @Test
+    public void testUserResourcesAreVisibleToTasks() throws Exception {
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .build()) {
+
+            Map<String, String> resourceMap = new HashMap<>(1);
+            resourceMap.put("resource-key1", "resource-value1");
+            List<FixedTuple> testTuples = resourceMap.keySet().stream()
+                    .map(value -> new FixedTuple(new Values(value)))
+                    .collect(Collectors.toList());
+
+            TopologyBuilder builder = new TopologyBuilder();
+            builder.addWorkerHook(new ResourceInitializingWorkerHook(resourceMap));
+            builder.setSpout("1", new FixedTupleSpout(testTuples, new Fields("key")));
+            builder.setBolt("2", new ResourceForwardingBolt()).shuffleGrouping("1");
+            StormTopology topology = builder.createTopology();
+
+            CompleteTopologyParam completeTopologyParams = new CompleteTopologyParam();
+
+            Map<String, List<FixedTuple>> results = Testing.completeTopology(cluster, topology, completeTopologyParams);
+            List<Object> expectedTuple = Arrays.asList("resource-key1", new TestUserResource("resource-key1", "resource-value1"));
+            assertThat(Testing.readTuples(results, "2"), hasItem(expectedTuple));
+        }
+    }
 }

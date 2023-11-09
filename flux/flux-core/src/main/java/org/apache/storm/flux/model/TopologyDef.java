@@ -53,6 +53,7 @@ public class TopologyDef {
     private Map<String, BoltDef> boltMap = new LinkedHashMap<String, BoltDef>();
     private Map<String, SpoutDef> spoutMap = new LinkedHashMap<String, SpoutDef>();
     private List<StreamDef> streams = new ArrayList<StreamDef>();
+    private Map<String, WorkerHookDef> workerHookMap = new LinkedHashMap<>();
 
 
     public String getName() {
@@ -163,6 +164,27 @@ public class TopologyDef {
         this.includes = includes;
     }
 
+    /**
+     * Returns worker hook definitions.
+     * @return worker hook definitions
+     */
+    public List<WorkerHookDef> getWorkerHooks() {
+        ArrayList<WorkerHookDef> retval = new ArrayList<>();
+        retval.addAll(this.workerHookMap.values());
+        return retval;
+    }
+
+    /**
+     * Sets worker hook definitions.
+     * @param workerHooks worker hook definitions
+     */
+    public void setWorkerHooks(List<WorkerHookDef> workerHooks) {
+        this.workerHookMap = new LinkedHashMap<>();
+        for (WorkerHookDef workerHook : workerHooks) {
+            this.workerHookMap.put(workerHook.getId(), workerHook);
+        }
+    }
+
     // utility methods
     public int parallelismForBolt(String boltId) {
         return this.boltMap.get(boltId).getParallelism();
@@ -178,6 +200,10 @@ public class TopologyDef {
 
     public BeanDef getComponent(String id) {
         return this.componentMap.get(id);
+    }
+
+    public WorkerHookDef getWorkerHook(String id) {
+        return this.workerHookMap.get(id);
     }
 
     /**
@@ -241,6 +267,23 @@ public class TopologyDef {
         //TODO figure out how we want to deal with overrides. Users may want to add streams even when overriding other
         // properties. For now we just add them blindly which could lead to a potentially invalid topology.
         this.streams.addAll(streams);
+    }
+
+    /**
+     * Adds a list of worker hook definitions. Optionally overriding existing definitions
+     * if one with the same ID already exists.
+     * @param workerHooks worker hook definitions
+     * @param override whether or not to override existing definitions
+     */
+    public void addAllWorkerHooks(List<WorkerHookDef> workerHooks, boolean override) {
+        for (WorkerHookDef workerHook : workerHooks) {
+            String id = workerHook.getId();
+            if (this.workerHookMap.get(id) == null || override) {
+                this.workerHookMap.put(workerHook.getId(), workerHook);
+            } else {
+                LOG.warn("Ignoring attempt to create worker hook '{}' with override == false.", id);
+            }
+        }
     }
 
     public TopologySourceDef getTopologySource() {

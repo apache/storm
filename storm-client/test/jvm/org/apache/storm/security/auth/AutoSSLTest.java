@@ -73,7 +73,7 @@ public class AutoSSLTest {
 
     @Test
     public void testpopulateCredentials() throws Exception {
-        File temp = File.createTempFile("tmp-autossl-test", ".txt");
+        File temp = Files.createTempFile("tmp-autossl-test", ".txt").toFile();
         temp.deleteOnExit();
         List<String> lines = Arrays.asList("The first line", "The second line");
         Files.write(temp.toPath(), lines, StandardCharsets.UTF_8);

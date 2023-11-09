@@ -27,7 +27,6 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>org.apache.storm</groupId>
     <artifactId>storm-shaded-deps</artifactId>
     <packaging>jar</packaging>
     <name>Shaded Deps for Storm Client</name>
@@ -76,6 +75,14 @@
                     <groupId>org.apache.yetus</groupId>
                     <artifactId>audience-annotations</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -89,6 +96,11 @@
                     <artifactId>audience-annotations</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -111,8 +123,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -190,19 +202,21 @@
                     <artifactSet>
                         <includes>
                             <include>com.google.guava:*</include>
-                            <include>com.googlecode.json-simple:json-simple</include>
                             <include>commons-codec:commons-codec</include>
                             <include>commons-collections:commons-collections</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-lang:commons-lang</include>
+                            <!-- Pulled in by json-smart -->
+                            <include>net.minidev:*</include>
+                            <include>org.ow2.asm:*</include>
                             <!-- Pulled in by Zookeeper -->
-                            <include>io.netty:netty</include>
-                            <include>io.netty:netty-all</include>
+                            <include>io.netty:*</include>
                             <include>org.apache.curator:*</include>
                             <include>org.apache.httpcomponents:httpclient</include>
                             <include>org.apache.thrift:*</include>
                             <include>org.apache.zookeeper:zookeeper</include>
                             <include>org.apache.zookeeper:zookeeper-jute</include>
+                            <include>org.xerial.snappy:*</include>
                             <include>org.jctools:jctools-core</include>
                             <include>org.jgrapht:jgrapht-core</include>
                             <include>org.yaml:snakeyaml</include>
@@ -249,10 +263,6 @@
                             <shadedPattern>org.apache.storm.shade.org.jctools</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.json.simple</pattern>
-                            <shadedPattern>org.apache.storm.shade.org.json.simple</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>org.yaml.snakeyaml</pattern>
                             <shadedPattern>org.apache.storm.shade.org.yaml.snakeyaml</shadedPattern>
                         </relocation>
@@ -271,6 +281,22 @@
                         <relocation>
                             <pattern>org.apache.commons.codec</pattern>
                             <shadedPattern>org.apache.storm.shade.org.apache.commons.codec</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>net.minidev.json</pattern>
+                            <shadedPattern>org.apache.storm.shade.net.minidev.json</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>net.minidev.asm</pattern>
+                            <shadedPattern>org.apache.storm.shade.net.minidev.asm</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.objectweb.asm</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.objectweb.asm</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.xerial.snappy</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.xerial.snappy</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>uk.org.lidalia.sysoutslf4j</pattern>
@@ -324,7 +350,7 @@
                 -->
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>workaround-makeItVisibleOnIntellij</id>
@@ -345,5 +371,34 @@
                 </executions>
             </plugin>
         </plugins>
+        <pluginManagement>
+            <plugins>
+                <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+                <plugin>
+                    <groupId>org.eclipse.m2e</groupId>
+                    <artifactId>lifecycle-mapping</artifactId>
+                    <version>1.0.0</version>
+                    <configuration>
+                        <lifecycleMappingMetadata>
+                            <pluginExecutions>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.apache.maven.plugins</groupId>
+                                        <artifactId>maven-checkstyle-plugin</artifactId>
+                                        <versionRange>[3.0.0,)</versionRange>
+                                        <goals>
+                                            <goal>check</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                            </pluginExecutions>
+                        </lifecycleMappingMetadata>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 </project>

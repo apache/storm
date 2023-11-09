@@ -18,7 +18,7 @@ import org.apache.storm.thrift.transport.TTransportException;
 
 public class NoOpTTrasport extends TSaslServerTransport {
 
-    public NoOpTTrasport(TTransport transport) {
+    public NoOpTTrasport(TTransport transport) throws TTransportException {
         super(transport);
     }
 

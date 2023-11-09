@@ -19,6 +19,7 @@
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
+import org.apache.storm.scheduler.resource.strategies.scheduling.sorter.NodeSorter;
 
 /**
  * class to keep track of resources on a rack or node.
@@ -33,8 +34,7 @@ public class ObjectResourcesItem {
      * Note that nodes are grouped into hosts. Hosts into racks. And racks are grouped under the cluster.
      *
      * <p>
-     * An example of this calculation is in
-     * {@link NodeSorter#sortObjectResourcesCommon(ObjectResourcesSummary, ExecutorDetails, NodeSorter.ExistingScheduleFunc)}
+     * An example of this calculation is in {@link NodeSorter}
      * where value is calculated by {@link ObjectResourcesSummary#getAvailableResourcesOverall()}
      * using {@link NormalizedResourceOffer#calculateMinPercentageUsedBy(NormalizedResourceOffer)}.
      * </p>
@@ -46,8 +46,7 @@ public class ObjectResourcesItem {
      * Note that nodes are grouped into hosts, hosts into racks, and racks are grouped under the cluster.
      *
      * <p>
-     * An example of this calculation is in
-     * {@link NodeSorter#sortObjectResourcesCommon(ObjectResourcesSummary, ExecutorDetails, NodeSorter.ExistingScheduleFunc)}
+     * An example of this calculation is in {@link NodeSorter}
      * where value is calculated by {@link ObjectResourcesSummary#getAvailableResourcesOverall()}
      * using {@link NormalizedResourceOffer#calculateAveragePercentageUsedBy(NormalizedResourceOffer)}.
      * </p>

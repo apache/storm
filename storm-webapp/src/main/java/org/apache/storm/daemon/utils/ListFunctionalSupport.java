@@ -97,7 +97,6 @@ public class ListFunctionalSupport {
     /**
      * Drop the only first element and create a new list. equivalent to drop(list, 1).
      *
-     * @see {@link ListFunctionalSupport#drop(List, int)}
      * @param list the list
      * @return newly created sublist that drops the first element from origin list. null if list is null.
      */

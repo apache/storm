@@ -33,7 +33,6 @@ public class StreamUtil {
      * <p/>
      * FileInputStream#skip may not work the first time, so ensure it successfully skips the given number of bytes.
      *
-     * @see {@link java.io.FileInputStream#skip(long)}
      * @param stream the stream to skip
      * @param n bytes to skip
      */

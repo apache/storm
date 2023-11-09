@@ -40,6 +40,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.StormTimer;
@@ -58,9 +62,6 @@ import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;

@@ -41,12 +41,6 @@
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
-            <version>${kryo.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.esotericsoftware</groupId>
-            <artifactId>kryo-shaded</artifactId>
-            <version>${kryo.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -56,10 +50,6 @@
                 <exclusion>
                     <groupId>com.esotericsoftware</groupId>
                     <artifactId>kryo</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.esotericsoftware</groupId>
-                    <artifactId>kryo-shaded</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -110,8 +100,8 @@
             <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -208,7 +198,6 @@
             -->
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-auth</artifactId>
-            <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.directory.server</groupId>
@@ -226,22 +215,22 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>net.minidev</groupId>
+                    <artifactId>json-smart</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
+        <!--
+            This dependency is required for the integration_test.clj
+            It seems that some implementation detail is assumed to parse drcp arguments
+            Removing it will require some investigation and effort here.
+        -->
         <dependency>
-            <!--
-            This jar is pulled in as a transitive dependency from
-            org.apache.hadoop:hadoop-auth
-                -> com.nimbusds:nimbus-jose-jwt
-                -> com.github.stephenc.jcip:jcip-annotations
-            But is being downloaded from http://conjars.org/repo which is no longer active,
-
-            Download this directly from maven repository and avoid long build timeouts due to multiple failed attempts
-            to download from conjars.org
-            -->
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
-            <version>${json-smart.version}</version>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
@@ -315,9 +304,7 @@
                                 <testNamespace>${clojure.test.set}</testNamespace>
                             </testNamespaces>
                             <testDeclaredNamespaceOnly>${clojure.test.declared.namespace.only}</testDeclaredNamespaceOnly>
-                            <configuration>
-                                <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
-                            </configuration>
+                            <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
                         </configuration>
                     </execution>
                 </executions>
@@ -370,6 +357,7 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>

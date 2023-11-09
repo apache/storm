@@ -14,9 +14,6 @@ package org.apache.storm.streams.operations;
 
 /**
  * Interface for updating state.
- *
- * @param <T> the value type
- * @param <S> the state type
  */
 public interface StateUpdater<T, S> extends Operation {
     /**
@@ -24,8 +21,6 @@ public interface StateUpdater<T, S> extends Operation {
      *
      * @param initialValue  the intial value of the state
      * @param stateUpdateFn the state update function
-     * @param <T>           the value type
-     * @param <S>           the state type
      * @return the {@link StateUpdater}
      */
     static <T, S> StateUpdater<T, S> of(S initialValue,

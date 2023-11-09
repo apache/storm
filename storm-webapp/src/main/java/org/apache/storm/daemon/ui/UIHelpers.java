@@ -44,6 +44,7 @@ import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import net.minidev.json.JSONValue;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -110,7 +111,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.json.simple.JSONValue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1150,7 +1151,7 @@ public class UIHelpers {
                                                          String window, Map<String, Object> config, String remoteUser) {
         Map<String, Object> result = new HashMap();
         Map<String, Object> topologyConf = (Map<String, Object>) JSONValue.parse(topologyPageInfo.get_topology_conf());
-        long messageTimeout = (long) topologyConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
+        int messageTimeout = (int) topologyConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
         Map<String, Object> unpackedTopologyPageInfo =
                 unpackTopologyInfo(topologyPageInfo, window, config);
         result.putAll(unpackedTopologyPageInfo);
