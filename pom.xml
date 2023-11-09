@@ -92,6 +92,7 @@
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
         <commons-codec.version>1.11</commons-codec.version>
+        <commons-text.version>1.11.0</commons-text.version>
         <commons-cli.version>1.4</commons-cli.version>
         <curator.version>5.5.0</curator.version>
         <jetty.version>9.4.45.v20220203</jetty.version>
@@ -600,6 +601,12 @@
                 <artifactId>commons-lang</artifactId>
                 <version>${commons-lang.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${commons-text.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>jline</groupId>
                 <artifactId>jline</artifactId>
