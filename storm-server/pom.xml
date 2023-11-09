@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
-            <version>${rocksdb-version}</version>
+            <version>${rocksdb-jni-version}</version>
         </dependency>
 
         <!-- jline is included to make the zk shell work through the cli for debugging -->

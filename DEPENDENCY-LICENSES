@@ -485,7 +485,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, GNU General Public License, version 2
 
-        * RocksDB JNI (org.rocksdb:rocksdbjni:8.1.1 - https://rocksdb.org)
+        * RocksDB JNI (org.rocksdb:rocksdbjni:8.5.4 - https://rocksdb.org)
 
     Apache License, Version 2.0, LGPL 2.1, MPL 1.1
 

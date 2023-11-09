@@ -155,7 +155,7 @@
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jaxb-version>2.3.0</jaxb-version>
         <activation-version>1.1.1</activation-version>
-        <rocksdb-version>8.1.1</rocksdb-version>
+        <rocksdb-jni-version>8.5.4</rocksdb-jni-version>
         <json-smart.version>2.5.0</json-smart.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
@@ -914,7 +914,7 @@
             <dependency>
                 <groupId>org.rocksdb</groupId>
                 <artifactId>rocksdbjni</artifactId>
-                <version>${rocksdb-version}</version>
+                <version>${rocksdb-jni-version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.activemq</groupId>
