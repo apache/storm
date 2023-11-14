@@ -89,7 +89,15 @@
         </exclusion>
         <exclusion>
             <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+          <artifactId>junit</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-test</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-core</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -126,6 +134,14 @@
         <exclusion>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-test</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-core</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
