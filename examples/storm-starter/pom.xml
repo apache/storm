@@ -126,11 +126,6 @@
       <artifactId>storm-hdfs</artifactId>
       <version>${project.version}</version>
     </dependency>
-      <dependency>
-          <groupId>org.apache.storm</groupId>
-          <artifactId>storm-hbase</artifactId>
-          <version>${project.version}</version>
-      </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-redis</artifactId>
