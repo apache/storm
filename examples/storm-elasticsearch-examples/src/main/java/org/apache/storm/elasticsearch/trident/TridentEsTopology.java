@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -26,7 +26,9 @@ import java.util.UUID;
 
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.elasticsearch.common.*;
+import org.apache.storm.elasticsearch.common.DefaultEsTupleMapper;
+import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
@@ -141,7 +143,7 @@ public final class TridentEsTopology {
          */
         @Override
         public void open(final Map<String, Object> conf,
-                final TopologyContext context) {
+                         final TopologyContext context) {
             index = 0;
         }
 
@@ -152,7 +154,7 @@ public final class TridentEsTopology {
          */
         @Override
         public void emitBatch(final long batchId,
-                final TridentCollector collector) {
+                              final TridentCollector collector) {
             List<List<Object>> batch = this.batches.get(batchId);
             if (batch == null) {
                 batch = new ArrayList<List<Object>>();
