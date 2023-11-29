@@ -26,10 +26,7 @@ import java.util.UUID;
 
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsConstants;
-import org.apache.storm.elasticsearch.common.EsTestUtil;
-import org.apache.storm.elasticsearch.common.EsTupleMapper;
+import org.apache.storm.elasticsearch.common.*;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
@@ -68,15 +65,12 @@ public final class TridentEsTopology {
         Stream stream = topology.newStream("spout", spout);
         EsConfig esConfig = new EsConfig("http://localhost:9300");
         Fields esFields = new Fields("index", "type", "source");
-        EsTupleMapper tupleMapper = EsTestUtil.generateDefaultTupleMapper();
+        EsTupleMapper tupleMapper = new DefaultEsTupleMapper();
         StateFactory factory = new EsStateFactory(esConfig, tupleMapper);
         TridentState state = stream.partitionPersist(factory,
                 esFields,
                 new EsUpdater(),
                 new Fields());
-
-        EsTestUtil.startEsNode();
-        EsTestUtil.waitForSeconds(EsConstants.WAIT_DEFAULT_SECS);
 
         StormSubmitter.submitTopology(TOPOLOGY_NAME,
                 new Config(),

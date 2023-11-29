@@ -35,12 +35,13 @@ import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback;
 public class EsConfig implements Serializable {
 
     private final HttpHost[] httpHosts;
-    private Integer maxRetryTimeoutMillis;
     private Header[] defaultHeaders;
     private RestClient.FailureListener failureListener;
     private HttpClientConfigCallback httpClientConfigCallback;
     private RequestConfigCallback requestConfigCallback;
     private String pathPrefix;
+
+    private boolean compression;
 
     /**
     * EsConfig Constructor to be used in EsIndexBolt, EsPercolateBolt and EsStateFactory.
@@ -75,11 +76,6 @@ public class EsConfig implements Serializable {
             throw new IllegalArgumentException("Invalid url " + url);
         }
     }
-    
-    public EsConfig withMaxRetryTimeoutMillis(Integer maxRetryTimeoutMillis) {
-        this.maxRetryTimeoutMillis = maxRetryTimeoutMillis;
-        return this;
-    }
 
     public EsConfig withDefaultHeaders(Header[] defaultHeaders) {
         this.defaultHeaders = defaultHeaders;
@@ -106,12 +102,13 @@ public class EsConfig implements Serializable {
         return this;
     }
 
-    public HttpHost[] getHttpHosts() {
-        return httpHosts;
+    public EsConfig withCompression(boolean compression) {
+        this.compression = compression;
+        return this;
     }
 
-    public Integer getMaxRetryTimeoutMillis() {
-        return maxRetryTimeoutMillis;
+    public HttpHost[] getHttpHosts() {
+        return httpHosts;
     }
 
     public Header[] getDefaultHeaders() {
@@ -133,4 +130,9 @@ public class EsConfig implements Serializable {
     public String getPathPrefix() {
         return pathPrefix;
     }
+
+    public boolean isCompression() {
+        return compression;
+    }
+
 }

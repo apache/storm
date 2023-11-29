@@ -34,6 +34,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 
 /**
@@ -82,8 +83,13 @@ public class EsPercolateBolt extends AbstractEsBolt {
             Map<String, String> indexParams = new HashMap<>();
             indexParams.put(type, null);
             String percolateDoc = "{\"doc\": " + source + "}";
-            Response response = client.performRequest("get", getEndpoint(index, type, "_percolate"),
-                    new HashMap<>(), new StringEntity(percolateDoc));
+
+            final Request request = new Request("get",  getEndpoint(index, type, "_percolate"));
+            request.setEntity(new StringEntity(percolateDoc));
+            request.addParameters(new HashMap<>());
+
+            Response response = client.performRequest(request);
+
             PercolateResponse percolateResponse = objectMapper.readValue(response.getEntity().getContent(), PercolateResponse.class);
             if (!percolateResponse.getMatches().isEmpty()) {
                 for (PercolateResponse.Match match : percolateResponse.getMatches()) {

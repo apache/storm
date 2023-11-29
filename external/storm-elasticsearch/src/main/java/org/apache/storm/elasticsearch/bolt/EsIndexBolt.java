@@ -31,6 +31,8 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
 
 /**
  * Basic bolt for storing tuple to ES document.
@@ -74,7 +76,11 @@ public class EsIndexBolt extends AbstractEsBolt {
             String id = tupleMapper.getId(tuple);
             Map<String, String> params = tupleMapper.getParams(tuple, new HashMap<>());
 
-            client.performRequest("put", getEndpoint(index, type, id), params, new StringEntity(source));
+            final Request request = new Request("post", getEndpoint(index, type, id));
+            request.setEntity(new StringEntity(source));
+            request.addParameters(params);
+
+            client.performRequest(request);
             collector.ack(tuple);
         } catch (Exception e) {
             collector.reportError(e);
