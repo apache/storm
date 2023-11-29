@@ -29,10 +29,17 @@ import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.elasticsearch.response.PercolateResponse;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.xcontent.XContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+
+import java.io.IOException;
 
 public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercolateBolt> {
 
@@ -44,11 +51,14 @@ public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercola
     }
 
     @BeforeEach
-    public void populateIndexWithTestData() {
-        node.client().prepareIndex(index, ".percolator", documentId)
-            .setSource("{\"query\":{\"match\":" + source + "}}")
-            .setRefresh(true)
-            .execute().actionGet();
+    public void populateIndexWithTestData() throws IOException {
+        IndexRequest indexRequest = new IndexRequest(index, ".percolator", documentId)
+                .source(source, XContentType.JSON)
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE); // setRefresh(true) in Elasticsearch 6.x
+
+        RestHighLevelClient client =  EsTestUtil.getRestHighLevelClient(node);
+
+        client.index(indexRequest, RequestOptions.DEFAULT);
     }
 
     @Test

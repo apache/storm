@@ -35,6 +35,8 @@ import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.AfterEach;
@@ -87,7 +89,9 @@ public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
     }
 
     private void makeRequestAndThrow(Exception exception) throws IOException {
-        when(client.performRequest("get", AbstractEsBolt.getEndpoint(index, type, documentId), params)).thenThrow(exception);
+        final Request request = new Request("get", AbstractEsBolt.getEndpoint(index, type, documentId));
+        request.addParameters(params);
+        when(client.performRequest(request)).thenThrow(exception);
         bolt.execute(tuple);
     }
 

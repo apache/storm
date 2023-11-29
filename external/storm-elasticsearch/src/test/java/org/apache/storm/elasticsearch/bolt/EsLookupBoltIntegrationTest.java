@@ -27,13 +27,19 @@ import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.xcontent.XContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.io.IOException;
 
 @ExtendWith(MockitoExtension.class)
 public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<EsLookupBolt> {
@@ -52,8 +58,11 @@ public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<E
     }
 
     @BeforeEach
-    public void populateIndexWithTestData() {
-        node.client().prepareIndex(index, type, documentId).setSource(source).execute().actionGet();
+    public void populateIndexWithTestData() throws IOException {
+        IndexRequest indexRequest = new IndexRequest(index, type, documentId)
+                .source(source, XContentType.JSON);
+        RestHighLevelClient client =  EsTestUtil.getRestHighLevelClient(node);
+        client.index(indexRequest, RequestOptions.DEFAULT);
     }
 
     @Test
