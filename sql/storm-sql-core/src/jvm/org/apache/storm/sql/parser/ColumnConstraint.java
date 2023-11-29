@@ -19,7 +19,7 @@ import org.apache.calcite.sql.validate.SqlMonotonicity;
 
 public class ColumnConstraint extends SqlLiteral {
     private ColumnConstraint(
-        Object value, SqlTypeName typeName, SqlParserPos pos) {
+            SqlDdlKeywords value, SqlTypeName typeName, SqlParserPos pos) {
         super(value, typeName, pos);
     }
 
