@@ -36,9 +36,9 @@
     <category rdf:resource="http://projects.apache.org/category/big-data" />
     <release>
       <Version>
-        <name>Apache Storm 2.5.0</name>
-        <created>2023-08-04</created>
-        <revision>2.5.0</revision>
+        <name>Apache Storm 2.6.0</name>
+        <created>2023-11-16</created>
+        <revision>2.6.0</revision>
       </Version>
     </release>
     <repository>

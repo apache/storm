@@ -659,7 +659,7 @@ public class TestGenericResourceAwareStrategy {
             scheduler.prepare(conf, new StormMetricsRegistry());
             scheduler.schedule(topologies, cluster);
 
-            // First it tries too schedule spout [0, 0] with a bound acker [1, 1] to sup1 r000s000.
+            // First it tries to schedule spout [0, 0] with a bound acker [1, 1] to sup1 r000s000.
             // However, sup2 r000s001 only has 400 on-heap mem which can not fit the left over acker [2, 2]
             // So it backtrack to [0, 0] and put it to sup2 r000s001.
             // Then put two ackers both as left-over ackers to sup1 r000s000.

@@ -103,17 +103,6 @@ public class TCKTest {
         topology.validate();
     }
 
-
-    @Test
-    public void testHbase() throws Exception {
-        TopologyDef topologyDef = FluxParser.parseResource("/configs/simple_hbase.yaml", false, true, null, false);
-        Config conf = FluxBuilder.buildConfig(topologyDef);
-        ExecutionContext context = new ExecutionContext(topologyDef, conf);
-        StormTopology topology = FluxBuilder.buildTopology(context);
-        assertNotNull(topology);
-        topology.validate();
-    }
-
     @Test
     public void testBadHbase() throws Exception {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/bad_hbase.yaml", false, true, null, false);

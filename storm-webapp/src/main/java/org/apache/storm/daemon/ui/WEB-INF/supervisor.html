@@ -114,9 +114,9 @@ $(document).ready(function() {
     });
 
     $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {
-        var uiTitle = $("#ui-title");
+        const uiTitle = $("#ui-title");
         setStormUITitle(uiTitle, response);				
-    };
+    });
 
     $.getJSON(url,function(response,status,jqXHR) {
         getStatic("/templates/supervisor-page-template.html", function(template) {
