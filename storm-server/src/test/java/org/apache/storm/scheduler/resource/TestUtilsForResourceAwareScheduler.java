@@ -48,7 +48,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -482,13 +482,13 @@ public class TestUtilsForResourceAwareScheduler {
         Topologies topologies = cluster.getTopologies();
         for (String topoName : topoNames) {
             TopologyDetails td = topologies.getByName(topoName);
-            Assert.assertTrue("Cannot find topology for topoName " + topoName, td != null);
+            Assertions.assertNotNull(td, "Cannot find topology for topoName " + topoName);
             String topoId = td.getId();
             String status = cluster.getStatus(topoId);
-            Assert.assertTrue("Status unknown for topoName " + topoName, status != null);
-            Assert.assertTrue("Successful status " + status + " for topoName " + topoName, !isStatusSuccess(status));
-            Assert.assertTrue("Found assignment for topoId " + topoId, cluster.getAssignmentById(topoId) == null);
-            Assert.assertTrue("Scheduling not required for topoName " + topoName, cluster.needsSchedulingRas(td));
+            Assertions.assertNotNull(status, "Status unknown for topoName " + topoName);
+            Assertions.assertFalse(isStatusSuccess(status), "Successful status " + status + " for topoName " + topoName);
+            Assertions.assertNull(cluster.getAssignmentById(topoId), "Found assignment for topoId " + topoId);
+            Assertions.assertTrue(cluster.needsSchedulingRas(td), "Scheduling not required for topoName " + topoName);
         }
     }
 
@@ -496,11 +496,11 @@ public class TestUtilsForResourceAwareScheduler {
         Topologies topologies = cluster.getTopologies();
         for (String topoName : topoNames) {
             TopologyDetails td = topologies.getByName(topoName);
-            Assert.assertTrue("Cannot find topology for topoName " + topoName, td != null);
+            Assertions.assertNotNull(td, "Cannot find topology for topoName " + topoName);
             String topoId = td.getId();
             assertStatusSuccess(cluster, topoId);
-            Assert.assertTrue("Cannot find assignment for topoId " + topoId, cluster.getAssignmentById(topoId) != null);
-            Assert.assertTrue("Scheduling required for topoName " + topoName, !cluster.needsSchedulingRas(td));
+            Assertions.assertNotNull(cluster.getAssignmentById(topoId), "Cannot find assignment for topoId " + topoId);
+            Assertions.assertFalse(cluster.needsSchedulingRas(td), "Scheduling required for topoName " + topoName);
         }
     }
 
@@ -523,32 +523,31 @@ public class TestUtilsForResourceAwareScheduler {
     public static void assertTopologiesBeenEvicted(Cluster cluster, Class strategyClass, Set<String> evictedTopologies, String... topoNames) {
         Topologies topologies = cluster.getTopologies();
         LOG.info("Evicted topos: {}", evictedTopologies);
-        Assert.assertTrue("evictedTopologies is null", evictedTopologies != null);
+        Assertions.assertNotNull(evictedTopologies, "evictedTopologies is null");
         for (String topoName : topoNames) {
             String errMsg = "topology " + topoName + " using " + strategyClass.getName();
             TopologyDetails td = topologies.getByName(topoName);
-            Assert.assertTrue("Cannot find topology for topoName " + topoName, td != null);
+            Assertions.assertNotNull(td, "Cannot find topology for topoName " + topoName);
             String topoId = td.getId();
-            Assert.assertTrue("evictedTopologies does not contain topoId " + topoId, evictedTopologies.contains(topoId));
+            Assertions.assertTrue(evictedTopologies.contains(topoId), "evictedTopologies does not contain topoId " + topoId);
         }
     }
 
     public static void assertTopologiesNotBeenEvicted(Cluster cluster, Class strategyClass, Set<String> evictedTopologies, String... topoNames) {
         Topologies topologies = cluster.getTopologies();
         LOG.info("Evicted topos: {}", evictedTopologies);
-        Assert.assertTrue("evictedTopologies is null", evictedTopologies != null);
+        Assertions.assertNotNull(evictedTopologies, "evictedTopologies is null");
         for (String topoName : topoNames) {
             String errMsg = "topology " + topoName + " using " + strategyClass.getName();
             TopologyDetails td = topologies.getByName(topoName);
-            Assert.assertTrue("Cannot find topology for topoName " + topoName, td != null);
+            Assertions.assertNotNull(td, "Cannot find topology for topoName " + topoName);
             String topoId = td.getId();
-            Assert.assertTrue("evictedTopologies contains topoId " + topoId, !evictedTopologies.contains(topoId));
+            Assertions.assertFalse(evictedTopologies.contains(topoId), "evictedTopologies contains topoId " + topoId);
         }
     }
 
     public static void assertStatusSuccess(Cluster cluster, String topoId) {
-        Assert.assertTrue("topology " + topoId + " in unsuccessful status: " + cluster.getStatus(topoId),
-                isStatusSuccess(cluster.getStatus(topoId)));
+        Assertions.assertTrue(isStatusSuccess(cluster.getStatus(topoId)), "topology " + topoId + " in unsuccessful status: " + cluster.getStatus(topoId));
     }
 
     public static boolean isStatusSuccess(String status) {
