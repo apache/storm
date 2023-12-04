@@ -81,7 +81,7 @@ public class DaemonConfig implements Validated {
     /**
      * We report the metrics with this interval period.
      */
-    @IsString
+    @IsInteger
     public static final String STORM_DAEMON_METRICS_REPORTER_INTERVAL_SECS = "storm.daemon.metrics.reporter.interval.secs";
 
     /**
