@@ -32,15 +32,6 @@ public interface IMetric {
      */
     Object getValueAndReset();
 
-
-    /**
-     * Check whether this metric is carrying additional dimension map.
-     * @return a boolean value.
-     */
-    default boolean isDimensional() {
-        return false;
-    }
-
     /**
      * Get dimension map. An empty map will be returned if metric is not dimensional.
      * @return a K-V map of the additional metadata.
