@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 public class CsvPreparableReporter implements PreparableReporter {
     private static final Logger LOG = LoggerFactory.getLogger(CsvPreparableReporter.class);
     CsvReporter reporter = null;
-    Integer reportingIntervalPeriod = null;
+    Integer reportingIntervalSecs = null;
 
     @Override
     public void prepare(MetricRegistry metricsRegistry, Map<String, Object> daemonConf) {
@@ -52,14 +52,14 @@ public class CsvPreparableReporter implements PreparableReporter {
 
         File csvMetricsDir = MetricsUtils.getCsvLogDir(daemonConf);
         reporter = builder.build(csvMetricsDir);
-        reportingIntervalPeriod = ObjectReader.getInt(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_INTERVAL_SECS), 10);
+        reportingIntervalSecs = ObjectReader.getInt(daemonConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_INTERVAL_SECS), 10);
     }
 
     @Override
     public void start() {
         if (reporter != null) {
             LOG.debug("Starting...");
-            reporter.start(reportingIntervalPeriod, TimeUnit.SECONDS);
+            reporter.start(reportingIntervalSecs, TimeUnit.SECONDS);
         } else {
             throw new IllegalStateException("Attempt to start without preparing " + getClass().getSimpleName());
         }
