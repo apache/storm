@@ -22,8 +22,8 @@ import org.apache.storm.state.BaseBinaryStateIterator;
 import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
 import org.apache.storm.state.StateEncoder;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
 /**
  * An iterator over {@link RedisKeyValueState}.

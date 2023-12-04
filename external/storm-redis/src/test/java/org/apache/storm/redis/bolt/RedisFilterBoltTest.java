@@ -59,7 +59,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 class RedisFilterBoltTest {
 
     @Container
-    public GenericContainer container = new GenericContainer("redis:6.0.5-alpine")
+    public GenericContainer container = new GenericContainer("redis:7.2.3-alpine")
         .withExposedPorts(6379);
 
     private JedisTestHelper jedisHelper;

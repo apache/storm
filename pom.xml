@@ -128,7 +128,7 @@
         <hamcrest.version>2.2</hamcrest.version>
         <elasticsearch.version>7.17.13</elasticsearch.version>
         <calcite.version>1.16.0</calcite.version>
-        <jedis.version>3.2.0</jedis.version>
+        <jedis.version>5.1.0</jedis.version>
         <activemq.version>5.18.3</activemq.version>
 
         <jackson.version>2.15.2</jackson.version>
@@ -157,6 +157,7 @@
         <rocksdb-jni-version>8.5.4</rocksdb-jni-version>
         <json-smart.version>2.5.0</json-smart.version>
         <byte-buddy.version>1.14.9</byte-buddy.version>
+        <gson.version>2.10.1</gson.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
@@ -1150,6 +1151,12 @@
                 <artifactId>byte-buddy-agent</artifactId>
                 <version>${byte-buddy.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
