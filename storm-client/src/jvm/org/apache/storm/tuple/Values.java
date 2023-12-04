@@ -24,7 +24,7 @@ public class Values extends ArrayList<Object> {
 
     public Values(Object... vals) {
         super(vals != null ? vals.length : 1);
-        if (vals != null ) {
+        if (vals != null) {
             for (Object o : vals) {
                 add(o);
             }
