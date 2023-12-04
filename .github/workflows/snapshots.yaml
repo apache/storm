@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Publish Storm to nightlies.apache.org
+name: Publish Storm SNAPSHOTs
 
 on:
   workflow_dispatch: { }
