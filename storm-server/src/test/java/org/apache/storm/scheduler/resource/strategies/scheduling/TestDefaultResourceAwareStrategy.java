@@ -818,11 +818,11 @@ public class TestDefaultResourceAwareStrategy {
             assertEquals("rack-5", it.next().id, "Rack-5 should be ordered sixth");
 
             SchedulingResult schedulingResult = rs.schedule(cluster, topo1);
-            assert (schedulingResult.isSuccess());
-            SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
-            for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
-                //make sure all workers on scheduled in rack-0
-                assertEquals("rack-0",
+            assertTrue(schedulingResult.isSuccess(), "Scheduling failed");
+        SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
+        for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
+            //make sure all workers on scheduled in rack-0
+            assertEquals("rack-0",
                         resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()), "assert worker scheduled on rack-0");
             }
             assertEquals(0, cluster.getUnassignedExecutors(topo1).size(), "All executors in topo-1 scheduled");
@@ -842,11 +842,11 @@ public class TestDefaultResourceAwareStrategy {
             rs = new DefaultResourceAwareStrategyOld();
             // schedule topo2
             schedulingResult = rs.schedule(cluster, topo2);
-            assert (schedulingResult.isSuccess());
-            assignment = cluster.getAssignmentById(topo2.getId());
-            for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
-                //make sure all workers on scheduled in rack-1
-                assertEquals("rack-1",
+            assertTrue(schedulingResult.isSuccess(), "Scheduling failed");
+        assignment = cluster.getAssignmentById(topo2.getId());
+        for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
+            //make sure all workers on scheduled in rack-1
+            assertEquals("rack-1",
                         resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()), "assert worker scheduled on rack-1");
             }
             assertEquals(0, cluster.getUnassignedExecutors(topo2).size(), "All executors in topo-2 scheduled");
@@ -944,12 +944,12 @@ public class TestDefaultResourceAwareStrategy {
             assertEquals("rack-2", it.next().id, "rack-2 should be ordered fifth");
 
             SchedulingResult schedulingResult = rs.schedule(cluster, topo1);
-            assert (schedulingResult.isSuccess());
-            SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
-            for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
-                String hostName = rs.idToNode(ws.getNodeId()).getHostname();
-                String rackId = resolvedSuperVisors.get(hostName);
-                assertTrue(t1FavoredHostNames.contains(hostName) || "rack-0".equals(rackId),
+            assertTrue(schedulingResult.isSuccess(), "Scheduling failed");
+        SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
+        for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
+            String hostName = rs.idToNode(ws.getNodeId()).getHostname();
+            String rackId = resolvedSuperVisors.get(hostName);
+            assertTrue(t1FavoredHostNames.contains(hostName) || "rack-0".equals(rackId),
                         ws + " is neither on a favored node " + t1FavoredHostNames + " nor the highest priority rack (rack-0)");
                 assertFalse(t1UnfavoredHostIds.contains(hostName),
                         ws + " is a part of an unfavored node " + t1UnfavoredHostIds);
@@ -971,13 +971,13 @@ public class TestDefaultResourceAwareStrategy {
             rs = new DefaultResourceAwareStrategyOld();
             // schedule topo2
             schedulingResult = rs.schedule(cluster, topo2);
-            assert (schedulingResult.isSuccess());
-            assignment = cluster.getAssignmentById(topo2.getId());
-            for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
-                //make sure all workers on scheduled in rack-1
-                // The favored nodes would have put it on a different rack, but because that rack does not have free space to run the
-                // topology it falls back to this rack
-                assertEquals("rack-1", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()), "assert worker scheduled on rack-1");
+            assertTrue(schedulingResult.isSuccess(), "Scheduling failed");
+        assignment = cluster.getAssignmentById(topo2.getId());
+        for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
+            //make sure all workers on scheduled in rack-1
+            // The favored nodes would have put it on a different rack, but because that rack does not have free space to run the
+            // topology it falls back to this rack
+            assertEquals("rack-1", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()), "assert worker scheduled on rack-1");
             }
             assertEquals(0, cluster.getUnassignedExecutors(topo2).size(), "All executors in topo-2 scheduled");
         }

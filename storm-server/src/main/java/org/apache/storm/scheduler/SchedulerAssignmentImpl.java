@@ -147,7 +147,9 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      * Assign the slot to executors.
      */
     public void assign(WorkerSlot slot, Collection<ExecutorDetails> executors, WorkerResources slotResources) {
-        assert slot != null;
+        if (slot == null) {
+            throw new AssertionError("WorkerSlot parameter is null");
+        }
         for (ExecutorDetails executor : executors) {
             this.executorToSlot.put(executor, slot);
         }

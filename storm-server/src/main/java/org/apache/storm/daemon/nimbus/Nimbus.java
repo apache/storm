@@ -828,9 +828,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
+    /**
+     * Check new assignments with existing assignments and determine difference is any.
+     *
+     * @param existingAssignments non-null map of topology-id to existing assignments.
+     * @param newAssignments non-null map of topology-id to new assignments.
+     * @return true if there is a change in assignments, false otherwise.
+     */
     private boolean auditAssignmentChanges(Map<String, Assignment> existingAssignments,
                                            Map<String, Assignment> newAssignments) {
-        assert existingAssignments != null && newAssignments != null;
         boolean anyChanged = existingAssignments.isEmpty() ^ newAssignments.isEmpty();
         long numRemovedExec = 0;
         long numRemovedSlot = 0;
@@ -1966,8 +1972,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private TopologyDetails readTopologyDetails(String topoId, StormBase base) throws KeyNotFoundException,
         AuthorizationException, IOException, InvalidTopologyException {
-        assert (base != null);
-        assert (topoId != null);
+        if (base == null) {
+            throw new InvalidTopologyException("Cannot readTopologyDetails: StormBase parameter value is null");
+        }
+        if (topoId == null) {
+            throw new InvalidTopologyException("Cannot readTopologyDetails: topoId parameter value is null");
+        }
 
         Map<String, Object> topoConf = readTopoConfAsNimbus(topoId, topoCache);
         StormTopology topo = readStormTopologyAsNimbus(topoId, topoCache);
@@ -2067,7 +2077,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                                                  StormTopology topology)
         throws InvalidTopologyException {
 
-        assert (base != null);
+        if (base == null) {
+            throw new InvalidTopologyException("Cannot computeExecutors: StormBase parameter value is null");
+        }
 
         Map<String, Integer> compToExecutors = base.get_component_executors();
         List<List<Integer>> ret = new ArrayList<>();
@@ -2677,7 +2689,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private void startTopology(String topoName, String topoId, TopologyStatus initStatus, String owner,
                                String principal, Map<String, Object> topoConf, StormTopology stormTopology)
         throws InvalidTopologyException {
-        assert (TopologyStatus.ACTIVE == initStatus || TopologyStatus.INACTIVE == initStatus);
+        if (TopologyStatus.ACTIVE != initStatus && TopologyStatus.INACTIVE != initStatus) {
+            throw new InvalidTopologyException("Cannot startTopology: initStatus should be ACTIVE or INACTIVE, not " + initStatus.name());
+        }
         Map<String, Integer> numExecutors = new HashMap<>();
         StormTopology topology = StormCommon.systemTopology(topoConf, stormTopology);
         for (Entry<String, Object> entry : StormCommon.allComponents(topology).entrySet()) {
@@ -3195,7 +3209,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             submitTopologyWithOptsCalls.mark();
             assertIsLeader();
-            assert (options != null);
+            if (options == null) {
+                throw new InvalidTopologyException("Cannot submitTopologyWithOpts: SubmitOptions parameter value is null");
+            }
             validateTopologyName(topoName);
             checkAuthorization(topoName, null, "submitTopology");
             assertTopoActive(topoName, false);
@@ -5321,10 +5337,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         ClusterSummaryMetricSet(StormMetricsRegistry metricsRegistry) {
             this.metricsRegistry = metricsRegistry;
             //Break the code if out of sync to thrift protocol
-            assert ClusterSummary._Fields.values().length == 3
-                && ClusterSummary._Fields.findByName("supervisors") == ClusterSummary._Fields.SUPERVISORS
-                && ClusterSummary._Fields.findByName("topologies") == ClusterSummary._Fields.TOPOLOGIES
-                && ClusterSummary._Fields.findByName("nimbuses") == ClusterSummary._Fields.NIMBUSES;
+            if (ClusterSummary._Fields.values().length != 3
+                    || ClusterSummary._Fields.findByName("supervisors") != ClusterSummary._Fields.SUPERVISORS
+                    || ClusterSummary._Fields.findByName("topologies") != ClusterSummary._Fields.TOPOLOGIES
+                    || ClusterSummary._Fields.findByName("nimbuses") != ClusterSummary._Fields.NIMBUSES) {
+                throw new AssertionError("Out of sync with thrift protocol");
+            }
 
             final CachedGauge<ClusterSummary> cachedSummary = new CachedGauge<ClusterSummary>(CACHING_WINDOW, TimeUnit.SECONDS) {
                 @Override
