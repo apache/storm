@@ -15,12 +15,12 @@ package org.apache.storm.redis.bolt;
 import java.util.List;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.container.JedisCommandsContainer;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisLookupMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import redis.clients.jedis.JedisCommands;
 
 /**
  * Basic bolt for querying from Redis and emits response as tuple.
@@ -70,7 +70,7 @@ public class RedisLookupBolt extends AbstractRedisBolt {
         String key = lookupMapper.getKeyFromTuple(input);
         Object lookupValue;
 
-        JedisCommands jedisCommand = null;
+        JedisCommandsContainer jedisCommand = null;
         try {
             jedisCommand = getInstance();
 
@@ -116,8 +116,6 @@ public class RedisLookupBolt extends AbstractRedisBolt {
         } catch (Exception e) {
             this.collector.reportError(e);
             this.collector.fail(input);
-        } finally {
-            returnInstance(jedisCommand);
         }
     }
 

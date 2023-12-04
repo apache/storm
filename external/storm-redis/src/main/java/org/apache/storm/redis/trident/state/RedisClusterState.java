@@ -13,10 +13,13 @@
 package org.apache.storm.redis.trident.state;
 
 import java.util.Map;
+
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.state.StateFactory;
+import redis.clients.jedis.Connection;
 import redis.clients.jedis.JedisCluster;
 
 /**
@@ -74,9 +77,9 @@ public class RedisClusterState implements State {
      * @see StateFactory
      */
     public static class Factory implements StateFactory {
-        public static final redis.clients.jedis.JedisPoolConfig DEFAULT_POOL_CONFIG = new redis.clients.jedis.JedisPoolConfig();
+        public static final GenericObjectPoolConfig<Connection> DEFAULT_POOL_CONFIG = new GenericObjectPoolConfig<>();
 
-        private JedisClusterConfig jedisClusterConfig;
+        private final JedisClusterConfig jedisClusterConfig;
 
         /**
          * Constructor.
@@ -92,7 +95,7 @@ public class RedisClusterState implements State {
          */
         @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-            JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
+            final JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
                                                          jedisClusterConfig.getTimeout(),
                                                          jedisClusterConfig.getTimeout(),
                                                          jedisClusterConfig.getMaxRedirections(),

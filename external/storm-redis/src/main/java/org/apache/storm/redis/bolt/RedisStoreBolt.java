@@ -14,11 +14,11 @@ package org.apache.storm.redis.bolt;
 
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.container.JedisCommandsContainer;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisStoreMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
-import redis.clients.jedis.JedisCommands;
 
 /**
  * Basic bolt for writing to Redis.
@@ -66,7 +66,7 @@ public class RedisStoreBolt extends AbstractRedisBolt {
         String key = storeMapper.getKeyFromTuple(input);
         String value = storeMapper.getValueFromTuple(input);
 
-        JedisCommands jedisCommand = null;
+        JedisCommandsContainer jedisCommand = null;
         try {
             jedisCommand = getInstance();
 
@@ -114,8 +114,6 @@ public class RedisStoreBolt extends AbstractRedisBolt {
         } catch (Exception e) {
             this.collector.reportError(e);
             this.collector.fail(input);
-        } finally {
-            returnInstance(jedisCommand);
         }
     }
 

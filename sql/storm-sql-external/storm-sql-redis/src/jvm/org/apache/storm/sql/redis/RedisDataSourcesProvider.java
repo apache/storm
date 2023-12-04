@@ -42,8 +42,7 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
-
-import redis.clients.util.JedisURIHelper;
+import redis.clients.jedis.util.JedisURIHelper;
 
 /**
  * Create a Redis sink based on the URI and properties. The URI has the format of
