@@ -63,7 +63,7 @@ jobs:
         with:
           switches: -avzr --include='*/' --include='*.zip' --include='*.tar.gz' --exclude='*'
           path: storm-dist/binary/final-package/target/
-          remote_path: ${{ secrets.NIGHTLIES_RSYNC_PATH }}/storm
+          remote_path: ${{ secrets.NIGHTLIES_RSYNC_PATH }}/storm/
           remote_host: ${{ secrets.NIGHTLIES_RSYNC_HOST }}
           remote_port: ${{ secrets.NIGHTLIES_RSYNC_PORT }}
           remote_user: ${{ secrets.NIGHTLIES_RSYNC_USER }}
