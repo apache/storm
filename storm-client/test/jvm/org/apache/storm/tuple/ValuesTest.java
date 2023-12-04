@@ -18,37 +18,37 @@
 
 package org.apache.storm.tuple;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ValuesTest {
 
     @Test
     public void testNoArgsToValues() {
         Values vals = new Values();
-        Assert.assertTrue("Failed to add null to Values", vals.size() == 0);
+        Assertions.assertEquals(0, vals.size(), "Failed to add null to Values");
     }
 
     @Test
     public void testNullArgsToValues() {
         Values vals = new Values(null);
-        Assert.assertTrue("Failed to add null to Values", vals.size() == 1);
-        Assert.assertNull(vals.get(0));
+        Assertions.assertEquals(1, vals.size(), "Failed to add null to Values");
+        Assertions.assertNull(vals.get(0));
     }
 
     @Test
     public void testNonNullArgsToValues() {
         Values vals = new Values("A", "B");
-        Assert.assertTrue("Failed to Add values to Values", vals.size() == 2);
-        Assert.assertEquals(vals.get(0), "A");
-        Assert.assertEquals(vals.get(1), "B");
+        Assertions.assertEquals(2, vals.size(), "Failed to Add values to Values");
+        Assertions.assertEquals(vals.get(0), "A");
+        Assertions.assertEquals(vals.get(1), "B");
     }
 
     @Test
     public void testNullAsArgsToValues() {
         Values vals = new Values(null, "A");
-        Assert.assertTrue("Failed to Add values to Values", vals.size() == 2);
-        Assert.assertNull(vals.get(0));
-        Assert.assertEquals(vals.get(1), "A");
+        Assertions.assertEquals(2, vals.size(), "Failed to Add values to Values");
+        Assertions.assertNull(vals.get(0));
+        Assertions.assertEquals(vals.get(1), "A");
     }
 }
