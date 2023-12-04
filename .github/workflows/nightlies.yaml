@@ -61,7 +61,7 @@ jobs:
       - name: Upload to nightlies.apache.org
         uses: burnett01/rsync-deployments@5.2
         with:
-          switches: -avzh --update --delete --progress --include='*/' --include='*.zip' --include='*.tar.gz' --exclude='*'
+          switches: -avzh --update --delete --progress --include='*.zip' --include='*.tar.gz' --exclude='*'
           path: storm-dist/binary/final-package/target/
           remote_path: ${{ secrets.NIGHTLIES_RSYNC_PATH }}/storm/
           remote_host: ${{ secrets.NIGHTLIES_RSYNC_HOST }}
