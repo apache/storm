@@ -56,9 +56,9 @@ jobs:
         run: rm -rf ~/.m2/repository/org/apache/storm
       - name: Set up project dependencies
         run: /bin/bash ./dev-tools/gitact/gitact-install.sh `pwd`
-      - name: Run package
-        run: cd storm-dist/binary && mvn package
-      - name: rsync
+      - name: Package binaries
+        run: mvn package -f storm-dist/binary/pom.xml -Dgpg.skip
+      - name: Upload to nightlies.apache.org
         uses: burnett01/rsync-deployments@5.2
         with:
           switches: -avzr --include='*/' --include='*.zip' --include='*.tar.gz' --exclude='*'
