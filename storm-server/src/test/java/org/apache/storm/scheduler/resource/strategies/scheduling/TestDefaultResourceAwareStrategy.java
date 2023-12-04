@@ -818,7 +818,7 @@ public class TestDefaultResourceAwareStrategy {
             assertEquals("rack-5", it.next().id, "Rack-5 should be ordered sixth");
 
             SchedulingResult schedulingResult = rs.schedule(cluster, topo1);
-            assertTrue("Scheduling failed", schedulingResult.isSuccess());
+            assertTrue(schedulingResult.isSuccess(), "Scheduling failed");
         SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
         for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             //make sure all workers on scheduled in rack-0
@@ -842,7 +842,7 @@ public class TestDefaultResourceAwareStrategy {
             rs = new DefaultResourceAwareStrategyOld();
             // schedule topo2
             schedulingResult = rs.schedule(cluster, topo2);
-            assertTrue("Scheduling failed", schedulingResult.isSuccess());
+            assertTrue(schedulingResult.isSuccess(), "Scheduling failed");
         assignment = cluster.getAssignmentById(topo2.getId());
         for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             //make sure all workers on scheduled in rack-1
@@ -944,7 +944,7 @@ public class TestDefaultResourceAwareStrategy {
             assertEquals("rack-2", it.next().id, "rack-2 should be ordered fifth");
 
             SchedulingResult schedulingResult = rs.schedule(cluster, topo1);
-            assertTrue("Scheduling failed", schedulingResult.isSuccess());
+            assertTrue(schedulingResult.isSuccess(), "Scheduling failed");
         SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
         for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             String hostName = rs.idToNode(ws.getNodeId()).getHostname();
@@ -971,7 +971,7 @@ public class TestDefaultResourceAwareStrategy {
             rs = new DefaultResourceAwareStrategyOld();
             // schedule topo2
             schedulingResult = rs.schedule(cluster, topo2);
-            assertTrue("Scheduling failed", schedulingResult.isSuccess());
+            assertTrue(schedulingResult.isSuccess(), "Scheduling failed");
         assignment = cluster.getAssignmentById(topo2.getId());
         for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             //make sure all workers on scheduled in rack-1
