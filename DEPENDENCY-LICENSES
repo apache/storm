@@ -130,7 +130,7 @@ List of third-party dependencies grouped by their license type.
         * Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
         * Apache HttpCore NIO (org.apache.httpcomponents:httpcore-nio:4.4.15 - http://hc.apache.org/httpcomponents-core-ga)
         * Apache Ivy (org.apache.ivy:ivy:2.4.0 - http://ant.apache.org/ivy/)
-        * Apache Kafka (org.apache.kafka:kafka-clients:0.11.0.3 - http://kafka.apache.org)
+        * Apache Kafka (org.apache.kafka:kafka-clients:3.6.0 - https://kafka.apache.org)
         * Apache Maven Artifact Transfer (org.apache.maven.shared:maven-artifact-transfer:0.9.1 - https://maven.apache.org/shared/maven-artifact-transfer/)
         * Apache Maven Common Artifact Filters (org.apache.maven.shared:maven-common-artifact-filters:3.0.1 - https://maven.apache.org/shared/maven-common-artifact-filters/)
         * Apache Maven Dependency Tree (org.apache.maven.shared:maven-dependency-tree:2.2 - http://maven.apache.org/shared/maven-dependency-tree/)
@@ -319,7 +319,6 @@ List of third-party dependencies grouped by their license type.
         * Lucene Sandbox (org.apache.lucene:lucene-sandbox:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-sandbox)
         * Lucene Spatial 3D (org.apache.lucene:lucene-spatial3d:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-spatial3d)
         * Lucene Suggest (org.apache.lucene:lucene-suggest:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-suggest)
-        * LZ4 and xxHash (net.jpountz.lz4:lz4:1.3.0 - https://github.com/jpountz/lz4-java)
         * LZ4 and xxHash (org.lz4:lz4-java:1.8.0 - https://github.com/lz4/lz4-java)
         * Maven Aether Provider (org.apache.maven:maven-aether-provider:3.0 - http://maven.apache.org/maven-aether-provider/)
         * Maven Artifact (org.apache.maven:maven-artifact:3.0 - http://maven.apache.org/maven-artifact/)
@@ -515,6 +514,10 @@ List of third-party dependencies grouped by their license type.
     BSD 2-Clause license
 
         * dnsjava (dnsjava:dnsjava:2.1.7 - http://www.dnsjava.org)
+
+    BSD 2-Clause License
+
+        * zstd-jni (com.github.luben:zstd-jni:1.5.5-1 - https://github.com/luben/zstd-jni)
 
     BSD-3-Clause
 

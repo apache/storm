@@ -39,6 +39,7 @@ public class KafkaSpoutNullTupleTest extends KafkaSpoutAbstractTest {
     KafkaSpoutConfig<String, String> createSpoutConfig() {
         return KafkaSpoutConfig.builder("127.0.0.1:" + kafkaUnitExtension.getKafkaUnit().getKafkaPort(),
                 Pattern.compile(SingleTopicKafkaSpoutConfiguration.TOPIC))
+                .setGroupId("test")
                 .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
                 .setRecordTranslator(new NullRecordTranslator<>())
                 .build();

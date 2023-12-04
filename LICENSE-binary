@@ -737,7 +737,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.14 - http://hc.apache.org/httpcomponents-client-ga)
         * Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
         * Apache Ivy (org.apache.ivy:ivy:2.4.0 - http://ant.apache.org/ivy/)
-        * Apache Kafka (org.apache.kafka:kafka-clients:0.11.0.3 - http://kafka.apache.org)
+        * Apache Kafka (org.apache.kafka:kafka-clients:3.6.0 - https://kafka.apache.org)
         * Apache Log4j 1.x Compatibility API (org.apache.logging.log4j:log4j-1.2-api:2.21.1 - https://logging.apache.org/log4j/2.x/log4j-1.2-api/)
         * Apache Log4j API (org.apache.logging.log4j:log4j-api:2.21.1 - https://logging.apache.org/log4j/2.x/log4j-api/)
         * Apache Log4j Core (org.apache.logging.log4j:log4j-core:2.21.1 - https://logging.apache.org/log4j/2.x/log4j-core/)
@@ -886,7 +886,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Kerby PKIX Project (org.apache.kerby:kerby-pkix:1.0.1 - http://directory.apache.org/kerby/kerby-pkix)
         * Kerby Util (org.apache.kerby:kerby-util:1.0.1 - http://directory.apache.org/kerby/kerby-common/kerby-util)
         * Kerby XDR Project (org.apache.kerby:kerby-xdr:1.0.1 - http://directory.apache.org/kerby/kerby-common/kerby-xdr)
-        * LZ4 and xxHash (net.jpountz.lz4:lz4:1.3.0 - https://github.com/jpountz/lz4-java)
+        * LZ4 and xxHash (org.lz4:lz4-java:1.8.0 - https://github.com/lz4/lz4-java)
         * Maven Artifact (org.apache.maven:maven-artifact:3.6.0 - https://maven.apache.org/ref/3.6.0/maven-artifact/)
         * Maven Artifact Resolver API (org.apache.maven.resolver:maven-resolver-api:1.3.3 - https://maven.apache.org/resolver/maven-resolver-api/)
         * Maven Artifact Resolver Connector Basic (org.apache.maven.resolver:maven-resolver-connector-basic:1.3.3 - https://maven.apache.org/resolver/maven-resolver-connector-basic/)
@@ -1030,6 +1030,7 @@ The license texts of these dependencies can be found in the licenses directory.
     BSD 2-Clause license
 
         * dnsjava (dnsjava:dnsjava:2.1.7 - http://www.dnsjava.org)
+        * zstd-jni (com.github.luben:zstd-jni:1.5.5-1 - https://github.com/luben/zstd-jni)
 
     BSD-3-Clause
 

@@ -110,7 +110,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.11</artifactId>
+            <artifactId>kafka_2.13</artifactId>
             <version>${storm.kafka.client.version}</version>
             <classifier>test</classifier>
             <scope>test</scope>
@@ -130,7 +130,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.11</artifactId>
+            <artifactId>kafka_2.13</artifactId>
             <version>${storm.kafka.client.version}</version>
             <scope>test</scope>
             <exclusions>
