@@ -521,9 +521,11 @@ List of third-party dependencies grouped by their license type.
 
     BSD-3-Clause
 
-        * asm (org.ow2.asm:asm:9.3 - http://asm.ow2.io/)
+        * asm (org.ow2.asm:asm:9.6 - http://asm.ow2.io/)
+        * asm-analysis (org.ow2.asm:asm-analysis:9.6 - http://asm.ow2.io/)
         * asm-commons (org.ow2.asm:asm-commons:9.6 - http://asm.ow2.io/)
         * asm-tree (org.ow2.asm:asm-tree:9.6 - http://asm.ow2.io/)
+        * asm-util (org.ow2.asm:asm-util:9.6 - http://asm.ow2.io/)
 
     BSD 3-Clause License
 
@@ -539,11 +541,6 @@ List of third-party dependencies grouped by their license type.
 
     BSD License
 
-        * ASM Analysis (org.ow2.asm:asm-analysis:6.0_BETA - http://asm.objectweb.org/asm-analysis/)
-        * ASM Commons (org.ow2.asm:asm-commons:6.0 - http://asm.objectweb.org/asm-commons/)
-        * ASM Core (org.ow2.asm:asm:6.0 - http://asm.objectweb.org/asm/)
-        * ASM Tree (org.ow2.asm:asm-tree:6.0 - http://asm.objectweb.org/asm-tree/)
-        * ASM Util (org.ow2.asm:asm-util:6.0_BETA - http://asm.objectweb.org/asm-util/)
         * Javolution (javolution:javolution:5.5.1 - http://javolution.org)
         * JLine (jline:jline:0.9.94 - http://jline.sourceforge.net)
         * JLine Bundle (org.jline:jline:3.9.0 - http://nexus.sonatype.org/oss-repository-hosting.html/jline-parent/jline)
