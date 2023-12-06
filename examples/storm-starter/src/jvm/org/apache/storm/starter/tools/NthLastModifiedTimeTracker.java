@@ -2,9 +2,9 @@
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
@@ -12,7 +12,8 @@
 
 package org.apache.storm.starter.tools;
 
-import org.apache.commons.collections.buffer.CircularFifoBuffer;
+import java.util.concurrent.ArrayBlockingQueue;
+
 import org.apache.storm.utils.Time;
 
 /**
@@ -27,21 +28,21 @@ public class NthLastModifiedTimeTracker {
 
     private static final int MILLIS_IN_SEC = 1000;
 
-    private final CircularFifoBuffer lastModifiedTimesMillis;
+    private final ArrayBlockingQueue<Long> lastModifiedTimesMillis;
 
     public NthLastModifiedTimeTracker(int numTimesToTrack) {
         if (numTimesToTrack < 1) {
             throw new IllegalArgumentException(
-                "numTimesToTrack must be greater than zero (you requested " + numTimesToTrack + ")");
+                    "numTimesToTrack must be greater than zero (you requested " + numTimesToTrack + ")");
         }
-        lastModifiedTimesMillis = new CircularFifoBuffer(numTimesToTrack);
-        initLastModifiedTimesMillis();
+        lastModifiedTimesMillis = new ArrayBlockingQueue<>(numTimesToTrack);
+        initLastModifiedTimesMillis(numTimesToTrack);
     }
 
-    private void initLastModifiedTimesMillis() {
+    private void initLastModifiedTimesMillis(int numTimesToTrack) {
         long nowCached = now();
-        for (int i = 0; i < lastModifiedTimesMillis.maxSize(); i++) {
-            lastModifiedTimesMillis.add(Long.valueOf(nowCached));
+        for (int i = 0; i < numTimesToTrack; i++) {
+            lastModifiedTimesMillis.add(nowCached);
         }
     }
 
@@ -50,8 +51,12 @@ public class NthLastModifiedTimeTracker {
     }
 
     public int secondsSinceOldestModification() {
-        long modifiedTimeMillis = ((Long) lastModifiedTimesMillis.get()).longValue();
-        return (int) ((now() - modifiedTimeMillis) / MILLIS_IN_SEC);
+        try {
+            long modifiedTimeMillis = lastModifiedTimesMillis.take();
+            return (int) ((now() - modifiedTimeMillis) / MILLIS_IN_SEC);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void markAsModified() {
@@ -59,7 +64,14 @@ public class NthLastModifiedTimeTracker {
     }
 
     private void updateLastModifiedTime() {
-        lastModifiedTimesMillis.add(now());
+        if (!lastModifiedTimesMillis.offer(now())) {
+            lastModifiedTimesMillis.poll();
+            try {
+                lastModifiedTimesMillis.put(now());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 }
