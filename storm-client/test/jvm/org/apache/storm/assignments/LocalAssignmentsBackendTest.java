@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.NodeInfo;
-import org.apache.storm.shade.org.apache.commons.collections.map.HashedMap;
+import org.apache.storm.shade.org.apache.commons.collections4.map.HashedMap;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.jupiter.api.Test;
 
