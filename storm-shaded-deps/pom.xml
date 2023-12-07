@@ -113,8 +113,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>commons-collections</groupId>
-            <artifactId>commons-collections</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -203,9 +203,9 @@
                         <includes>
                             <include>com.google.guava:*</include>
                             <include>commons-codec:commons-codec</include>
-                            <include>commons-collections:commons-collections</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-lang:commons-lang</include>
+                            <include>org.apache.commons:commons-collections4</include>
                             <!-- Pulled in by json-smart -->
                             <include>net.minidev:*</include>
                             <include>org.ow2.asm:*</include>
@@ -255,8 +255,8 @@
                             <shadedPattern>org.apache.storm.shade.org.apache.commons.lang</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.apache.commons.collections</pattern>
-                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
+                            <pattern>org.apache.commons.collections4</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections4</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.jctools</pattern>
