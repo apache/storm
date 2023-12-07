@@ -257,7 +257,7 @@ public class BlobStoreUtils {
                 return;
             }
             stateInfo = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + "/" + key);
-            if (stateInfo != null && stateInfo.isEmpty()) {
+            if (stateInfo == null || stateInfo.isEmpty()) {
                 return;
             }
 
