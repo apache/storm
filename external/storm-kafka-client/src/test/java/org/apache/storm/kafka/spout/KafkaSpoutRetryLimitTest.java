@@ -18,14 +18,15 @@ package org.apache.storm.kafka.spout;
 import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +84,7 @@ public class KafkaSpoutRetryLimitTest {
             int numRecords = lastOffset + 1;
             records.put(partition, SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, numRecords));
             
-            when(consumerMock.poll(any(Duration.class)))
+            when(consumerMock.poll(anyLong()))
                 .thenReturn(new ConsumerRecords<>(records));
             
             for (int i = 0; i < numRecords; i++) {
@@ -103,7 +104,7 @@ public class KafkaSpoutRetryLimitTest {
             
             InOrder inOrder = inOrder(consumerMock);
             inOrder.verify(consumerMock).commitSync(commitCapture.capture());
-            inOrder.verify(consumerMock).poll(any(Duration.class));
+            inOrder.verify(consumerMock).poll(anyLong());
 
             //verify that offset 4 was committed for the given TopicPartition, since processing should resume at 4.
             assertTrue(commitCapture.getValue().containsKey(partition));

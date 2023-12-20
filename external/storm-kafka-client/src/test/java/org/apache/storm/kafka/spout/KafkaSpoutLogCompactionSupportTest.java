@@ -21,7 +21,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -29,7 +31,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,7 +86,7 @@ public class KafkaSpoutLogCompactionSupportTest {
             recordsForPartition.addAll(SpoutWithMockedConsumerSetupHelper.createRecords(partition, 8, 2));
             records.put(partition, recordsForPartition);
 
-            when(consumerMock.poll(any(Duration.class)))
+            when(consumerMock.poll(anyLong()))
                     .thenReturn(new ConsumerRecords<>(records));
 
             for (int i = 0; i < recordsForPartition.size(); i++) {
@@ -101,13 +102,13 @@ public class KafkaSpoutLogCompactionSupportTest {
 
             // Advance time and then trigger first call to kafka consumer commit; the commit must progress to offset 9
             Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + offsetCommitPeriodMs);
-            when(consumerMock.poll(any(Duration.class)))
+            when(consumerMock.poll(anyLong()))
                     .thenReturn(new ConsumerRecords<>(Collections.emptyMap()));
             spout.nextTuple();
 
             InOrder inOrder = inOrder(consumerMock);
             inOrder.verify(consumerMock).commitSync(commitCapture.capture());
-            inOrder.verify(consumerMock).poll(any(Duration.class));
+            inOrder.verify(consumerMock).poll(anyLong());
 
             //verify that Offset 10 was last committed offset, since this is the offset the spout should resume at
             Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();
