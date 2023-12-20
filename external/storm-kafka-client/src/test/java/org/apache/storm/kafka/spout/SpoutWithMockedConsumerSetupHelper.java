@@ -27,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,7 +153,7 @@ public class SpoutWithMockedConsumerSetupHelper {
             records.put(tp, tpRecords);
         }
 
-        when(consumerMock.poll(anyLong()))
+        when(consumerMock.poll(any(Duration.class)))
             .thenReturn(new ConsumerRecords<>(records));
 
         for (int i = 0; i < totalOffsets; i++) {
