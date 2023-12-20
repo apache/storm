@@ -24,6 +24,8 @@ import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.UNCOMMITTED_E
 import static org.apache.storm.kafka.spout.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
 
 import com.google.common.annotations.VisibleForTesting;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -355,7 +357,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         pausedPartitions.removeIf(pollablePartitionsInfo.pollablePartitions::contains);
         try {
             consumer.pause(pausedPartitions);
-            final ConsumerRecords<K, V> consumerRecords = consumer.poll(kafkaSpoutConfig.getPollTimeoutMs());
+            final ConsumerRecords<K, V> consumerRecords = consumer.poll(Duration.ofMillis(kafkaSpoutConfig.getPollTimeoutMs()));
             ackRetriableOffsetsIfCompactedAway(pollablePartitionsInfo.pollableEarliestRetriableOffsets, consumerRecords);
             final int numPolledRecords = consumerRecords.count();
             LOG.debug("Polled [{}] records from Kafka",
