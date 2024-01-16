@@ -547,8 +547,9 @@ public class StormApiResource {
         componentOpResponseRequestMeter.mark();
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
+
                     UIHelpers.putTopologyDebugActionSpct(
-                            nimbusClient.getClient(), id, component, action, spct
+                            nimbusClient.getClient(), id, action, spct, component
                     ),
                     callback
             );
