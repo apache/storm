@@ -2673,6 +2673,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             Map<String, Object> topoConf = tryReadTopoConf(topoId, topoCache);
             return getTopologyHeartbeatTimeoutSecs(topoConf);
+        } catch (NotAliveException e) {
+            // no log here to avoid flooding nimbus logs
+            return ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS));
         } catch (Exception e) {
             // contain any exception
             LOG.warn("Exception when getting heartbeat timeout", e);
