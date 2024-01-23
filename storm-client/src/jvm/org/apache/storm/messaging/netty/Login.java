@@ -64,12 +64,14 @@ public class Login {
     private String loginContextName = null;
     private String principal = null;
     private long lastLogin = 0;
+    private String jaasConfFile = null;
+    private Configuration configuration = null;
 
     /**
      * Login constructor. The constructor starts the thread used
      * to periodically re-login to the Kerberos Ticket Granting Server.
      * @param loginContextName
-     *               name of section in JAAS file that will be use to login.
+     *               name of section in JAAS file that will be used to login.
      *               Passed as first param to javax.security.auth.login.LoginContext().
      *
      * @param callbackHandler
@@ -79,12 +81,16 @@ public class Login {
      */
     public Login(final String loginContextName, CallbackHandler callbackHandler, String jaasConfFile)
         throws LoginException {
-        this.callbackHandler = callbackHandler;
-        login = login(loginContextName, jaasConfFile);
         this.loginContextName = loginContextName;
-        subject = login.getSubject();
-        isKrbTicket = !subject.getPrivateCredentials(KerberosTicket.class).isEmpty();
-        AppConfigurationEntry[] entries = this.getConfiguration(jaasConfFile).getAppConfigurationEntry(loginContextName);
+        this.callbackHandler = callbackHandler;
+        this.jaasConfFile = jaasConfFile;
+        this.configuration = getConfiguration(jaasConfFile);
+
+        this.login = login();
+        this.subject = login.getSubject();
+        this.isKrbTicket = !subject.getPrivateCredentials(KerberosTicket.class).isEmpty();
+
+        AppConfigurationEntry[] entries = configuration.getAppConfigurationEntry(loginContextName);
         for (AppConfigurationEntry entry : entries) {
             // there will only be a single entry, so this for() loop will only be iterated through once.
             if (entry.getOptions().get("useTicketCache") != null) {
@@ -108,7 +114,7 @@ public class Login {
         // TGT's existing expiry date and the configured MIN_TIME_BEFORE_RELOGIN. For testing and development,
         // you can decrease the interval of expiration of tickets (for example, to 3 minutes) by running :
         //  "modprinc -maxlife 3mins <principal>" in kadmin.
-        thread = new Thread(new Runnable() {
+        this.thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 LOG.info("TGT refresh thread started.");
@@ -247,7 +253,7 @@ public class Login {
         thread.setDaemon(true);
     }
 
-    private Configuration getConfiguration(String jaasConfFile) {
+    private static Configuration getConfiguration(String jaasConfFile) {
         File configFile = new File(jaasConfFile);
         if (!configFile.canRead()) {
             throw new RuntimeException("File " + jaasConfFile + " cannot be read.");
@@ -286,7 +292,7 @@ public class Login {
         return loginContextName;
     }
 
-    private synchronized LoginContext login(final String loginContextName, String jaasConfFile) throws LoginException {
+    private synchronized LoginContext login() throws LoginException {
         if (loginContextName == null) {
             throw new LoginException("loginContext name (JAAS file section header) was null. "
                     + "Please check your java.security.login.auth.config (="
@@ -294,9 +300,9 @@ public class Login {
                     + ") and your " + ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY + "(="
                     + System.getProperty(ZooKeeperSaslClient.LOGIN_CONTEXT_NAME_KEY, "Client") + ")");
         }
-        Configuration configuration = this.getConfiguration(jaasConfFile);
         LoginContext loginContext;
         try {
+            // The subject is null for our initial login attempt.
             loginContext = new LoginContext(loginContextName, null, callbackHandler, configuration);
             loginContext.login();
         } catch (LoginException e) {
@@ -384,7 +390,7 @@ public class Login {
     }
 
     /**
-     * Re-login a principal. This method assumes that {@link #login(String)} has happened already.
+     * Re-login a principal. This method assumes that {@link #login()} has happened already.
      * @throws javax.security.auth.login.LoginException on a failure
      */
     // c.f. HADOOP-6559
@@ -404,11 +410,13 @@ public class Login {
             //the Java kerberos login module code, only the kerberos credentials
             //are cleared
             login.logout();
-            //login and also update the subject field of this instance to
-            //have the new credentials (pass it to the LoginContext constructor)
-            login = new LoginContext(loginContextName, getSubject());
+            //login with original callback handler and config, and also update the
+            //subject field of this instance to have the new credentials (pass it
+            //to the LoginContext constructor)
+            login = new LoginContext(loginContextName, getSubject(), callbackHandler, configuration);
             LOG.info("Initiating re-login for " + principal);
             login.login();
+            LOG.info("Successfully re-logged in to context " + loginContextName + " using " + jaasConfFile);
             setLogin(login);
         }
     }
