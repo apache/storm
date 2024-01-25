@@ -14,7 +14,10 @@ package org.apache.storm;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.storm.generated.AuthorizationException;
+
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.NotAliveException;
@@ -24,21 +27,31 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
+import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestRebalance {
+    private static final Class[] strategyClasses = {
+            DefaultResourceAwareStrategy.class,
+            DefaultResourceAwareStrategyOld.class,
+            RoundRobinResourceAwareStrategy.class,
+            GenericResourceAwareStrategy.class,
+            GenericResourceAwareStrategyOld.class,
+    };
 
     static final int SLEEP_TIME_BETWEEN_RETRY = 1000;
 
@@ -54,93 +67,90 @@ public class TestRebalance {
         return null;
     }
 
-    protected Class getDefaultResourceAwareStrategyClass() {
-        return DefaultResourceAwareStrategy.class;
-    }
-
     @Test
     public void testRebalanceTopologyResourcesAndConfigs()
         throws Exception {
+        for (Class strategyClass : strategyClasses) {
+            LOG.info("Starting local cluster...using ", strategyClass.getName());
 
-        LOG.info("Starting local cluster...");
+            Config conf = new Config();
+            conf.put(DaemonConfig.STORM_SCHEDULER, ResourceAwareScheduler.class.getName());
+            conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, DefaultSchedulingPriorityStrategy.class.getName());
+            conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, strategyClass.getName());
+            conf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10.0);
+            conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 10.0);
+            conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 100.0);
+            conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
+            Map<String, Double> resourcesMap = new HashMap();
+            resourcesMap.put("gpu.count", 5.0);
+            conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
 
-        Config conf = new Config();
-        conf.put(DaemonConfig.STORM_SCHEDULER, ResourceAwareScheduler.class.getName());
-        conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, DefaultSchedulingPriorityStrategy.class.getName());
-        conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
-        conf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10.0);
-        conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 10.0);
-        conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 100.0);
-        conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
-        Map<String, Double> resourcesMap = new HashMap();
-        resourcesMap.put("gpu.count", 5.0);
-        conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
+            try (ILocalCluster cluster = new LocalCluster.Builder().withDaemonConf(conf).build()) {
 
-        try (ILocalCluster cluster = new LocalCluster.Builder().withDaemonConf(conf).build()) {
+                TopologyBuilder builder = new TopologyBuilder();
+                SpoutDeclarer s1 = builder.setSpout("spout-1", new TestUtilsForResourceAwareScheduler.TestSpout(),
+                        2);
+                BoltDeclarer b1 = builder.setBolt("bolt-1", new TestUtilsForResourceAwareScheduler.TestBolt(),
+                        2).shuffleGrouping("spout-1");
+                BoltDeclarer b2 = builder.setBolt("bolt-2", new TestUtilsForResourceAwareScheduler.TestBolt(),
+                        2).shuffleGrouping("bolt-1");
 
-            TopologyBuilder builder = new TopologyBuilder();
-            SpoutDeclarer s1 = builder.setSpout("spout-1", new TestUtilsForResourceAwareScheduler.TestSpout(),
-                                                2);
-            BoltDeclarer b1 = builder.setBolt("bolt-1", new TestUtilsForResourceAwareScheduler.TestBolt(),
-                                              2).shuffleGrouping("spout-1");
-            BoltDeclarer b2 = builder.setBolt("bolt-2", new TestUtilsForResourceAwareScheduler.TestBolt(),
-                                              2).shuffleGrouping("bolt-1");
+                StormTopology stormTopology = builder.createTopology();
 
-            StormTopology stormTopology = builder.createTopology();
+                LOG.info("submitting topologies....");
+                String topoName = "topo1";
+                cluster.submitTopology(topoName, new HashMap<>(), stormTopology);
 
-            LOG.info("submitting topologies....");
-            String topoName = "topo1";
-            cluster.submitTopology(topoName, new HashMap<>(), stormTopology);
+                waitTopologyScheduled(topoName, cluster, 20);
 
-            waitTopologyScheduled(topoName, cluster, 20);
+                RebalanceOptions opts = new RebalanceOptions();
 
-            RebalanceOptions opts = new RebalanceOptions();
+                Map<String, Map<String, Double>> resources = new HashMap<String, Map<String, Double>>();
+                resources.put("spout-1", new HashMap<String, Double>());
+                resources.get("spout-1").put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 120.0);
+                resources.get("spout-1").put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 25.0);
+                resources.get("spout-1").put("gpu.count", 5.0);
 
-            Map<String, Map<String, Double>> resources = new HashMap<String, Map<String, Double>>();
-            resources.put("spout-1", new HashMap<String, Double>());
-            resources.get("spout-1").put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 120.0);
-            resources.get("spout-1").put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 25.0);
-            resources.get("spout-1").put("gpu.count", 5.0);
+                opts.set_topology_resources_overrides(resources);
+                opts.set_wait_secs(0);
 
-            opts.set_topology_resources_overrides(resources);
-            opts.set_wait_secs(0);
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 768.0);
 
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 768.0);
+                opts.set_topology_conf_overrides(jsonObject.toJSONString());
 
-            opts.set_topology_conf_overrides(jsonObject.toJSONString());
+                LOG.info("rebalancing....");
+                cluster.rebalance("topo1", opts);
 
-            LOG.info("rebalancing....");
-            cluster.rebalance("topo1", opts);
+                waitTopologyScheduled(topoName, cluster, 10);
 
-            waitTopologyScheduled(topoName, cluster, 10);
+                boolean topologyUpdated = false;
+                JSONParser parser = new JSONParser();
 
-            boolean topologyUpdated = false;
-            JSONParser parser = new JSONParser();
+                for (int i = 0; i < 5; i++) {
+                    Utils.sleep(SLEEP_TIME_BETWEEN_RETRY);
 
-            for (int i = 0; i < 5; i++) {
-                Utils.sleep(SLEEP_TIME_BETWEEN_RETRY);
-
-                String confRaw = cluster.getTopologyConf(topoNameToId(topoName, cluster));
+                    String confRaw = cluster.getTopologyConf(topoNameToId(topoName, cluster));
 
 
-                JSONObject readConf = (JSONObject) parser.parse(confRaw);
-                if (768.0 == (double) readConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB)) {
-                    topologyUpdated = true;
-                    break;
+                    JSONObject readConf = (JSONObject) parser.parse(confRaw);
+                    if (768.0 == (double) readConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB)) {
+                        topologyUpdated = true;
+                        break;
+                    }
                 }
+
+                StormTopology readStormTopology = cluster.getTopology(topoNameToId(topoName, cluster));
+                String componentConfRaw = readStormTopology.get_spouts().get("spout-1").get_common().get_json_conf();
+
+                JSONObject readTopologyConf = (JSONObject) parser.parse(componentConfRaw);
+
+                Map<String, Double> componentResources = (Map<String, Double>) readTopologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+                assertTrue(topologyUpdated, "Topology has been updated");
+                assertEquals(25.0, componentResources.get(Constants.COMMON_CPU_RESOURCE_NAME), 0.001, "Updated CPU correct");
+                assertEquals(120.0, componentResources.get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME), 0.001, "Updated Memory correct");
+                assertEquals(5.0, componentResources.get("gpu.count"), 0.001, "Updated Generic resource correct");
             }
-
-            StormTopology readStormTopology = cluster.getTopology(topoNameToId(topoName, cluster));
-            String componentConfRaw = readStormTopology.get_spouts().get("spout-1").get_common().get_json_conf();
-
-            JSONObject readTopologyConf = (JSONObject) parser.parse(componentConfRaw);
-
-            Map<String, Double> componentResources = (Map<String, Double>) readTopologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
-            assertTrue("Topology has been updated", topologyUpdated);
-            assertEquals("Updated CPU correct", 25.0, componentResources.get(Constants.COMMON_CPU_RESOURCE_NAME), 0.001);
-            assertEquals("Updated Memory correct", 120.0, componentResources.get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME), 0.001);
-            assertEquals("Updated Generic resource correct", 5.0, componentResources.get("gpu.count"), 0.001);
         }
     }
 

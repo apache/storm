@@ -29,7 +29,7 @@ import org.apache.storm.generated.SpoutAggregateStats;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.utils.Time;
-import org.json.simple.JSONValue;
+import net.minidev.json.JSONValue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -483,6 +483,22 @@ class UIHelpersTest {
 
         // We expect there to be no error populated.
         assertEquals("", spoutResult.get("lastError"), "No error should be reported as empty string");
+    }
+
+    /**
+     * Tests that santizeStreamName() does the expected manipulations
+     */
+    @Test
+    public void testSanitizeStreamName() {
+        // replaces the expected characters with underscores (everything except A-Z, a-z, dot, dash, and underscore)
+        assertEquals("my-stream_with.all_characterClasses____",
+                UIHelpers.sanitizeStreamName("my-stream:with.all_characterClasses1/\\2"));
+
+        // has the expected effect when streamName begins with a non-alpha character
+        assertEquals("_s_foo", UIHelpers.sanitizeStreamName("3foo"));
+
+        // handles empty string, though that's not an expected stream name
+        assertEquals("_s", UIHelpers.sanitizeStreamName(""));
     }
 
     /**

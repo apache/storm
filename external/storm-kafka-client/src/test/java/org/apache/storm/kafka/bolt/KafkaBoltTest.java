@@ -34,12 +34,13 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.storm.Testing;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.testing.MkTupleParam;
 import org.apache.storm.tuple.Tuple;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,9 @@ public class KafkaBoltTest {
 
     @Test
     public void testSimple() {
-        MockProducer<String, String> producer = new MockProducer<>(Cluster.empty(), false, null, null, null);
+        MockProducer<String, String> producer = new MockProducer<>(
+                Cluster.empty(), false,
+                null, new StringSerializer(), new StringSerializer());
         KafkaBolt<String, String> bolt = makeBolt(producer);
 
         OutputCollector collector = mock(OutputCollector.class);
@@ -95,7 +98,9 @@ public class KafkaBoltTest {
 
     @Test
     public void testSimpleWithError() {
-        MockProducer<String, String> producer = new MockProducer<>(Cluster.empty(), false, null, null, null);
+        MockProducer<String, String> producer = new MockProducer<>(
+                Cluster.empty(), false,
+                null, new StringSerializer(), new StringSerializer());
         KafkaBolt<String, String> bolt = makeBolt(producer);
 
         OutputCollector collector = mock(OutputCollector.class);
@@ -126,7 +131,9 @@ public class KafkaBoltTest {
 
     @Test
     public void testCustomCallbackIsWrappedByDefaultCallbackBehavior() {
-        MockProducer<String, String> producer = new MockProducer<>(Cluster.empty(), false, null, null, null);
+        MockProducer<String, String> producer = new MockProducer<>(
+                Cluster.empty(), false,
+                null, new StringSerializer(), new StringSerializer());
         KafkaBolt<String, String> bolt = makeBolt(producer);
 
         PreparableCallback customCallback = mock(PreparableCallback.class);

@@ -39,23 +39,11 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.cluster.ClusterName;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.common.Priority;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 public class EsTestUtil {
     private static final Logger LOG = LoggerFactory.getLogger(EsTestUtil.class);
@@ -91,40 +79,32 @@ public class EsTestUtil {
         return new ResponseException(response);
     }
 
-    public static Node startEsNode(){
-        Node node = NodeBuilder.nodeBuilder().data(true).settings(
-                Settings.settingsBuilder()
-                        .put(ClusterName.SETTING, EsConstants.clusterName)
-                        .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .put(EsExecutors.PROCESSORS, 1)
-                        .put("http.enabled", true)
-                        .put("index.percolator.map_unmapped_fields_as_string", true)
-                        .put("index.store.type", "mmapfs")
-                        .put("path.home", "./data")
-        ).build();
-        node.start();
-        return node;
+    public static RestHighLevelClient getRestHighLevelClient(ElasticsearchContainer node) {
+        final EsConfig cfg = new EsConfig(node.getHttpHostAddress());
+        return new RestHighLevelClientBuilder(new StormElasticSearchClient(cfg).construct()).build();
     }
 
-    public static void ensureEsGreen(Node node) {
-        ClusterHealthResponse chr = node.client()
-                                        .admin()
-                                        .cluster()
-                                        .health(Requests.clusterHealthRequest()
-                                                        .timeout(TimeValue.timeValueSeconds(30))
-                                                        .waitForGreenStatus()
-                                                        .waitForEvents(Priority.LANGUID)
-                                                        .waitForRelocatingShards(0))
-                                        .actionGet();
-        assertThat("cluster status is green", chr.getStatus(), equalTo(ClusterHealthStatus.GREEN));
+    public static ElasticsearchContainer startEsNode() {
+        String version = System.getProperty("elasticsearch-version");
+        if (version == null) version = "7.17.13";
+        LOG.info("Starting docker instance of Elasticsearch {}...", version);
+
+        final ElasticsearchContainer container =
+                new ElasticsearchContainer(
+                        "docker.elastic.co/elasticsearch/elasticsearch:" + version);
+        container.start();
+        return container;
+    }
+
+    public static void ensureEsGreen(ElasticsearchContainer node) {
+        assertThat("cluster status is green", node.isHealthy());
     }
 
     /**
      * Stop the given Elasticsearch node and clear the data directory.
      * @param node
      */
-    public static void stopEsNode(Node node) {
+    public static void stopEsNode(ElasticsearchContainer node) {
         node.close();
         try {
             FileUtils.deleteDirectory(new File("./data"));
@@ -138,10 +118,10 @@ public class EsTestUtil {
      * @param node - the node to connect to
      * @param index - the index to clear
      */
-    public static void clearIndex(Node node, String index) {
+    public static void clearIndex(ElasticsearchContainer node, String index) {
         try {
-            node.client().admin().indices().delete(new DeleteIndexRequest(index)).actionGet();
-        } catch (IndexNotFoundException ignore) {
+            getRestHighLevelClient(node).indices().delete(new DeleteIndexRequest(index), RequestOptions.DEFAULT);
+        } catch (IOException ignore) {
 
         }
     }

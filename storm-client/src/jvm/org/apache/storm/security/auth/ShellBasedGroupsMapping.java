@@ -105,6 +105,11 @@ public class ShellBasedGroupsMapping implements
      * @throws IOException if encounter any error when running the command
      */
     private Set<String> getUnixGroups(final String user) throws IOException {
+        if (user == null) {
+            LOG.debug("User is null. Returning an empty set as the result");
+            return new HashSet<>();
+        }
+
         String result;
         try {
             result = shellCommandRunner.execCommand(ShellUtils.getGroupsForUserCommand(user));

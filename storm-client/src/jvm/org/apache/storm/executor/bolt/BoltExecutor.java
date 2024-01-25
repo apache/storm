@@ -99,9 +99,6 @@ public class BoltExecutor extends Executor {
             Utils.sleepNoSimulation(100);
         }
 
-        if (!componentId.equals(StormCommon.SYSTEM_STREAM_ID)) { // System bolt doesn't call reportError()
-            this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0) - idToTaskBase).getUserContext());
-        }
         LOG.info("Preparing bolt {}:{}", componentId, getTaskIds());
         for (Task taskData : idToTask) {
             if (taskData == null) {
@@ -114,8 +111,6 @@ public class BoltExecutor extends Executor {
                 ((ICredentialsListener) boltObject).setCredentials(credentials);
             }
             if (Constants.SYSTEM_COMPONENT_ID.equals(componentId)) {
-                Map<NodeInfo, IConnection> cachedNodePortToSocket = workerData.getCachedNodeToPortSocket().get();
-                BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, topoConf, userContext);
                 BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), topoConf, userContext);
 
                 // add any autocredential expiry metrics from the worker

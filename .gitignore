@@ -23,7 +23,6 @@ target
 /.project/
 /.lein-plugins/
 #.*
-!/.travis.yml
 !/.gitignore
 _site
 dependency-reduced-pom.xml

@@ -23,6 +23,7 @@ import org.apache.storm.container.cgroup.core.CpuCore;
  * It gets the result from cpu.shares.
  * Use this when org.apache.storm.container.cgroup.CgroupManager is used as the storm.resource.isolation.plugin.
  */
+@Deprecated
 public class CGroupCpuGuarantee extends CGroupMetricsBase<Long> {
     long previousTime = -1;
 

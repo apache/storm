@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -103,28 +104,14 @@ public abstract class ShellUtils {
     }
 
     /**
-     * a Unix command to get the current user's groups list.
-     */
-    public static String[] getGroupsCommand() {
-        if (WINDOWS) {
-            throw new UnsupportedOperationException("Getting user groups is not supported on Windows");
-        }
-        return new String[]{ "bash", "-c", "groups" };
-    }
-
-    /**
-     * a Unix command to get a given user's groups list. If the OS is not WINDOWS, the command will get the user's primary group first and
-     * finally get the groups list which includes the primary group. i.e. the user's primary group will be included twice.
+     * a Unix command to get a given user's groups list. Windows is not supported.
      */
     public static String[] getGroupsForUserCommand(final String user) {
         if (WINDOWS) {
             throw new UnsupportedOperationException("Getting user groups is not supported on Windows");
         }
         //'groups username' command return is non-consistent across different unixes
-        return new String[]{
-            "bash", "-c", "id -gn " + user
-                          + "&& id -Gn " + user
-        };
+        return new String[]{"id", "-Gn", user};
     }
 
     private static void joinThread(Thread t) {
@@ -196,6 +183,7 @@ public abstract class ShellUtils {
             runCommand();
         } catch (IOException e) {
             numShellExceptions.mark();
+            LOG.info("Failed running command {}", getExecString(), e);
             throw e;
         }
     }
@@ -227,11 +215,13 @@ public abstract class ShellUtils {
             timeOutTimer.schedule(timeoutTimerTask, timeOutInterval);
         }
         final BufferedReader errReader =
-            new BufferedReader(new InputStreamReader(process
-                                                         .getErrorStream()));
+            new BufferedReader(
+                new InputStreamReader(
+                    process.getErrorStream(), StandardCharsets.UTF_8));
         BufferedReader inReader =
-            new BufferedReader(new InputStreamReader(process
-                                                         .getInputStream()));
+            new BufferedReader(
+                new InputStreamReader(
+                    process.getInputStream(), StandardCharsets.UTF_8));
         final StringBuffer errMsg = new StringBuffer();
 
         // read error and input streams as this would free up the buffers

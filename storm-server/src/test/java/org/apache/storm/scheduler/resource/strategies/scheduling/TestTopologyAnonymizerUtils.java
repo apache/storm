@@ -26,6 +26,7 @@ import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.serialization.GzipThriftSerializationDelegate;
 import org.apache.storm.utils.Utils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +67,8 @@ import java.util.Map;
 public class TestTopologyAnonymizerUtils {
     private static final Logger LOG = LoggerFactory.getLogger(TestTopologyAnonymizerUtils.class);
 
-    private static final String DEFAULT_ORIGINAL_RESOURCES_PATH = "clusterconf/iridiumblue";
-    private static final String DEFAULT_ANONYMIZED_RESOURCES_OUTDIR = "src/test/resources/clusterconf/largeCluster01";
+    private static final String DEFAULT_ORIGINAL_RESOURCES_PATH = "clusterconf/ebonyred";
+    private static final String DEFAULT_ANONYMIZED_RESOURCES_OUTDIR = "src/test/resources/clusterconf/largeCluster03";
     public static final String COMPRESSED_SERIALIZED_TOPOLOGY_FILENAME_ENDING = "stormcode.ser";
     public static final String COMPRESSED_SERIALIZED_CONFIG_FILENAME_ENDING = "stormconf.ser";
 
@@ -95,7 +96,6 @@ public class TestTopologyAnonymizerUtils {
      * Take all compressed serialized files in {@link #originalResourcePath} and create anonymized versions or the
      * topology and configuration in the {@link #outputDirPath}.
      *
-     * @throws Exception
      */
     public void anonymizeDirectory() throws Exception {
         Map<String, Integer> seenTopoNameIndex = new HashMap<>();
@@ -147,8 +147,7 @@ public class TestTopologyAnonymizerUtils {
     /**
      * InputStream to read the fully qualified resource path.
      *
-     * @param resourcePath
-     * @return
+     * @param resourcePath to read
      */
     private static InputStream getResourceAsStream(String resourcePath) {
         final InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
@@ -161,8 +160,6 @@ public class TestTopologyAnonymizerUtils {
      * resource files in the path.
      *
      * @param path directory in which resources exist.
-     * @return
-     * @throws IOException
      */
     public static List<String> getResourceFiles(String path) throws IOException {
         List<String> fileNames = new ArrayList<>();
@@ -187,9 +184,9 @@ public class TestTopologyAnonymizerUtils {
     /**
      * Read the contents of the fully qualified resource path.
      *
-     * @param resourcePath
-     * @return
-     * @throws Exception
+     * @param resourcePath to read
+     * @return byte array read
+     * @throws Exception in called nnethods.
      */
     private static byte[] getResourceAsBytes(String resourcePath) throws Exception {
         InputStream in = getResourceAsStream(resourcePath);
@@ -321,11 +318,11 @@ public class TestTopologyAnonymizerUtils {
      *    <li>Uncomment annotation so that this method is executed as a test</li>
      *    <li>add files in {@link #DEFAULT_ANONYMIZED_RESOURCES_OUTDIR} to the resource path "clusterconf/new-cluster-name"</li>
      *    <li>use TestLargeCluster to test these newly generated files after changing
-     *    {@link TestLargeCluster#TEST_CLUSTER_NAME} to "new-cluster-name"</li>
+     *    {@link TestLargeCluster.TEST_CLUSTER_NAME} to "new-cluster-name"</li>
      *    
-     * @throws Exception
+     * @throws Exception upon I/O
      */
-    // @Test
+    @Disabled
     public void testAnonymizer() throws Exception {
         String[] args = { DEFAULT_ORIGINAL_RESOURCES_PATH, DEFAULT_ANONYMIZED_RESOURCES_OUTDIR };
         TestTopologyAnonymizerUtils instance = new TestTopologyAnonymizerUtils();

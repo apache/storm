@@ -45,7 +45,6 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
     private final String key;
     private final boolean isTmp;
     private final Path path;
-    private Long modTime = null;
     private final boolean mustBeNew;
     private final Configuration hadoopConf;
     private final FileSystem fileSystem;
@@ -106,11 +105,7 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
 
     @Override
     public long getModTime() throws IOException {
-        if (modTime == null) {
-            FileSystem fs = path.getFileSystem(hadoopConf);
-            modTime = fs.getFileStatus(path).getModificationTime();
-        }
-        return modTime;
+        return fileSystem.getFileStatus(path).getModificationTime();
     }
 
     private void checkIsNotTmp() {
@@ -146,8 +141,13 @@ public class HdfsBlobStoreFile extends BlobStoreFile {
             if (!fileSystem.mkdirs(path.getParent(), dirperms)) {
                 LOG.warn("error creating parent dir: " + path.getParent());
             }
+            if (!fileSystem.getFileStatus(path.getParent()).getPermission().equals(dirperms)) {
+                LOG.warn("Directory {} created with unexpected permission {}.Set permission {} for this directory.",
+                    path.getParent(), fileSystem.getFileStatus(path.getParent()).getPermission(), dirperms);
+                fileSystem.setPermission(path.getParent(), dirperms);
+            }
             out = fileSystem.create(path, (short) this.getMetadata().get_replication_factor());
-            fileSystem.setPermission(path, dirperms);
+            fileSystem.setPermission(path, fileperms);
             fileSystem.setReplication(path, (short) this.getMetadata().get_replication_factor());
         }
         if (out == null) {

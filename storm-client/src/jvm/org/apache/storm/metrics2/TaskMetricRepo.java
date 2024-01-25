@@ -22,16 +22,17 @@ import com.codahale.metrics.Timer;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Metric repository to allow reporting of task-specific metrics.
  */
 public class TaskMetricRepo {
-    private SortedMap<String, Gauge> gauges = new TreeMap<>();
-    private SortedMap<String, Counter> counters = new TreeMap<>();
-    private SortedMap<String, Histogram> histograms = new TreeMap<>();
-    private SortedMap<String, Meter> meters = new TreeMap<>();
-    private SortedMap<String, Timer> timers = new TreeMap<>();
+    private ConcurrentHashMap<String, Gauge> gauges = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Histogram> histograms = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Meter> meters = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Timer> timers = new ConcurrentHashMap<>();
 
     public void addCounter(String name, Counter counter) {
         counters.put(name, counter);
@@ -54,41 +55,49 @@ public class TaskMetricRepo {
     }
 
     public void report(ScheduledReporter reporter, MetricFilter filter) {
-        if (filter != null) {
-            SortedMap<String, Gauge> filteredGauges = new TreeMap<>();
-            SortedMap<String, Counter> filteredCounters = new TreeMap<>();
-            SortedMap<String, Histogram> filteredHistograms = new TreeMap<>();
-            SortedMap<String, Meter> filteredMeters = new TreeMap<>();
-            SortedMap<String, Timer> filteredTimers = new TreeMap<>();
-
-            for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
-                if (filter.matches(entry.getKey(), entry.getValue())) {
-                    filteredGauges.put(entry.getKey(), entry.getValue());
-                }
-            }
-            for (Map.Entry<String, Counter> entry : counters.entrySet()) {
-                if (filter.matches(entry.getKey(), entry.getValue())) {
-                    filteredCounters.put(entry.getKey(), entry.getValue());
-                }
-            }
-            for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
-                if (filter.matches(entry.getKey(), entry.getValue())) {
-                    filteredHistograms.put(entry.getKey(), entry.getValue());
-                }
-            }
-            for (Map.Entry<String, Meter> entry : meters.entrySet()) {
-                if (filter.matches(entry.getKey(), entry.getValue())) {
-                    filteredMeters.put(entry.getKey(), entry.getValue());
-                }
-            }
-            for (Map.Entry<String, Timer> entry : timers.entrySet()) {
-                if (filter.matches(entry.getKey(), entry.getValue())) {
-                    filteredTimers.put(entry.getKey(), entry.getValue());
-                }
-            }
-            reporter.report(filteredGauges, filteredCounters, filteredHistograms, filteredMeters, filteredTimers);
-        } else {
-            reporter.report(gauges, counters, histograms, meters, timers);
+        if (filter == null) {
+            filter = MetricFilter.ALL;
         }
+
+        SortedMap<String, Gauge> filteredGauges = new TreeMap<>();
+        SortedMap<String, Counter> filteredCounters = new TreeMap<>();
+        SortedMap<String, Histogram> filteredHistograms = new TreeMap<>();
+        SortedMap<String, Meter> filteredMeters = new TreeMap<>();
+        SortedMap<String, Timer> filteredTimers = new TreeMap<>();
+
+        for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
+            if (filter.matches(entry.getKey(), entry.getValue())) {
+                filteredGauges.put(entry.getKey(), entry.getValue());
+            }
+        }
+        for (Map.Entry<String, Counter> entry : counters.entrySet()) {
+            if (filter.matches(entry.getKey(), entry.getValue())) {
+                filteredCounters.put(entry.getKey(), entry.getValue());
+            }
+        }
+        for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
+            if (filter.matches(entry.getKey(), entry.getValue())) {
+                filteredHistograms.put(entry.getKey(), entry.getValue());
+            }
+        }
+        for (Map.Entry<String, Meter> entry : meters.entrySet()) {
+            if (filter.matches(entry.getKey(), entry.getValue())) {
+                filteredMeters.put(entry.getKey(), entry.getValue());
+            }
+        }
+        for (Map.Entry<String, Timer> entry : timers.entrySet()) {
+            if (filter.matches(entry.getKey(), entry.getValue())) {
+                filteredTimers.put(entry.getKey(), entry.getValue());
+            }
+        }
+        reporter.report(filteredGauges, filteredCounters, filteredHistograms, filteredMeters, filteredTimers);
+    }
+
+    void degister(MetricFilter metricFilter) {
+        gauges.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+        counters.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+        histograms.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+        meters.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+        timers.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
     }
 }

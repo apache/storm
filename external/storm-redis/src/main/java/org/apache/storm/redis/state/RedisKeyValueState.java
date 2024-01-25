@@ -35,7 +35,7 @@ import org.apache.storm.state.KeyValueState;
 import org.apache.storm.state.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.util.SafeEncoder;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * A redis based implementation that persists the state in Redis.

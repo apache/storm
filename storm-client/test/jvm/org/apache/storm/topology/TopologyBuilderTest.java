@@ -23,32 +23,36 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.topology.base.BaseStatefulBolt;
 import org.apache.storm.tuple.Tuple;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 public class TopologyBuilderTest {
     private final TopologyBuilder builder = new TopologyBuilder();
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetRichBolt() {
-        builder.setBolt("bolt", mock(IRichBolt.class), 0);
+        assertThrows(IllegalArgumentException.class, () -> builder.setBolt("bolt", mock(IRichBolt.class), 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetBasicBolt() {
-        builder.setBolt("bolt", mock(IBasicBolt.class), 0);
+        assertThrows(IllegalArgumentException.class,
+            () -> builder.setBolt("bolt", mock(IBasicBolt.class), 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetSpout() {
-        builder.setSpout("spout", mock(IRichSpout.class), 0);
+        assertThrows(IllegalArgumentException.class,
+            () -> builder.setSpout("spout", mock(IRichSpout.class), 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAddWorkerHook() {
-        builder.addWorkerHook(null);
+        assertThrows(IllegalArgumentException.class, () -> builder.addWorkerHook(null));
     }
 
     @Test
@@ -62,20 +66,20 @@ public class TopologyBuilderTest {
                .shuffleGrouping("bolt1").shuffleGrouping("bolt2");
         StormTopology topology = builder.createTopology();
 
-        Assert.assertNotNull(topology);
+        assertNotNull(topology);
         Set<String> spouts = topology.get_spouts().keySet();
         // checkpoint spout should 've been added
-        Assert.assertEquals(ImmutableSet.of("spout1", "spout2", "$checkpointspout"), spouts);
+        assertEquals(ImmutableSet.of("spout1", "spout2", "$checkpointspout"), spouts);
         // bolt1, bolt2 should also receive from checkpoint spout
-        Assert.assertEquals(ImmutableSet.of(new GlobalStreamId("spout1", "default"),
+        assertEquals(ImmutableSet.of(new GlobalStreamId("spout1", "default"),
                                             new GlobalStreamId("spout2", "default"),
                                             new GlobalStreamId("$checkpointspout", "$checkpoint")),
                             topology.get_bolts().get("bolt1").get_common().get_inputs().keySet());
-        Assert.assertEquals(ImmutableSet.of(new GlobalStreamId("spout1", "default"),
+        assertEquals(ImmutableSet.of(new GlobalStreamId("spout1", "default"),
                                             new GlobalStreamId("$checkpointspout", "$checkpoint")),
                             topology.get_bolts().get("bolt2").get_common().get_inputs().keySet());
         // bolt3 should also receive from checkpoint streams of bolt1, bolt2
-        Assert.assertEquals(ImmutableSet.of(new GlobalStreamId("bolt1", "default"),
+        assertEquals(ImmutableSet.of(new GlobalStreamId("bolt1", "default"),
                                             new GlobalStreamId("bolt1", "$checkpoint"),
                                             new GlobalStreamId("bolt2", "default"),
                                             new GlobalStreamId("bolt2", "$checkpoint")),

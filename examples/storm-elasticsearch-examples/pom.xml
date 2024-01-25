@@ -21,14 +21,11 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>2.7.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>storm-elasticsearch-examples</artifactId>
-    <properties>
-        <elasticsearch.test.version>2.4.4</elasticsearch.test.version>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -41,11 +38,6 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-elasticsearch</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch</artifactId>
-            <version>${elasticsearch.test.version}</version>
         </dependency>
     </dependencies>
 

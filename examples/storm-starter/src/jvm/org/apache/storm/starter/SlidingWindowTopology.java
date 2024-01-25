@@ -58,8 +58,8 @@ public class SlidingWindowTopology {
         StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
     }
 
-    /*
-     * Computes tumbling window average
+    /**
+     * Computes tumbling window average.
      */
     private static class TumblingWindowAvgBolt extends BaseWindowedBolt {
         private OutputCollector collector;

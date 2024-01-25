@@ -16,12 +16,11 @@ import static java.lang.String.format;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.storm.generated.Nimbus;
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,12 +72,9 @@ public class Rebalance {
             rebalanceOptions.set_topology_conf_overrides(JSONValue.toJSONString(confOverrides));
         }
 
-        NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
-            @Override
-            public void run(Nimbus.Iface nimbus) throws Exception {
-                nimbus.rebalance(name, rebalanceOptions);
-                LOG.info("Topology {} is rebalancing", name);
-            }
+        NimbusClient.withConfiguredClient(nimbus -> {
+            nimbus.rebalance(name, rebalanceOptions);
+            LOG.info("Topology {} is rebalancing", name);
         });
     }
 

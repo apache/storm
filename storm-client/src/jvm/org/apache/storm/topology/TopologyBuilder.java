@@ -44,7 +44,7 @@ import org.apache.storm.lambda.LambdaSpout;
 import org.apache.storm.lambda.SerializableBiConsumer;
 import org.apache.storm.lambda.SerializableConsumer;
 import org.apache.storm.lambda.SerializableSupplier;
-import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.state.State;
 import org.apache.storm.task.OutputCollector;
@@ -330,8 +330,7 @@ public class TopologyBuilder {
      *                         outputs.
      * @param bolt             the stateful windowed bolt
      * @param parallelismHint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process
-     *                         somwehere around the cluster.
-     * @param <T>              the type of the state (e.g. {@link org.apache.storm.state.KeyValueState})
+     *                         somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      *
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
@@ -653,58 +652,72 @@ public class TopologyBuilder {
             this.boltId = boltId;
         }
 
+        @Override
         public BoltDeclarer fieldsGrouping(String componentId, Fields fields) {
             return fieldsGrouping(componentId, Utils.DEFAULT_STREAM_ID, fields);
         }
 
+        @Override
         public BoltDeclarer fieldsGrouping(String componentId, String streamId, Fields fields) {
             return grouping(componentId, streamId, Grouping.fields(fields.toList()));
         }
 
+        @Override
         public BoltDeclarer globalGrouping(String componentId) {
             return globalGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer globalGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.fields(new ArrayList<String>()));
         }
 
+        @Override
         public BoltDeclarer shuffleGrouping(String componentId) {
             return shuffleGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer shuffleGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.shuffle(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer localOrShuffleGrouping(String componentId) {
             return localOrShuffleGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer localOrShuffleGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.local_or_shuffle(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer noneGrouping(String componentId) {
             return noneGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer noneGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.none(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer allGrouping(String componentId) {
             return allGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer allGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.all(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer directGrouping(String componentId) {
             return directGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer directGrouping(String componentId, String streamId) {
             return grouping(componentId, streamId, Grouping.direct(new NullStruct()));
         }

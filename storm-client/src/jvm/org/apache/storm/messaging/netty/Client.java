@@ -14,13 +14,17 @@ package org.apache.storm.messaging.netty;
 
 import static org.apache.storm.shade.com.google.common.base.Preconditions.checkState;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,10 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.TaskMessage;
-import org.apache.storm.metric.api.IStatefulObject;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.IWaitStrategy.WaitSituation;
 import org.apache.storm.policy.WaitStrategyProgressive;
@@ -63,7 +68,7 @@ import org.slf4j.LoggerFactory;
  * asynchronously. Note: The current implementation drops any messages that are being enqueued for sending if the connection to the remote
  * destination is currently unavailable.
  */
-public class Client extends ConnectionWithStatus implements IStatefulObject, ISaslClient {
+public class Client extends ConnectionWithStatus implements ISaslClient {
     private static final long PENDING_MESSAGES_FLUSH_TIMEOUT_MS = 600000L;
     private static final long PENDING_MESSAGES_FLUSH_INTERVAL_MS = 1000L;
     /**
@@ -119,10 +124,12 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
      * This flag is set to true if and only if a client instance is being closed.
      */
     private volatile boolean closing = false;
+    StormMetricRegistry metricRegistry;
+    private Set<Metric> metrics = new HashSet<>();
 
     Client(Map<String, Object> topoConf, AtomicBoolean[] remoteBpStatus,
         EventLoopGroup eventLoopGroup, HashedWheelTimer scheduler, String host,
-           int port) {
+           int port, StormMetricRegistry metricRegistry) {
         this.topoConf = topoConf;
         closing = false;
         this.scheduler = scheduler;
@@ -163,6 +170,53 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             waitStrategy = ReflectionUtils.newInstance(clazz);
         }
         waitStrategy.prepare(topoConf, WaitSituation.BACK_PRESSURE_WAIT);
+        this.metricRegistry = metricRegistry;
+
+        // it's possible to be passed a null metric registry if users are using their own IContext implementation.
+        boolean reportMetrics =  this.metricRegistry != null
+                && ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_SEND_ICONNECTION_METRICS), true);
+
+        if (reportMetrics) {
+            Gauge<Integer> reconnects = new Gauge<Integer>() {
+                @Override
+                public Integer getValue() {
+                    return totalConnectionAttempts.get();
+                }
+            };
+            metricRegistry.gauge("__send-iconnection-reconnects-" + host + ":" + port, reconnects,
+                    Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
+            metrics.add(reconnects);
+
+            Gauge<Integer> sent = new Gauge<Integer>() {
+                @Override
+                public Integer getValue() {
+                    return messagesSent.get();
+                }
+            };
+            metricRegistry.gauge("__send-iconnection-sent-" + host + ":" + port, sent,
+                    Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
+            metrics.add(sent);
+
+            Gauge<Long> pending = new Gauge<Long>() {
+                @Override
+                public Long getValue() {
+                    return pendingMessages.get();
+                }
+            };
+            metricRegistry.gauge("__send-iconnection-pending-" + host + ":" + port, pending,
+                    Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
+            metrics.add(pending);
+
+            Gauge<Integer> lostOnSend = new Gauge<Integer>() {
+                @Override
+                public Integer getValue() {
+                    return messagesLost.get();
+                }
+            };
+            metricRegistry.gauge("__send-iconnection-lostOnSend-" + host + ":" + port, lostOnSend,
+                    Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID);
+            metrics.add(lostOnSend);
+        }
     }
 
     /**
@@ -415,6 +469,11 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             closing = true;
             waitForPendingMessagesToBeSent();
             closeChannel();
+
+            // stop tracking metrics for this client
+            if (this.metricRegistry != null) {
+                this.metricRegistry.deregister(this.metrics);
+            }
         }
     }
 
@@ -463,22 +522,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
                     ret.put(task, new Load(true, found, clientLoad));
                 }
             }
-        }
-        return ret;
-    }
-
-    @Override
-    public Object getState() {
-        LOG.debug("Getting metrics for client connection to {}", dstAddressPrefixedName);
-        HashMap<String, Object> ret = new HashMap<String, Object>();
-        ret.put("reconnects", totalConnectionAttempts.getAndSet(0));
-        ret.put("sent", messagesSent.getAndSet(0));
-        ret.put("pending", pendingMessages.get());
-        ret.put("lostOnSend", messagesLost.getAndSet(0));
-        ret.put("dest", dstAddress.toString());
-        String src = srcAddressName();
-        if (src != null) {
-            ret.put("src", src);
         }
         return ret;
     }

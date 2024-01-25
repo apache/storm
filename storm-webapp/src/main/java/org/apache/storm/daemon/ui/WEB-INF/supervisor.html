@@ -39,9 +39,7 @@
 <body>
 <div class="supervisor-page container-fluid">
   <div class="row">
-    <div class="col-md-11">
-      <h1><a href="/">Storm UI</a></h1>
-    </div>
+    <div id="ui-title" class="col-md-11"></div>
     <div id="ui-user" class="col-md-1"></div>
   </div>
   <div class="row">
@@ -115,19 +113,38 @@ $(document).ready(function() {
         }
     });
 
+    $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {
+        const uiTitle = $("#ui-title");
+        setStormUITitle(uiTitle, response);				
+    });
+
     $.getJSON(url,function(response,status,jqXHR) {
         getStatic("/templates/supervisor-page-template.html", function(template) {
             jsError(function() {
                 supervisorSummary.append(
                         Mustache.render($(template).filter("#supervisor-summary-template").html(),response));
-                
-                //id, host, uptime, slots, used slots
-                dtAutoPage("#supervisor-summary-table", {
+                var displayResource = response["schedulerDisplayResource"];
+                if (displayResource){
+                  // (0) host, (1) supervisor id, (2) uptime, (3) slots, (4) used slots, (5) total mem (6) used mem,
+                  // (7) availMem (8) totalCpu (9) usedCpu (10) availCpu (11) totalGenericResources
+                  // (12) usedGenericResources (13) availGenericResources (14) version, (15) blacklisted
+                  dtAutoPage("#supervisor-summary-table", {
                     columnDefs: [
-                    {type: "num", targets: [3, 4]},
-                    {type: "time-str", targets: [2]}
+                      {type: "num", targets: [3, 4]},
+                      {type: "num", targets: [5, 6, 7, 8, 9, 10, 11, 12, 13], render: $.fn.dataTable.render.number(',', '.', 0)},
+                      {type: "time-str", targets: [2]}
                     ]
-                });
+                  });
+                } else {
+                  // (0) host, (1) supervisor id, (2) uptime, (3) slots, (4) used slots, (5) used mem, (6) version, (7) blacklisted
+                  dtAutoPage("#supervisor-summary-table", {
+                    columnDefs: [
+                      {type: "num", targets: [3, 4]},
+                      {type: "num", targets: [5], render: $.fn.dataTable.render.number(',', '.', 0)},
+                      {type: "time-str", targets: [2]}
+                    ]
+                  });
+                }
 
                 $('#supervisor-summary-table [data-toggle="tooltip"]').tooltip();
                 workerStats.append(Mustache.render($(template).filter("#worker-stats-template").html(),response));

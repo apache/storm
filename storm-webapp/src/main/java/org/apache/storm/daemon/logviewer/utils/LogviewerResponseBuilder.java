@@ -29,7 +29,6 @@ import com.google.common.io.ByteStreams;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -65,7 +64,6 @@ public class LogviewerResponseBuilder {
      * @param entity entity object to represent it as JSON
      * @param callback callbackParameterName for JSONP
      * @param origin origin
-     * @see {@link JsonResponseBuilder}
      */
     public static Response buildSuccessJsonResponse(Object entity, String callback, String origin) {
         return new JsonResponseBuilder().setData(entity).setCallback(callback)

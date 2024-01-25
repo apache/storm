@@ -14,20 +14,26 @@ package org.apache.storm.localizer;
 
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.daemon.supervisor.IAdvancedFSOps;
+import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
-import org.junit.Test;
+import org.apache.storm.utils.EquivalenceUtils;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -37,7 +43,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 public class LocalizedResourceRetentionSetTest {
 
     @Test
-    public void testAddResources() throws Exception {
+    public void testAddResources() {
         PortAndAssignment pna1 = new PortAndAssignmentImpl(1, new LocalAssignment("topo1", Collections.emptyList()));
         PortAndAssignment pna2 = new PortAndAssignmentImpl(1, new LocalAssignment("topo2", Collections.emptyList()));
         String user = "user";
@@ -56,21 +62,61 @@ public class LocalizedResourceRetentionSetTest {
         lrset.put("key1", localresource1);
         lrset.put("key2", localresource2);
         lrretset.addResources(lrset);
-        assertEquals("number to clean is not 0 " + lrretset.noReferences, 0, lrretset.getSizeWithNoReferences());
-        localresource1.removeReference(pna1);
+        assertEquals(0, lrretset.getSizeWithNoReferences(), "number to clean is not 0 " + lrretset.noReferences);
+        assertTrue(localresource1.removeReference(pna1));
         lrretset = new LocalizedResourceRetentionSet(10);
         lrretset.addResources(lrset);
-        assertEquals("number to clean is not 1 " + lrretset.noReferences, 1, lrretset.getSizeWithNoReferences());
+        assertEquals(1, lrretset.getSizeWithNoReferences(), "number to clean is not 1 " + lrretset.noReferences);
 
-        localresource2.removeReference(pna1);
+        assertTrue(localresource2.removeReference(pna1));
         lrretset = new LocalizedResourceRetentionSet(10);
         lrretset.addResources(lrset);
-        assertEquals("number to clean is not 1  " + lrretset.noReferences, 1, lrretset.getSizeWithNoReferences());
+        assertEquals(1, lrretset.getSizeWithNoReferences(), "number to clean is not 1  " + lrretset.noReferences);
 
-        localresource2.removeReference(pna2);
+        assertTrue(localresource2.removeReference(pna2));
         lrretset = new LocalizedResourceRetentionSet(10);
         lrretset.addResources(lrset);
-        assertEquals("number to clean is not 2 " + lrretset.noReferences, 2, lrretset.getSizeWithNoReferences());
+        assertEquals(2, lrretset.getSizeWithNoReferences(), "number to clean is not 2 " + lrretset.noReferences);
+    }
+
+    @Test
+    public void testRemoveEquivalent() {
+        ExecutorInfo a = new ExecutorInfo(1, 1);
+        ExecutorInfo b = new ExecutorInfo(2, 2);
+        ExecutorInfo c = new ExecutorInfo(3, 3);
+
+        List<ExecutorInfo> origList = new ArrayList<>();
+        origList.add(a);
+        origList.add(b);
+
+        List<ExecutorInfo> equivList = new ArrayList<>();
+        equivList.add(b);
+        equivList.add(a);
+
+        List<ExecutorInfo> differentList = new ArrayList<>();
+        differentList.add(a);
+        differentList.add(c);
+
+        LocalAssignment laOrig = new LocalAssignment("topo1", origList);
+        LocalAssignment laEquiv = new LocalAssignment("topo1", equivList);
+        LocalAssignment laDifferent = new LocalAssignment("topo1", differentList);
+
+        assertTrue(EquivalenceUtils.areLocalAssignmentsEquivalent(laOrig, laEquiv));
+        assertFalse(EquivalenceUtils.areLocalAssignmentsEquivalent(laOrig, laDifferent));
+
+        PortAndAssignment pnaOrig = new PortAndAssignmentImpl(1, laOrig);
+        PortAndAssignment pnaEquiv = new PortAndAssignmentImpl(1, laEquiv);
+        PortAndAssignment pnaDifferent = new PortAndAssignmentImpl(1, laDifferent);
+
+        assertTrue(pnaOrig.isEquivalentTo(pnaEquiv));
+        assertFalse(pnaOrig.isEquivalentTo(pnaDifferent));
+
+        LocalizedResource localresource = new LocalizedResource("key1", Paths.get("testfile1"),
+                false, mock(IAdvancedFSOps.class), new HashMap<>(), "user", new StormMetricsRegistry());
+        localresource.addReference(pnaOrig, null);
+
+        assertFalse(localresource.removeReference(pnaDifferent));
+        assertTrue(localresource.removeReference(pnaEquiv));
     }
 
     @Test
@@ -106,9 +152,9 @@ public class LocalizedResourceRetentionSetTest {
 
         lrretset.addResources(lrFiles);
         lrretset.addResources(lrArchives);
-        assertEquals("number to clean is not 2", 2, lrretset.getSizeWithNoReferences());
+        assertEquals(2, lrretset.getSizeWithNoReferences(), "number to clean is not 2");
 
         lrretset.cleanup(mockBlobstore);
-        assertEquals("resource not cleaned up", 0, lrretset.getSizeWithNoReferences());
+        assertEquals(0, lrretset.getSizeWithNoReferences(), "resource not cleaned up");
     }
 }

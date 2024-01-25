@@ -18,7 +18,6 @@ package org.apache.storm.kafka.spout;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -27,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,6 +48,7 @@ import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.Answer;
 
 public class SpoutWithMockedConsumerSetupHelper {
 
@@ -81,7 +82,9 @@ public class SpoutWithMockedConsumerSetupHelper {
             listener.onPartitionsAssigned(assignedPartitionsSet);
             return null;
         }).when(assigner).assignPartitions(any(), any(), any());
-        when(consumerMock.assignment()).thenReturn(assignedPartitionsSet);
+
+        final Answer<Object> set = invocation -> assignedPartitionsSet;
+        doAnswer(set).when(consumerMock).assignment();
         
         ConsumerFactory<K, V> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
         KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory, assigner);
@@ -149,7 +152,7 @@ public class SpoutWithMockedConsumerSetupHelper {
             records.put(tp, tpRecords);
         }
 
-        when(consumerMock.poll(anyLong()))
+        when(consumerMock.poll(any(Duration.class)))
             .thenReturn(new ConsumerRecords<>(records));
 
         for (int i = 0; i < totalOffsets; i++) {

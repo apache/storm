@@ -33,7 +33,7 @@ public class KryoTupleSerializer implements ITupleSerializer {
     public byte[] serialize(Tuple tuple) {
         try {
 
-            kryoOut.clear();
+            kryoOut.reset();
             kryoOut.writeInt(tuple.getSourceTask(), true);
             kryoOut.writeInt(ids.getStreamId(tuple.getSourceComponent(), tuple.getSourceStreamId()), true);
             tuple.getMessageId().serialize(kryoOut);

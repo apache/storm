@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -24,9 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.elasticsearch.common.DefaultEsTupleMapper;
 import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsConstants;
-import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
@@ -76,13 +75,11 @@ public final class EsIndexTopology {
         TopologyBuilder builder = new TopologyBuilder();
         UserDataSpout spout = new UserDataSpout();
         builder.setSpout(SPOUT_ID, spout, 1);
-        EsTupleMapper tupleMapper = EsTestUtil.generateDefaultTupleMapper();
+        EsTupleMapper tupleMapper = new DefaultEsTupleMapper();
         EsConfig esConfig = new EsConfig("http://localhost:9300");
         builder.setBolt(BOLT_ID, new EsIndexBolt(esConfig, tupleMapper), 1)
                 .shuffleGrouping(SPOUT_ID);
 
-        EsTestUtil.startEsNode();
-        EsTestUtil.waitForSeconds(EsConstants.WAIT_DEFAULT_SECS);
         StormSubmitter.submitTopology(TOPOLOGY_NAME,
                 config,
                 builder.createTopology());
@@ -132,8 +129,8 @@ public final class EsIndexTopology {
          */
         @Override
         public void open(final Map<String, Object> config,
-                final TopologyContext context,
-                final SpoutOutputCollector collectorArg) {
+                         final TopologyContext context,
+                         final SpoutOutputCollector collectorArg) {
             this.collector = collectorArg;
             this.pending = new ConcurrentHashMap<>();
         }

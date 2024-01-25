@@ -22,8 +22,8 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.3.0-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <version>2.7.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>storm-client</artifactId>
@@ -114,7 +114,12 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>java-hamcrest</artifactId>
+            <artifactId>hamcrest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -182,7 +187,6 @@
             </plugin>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.8</version>
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
@@ -271,25 +275,6 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <execution>
-                                <configuration>
-                                    <executable>python2.7</executable>
-                                    <workingDirectory>test/py</workingDirectory>
-                                    <arguments>
-                                        <argument>test_storm_cli.py</argument>
-                                    </arguments>
-                                    <environmentVariables>
-                                        <PYTHONPATH>../../../bin:$PYTHONPATH</PYTHONPATH>
-                                        <PYTHONDONTWRITEBYTECODE>true</PYTHONDONTWRITEBYTECODE>
-                                    </environmentVariables>
-                                    <skip>${skipTests}</skip>
-                                </configuration>
-                                <id>python2.7-test</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                            </execution>
                             <execution>
                                 <configuration>
                                     <executable>python3</executable>

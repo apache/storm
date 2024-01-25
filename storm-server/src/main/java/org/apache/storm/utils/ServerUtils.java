@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -72,6 +73,7 @@ import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.blobstore.LocalModeClientBlobStore;
+import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.generated.AccessControl;
 import org.apache.storm.generated.AccessControlType;
@@ -199,12 +201,7 @@ public class ServerUtils {
             File[] allFiles = dir.listFiles();
             if (allFiles != null) {
                 for (int i = 0; i < allFiles.length; i++) {
-                    boolean isSymLink;
-                    try {
-                        isSymLink = org.apache.commons.io.FileUtils.isSymlink(allFiles[i]);
-                    } catch (IOException ioe) {
-                        isSymLink = true;
-                    }
+                    boolean isSymLink = org.apache.commons.io.FileUtils.isSymlink(allFiles[i]);
                     if (!isSymLink) {
                         size += getDiskUsage(allFiles[i]);
                     }
@@ -807,7 +804,7 @@ public class ServerUtils {
         LOG.debug("CMD: tasklist /fo list /fi \"pid eq {}\" /v", pid);
         ProcessBuilder pb = new ProcessBuilder("tasklist", "/fo", "list", "/fi", "pid eq " + pid, "/v");
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 0;
             String line;
             while ((line = in.readLine()) != null) {
@@ -841,7 +838,7 @@ public class ServerUtils {
         LOG.debug("CMD: ps -o user -p {}", pid);
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", String.valueOf(pid));
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 1;
             String line = in.readLine();
             LOG.debug("CMD-LINE#{}: {}", lineNo, line);
@@ -914,46 +911,47 @@ public class ServerUtils {
      * @throws IOException on I/O exception
      */
     private static boolean isAnyWindowsProcessAlive(Collection<Long> pids, String user) throws IOException {
-        List<String> cmdArgs = new ArrayList<>();
-        cmdArgs.add("tasklist");
-        cmdArgs.add("/fo");
-        cmdArgs.add("list");
-        pids.forEach(pid -> {
+        List<String> unexpectedUsers = new ArrayList<>();
+        for (Long pid: pids) {
+            List<String> cmdArgs = new ArrayList<>();
+            cmdArgs.add("tasklist");
+            cmdArgs.add("/fo");
+            cmdArgs.add("list");
             cmdArgs.add("/fi");
             cmdArgs.add("pid eq " + pid);
-        });
-        cmdArgs.add("/v");
-        LOG.debug("CMD: {}", String.join(" ", cmdArgs));
-        ProcessBuilder pb = new ProcessBuilder(cmdArgs);
-        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        List<String> unexpectedUsers = new ArrayList<>();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
-            int lineNo = 0;
-            String line;
-            while ((line = in.readLine()) != null) {
-                lineNo++;
-                LOG.debug("CMD-LINE#{}: {}", lineNo, line);
-                if (line.contains("User Name:")) { //Check for : in case someone called their user "User Name"
-                    //This line contains the user name for the pid we're looking up
-                    //Example line: "User Name:    exampleDomain\exampleUser"
-                    List<String> userNameLineSplitOnWhitespace = Arrays.asList(line.split(":"));
-                    if (userNameLineSplitOnWhitespace.size() == 2) {
-                        List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
-                        String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
-                        processUser = processUser.trim();
-                        if (user.equals(processUser)) {
-                            return true;
+            cmdArgs.add("/v");
+            LOG.debug("CMD: {}", String.join(" ", cmdArgs));
+            ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
+                int lineNo = 0;
+                String line;
+                while ((line = in.readLine()) != null) {
+                    lineNo++;
+                    LOG.debug("CMD-LINE#{}: {}", lineNo, line);
+                    if (line.contains("User Name:")) { //Check for : in case someone called their user "User Name"
+                        //This line contains the user name for the pid we're looking up
+                        //Example line: "User Name:    exampleDomain\exampleUser"
+                        List<String> userNameLineSplitOnWhitespace = Arrays.asList(line.split(":"));
+                        if (userNameLineSplitOnWhitespace.size() == 2) {
+                            List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
+                            String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
+                            processUser = processUser.trim();
+                            if (user.equals(processUser)) {
+                                return true;
+                            }
+                            unexpectedUsers.add(processUser);
+                        } else {
+                            LOG.error("Received unexpected output from tasklist command. Expected one colon in user name line. Line was {}",
+                                    line);
                         }
-                        unexpectedUsers.add(processUser);
-                    } else {
-                        LOG.error("Received unexpected output from tasklist command. Expected one colon in user name line. Line was {}",
-                            line);
+                        break;
                     }
                 }
+            } catch (IOException ex) {
+                String err = String.format("Cannot read output of command \"%s\"", String.join(" ", cmdArgs));
+                throw new IOException(err, ex);
             }
-        } catch (IOException ex) {
-            String err = String.format("Cannot read output of command \"%s\"", String.join(" ", cmdArgs));
-            throw new IOException(err, ex);
         }
         String pidsAsStr = StringUtils.join(pids, ",");
         if (unexpectedUsers.isEmpty()) {
@@ -992,7 +990,7 @@ public class ServerUtils {
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "user", "-p", pidParams);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         List<String> unexpectedUsers = new ArrayList<>();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 1;
             String line = in.readLine();
             LOG.debug("CMD-LINE#{}: {}", lineNo, line);
@@ -1036,7 +1034,7 @@ public class ServerUtils {
         ProcessBuilder pb = new ProcessBuilder("ps", "-o", "uid", "-p", pidParams);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         List<String> unexpectedUsers = new ArrayList<>();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             int lineNo = 1;
             String line = in.readLine();
             LOG.debug("CMD-LINE#{}: {}", lineNo, line);
@@ -1090,7 +1088,7 @@ public class ServerUtils {
         LOG.debug("CMD: {}", String.join(" ", cmdArgs));
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             String line = in.readLine();
             LOG.debug("CMD-LINE#1: {}", line);
             try {
@@ -1124,7 +1122,7 @@ public class ServerUtils {
         LOG.debug("CMD: ls -dn {}", fpath);
         ProcessBuilder pb = new ProcessBuilder("ls", "-dn", fpath);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream()))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pb.start().getInputStream(), StandardCharsets.UTF_8))) {
             String line = in.readLine();
             LOG.debug("CMD-OUTLINE: {}", line);
             line = line.trim();
@@ -1295,9 +1293,9 @@ public class ServerUtils {
                     LOG.debug("Process {} is alive and owned by expectedUser {}/{}", pid, expectedUser, expectedUid);
                     return true;
                 }
-                LOG.info("Prior process is dead, since directory {} owner {} is not same as expected expectedUser {}/{}, "
-                        + "likely pid {} was reused for a new process for uid {}",
-                        pidDir, actualUser, expectedUser, expectedUid, pid, actualUid);
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expectedUser {}/{}, "
+                        + "likely pid {} was reused for a new process for uid {}, {}",
+                        pidDir, actualUser, expectedUser, expectedUid, pid, actualUid, getProcessDesc(pidDir));
             } else {
                 // actualUser is a string
                 LOG.debug("Process directory {} owner is {}", pidDir, actualUser);
@@ -1305,14 +1303,126 @@ public class ServerUtils {
                     LOG.debug("Process {} is alive and owned by expectedUser {}", pid, expectedUser);
                     return true;
                 }
-                LOG.info("Prior process is dead, since directory {} owner {} is not same as expected expectedUser {}, "
-                        + "likely pid {} was reused for a new process for expectedUser {}",
-                        pidDir, actualUser, expectedUser, pid, actualUser);
+                LOG.info("Prior process is dead, since directory {} owner {} is not same as expectedUser {}, "
+                        + "likely pid {} was reused for a new process for actualUser {}, {}}",
+                        pidDir, actualUser, expectedUser, pid, actualUser, getProcessDesc(pidDir));
             }
-            LOG.debug("Process {} is alive and owned by user {}", pid, expectedUser);
-            return true;
         }
         LOG.info("None of the processes {} are alive AND owned by expectedUser {}", pids, expectedUser);
         return false;
+    }
+
+    @VisibleForTesting
+    public static void validateTopologyWorkerMaxHeapSizeConfigs(
+        Map<String, Object> stormConf, StormTopology topology, double defaultWorkerMaxHeapSizeMb)
+        throws InvalidTopologyException {
+
+        double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
+        double topologyWorkerMaxHeapSize =
+            ObjectReader.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), defaultWorkerMaxHeapSizeMb);
+        if (topologyWorkerMaxHeapSize < largestMemReq) {
+            throw new InvalidTopologyException(
+                "Topology will not be able to be successfully scheduled: Config "
+                    + "TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB="
+                    + topologyWorkerMaxHeapSize
+                    + " < " + largestMemReq + " (Largest memory requirement of a component in the topology)."
+                    + " Perhaps set TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB to a larger amount");
+        }
+    }
+
+    /**
+     * RAS scheduler will try to distribute ackers evenly over workers by adding some ackers to each newly launched worker.
+     * Validations are performed here:
+     * ({@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} * memory for an acker
+     *      + memory for the biggest topo executor) < max worker heap memory.
+     *    When RAS tries to schedule an executor to a new worker,
+     *    it will put {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} ackers into the worker first.
+     *    So {@link Config#TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB} need to be able to accommodate this.
+     * @param topoConf Topology conf
+     * @param topology Topology (not system topology)
+     * @param topoName The name of the topology
+     */
+    public static void validateTopologyAckerBundleResource(Map<String, Object> topoConf,
+                                                           StormTopology topology, String topoName)
+        throws InvalidTopologyException {
+
+        boolean oneExecutorPerWorker = (Boolean) topoConf.getOrDefault(Config.TOPOLOGY_RAS_ONE_EXECUTOR_PER_WORKER, false);
+        boolean oneComponentPerWorker = (Boolean) topoConf.getOrDefault(Config.TOPOLOGY_RAS_ONE_COMPONENT_PER_WORKER, false);
+
+        double topologyWorkerMaxHeapSize =
+            ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB));
+
+        int numOfAckerExecutorsPerWorker = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER));
+        double maxTopoExecMem = getMaxExecutorMemoryUsageForTopo(topology, topoConf);
+        double ackerExecMem = getAckerExecutorMemoryUsageForTopo(topology, topoConf);
+        double minMemReqForWorker = maxTopoExecMem + ackerExecMem * numOfAckerExecutorsPerWorker;
+
+        // A worker need to have enough resources for a bigest topo executor + topology.acker.executors.per.worker ackers
+        if (!oneExecutorPerWorker
+            && !oneComponentPerWorker
+            && topologyWorkerMaxHeapSize < minMemReqForWorker) {
+            String warnMsg
+                = String.format("For topology %s. Worker max on-heap limit %s is %s. "
+                    + "The biggest topo executor requires %s MB on-heap memory, "
+                    + "there might not be enough space for %s ackers. "
+                    + "Real acker-per-worker will be determined by scheduler.",
+                    topoName, Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, topologyWorkerMaxHeapSize,
+                    maxTopoExecMem, numOfAckerExecutorsPerWorker);
+            LOG.warn(warnMsg);
+        }
+    }
+
+    private static double getMaxExecutorMemoryUsageForTopo(
+        StormTopology topology, Map<String, Object> topologyConf) {
+        double largestMemoryOperator = 0.0;
+        for (NormalizedResourceRequest entry :
+            ResourceUtils.getBoltsResources(topology, topologyConf).values()) {
+            double memoryRequirement = entry.getTotalMemoryMb();
+            if (memoryRequirement > largestMemoryOperator) {
+                largestMemoryOperator = memoryRequirement;
+            }
+        }
+        for (NormalizedResourceRequest entry :
+            ResourceUtils.getSpoutsResources(topology, topologyConf).values()) {
+            double memoryRequirement = entry.getTotalMemoryMb();
+            if (memoryRequirement > largestMemoryOperator) {
+                largestMemoryOperator = memoryRequirement;
+            }
+        }
+        return largestMemoryOperator;
+    }
+
+    private static double getAckerExecutorMemoryUsageForTopo(
+        StormTopology topology, Map<String, Object> topologyConf)
+        throws InvalidTopologyException {
+        topology = StormCommon.systemTopology(topologyConf, topology);
+        Map<String, NormalizedResourceRequest> boltResources = ResourceUtils.getBoltsResources(topology, topologyConf);
+        NormalizedResourceRequest entry = boltResources.get(Acker.ACKER_COMPONENT_ID);
+        return entry.getTotalMemoryMb();
+    }
+
+    /**
+     * Support method to obtain additional log info for the process. Use the contents of comm and cmdline
+     * in the process directory. Note that this method works properly only on posix systems with /proc directory.
+     *
+     * @param pidDir PID directory (/proc/&lt;pid&gt;)
+     * @return process description string
+     */
+    private static String getProcessDesc(File pidDir) {
+        String comm = "";
+        Path p = pidDir.toPath().resolve("comm");
+        try {
+            comm = String.join(", ", Files.readAllLines(p));
+        } catch (IOException ex) {
+            LOG.warn("Cannot get contents of " + p, ex);
+        }
+        String cmdline = "";
+        p = pidDir.toPath().resolve("cmdline");
+        try {
+            cmdline = String.join(", ", Files.readAllLines(p)).replace('\0', ' ');
+        } catch (IOException ex) {
+            LOG.warn("Cannot get contents of " + p, ex);
+        }
+        return String.format("process(comm=\"%s\", cmdline=\"%s\")", comm, cmdline);
     }
 }

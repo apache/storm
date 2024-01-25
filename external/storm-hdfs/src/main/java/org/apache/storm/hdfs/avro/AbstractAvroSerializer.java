@@ -57,7 +57,7 @@ public abstract class AbstractAvroSerializer extends Serializer<GenericContainer
     }
 
     @Override
-    public GenericContainer read(Kryo kryo, Input input, Class<GenericContainer> someClass) {
+    public GenericContainer read(Kryo kryo, Input input, Class<? extends GenericContainer> someClass) {
         Schema theSchema = this.getSchema(input.readString());
         GenericDatumReader<GenericContainer> reader = new GenericDatumReader<>(theSchema);
         Decoder decoder = DecoderFactory

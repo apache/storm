@@ -12,6 +12,7 @@
 
 package org.apache.storm.blobstore;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.storm.daemon.Shutdownable;
@@ -182,5 +183,12 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
         void run(ClientBlobStore blobStore) throws Exception;
     }
 
-
+    /**
+     * Client facing API to get the last update time of existing blobs in a blobstore.  This is only required for use on
+     * supervisors.
+     *
+     * @return the timestamp of when the blobstore was last updated.  -1L if the blobstore
+     *     does not support this.
+     */
+    public abstract long getRemoteBlobstoreUpdateTime() throws IOException;
 }

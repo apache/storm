@@ -34,6 +34,7 @@ import org.apache.storm.scheduler.resource.strategies.priority.DefaultScheduling
 import org.apache.storm.scheduler.resource.strategies.scheduling.ConstraintSolverStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -47,6 +48,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +64,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestUtilsForResourceAwareScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(TestUtilsForResourceAwareScheduler.class);
@@ -107,6 +111,19 @@ public class TestUtilsForResourceAwareScheduler {
                                                 Map<String, Map<String, Number>> pools) {
         Config config = createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
         config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, ConstraintSolverStrategy.class.getName());
+        Map<String, Map<String,Object>> modifiedConstraints = new HashMap<>();
+        Map<String, Object> contraints = new HashMap<>();
+        contraints.put("maxNodeCoLocationCnt", 1);
+        modifiedConstraints.put("testSpout", contraints);
+        config.put(Config.TOPOLOGY_RAS_CONSTRAINTS, modifiedConstraints);
+        return config;
+    }
+
+    public static Config createRoundRobinClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                                 Map<String, Map<String, Number>> pools, Map<String, Double> genericResourceMap) {
+        Config config = createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
+        config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, genericResourceMap);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, RoundRobinResourceAwareStrategy.class.getName());
         return config;
     }
 
@@ -189,13 +206,34 @@ public class TestUtilsForResourceAwareScheduler {
         }
     }
 
-    public static Map<String, SupervisorDetails> genSupervisorsWithRacks(int numRacks, int numSupersPerRack, int numPorts, int rackStart,
-                                                                         int superInRackStart, double cpu, double mem,
-                                                                         Map<String, Double> miscResources) {
-        Map<String, Double> resourceMap = new HashMap<>();
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, cpu);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, mem);
-        resourceMap.putAll(miscResources);
+    public static Map<String, SupervisorDetails> genSupervisorsWithRacks(
+            int numRacks, int numSupersPerRack, int numPorts, int rackStart, int superInRackStart,
+            double cpu, double mem, Map<String, Double> miscResources) {
+
+        return genSupervisorsWithRacksAndNuma(numRacks, numSupersPerRack, 1, numPorts, rackStart,
+                superInRackStart, cpu, mem, miscResources, 1.0);
+    }
+
+    /**
+     * Takes one additional parameter numaZonesPerHost. This parameter determines how many supervisors
+     * will be created on the same host. If numaResourceMultiplier is set to a factor below 1.0, then
+     * each subsequent numa zone will have corresponding lower cpu/mem than previous numa zone.
+     *
+     * @param numRacks
+     * @param numSupersPerRack
+     * @param numaZonesPerHost
+     * @param numPorts
+     * @param rackStart
+     * @param superInRackStart
+     * @param cpu
+     * @param mem
+     * @param miscResources
+     * @param numaResourceMultiplier - cpu/mem resource for each numaZone is multiplied by this factor to obtain uneven resources
+     * @return
+     */
+    public static Map<String, SupervisorDetails> genSupervisorsWithRacksAndNuma(
+            int numRacks, int numSupersPerRack, int numaZonesPerHost, int numPorts, int rackStart, int superInRackStart,
+            double cpu, double mem, Map<String, Double> miscResources, double numaResourceMultiplier) {
         Map<String, SupervisorDetails> retList = new HashMap<>();
         for (int rack = rackStart; rack < numRacks + rackStart; rack++) {
             for (int superInRack = superInRackStart; superInRack < (numSupersPerRack + superInRackStart); superInRack++) {
@@ -203,8 +241,23 @@ public class TestUtilsForResourceAwareScheduler {
                 for (int p = 0; p < numPorts; p++) {
                     ports.add(p);
                 }
-                SupervisorDetails sup = new SupervisorDetails(String.format("r%03ds%03d", rack, superInRack),
-                    String.format("host-%03d-rack-%03d", superInRack, rack), null, ports,
+                String superId;
+                String host;
+                int numaZone = superInRack % numaZonesPerHost;
+                if (numaZonesPerHost > 1) {
+                    // multiple supervisors per host
+                    int hostInRack = superInRack / numaZonesPerHost;
+                    superId = String.format("r%03ds%03dn%d", rack, superInRack, numaZone);
+                    host = String.format("host-%03d-rack-%03d", hostInRack, rack);
+                } else {
+                    superId = String.format("r%03ds%03d", rack, superInRack);
+                    host = String.format("host-%03d-rack-%03d", superInRack, rack);
+                }
+                Map<String, Double> resourceMap = new HashMap<>();
+                resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, cpu * Math.pow(numaResourceMultiplier, numaZone));
+                resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, mem * Math.pow(numaResourceMultiplier, numaZone));
+                resourceMap.putAll(miscResources);
+                SupervisorDetails sup = new SupervisorDetails(superId, host, null, ports,
                     NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resourceMap));
                 retList.put(sup.getId(), sup);
 
@@ -425,59 +478,76 @@ public class TestUtilsForResourceAwareScheduler {
         return m.find();
     }
 
-    public static void assertTopologiesNotScheduled(Cluster cluster, String... topoNames) {
+    public static void assertTopologiesNotScheduled(Cluster cluster, Class strategyClass, String... topoNames) {
         Topologies topologies = cluster.getTopologies();
         for (String topoName : topoNames) {
             TopologyDetails td = topologies.getByName(topoName);
-            assert (td != null) : topoName;
+            Assertions.assertNotNull(td, "Cannot find topology for topoName " + topoName);
             String topoId = td.getId();
             String status = cluster.getStatus(topoId);
-            assert (status != null) : topoName;
-            assert (!isStatusSuccess(status)) : topoName;
-            assert (cluster.getAssignmentById(topoId) == null) : topoName;
-            assert (cluster.needsSchedulingRas(td)) : topoName;
+            Assertions.assertNotNull(status, "Status unknown for topoName " + topoName);
+            Assertions.assertFalse(isStatusSuccess(status), "Successful status " + status + " for topoName " + topoName);
+            Assertions.assertNull(cluster.getAssignmentById(topoId), "Found assignment for topoId " + topoId);
+            Assertions.assertTrue(cluster.needsSchedulingRas(td), "Scheduling not required for topoName " + topoName);
         }
     }
 
-    public static void assertTopologiesFullyScheduled(Cluster cluster, String... topoNames) {
+    public static void assertTopologiesFullyScheduled(Cluster cluster, Class strategyClass, String... topoNames) {
         Topologies topologies = cluster.getTopologies();
         for (String topoName : topoNames) {
             TopologyDetails td = topologies.getByName(topoName);
-            assert (td != null) : topoName;
+            Assertions.assertNotNull(td, "Cannot find topology for topoName " + topoName);
             String topoId = td.getId();
             assertStatusSuccess(cluster, topoId);
-            assert (cluster.getAssignmentById(topoId) != null) : topoName;
-            assert (cluster.needsSchedulingRas(td) == false) : topoName;
+            Assertions.assertNotNull(cluster.getAssignmentById(topoId), "Cannot find assignment for topoId " + topoId);
+            Assertions.assertFalse(cluster.needsSchedulingRas(td), "Scheduling required for topoName " + topoName);
         }
     }
 
-    public static void assertTopologiesBeenEvicted(Cluster cluster, Set<String> evictedTopologies, String... topoNames) {
+    public static void assertTopologiesFullyScheduled(Cluster cluster, Class strategyClass, int expectedScheduledCnt) {
+        List<String> toposScheduled = new ArrayList<>();
+        for (TopologyDetails td: cluster.getTopologies()) {
+            String topoId = td.getId();
+            if (!isStatusSuccess(cluster.getStatus(topoId))
+                || cluster.getAssignmentById(topoId) == null
+                || cluster.needsSchedulingRas(td)) {
+                continue;
+            }
+            toposScheduled.add(td.getName());
+        }
+        String errMsg = String.format("Only following topologies are scheduled: %s using %s",
+                String.join(",", toposScheduled), strategyClass.getName());
+        assertEquals(expectedScheduledCnt, toposScheduled.size(), errMsg);
+    }
+
+    public static void assertTopologiesBeenEvicted(Cluster cluster, Class strategyClass, Set<String> evictedTopologies, String... topoNames) {
         Topologies topologies = cluster.getTopologies();
         LOG.info("Evicted topos: {}", evictedTopologies);
-        assert (evictedTopologies != null);
+        Assertions.assertNotNull(evictedTopologies, "evictedTopologies is null");
         for (String topoName : topoNames) {
+            String errMsg = "topology " + topoName + " using " + strategyClass.getName();
             TopologyDetails td = topologies.getByName(topoName);
-            assert (td != null) : topoName;
+            Assertions.assertNotNull(td, "Cannot find topology for topoName " + topoName);
             String topoId = td.getId();
-            assert (evictedTopologies.contains(topoId)) : topoName;
+            Assertions.assertTrue(evictedTopologies.contains(topoId), "evictedTopologies does not contain topoId " + topoId);
         }
     }
 
-    public static void assertTopologiesNotBeenEvicted(Cluster cluster, Set<String> evictedTopologies, String... topoNames) {
+    public static void assertTopologiesNotBeenEvicted(Cluster cluster, Class strategyClass, Set<String> evictedTopologies, String... topoNames) {
         Topologies topologies = cluster.getTopologies();
         LOG.info("Evicted topos: {}", evictedTopologies);
-        assert (evictedTopologies != null);
+        Assertions.assertNotNull(evictedTopologies, "evictedTopologies is null");
         for (String topoName : topoNames) {
+            String errMsg = "topology " + topoName + " using " + strategyClass.getName();
             TopologyDetails td = topologies.getByName(topoName);
-            assert (td != null) : topoName;
+            Assertions.assertNotNull(td, "Cannot find topology for topoName " + topoName);
             String topoId = td.getId();
-            assert (!evictedTopologies.contains(topoId)) : topoName;
+            Assertions.assertFalse(evictedTopologies.contains(topoId), "evictedTopologies contains topoId " + topoId);
         }
     }
 
     public static void assertStatusSuccess(Cluster cluster, String topoId) {
-        assert (isStatusSuccess(cluster.getStatus(topoId))) :
-            "topology status " + topoId + " is not successful " + cluster.getStatus(topoId);
+        Assertions.assertTrue(isStatusSuccess(cluster.getStatus(topoId)), "topology " + topoId + " in unsuccessful status: " + cluster.getStatus(topoId));
     }
 
     public static boolean isStatusSuccess(String status) {

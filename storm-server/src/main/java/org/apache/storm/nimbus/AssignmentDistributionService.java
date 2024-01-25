@@ -107,7 +107,6 @@ public class AssignmentDistributionService implements Closeable {
      * Function for initialization.
      *
      * @param conf config
-     * @param callback callback for sendAssignment results
      */
     public void prepare(Map conf, INodeAssignmentSentCallBack callBack) {
         this.conf = conf;

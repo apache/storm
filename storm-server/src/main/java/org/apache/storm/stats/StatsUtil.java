@@ -150,13 +150,15 @@ public class StatsUtil {
                                                             Map<K, Double> id2procAvg,
                                                             Map<K, Long> id2numExec) {
         Map<K, Map> ret = new HashMap<>();
-        if (id2execAvg == null || id2procAvg == null || id2numExec == null) {
+        if (id2execAvg == null || id2numExec == null) {
             return ret;
         }
         for (K k : id2execAvg.keySet()) {
             Map<String, Object> subMap = new HashMap<>();
             subMap.put(EXEC_LAT_TOTAL, weightAvg(id2execAvg, id2numExec, k));
-            subMap.put(PROC_LAT_TOTAL, weightAvg(id2procAvg, id2numExec, k));
+            if (id2procAvg != null) {
+                subMap.put(PROC_LAT_TOTAL, weightAvg(id2procAvg, id2numExec, k));
+            }
             subMap.put(EXECUTED, id2numExec.get(k));
             ret.put(k, subMap);
         }

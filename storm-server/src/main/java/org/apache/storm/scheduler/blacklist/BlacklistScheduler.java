@@ -194,7 +194,11 @@ public class BlacklistScheduler implements IScheduler {
                 new ArrayList<>(badSupervisorsToleranceSlidingWindow),
                 new ArrayList<>(sendAssignmentFailureCount),
                 cluster, topologies);
-        LOG.info("Supervisors {} are blacklisted.", blacklistedSupervisors);
+        if (blacklistedSupervisors.isEmpty()) {
+            LOG.debug("No Supervisors are blacklisted.");
+        } else {
+            LOG.info("Supervisors {} are blacklisted.", blacklistedSupervisors);
+        }
         return blacklistedSupervisors;
     }
 

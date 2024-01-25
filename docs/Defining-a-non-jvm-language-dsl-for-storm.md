@@ -20,19 +20,26 @@ For a Python DSL, you would want to make use of "2" and "3". ShellComponent lets
 There's a "storm shell" command that will help with submitting a topology. Its usage is like this:
 
 ```
-storm shell resources/ python topology.py arg1 arg2
+storm shell resources/ python3 topology.py arg1 arg2
 ```
 
 storm shell will then package resources/ into a jar, upload the jar to Nimbus, and call your topology.py script like this:
 
 ```
-python topology.py arg1 arg2 {nimbus-host} {nimbus-port} {uploaded-jar-location}
+python3 topology.py arg1 arg2 {nimbus-host} {nimbus-port} {uploaded-jar-location}
 ```
 
 Then you can connect to Nimbus using the Thrift API and submit the topology, passing {uploaded-jar-location} into the submitTopology method. For reference, here's the submitTopology definition:
 
 ```java
-void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite);
+void submitTopology(
+        1: string name,
+        2: string uploadedJarLocation,
+        3: string jsonConf,
+        4: StormTopology topology)
+        throws (
+                1: AlreadyAliveException e,
+                2: InvalidTopologyException ite);
 ```
 
 Finally, one of the key things to do in a non-JVM DSL is make it easy to define the entire topology in one file (the bolts, spouts, and the definition of the topology).

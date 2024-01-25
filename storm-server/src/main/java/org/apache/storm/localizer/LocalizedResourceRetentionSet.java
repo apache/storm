@@ -13,8 +13,10 @@
 package org.apache.storm.localizer;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentMap;
@@ -77,8 +79,10 @@ public class LocalizedResourceRetentionSet {
      * Actually cleanup the blobs to try and get below the target cache size.
      * @param store the blobs store client used to check if the blob has been deleted from the blobstore.  If it has, the blob will be
      *     deleted even if the cache is not over the target size.
+     * @return a set containing any deleted blobs.
      */
-    public void cleanup(ClientBlobStore store) {
+    public Set<LocallyCachedBlob> cleanup(ClientBlobStore store) {
+        Set<LocallyCachedBlob> deleted = new HashSet<>();
         LOG.debug("cleanup target size: {} current size is: {}", targetSize, currentSize);
         long bytesOver = currentSize - targetSize;
         //First delete everything that no longer exists...
@@ -93,6 +97,7 @@ public class LocalizedResourceRetentionSet {
                     if (removeBlob(resource, set)) {
                         bytesOver -= resource.getSizeOnDisk();
                         LOG.info("Deleted blob: {} (REMOVED FROM CLUSTER).", resource.getKey());
+                        deleted.add(resource);
                         i.remove();
                     }
                 }
@@ -109,9 +114,11 @@ public class LocalizedResourceRetentionSet {
             if (removeBlob(resource, set)) {
                 bytesOver -= resource.getSizeOnDisk();
                 LOG.info("Deleted blob: {} (OVER SIZE LIMIT).", resource.getKey());
+                deleted.add(resource);
                 i.remove();
             }
         }
+        return deleted;
     }
 
     private boolean removeBlob(LocallyCachedBlob blob, Map<String, ? extends LocallyCachedBlob> blobs) {

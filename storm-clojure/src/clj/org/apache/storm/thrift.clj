@@ -27,7 +27,7 @@
   (:import [org.apache.storm.topology TopologyBuilder])
   (:import [org.apache.storm.clojure RichShellBolt RichShellSpout])
   (:import [org.apache.storm.thrift.transport TTransport]
-           (org.json.simple JSONValue))
+           (net.minidev.json JSONValue))
   (:use [org.apache.storm util config log]))
 
 (defn instantiate-java-object

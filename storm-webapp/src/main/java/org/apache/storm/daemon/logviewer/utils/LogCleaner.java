@@ -56,7 +56,6 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +70,7 @@ public class LogCleaner implements Runnable, Closeable {
     private final Histogram diskSpaceFreed;
     private final Meter numFileRemovalExceptions;
     private final Meter numCleanupExceptions;
-    
+
     private final Map<String, Object> stormConf;
     private final Integer intervalSecs;
     private final Path logRootDir;
@@ -85,11 +84,11 @@ public class LogCleaner implements Runnable, Closeable {
     /**
      * Constuctor.
      *
-     * @param stormConf configuration map for Storm cluster
-     * @param workerLogs {@link WorkerLogs} instance
+     * @param stormConf        configuration map for Storm cluster
+     * @param workerLogs       {@link WorkerLogs} instance
      * @param directoryCleaner {@link DirectoryCleaner} instance
-     * @param logRootDir root log directory
-     * @param metricsRegistry The logviewer metrics registry
+     * @param logRootDir       root log directory
+     * @param metricsRegistry  The logviewer metrics registry
      */
     public LogCleaner(Map<String, Object> stormConf, WorkerLogs workerLogs, DirectoryCleaner directoryCleaner,
                       Path logRootDir, StormMetricsRegistry metricsRegistry) {
@@ -104,7 +103,7 @@ public class LogCleaner implements Runnable, Closeable {
         maxPerWorkerLogsSizeMb = Math.min(maxPerWorkerLogsSizeMb, (long) (maxSumWorkerLogsSizeMb * 0.5));
 
         LOG.info("configured max total size of worker logs: {} MB, max total size of worker logs per directory: {} MB",
-            maxSumWorkerLogsSizeMb, maxPerWorkerLogsSizeMb);
+                maxSumWorkerLogsSizeMb, maxPerWorkerLogsSizeMb);
         //Switch to CachedGauge if this starts to hurt performance
         metricsRegistry.registerGauge("logviewer:worker-log-dir-size", () -> sizeOfDir(logRootDir));
         this.cleanupRoutineDuration = metricsRegistry.registerTimer("logviewer:cleanup-routine-duration-ms");
@@ -113,13 +112,13 @@ public class LogCleaner implements Runnable, Closeable {
         this.numFileRemovalExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_REMOVAL_EXCEPTIONS);
         this.numCleanupExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_CLEANUP_EXCEPTIONS);
     }
-    
+
     private long sizeOfDir(Path dir) {
-        try {
-            return Files.walk(dir)
-                .filter(Files::isRegularFile)
-                .mapToLong(p -> p.toFile().length())
-                .sum();
+        try (Stream<Path> stream = Files.walk(dir)) {
+            return stream
+                    .filter(Files::isRegularFile)
+                    .mapToLong(p -> p.toFile().length())
+                    .sum();
         } catch (IOException e) {
             //This is only used for logging/metrics. Don't crash the process over it.
             LOG.debug("Failed to get size of directory {}", dir);
@@ -210,8 +209,13 @@ public class LogCleaner implements Runnable, Closeable {
     @VisibleForTesting
     List<DeletionMeta> perWorkerDirCleanup(long size) {
         return workerLogs.getAllWorkerDirs().stream()
-                .map(Unchecked.function(dir ->
-                        directoryCleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null)))
+                .map(dir -> {
+                    try {
+                        return directoryCleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .collect(toList());
     }
 
@@ -257,9 +261,15 @@ public class LogCleaner implements Runnable, Closeable {
         Predicate<Path> fileFilter = mkFileFilterForLogCleanup(nowMillis);
         try (Stream<Path> fileList = Files.list(logRootDir)) {
             return fileList
-                .flatMap(Unchecked.function(Files::list))
-                .filter(fileFilter)
-                .collect(Collectors.toCollection(TreeSet::new));
+                    .flatMap(a -> {
+                        try {
+                            return Files.list(a);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .filter(fileFilter)
+                    .collect(Collectors.toCollection(TreeSet::new));
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -269,7 +279,7 @@ public class LogCleaner implements Runnable, Closeable {
     Predicate<Path> mkFileFilterForLogCleanup(long nowMillis) {
         //It seems safer not to follow symlinks, since we don't expect them here
         return file -> Files.isDirectory(file, LinkOption.NOFOLLOW_LINKS)
-            && lastModifiedTimeWorkerLogdir(file) <= cleanupCutoffAgeMillis(nowMillis);
+                && lastModifiedTimeWorkerLogdir(file) <= cleanupCutoffAgeMillis(nowMillis);
     }
 
     /**
@@ -280,11 +290,17 @@ public class LogCleaner implements Runnable, Closeable {
     private long lastModifiedTimeWorkerLogdir(Path logDir) {
         try {
             long dirModified = Files.getLastModifiedTime(logDir).toMillis();
-            
+
             try (DirectoryStream<Path> dirStream = directoryCleaner.getStreamForDirectory(logDir)) {
                 return StreamSupport.stream(dirStream.spliterator(), false)
-                    .map(Unchecked.function(p -> Files.getLastModifiedTime(p).toMillis()))
-                    .reduce(dirModified, BinaryOperator.maxBy(Long::compareTo));
+                        .map(p -> {
+                            try {
+                                return Files.getLastModifiedTime(p).toMillis();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .reduce(dirModified, BinaryOperator.maxBy(Long::compareTo));
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
                 return dirModified;

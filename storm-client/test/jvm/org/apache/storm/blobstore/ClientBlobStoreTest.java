@@ -22,16 +22,18 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.utils.NimbusClient;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClientBlobStoreTest {
 
     private ClientBlobStore client;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         client = new TestClientBlobStore();
@@ -40,20 +42,22 @@ public class ClientBlobStoreTest {
 
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         client = null;
     }
 
-    @Test(expected = AuthorizationException.class)
-    public void testDuplicateACLsForCreate() throws Exception {
-        SettableBlobMeta meta = new SettableBlobMeta();
-        AccessControl submitterAcl = BlobStoreAclHandler.parseAccessControl("u:tester:rwa");
-        meta.add_to_acl(submitterAcl);
-        AccessControl duplicateAcl = BlobStoreAclHandler.parseAccessControl("u:tester:r--");
-        meta.add_to_acl(duplicateAcl);
-        String testKey = "testDuplicateACLsBlobKey";
-        client.createBlob(testKey, meta);
+    @Test
+    public void testDuplicateACLsForCreate() {
+        assertThrows(AuthorizationException.class, () -> {
+            SettableBlobMeta meta = new SettableBlobMeta();
+            AccessControl submitterAcl = BlobStoreAclHandler.parseAccessControl("u:tester:rwa");
+            meta.add_to_acl(submitterAcl);
+            AccessControl duplicateAcl = BlobStoreAclHandler.parseAccessControl("u:tester:r--");
+            meta.add_to_acl(duplicateAcl);
+            String testKey = "testDuplicateACLsBlobKey";
+            client.createBlob(testKey, meta);
+        });
     }
 
     @Test
@@ -66,14 +70,16 @@ public class ClientBlobStoreTest {
         validatedBlobAcls(testKey);
     }
 
-    @Test(expected = AuthorizationException.class)
-    public void testDuplicateACLsForSetBlobMeta() throws Exception {
-        String testKey = "testDuplicateACLsBlobKey";
-        SettableBlobMeta meta = new SettableBlobMeta();
-        createTestBlob(testKey, meta);
-        AccessControl duplicateAcl = BlobStoreAclHandler.parseAccessControl("u:tester:r--");
-        meta.add_to_acl(duplicateAcl);
-        client.setBlobMeta(testKey, meta);
+    @Test
+    public void testDuplicateACLsForSetBlobMeta() {
+        assertThrows(AuthorizationException.class, () -> {
+            String testKey = "testDuplicateACLsBlobKey";
+            SettableBlobMeta meta = new SettableBlobMeta();
+            createTestBlob(testKey, meta);
+            AccessControl duplicateAcl = BlobStoreAclHandler.parseAccessControl("u:tester:r--");
+            meta.add_to_acl(duplicateAcl);
+            client.setBlobMeta(testKey, meta);
+        });
     }
 
     @Test
@@ -87,7 +93,7 @@ public class ClientBlobStoreTest {
     }
 
     @Test
-    public void testBloblStoreKeyWithUnicodesValidation() throws Exception {
+    public void testBloblStoreKeyWithUnicodesValidation() {
         BlobStore.validateKey("msg-kafka-unicodewriter䶵-11-1483434711-stormconf.ser");
         BlobStore.validateKey("msg-kafka-ascii-11-148343436363-stormconf.ser");
     }
@@ -100,23 +106,22 @@ public class ClientBlobStoreTest {
 
     private void validatedBlobAcls(String testKey) throws KeyNotFoundException, AuthorizationException {
         ReadableBlobMeta blobMeta = client.getBlobMeta(testKey);
-        Assert.assertNotNull("The blob" + testKey + "does not have any readable blobMeta.", blobMeta);
+        assertNotNull(blobMeta, "The blob" + testKey + "does not have any readable blobMeta.");
         SettableBlobMeta settableBlob = blobMeta.get_settable();
-        Assert.assertNotNull("The blob" + testKey + "does not have any settable blobMeta.", settableBlob);
+        assertNotNull(settableBlob, "The blob" + testKey + "does not have any settable blobMeta.");
     }
 
-    public class TestClientBlobStore extends ClientBlobStore {
+    public static class TestClientBlobStore extends ClientBlobStore {
 
         private Map<String, SettableBlobMeta> allBlobs;
 
         @Override
         public void prepare(Map<String, Object> conf) {
-            allBlobs = new HashMap<String, SettableBlobMeta>();
+            allBlobs = new HashMap<>();
         }
 
         @Override
-        protected AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta) throws AuthorizationException,
-            KeyAlreadyExistsException {
+        protected AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta) {
             allBlobs.put(key, meta);
             return null;
         }
@@ -137,12 +142,12 @@ public class ClientBlobStoreTest {
         }
 
         @Override
-        public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
+        public boolean isRemoteBlobExists(String blobKey) {
             return allBlobs.containsKey(blobKey);
         }
 
         @Override
-        protected void setBlobMetaToExtend(String key, SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException {
+        protected void setBlobMetaToExtend(String key, SettableBlobMeta meta) {
         }
 
         @Override
@@ -184,6 +189,11 @@ public class ClientBlobStoreTest {
 
         @Override
         public void createStateInZookeeper(String key) {
+        }
+
+        @Override
+        public long getRemoteBlobstoreUpdateTime() {
+            return -1L; // not supported
         }
     }
 }

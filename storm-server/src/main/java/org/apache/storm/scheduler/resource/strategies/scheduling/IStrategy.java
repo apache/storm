@@ -23,8 +23,8 @@ import org.apache.storm.scheduler.resource.SchedulingResult;
  * <p>
  *     A fully functioning implementation is in the abstract class {@link BaseResourceAwareStrategy}.
  *     Subclasses classes should extend {@link BaseResourceAwareStrategy#BaseResourceAwareStrategy()}
- *     in their constructors as in {@link GenericResourceAwareStrategy}, {@link DefaultResourceAwareStrategy})
- *     and {@link ConstraintSolverStrategy}.
+ *     in their constructors (as in {@link GenericResourceAwareStrategy}, {@link DefaultResourceAwareStrategy}
+ *     and {@link ConstraintSolverStrategy}).
  * </p>
  */
 public interface IStrategy {

@@ -20,11 +20,11 @@
 package org.apache.storm.utils;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,12 +36,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipFile;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.storm.testing.TmpPath;
@@ -94,19 +96,42 @@ public class ServerUtilsTest {
         }
     }
 
-    private Collection<Long> getRunningProcessIds() throws IOException {
+    /**
+     * Get running processes for all or specified user.
+     *
+     * @param user Null for all users, otherwise specify the user. e.g. "root"
+     * @return List of ProcessIds for the user
+     * @throws IOException thrown when reading process I/O
+     */
+    private Collection<Long> getRunningProcessIds(String user) throws IOException {
         // get list of few running processes
         Collection<Long> pids = new ArrayList<>();
-        Process p = Runtime.getRuntime().exec(ServerUtils.IS_ON_WINDOWS ? "tasklist" : "ps -e");
+        int pidIndex = 0;
+        String cmd;
+        if (ServerUtils.IS_ON_WINDOWS) {
+            cmd = "tasklist";
+            pidIndex = 1;
+        } else {
+            cmd = (user == null) ? "ps -e" : "ps -U " + user;
+        }
+        Process p = Runtime.getRuntime().exec(cmd);
         try (BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
             while ((line = input.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty() || line.startsWith("PID")) {
+                if (line.isEmpty()) {
                     continue;
                 }
                 try {
-                    pids.add(Long.parseLong(line.split("\\s")[0]));
+                    String pidStr = line.split("\\s+")[pidIndex];
+                    if (pidStr.equalsIgnoreCase("pid")) {
+                        continue; // header line
+                    }
+                    if (!StringUtils.isNumeric(pidStr)) {
+                        LOG.debug("Ignoring line \"{}\" while looking for PIDs in output of \"{}\"", line, cmd);
+                        continue;
+                    }
+                    pids.add(Long.parseLong(pidStr));
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -121,11 +146,11 @@ public class ServerUtilsTest {
         String randomUser = RandomStringUtils.randomAlphanumeric(12);
 
         // get list of few running processes
-        Collection<Long> pids = getRunningProcessIds();
+        Collection<Long> pids = getRunningProcessIds(null);
         assertFalse(pids.isEmpty());
         for (long pid: pids) {
             boolean status = ServerUtils.isProcessAlive(pid, randomUser);
-            assertFalse("Random user " + randomUser + " is not expected to own any process", status);
+            assertFalse(status, "Random user " + randomUser + " is not expected to own any process");
         }
 
         boolean status = false;
@@ -137,33 +162,33 @@ public class ServerUtilsTest {
                 break;
             }
         }
-        assertTrue("Expecting user " + currentUser + " to own at least one process", status);
+        assertTrue(status, "Expecting user " + currentUser + " to own at least one process");
     }
 
     @Test
     public void testIsAnyProcessAlive() throws Exception {
         // no process should be alive for a randomly generated user
         String randomUser = RandomStringUtils.randomAlphanumeric(12);
-        Collection<Long> pids = getRunningProcessIds();
+        Collection<Long> pids = getRunningProcessIds(null);
 
         assertFalse(pids.isEmpty());
         boolean status = ServerUtils.isAnyProcessAlive(pids, randomUser);
-        assertFalse("Random user " + randomUser + " is not expected to own any process", status);
+        assertFalse(status, "Random user " + randomUser + " is not expected to own any process");
 
         // at least one pid will be owned by the current user (doing the testing)
         String currentUser = System.getProperty("user.name");
         status = ServerUtils.isAnyProcessAlive(pids, currentUser);
-        assertTrue("Expecting user " + currentUser + " to own at least one process", status);
+        assertTrue(status, "Expecting user " + currentUser + " to own at least one process");
 
         if (!ServerUtils.IS_ON_WINDOWS) {
             // userid test is valid only on Posix platforms
             int inValidUserId = -1;
             status = ServerUtils.isAnyProcessAlive(pids, inValidUserId);
-            assertFalse("Invalid userId " + randomUser + " is not expected to own any process", status);
+            assertFalse(status, "Invalid userId " + randomUser + " is not expected to own any process");
 
             int currentUid = ServerUtils.getUserId(null);
             status = ServerUtils.isAnyProcessAlive(pids, currentUid);
-            assertTrue("Expecting uid " + currentUid + " to own at least one process", status);
+            assertTrue(status, "Expecting uid " + currentUid + " to own at least one process");
         }
     }
 
@@ -176,9 +201,10 @@ public class ServerUtilsTest {
         Path p = Files.createTempFile("testGetUser", ".txt");
         int uid2 = ServerUtils.getPathOwnerUid(p.toString());
         if (!p.toFile().delete()) {
-            LOG.warn("Could not delete tempoary file {}", p);
+            LOG.warn("Could not delete temporary file {}", p);
         }
-        assertEquals("User UID " + uid1 + " is not same as file " + p.toString() + " owner UID of " + uid2, uid1, uid2);
+        assertEquals(uid1, uid2,
+            "User UID " + uid1 + " is not same as file " + p + " owner UID of " + uid2);
     }
 
     @Test
@@ -206,7 +232,7 @@ public class ServerUtilsTest {
         Set<Long> observables = new HashSet<>();
 
         for (int i = 0 ; i < maxPidCnt ; i++) {
-            String cmd = "sleep 2000";
+            String cmd = "sleep 20000";
             Process process = Runtime.getRuntime().exec(cmd);
             long pid = getPidOfPosixProcess(process, errors);
             LOG.info("{}: ({}) ran process \"{}\" with pid={}", testName, i, cmd, pid);
@@ -272,17 +298,27 @@ public class ServerUtilsTest {
             LOG.info("Test testIsAnyPosixProcessPidDirAlive is designed to run on systems with /proc directory only, marking as success");
             return;
         }
-        Collection<Long> pids = getRunningProcessIds();
-        assertFalse(pids.isEmpty());
+        Collection<Long> allPids = getRunningProcessIds(null);
+        Collection<Long> rootPids = getRunningProcessIds("root");
+        assertFalse(allPids.isEmpty());
+        assertFalse(rootPids.isEmpty());
 
-        for (int i = 0 ; i < 2 ; i++) {
-            boolean mockFileOwnerToUid = (i % 2 == 0);
+        String currentUser = System.getProperty("user.name");
+
+        for (boolean mockFileOwnerToUid: Arrays.asList(true, false)) {
             // at least one pid will be owned by the current user (doing the testing)
-            String currentUser = System.getProperty("user.name");
-            boolean status = ServerUtils.isAnyPosixProcessPidDirAlive(pids, currentUser, mockFileOwnerToUid);
+            boolean status = ServerUtils.isAnyPosixProcessPidDirAlive(allPids, currentUser, mockFileOwnerToUid);
             String err = String.format("(mockFileOwnerToUid=%s) Expecting user %s to own at least one process",
                     mockFileOwnerToUid, currentUser);
-            assertTrue(err, status);
+            assertTrue(status, err);
+        }
+
+        // simulate reassignment of all process id to a different user (root)
+        for (boolean mockFileOwnerToUid: Arrays.asList(true, false)) {
+            boolean status = ServerUtils.isAnyPosixProcessPidDirAlive(rootPids, currentUser, mockFileOwnerToUid);
+            String err = String.format("(mockFileOwnerToUid=%s) Expecting user %s to own no process",
+                    mockFileOwnerToUid, currentUser);
+            assertFalse(status, err);
         }
     }
 

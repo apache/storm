@@ -15,12 +15,11 @@ package org.apache.storm.redis.bolt;
 import java.util.Map;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.container.JedisCommandsContainer;
 import org.apache.storm.redis.common.container.JedisCommandsContainerBuilder;
-import org.apache.storm.redis.common.container.JedisCommandsInstanceContainer;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
-import redis.clients.jedis.JedisCommands;
 
 /**
  * AbstractRedisBolt class is for users to implement custom bolts which makes interaction with Redis.
@@ -45,7 +44,7 @@ import redis.clients.jedis.JedisCommands;
 public abstract class AbstractRedisBolt extends BaseTickTupleAwareRichBolt {
     protected OutputCollector collector;
 
-    private transient JedisCommandsInstanceContainer container;
+    private transient JedisCommandsContainer container;
 
     private JedisPoolConfig jedisPoolConfig;
     private JedisClusterConfig jedisClusterConfig;
@@ -89,18 +88,10 @@ public abstract class AbstractRedisBolt extends BaseTickTupleAwareRichBolt {
      * Borrow JedisCommands instance from container.<p/>
      * JedisCommands is an interface which contains single key operations.
      * @return implementation of JedisCommands
-     * @see JedisCommandsInstanceContainer#getInstance()
+     * @see JedisCommandsContainer
      */
-    protected JedisCommands getInstance() {
-        return this.container.getInstance();
-    }
-
-    /**
-     * Return borrowed instance to container.
-     * @param instance borrowed object
-     */
-    protected void returnInstance(JedisCommands instance) {
-        this.container.returnInstance(instance);
+    protected JedisCommandsContainer getInstance() {
+        return this.container;
     }
 
     @Override

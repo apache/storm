@@ -23,9 +23,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import org.apache.storm.shade.org.json.simple.JSONObject;
-import org.apache.storm.shade.org.json.simple.JSONValue;
-import org.apache.storm.shade.org.json.simple.parser.ParseException;
+import org.apache.storm.shade.net.minidev.json.JSONObject;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
+import org.apache.storm.shade.net.minidev.json.parser.ParseException;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Utils;
 

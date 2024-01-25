@@ -33,6 +33,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
+import net.minidev.json.JSONValue;
+import net.minidev.json.parser.ParseException;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
@@ -111,8 +113,6 @@ import org.apache.storm.utils.Time.SimulatedTime;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedAuthorizationException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1055,6 +1055,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     }
 
+    @Override
     public void processWorkerMetrics(WorkerMetrics metrics) throws TException {
         getNimbus().processWorkerMetrics(metrics);
     }

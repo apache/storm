@@ -21,8 +21,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.LocalState;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LocalStateTest {
 
@@ -36,22 +39,22 @@ public class LocalStateTest {
 
             LocalState ls1 = new LocalState(dir1_tmp.getPath(), true);
             LocalState ls2 = new LocalState(dir2_tmp.getPath(), true);
-            Assert.assertTrue(ls1.snapshot().isEmpty());
+            assertTrue(ls1.snapshot().isEmpty());
 
             ls1.put("a", globalStreamId_a);
             ls1.put("b", globalStreamId_b);
             Map<String, GlobalStreamId> expected = new HashMap<>();
             expected.put("a", globalStreamId_a);
             expected.put("b", globalStreamId_b);
-            Assert.assertEquals(expected, ls1.snapshot());
-            Assert.assertEquals(expected, new LocalState(dir1_tmp.getPath(), true).snapshot());
+            assertEquals(expected, ls1.snapshot());
+            assertEquals(expected, new LocalState(dir1_tmp.getPath(), true).snapshot());
 
-            Assert.assertTrue(ls2.snapshot().isEmpty());
+            assertTrue(ls2.snapshot().isEmpty());
             ls2.put("b", globalStreamId_a);
             ls2.put("b", globalStreamId_b);
             ls2.put("b", globalStreamId_c);
             ls2.put("b", globalStreamId_d);
-            Assert.assertEquals(globalStreamId_d, ls2.get("b"));
+            assertEquals(globalStreamId_d, ls2.get("b"));
         }
     }
 
@@ -66,9 +69,9 @@ public class LocalStateTest {
             FileUtils.touch(new File(dir, "12345"));
             FileUtils.touch(new File(dir, "12345.version"));
 
-            Assert.assertNull(ls.get("c"));
+            assertNull(ls.get("c"));
             ls.put("a", globalStreamId_a);
-            Assert.assertEquals(globalStreamId_a, ls.get("a"));
+            assertEquals(globalStreamId_a, ls.get("a"));
         }
     }
 
@@ -83,10 +86,10 @@ public class LocalStateTest {
             FileUtils.touch(new File(dir, "12345.version"));
 
             try (FileOutputStream data = FileUtils.openOutputStream(new File(dir, "12345"))) {
-                Assert.assertNull(ls.get("c"));
+                assertNull(ls.get("c"));
                 data.write(new byte[100]);
                 ls.put("a", globalStreamId_a);
-                Assert.assertEquals(globalStreamId_a, ls.get("a"));
+                assertEquals(globalStreamId_a, ls.get("a"));
             }
         }
     }

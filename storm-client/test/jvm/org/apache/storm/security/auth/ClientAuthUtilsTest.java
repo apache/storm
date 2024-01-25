@@ -20,8 +20,6 @@ package org.apache.storm.security.auth;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,29 +29,33 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import org.apache.storm.Config;
-import org.apache.storm.shade.org.apache.commons.codec.binary.Hex;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClientAuthUtilsTest {
 
     // JUnit ensures that the temporary folder is removed after
     // the test finishes
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    File folder;
 
-    @Test(expected = IOException.class)
-    public void getOptionsThrowsOnMissingSectionTest() throws IOException {
+    @Test
+    public void getOptionsThrowsOnMissingSectionTest() {
         Configuration mockConfig = Mockito.mock(Configuration.class);
-        ClientAuthUtils.get(mockConfig, "bogus-section", "");
+        assertThrows(IOException.class, () -> ClientAuthUtils.get(mockConfig, "bogus-section", ""));
     }
 
     @Test
     public void getNonExistentSectionTest() throws IOException {
-        Map<String, String> optionMap = new HashMap<String, String>();
+        Map<String, String> optionMap = new HashMap<>();
         AppConfigurationEntry entry = Mockito.mock(AppConfigurationEntry.class);
 
         Mockito.<Map<String, ?>>when(entry.getOptions()).thenReturn(optionMap);
@@ -61,7 +63,7 @@ public class ClientAuthUtilsTest {
         Configuration mockConfig = Mockito.mock(Configuration.class);
         Mockito.when(mockConfig.getAppConfigurationEntry(section))
                .thenReturn(new AppConfigurationEntry[]{ entry });
-        Assert.assertNull(
+        assertNull(
             ClientAuthUtils.get(mockConfig, section, "nonexistent-key"));
     }
 
@@ -70,10 +72,10 @@ public class ClientAuthUtilsTest {
         String k = "the-key";
         String expected = "good-value";
 
-        Map<String, String> optionMap = new HashMap<String, String>();
+        Map<String, String> optionMap = new HashMap<>();
         optionMap.put(k, expected);
 
-        Map<String, String> badOptionMap = new HashMap<String, String>();
+        Map<String, String> badOptionMap = new HashMap<>();
         badOptionMap.put(k, "bad-value");
 
         AppConfigurationEntry emptyEntry = Mockito.mock(AppConfigurationEntry.class);
@@ -89,82 +91,83 @@ public class ClientAuthUtilsTest {
         Mockito.when(mockConfig.getAppConfigurationEntry(section))
                .thenReturn(new AppConfigurationEntry[]{ emptyEntry, goodEntry, badEntry });
 
-        Assert.assertEquals(
+        assertEquals(
             ClientAuthUtils.get(mockConfig, section, k), expected);
     }
 
     @Test
     public void objGettersReturnNullWithNullConfigTest() throws IOException {
         Map<String, Object> topoConf = new HashMap<>();
-        Assert.assertNull(ClientAuthUtils.pullConfig(topoConf, "foo"));
-        Assert.assertNull(ClientAuthUtils.get(topoConf, "foo", "bar"));
+        assertNull(ClientAuthUtils.pullConfig(topoConf, "foo"));
+        assertNull(ClientAuthUtils.get(topoConf, "foo", "bar"));
 
-        Assert.assertNull(ClientAuthUtils.getConfiguration(Collections.emptyMap()));
+        assertNull(ClientAuthUtils.getConfiguration(Collections.emptyMap()));
     }
 
     @Test
     public void getAutoCredentialsTest() {
         Map<String, Object> map = new HashMap<>();
         map.put(Config.TOPOLOGY_AUTO_CREDENTIALS,
-                Arrays.asList(new String[]{ "org.apache.storm.security.auth.AuthUtilsTestMock" }));
+            Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
 
-        Assert.assertTrue(ClientAuthUtils.getAutoCredentials(Collections.emptyMap()).isEmpty());
-        Assert.assertEquals(ClientAuthUtils.getAutoCredentials(map).size(), 1);
+        assertTrue(ClientAuthUtils.getAutoCredentials(Collections.emptyMap()).isEmpty());
+        assertEquals(ClientAuthUtils.getAutoCredentials(map).size(), 1);
     }
 
     @Test
     public void getNimbusAutoCredPluginTest() {
         Map<String, Object> map = new HashMap<>();
         map.put(Config.NIMBUS_AUTO_CRED_PLUGINS,
-                Arrays.asList(new String[]{ "org.apache.storm.security.auth.AuthUtilsTestMock" }));
+            Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
 
-        Assert.assertTrue(ClientAuthUtils.getNimbusAutoCredPlugins(Collections.emptyMap()).isEmpty());
-        Assert.assertEquals(ClientAuthUtils.getNimbusAutoCredPlugins(map).size(), 1);
+        assertTrue(ClientAuthUtils.getNimbusAutoCredPlugins(Collections.emptyMap()).isEmpty());
+        assertEquals(ClientAuthUtils.getNimbusAutoCredPlugins(map).size(), 1);
     }
 
     @Test
     public void GetCredentialRenewersTest() {
         Map<String, Object> map = new HashMap<>();
         map.put(Config.NIMBUS_CREDENTIAL_RENEWERS,
-                Arrays.asList(new String[]{ "org.apache.storm.security.auth.AuthUtilsTestMock" }));
+            Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
 
-        Assert.assertTrue(ClientAuthUtils.getCredentialRenewers(Collections.emptyMap()).isEmpty());
-        Assert.assertEquals(ClientAuthUtils.getCredentialRenewers(map).size(), 1);
+        assertTrue(ClientAuthUtils.getCredentialRenewers(Collections.emptyMap()).isEmpty());
+        assertEquals(ClientAuthUtils.getCredentialRenewers(map).size(), 1);
     }
 
     @Test
     public void populateSubjectTest() {
         AuthUtilsTestMock autoCred = Mockito.mock(AuthUtilsTestMock.class);
         Subject subject = new Subject();
-        Map<String, String> cred = new HashMap<String, String>();
+        Map<String, String> cred = new HashMap<>();
         Collection<IAutoCredentials> autos = Arrays.asList(new IAutoCredentials[]{ autoCred });
         ClientAuthUtils.populateSubject(subject, autos, cred);
         Mockito.verify(autoCred, Mockito.times(1)).populateSubject(subject, cred);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void invalidConfigResultsInIOException() throws RuntimeException {
         HashMap<String, Object> conf = new HashMap<>();
         conf.put("java.security.auth.login.config", "__FAKE_FILE__");
-        Assert.assertNotNull(ClientAuthUtils.getConfiguration(conf));
+        assertThrows(RuntimeException.class, () -> assertNotNull(ClientAuthUtils.getConfiguration(conf)));
     }
 
     @Test
     public void validConfigResultsInNotNullConfigurationTest() throws IOException {
-        File file1 = folder.newFile("mockfile.txt");
+        File file1 = new File(folder, "mockfile.txt");
+        file1.createNewFile();
         HashMap<String, Object> conf = new HashMap<>();
         conf.put("java.security.auth.login.config", file1.getAbsolutePath());
-        Assert.assertNotNull(ClientAuthUtils.getConfiguration(conf));
+        assertNotNull(ClientAuthUtils.getConfiguration(conf));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void updateSubjectWithNullThrowsTest() {
-        ClientAuthUtils.updateSubject(null, null, null);
+        assertThrows(RuntimeException.class, () -> ClientAuthUtils.updateSubject(null, null, null));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void updateSubjectWithNullAutosThrowsTest() {
-        ClientAuthUtils.updateSubject(new Subject(), null, null);
+        assertThrows(RuntimeException.class, () -> ClientAuthUtils.updateSubject(new Subject(), null, null));
     }
 
     @Test
@@ -184,9 +187,8 @@ public class ClientAuthUtilsTest {
         conf.put(
             Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN, AuthUtilsTestMock.class.getName());
 
-        Assert.assertTrue(
+        assertTrue(
             ClientAuthUtils.getPrincipalToLocalPlugin(conf).getClass() == AuthUtilsTestMock.class);
-        Assert.assertTrue(
-            ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf).getClass() == AuthUtilsTestMock.class);
+        assertSame(ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf).getClass(), AuthUtilsTestMock.class);
     }
 }

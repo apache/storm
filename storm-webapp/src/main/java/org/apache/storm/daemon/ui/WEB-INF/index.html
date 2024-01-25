@@ -37,9 +37,7 @@
 <body>
 <div class="container-fluid">
   <div class="row">
-    <div class="col-md-9">
-      <h1><a href="/">Storm UI</a></h1>
-    </div>
+    <div id="ui-title" class="col-md-9"></div>
     <div id="ui-user" class="col-md-2"></div>
   </div>
   <div class="row">
@@ -128,6 +126,7 @@ $(document).ready(function() {
         });
 
         var uiUser = $("#ui-user");
+        var uiTitle = $("#ui-title");
         var clusterSummary = $("#cluster-summary");
         var clusterResources = $("#cluster-resources");
         var nimbusSummary = $("#nimbus-summary");
@@ -135,6 +134,8 @@ $(document).ready(function() {
         var topologySummary = $("#topology-summary");
         var supervisorSummary = $("#supervisor-summary");
         var config = $("#nimbus-configuration");
+				
+        setStormUITitle(uiTitle, responseClusterConfig);
 
         getStatic("/templates/index-page-template.html", function(indexTemplate) {
             $.getJSON("/api/v1/cluster/summary",function(response,status,jqXHR) {
@@ -199,7 +200,7 @@ $(document).ready(function() {
                     //name, owner, status, uptime, num workers, num executors, num tasks, replication count, assigned total mem, assigned total cpu, scheduler info
                     dtAutoPage("#topology-summary-table", {
                       columnDefs: [
-                        {type: "num", targets: [4, 5, 6, 7, 8, 9]},
+                        {type: "num", targets: [4, 5, 6, 7, 8, 9], render: $.fn.dataTable.render.number(',', '.', 0)},
                         {type: "time-str", targets: [3]}
                       ]
                     });
@@ -210,10 +211,11 @@ $(document).ready(function() {
             $.getJSON("/api/v1/supervisor/summary",function(response,status,jqXHR) {
                 jsError(function() {
                     supervisorSummary.append(Mustache.render($(indexTemplate).filter("#supervisor-summary-template").html(),response));
-                    //id, host, uptime, slots, used slots
+                    //id, host, uptime, slots, used slots, avail slots, used mem, version, blacklisted
                     dtAutoPage("#supervisor-summary-table", {
                       columnDefs: [
                         {type: "num", targets: [3, 4]},
+                        {type: "num", targets: [6], render: $.fn.dataTable.render.number(',', '.', 0)},
                         {type: "time-str", targets: [2]}
                       ]
                     });

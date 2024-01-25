@@ -79,7 +79,7 @@ public interface ILocalCluster extends AutoCloseable {
      * @param options      for how to kill the topology
      * @throws TException on any error from nimbus
      */
-    void killTopologyWithOpts(String name, KillOptions options) throws TException;
+    void killTopologyWithOpts(String topologyName, KillOptions options) throws TException;
 
     /**
      * Activate a topology.
@@ -203,7 +203,7 @@ public interface ILocalCluster extends AutoCloseable {
      * @param secs  the number of seconds to advance time
      * @param steps the number of steps we should take when advancing simulated time
      */
-    void advanceClusterTime(int secs, int step) throws InterruptedException;
+    void advanceClusterTime(int secs, int steps) throws InterruptedException;
 
     /**
      * If the cluster is tracked get the id for the tracked cluster. This is intended for internal testing only.

@@ -529,7 +529,6 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
      *
      * @param inputFieldName input field name
      * @param comparator     comparator used in for finding minimum of two tuple values of {@code inputFieldName}.
-     * @param <T>            type of tuple's given input field value.
      * @return the new stream with this operation.
      */
     public <T> Stream minBy(String inputFieldName, Comparator<T> comparator) {
@@ -569,7 +568,6 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
      *
      * @param inputFieldName input field name
      * @param comparator     comparator used in for finding maximum of two tuple values of {@code inputFieldName}.
-     * @param <T>            type of tuple's given input field value.
      * @return the new stream with this operation.
      */
     public <T> Stream maxBy(String inputFieldName, Comparator<T> comparator) {
@@ -806,6 +804,15 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     @Override
     public Stream toStream() {
         return this;
+    }
+
+    /**
+     * Returns the label applied to the stream.
+     *
+     * @return the label applied to the stream.
+     */
+    public String getName() {
+        return name;
     }
 
     @Override

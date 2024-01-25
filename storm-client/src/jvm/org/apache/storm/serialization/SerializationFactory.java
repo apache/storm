@@ -32,6 +32,7 @@ import java.util.ServiceLoader;
 import java.util.TreeMap;
 import org.apache.storm.Config;
 import org.apache.storm.generated.ComponentCommon;
+import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.serialization.types.ArrayListSerializer;
@@ -75,6 +76,7 @@ public class SerializationFactory {
         k.register(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo.class);
         k.register(ConsList.class);
         k.register(BackPressureStatus.class);
+        k.register(NodeInfo.class);
 
         synchronized (loader) {
             for (SerializationRegister sr : loader) {
@@ -177,10 +179,12 @@ public class SerializationFactory {
                 }
             }
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Unable to create serializer \""
-                                               + serializerClass.getName()
-                                               + "\" for class: "
-                                               + superClass.getName(), ex);
+            throw new IllegalArgumentException(
+                    "Unable to create serializer \""
+                            + serializerClass.getName()
+                            + "\" for class: "
+                            + (superClass == null ? "NoSuperClass" : superClass.getName()),
+                    ex);
         }
     }
 

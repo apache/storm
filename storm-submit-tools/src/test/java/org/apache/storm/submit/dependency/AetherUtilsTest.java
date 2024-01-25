@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,7 +18,7 @@
 package org.apache.storm.submit.dependency;
 
 import com.google.common.collect.Lists;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.Exclusion;
@@ -27,11 +27,11 @@ import org.eclipse.aether.util.artifact.JavaScopes;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AetherUtilsTest {
     @Test
-    public void parseDependency() throws Exception {
+    public void parseDependency() {
         String testDependency = "testgroup:testartifact:1.0.0^testgroup:testexcartifact^testgroup:*";
 
         Dependency dependency = AetherUtils.parseDependency(testDependency);
@@ -57,7 +57,7 @@ public class AetherUtilsTest {
     }
 
     @Test
-    public void createExclusion() throws Exception {
+    public void createExclusion() {
         String testExclusion = "group";
         Exclusion exclusion = AetherUtils.createExclusion(testExclusion);
 
@@ -92,7 +92,7 @@ public class AetherUtilsTest {
     }
 
     @Test
-    public void artifactToString() throws Exception {
+    public void artifactToString() {
         Artifact testArtifact = new DefaultArtifact("org.apache.storm:storm-core:1.0.0");
 
         String ret = AetherUtils.artifactToString(testArtifact);

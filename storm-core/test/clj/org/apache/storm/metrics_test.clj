@@ -194,7 +194,7 @@
                      {"2" (mk-shell-bolt-with-metrics-spec
                             {(Utils/getGlobalStreamId "1" nil)
                              (Thrift/prepareGlobalGrouping)}
-                            "python" "tester_bolt_metrics.py")})]
+                            "python3" "tester_bolt_metrics.py")})]
       (.submitTopology cluster "shell-metrics-tester" {} topology)
 
       (.feed feeder ["a"] 1)
@@ -226,7 +226,7 @@
                            "storm.zookeeper.session.timeout" 60000
                            })))]
     (let [topology (Thrift/buildTopology
-                     {"1" (mk-shell-spout-with-metrics-spec "python" "tester_spout_metrics.py")}
+                     {"1" (mk-shell-spout-with-metrics-spec "python3" "tester_spout_metrics.py")}
                      {"2" (Thrift/prepareBoltDetails
                             {(Utils/getGlobalStreamId "1" nil)
                              (Thrift/prepareAllGrouping)}

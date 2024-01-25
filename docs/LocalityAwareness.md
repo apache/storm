@@ -48,7 +48,7 @@ If the downstream executor located on the same worker as the executor `E`, the l
 The capacity of a bolt executor on Storm UI is calculated as:
   * (number executed * average execute latency) / measurement time
 
-It basically means how busy this executor is. If this is around 1.0, the corresponding Bolt is running as fast as it can. 
+It basically means how busy this executor is. If this is around 1.0, the corresponding Bolt is running as fast as it can. A `__capacity` metric exists to track this value for each executor.
 
 The `Capacity` is not related to the `Load`:
 

@@ -35,8 +35,6 @@ storm.zookeeper.retry.interval: 1000
 storm.zookeeper.retry.intervalceiling.millis: 30000
 storm.zookeeper.auth.user: null
 storm.zookeeper.auth.password: null
-storm.exhibitor.port: 8080
-storm.exhibitor.poll.uripath: "/exhibitor/v1/cluster/list"
 storm.cluster.mode: "distributed" # can be distributed or local
 storm.local.mode.zmq: false
 storm.thrift.transport: "org.apache.storm.security.auth.SimpleTransportPlugin"
@@ -89,6 +87,7 @@ nimbus.topology.blobstore.deletion.delay.ms: 300000
 ### ui.* configs are for the master
 ui.host: 0.0.0.0
 ui.port: 8080
+ui.title: "Storm UI"
 ui.childopts: "-Xmx768m"
 ui.actions.enabled: true
 ui.filter: null
@@ -139,6 +138,7 @@ supervisor.blobstore.download.thread.count: 5
 supervisor.blobstore.download.max_retries: 3
 supervisor.localizer.cache.target.size.mb: 10240
 supervisor.localizer.cleanup.interval.ms: 30000
+supervisor.localizer.update.blob.interval.secs: 30
 
 nimbus.blobstore.class: "org.apache.storm.blobstore.LocalFsBlobStore"
 nimbus.blobstore.expiration.secs: 600
@@ -191,7 +191,7 @@ supervisor.thrift.socket.timeout.ms: 5000
 
 ### worker.* configs are for task workers
 worker.heap.memory.mb: 768
-worker.childopts: "-Xmx%HEAP-MEM%m -XX:+PrintGCDetails -Xloggc:artifacts/gc.log -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
+worker.childopts: "-Xmx%HEAP-MEM%m -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGCDetails -Xloggc:artifacts/gc.log -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=artifacts/heapdump"
 worker.gc.childopts: ""
 
 # Unlocking commercial features requires a special license from Oracle.
@@ -241,6 +241,7 @@ storm.messaging.netty.transfer.batch.size: 262144
 storm.messaging.netty.socket.backlog: 500
 
 # By default, the Netty SASL authentication is set to false.  Users can override and set it true for a specific topology.
+# see https://issues.apache.org/jira/browse/STORM-348 for more details
 storm.messaging.netty.authentication: false
 
 # Default plugin to use for automatic network topology discovery
@@ -254,6 +255,7 @@ topology.enable.message.timeouts: true
 topology.debug: false
 topology.workers: 1
 topology.acker.executors: null
+topology.ras.acker.executors.per.worker: 1
 topology.eventlogger.executors: 0
 topology.tasks: null
 # maximum amount of time a message has to complete before it's considered failed
@@ -266,7 +268,7 @@ topology.max.spout.pending: null    # ideally should be larger than topology.pro
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60
-topology.fall.back.on.java.serialization: true
+topology.fall.back.on.java.serialization: false
 topology.worker.childopts: null
 topology.worker.logwriter.childopts: "-Xmx64m"
 topology.tick.tuple.freq.secs: null
@@ -364,6 +366,7 @@ pacemaker.thrift.message.size.max: 10485760
 #default storm daemon metrics reporter plugins
 storm.daemon.metrics.reporter.plugins:
      - "org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter"
+storm.daemon.metrics.reporter.interval.secs: 10
 
 storm.metricstore.class: "org.apache.storm.metricstore.rocksdb.RocksDbStore"
 storm.metricprocessor.class: "org.apache.storm.metricstore.NimbusMetricProcessor"
@@ -405,11 +408,12 @@ storm.worker.min.cpu.pcore.percent: 0.0
 
 storm.topology.classpath.beginning.enabled: false
 worker.metrics:
-    "CGroupMemory": "org.apache.storm.metric.cgroup.CGroupMemoryUsage"
-    "CGroupMemoryLimit": "org.apache.storm.metric.cgroup.CGroupMemoryLimit"
-    "CGroupCpu": "org.apache.storm.metric.cgroup.CGroupCpu"
-    "CGroupCpuGuarantee": "org.apache.storm.metric.cgroup.CGroupCpuGuarantee"
-    "CGroupCpuGuaranteeByCfsQuota": "org.apache.storm.metric.cgroup.CGroupCpuGuaranteeByCfsQuota"
+    "CGroupMemory": "org.apache.storm.metrics2.cgroup.CGroupMemoryUsage"
+    "CGroupMemoryLimit": "org.apache.storm.metrics2.cgroup.CGroupMemoryLimit"
+    "CGroupCpu": "org.apache.storm.metrics2.cgroup.CGroupCpu"
+    "CGroupCpuGuarantee": "org.apache.storm.metrics2.cgroup.CGroupCpuGuarantee"
+    "CGroupCpuGuaranteeByCfsQuota": "org.apache.storm.metrics2.cgroup.CGroupCpuGuaranteeByCfsQuota"
+    "CGroupCpuStat": "org.apache.storm.metrics2.cgroup.CGroupCpuStat"
 
 # The number of buckets for running statistics
 num.stat.buckets: 20

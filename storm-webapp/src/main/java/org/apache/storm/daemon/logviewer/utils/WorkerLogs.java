@@ -52,7 +52,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,7 +137,13 @@ public class WorkerLogs {
         try (Stream<Path> topoDirs = Files.list(logRootDir)) {
             return topoDirs
                 .filter(Files::isDirectory)
-                .flatMap(Unchecked.function(Files::list)) //Worker dirs
+                .flatMap(a -> {
+                    try {
+                        return Files.list(a);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }) //Worker dirs
                 .filter(Files::isDirectory)
                 .collect(Collectors.toCollection(TreeSet::new));
         } catch (IOException e) {

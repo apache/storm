@@ -50,8 +50,9 @@ public class ExecSorterByConnectionCount implements IExecSorter {
      * @param unassignedExecutors an unmodifiable set of executors that need to be scheduled.
      * @return a list of executors in sorted order for scheduling.
      */
+    @Override
     public List<ExecutorDetails> sortExecutors(Set<ExecutorDetails> unassignedExecutors) {
-        Map<String, Component> componentMap = topologyDetails.getComponents(); // excludes system components
+        Map<String, Component> componentMap = topologyDetails.getUserTopolgyComponents(); // excludes system components
         LinkedHashSet<ExecutorDetails> orderedExecutorSet = new LinkedHashSet<>(); // in insert order
 
         Map<String, Queue<ExecutorDetails>> compToExecsToSchedule = new HashMap<>();

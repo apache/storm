@@ -22,7 +22,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 
 import org.apache.http.entity.StringEntity;
@@ -36,6 +35,7 @@ import org.apache.storm.elasticsearch.response.BulkIndexResponse;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
@@ -122,7 +122,10 @@ class EsState implements State {
     public void updateState(List<TridentTuple> tuples) {
         try {
             String bulkRequest = buildRequest(tuples);
-            Response response = client.performRequest("post", "_bulk", new HashMap<>(), new StringEntity(bulkRequest.toString()));
+
+            final Request request = new Request("post", "_bulk");
+            request.setEntity(new StringEntity(bulkRequest));
+            Response response = client.performRequest(request);
             BulkIndexResponse bulkResponse = objectMapper.readValue(response.getEntity().getContent(), BulkIndexResponse.class);
             if (bulkResponse.hasErrors()) {
                 LOG.warn("failed processing bulk index requests: " + bulkResponse.getFirstError() + ": " + bulkResponse.getFirstResult());

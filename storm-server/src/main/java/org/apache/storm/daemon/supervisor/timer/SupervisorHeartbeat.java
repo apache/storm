@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections.ListUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.ServerConstants;
@@ -29,6 +28,7 @@ import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResources;
+import org.apache.storm.shade.org.apache.commons.collections4.ListUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;

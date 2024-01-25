@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.http.entity.StringEntity;
 import org.apache.storm.elasticsearch.DefaultEsLookupResultOutput;
 import org.apache.storm.elasticsearch.EsLookupResultOutput;
 import org.apache.storm.elasticsearch.common.DefaultEsTupleMapper;
@@ -33,6 +34,7 @@ import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 
 /**
@@ -83,7 +85,9 @@ public class EsLookupBolt extends AbstractEsBolt {
         String id = tupleMapper.getId(tuple);
         Map<String, String> params = tupleMapper.getParams(tuple, new HashMap<>());
 
-        Response response = client.performRequest("get", getEndpoint(index, type, id), params);
+        final Request request = new Request("get", getEndpoint(index, type, id));
+        request.addParameters(params);
+        Response response = client.performRequest(request);
         return output.toValues(response);
     }
 

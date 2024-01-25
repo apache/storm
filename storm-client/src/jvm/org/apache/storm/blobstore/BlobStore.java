@@ -256,7 +256,6 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * Filters keys based on the KeyFilter passed as the argument.
      *
      * @param filter KeyFilter
-     * @param <R>    Type
      * @return Set of filtered keys
      */
     public <R> Set<R> filterAndListKeys(KeyFilter<R> filter) {
@@ -316,6 +315,24 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      */
     public Set<String> storedTopoIds() {
         return filterAndListKeys(TO_TOPO_ID);
+    }
+
+    /**
+     * Updates the last update time of existing blobs in the blobstore to the current time.
+     *
+     * @throws IOException on any error
+     */
+    public void updateLastBlobUpdateTime() throws IOException {
+        // default implementation is a NOOP.
+    }
+
+    /**
+     * Validates that the blob update time of the blobstore is up to date with the current existing blobs.
+     *
+     * @throws IOException on any error
+     */
+    public void validateBlobUpdateTime() throws IOException {
+        // default implementation is a NOOP.
     }
 
     /**

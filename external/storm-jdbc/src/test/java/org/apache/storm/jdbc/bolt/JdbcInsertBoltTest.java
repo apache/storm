@@ -19,8 +19,9 @@ import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.HikariCPConnectionProvider;
 import org.apache.storm.jdbc.mapper.JdbcMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Created by pbrahmbhatt on 10/29/15.
@@ -29,37 +30,26 @@ public class JdbcInsertBoltTest {
 
     @Test
     public void testValidation() {
-        ConnectionProvider provider = new HikariCPConnectionProvider(new HashMap<String, Object>());
-        JdbcMapper mapper = new SimpleJdbcMapper(Lists.newArrayList(new Column("test", 0)));
-        expectIllegaArgs(null, mapper);
-        expectIllegaArgs(provider, null);
+        ConnectionProvider provider = new HikariCPConnectionProvider(new HashMap<>());
+        JdbcMapper mapper = new SimpleJdbcMapper(Lists.newArrayList(new Column<String>("test", 0)));
+        expectNullPointerException(null, mapper);
+        expectNullPointerException(provider, null);
 
-        try {
+        assertThrows(IllegalArgumentException.class, () -> {
             JdbcInsertBolt bolt = new JdbcInsertBolt(provider, mapper);
             bolt.withInsertQuery("test");
             bolt.withTableName("test");
-            Assert.fail("Should have thrown IllegalArgumentException.");
-        } catch (IllegalArgumentException ne) {
-            //expected
-        }
+        });
 
-        try {
+        assertThrows(IllegalArgumentException.class, () -> {
             JdbcInsertBolt bolt = new JdbcInsertBolt(provider, mapper);
             bolt.withTableName("test");
             bolt.withInsertQuery("test");
-            Assert.fail("Should have thrown IllegalArgumentException.");
-        } catch (IllegalArgumentException ne) {
-            //expected
-        }
+        });
     }
 
-    private void expectIllegaArgs(ConnectionProvider provider, JdbcMapper mapper) {
-        try {
-            JdbcInsertBolt bolt = new JdbcInsertBolt(provider, mapper);
-            Assert.fail("Should have thrown IllegalArgumentException.");
-        } catch (IllegalArgumentException ne) {
-            //expected
-        }
+    private void expectNullPointerException(ConnectionProvider provider, JdbcMapper mapper) {
+        assertThrows(NullPointerException.class, () -> new JdbcInsertBolt(provider, mapper));
     }
 
 }

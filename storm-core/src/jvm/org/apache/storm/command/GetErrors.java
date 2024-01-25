@@ -15,6 +15,7 @@ package org.apache.storm.command;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.minidev.json.JSONValue;
 import org.apache.storm.generated.ErrorInfo;
 import org.apache.storm.generated.GetInfoOptions;
 import org.apache.storm.generated.Nimbus;
@@ -22,8 +23,6 @@ import org.apache.storm.generated.NotAliveException;
 import org.apache.storm.generated.NumErrorsChoice;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.utils.NimbusClient;
-import org.apache.storm.utils.Utils;
-import org.json.simple.JSONValue;
 
 public class GetErrors {
     /**

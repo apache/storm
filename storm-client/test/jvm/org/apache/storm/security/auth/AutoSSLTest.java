@@ -14,7 +14,7 @@ package org.apache.storm.security.auth;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,20 +26,20 @@ import java.util.Map;
 import java.util.UUID;
 import javax.security.auth.Subject;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AutoSSLTest {
     final static Logger LOG = LoggerFactory.getLogger(AutoSSLTest.class);
 
     @Test
-    public void testgetSSLFilesFromConf() throws Exception {
+    public void testgetSSLFilesFromConf() {
         AutoSSL assl = new AutoSSL();
         Map<String, Object> conf = new HashMap<>();
         assertNull(assl.getSSLFilesFromConf(conf));
@@ -54,7 +54,7 @@ public class AutoSSLTest {
     }
 
     @Test
-    public void testgetSSLFilesFromConfMultipleComma() throws Exception {
+    public void testgetSSLFilesFromConfMultipleComma() {
         AutoSSL assl = new AutoSSL();
         Map<String, Object> conf = new HashMap<>();
         assertNull(assl.getSSLFilesFromConf(conf));
@@ -66,17 +66,17 @@ public class AutoSSLTest {
         List<String> valid = new ArrayList<>();
         Collections.addAll(valid, "sslfile1.txt", "sslfile2.txt", "sslfile3.txt");
         for (String file : sslFiles) {
-            assertTrue("removing: " + file, valid.remove(file));
+            assertTrue(valid.remove(file), "removing: " + file);
         }
         assertEquals(0, valid.size());
     }
 
     @Test
     public void testpopulateCredentials() throws Exception {
-        File temp = File.createTempFile("tmp-autossl-test", ".txt");
+        File temp = Files.createTempFile("tmp-autossl-test", ".txt").toFile();
         temp.deleteOnExit();
         List<String> lines = Arrays.asList("The first line", "The second line");
-        Files.write(temp.toPath(), lines, Charset.forName("UTF-8"));
+        Files.write(temp.toPath(), lines, StandardCharsets.UTF_8);
         File baseDir = null;
         try {
             baseDir = new File("/tmp/autossl-test-" + UUID.randomUUID());
@@ -99,12 +99,12 @@ public class AutoSSLTest {
             Subject unusedSubject = new Subject();
             assl.populateSubject(unusedSubject, creds);
             String[] outputFiles = baseDir.list();
+            assertNotNull(outputFiles);
             assertEquals(1, outputFiles.length);
 
             // compare contents of files
             if (outputFiles.length > 0) {
-                List<String> linesWritten = FileUtils.readLines(new File(baseDir, outputFiles[0]),
-                                                                Charset.forName("UTF-8"));
+                List<String> linesWritten = FileUtils.readLines(new File(baseDir, outputFiles[0]), StandardCharsets.UTF_8);
                 for (String l : linesWritten) {
                     assertTrue(lines.contains(l));
                 }
@@ -117,12 +117,12 @@ public class AutoSSLTest {
     }
 
     // Test class to override the write directory
-    public class TestAutoSSL extends AutoSSL {
+    public static class TestAutoSSL extends AutoSSL {
 
-        String baseDir = null;
+        String baseDir;
 
         TestAutoSSL(String newDir) {
-            baseDir = newDir;
+            this.baseDir = newDir;
         }
 
         @Override

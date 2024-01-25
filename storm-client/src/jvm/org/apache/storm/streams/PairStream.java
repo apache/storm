@@ -59,7 +59,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * Returns a new stream by applying a {@link Function} to the value of each key-value pairs in this stream.
      *
      * @param function the mapping function
-     * @param <R>      the result type
      * @return the new stream
      */
     public <R> PairStream<K, R> mapValues(Function<? super V, ? extends R> function) {
@@ -71,7 +70,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * Return a new stream by applying a {@link FlatMapFunction} function to the value of each key-value pairs in this stream.
      *
      * @param function the flatmap function
-     * @param <R>      the result type
      * @return the new stream
      */
     public <R> PairStream<K, R> flatMapValues(FlatMapFunction<? super V, ? extends R> function) {
@@ -85,7 +83,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @param initialValue the initial value of the result
      * @param accumulator  the accumulator
      * @param combiner     the combiner
-     * @param <R>          the result type
      * @return the new stream
      */
     public <R> PairStream<K, R> aggregateByKey(R initialValue,
@@ -98,8 +95,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * Aggregates the values for each key of this stream using the given {@link CombinerAggregator}.
      *
      * @param aggregator the combiner aggregator
-     * @param <A>        the accumulator type
-     * @param <R>        the result type
      * @return the new stream
      */
     public <A, R> PairStream<K, R> aggregateByKey(CombinerAggregator<? super V, A, ? extends R> aggregator) {
@@ -168,6 +163,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public PairStream<K, V> filter(Predicate<? super Pair<K, V>> predicate) {
         return toPairStream(super.filter(predicate));
     }
@@ -179,7 +175,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * </p>
      *
      * @param otherStream the other stream
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <V1> PairStream<K, Pair<V, V1>> join(PairStream<K, V1> otherStream) {
@@ -194,8 +189,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      *
      * @param otherStream the other stream
      * @param valueJoiner the {@link ValueJoiner}
-     * @param <R>         the type of the values resulting from the join
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <R, V1> PairStream<K, R> join(PairStream<K, V1> otherStream,
@@ -215,7 +208,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * </p>
      *
      * @param otherStream the other stream
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <V1> PairStream<K, Pair<V, V1>> leftOuterJoin(PairStream<K, V1> otherStream) {
@@ -230,8 +222,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      *
      * @param otherStream the other stream
      * @param valueJoiner the {@link ValueJoiner}
-     * @param <R>         the type of the values resulting from the join
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <R, V1> PairStream<K, R> leftOuterJoin(PairStream<K, V1> otherStream,
@@ -251,7 +241,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * </p>
      *
      * @param otherStream the other stream
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <V1> PairStream<K, Pair<V, V1>> rightOuterJoin(PairStream<K, V1> otherStream) {
@@ -266,8 +255,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      *
      * @param otherStream the other stream
      * @param valueJoiner the {@link ValueJoiner}
-     * @param <R>         the type of the values resulting from the join
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <R, V1> PairStream<K, R> rightOuterJoin(PairStream<K, V1> otherStream,
@@ -287,7 +274,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * </p>
      *
      * @param otherStream the other stream
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <V1> PairStream<K, Pair<V, V1>> fullOuterJoin(PairStream<K, V1> otherStream) {
@@ -302,8 +288,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      *
      * @param otherStream the other stream
      * @param valueJoiner the {@link ValueJoiner}
-     * @param <R>         the type of the values resulting from the join
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <R, V1> PairStream<K, R> fullOuterJoin(PairStream<K, V1> otherStream,
@@ -351,7 +335,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * choose the state implementation.
      *
      * @param stateUpdateFn the state update function
-     * @param <R>           the result type
      * @return the {@link StreamState} which can be used to query the state
      */
     public <R> StreamState<K, R> updateStateByKey(R initialValue,
@@ -365,7 +348,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * choose the state implementation.
      *
      * @param stateUpdater the state updater
-     * @param <R>          the result type
      * @return the {@link StreamState} which can be used to query the state
      */
     public <R> StreamState<K, R> updateStateByKey(StateUpdater<? super V, ? extends R> stateUpdater) {
@@ -384,7 +366,6 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * </p>
      *
      * @param otherStream the other stream
-     * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
     public <V1> PairStream<K, Pair<Iterable<V>, Iterable<V1>>> coGroupByKey(PairStream<K, V1> otherStream) {

@@ -15,6 +15,7 @@
 package org.apache.storm.localizer;
 
 import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.utils.EquivalenceUtils;
 
 public interface PortAndAssignment {
     String getToplogyId();
@@ -26,6 +27,12 @@ public interface PortAndAssignment {
     LocalAssignment getAssignment();
 
     default void complete() {
+    }
 
+    default boolean isEquivalentTo(PortAndAssignment other) {
+        if (getPort() == other.getPort()) {
+            return EquivalenceUtils.areLocalAssignmentsEquivalent(getAssignment(), other.getAssignment());
+        }
+        return false;
     }
 }

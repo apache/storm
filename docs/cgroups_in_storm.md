@@ -8,7 +8,7 @@ documentation: true
 
 CGroups are used by Storm to limit the resource usage of workers to guarantee fairness and QOS.  
 
-**Please note: CGroups is currently supported only on Linux platforms (kernel version 2.6.24 and above)** 
+**Please note: CGroups are currently supported only on Linux platforms (kernel version 2.6.24 and above)** 
 
 ## Setup
 
@@ -86,30 +86,55 @@ CGroups not only can limit the amount of resources a worker has access to, but i
 
 ## CGroupCPU
 
-org.apache.storm.metric.cgroup.CGroupCPU reports back metrics similar to org.apache.storm.metrics.sigar.CPUMetric, except for everything within the CGroup.  It reports both user and system CPU usage in ms as a map
+org.apache.storm.metrics2.cgroup.CGroupCPU reports metrics similar to org.apache.storm.metrics.sigar.CPUMetric, but for everything within the CGroup.  It reports both user and system CPU usage in ms. 
 
 ```
-{
-   "user-ms": number
-   "sys-ms": number
-}
+   "CGroupCPU.user-ms": number
+   "CGroupCPU.sys-ms": number
 ```
 
 CGroup reports these as CLK_TCK counts, and not milliseconds so the accuracy is determined by what CLK_TCK is set to.  On most systems it is 100 times a second so at most the accuracy is 10 ms.
 
-To make this metric work cpuacct must be mounted.
+To make these metrics work cpuacct must be mounted.
 
 ## CGroupCpuGuarantee
 
-org.apache.storm.metric.cgroup.CGroupCpuGuarantee reports back an approximate number of ms of CPU time that this worker is guaranteed to get.  This is calculated from the resources requested by the tasks in that given worker.
+org.apache.storm.metrics2.cgroup.CGroupCpuGuarantee reports back an approximate number of ms of CPU time that this worker is guaranteed to get.  This is calculated from the resources requested by the tasks in that given worker.
+
+## CGroupCpuGuaranteeByCfsQuota
+
+org.apache.storm.metrics2.cgroup.CGroupCpuGuaranteeByCfsQuota reports the percentage of the cpu guaranteed for the worker from cpu.cfs_period_us and cpu.cfs_quota_us.
+
+## CGroupCpuStat
+
+org.apache.storm.metrics2.cgroup.CGroupCpuStat reports the bandwidth statistics of the CGroup. It includes
+```
+   "CGroupCpuStat.nr.period-count": number
+   "CGroupCpuStat.nr.throttled-count": number
+   "CGroupCpuStat.nr.throttled-percentage": number
+   "CGroupCpuStat.throttled.time-ms": number
+```
+
+It is based on the following `cpu.stat`:
+  - `nr_periods`: Number of enforcement intervals that have elapsed.
+  - `nr_throttled`: Number of times the group has been throttled/limited.
+  - `throttled_time`: The total time duration (in nanoseconds) for which entities of the group have been throttled.
+
+And the reported metrics are
+  - `nr.period-count`: the difference of `nr_periods` between two consecutive reporting cycles
+  - `nr.throttled-count`: the difference of `nr_throttled` between two consecutive reporting cycles
+  - `nr.throttled-percentage`: (`nr.throttled-count` / `nr.period-count`)
+  - `throttled.time-ms`: the difference of `throttled_time` in milliseconds between two consecutive reporting cycles
+
+Note: when `org.apache.storm.container.docker.DockerManager` or `org.apache.storm.container.oci.RuncLibContainerManager` is used as `storm.resource.isolation.plugin`, use `org.apache.storm.metric.cgroup.CGroupCpuGuaranteeByCfsQuota` instead.
 
 ## CGroupMemory
 
-org.apache.storm.metric.cgroup.CGroupMemoryUsage reports the current memory usage of all processes in the cgroup in bytes
+org.apache.storm.metrics2.cgroup.CGroupMemoryUsage reports the current memory usage of all processes in the cgroup in bytes
 
 ## CGroupMemoryLimit
 
-org.apache.storm.metric.cgroup.CGroupMemoryLimit report the current limit in bytes for all of the processes in the cgroup.  If running with CGroups enabled in storm this is the on-heap request + the off-heap request for all tasks within the worker + any extra slop space given to workers.
+org.apache.storm.metrics2.cgroup.CGroupMemoryLimit report the current limit in bytes for all of the processes in the cgroup.  If running with CGroups enabled in storm this is the on-heap request + the off-heap request for all tasks within the worker + any extra slop space given to workers.
 
 ## Usage/Debugging CGroups in your topology
 

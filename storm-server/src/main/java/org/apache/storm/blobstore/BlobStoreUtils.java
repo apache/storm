@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.security.auth.Subject;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.generated.AuthorizationException;
@@ -258,7 +257,7 @@ public class BlobStoreUtils {
                 return;
             }
             stateInfo = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + "/" + key);
-            if (CollectionUtils.isEmpty(stateInfo)) {
+            if (stateInfo == null || stateInfo.isEmpty()) {
                 return;
             }
 

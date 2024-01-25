@@ -26,8 +26,6 @@ public class EnumUtil {
      * Create an Enum map with given lambda mapper.
      * @param klass the Enum class
      * @param mapper The mapper producing value with key (enum constant)
-     * @param <T> An Enum class
-     * @param <U> Mapped class
      * @return An Enum map
      */
     public static <T extends Enum<T>, U> EnumMap<T, U> toEnumMap(Class<T> klass, Function<? super T, ? extends U> mapper) {

@@ -13,6 +13,7 @@
 package org.apache.storm;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,9 +24,13 @@ import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.pacemaker.Pacemaker;
 import org.apache.storm.utils.Utils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PacemakerTest {
 
@@ -34,7 +39,7 @@ public class PacemakerTest {
     private Random random;
     private Pacemaker handler;
 
-    @Before
+    @BeforeEach
     public void init() {
         random = new Random(100);
         handler = new Pacemaker(new ConcurrentHashMap<>(), new StormMetricsRegistry());
@@ -44,9 +49,9 @@ public class PacemakerTest {
     public void testServerCreatePath() {
         messageWithRandId(HBServerMessageType.CREATE_PATH, HBMessageData.path("/testpath"));
         HBMessage response = handler.handleMessage(hbMessage, true);
-        Assert.assertEquals(mid, response.get_message_id());
-        Assert.assertEquals(HBServerMessageType.CREATE_PATH_RESPONSE, response.get_type());
-        Assert.assertNull(response.get_data());
+        assertEquals(mid, response.get_message_id());
+        assertEquals(HBServerMessageType.CREATE_PATH_RESPONSE, response.get_type());
+        assertNull(response.get_data());
     }
 
     @Test
@@ -54,12 +59,12 @@ public class PacemakerTest {
         messageWithRandId(HBServerMessageType.EXISTS, HBMessageData.path("/testpath"));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
-        Assert.assertEquals(mid, badResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
+        assertEquals(mid, badResponse.get_message_id());
+        assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
 
-        Assert.assertEquals(mid, goodResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.EXISTS_RESPONSE, goodResponse.get_type());
-        Assert.assertFalse(goodResponse.get_data().get_boolval());
+        assertEquals(mid, goodResponse.get_message_id());
+        assertEquals(HBServerMessageType.EXISTS_RESPONSE, goodResponse.get_type());
+        assertFalse(goodResponse.get_data().get_boolval());
     }
 
     @Test
@@ -75,32 +80,32 @@ public class PacemakerTest {
         messageWithRandId(HBServerMessageType.EXISTS, HBMessageData.path(path));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
-        Assert.assertEquals(mid, badResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
+        assertEquals(mid, badResponse.get_message_id());
+        assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
 
-        Assert.assertEquals(mid, goodResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.EXISTS_RESPONSE, goodResponse.get_type());
-        Assert.assertTrue(goodResponse.get_data().get_boolval());
+        assertEquals(mid, goodResponse.get_message_id());
+        assertEquals(HBServerMessageType.EXISTS_RESPONSE, goodResponse.get_type());
+        assertTrue(goodResponse.get_data().get_boolval());
     }
 
     @Test
-    public void testServerSendPulseGetPulse() throws UnsupportedEncodingException {
+    public void testServerSendPulseGetPulse() {
         String path = "/pulsepath";
         String dataString = "pulse data";
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
-        hbPulse.set_details(dataString.getBytes("UTF-8"));
+        hbPulse.set_details(dataString.getBytes(StandardCharsets.UTF_8));
         messageWithRandId(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
         HBMessage sendResponse = handler.handleMessage(hbMessage, true);
-        Assert.assertEquals(mid, sendResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.SEND_PULSE_RESPONSE, sendResponse.get_type());
-        Assert.assertNull(sendResponse.get_data());
+        assertEquals(mid, sendResponse.get_message_id());
+        assertEquals(HBServerMessageType.SEND_PULSE_RESPONSE, sendResponse.get_type());
+        assertNull(sendResponse.get_data());
 
         messageWithRandId(HBServerMessageType.GET_PULSE, HBMessageData.path(path));
         HBMessage response = handler.handleMessage(hbMessage, true);
-        Assert.assertEquals(mid, response.get_message_id());
-        Assert.assertEquals(HBServerMessageType.GET_PULSE_RESPONSE, response.get_type());
-        Assert.assertEquals(dataString, new String(response.get_data().get_pulse().get_details(), "UTF-8"));
+        assertEquals(mid, response.get_message_id());
+        assertEquals(HBServerMessageType.GET_PULSE_RESPONSE, response.get_type());
+        assertEquals(dataString, new String(response.get_data().get_pulse().get_details(), StandardCharsets.UTF_8));
     }
 
     @Test
@@ -108,12 +113,12 @@ public class PacemakerTest {
         messageWithRandId(HBServerMessageType.GET_ALL_PULSE_FOR_PATH, HBMessageData.path("/testpath"));
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
-        Assert.assertEquals(mid, badResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
+        assertEquals(mid, badResponse.get_message_id());
+        assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
 
-        Assert.assertEquals(mid, goodResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.GET_ALL_PULSE_FOR_PATH_RESPONSE, goodResponse.get_type());
-        Assert.assertNull(goodResponse.get_data());
+        assertEquals(mid, goodResponse.get_message_id());
+        assertEquals(HBServerMessageType.GET_ALL_PULSE_FOR_PATH_RESPONSE, goodResponse.get_type());
+        assertNull(goodResponse.get_data());
     }
 
     @Test
@@ -127,16 +132,16 @@ public class PacemakerTest {
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
         List<String> pulseIds = goodResponse.get_data().get_nodes().get_pulseIds();
 
-        Assert.assertEquals(mid, badResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
+        assertEquals(mid, badResponse.get_message_id());
+        assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
 
-        Assert.assertEquals(mid, goodResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, goodResponse.get_type());
+        assertEquals(mid, goodResponse.get_message_id());
+        assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, goodResponse.get_type());
 
-        Assert.assertTrue(pulseIds.contains("foo"));
-        Assert.assertTrue(pulseIds.contains("bar"));
-        Assert.assertTrue(pulseIds.contains("baz"));
-        Assert.assertTrue(pulseIds.contains("boo"));
+        assertTrue(pulseIds.contains("foo"));
+        assertTrue(pulseIds.contains("bar"));
+        assertTrue(pulseIds.contains("baz"));
+        assertTrue(pulseIds.contains("boo"));
 
         makeNode(handler, "/some/deeper/path/foo");
         makeNode(handler, "/some/deeper/path/bar");
@@ -146,15 +151,15 @@ public class PacemakerTest {
         goodResponse = handler.handleMessage(hbMessage, true);
         pulseIds = goodResponse.get_data().get_nodes().get_pulseIds();
 
-        Assert.assertEquals(mid, badResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
+        assertEquals(mid, badResponse.get_message_id());
+        assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
 
-        Assert.assertEquals(mid, goodResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, goodResponse.get_type());
+        assertEquals(mid, goodResponse.get_message_id());
+        assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, goodResponse.get_type());
 
-        Assert.assertTrue(pulseIds.contains("foo"));
-        Assert.assertTrue(pulseIds.contains("bar"));
-        Assert.assertTrue(pulseIds.contains("baz"));
+        assertTrue(pulseIds.contains("foo"));
+        assertTrue(pulseIds.contains("bar"));
+        assertTrue(pulseIds.contains("baz"));
     }
 
     @Test
@@ -164,14 +169,14 @@ public class PacemakerTest {
         HBMessage badResponse = handler.handleMessage(hbMessage, false);
         HBMessage goodResponse = handler.handleMessage(hbMessage, true);
         HBPulse goodPulse = goodResponse.get_data().get_pulse();
-        Assert.assertEquals(mid, badResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
-        Assert.assertNull(badResponse.get_data());
+        assertEquals(mid, badResponse.get_message_id());
+        assertEquals(HBServerMessageType.NOT_AUTHORIZED, badResponse.get_type());
+        assertNull(badResponse.get_data());
 
-        Assert.assertEquals(mid, goodResponse.get_message_id());
-        Assert.assertEquals(HBServerMessageType.GET_PULSE_RESPONSE, goodResponse.get_type());
-        Assert.assertEquals("/some-root/GET_PULSE", goodPulse.get_id());
-        Assert.assertEquals("nothing", new String(goodPulse.get_details(), "UTF-8"));
+        assertEquals(mid, goodResponse.get_message_id());
+        assertEquals(HBServerMessageType.GET_PULSE_RESPONSE, goodResponse.get_type());
+        assertEquals("/some-root/GET_PULSE", goodPulse.get_id());
+        assertEquals("nothing", new String(goodPulse.get_details(), StandardCharsets.UTF_8));
     }
 
     @Test
@@ -183,16 +188,16 @@ public class PacemakerTest {
 
         messageWithRandId(HBServerMessageType.DELETE_PATH, HBMessageData.path("/some-root/DELETE_PATH"));
         HBMessage response = handler.handleMessage(hbMessage, true);
-        Assert.assertEquals(mid, response.get_message_id());
-        Assert.assertEquals(HBServerMessageType.DELETE_PATH_RESPONSE, response.get_type());
-        Assert.assertNull(response.get_data());
+        assertEquals(mid, response.get_message_id());
+        assertEquals(HBServerMessageType.DELETE_PATH_RESPONSE, response.get_type());
+        assertNull(response.get_data());
 
         messageWithRandId(HBServerMessageType.GET_ALL_NODES_FOR_PATH, HBMessageData.path("/some-root/DELETE_PATH"));
         response = handler.handleMessage(hbMessage, true);
         List<String> pulseIds = response.get_data().get_nodes().get_pulseIds();
-        Assert.assertEquals(mid, response.get_message_id());
-        Assert.assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, response.get_type());
-        Assert.assertTrue(pulseIds.isEmpty());
+        assertEquals(mid, response.get_message_id());
+        assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, response.get_type());
+        assertTrue(pulseIds.isEmpty());
     }
 
     @Test
@@ -204,16 +209,16 @@ public class PacemakerTest {
 
         messageWithRandId(HBServerMessageType.DELETE_PULSE_ID, HBMessageData.path("/some-root/DELETE_PULSE_ID/foo"));
         HBMessage response = handler.handleMessage(hbMessage, true);
-        Assert.assertEquals(mid, response.get_message_id());
-        Assert.assertEquals(HBServerMessageType.DELETE_PULSE_ID_RESPONSE, response.get_type());
-        Assert.assertNull(response.get_data());
+        assertEquals(mid, response.get_message_id());
+        assertEquals(HBServerMessageType.DELETE_PULSE_ID_RESPONSE, response.get_type());
+        assertNull(response.get_data());
 
         messageWithRandId(HBServerMessageType.GET_ALL_NODES_FOR_PATH, HBMessageData.path("/some-root/DELETE_PULSE_ID"));
         response = handler.handleMessage(hbMessage, true);
         List<String> pulseIds = response.get_data().get_nodes().get_pulseIds();
-        Assert.assertEquals(mid, response.get_message_id());
-        Assert.assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, response.get_type());
-        Assert.assertFalse(pulseIds.contains("foo"));
+        assertEquals(mid, response.get_message_id());
+        assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, response.get_type());
+        assertFalse(pulseIds.contains("foo"));
     }
 
     private void messageWithRandId(HBServerMessageType type, HBMessageData data) {
@@ -225,7 +230,7 @@ public class PacemakerTest {
     private HBMessage makeNode(Pacemaker handler, String path) throws UnsupportedEncodingException {
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id(path);
-        hbPulse.set_details("nothing".getBytes("UTF-8"));
+        hbPulse.set_details("nothing".getBytes(StandardCharsets.UTF_8));
         HBMessage message = new HBMessage(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
         return handler.handleMessage(message, true);
     }

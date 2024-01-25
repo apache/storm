@@ -44,6 +44,7 @@ import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import net.minidev.json.JSONValue;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -110,7 +111,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.json.simple.JSONValue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1150,7 +1151,7 @@ public class UIHelpers {
                                                          String window, Map<String, Object> config, String remoteUser) {
         Map<String, Object> result = new HashMap();
         Map<String, Object> topologyConf = (Map<String, Object>) JSONValue.parse(topologyPageInfo.get_topology_conf());
-        long messageTimeout = (long) topologyConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
+        int messageTimeout = (int) topologyConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
         Map<String, Object> unpackedTopologyPageInfo =
                 unpackTopologyInfo(topologyPageInfo, window, config);
         result.putAll(unpackedTopologyPageInfo);
@@ -1577,9 +1578,8 @@ public class UIHelpers {
             temp.put("emitted", emittedStatDisplayMap.get(window));
             temp.put("transferred", transferred.get(window));
             temp.put("completeLatency", StatsUtil.floatStr(completeLatency.get(getWindowHint(window))));
-            temp.put("acked", acked.get(window));
-            temp.put("failed", failed.get(window));
-
+            temp.put("acked", acked.getOrDefault(window, 0L));
+            temp.put("failed", failed.getOrDefault(window, 0L));
 
             result.add(temp);
         }
@@ -1747,19 +1747,18 @@ public class UIHelpers {
     }
 
     /**
-     * sanitizeStreamName.
-     * @param streamName streamName
-     * @return sanitizeStreamName
+     * Sanitizes streamName for use as an identifier in the visualization.  Replaces all characters except A-Z, a-z,
+     * '.', '-', and '_' with '_'.  If streamName does not start with A-Z or a-z, adds '_s' prefix.
+     * @param streamName non-null streamName
+     * @return sanitized stream name
      */
     public static String sanitizeStreamName(String streamName) {
-        Pattern pattern = Pattern.compile("(?![A-Za-z_\\-:\\.]).");
-        Pattern pattern2 = Pattern.compile("^[A-Za-z]");
-        Matcher matcher = pattern2.matcher(streamName);
-        Matcher matcher2 = pattern.matcher("\\s" + streamName);
-        if (matcher.find()) {
-            matcher2 = pattern.matcher(streamName);
+        Matcher problemCharacterMatcher = Pattern.compile("(?![A-Za-z_\\-\\.]).").matcher(streamName);
+        if (streamName.length() > 0 && Character.isLetter(streamName.charAt(0))) {
+            return problemCharacterMatcher.replaceAll("_");
+        } else {
+            return "_s" + problemCharacterMatcher.replaceAll("_");
         }
-        return matcher2.replaceAll("_");
     }
 
     /**

@@ -18,6 +18,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Timer;
@@ -25,11 +26,14 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.storm.Config;
+import org.apache.storm.StormTimer;
 import org.apache.storm.metrics2.reporters.StormReporter;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -42,6 +46,7 @@ public class StormMetricRegistry implements MetricRegistryProvider {
     private static final Logger LOG = LoggerFactory.getLogger(StormMetricRegistry.class);
     private static final String WORKER_METRIC_PREFIX = "storm.worker.";
     private static final String TOPOLOGY_METRIC_PREFIX = "storm.topology.";
+    private static final int RATE_COUNTER_UPDATE_INTERVAL_SECONDS = 2;
     
     private final MetricRegistry registry = new MetricRegistry();
     private final List<StormReporter> reporters = new ArrayList<>();
@@ -54,6 +59,23 @@ public class StormMetricRegistry implements MetricRegistryProvider {
     private String hostName = null;
     private int port = -1;
     private String topologyId = null;
+    private StormTimer metricTimer;
+    private Set<RateCounter> rateCounters = ConcurrentHashMap.newKeySet();
+
+    public RateCounter rateCounter(String metricName, String topologyId,
+                                   String componentId, int taskId, int workerPort, String streamId) {
+        RateCounter rateCounter = new RateCounter(this, metricName, topologyId, componentId, taskId,
+                workerPort, streamId);
+        rateCounters.add(rateCounter);
+        return rateCounter;
+    }
+
+    public RateCounter rateCounter(String metricName, String componentId, int taskId) {
+        RateCounter rateCounter = new RateCounter(this, metricName, topologyId, componentId, taskId,
+                port);
+        rateCounters.add(rateCounter);
+        return rateCounter;
+    }
 
     public <T> SimpleGauge<T> gauge(
         T initialValue, String name, String topologyId, String componentId, Integer taskId, Integer port) {
@@ -71,7 +93,15 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         return gauge;
     }
 
+    @Deprecated
     public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String topologyId, String componentId, Integer taskId, Integer port) {
+        MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
+        gauge = registerGauge(metricNames, gauge, taskId, componentId, null);
+        saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
+        return gauge;
+    }
+
+    public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String componentId, Integer taskId) {
         MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
         gauge = registerGauge(metricNames, gauge, taskId, componentId, null);
         saveMetricTaskIdMapping(taskId, metricNames, gauge, taskIdGauges);
@@ -128,6 +158,13 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         return counter;
     }
 
+    public Counter counter(String name, String componentId, Integer taskId) {
+        MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
+        Counter counter = registerCounter(metricNames, new Counter(), taskId, componentId, null);
+        saveMetricTaskIdMapping(taskId, metricNames, counter, taskIdCounters);
+        return counter;
+    }
+
     public Timer timer(String name, TopologyContext context) {
         MetricNames metricNames = topologyMetricName(name, context);
         Timer timer = registerTimer(metricNames, new Timer(), context.getThisTaskId(), context.getThisComponentId(), null);
@@ -175,7 +212,7 @@ public class StormMetricRegistry implements MetricRegistryProvider {
 
     private static <T extends Metric> void saveMetricTaskIdMapping(Integer taskId, MetricNames names, T metric, Map<Integer,
             Map<String, T>> taskIdMetrics) {
-        Map<String, T> metrics = taskIdMetrics.computeIfAbsent(taskId, (tid) -> new HashMap<>());
+        Map<String, T> metrics = taskIdMetrics.computeIfAbsent(taskId, (tid) -> new ConcurrentHashMap<>());
         metrics.put(names.getShortName(), metric);
     }
 
@@ -222,6 +259,14 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         return histogram;
     }
 
+    public void deregister(Set<Metric> toRemove) {
+        MetricFilter metricFilter = new RemoveMetricFilter(toRemove);
+        for (TaskMetricRepo taskMetricRepo : taskMetrics.values()) {
+            taskMetricRepo.degister(metricFilter);
+        }
+        registry.removeMatching(metricFilter);
+    }
+
     private <T extends Metric> Map<String, T> getMetricNameMap(int taskId, Map<Integer, Map<String, T>> taskIdMetrics) {
         Map<String, T> ret = new HashMap<>();
         Map<String, T> taskMetrics = taskIdMetrics.getOrDefault(taskId, Collections.emptyMap());
@@ -260,6 +305,13 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         this.topologyId = (String) topoConf.get(Config.STORM_ID);
         this.port = port;
 
+        this.metricTimer = new StormTimer("MetricRegistryTimer", (thread, exception) -> {
+            LOG.error("Error when processing metric event", exception);
+            Utils.exitProcess(20, "Error when processing metric event");
+        });
+        this.metricTimer.scheduleRecurring(RATE_COUNTER_UPDATE_INTERVAL_SECONDS,
+                RATE_COUNTER_UPDATE_INTERVAL_SECONDS, new RateCounterUpdater());
+
         LOG.info("Starting metrics reporters...");
         List<Map<String, Object>> reporterList = (List<Map<String, Object>>) topoConf.get(Config.TOPOLOGY_METRICS_REPORTERS);
         
@@ -286,12 +338,23 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         for (StormReporter sr : reporters) {
             sr.stop();
         }
+        try {
+            metricTimer.close();
+        } catch (InterruptedException e) {
+            LOG.warn("Exception while stopping", e);
+        }
     }
 
+    public int getRateCounterUpdateIntervalSeconds() {
+        return RATE_COUNTER_UPDATE_INTERVAL_SECONDS;
+    }
+
+    @Override
     public MetricRegistry getRegistry() {
         return registry;
     }
 
+    @Override
     public Map<TaskMetricDimensions, TaskMetricRepo> getTaskMetrics() {
         return taskMetrics;
     }
@@ -368,7 +431,7 @@ public class StormMetricRegistry implements MetricRegistryProvider {
     private String dotToUnderScore(String str) {
         return str.replace('.', '_');
     }
-
+    
     private static class MetricNames {
         private String longName;
         private String shortName;
@@ -392,6 +455,42 @@ public class StormMetricRegistry implements MetricRegistryProvider {
          */
         String getShortName() {
             return shortName;
+        }
+    }
+
+    private class RateCounterUpdater implements Runnable {
+        @Override
+        public void run() {
+            for (RateCounter rateCounter : rateCounters) {
+                rateCounter.update();
+            }
+        }
+    }
+
+    private static class RemoveMetricFilter implements MetricFilter {
+        private Set<Metric> metrics = new HashSet<>();
+
+        RemoveMetricFilter(Set<Metric> toRemove) {
+            this.metrics.addAll(toRemove);
+            for (Metric metric : toRemove) {
+                // RateCounters are gauges, but also have internal Counters that should also be removed
+                if (metric instanceof RateCounter) {
+                    RateCounter rateCounter = (RateCounter) metric;
+                    this.metrics.add(rateCounter.getCounter());
+                }
+            }
+        }
+
+        /**
+         * Returns {@code true} if the metric matches the filter; {@code false} otherwise.
+         *
+         * @param name   the metric's name
+         * @param metric the metric
+         * @return {@code true} if the metric matches the filter
+         */
+        @Override
+        public boolean matches(String name, Metric metric) {
+            return this.metrics.contains(metric);
         }
     }
 }

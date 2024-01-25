@@ -92,8 +92,13 @@ public class SupervisorUtils {
     }
 
     public static List<Integer> getSlotsPorts(Map<String, Object> supervisorConf) {
-        List<Integer> slotsPorts = (List<Integer>) supervisorConf.getOrDefault(DaemonConfig.SUPERVISOR_SLOTS_PORTS,
+        List<Integer> slotsPorts = new ArrayList<>();
+        List<Number> ports = (List<Number>) supervisorConf.getOrDefault(DaemonConfig.SUPERVISOR_SLOTS_PORTS,
                 new ArrayList<>());
+        for (Number port : ports) {
+            slotsPorts.add(port.intValue());
+        }
+
         // It's possible we have numaPorts specified that weren't configured in SUPERVISOR_SLOTS_PORTS.  Make
         // sure we handle these ports as well.
         Set<Integer> numaPorts = SupervisorUtils.getNumaPorts(supervisorConf);
@@ -115,7 +120,7 @@ public class SupervisorUtils {
     }
 
     /**
-     * Given the blob information returns the value of the uncompress field, handling it either being a string or a boolean value, or if
+     * Given the blob information returns the value of the uncompress field, handling it being a boolean value, or if
      * it's not specified then returns false.
      */
     public static boolean shouldUncompressBlob(Map<String, Object> blobInfo) {
@@ -123,7 +128,7 @@ public class SupervisorUtils {
     }
 
     /**
-     * Given the blob information returns the value of the workerRestart field, handling it either being a string or a boolean value, or if
+     * Given the blob information returns the value of the workerRestart field, handling it being a boolean value, or if
      * it's not specified then returns false.
      *
      * @param blobInfo the info for the blob.

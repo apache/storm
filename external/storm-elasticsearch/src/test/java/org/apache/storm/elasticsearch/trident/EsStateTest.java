@@ -33,12 +33,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 @IntegrationTest
 @ExtendWith(MockitoExtension.class)
 public class EsStateTest {
     
-    private static Node node;
+    private static ElasticsearchContainer node;
 
     private final String[] documentId = {UUID.randomUUID().toString(), UUID.randomUUID().toString()};
     private final String index = "index";

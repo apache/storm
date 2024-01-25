@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
@@ -38,19 +39,20 @@ public class TimeOutWorkerHeartbeatsRecoveryStrategy implements IWorkerHeartbeat
 
     private static int NODE_MAX_TIMEOUT_SECS = 600;
 
-    private long startTimeSecs;
+    private AtomicLong startTimeSecs;
 
     private Set<String> reportedIds;
 
     @Override
     public void prepare(Map conf) {
         NODE_MAX_TIMEOUT_SECS = ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_HEARTBEATS_MAX_TIMEOUT_SECS), 600);
-        this.startTimeSecs = Time.currentTimeMillis() / 1000L;
+        this.startTimeSecs = new AtomicLong(0L);
         this.reportedIds = new HashSet<>();
     }
 
     @Override
     public boolean isReady(Set<String> nodeIds) {
+        startTimeSecs.compareAndSet(0L, Time.currentTimeMillis() / 1000L);
         if (exceedsMaxTimeOut()) {
             Set<String> tmp = nodeIds.stream().filter(id -> !this.reportedIds.contains(id)).collect(toSet());
             LOG.warn("Failed to recover heartbeats for nodes: {} with timeout {}s", tmp, NODE_MAX_TIMEOUT_SECS);
@@ -66,7 +68,7 @@ public class TimeOutWorkerHeartbeatsRecoveryStrategy implements IWorkerHeartbeat
     }
 
     private boolean exceedsMaxTimeOut() {
-        return (Time.currentTimeMillis() / 1000L - this.startTimeSecs) > NODE_MAX_TIMEOUT_SECS;
+        return (Time.currentTimeMillis() / 1000L - this.startTimeSecs.get()) > NODE_MAX_TIMEOUT_SECS;
     }
 
 }

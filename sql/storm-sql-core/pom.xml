@@ -21,12 +21,24 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.3.0-SNAPSHOT</version>
+        <version>2.7.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>storm-sql-core</artifactId>
 
+    <properties>
+        <!--
+            +- org.apache.calcite:calcite-core:jar:1.16.0:compile
+             |  +- org.apache.calcite.avatica:avatica-core:jar:1.11.0:compile
+             |  |  \- com.google.protobuf:protobuf-java:jar:3.3.0:compile
+
+             to fix Illegal reflective access by com.google.protobuf.UnsafeUtil
+             (com.google.protobuf:protobuf-java:3.3.0) to field java.nio.Buffer.address add
+             "add-opens java.base/java.nio=ALL-UNNAMED"
+        -->
+        <storm-sql-core.test.introspection.argLine>--add-opens java.base/java.nio=ALL-UNNAMED</storm-sql-core.test.introspection.argLine>
+    </properties>
     <developers>
         <developer>
             <id>haohui</id>
@@ -35,11 +47,6 @@
         </developer>
     </developers>
     
-    <properties>
-        <!-- Required downgrade by calcite-core 1.14.0 -->
-        <guava.version>16.0.1</guava.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -98,6 +105,14 @@
                     <groupId>commons-dbcp</groupId>
                     <artifactId>commons-dbcp</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.reload4j</groupId>
+                    <artifactId>reload4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -119,7 +134,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>java-hamcrest</artifactId>
+            <artifactId>hamcrest</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -127,17 +142,13 @@
             <version>4.1</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
         <testSourceDirectory>src/test</testSourceDirectory>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
@@ -186,7 +197,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.2</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -199,7 +210,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <forkCount>1</forkCount>
+                    <argLine>${storm-sql-core.test.introspection.argLine} -Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <excludedGroups>IntegrationTest | ${java.unit.test.exclude.groups}</excludedGroups>
+                    <trimStackTrace>false</trimStackTrace>
+                    <forkCount>1.0C</forkCount>
+                    <reuseForks>true</reuseForks>
+                    <systemPropertyVariables>
+                        <storm.home>${project.basedir}/target/testhome</storm.home>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>
@@ -216,7 +235,6 @@
                      it under ${project.build.directory} where all freemarker templates are. -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.8</version>
                 <executions>
                     <execution>
                         <id>unpack-parser-template</id>
@@ -229,6 +247,7 @@
                                 <artifactItem>
                                     <groupId>org.apache.calcite</groupId>
                                     <artifactId>calcite-core</artifactId>
+                                    <version>${calcite.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/</outputDirectory>
@@ -268,7 +287,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.5</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>add-generated-sources</id>
@@ -287,7 +306,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>javacc-maven-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
@@ -298,7 +317,7 @@
                         <configuration>
                             <sourceDirectory>${project.build.directory}/generated-sources/</sourceDirectory>
                             <includes>
-                                <include>**/Parser.jj</include>
+                                <include>**/*.jj</include>
                             </includes>
                             <lookAhead>2</lookAhead>
                             <isStatic>false</isStatic>

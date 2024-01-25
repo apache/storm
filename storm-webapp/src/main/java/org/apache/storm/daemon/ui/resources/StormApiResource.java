@@ -35,13 +35,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
+import net.minidev.json.JSONValue;
+
 import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -546,8 +547,9 @@ public class StormApiResource {
         componentOpResponseRequestMeter.mark();
         try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
             return UIHelpers.makeStandardResponse(
+
                     UIHelpers.putTopologyDebugActionSpct(
-                            nimbusClient.getClient(), id, component, action, spct
+                            nimbusClient.getClient(), id, action, spct, component
                     ),
                     callback
             );

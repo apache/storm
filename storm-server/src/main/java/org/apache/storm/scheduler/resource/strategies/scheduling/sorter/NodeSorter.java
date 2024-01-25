@@ -21,6 +21,7 @@ package org.apache.storm.scheduler.resource.strategies.scheduling.sorter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -70,17 +70,11 @@ public class NodeSorter implements INodeSorter {
     protected List<String> favoredNodeIds;
     protected List<String> unFavoredNodeIds;
 
+    // Updated in prepare method
+    ExecutorDetails exec;
+
     /**
      * Initialize for the default implementation node sorting.
-     *
-     * <p>
-     *  <li>{@link BaseResourceAwareStrategy.NodeSortType#GENERIC_RAS} sorting implemented in
-     *  {@link #sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, NodeSorter.ExistingScheduleFunc)}</li>
-     *  <li>{@link BaseResourceAwareStrategy.NodeSortType#DEFAULT_RAS} sorting implemented in
-     *  {@link #sortObjectResourcesDefault(ObjectResourcesSummary, NodeSorter.ExistingScheduleFunc)}</li>
-     *  <li>{@link BaseResourceAwareStrategy.NodeSortType#COMMON} sorting implemented in
-     *  {@link #sortObjectResourcesCommon(ObjectResourcesSummary, ExecutorDetails, NodeSorter.ExistingScheduleFunc)}</li>
-     * </p>
      *
      * @param cluster for which nodes will be sorted.
      * @param topologyDetails the topology to sort for.
@@ -93,21 +87,18 @@ public class NodeSorter implements INodeSorter {
 
         // from Cluster
         networkTopography = cluster.getNetworkTopography();
-        Map<String, String> hostToRack = new HashMap<>();
-        for (Map.Entry<String, List<String>> entry : networkTopography.entrySet()) {
-            String rackId = entry.getKey();
-            for (String hostName: entry.getValue()) {
-                hostToRack.put(hostName, rackId);
-            }
-        }
+        Map<String, String> hostToRack = cluster.getHostToRack();
         RasNodes nodes = new RasNodes(cluster);
         for (RasNode node: nodes.getNodes()) {
             String superId = node.getId();
             String hostName = node.getHostname();
+            if (!node.isAlive() || hostName == null) {
+                continue;
+            }
             String rackId = hostToRack.getOrDefault(hostName, DNSToSwitchMapping.DEFAULT_RACK);
             superIdToRack.put(superId, rackId);
             hostnameToNodes.computeIfAbsent(hostName, (hn) -> new ArrayList<>()).add(node);
-            rackIdToNodes.computeIfAbsent(rackId, (hn) -> new ArrayList<>()).add(node);
+            rackIdToNodes.computeIfAbsent(rackId, (rid) -> new ArrayList<>()).add(node);
         }
         this.greyListedSupervisorIds = cluster.getGreyListedSupervisors();
 
@@ -122,16 +113,21 @@ public class NodeSorter implements INodeSorter {
         unFavoredNodeIds.removeAll(favoredNodeIds);
     }
 
+    @Override
+    public void prepare(ExecutorDetails exec) {
+        this.exec = exec;
+    }
+
     /**
-     * Scheduling uses {@link #sortAllNodes(ExecutorDetails)} which eventually
-     * calls this method whose behavior can altered by setting {@link #nodeSortType}.
+     * Scheduling uses {@link #sortAllNodes()} which eventually
+     * calls this method whose behavior can be altered by setting {@link #nodeSortType}.
      *
      * @param resourcesSummary     contains all individual {@link ObjectResourcesItem} as well as cumulative stats
      * @param exec                 executor for which the sorting is done
      * @param existingScheduleFunc a function to get existing executors already scheduled on this object
      * @return a sorted list of {@link ObjectResourcesItem}
      */
-    protected TreeSet<ObjectResourcesItem> sortObjectResources(
+    protected List<ObjectResourcesItem> sortObjectResources(
             ObjectResourcesSummary resourcesSummary, ExecutorDetails exec, ExistingScheduleFunc existingScheduleFunc) {
         switch (nodeSortType) {
             case DEFAULT_RAS:
@@ -164,14 +160,15 @@ public class NodeSorter implements INodeSorter {
      *     above will be ranked after racks that have more balanced resource availability and nodes or racks that have
      *     resources that are not requested will be ranked below . So we will be less likely to pick a rack that
      *     have a lot of one resource but a low amount of another and have a lot of resources that are not requested by the executor.
-     *     This is similar to logic used {@link #sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
+     *     This is similar to logic used in
+     *     {@link NodeSorter#sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
      * </li>
      *
      * <li>
      *     The tie between two nodes with same resource availability is broken by using the node with lower minimum
      *     percentage used. This comparison was used in {@link #sortObjectResourcesDefault(ObjectResourcesSummary, ExistingScheduleFunc)}
      *     but here it is made subservient to modified resource availbility used in
-     *     {@link #sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
+     *     {@code #sortObjectResourcesGeneric(ObjectResourcesSummary, ExecutorDetails, ExistingScheduleFunc)}.
      *
      * </li>
      *
@@ -180,7 +177,7 @@ public class NodeSorter implements INodeSorter {
      * @param existingScheduleFunc a function to get existing executors already scheduled on this object
      * @return a sorted list of ObjectResources
      */
-    private TreeSet<ObjectResourcesItem> sortObjectResourcesCommon(
+    private List<ObjectResourcesItem> sortObjectResourcesCommon(
             final ObjectResourcesSummary allResources, final ExecutorDetails exec,
             final ExistingScheduleFunc existingScheduleFunc) {
         // Copy and modify allResources
@@ -203,34 +200,31 @@ public class NodeSorter implements INodeSorter {
         );
 
         // Use the following comparator to return a sorted set
-        TreeSet<ObjectResourcesItem> sortedObjectResources =
-                new TreeSet<>((o1, o2) -> {
-                    int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
-                    int execsScheduled2 = existingScheduleFunc.getNumExistingSchedule(o2.id);
-                    if (execsScheduled1 > execsScheduled2) {
-                        return -1;
-                    } else if (execsScheduled1 < execsScheduled2) {
-                        return 1;
-                    } else {
-                        double o1Avg = o1.avgResourcePercent;
-                        double o2Avg = o2.avgResourcePercent;
-
-                        if (o1Avg > o2Avg) {
-                            return -1;
-                        } else if (o1Avg < o2Avg) {
-                            return 1;
-                        } else {
-                            if (o1.minResourcePercent > o2.minResourcePercent) {
-                                return -1;
-                            } else if (o1.minResourcePercent < o2.minResourcePercent) {
-                                return 1;
-                            } else {
-                                return o1.id.compareTo(o2.id);
-                            }
-                        }
-                    }
-                });
+        List<ObjectResourcesItem> sortedObjectResources = new ArrayList();
+        Comparator<ObjectResourcesItem> comparator = (o1, o2) -> {
+            int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
+            int execsScheduled2 = existingScheduleFunc.getNumExistingSchedule(o2.id);
+            if (execsScheduled1 > execsScheduled2) {
+                return -1;
+            } else if (execsScheduled1 < execsScheduled2) {
+                return 1;
+            }
+            double o1Avg = o1.avgResourcePercent;
+            double o2Avg = o2.avgResourcePercent;
+            if (o1Avg > o2Avg) {
+                return -1;
+            } else if (o1Avg < o2Avg) {
+                return 1;
+            }
+            if (o1.minResourcePercent > o2.minResourcePercent) {
+                return -1;
+            } else if (o1.minResourcePercent < o2.minResourcePercent) {
+                return 1;
+            }
+            return o1.id.compareTo(o2.id);
+        };
         sortedObjectResources.addAll(affinityBasedAllResources.getObjectResources());
+        sortedObjectResources.sort(comparator);
         LOG.debug("Sorted Object Resources: {}", sortedObjectResources);
         return sortedObjectResources;
     }
@@ -258,38 +252,35 @@ public class NodeSorter implements INodeSorter {
      * @return a sorted list of ObjectResources
      */
     @Deprecated
-    private TreeSet<ObjectResourcesItem> sortObjectResourcesGeneric(
+    private List<ObjectResourcesItem> sortObjectResourcesGeneric(
             final ObjectResourcesSummary allResources, ExecutorDetails exec,
             final ExistingScheduleFunc existingScheduleFunc) {
         ObjectResourcesSummary affinityBasedAllResources = new ObjectResourcesSummary(allResources);
         NormalizedResourceRequest requestedResources = topologyDetails.getTotalResources(exec);
-        for (ObjectResourcesItem objectResources : affinityBasedAllResources.getObjectResources()) {
-            objectResources.availableResources.updateForRareResourceAffinity(requestedResources);
-        }
+        affinityBasedAllResources.getObjectResources()
+                .forEach(x -> x.availableResources.updateForRareResourceAffinity(requestedResources));
         final NormalizedResourceOffer availableResourcesOverall = allResources.getAvailableResourcesOverall();
 
-        TreeSet<ObjectResourcesItem> sortedObjectResources =
-                new TreeSet<>((o1, o2) -> {
-                    int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
-                    int execsScheduled2 = existingScheduleFunc.getNumExistingSchedule(o2.id);
-                    if (execsScheduled1 > execsScheduled2) {
-                        return -1;
-                    } else if (execsScheduled1 < execsScheduled2) {
-                        return 1;
-                    } else {
-                        double o1Avg = availableResourcesOverall.calculateAveragePercentageUsedBy(o1.availableResources);
-                        double o2Avg = availableResourcesOverall.calculateAveragePercentageUsedBy(o2.availableResources);
-
-                        if (o1Avg > o2Avg) {
-                            return -1;
-                        } else if (o1Avg < o2Avg) {
-                            return 1;
-                        } else {
-                            return o1.id.compareTo(o2.id);
-                        }
-                    }
-                });
+        List<ObjectResourcesItem> sortedObjectResources = new ArrayList<>();
+        Comparator<ObjectResourcesItem> comparator = (o1, o2) -> {
+            int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
+            int execsScheduled2 = existingScheduleFunc.getNumExistingSchedule(o2.id);
+            if (execsScheduled1 > execsScheduled2) {
+                return -1;
+            } else if (execsScheduled1 < execsScheduled2) {
+                return 1;
+            }
+            double o1Avg = availableResourcesOverall.calculateAveragePercentageUsedBy(o1.availableResources);
+            double o2Avg = availableResourcesOverall.calculateAveragePercentageUsedBy(o2.availableResources);
+            if (o1Avg > o2Avg) {
+                return -1;
+            } else if (o1Avg < o2Avg) {
+                return 1;
+            }
+            return o1.id.compareTo(o2.id);
+        };
         sortedObjectResources.addAll(affinityBasedAllResources.getObjectResources());
+        sortedObjectResources.sort(comparator);
         LOG.debug("Sorted Object Resources: {}", sortedObjectResources);
         return sortedObjectResources;
     }
@@ -313,7 +304,7 @@ public class NodeSorter implements INodeSorter {
      * @return a sorted list of ObjectResources
      */
     @Deprecated
-    private TreeSet<ObjectResourcesItem> sortObjectResourcesDefault(
+    private List<ObjectResourcesItem> sortObjectResourcesDefault(
             final ObjectResourcesSummary allResources,
             final ExistingScheduleFunc existingScheduleFunc) {
 
@@ -328,32 +319,30 @@ public class NodeSorter implements INodeSorter {
                     existingScheduleFunc.getNumExistingSchedule(objectResources.id));
         }
 
-        TreeSet<ObjectResourcesItem> sortedObjectResources =
-                new TreeSet<>((o1, o2) -> {
-                    int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
-                    int execsScheduled2 = existingScheduleFunc.getNumExistingSchedule(o2.id);
-                    if (execsScheduled1 > execsScheduled2) {
-                        return -1;
-                    } else if (execsScheduled1 < execsScheduled2) {
-                        return 1;
-                    } else {
-                        if (o1.minResourcePercent > o2.minResourcePercent) {
-                            return -1;
-                        } else if (o1.minResourcePercent < o2.minResourcePercent) {
-                            return 1;
-                        } else {
-                            double diff = o1.avgResourcePercent - o2.avgResourcePercent;
-                            if (diff > 0.0) {
-                                return -1;
-                            } else if (diff < 0.0) {
-                                return 1;
-                            } else {
-                                return o1.id.compareTo(o2.id);
-                            }
-                        }
-                    }
-                });
+        List<ObjectResourcesItem> sortedObjectResources = new ArrayList<>();
+        Comparator<ObjectResourcesItem> comparator = (o1, o2) -> {
+            int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
+            int execsScheduled2 = existingScheduleFunc.getNumExistingSchedule(o2.id);
+            if (execsScheduled1 > execsScheduled2) {
+                return -1;
+            } else if (execsScheduled1 < execsScheduled2) {
+                return 1;
+            }
+            if (o1.minResourcePercent > o2.minResourcePercent) {
+                return -1;
+            } else if (o1.minResourcePercent < o2.minResourcePercent) {
+                return 1;
+            }
+            double diff = o1.avgResourcePercent - o2.avgResourcePercent;
+            if (diff > 0.0) {
+                return -1;
+            } else if (diff < 0.0) {
+                return 1;
+            }
+            return o1.id.compareTo(o2.id);
+        };
         sortedObjectResources.addAll(allResources.getObjectResources());
+        sortedObjectResources.sort(comparator);
         LOG.debug("Sorted Object Resources: {}", sortedObjectResources);
         return sortedObjectResources;
     }
@@ -368,14 +357,14 @@ public class NodeSorter implements INodeSorter {
      * <p>2) the subordinate/subservient resource availability percentage of a node in descending
      * order We calculate the resource availability percentage by dividing the resource availability that have exhausted or little of one of
      * the resources mentioned above will be ranked after on the node by the resource availability of the entire rack By doing this
-     * calculation, nodes nodes that have more balanced resource availability. So we will be less likely to pick a node that have a lot of
+     * calculation, nodes that have more balanced resource availability. So we will be less likely to pick a node that have a lot of
      * one resource but a low amount of another.
      *
      * @param availRasNodes a list of all the nodes we want to sort
      * @param rackId     the rack id availNodes are a part of
      * @return a sorted list of nodes.
      */
-    private TreeSet<ObjectResourcesItem> sortNodes(
+    private List<ObjectResourcesItem> sortNodes(
             List<RasNode> availRasNodes, ExecutorDetails exec, String rackId,
             Map<String, AtomicInteger> scheduledCount) {
         ObjectResourcesSummary rackResourcesSummary = new ObjectResourcesSummary("RACK");
@@ -428,7 +417,7 @@ public class NodeSorter implements INodeSorter {
         private final Iterator<String> post;
         private final Set<String> skip;
 
-        LazyNodeSortingIterator(LazyNodeSorting parent, TreeSet<ObjectResourcesItem> sortedRacks) {
+        LazyNodeSortingIterator(LazyNodeSorting parent, List<ObjectResourcesItem> sortedRacks) {
             this.parent = parent;
             rackIterator = sortedRacks.iterator();
             pre = favoredNodeIds.iterator();
@@ -495,8 +484,8 @@ public class NodeSorter implements INodeSorter {
 
     private class LazyNodeSorting implements Iterable<String> {
         private final Map<String, AtomicInteger> perNodeScheduledCount = new HashMap<>();
-        private final TreeSet<ObjectResourcesItem> sortedRacks;
-        private final Map<String, TreeSet<ObjectResourcesItem>> cachedNodes = new HashMap<>();
+        private final List<ObjectResourcesItem> sortedRacks;
+        private final Map<String, List<ObjectResourcesItem>> cachedNodes = new HashMap<>();
         private final ExecutorDetails exec;
         private final Set<String> skippedNodeIds = new HashSet<>();
 
@@ -516,10 +505,10 @@ public class NodeSorter implements INodeSorter {
                         .getAndAdd(entry.getValue().size());
                 }
             }
-            sortedRacks = sortRacks(exec);
+            sortedRacks = getSortedRacks();
         }
 
-        private TreeSet<ObjectResourcesItem> getSortedNodesFor(String rackId) {
+        private List<ObjectResourcesItem> getSortedNodesFor(String rackId) {
             return cachedNodes.computeIfAbsent(rackId,
                 (rid) -> sortNodes(rackIdToNodes.getOrDefault(rid, Collections.emptyList()), exec, rid, perNodeScheduledCount));
         }
@@ -531,7 +520,7 @@ public class NodeSorter implements INodeSorter {
     }
 
     @Override
-    public Iterable<String> sortAllNodes(ExecutorDetails exec) {
+    public Iterable<String> sortAllNodes() {
         return new LazyNodeSorting(exec);
     }
 
@@ -591,7 +580,7 @@ public class NodeSorter implements INodeSorter {
      * @return a sorted list of racks
      */
     @Override
-    public TreeSet<ObjectResourcesItem> sortRacks(ExecutorDetails exec) {
+    public List<ObjectResourcesItem> getSortedRacks() {
 
         final ObjectResourcesSummary clusterResourcesSummary = createClusterSummarizedResources();
         final Map<String, AtomicInteger> scheduledCount = getScheduledExecCntByRackId();

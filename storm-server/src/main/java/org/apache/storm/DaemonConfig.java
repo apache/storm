@@ -36,6 +36,9 @@ import static org.apache.storm.validation.ConfigValidationAnnotations.Password;
 import java.util.ArrayList;
 import java.util.Map;
 import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.container.oci.OciImageTagToManifestPluginInterface;
+import org.apache.storm.container.oci.OciManifestToResourcesPluginInterface;
+import org.apache.storm.container.oci.OciResourcesLocalizerInterface;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
@@ -74,6 +77,12 @@ public class DaemonConfig implements Validated {
      */
     @IsString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN = "storm.daemon.metrics.reporter.plugin.domain";
+
+    /**
+     * We report the metrics with this interval period.
+     */
+    @IsInteger
+    public static final String STORM_DAEMON_METRICS_REPORTER_INTERVAL_SECS = "storm.daemon.metrics.reporter.interval.secs";
 
     /**
      * Specify the csv reporter directory for CvsPreparableReporter daemon metrics reporter.
@@ -336,6 +345,12 @@ public class DaemonConfig implements Validated {
     @IsInteger
     @IsPositiveNumber
     public static final String UI_PORT = "ui.port";
+
+    /**
+     * Storm UI's title.
+     */
+    @IsString
+    public static final String UI_TITLE = "ui.title";
 
     /**
      * This controls wheather Storm UI should bind to http port even if ui.port is > 0.
@@ -761,6 +776,13 @@ public class DaemonConfig implements Validated {
     @IsPositiveNumber
     @IsInteger
     public static final String SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS = "supervisor.localizer.cleanup.interval.ms";
+
+    /**
+     * The distributed cache interval for checking for blobs to update.
+     */
+    @IsPositiveNumber
+    @IsInteger
+    public static final String SUPERVISOR_LOCALIZER_UPDATE_BLOB_INTERVAL_SECS = "supervisor.localizer.update.blob.interval.secs";
 
     /**
      * What blobstore download parallelism the supervisor should use.
@@ -1278,10 +1300,46 @@ public class DaemonConfig implements Validated {
     public static String STORM_OCI_ALLOWED_IMAGES = "storm.oci.allowed.images";
 
     /**
-     * White listed syscalls seccomp Json file to be used as a seccomp filter.
+     * Specify the seccomp Json file to be used as a seccomp filter.
      */
     @IsString
     public static String STORM_OCI_SECCOMP_PROFILE = "storm.oci.seccomp.profile";
+
+    /**
+     * The HDFS location under which the oci image manifests, layers,
+     * and configs directories exist.
+     */
+    public static String STORM_OCI_IMAGE_HDFS_TOPLEVEL_DIR = "storm.oci.image.hdfs.toplevel.dir";
+
+    /**
+     * The plugin to be used to get the image-tag to manifest mappings.
+     */
+    @IsImplementationOfClass(implementsClass = OciImageTagToManifestPluginInterface.class)
+    public static final String STORM_OCI_IMAGE_TAG_TO_MANIFEST_PLUGIN = "storm.oci.image.tag.to.manifest.plugin";
+
+    /**
+     * The plugin to be used to get oci resource according to the manifest.
+     */
+    @IsImplementationOfClass(implementsClass = OciManifestToResourcesPluginInterface.class)
+    public static final String STORM_OCI_MANIFEST_TO_RESOURCES_PLUGIN = "storm.oci.manifest.to.resources.plugin";
+
+    /**
+     * The plugin to use for oci resources localization.
+     */
+    @IsImplementationOfClass(implementsClass = OciResourcesLocalizerInterface.class)
+    public static final String STORM_OCI_RESOURCES_LOCALIZER = "storm.oci.resources.localizer";
+
+    /**
+     * The local directory for localized oci resources.
+     */
+    @IsString
+    public static final String STORM_OCI_RESOURCES_LOCAL_DIR = "storm.oci.resources.local.dir";
+
+    /**
+     * Target count of OCI layer mounts that we should keep on disk at one time.
+     */
+    @IsInteger
+    public static final String STORM_OCI_LAYER_MOUNTS_TO_KEEP = "storm.oci.layer.mounts.to.keep";
 
     public static String getCgroupRootDir(Map<String, Object> conf) {
         return (String) conf.get(STORM_SUPERVISOR_CGROUP_ROOTDIR);

@@ -18,8 +18,8 @@
 package org.apache.storm.elasticsearch.bolt;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -27,13 +27,19 @@ import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.xcontent.XContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.io.IOException;
 
 @ExtendWith(MockitoExtension.class)
 public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<EsLookupBolt> {
@@ -42,9 +48,9 @@ public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<E
     private ArgumentCaptor<Tuple> anchor;
 
     @Captor
-    private ArgumentCaptor<Values> emmitedValues;
+    private ArgumentCaptor<Values> emittedValues;
 
-    private Tuple tuple = EsTestUtil.generateTestTuple(source, index, type, documentId);
+    private final Tuple tuple = EsTestUtil.generateTestTuple(source, index, type, documentId);
 
     @Override
     protected EsLookupBolt createBolt(EsConfig esConfig) {
@@ -52,30 +58,33 @@ public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<E
     }
 
     @BeforeEach
-    public void populateIndexWithTestData() throws Exception {
-        node.client().prepareIndex(index, type, documentId).setSource(source).execute().actionGet();
+    public void populateIndexWithTestData() throws IOException {
+        IndexRequest indexRequest = new IndexRequest(index, type, documentId)
+                .source(source, XContentType.JSON);
+        RestHighLevelClient client =  EsTestUtil.getRestHighLevelClient(node);
+        client.index(indexRequest, RequestOptions.DEFAULT);
     }
 
     @Test
-    public void anchorsTheTuple() throws Exception {
+    public void anchorsTheTuple() {
         bolt.execute(tuple);
 
-        verify(outputCollector).emit(anchor.capture(), emmitedValues.capture());
+        verify(outputCollector).emit(anchor.capture(), emittedValues.capture());
         assertThat(anchor.getValue(), is(tuple));
     }
 
     @Test
-    public void emitsExpectedValues() throws Exception {
+    public void emitsExpectedValues() {
         Values expectedValues = expectedValues();
 
         bolt.execute(tuple);
 
-        verify(outputCollector).emit(anchor.capture(), emmitedValues.capture());
-        assertThat(emmitedValues.getValue(), is(expectedValues));
+        verify(outputCollector).emit(anchor.capture(), emittedValues.capture());
+        assertThat(emittedValues.getValue(), is(expectedValues));
     }
 
     @Test
-    public void acksTuple() throws Exception {
+    public void acksTuple() {
         bolt.execute(tuple);
 
         verify(outputCollector).ack(anchor.capture());
@@ -83,7 +92,7 @@ public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<E
     }
 
     @Test
-    public void indexMissing() throws Exception {
+    public void indexMissing() {
         Tuple tuple = EsTestUtil.generateTestTuple(source, "missing", type, documentId);
         bolt.execute(tuple);
 

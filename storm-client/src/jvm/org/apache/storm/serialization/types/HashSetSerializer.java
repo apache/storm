@@ -19,9 +19,9 @@ import java.util.Collection;
 import java.util.HashSet;
 
 
-public class HashSetSerializer extends CollectionSerializer {
+public class HashSetSerializer extends CollectionSerializer<HashSet> {
     @Override
-    public Collection create(Kryo kryo, Input input, Class<Collection> type) {
-        return new HashSet();
+    protected HashSet create(Kryo kryo, Input input, Class<? extends HashSet> type, int length) {
+        return new HashSet(length);
     }
 }

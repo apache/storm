@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -27,8 +27,12 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
+import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.utils.Time;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,67 +46,72 @@ import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class TestFIFOSchedulingPriorityStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestFIFOSchedulingPriorityStrategy.class);
+    private static final Class[] strategyClasses = {
+            DefaultResourceAwareStrategy.class,
+            DefaultResourceAwareStrategyOld.class,
+            RoundRobinResourceAwareStrategy.class,
+            GenericResourceAwareStrategy.class,
+            GenericResourceAwareStrategyOld.class,
+    };
 
-    protected Class getDefaultResourceAwareStrategyClass() {
-        return DefaultResourceAwareStrategy.class;
-    }
-
-    private Config createClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+    private Config createClusterConfig(Class strategyClass, double compPcore, double compOnHeap, double compOffHeap,
                                              Map<String, Map<String, Number>> pools) {
         Config config = TestUtilsForResourceAwareScheduler.createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
-        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, getDefaultResourceAwareStrategyClass().getName());
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, strategyClass.getName());
         return config;
     }
 
     @Test
     public void testFIFOEvictionStrategy() {
-        try (Time.SimulatedTime sim = new Time.SimulatedTime()) {
-            INimbus iNimbus = new INimbusTest();
-            Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 100.0, 1000.0);
-            Map<String, Map<String, Number>> resourceUserPool = userResourcePool(
-                userRes("jerry", 200.0, 2000.0));
-            Config config = createClusterConfig(100, 500, 500, resourceUserPool);
-            config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, FIFOSchedulingPriorityStrategy.class.getName());
+        for (Class strategyClass: strategyClasses) {
+            try (Time.SimulatedTime sim = new Time.SimulatedTime()) {
+                INimbus iNimbus = new INimbusTest();
+                Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 100.0, 1000.0);
+                Map<String, Map<String, Number>> resourceUserPool = userResourcePool(
+                        userRes("jerry", 200.0, 2000.0));
+                Config config = createClusterConfig(strategyClass, 100, 500, 500, resourceUserPool);
+                config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, FIFOSchedulingPriorityStrategy.class.getName());
 
-            Topologies topologies = new Topologies(
-                genTopology("topo-1-jerry", config, 1, 0, 1, 0, Time.currentTimeSecs() - 250, 20, "jerry"),
-                genTopology("topo-2-bobby", config, 1, 0, 1, 0, Time.currentTimeSecs() - 200, 10, "bobby"),
-                genTopology("topo-3-bobby", config, 1, 0, 1, 0, Time.currentTimeSecs() - 300, 20, "bobby"),
-                genTopology("topo-4-derek", config, 1, 0, 1, 0, Time.currentTimeSecs() - 201, 29, "derek"));
-            Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+                Topologies topologies = new Topologies(
+                        genTopology("topo-1-jerry", config, 1, 0, 1, 0, Time.currentTimeSecs() - 250, 20, "jerry"),
+                        genTopology("topo-2-bobby", config, 1, 0, 1, 0, Time.currentTimeSecs() - 200, 10, "bobby"),
+                        genTopology("topo-3-bobby", config, 1, 0, 1, 0, Time.currentTimeSecs() - 300, 20, "bobby"),
+                        genTopology("topo-4-derek", config, 1, 0, 1, 0, Time.currentTimeSecs() - 201, 29, "derek"));
+                Cluster cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
 
-            ResourceAwareScheduler rs = new ResourceAwareScheduler();
-            rs.prepare(config, new StormMetricsRegistry());
-            try {
-                rs.schedule(topologies, cluster);
+                ResourceAwareScheduler rs = new ResourceAwareScheduler();
+                rs.prepare(config, new StormMetricsRegistry());
+                try {
+                    rs.schedule(topologies, cluster);
 
-                assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-3-bobby", "topo-4-derek");
+                    assertTopologiesFullyScheduled(cluster, strategyClass, "topo-1-jerry", "topo-2-bobby", "topo-3-bobby", "topo-4-derek");
 
-                LOG.info("\n\n\t\tINSERTING topo-5");
-                //new topology needs to be scheduled
-                //topo-3 should be evicted since its been up the longest
-                topologies = addTopologies(topologies,
-                    genTopology("topo-5-derek", config, 1, 0, 1, 0, Time.currentTimeSecs() - 15, 29, "derek"));
+                    LOG.info("\n\n\t\tINSERTING topo-5");
+                    //new topology needs to be scheduled
+                    //topo-3 should be evicted since it's been up the longest
+                    topologies = addTopologies(topologies,
+                            genTopology("topo-5-derek", config, 1, 0, 1, 0, Time.currentTimeSecs() - 15, 29, "derek"));
 
-                cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
-                rs.schedule(topologies, cluster);
+                    cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+                    rs.schedule(topologies, cluster);
 
-                assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-4-derek", "topo-5-derek");
-                assertTopologiesNotScheduled(cluster, "topo-3-bobby");
+                    assertTopologiesFullyScheduled(cluster, strategyClass, "topo-1-jerry", "topo-2-bobby", "topo-4-derek", "topo-5-derek");
+                    assertTopologiesNotScheduled(cluster, strategyClass, "topo-3-bobby");
 
-                LOG.info("\n\n\t\tINSERTING topo-6");
-                //new topology needs to be scheduled.  topo-4 should be evicted. Even though topo-1 from user jerry is older, topo-1 will not be evicted
-                //since user jerry has enough resource guarantee
-                topologies = addTopologies(topologies,
-                    genTopology("topo-6-bobby", config, 1, 0, 1, 0, Time.currentTimeSecs() - 10, 29, "bobby"));
+                    LOG.info("\n\n\t\tINSERTING topo-6");
+                    //new topology needs to be scheduled.  topo-4 should be evicted. Even though topo-1 from user jerry is older, topo-1 will not be evicted
+                    //since user jerry has enough resource guarantee
+                    topologies = addTopologies(topologies,
+                            genTopology("topo-6-bobby", config, 1, 0, 1, 0, Time.currentTimeSecs() - 10, 29, "bobby"));
 
-                cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
-                rs.schedule(topologies, cluster);
+                    cluster = new Cluster(iNimbus, new ResourceMetrics(new StormMetricsRegistry()), supMap, new HashMap<>(), topologies, config);
+                    rs.schedule(topologies, cluster);
 
-                assertTopologiesFullyScheduled(cluster, "topo-1-jerry", "topo-2-bobby", "topo-5-derek", "topo-6-bobby");
-                assertTopologiesNotScheduled(cluster, "topo-3-bobby", "topo-4-derek");
-            } finally {
-                rs.cleanup();
+                    assertTopologiesFullyScheduled(cluster, strategyClass, "topo-1-jerry", "topo-2-bobby", "topo-5-derek", "topo-6-bobby");
+                    assertTopologiesNotScheduled(cluster, strategyClass, "topo-3-bobby", "topo-4-derek");
+                } finally {
+                    rs.cleanup();
+                }
             }
         }
     }

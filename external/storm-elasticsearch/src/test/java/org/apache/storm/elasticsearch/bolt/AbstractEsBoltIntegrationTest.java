@@ -20,16 +20,20 @@ package org.apache.storm.elasticsearch.bolt;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.testing.IntegrationTest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.node.Node;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
+
+import java.io.IOException;
 
 @IntegrationTest
 public abstract class AbstractEsBoltIntegrationTest<Bolt extends AbstractEsBolt> extends AbstractEsBoltTest<Bolt> {
 
-    protected static Node node;
+    protected static ElasticsearchContainer node;
 
     @BeforeAll
     public static void startElasticSearchNode() throws Exception {
@@ -43,8 +47,8 @@ public abstract class AbstractEsBoltIntegrationTest<Bolt extends AbstractEsBolt>
     }
 
     @BeforeEach
-    public void createIndex() {
-        node.client().admin().indices().create(new CreateIndexRequest(index)).actionGet();
+    public void createIndex() throws IOException {
+        EsTestUtil.getRestHighLevelClient(node).indices().create(new CreateIndexRequest(index), RequestOptions.DEFAULT);
     }
 
     @AfterEach

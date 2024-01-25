@@ -19,15 +19,20 @@
 package org.apache.storm.metricstore.rocksdb;
 
 import org.apache.storm.metricstore.MetricException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.rocksdb.RocksDB;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class StringMetadataCacheTest {
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // remove any previously created cache instance
         StringMetadataCache.cleanUp();
@@ -47,7 +52,7 @@ public class StringMetadataCacheTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         StringMetadataCache.cleanUp();
     }
@@ -64,20 +69,20 @@ public class StringMetadataCacheTest {
         long s1Timestamp = 1L;
         StringMetadata metadata1 = new StringMetadata(KeyType.STREAM_ID_STRING, s1Id, s1Timestamp);
         wCache.put(s1, metadata1, false);
-        Assert.assertEquals(metadata1, rCache.get(s1));
-        Assert.assertTrue(rCache.contains(s1Id));
-        Assert.assertEquals(s1, rCache.getMetadataString(s1Id));
+        assertEquals(metadata1, rCache.get(s1));
+        assertTrue(rCache.contains(s1Id));
+        assertEquals(s1, rCache.getMetadataString(s1Id));
 
         String s2 = "string2";
         Integer s2Id = 2;
         long s2Timestamp = 2L;
         StringMetadata metadata2 = new StringMetadata(KeyType.EXEC_ID_STRING, s2Id, s2Timestamp);
         wCache.put(s2, metadata2, false);
-        Assert.assertEquals(metadata2, rCache.get(s2));
-        Assert.assertTrue(rCache.contains(s2Id));
-        Assert.assertEquals(s2, rCache.getMetadataString(s2Id));
+        assertEquals(metadata2, rCache.get(s2));
+        assertTrue(rCache.contains(s2Id));
+        assertEquals(s2, rCache.getMetadataString(s2Id));
 
-        Assert.assertEquals(false, writer.evictCalled);
+        assertEquals(false, writer.evictCalled);
 
         // read s1 last....  This should cause s2 to be evicted on next put
         rCache.get(s1);
@@ -88,17 +93,17 @@ public class StringMetadataCacheTest {
         StringMetadata metadata3 = new StringMetadata(KeyType.TOPOLOGY_STRING, s3Id, s3Timestamp);
         wCache.put(s3, metadata3, false);
 
-        Assert.assertEquals(true, writer.evictCalled);
-        Assert.assertEquals(metadata3, rCache.get(s3));
-        Assert.assertTrue(rCache.contains(s3Id));
-        Assert.assertEquals(s3, rCache.getMetadataString(s3Id));
+        assertEquals(true, writer.evictCalled);
+        assertEquals(metadata3, rCache.get(s3));
+        assertTrue(rCache.contains(s3Id));
+        assertEquals(s3, rCache.getMetadataString(s3Id));
 
         // since s2 read last, it should be evicted, s1 and s3 should exist
-        Assert.assertEquals(null, rCache.get(s2));
-        Assert.assertFalse(rCache.contains(s2Id));
-        Assert.assertEquals(metadata1, rCache.get(s1));
-        Assert.assertTrue(rCache.contains(s1Id));
-        Assert.assertEquals(s1, rCache.getMetadataString(s1Id));
+        assertEquals(null, rCache.get(s2));
+        assertFalse(rCache.contains(s2Id));
+        assertEquals(metadata1, rCache.get(s1));
+        assertTrue(rCache.contains(s1Id));
+        assertEquals(s1, rCache.getMetadataString(s1Id));
 
         StringMetadataCache.cleanUp();
     }
@@ -119,10 +124,10 @@ public class StringMetadataCacheTest {
         metadata.update(2L, KeyType.STREAM_ID_STRING);
 
         metadata = wCache.get("default");
-        Assert.assertEquals(2, metadata.getMetadataTypes().size());
-        Assert.assertTrue(metadata.getMetadataTypes().contains(KeyType.STREAM_ID_STRING));
-        Assert.assertTrue(metadata.getMetadataTypes().contains(KeyType.COMPONENT_STRING));
-        Assert.assertEquals(3L, metadata.getLastTimestamp());
+        assertEquals(2, metadata.getMetadataTypes().size());
+        assertTrue(metadata.getMetadataTypes().contains(KeyType.STREAM_ID_STRING));
+        assertTrue(metadata.getMetadataTypes().contains(KeyType.COMPONENT_STRING));
+        assertEquals(3L, metadata.getLastTimestamp());
 
         StringMetadataCache.cleanUp();
     }

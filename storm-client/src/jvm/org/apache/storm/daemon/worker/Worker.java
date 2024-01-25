@@ -12,7 +12,10 @@
 
 package org.apache.storm.daemon.worker;
 
+import static org.apache.storm.Constants.WORKER_METRICS_REGISTRY;
+
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.SharedMetricRegistries;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -29,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -121,6 +125,12 @@ public class Worker implements Shutdownable, DaemonCommon {
 
         this.topologyConf = ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
 
+        // See STORM-3728.
+        // Writes to Pacemaker are currently always allowed.
+        // Ignore Config.PACEMAKER_AUTH_METHOD on Workers.
+        topologyConf.put(Config.PACEMAKER_AUTH_METHOD, "NONE");
+        conf.put(Config.PACEMAKER_AUTH_METHOD, "NONE");
+
         if (supervisorIfaceSupplier == null) {
             this.supervisorIfaceSupplier = () -> {
                 try {
@@ -181,6 +191,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, null, csContext);
 
         metricRegistry.start(topologyConf, port);
+        SharedMetricRegistries.add(WORKER_METRICS_REGISTRY, metricRegistry.getRegistry());
 
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();
@@ -271,9 +282,25 @@ public class Worker implements Shutdownable, DaemonCommon {
 
         establishLogSettingCallback();
 
+        final int credCheckMaxAllowed = 10;
+        final int[] credCheckErrCnt = new int[1]; // consecutive-error-count
+
         workerState.refreshCredentialsTimer.scheduleRecurring(0,
                                                               (Integer) conf.get(Config.TASK_CREDENTIALS_POLL_SECS), () -> {
-                checkCredentialsChanged();
+                try {
+                    checkCredentialsChanged();
+                    credCheckErrCnt[0] = 0;
+                } catch (Exception ex) {
+                    credCheckErrCnt[0]++;
+                    if (credCheckErrCnt[0] <= credCheckMaxAllowed) {
+                        LOG.warn("Ignoring {} of {} consecutive exceptions when checking for credential change",
+                            credCheckErrCnt[0], credCheckMaxAllowed, ex);
+                    } else {
+                        LOG.error("Received {} consecutive exceptions, {} tolerated, when checking for credential change",
+                            credCheckErrCnt[0], credCheckMaxAllowed, ex);
+                        throw ex;
+                    }
+                }
             });
 
         workerState.checkForUpdatedBlobsTimer.scheduleRecurring(0,
@@ -530,7 +557,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             }
 
             metricRegistry.stop();
-
+            SharedMetricRegistries.remove(WORKER_METRICS_REGISTRY);
             LOG.info("Shut down worker {} {} {}", topologyId, assignmentId, port);
         } catch (Exception ex) {
             throw Utils.wrapInRuntime(ex);

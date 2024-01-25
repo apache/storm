@@ -251,7 +251,7 @@ e10 is not evaluated since the tuple ts `8:00:39` is beyond the watermark time `
 The window calculation considers the time gaps and computes the windows based on the tuple timestamp.
 
 ## Guarantees
-The windowing functionality in storm core currently provides at-least once guarentee. The values emitted from the bolts
+The windowing functionality in storm core currently provides at-least once guarantee. The values emitted from the bolts
 `execute(TupleWindow inputWindow)` method are automatically anchored to all the tuples in the inputWindow. The downstream
 bolts are expected to ack the received tuple (i.e the tuple emitted from the windowed bolt) to complete the tuple tree. 
 If not the tuples will be replayed and the windowing computation will be re-evaluated. 

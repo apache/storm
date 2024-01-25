@@ -125,13 +125,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../../external/storm-hbase</directory>
-            <outputDirectory>external/storm-hbase</outputDirectory>
-            <includes>
-                <include>README.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../../../external/storm-jdbc</directory>
             <outputDirectory>external/storm-jdbc</outputDirectory>
             <includes>

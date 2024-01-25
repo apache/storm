@@ -146,13 +146,18 @@ public class AdminCommands {
     }
 
     private static void prettyPrintFields(TBase value, int depth, StringBuilder out) {
-        for (Map.Entry<? extends TFieldIdEnum, FieldMetaData> entry : FieldMetaData.getStructMetaDataMap(value.getClass()).entrySet()) {
-            TFieldIdEnum key = entry.getKey();
-            if (!value.isSet(key)) {
-                println(out, depth, key.getFieldName() + ": not set");
-            } else {
-                Object o = value.getFieldValue(key);
-                prettyPrintKeyValue(key.getFieldName(), o, depth, out);
+        for (Object e : FieldMetaData.getStructMetaDataMap(value.getClass()).entrySet()) {
+            if (e instanceof Map.Entry<?, ?>) {
+                final Map.Entry<?, ?> entry = (Map.Entry<?, ?>) e;
+                if (entry instanceof TFieldIdEnum) {
+                    TFieldIdEnum key = (TFieldIdEnum) entry.getKey();
+                    if (!value.isSet(key)) {
+                        println(out, depth, key.getFieldName() + ": not set");
+                    } else {
+                        Object o = value.getFieldValue(key);
+                        prettyPrintKeyValue(key.getFieldName(), o, depth, out);
+                    }
+                }
             }
         }
     }
