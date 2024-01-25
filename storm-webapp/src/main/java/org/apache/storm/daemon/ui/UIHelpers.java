@@ -2419,7 +2419,7 @@ public class UIHelpers {
         for (Map.Entry<String, Map> entry : namedLoggerlevels.entrySet()) {
             String loggerNMame = entry.getKey();
             String targetLevel = (String) entry.getValue().get("target_level");
-            Long timeout = (Long) entry.getValue().get("timeout");
+            long timeout = ((Number) entry.getValue().get("timeout")).longValue();
             LogLevel logLevel = new LogLevel();
             if (targetLevel == null) {
                 logLevel.set_action(LogLevelAction.REMOVE);
