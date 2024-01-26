@@ -93,7 +93,7 @@
         <commons-codec.version>1.11</commons-codec.version>
         <commons-text.version>1.11.0</commons-text.version>
         <commons-cli.version>1.4</commons-cli.version>
-        <curator.version>5.5.0</curator.version>
+        <curator.version>5.6.0</curator.version>
         <jetty.version>9.4.53.v20231009</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.6.0</carbonite.version>
