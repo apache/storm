@@ -83,7 +83,7 @@
 
         <!-- dependency versions -->
         <clojure.version>1.10.0</clojure.version>
-        <commons-compress.version>1.21</commons-compress.version>
+        <commons-compress.version>1.26.0</commons-compress.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
