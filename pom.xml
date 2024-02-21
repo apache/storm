@@ -83,7 +83,7 @@
 
         <!-- dependency versions -->
         <clojure.version>1.10.0</clojure.version>
-        <commons-compress.version>1.21</commons-compress.version>
+        <commons-compress.version>1.26.0</commons-compress.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
@@ -1382,6 +1382,8 @@
                                 Apache License version 2.0 |
                                 Apache 2 |
                                 Apache 2.0 |
+                                Apache-2.0 |
+                                Apache 2.0 License |
                                 Apache License, 2.0 |
                                 Apache License 2 |
                                 Apache License 2.0 |
@@ -1399,13 +1401,19 @@
                             <licenseMerge>
                                 BSD License |
                                 BSD license |
+                                BSD licence |
                                 BSD |
                                 The BSD License
+                            </licenseMerge>
+                            <licenseMerge>
+                                BSD 2-Clause License |
+                                BSD 2-Clause license |
                             </licenseMerge>
                             <licenseMerge>
                                 BSD 3-Clause License |
                                 BSD 3-Clause |
                                 BSD 3-clause |
+                                BSD-3-Clause |
                                 The BSD 3-Clause License |
                                 New BSD License |
                                 New BSD license
