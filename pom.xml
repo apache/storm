@@ -163,6 +163,8 @@
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.6</asm.version>
+        <checker-qual.version>3.42.0</checker-qual.version>
+        <error_prone_annotations.version>2.25.0</error_prone_annotations.version>
     </properties>
 
     <modules>
@@ -779,6 +781,11 @@
                 <version>${guava.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>${checker-qual.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.auto.service</groupId>
                 <artifactId>auto-service</artifactId>
                 <version>${auto-service.version}</version>
@@ -1181,6 +1188,11 @@
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm-analysis</artifactId>
                 <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${error_prone_annotations.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
