@@ -279,8 +279,6 @@ List of third-party dependencies grouped by their license type.
         * json-io (com.cedarsoftware:json-io:2.5.1 - https://github.com/jdereg/json-io)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.5.0 - https://urielch.github.io/)
         * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:3.2.6 - http://metrics.dropwizard.io/metrics-jvm/)
-        * kafka-avro-serializer (io.confluent:kafka-avro-serializer:1.0 - http://confluent.io/kafka-avro-serializer)
-        * kafka-schema-registry-client (io.confluent:kafka-schema-registry-client:1.0 - http://confluent.io/kafka-schema-registry-client)
         * Kerb Simple Kdc (org.apache.kerby:kerb-simplekdc:1.0.1 - http://directory.apache.org/kerby/kerby-kerb/kerb-simplekdc)
         * Kerby ASN1 Project (org.apache.kerby:kerby-asn1:1.0.1 - http://directory.apache.org/kerby/kerby-common/kerby-asn1)
         * Kerby Config (org.apache.kerby:kerby-config:1.0.1 - http://directory.apache.org/kerby/kerby-common/kerby-config)
