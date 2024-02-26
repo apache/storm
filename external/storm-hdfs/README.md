@@ -351,8 +351,8 @@ method is provided for this:
 `AvroUtils.addAvroKryoSerializations(conf);`
 
 By default Storm will use the ```GenericAvroSerializer``` to handle serialization.  This will work, but there are much 
-faster options available if you can pre-define the schemas you will be using or utilize an external schema registry. An
-implementation using the Confluent Schema Registry is provided, but others can be implemented and provided to Storm.
+faster options available if you can pre-define the schemas you will be using or utilize an external schema registry.
+
 Please see the javadoc for classes in org.apache.storm.hdfs.avro for information about using the built-in options or
 creating your own.
 
