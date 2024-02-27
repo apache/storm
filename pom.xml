@@ -90,7 +90,7 @@
         <commons-exec.version>1.3</commons-exec.version>
         <commons-collections.version>4.4</commons-collections.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
-        <commons-codec.version>1.11</commons-codec.version>
+        <commons-codec.version>1.15</commons-codec.version>
         <commons-text.version>1.11.0</commons-text.version>
         <commons-cli.version>1.4</commons-cli.version>
         <curator.version>5.6.0</curator.version>
@@ -1194,6 +1194,21 @@
                 <artifactId>error_prone_annotations</artifactId>
                 <version>${error_prone_annotations.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>5.4.0</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>3.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>2.9.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1217,17 +1232,6 @@
             </snapshots>
             <id>clojars</id>
             <url>https://clojars.org/repo/</url>
-        </repository>
-        <!--
-            STORM-3948: This repository is declared by hive-2.3.9 (parent pom). As of today (08/14/23) this Maven Repository isn't available anymore.
-            hive-2.3.10 already removed it, so we only need to wait for a 2.3.10 release here. As long is that didn't happen,
-            we work around by overriding the repository with the same id targeting Maven Central.
-            TODO: Remove this repository declaration after hive-2.3.10 is available.
-         -->
-        <repository>
-            <id>conjars</id>
-            <name>STORM-3948-Workaround-Offline-Conjars-Repo</name>
-            <url>https://repo1.maven.org/maven2/</url>
         </repository>
     </repositories>
 
