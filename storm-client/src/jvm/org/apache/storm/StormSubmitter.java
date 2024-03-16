@@ -358,7 +358,7 @@ public class StormSubmitter {
             }
             LOG.info("Finished submitting topology: {}", name);
         } catch (InvalidTopologyException e) {
-            LOG.error("Topology submission exception: {}", e.get_msg());
+            LOG.error("Topology submission exception: {}", e.getMessage());
             throw e;
         } catch (AlreadyAliveException e) {
             LOG.error("Topology already alive exception", e);

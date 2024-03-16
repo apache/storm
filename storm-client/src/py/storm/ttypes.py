@@ -268,6 +268,681 @@ class WorkerTokenServiceType(object):
     }
 
 
+class AlreadyAliveException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(AlreadyAliveException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('AlreadyAliveException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class NotAliveException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(NotAliveException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('NotAliveException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class AuthorizationException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(AuthorizationException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('AuthorizationException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class InvalidTopologyException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(InvalidTopologyException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('InvalidTopologyException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class KeyNotFoundException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(KeyNotFoundException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('KeyNotFoundException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class IllegalStateException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(IllegalStateException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('IllegalStateException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class KeyAlreadyExistsException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(KeyAlreadyExistsException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('KeyAlreadyExistsException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class HBAuthorizationException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(HBAuthorizationException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('HBAuthorizationException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class HBExecutionException(TException):
+    """
+    Attributes:
+     - message
+
+    """
+
+
+    def __init__(self, message=None,):
+        super(HBExecutionException, self).__setattr__('message', message)
+
+    def __setattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __delattr__(self, *args):
+        raise TypeError("can't modify immutable instance")
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash((self.message, ))
+
+    @classmethod
+    def read(cls, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
+            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
+        iprot.readStructBegin()
+        message = None
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+        return cls(
+            message=message,
+        )
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('HBExecutionException')
+        if self.message is not None:
+            oprot.writeFieldBegin('message', TType.STRING, 1)
+            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.message is None:
+            raise TProtocolException(message='Required field message is unset!')
+        return
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
 class JavaObjectArg(object):
     """
     Attributes:
@@ -1616,531 +2291,6 @@ class StormTopology(object):
         if self.state_spouts is None:
             raise TProtocolException(message='Required field state_spouts is unset!')
         return
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class AlreadyAliveException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(AlreadyAliveException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('AlreadyAliveException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class NotAliveException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(NotAliveException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('NotAliveException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class AuthorizationException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(AuthorizationException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('AuthorizationException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class InvalidTopologyException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(InvalidTopologyException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('InvalidTopologyException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class KeyNotFoundException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(KeyNotFoundException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('KeyNotFoundException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class IllegalStateException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(IllegalStateException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('IllegalStateException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class KeyAlreadyExistsException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(KeyAlreadyExistsException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('KeyAlreadyExistsException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
 
     def __repr__(self):
         L = ['%s=%r' % (key, value)
@@ -10069,156 +10219,6 @@ class HBMessage(object):
         return not (self == other)
 
 
-class HBAuthorizationException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(HBAuthorizationException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('HBAuthorizationException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
-class HBExecutionException(TException):
-    """
-    Attributes:
-     - msg
-
-    """
-
-
-    def __init__(self, msg=None,):
-        super(HBExecutionException, self).__setattr__('msg', msg)
-
-    def __setattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __delattr__(self, *args):
-        raise TypeError("can't modify immutable instance")
-
-    def __hash__(self):
-        return hash(self.__class__) ^ hash((self.msg, ))
-
-    @classmethod
-    def read(cls, iprot):
-        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and cls.thrift_spec is not None:
-            return iprot._fast_decode(None, iprot, [cls, cls.thrift_spec])
-        iprot.readStructBegin()
-        msg = None
-        while True:
-            (fname, ftype, fid) = iprot.readFieldBegin()
-            if ftype == TType.STOP:
-                break
-            if fid == 1:
-                if ftype == TType.STRING:
-                    msg = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                else:
-                    iprot.skip(ftype)
-            else:
-                iprot.skip(ftype)
-            iprot.readFieldEnd()
-        iprot.readStructEnd()
-        return cls(
-            msg=msg,
-        )
-
-    def write(self, oprot):
-        if oprot._fast_encode is not None and self.thrift_spec is not None:
-            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
-            return
-        oprot.writeStructBegin('HBExecutionException')
-        if self.msg is not None:
-            oprot.writeFieldBegin('msg', TType.STRING, 1)
-            oprot.writeString(self.msg.encode('utf-8') if sys.version_info[0] == 2 else self.msg)
-            oprot.writeFieldEnd()
-        oprot.writeFieldStop()
-        oprot.writeStructEnd()
-
-    def validate(self):
-        if self.msg is None:
-            raise TProtocolException(message='Required field msg is unset!')
-        return
-
-    def __str__(self):
-        return repr(self)
-
-    def __repr__(self):
-        L = ['%s=%r' % (key, value)
-             for key, value in self.__dict__.items()]
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not (self == other)
-
-
 class WorkerTokenInfo(object):
     """
     Attributes:
@@ -10485,6 +10485,51 @@ class PrivateWorkerKey(object):
 
     def __ne__(self, other):
         return not (self == other)
+all_structs.append(AlreadyAliveException)
+AlreadyAliveException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
+all_structs.append(NotAliveException)
+NotAliveException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
+all_structs.append(AuthorizationException)
+AuthorizationException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
+all_structs.append(InvalidTopologyException)
+InvalidTopologyException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
+all_structs.append(KeyNotFoundException)
+KeyNotFoundException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
+all_structs.append(IllegalStateException)
+IllegalStateException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
+all_structs.append(KeyAlreadyExistsException)
+KeyAlreadyExistsException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
+all_structs.append(HBAuthorizationException)
+HBAuthorizationException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
+all_structs.append(HBExecutionException)
+HBExecutionException.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
+)
 all_structs.append(JavaObjectArg)
 JavaObjectArg.thrift_spec = (
     None,  # 0
@@ -10588,41 +10633,6 @@ StormTopology.thrift_spec = (
     (8, TType.STRING, 'jdk_version', 'UTF8', None, ),  # 8
     (9, TType.MAP, 'component_to_shared_memory', (TType.STRING, 'UTF8', TType.SET, (TType.STRING, 'UTF8', False), False), None, ),  # 9
     (10, TType.MAP, 'shared_memory', (TType.STRING, 'UTF8', TType.STRUCT, [SharedMemory, None], False), None, ),  # 10
-)
-all_structs.append(AlreadyAliveException)
-AlreadyAliveException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
-)
-all_structs.append(NotAliveException)
-NotAliveException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
-)
-all_structs.append(AuthorizationException)
-AuthorizationException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
-)
-all_structs.append(InvalidTopologyException)
-InvalidTopologyException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
-)
-all_structs.append(KeyNotFoundException)
-KeyNotFoundException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
-)
-all_structs.append(IllegalStateException)
-IllegalStateException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
-)
-all_structs.append(KeyAlreadyExistsException)
-KeyAlreadyExistsException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
 )
 all_structs.append(TopologySummary)
 TopologySummary.thrift_spec = (
@@ -13263,16 +13273,6 @@ HBMessage.thrift_spec = (
     (1, TType.I32, 'type', None, None, ),  # 1
     (2, TType.STRUCT, 'data', [HBMessageData, None], None, ),  # 2
     (3, TType.I32, 'message_id', None, -1, ),  # 3
-)
-all_structs.append(HBAuthorizationException)
-HBAuthorizationException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
-)
-all_structs.append(HBExecutionException)
-HBExecutionException.thrift_spec = (
-    None,  # 0
-    (1, TType.STRING, 'msg', 'UTF8', None, ),  # 1
 )
 all_structs.append(WorkerTokenInfo)
 WorkerTokenInfo.thrift_spec = (
