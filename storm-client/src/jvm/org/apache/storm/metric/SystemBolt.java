@@ -18,6 +18,7 @@ import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -67,10 +68,54 @@ public class SystemBolt implements IBolt {
 
 
         context.registerGauge("newWorkerEvent", new NewWorkerGauge());
+        context.registerGauge("workerCpuUsage", new WorkerCpuMetric());
 
         int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.WORKER_METRICS), bucketSize, topoConf);
         registerMetrics(context, (Map<String, String>) topoConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize, topoConf);
+    }
+
+    private class WorkerCpuMetric implements Gauge<Double> {
+        private long lastCalculationTimeNsec;
+        private long previousCpuTotal;
+        private double cpuUsage;
+
+        WorkerCpuMetric() {
+            lastCalculationTimeNsec = System.nanoTime();
+            previousCpuTotal = getTotalCpuUsage();
+            cpuUsage = 0.0d;
+        }
+
+        private long getTotalCpuUsage() {
+            long totalCpuNsecs = 0L;
+            ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+            for (Long threadId : threadMxBean.getAllThreadIds()) {
+                long threadCpu = threadMxBean.getThreadCpuTime(threadId);
+                if (threadCpu > 0L) {
+                    totalCpuNsecs += threadCpu;
+                }
+            }
+            return totalCpuNsecs;
+        }
+
+        private void updateCalculation() {
+            // we could have multiple reporters calling getValue() one right
+            // after another, with inaccurate reporting due to the small time difference.
+            long elapsed = System.nanoTime() - this.lastCalculationTimeNsec;
+            if (elapsed >= 1000000000L) {
+                long cpuUsage = getTotalCpuUsage();
+                long usageDuringPeriod = cpuUsage - previousCpuTotal;
+                this.cpuUsage = (double) usageDuringPeriod / (double) elapsed;
+                this.lastCalculationTimeNsec = System.nanoTime();
+                this.previousCpuTotal = cpuUsage;
+            }
+        }
+
+        @Override
+        public Double getValue() {
+            updateCalculation();
+            return this.cpuUsage;
+        }
     }
 
     // newWorkerEvent: 1 when a worker is first started and 0 all other times.
