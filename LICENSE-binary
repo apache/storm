@@ -744,8 +744,8 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Twill ZooKeeper client library (org.apache.twill:twill-zookeeper:0.6.0-incubating - http://twill.incubator.apache.org/twill-zookeeper)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.13.0 - https://yetus.apache.org/audience-annotations)
-        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.1 - http://zookeeper.apache.org/zookeeper-jute)
-        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.1 - http://zookeeper.apache.org/zookeeper)
+        * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.2 - http://zookeeper.apache.org/zookeeper-jute)
+        * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.2 - http://zookeeper.apache.org/zookeeper)
         * Arrow Format (org.apache.arrow:arrow-format:0.8.0 - http://arrow.apache.org/arrow-format/)
         * Arrow Memory (org.apache.arrow:arrow-memory:0.8.0 - http://arrow.apache.org/arrow-memory/)
         * Arrow Vectors (org.apache.arrow:arrow-vector:0.8.0 - http://arrow.apache.org/arrow-vector/)
@@ -1086,7 +1086,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Eclipse Public License, Version 1.0
 
-        * clojure (org.clojure:clojure:1.10.0 - http://clojure.org/)
+        * clojure (org.clojure:clojure:1.11.2 - http://clojure.org/)
         * core.specs.alpha (org.clojure:core.specs.alpha:0.2.44 - https://github.com/clojure/build.poms/core.specs.alpha)
         * spec.alpha (org.clojure:spec.alpha:0.2.176 - https://github.com/clojure/build.poms/spec.alpha)
         * tools.logging (org.clojure:tools.logging:0.2.3 - http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/tools.logging)
