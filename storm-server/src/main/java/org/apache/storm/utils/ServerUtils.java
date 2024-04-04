@@ -708,7 +708,22 @@ public class ServerUtils {
             double memoryRequirement = entry.getValue().getOnHeapMemoryMb();
             totalMemoryRequired += memoryRequirement * parallelism;
         }
+
+        double ackerMem = getTotalAckerExecutorMemoryUsageForTopo(topology, topoConf);
+        totalMemoryRequired += ackerMem;
+
         return totalMemoryRequired;
+    }
+
+    private static double getTotalAckerExecutorMemoryUsageForTopo(
+            StormTopology topology, Map<String, Object> topologyConf)
+            throws InvalidTopologyException {
+        topology = StormCommon.systemTopology(topologyConf, topology);
+        Map<String, NormalizedResourceRequest> boltResources = ResourceUtils.getBoltsResources(topology, topologyConf);
+        NormalizedResourceRequest entry = boltResources.get(Acker.ACKER_COMPONENT_ID);
+        Map<String, Integer> componentParallelism = getComponentParallelism(topologyConf, topology);
+        int parallelism = componentParallelism.getOrDefault(Acker.ACKER_COMPONENT_ID, 1);
+        return entry.getTotalMemoryMb() * parallelism;
     }
 
     public static Map<String, Integer> getComponentParallelism(Map<String, Object> topoConf, StormTopology topology)

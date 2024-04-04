@@ -627,14 +627,12 @@ public class Cluster implements ISchedulingState {
         double cpuAvailable = resourcesAvailable.getTotalCpu();
 
         if (cpuAdded > cpuAvailable) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Could not schedule {}:{} on {} not enough CPU {} > {}",
-                        td.getName(),
-                        exec,
-                        ws,
-                        cpuAdded,
-                        cpuAvailable);
-            }
+            LOG.debug("Could not schedule {}:{} on {} not enough CPU {} > {}",
+                    td.getName(),
+                    exec,
+                    ws,
+                    cpuAdded,
+                    cpuAvailable);
             return false;
         }
 
@@ -642,25 +640,21 @@ public class Cluster implements ISchedulingState {
         double memoryAvailable = resourcesAvailable.getTotalMemoryMb();
 
         if (memoryAdded > memoryAvailable) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Could not schedule {}:{} on {} not enough Mem {} > {}",
-                          td.getName(),
-                          exec,
-                          ws,
-                          memoryAdded,
-                          memoryAvailable);
-            }
+            LOG.debug("Could not schedule {}:{} on {} not enough Mem {} > {}",
+                      td.getName(),
+                      exec,
+                      ws,
+                      memoryAdded,
+                      memoryAvailable);
             return false;
         }
         if (afterOnHeap > maxHeap) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Could not schedule {}:{} on {} HEAP would be too large {} > {}",
-                          td.getName(),
-                          exec,
-                          ws,
-                          afterOnHeap,
-                          maxHeap);
-            }
+            LOG.debug("Could not schedule {}:{} on {} HEAP would be too large {} > {}",
+                      td.getName(),
+                      exec,
+                      ws,
+                      afterOnHeap,
+                      maxHeap);
             return false;
         }
         return true;
