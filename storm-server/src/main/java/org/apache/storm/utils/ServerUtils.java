@@ -721,6 +721,9 @@ public class ServerUtils {
         topology = StormCommon.systemTopology(topologyConf, topology);
         Map<String, NormalizedResourceRequest> boltResources = ResourceUtils.getBoltsResources(topology, topologyConf);
         NormalizedResourceRequest entry = boltResources.get(Acker.ACKER_COMPONENT_ID);
+        if (entry == null) {
+            return 0.0d;
+        }
         Map<String, Integer> componentParallelism = getComponentParallelism(topologyConf, topology);
         int parallelism = componentParallelism.getOrDefault(Acker.ACKER_COMPONENT_ID, 1);
         return entry.getTotalMemoryMb() * parallelism;
@@ -1413,6 +1416,9 @@ public class ServerUtils {
         topology = StormCommon.systemTopology(topologyConf, topology);
         Map<String, NormalizedResourceRequest> boltResources = ResourceUtils.getBoltsResources(topology, topologyConf);
         NormalizedResourceRequest entry = boltResources.get(Acker.ACKER_COMPONENT_ID);
+        if (entry == null) {
+            return 0.0d;
+        }
         return entry.getTotalMemoryMb();
     }
 
