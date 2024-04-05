@@ -18,6 +18,7 @@
 package org.apache.storm.scheduler.blacklist;
 
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
@@ -107,6 +108,22 @@ public class TestUtilsForBlacklistScheduler {
                 ports.add(j);
             }
             SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, null);
+            retList.put(sup.getId(), sup);
+        }
+        return retList;
+    }
+
+    public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts, double cpu, double memory) {
+        Map<String, Double> totalResources = new HashMap<>();
+        totalResources.put(Constants.COMMON_CPU_RESOURCE_NAME, cpu);
+        totalResources.put(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, memory);
+        Map<String, SupervisorDetails> retList = new HashMap<>();
+        for (int i = 0; i < numSup; i++) {
+            List<Number> ports = new LinkedList<>();
+            for (int j = 0; j < numPorts; j++) {
+                ports.add(j);
+            }
+            SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, totalResources);
             retList.put(sup.getId(), sup);
         }
         return retList;

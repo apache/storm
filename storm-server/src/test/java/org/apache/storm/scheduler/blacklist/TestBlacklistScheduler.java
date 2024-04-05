@@ -20,10 +20,19 @@ package org.apache.storm.scheduler.blacklist;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.daemon.StormCommon;
+import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.DefaultScheduler;
+import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.INimbus;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.SchedulerAssignmentImpl;
@@ -31,11 +40,13 @@ import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
+import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
+import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -71,6 +82,118 @@ public class TestBlacklistScheduler {
             scheduler.cleanup();
             scheduler = null;
         }
+    }
+
+    @Test
+    public void testBlacklistResumeWhenAckersWontFit() throws InvalidTopologyException {
+        // 3 supervisors exist with 4 slots, 2 are blacklisted
+        // topology with given worker heap size would fit in 4 slots if ignoring ackers, needs 5 slots with ackers.
+        // verify that one of the supervisors will be resumed and topology will schedule.
+
+        Config config = new Config();
+        config.putAll(Utils.readDefaultConfig());
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_TIME, 300);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT, 3);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME, 1800);
+        config.put(DaemonConfig.STORM_WORKER_MIN_CPU_PCORE_PERCENT, 100);
+        config.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_ASSUME_SUPERVISOR_BAD_BASED_ON_BAD_SLOT, false);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT, 3);
+        config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 128);
+        config.put(DaemonConfig.BLACKLIST_SCHEDULER_STRATEGY, "org.apache.storm.scheduler.blacklist.strategies.RasBlacklistStrategy");
+        config.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, 1);
+        config.setNumWorkers(1);
+        config.put(Config.TOPOLOGY_ACKER_EXECUTORS, 4);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, "org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy");
+        config.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 512);
+        config.put(Config.WORKER_HEAP_MEMORY_MB, 768);
+        config.put(Config.TOPOLOGY_NAME, "testTopology");
+
+        INimbus iNimbus = new TestUtilsForBlacklistScheduler.INimbusTest();
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
+        Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(3, 4, 400.0d, 4096.0d);
+        Topologies noTopologies = new Topologies();
+        Cluster cluster = new Cluster(iNimbus, resourceMetrics, supMap, new HashMap<>(), noTopologies, config);
+
+        scheduler = new BlacklistScheduler(new ResourceAwareScheduler());
+        scheduler.prepare(config, metricsRegistry);
+        scheduler.schedule(noTopologies, cluster);
+
+        Map<String, SupervisorDetails> removedSup0 = TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap, "sup-0");
+        Map<String, SupervisorDetails> removedSup0Sup1 = TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(removedSup0, "sup-1");
+
+        cluster = new Cluster(iNimbus, resourceMetrics, removedSup0Sup1,
+                TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), noTopologies, config);
+        scheduler.schedule(noTopologies, cluster);
+        scheduler.schedule(noTopologies, cluster);
+        scheduler.schedule(noTopologies, cluster);
+
+        // 2 supervisors blacklisted at this point.  Let's schedule the topology.
+
+        Map<String, TopologyDetails> topoMap = new HashMap<>();
+        TopologyDetails topo1 = createResourceTopo(config);
+        topoMap.put(topo1.getId(), topo1);
+        Topologies topologies = new Topologies(topoMap);
+
+        cluster = new Cluster(iNimbus, resourceMetrics, supMap,
+                TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
+        boolean enableTraceLogging = false; // for scheduling debug
+        if (enableTraceLogging) {
+            Configurator.setAllLevels(LogManager.getRootLogger().getName(), Level.TRACE);
+        }
+        scheduler.schedule(topologies, cluster);
+
+        // topology should be fully scheduled with 1 host remaining blacklisted
+        String topoScheduleStatus = cluster.getStatus("testTopology-id");
+        assertTrue(topoScheduleStatus.contains("Running - Fully Scheduled"));
+        assertEquals(1, cluster.getBlacklistedHosts().size());
+    }
+
+    public TopologyDetails createResourceTopo(Config conf) throws InvalidTopologyException {
+        int spoutParallelism = 6;
+        int boltParallelism = 5;
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("word", new TestUtilsForResourceAwareScheduler.TestSpout(),
+                spoutParallelism);
+        builder.setBolt("exclaim1", new TestUtilsForResourceAwareScheduler.TestBolt(),
+                boltParallelism).shuffleGrouping("word");
+        builder.setBolt("exclaim2", new TestUtilsForResourceAwareScheduler.TestBolt(),
+                boltParallelism).shuffleGrouping("exclaim1");
+
+        StormTopology stormTopology = builder.createTopology();
+
+        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormTopology, 0,
+                genExecsAndComps(StormCommon.systemTopology(conf, stormTopology)), currentTime, "user");
+        return topo;
+    }
+
+    public static Map<ExecutorDetails, String> genExecsAndComps(StormTopology topology) {
+        Map<ExecutorDetails, String> retMap = new HashMap<>();
+        int startTask = 1;
+        int endTask = 1;
+        for (Map.Entry<String, SpoutSpec> entry : topology.get_spouts().entrySet()) {
+            SpoutSpec spout = entry.getValue();
+            String spoutId = entry.getKey();
+            int spoutParallelism = spout.get_common().get_parallelism_hint();
+            for (int i = 0; i < spoutParallelism; i++) {
+                retMap.put(new ExecutorDetails(startTask, endTask), spoutId);
+                startTask++;
+                endTask++;
+            }
+        }
+
+        for (Map.Entry<String, Bolt> entry : topology.get_bolts().entrySet()) {
+            String boltId = entry.getKey();
+            Bolt bolt = entry.getValue();
+            int boltParallelism = bolt.get_common().get_parallelism_hint();
+            for (int i = 0; i < boltParallelism; i++) {
+                retMap.put(new ExecutorDetails(startTask, endTask), boltId);
+                startTask++;
+                endTask++;
+            }
+        }
+        return retMap;
     }
 
     @Test
