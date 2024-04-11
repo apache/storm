@@ -153,6 +153,13 @@
                     <systemPropertyVariables>
                         <storm.home>${project.basedir}/target/testhome</storm.home>
                     </systemPropertyVariables>
+                    <!-- We exclude these dependencies from the test classpath as they have some ambiguity with classes from the
+                      HDFS mini cluster used for testing. However, users need these dependencies, so we declare it in our POM
+                     -->
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExcludes>org.apache.hadoop:hadoop-client-api</classpathDependencyExcludes>
+                        <classpathDependencyExcludes>org.apache.hadoop:hadoop-client-runtime</classpathDependencyExcludes>
+                    </classpathDependencyExcludes>
                 </configuration>
             </plugin>
         </plugins>
