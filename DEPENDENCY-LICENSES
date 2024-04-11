@@ -54,6 +54,8 @@ List of third-party dependencies grouped by their license type.
         * Apache Hadoop Annotations (org.apache.hadoop:hadoop-annotations:3.3.6 - no url defined)
         * Apache Hadoop Archives (org.apache.hadoop:hadoop-archives:3.3.6 - no url defined)
         * Apache Hadoop Auth (org.apache.hadoop:hadoop-auth:3.3.6 - no url defined)
+        * Apache Hadoop Client API (org.apache.hadoop:hadoop-client-api:3.3.6 - no url defined)
+        * Apache Hadoop Client Runtime (org.apache.hadoop:hadoop-client-runtime:3.3.6 - no url defined)
         * Apache Hadoop Common (org.apache.hadoop:hadoop-common:3.3.6 - no url defined)
         * Apache Hadoop HDFS (org.apache.hadoop:hadoop-hdfs:3.3.6 - no url defined)
         * Apache Hadoop HDFS Client (org.apache.hadoop:hadoop-hdfs-client:3.3.6 - no url defined)
@@ -511,6 +513,7 @@ List of third-party dependencies grouped by their license type.
     Common Development and Distribution License (CDDL) v1.1
 
         * Java Transaction API (javax.transaction:jta:1.1 - http://java.sun.com/products/jta)
+        * jsp-api (javax.servlet.jsp:jsp-api:2.1 - no url defined)
         * transaction-api (javax.transaction:transaction-api:1.1 - no url defined)
 
     Common Development and Distribution License (CDDL) v1.1, The GNU General Public License (GPL), Version 2, With Classpath Exception
