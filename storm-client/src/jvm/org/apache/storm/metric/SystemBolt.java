@@ -21,6 +21,8 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metrics2.PerReporterGauge;
@@ -36,6 +38,8 @@ import org.apache.storm.utils.ReflectionUtils;
 // TaskID is always -1, therefore you can only send-unanchored tuples to co-located SystemBolt.
 // This bolt was conceived to export worker stats via metrics api.
 public class SystemBolt implements IBolt {
+    private static final long MIN_CPU_CALCULATION_THRESHOLD_NSEC =
+            TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS);
     private static boolean prepareWasCalled = false;
 
     @SuppressWarnings({ "unchecked" })
@@ -102,7 +106,7 @@ public class SystemBolt implements IBolt {
             // we could have multiple reporters calling getValue() one right
             // after another, with inaccurate reporting due to the small time difference.
             long elapsed = System.nanoTime() - this.lastCalculationTimeNsec;
-            if (elapsed >= 1000000000L) {
+            if (elapsed >= MIN_CPU_CALCULATION_THRESHOLD_NSEC) {
                 long cpuUsage = getTotalCpuUsage();
                 long usageDuringPeriod = cpuUsage - previousCpuTotal;
                 this.cpuUsage = (double) usageDuringPeriod / (double) elapsed;
