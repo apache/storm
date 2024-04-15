@@ -423,7 +423,6 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, Eclipse Public License - Version 1.0
 
-        * Jetty :: Asynchronous HTTP Client (org.eclipse.jetty:jetty-client:9.4.53.v20231009 - https://eclipse.org/jetty/jetty-client)
         * Jetty :: Continuation (org.eclipse.jetty:jetty-continuation:9.4.53.v20231009 - https://eclipse.org/jetty/jetty-continuation)
         * Jetty :: Http Utility (org.eclipse.jetty:jetty-http:9.4.53.v20231009 - https://eclipse.org/jetty/jetty-http)
         * Jetty :: IO Utility (org.eclipse.jetty:jetty-io:9.4.53.v20231009 - https://eclipse.org/jetty/jetty-io)
@@ -513,7 +512,6 @@ List of third-party dependencies grouped by their license type.
     Common Development and Distribution License (CDDL) v1.1
 
         * Java Transaction API (javax.transaction:jta:1.1 - http://java.sun.com/products/jta)
-        * jsp-api (javax.servlet.jsp:jsp-api:2.1 - no url defined)
         * transaction-api (javax.transaction:transaction-api:1.1 - no url defined)
 
     Common Development and Distribution License (CDDL) v1.1, The GNU General Public License (GPL), Version 2, With Classpath Exception

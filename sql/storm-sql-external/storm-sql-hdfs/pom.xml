@@ -86,26 +86,18 @@
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-minicluster</artifactId>
+            <artifactId>hadoop-client-minicluster</artifactId>
             <version>${hadoop.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.reload4j</groupId>
-                    <artifactId>reload4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-reload4j</artifactId>
-                </exclusion>
-            </exclusions>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-webapp</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -153,13 +145,6 @@
                     <systemPropertyVariables>
                         <storm.home>${project.basedir}/target/testhome</storm.home>
                     </systemPropertyVariables>
-                    <!-- We exclude these dependencies from the test classpath as they have some ambiguity with classes from the
-                      HDFS mini cluster used for testing. However, users need these dependencies, so we declare it in our POM
-                     -->
-                    <classpathDependencyExcludes>
-                        <classpathDependencyExcludes>org.apache.hadoop:hadoop-client-api</classpathDependencyExcludes>
-                        <classpathDependencyExcludes>org.apache.hadoop:hadoop-client-runtime</classpathDependencyExcludes>
-                    </classpathDependencyExcludes>
                 </configuration>
             </plugin>
         </plugins>
