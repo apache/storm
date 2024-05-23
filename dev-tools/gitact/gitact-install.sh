@@ -34,7 +34,17 @@ then
 fi
 
 cd "${STORM_SRC_ROOT_DIR}" || ( echo "Cannot cd to ${STORM_SRC_ROOT_DIR}"; exit 1 )
-python3 "${TRAVIS_SCRIPT_DIR}"/save-logs.py "install.txt" mvn clean install -DskipTests -Pnative,examples,externals -pl '!storm-shaded-deps' --batch-mode
+
+# Check the operating system
+OS="$(uname)"
+echo $OS
+# Run the command only if the OS is not macOS
+if [ "$OS" != "Darwin" ]; then
+  python3 "${TRAVIS_SCRIPT_DIR}"/save-logs.py "install.txt" mvn clean install -DskipTests -Pnative,examples,externals -pl '!storm-shaded-deps' --batch-mode
+else
+  echo "Running on macOS. Skipping -Pnative."
+  python3 "${TRAVIS_SCRIPT_DIR}"/save-logs.py "install.txt" mvn clean install -DskipTests -Pexamples,externals -pl '!storm-shaded-deps' --batch-mode
+fi
 BUILD_RET_VAL=$?
 
 if [[ "$BUILD_RET_VAL" != "0" ]];
