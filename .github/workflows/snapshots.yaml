@@ -78,4 +78,4 @@ jobs:
           ASF_PASSWORD: ${{ secrets.NEXUS_PW }}
         run: |
           echo "<settings><servers><server><id>apache.snapshots.https</id><username>$ASF_USERNAME</username><password>$ASF_PASSWORD</password></server></servers></settings>" > settings.xml
-          mvn --settings settings.xml -U -B -e -fae -ntp -DskipTests deploy
+          mvn --settings settings.xml -U -B -e -fae -ntp -DskipTests -P !examples deploy
