@@ -1102,6 +1102,17 @@ public class ServerUtils {
         cmdArgs.add("-u");
         if (user != null && !user.isEmpty()) {
             cmdArgs.add(user);
+            int exitCode = 0;
+            try {
+                exitCode = new ProcessBuilder(cmdArgs).start().waitFor();
+            } catch (Exception e) {
+                // Ignore
+            } finally {
+                if (exitCode != 0) {
+                    LOG.debug("CMD: '{}' returned exit code of {}", String.join(" ", cmdArgs), exitCode);
+                    cmdArgs.remove(user);
+                }
+            }
         }
         LOG.debug("CMD: {}", String.join(" ", cmdArgs));
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
