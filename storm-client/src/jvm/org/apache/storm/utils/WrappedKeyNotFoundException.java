@@ -23,15 +23,12 @@ import org.apache.storm.generated.KeyNotFoundException;
 /**
  * Wraps the generated TException to allow getMessage() to return a valid string.
  */
+@Deprecated
 public class WrappedKeyNotFoundException extends KeyNotFoundException {
     public WrappedKeyNotFoundException(String msg) {
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }
 
 

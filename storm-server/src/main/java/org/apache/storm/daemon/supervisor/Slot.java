@@ -464,13 +464,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             //We waited for 1 second loop around and try again....
             return dynamicState;
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof AuthorizationException) {
-                LOG.error("{}", ((AuthorizationException) e.getCause()).get_msg());
-            } else if (e.getCause() instanceof KeyNotFoundException) {
-                LOG.error("{}", ((KeyNotFoundException) e.getCause()).get_msg());
-            } else {
-                LOG.error("{}", e.getCause().getMessage());
-            }
+            LOG.error("{}", e.getCause().getMessage());
 
             // release the reference on all blobs associated with this worker.
             dynamicState.cancelPendingBlobs();
