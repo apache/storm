@@ -222,6 +222,7 @@ task.credentials.poll.secs: 30
 storm.messaging.netty.server_worker_threads: 1
 storm.messaging.netty.client_worker_threads: 1
 storm.messaging.netty.buffer_size: 5242880 #5MB buffer
+storm.messaging.netty.flush_timeout_ms: 600000
 
 # The netty write buffer high watermark in bytes.
 # If the number of bytes queued in the netty's write buffer exceeds this value, the netty client will block
