@@ -163,7 +163,7 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
         launchChannelAliveThread();
         scheduleConnect(NO_DELAY_MS);
         int messageBatchSize = ObjectReader.getInt(topoConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
-        pendingMessagesFlushTimeoutMs = ObjectReader.getLong(topoConf.get(Config.STORM_MESSAGING_NETTY_FLUSH_TIMEOUT_MS));
+        pendingMessagesFlushTimeoutMs = ObjectReader.getLong(topoConf.get(Config.STORM_MESSAGING_NETTY_FLUSH_TIMEOUT_MS), 600000L);
         pendingMessagesFlushIntervalMs = (long) (pendingMessagesFlushFactor * pendingMessagesFlushTimeoutMs);
         batcher = new MessageBuffer(messageBatchSize);
         String clazz = (String) topoConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY);
