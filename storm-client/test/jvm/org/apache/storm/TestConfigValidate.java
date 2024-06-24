@@ -18,6 +18,7 @@
 
 package org.apache.storm;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +44,7 @@ import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.ImpersonationAclUserEntryValidator;
 import org.apache.storm.validation.ConfigValidation.IntegerValidator;
 import org.apache.storm.validation.ConfigValidation.KryoRegValidator;
+import org.apache.storm.validation.ConfigValidation.LongValidator;
 import org.apache.storm.validation.ConfigValidation.ListEntryTypeValidator;
 import org.apache.storm.validation.ConfigValidation.ListOfListOfStringValidator;
 import org.apache.storm.validation.ConfigValidation.NoDuplicateInListValidator;
@@ -346,6 +348,23 @@ public class TestConfigValidate {
         }
 
         Object[] failCases = { 1.34, (long) Integer.MAX_VALUE + 1 };
+
+        for (Object value : failCases) {
+            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", value));
+        }
+    }
+
+    @Test
+    public void testLongValidator() {
+        LongValidator validator = new LongValidator();
+
+        Object[] passCases = { null, 1000, Integer.MAX_VALUE, Long.MAX_VALUE };
+
+        for (Object value : passCases) {
+            validator.validateField("test", value);
+        }
+
+        Object[] failCases = { 1.34, BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(1L))};
 
         for (Object value : failCases) {
             assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", value));

@@ -46,6 +46,7 @@ import org.apache.storm.validation.ConfigValidationAnnotations.IsImplementationO
 import org.apache.storm.validation.ConfigValidationAnnotations.IsInteger;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsKryoReg;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsListEntryCustom;
+import org.apache.storm.validation.ConfigValidationAnnotations.IsLong;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryCustom;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryType;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsNumber;
@@ -1517,6 +1518,13 @@ public class Config extends HashMap<String, Object> {
      */
     @IsInteger
     public static final String STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS = "storm.messaging.netty.client_worker_threads";
+    /**
+     * Netty based messaging: The number of milliseconds that a Netty client will retry flushing messages that are already
+     * buffered to be sent.
+     */
+    @IsLong
+    @IsPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_FLUSH_TIMEOUT_MS = "storm.messaging.netty.flush_timeout_ms";
     /**
      * Should the supervior try to run the worker as the lauching user or not.  Defaults to false.
      */
