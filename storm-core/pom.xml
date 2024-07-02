@@ -521,7 +521,7 @@
                                     <executable>sh</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>mkdir -p ${project.build.directory}/; cp -rufv ${basedir}/src/native/ ${project.build.directory}/</argument>
+                                        <argument>mkdir -p ${project.build.directory}/; cp -rfv ${basedir}/src/native/ ${project.build.directory}/</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
