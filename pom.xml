@@ -107,7 +107,7 @@
         <netty.version>4.1.107.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.23.0</log4j.version>
-        <slf4j.version>1.7.36</slf4j.version>
+        <slf4j.version>2.0.13</slf4j.version>
         <metrics.version>3.2.6</metrics.version>
         <mockito.version>4.11.0</mockito.version>
         <zookeeper.version>3.9.2</zookeeper.version>
