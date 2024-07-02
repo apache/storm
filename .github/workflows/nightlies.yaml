@@ -54,7 +54,7 @@ jobs:
           distribution: temurin
           java-version: 11
       - name: Set up Maven # We need to avoid default-http-blocker at the moment until we fix it ;-)
-        uses: stCarolas/setup-maven@v4.5
+        uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.6.3
       - name: Ensure a clean state without storm artifacts
