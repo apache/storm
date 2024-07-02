@@ -155,7 +155,7 @@
         <jaxb-version>2.3.0</jaxb-version>
         <activation-version>1.1.1</activation-version>
         <rocksdb-jni-version>8.10.0</rocksdb-jni-version>
-        <json-smart.version>2.5.0</json-smart.version>
+        <json-smart.version>2.5.1</json-smart.version>
         <byte-buddy.version>1.14.9</byte-buddy.version>
         <gson.version>2.10.1</gson.version>
 
