@@ -19,7 +19,6 @@
 package org.apache.storm.security.auth;
 
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Interface for handling credentials in an HttpServletRequest.
@@ -39,7 +38,7 @@ public interface IHttpCredentialsPlugin {
      * @param req the servlet request
      * @return the authenticated user, or null if none is authenticated.
      */
-    String getUserName(HttpServletRequest req);
+    String getUserName(jakarta.servlet.http.HttpServletRequest req);
 
     /**
      * Populates a given context with credentials information from an HTTP request.
@@ -47,5 +46,6 @@ public interface IHttpCredentialsPlugin {
      * @param req the servlet request
      * @return the context
      */
-    ReqContext populateContext(ReqContext context, HttpServletRequest req);
+    ReqContext populateContext(ReqContext context, jakarta.servlet.http.HttpServletRequest req);
+
 }

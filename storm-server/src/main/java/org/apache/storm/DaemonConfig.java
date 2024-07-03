@@ -522,13 +522,13 @@ public class DaemonConfig implements Validated {
     public static final String LOGVIEWER_APPENDER_NAME = "logviewer.appender.name";
 
     /**
-     * A class implementing javax.servlet.Filter for authenticating/filtering Logviewer requests.
+     * A class implementing jakarta.servlet.Filter for authenticating/filtering Logviewer requests.
      */
     @IsString
     public static final String LOGVIEWER_FILTER = "logviewer.filter";
 
     /**
-     * Initialization parameters for the javax.servlet.Filter for Logviewer.
+     * Initialization parameters for the jakarta.servlet.Filter for Logviewer.
      */
     @IsMapEntryType(keyType = String.class, valueType = String.class)
     public static final String LOGVIEWER_FILTER_PARAMS = "logviewer.filter.params";
@@ -540,13 +540,13 @@ public class DaemonConfig implements Validated {
     public static final String UI_CHILDOPTS = "ui.childopts";
 
     /**
-     * A class implementing javax.servlet.Filter for authenticating/filtering UI requests.
+     * A class implementing jakarta.servlet.Filter for authenticating/filtering UI requests.
      */
     @IsString
     public static final String UI_FILTER = "ui.filter";
 
     /**
-     * Initialization parameters for the javax.servlet.Filter for UI.
+     * Initialization parameters for the jakarta.servlet.Filter for UI.
      */
     @IsMapEntryType(keyType = String.class, valueType = String.class)
     public static final String UI_FILTER_PARAMS = "ui.filter.params";
@@ -838,13 +838,13 @@ public class DaemonConfig implements Validated {
     public static final String NIMBUS_SLOTS_PER_TOPOLOGY = "nimbus.slots.perTopology";
 
     /**
-     * A class implementing javax.servlet.Filter for DRPC HTTP requests.
+     * A class implementing jakarta.servlet.Filter for DRPC HTTP requests.
      */
     @IsString
     public static final String DRPC_HTTP_FILTER = "drpc.http.filter";
 
     /**
-     * Initialization parameters for the javax.servlet.Filter of the DRPC HTTP service.
+     * Initialization parameters for the jakarta.servlet.Filter of the DRPC HTTP service.
      */
     @IsMapEntryType(keyType = String.class, valueType = String.class)
     public static final String DRPC_HTTP_FILTER_PARAMS = "drpc.http.filter.params";

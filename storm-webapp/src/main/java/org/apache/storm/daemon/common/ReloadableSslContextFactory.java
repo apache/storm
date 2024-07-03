@@ -25,7 +25,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReloadableSslContextFactory extends SslContextFactory {
+public class ReloadableSslContextFactory extends SslContextFactory.Server {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReloadableSslContextFactory.class);
 

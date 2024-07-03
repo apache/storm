@@ -41,6 +41,8 @@ import com.codahale.metrics.Meter;
 import j2html.attributes.Attr;
 import j2html.tags.DomContent;
 
+import jakarta.ws.rs.core.Response;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -62,8 +64,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
-
-import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;

@@ -16,7 +16,7 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.HashSet;
 import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -32,7 +32,7 @@ public class DefaultHttpCredentialsPluginTest {
         DefaultHttpCredentialsPlugin handler = new DefaultHttpCredentialsPlugin();
         handler.prepare(new HashMap<>());
 
-        assertNull(handler.getUserName(null), "Should return null when request is null");
+        assertNull(handler.getUserName((HttpServletRequest) null), "Should return null when request is null");
 
         assertNull(handler.getUserName(Mockito.mock(HttpServletRequest.class)), "Should return null when user principal is null");
 

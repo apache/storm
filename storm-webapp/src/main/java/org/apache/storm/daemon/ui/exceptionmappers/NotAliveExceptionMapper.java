@@ -20,11 +20,11 @@ package org.apache.storm.daemon.ui.exceptionmappers;
 
 import static org.apache.storm.daemon.ui.exceptionmappers.ExceptionMapperUtils.getResponse;
 
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 import org.apache.storm.generated.NotAliveException;
 
 
@@ -32,7 +32,7 @@ import org.apache.storm.generated.NotAliveException;
 public class NotAliveExceptionMapper implements ExceptionMapper<NotAliveException> {
 
     @Inject
-    public javax.inject.Provider<HttpServletRequest> request;
+    public jakarta.inject.Provider<HttpServletRequest> request;
 
     @Override
     public Response toResponse(NotAliveException ex) {

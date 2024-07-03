@@ -110,7 +110,20 @@
             <version>${dropwizard.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>${jetty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlets</artifactId>
+            <version>${jetty.version}</version>
+        </dependency>
         <!-- UI -->
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
@@ -124,21 +137,6 @@
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-grizzly2-servlet</artifactId>
         </dependency>
-        <!-- Extra Java 11 jars for Jersey. Jersey's dependency tree only includes these on Java 11,
-            so we need to include them manually to ensure that Java 8 builds work on Java 11. -->
-        <dependency>
-            <groupId>com.sun.activation</groupId>
-            <artifactId>jakarta.activation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-        </dependency>
-        <!-- End extra Jersey Java 11 jars -->
     </dependencies>
     <build>
         <resources>

@@ -20,14 +20,14 @@ package org.apache.storm.daemon.logviewer.webapp;
 
 import static org.apache.storm.DaemonConfig.LOGVIEWER_APPENDER_NAME;
 
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
+
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;

@@ -111,7 +111,7 @@ public class LogviewerServer implements AutoCloseable {
 
             ServletHolder jerseyServlet = context.addServlet(ServletContainer.class, "/api/v1/*");
             jerseyServlet.setInitOrder(2);
-            jerseyServlet.setInitParameter("javax.ws.rs.Application", LogviewerApplication.class.getName());
+            jerseyServlet.setInitParameter("jakarta.ws.rs.Application", LogviewerApplication.class.getName());
 
             UIHelpers.configFilters(context, filterConfigurations);
         }

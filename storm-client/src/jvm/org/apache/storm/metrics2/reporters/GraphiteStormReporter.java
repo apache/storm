@@ -17,6 +17,8 @@ import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.codahale.metrics.graphite.GraphiteUDP;
+
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.daemon.metrics.ClientMetricsUtils;
@@ -91,5 +93,10 @@ public class GraphiteStormReporter extends ScheduledStormReporter {
             sender = new Graphite(host, port);
         }
         reporter = builder.build(sender);
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
     }
 }
