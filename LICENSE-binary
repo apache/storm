@@ -840,7 +840,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Jackson datatype: Guava (com.fasterxml.jackson.datatype:jackson-datatype-guava:2.16.1 - https://github.com/FasterXML/jackson-datatypes-collections)
         * Jackson datatype: jdk8 (com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.16.1 - https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8)
         * Jackson datatype: JSR310 (com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1 - https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310)
-        * Jackson Integration for Metrics (io.dropwizard.metrics:metrics-json:3.1.0 - http://metrics.codahale.com/metrics-json/)
         * Jackson Integration for Metrics (io.dropwizard.metrics:metrics-json:4.2.26 - https://metrics.dropwizard.io/metrics-json)
         * Jackson Jakarta-RS: base (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base:2.16.1 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-base)
         * Jackson Jakarta-RS: JSON (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider:2.16.1 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-json-provider)
