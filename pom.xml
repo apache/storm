@@ -1389,7 +1389,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>3.4.0</version>
                     <executions>
                         <execution>
                             <id>cleanup</id>
