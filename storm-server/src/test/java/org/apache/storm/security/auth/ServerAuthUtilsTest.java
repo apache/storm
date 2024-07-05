@@ -21,7 +21,6 @@ package org.apache.storm.security.auth;
 import org.apache.storm.DaemonConfig;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,12 +36,12 @@ public class ServerAuthUtilsTest {
         }
 
         @Override
-        public String getUserName(HttpServletRequest req) {
+        public String getUserName(jakarta.servlet.http.HttpServletRequest req) {
             return null;
         }
 
         @Override
-        public ReqContext populateContext(ReqContext context, HttpServletRequest req) {
+        public ReqContext populateContext(ReqContext context, jakarta.servlet.http.HttpServletRequest req) {
             return null;
         }
     }

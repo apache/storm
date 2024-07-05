@@ -21,13 +21,15 @@ package org.apache.storm.daemon.ui;
 import static org.apache.storm.utils.ConfigUtils.FILE_SEPARATOR;
 import static org.apache.storm.utils.ConfigUtils.STORM_HOME;
 
+import jakarta.servlet.DispatcherType;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.DispatcherType;
+
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
 import org.apache.storm.daemon.ui.exceptionmappers.AuthorizationExceptionMapper;

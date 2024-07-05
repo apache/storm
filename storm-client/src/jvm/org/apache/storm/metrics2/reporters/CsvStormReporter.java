@@ -14,7 +14,9 @@ package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -85,5 +87,10 @@ public class CsvStormReporter extends ScheduledStormReporter {
 
         File csvMetricsDir = getCsvLogDir(topoConf, reporterConf);
         reporter = builder.build(csvMetricsDir);
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
     }
 }

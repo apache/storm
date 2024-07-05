@@ -56,15 +56,14 @@ import org.apache.storm.streams.tuple.Tuple3;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-@RunWith(Enclosed.class)
 public class LogviewerLogSearchHandlerTest {
 
-    public static class SearchViaRestApi {
+    @Nested
+    public class SearchViaRestApi {
 
         private final String pattern = "needle";
         private final String expectedHost = "dev.null.invalid";

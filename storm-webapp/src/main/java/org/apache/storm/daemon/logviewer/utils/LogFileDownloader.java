@@ -21,11 +21,11 @@ package org.apache.storm.daemon.logviewer.utils;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 
+import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import javax.ws.rs.core.Response;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.metric.StormMetricsRegistry;

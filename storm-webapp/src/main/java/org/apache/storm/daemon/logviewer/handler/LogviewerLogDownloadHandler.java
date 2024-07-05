@@ -18,8 +18,9 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
+import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
-import javax.ws.rs.core.Response;
 
 import org.apache.storm.daemon.logviewer.utils.LogFileDownloader;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;

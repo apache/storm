@@ -20,11 +20,11 @@ package org.apache.storm.daemon.drpc;
 
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
+import jakarta.servlet.DispatcherType;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.DispatcherType;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.drpc.webapp.DRPCApplication;
@@ -119,7 +119,7 @@ public class DRPCServer implements AutoCloseable {
 
             ServletHolder jerseyServlet = context.addServlet(ServletContainer.class, "/*");
             jerseyServlet.setInitOrder(1);
-            jerseyServlet.setInitParameter("javax.ws.rs.Application", DRPCApplication.class.getName());
+            jerseyServlet.setInitParameter("jakarta.ws.rs.Application", DRPCApplication.class.getName());
             
             UIHelpers.configFilters(context, filterConfigurations);
             addRequestContextFilter(context, DaemonConfig.DRPC_HTTP_CREDS_PLUGIN, conf);

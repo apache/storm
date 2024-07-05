@@ -31,12 +31,13 @@ import static java.util.stream.Collectors.toList;
 import com.codahale.metrics.Meter;
 import j2html.tags.DomContent;
 
+import jakarta.ws.rs.core.Response;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
