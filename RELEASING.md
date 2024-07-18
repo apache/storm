@@ -18,7 +18,7 @@ Apache Storm follows the basic idea of [Semantic Versioning](https://semver.org/
 - We strongly encourage you to read the [Apache release signing page](http://www.apache.org/dev/release-signing.html), the [release distribution page](http://www.apache.org/dev/release-distribution.html#sigs-and-sums), as well as the [release publishing](http://www.apache.org/dev/release-publishing), [release policy](http://www.apache.org/legal/release-policy.html) and [Maven publishing](https://infra.apache.org/publishing-maven-artifacts.html) pages. ASF has common guidelines that apply to all projects.
 - Ensure you can log in to http://repository.apache.org. You should use your Apache ID username and password.
 - Install a SVN client, and ensure you can access the https://dist.apache.org/repos/dist/dev/storm/ and https://dist.apache.org/repos/dist/release/storm/ repositories. You should be able to access these with your Apache ID username and password.
-- During the release phase, artifacts will be uploaded to https://repository.apache.org. This means Maven needs to know your LDAP credentials. It is recommended that you use Maven's mechanism for [password encryption](https://maven.apache.org/guides/mini/guide-encryption.html). Please configure this in your `${user.home}/.m2/settings.xml.`:
+- During the release phase, artifacts will be uploaded to https://repository.apache.org. This means Maven needs to know your LDAP credentials. It is recommended that you use Maven's mechanism for [password encryption](https://maven.apache.org/guides/mini/guide-encryption.html). Please configure this in your `${user.home}/.m2/settings.xml`:
   
 ```
     <settings>
