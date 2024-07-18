@@ -61,8 +61,7 @@ In this way, you create a new release line and then you can create PATCH version
 This will create all the artifacts that will eventually be available in maven central. This step may seem simple, 
 but a lot can go wrong (mainly flaky tests). Note that this will create and push two commits with the commit message 
 starting with "[maven-release-plugin]" and it will also create and publish a git tag, e.g. `v2.6.0`.
-> [!WARNING]  
-> The full build can take up to 30 minutes to be completed
+
 
 4. Once you get a successful maven release, a “staging repository” will be created at http://repository.apache.org 
 in the “open” state, meaning it is still writable. You will need to close it, making it read-only. You can find more 
