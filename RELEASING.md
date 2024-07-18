@@ -61,16 +61,18 @@ In this way, you create a new release line and then you can create PATCH version
 This will create all the artifacts that will eventually be available in maven central. This step may seem simple, 
 but a lot can go wrong (mainly flaky tests). Note that this will create and push two commits with the commit message 
 starting with "[maven-release-plugin]" and it will also create and publish a git tag, e.g. `v2.6.0`.
+> [!WARNING]  
+> The full build can take up to 30 minutes to be completed
 
-3. Once you get a successful maven release, a “staging repository” will be created at http://repository.apache.org 
+4. Once you get a successful maven release, a “staging repository” will be created at http://repository.apache.org 
 in the “open” state, meaning it is still writable. You will need to close it, making it read-only. You can find more 
 information on this step [here](https://infra.apache.org/publishing-maven-artifacts.html).
 
-4. Checkout to the git tag that was published by Step 1 above, e.g. `git checkout tags/v2.6.0 -b v2.6.0`. 
+5. Checkout to the git tag that was published by Step 1 above, e.g. `git checkout tags/v2.6.0 -b v2.6.0`. 
 Then build it with `mvn clean install -DskipTests`. Run `mvn package` for `storm-dist/binary` and `storm-dist/source` 
 to create the actual distributions.
 
-5. Generate checksums for the *.tar.gz and *.zip distribution files, e.g.
+6. Generate checksums for the *.tar.gz and *.zip distribution files, e.g.
 ```bash
 pushd storm-dist/source/target
 sha512sum apache-storm-2.6.0-src.zip > apache-storm-2.6.0-src.zip.sha512
