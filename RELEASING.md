@@ -46,7 +46,7 @@ Apache Storm follows the basic idea of [Semantic Versioning](https://semver.org/
   - some tests currently rely on the following packages being available locally:
    - NodeJS
    - Python3
-  - some tests will require Docker to be running since they will create/launch containers (make sure /var/run/docker.sock has the correct permissions, other wise you migh see the error `Could not find a valid Docker environment`)
+  - some tests will require Docker to be running since they will create/launch containers (make sure /var/run/docker.sock has the correct permissions, otherwise you migh see the error `Could not find a valid Docker environment`)
 
 
 
