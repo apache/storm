@@ -15,11 +15,40 @@ Apache Storm follows the basic idea of [Semantic Versioning](https://semver.org/
 
 ## Preparation
 
-Ensure you can log in to http://repository.apache.org. You should use your Apache ID username and password.
+- We strongly encourage you to read the [Apache release signing page](http://www.apache.org/dev/release-signing.html), the [release distribution page](http://www.apache.org/dev/release-distribution.html#sigs-and-sums), as well as the [release publishing](http://www.apache.org/dev/release-publishing), [release policy](http://www.apache.org/legal/release-policy.html) and [Maven publishing](https://infra.apache.org/publishing-maven-artifacts.html) pages. ASF has common guidelines that apply to all projects.
+- Ensure you can log in to http://repository.apache.org. You should use your Apache ID username and password.
+- Install a SVN client, and ensure you can access the https://dist.apache.org/repos/dist/dev/storm/ and https://dist.apache.org/repos/dist/release/storm/ repositories. You should be able to access these with your Apache ID username and password.
+- During the release phase, artifacts will be uploaded to https://repository.apache.org. This means Maven needs to know your LDAP credentials. It is recommended that you use Maven's mechanism for [password encryption](https://maven.apache.org/guides/mini/guide-encryption.html):
+  
+```
+    <settings>
+  ...
+    <servers>
+      <!-- To publish a snapshot of your project -->
+      <server>
+        <id>apache.snapshots.https</id>
+        <username> <!-- YOUR APACHE LDAP USERNAME --> </username>
+        <password> <!-- YOUR APACHE LDAP PASSWORD (encrypted) --> </password>
+      </server>
+      <!-- To stage a release of your project -->
+      <server>
+        <id>apache.releases.https</id>
+        <username> <!-- YOUR APACHE LDAP USERNAME --> </username>
+        <password> <!-- YOUR APACHE LDAP PASSWORD (encrypted) --> </password>
+      </server>
+     ...
+    </servers>
+  </settings>
+``` 
+- Ensure you have a signed GPG key, and that the GPG key is listed in the Storm KEYS file at https://dist.apache.org/repos/dist/release/storm/KEYS. The key should be hooked into the Apache web of trust (https://keyserver.ubuntu.com for example)
+   - set up the key as the default one to be used during the signing operations that the GPG Maven plugin will request (your OS GPG agent can do this)
+- Compile environment:
+  - some tests currently rely on the following packages being available locally:
+   - NodeJS
+   - Python3
+  - some tests will require Docker to be running since they will create/launch containers (make sure /var/run/docker.sock has the correct permissions, other wise you migh see the error `Could not find a valid Docker environment`)
 
-Install an svn client, and ensure you can access the https://dist.apache.org/repos/dist/dev/storm/ and https://dist.apache.org/repos/dist/release/storm/ repositories. You should be able to access these with your Apache ID username and password.
 
-Ensure you have a signed GPG key, and that the GPG key is listed in the Storm KEYS file at https://dist.apache.org/repos/dist/release/storm/KEYS. The key should be hooked into the Apache web of trust. You should read the [Apache release signing page](http://www.apache.org/dev/release-signing.html), the [release distribution page](http://www.apache.org/dev/release-distribution.html#sigs-and-sums), as well as the [release publishing](http://www.apache.org/dev/release-publishing) and [release policy](http://www.apache.org/legal/release-policy.html) pages.
 
 If you are setting up a new MINOR version release, create a new branch based on `master` branch, e.g. `2.6.x-branch`. Then on master branch, set the version to a higher MINOR version (with SNAPSHOT), e.g. `mvn versions:set -DnewVersion=2.3.0-SNAPSHOT -P dist,rat,externals,examples`.
 In this way, you create a new release line and then you can create PATCH version releases from it, e.g. `2.6.0`.
