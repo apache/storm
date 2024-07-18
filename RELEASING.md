@@ -60,7 +60,7 @@ In this way, you create a new release line and then you can create PATCH version
 2. Run `mvn release:prepare -P dist,rat,externals,examples` followed `mvn release:perform -P dist,rat,externals,examples`. 
 This will create all the artifacts that will eventually be available in maven central. This step may seem simple, 
 but a lot can go wrong (mainly flaky tests). Note that this will create and push two commits with the commit message 
-starting with "[maven-release-plugin]" and it will also create and publish a git tag, e.g. `v2.6.0`.
+starting with "[maven-release-plugin]" and it will also create and publish a git tag, e.g. `v2.6.0`. Note: the full build can take up to 30 minutes to complete.
 
 
 4. Once you get a successful maven release, a “staging repository” will be created at http://repository.apache.org 
