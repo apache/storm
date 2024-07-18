@@ -64,7 +64,7 @@ starting with "[maven-release-plugin]" and it will also create and publish a git
 
 3. Once you get a successful maven release, a “staging repository” will be created at http://repository.apache.org 
 in the “open” state, meaning it is still writable. You will need to close it, making it read-only. You can find more 
-information on this step [here](www.apache.org/dev/publishing-maven-artifacts.html).
+information on this step [here](https://infra.apache.org/publishing-maven-artifacts.html).
 
 4. Checkout to the git tag that was published by Step 1 above, e.g. `git checkout tags/v2.6.0 -b v2.6.0`. 
 Then build it with `mvn clean install -DskipTests`. Run `mvn package` for `storm-dist/binary` and `storm-dist/source` 
