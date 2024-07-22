@@ -62,16 +62,15 @@ This will create all the artifacts that will eventually be available in maven ce
 but a lot can go wrong (mainly flaky tests). Note that this will create and push two commits with the commit message 
 starting with "[maven-release-plugin]" and it will also create and publish a git tag, e.g. `v2.6.0`. Note: the full build can take up to 30 minutes to complete.
 
-
-4. Once you get a successful maven release, a “staging repository” will be created at http://repository.apache.org 
+3. Once you get a successful maven release, a “staging repository” will be created at http://repository.apache.org 
 in the “open” state, meaning it is still writable. You will need to close it, making it read-only. You can find more 
 information on this step [here](https://infra.apache.org/publishing-maven-artifacts.html).
 
-5. Checkout to the git tag that was published by Step 1 above, e.g. `git checkout tags/v2.6.0 -b v2.6.0`. 
+4. Checkout to the git tag that was published by Step 1 above, e.g. `git checkout tags/v2.6.0 -b v2.6.0`. 
 Then build it with `mvn clean install -DskipTests`. Run `mvn package` for `storm-dist/binary` and `storm-dist/source` 
 to create the actual distributions.
 
-6. Generate checksums for the *.tar.gz and *.zip distribution files, e.g.
+5. Generate checksums for the *.tar.gz and *.zip distribution files, e.g.
 ```bash
 pushd storm-dist/source/target
 sha512sum apache-storm-2.6.0-src.zip > apache-storm-2.6.0-src.zip.sha512
@@ -79,24 +78,24 @@ sha512sum apache-storm-2.6.0-src.tar.gz > apache-storm-2.6.0-src.tar.gz.sha512
 popd
 
 pushd storm-dist/binary/final-package/target
-gpg --print-md SHA512 apache-storm-2.6.0.zip > apache-storm-2.6.0.zip.sha512
-gpg --print-md SHA512 apache-storm-2.6.0.tar.gz > apache-storm-2.6.0.tar.gz.sha512
+sha512sum apache-storm-2.6.0.zip > apache-storm-2.6.0.zip.sha512
+sha512sum apache-storm-2.6.0.tar.gz > apache-storm-2.6.0.tar.gz.sha512
 popd
 ```
 
-5. Create a directory in the dist svn repo for the release candidate: https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx
+6. Create a directory in the dist svn repo for the release candidate: https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx
 
-6. Run `dev-tools/release_notes.py` for the release version, piping the output to a RELEASE_NOTES.html file. Move that file to the svn release directory, sign it, and generate checksums, e.g.
+7. Run `dev-tools/release_notes.py` for the release version, piping the output to a RELEASE_NOTES.html file. Move that file to the svn release directory, sign it, and generate checksums, e.g.
 ```bash
 python3 dev-tools/release_notes.py 2.6.0 > RELEASE_NOTES.html
 gpg --armor --output RELEASE_NOTES.html.asc --detach-sig RELEASE_NOTES.html
 sha512sum RELEASE_NOTES.html > RELEASE_NOTES.html.sha512
 ```
 
-7. Move the release files from Step 4 and 6 to the svn directory from Step 5. Add and commit the files. 
+8. Move the release files from steps 4,5 and 7 to the svn directory from Step 6. Add and commit the files. 
 This makes them available in the Apache staging repo.
 
-8. Start the VOTE thread. The vote should follow the [ASF voting process](https://www.apache.org/foundation/voting.html). 
+9. Start the VOTE thread. The vote should follow the [ASF voting process](https://www.apache.org/foundation/voting.html). 
 Sample Template sent to dev@storm.apache.org
 
 ```
