@@ -25,6 +25,43 @@
 
 namespace java org.apache.storm.generated
 
+/* Placeholder exceptions that will be regenerated in camel-case (for java) from storm_exception.thrift */
+exception AlreadyAliveException {
+  1: required string message;
+}
+
+exception NotAliveException {
+  1: required string message;
+}
+
+exception AuthorizationException {
+  1: required string message;
+}
+
+exception InvalidTopologyException {
+  1: required string message;
+}
+
+exception KeyNotFoundException {
+  1: required string message;
+}
+
+exception IllegalStateException {
+  1: required string message;
+}
+
+exception KeyAlreadyExistsException {
+  1: required string message;
+}
+
+exception HBAuthorizationException {
+  1: required string message;
+}
+
+exception HBExecutionException {
+  1: required string message;
+}
+
 union JavaObjectArg {
   1: i32 int_arg;
   2: i64 long_arg;
@@ -131,34 +168,6 @@ struct StormTopology {
   8: optional string jdk_version;
   9: optional map<string, set<string>> component_to_shared_memory;
   10: optional map<string, SharedMemory> shared_memory;
-}
-
-exception AlreadyAliveException {
-  1: required string msg;
-}
-
-exception NotAliveException {
-  1: required string msg;
-}
-
-exception AuthorizationException {
-  1: required string msg;
-}
-
-exception InvalidTopologyException {
-  1: required string msg;
-}
-
-exception KeyNotFoundException {
-  1: required string msg;
-}
-
-exception IllegalStateException {
-  1: required string msg;
-}
-
-exception KeyAlreadyExistsException {
-  1: required string msg;
 }
 
 struct TopologySummary {
@@ -898,14 +907,6 @@ struct HBMessage {
   3: optional i32 message_id = -1,
 }
 
-
-exception HBAuthorizationException {
-  1: required string msg;
-}
-
-exception HBExecutionException {
-  1: required string msg;
-}
 
 service Supervisor {
   /**

@@ -24,13 +24,10 @@ import org.apache.storm.generated.HBExecutionException;
  * Wraps the generated TException to allow getMessage() to return a valid string.
  */
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+@Deprecated
 public class WrappedHBExecutionException extends HBExecutionException {
     public WrappedHBExecutionException(String msg) {
         super(msg);
     }
 
-    @Override
-    public String getMessage() {
-        return this.get_msg();
-    }
 }
