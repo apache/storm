@@ -206,6 +206,7 @@ struct NimbusSummary {
   3: required i32 uptime_secs;
   4: required bool isLeader;
   5: required string version;
+  6: optional i32 tlsPort;
 }
 
 struct ClusterSummary {

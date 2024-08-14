@@ -12,11 +12,14 @@
 
 package org.apache.storm.utils;
 
+import static org.apache.storm.Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN;
+
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
+import org.apache.storm.Thrift;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.security.auth.ReqContext;
@@ -62,9 +65,7 @@ public class NimbusClient extends ThriftClient {
      * @throws TTransportException on any error.
      */
     public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, null);
-        client = new Nimbus.Client(protocol);
-        isLocal = false;
+        this(conf, host, port, timeout, null);
     }
 
     /**
@@ -77,7 +78,12 @@ public class NimbusClient extends ThriftClient {
      * @throws TTransportException on any error.
      */
     public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
+        this(conf, host, port, timeout, asUser, false);
+    }
+
+    public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser, boolean useTls)
+            throws TTransportException {
+        super(conf, useTls ? ThriftConnectionType.NIMBUS_TLS : ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
         client = new Nimbus.Client(protocol);
         isLocal = false;
     }
@@ -89,9 +95,7 @@ public class NimbusClient extends ThriftClient {
      * @throws TTransportException on any error.
      */
     public NimbusClient(Map<String, Object> conf, String host) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, null, null, null);
-        client = new Nimbus.Client(protocol);
-        isLocal = false;
+        this(conf, host, null, null, null);
     }
 
     private NimbusClient(Nimbus.Iface client) {
@@ -213,25 +217,36 @@ public class NimbusClient extends ThriftClient {
 
         List<String> seeds = (List<String>) conf.get(Config.NIMBUS_SEEDS);
 
+        boolean useTls = ObjectReader.getBoolean(conf.get(Config.NIMBUS_THRIFT_CLIENT_USE_TLS), false);
+        if (useTls && null == ObjectReader.getString(conf.get(NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN))) {
+            throw new RuntimeException(NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN + " must be set to use a transport plugin that supports tls");
+        }
+
+        int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
+        int tlsPort = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_TLS_PORT).toString());
+        int configuredPortToUse = useTls ? tlsPort : port;
+
         for (String host : seeds) {
-            int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
             NimbusSummary nimbusSummary;
             NimbusClient client = null;
             try {
-                client = new NimbusClient(conf, host, port, timeout, asUser);
+                client = new NimbusClient(conf, host, configuredPortToUse, timeout, asUser, useTls);
+
                 nimbusSummary = client.getClient().getLeader();
                 if (nimbusSummary != null) {
-                    String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
+                    String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port() + ":" + nimbusSummary.get_tlsPort();
                     if (shouldLogLeader(leaderNimbus)) {
                         LOG.info("Found leader nimbus : {}", leaderNimbus);
                     }
-                    if (nimbusSummary.get_host().equals(host) && nimbusSummary.get_port() == port) {
+
+                    int nimbusPortFromSummary = useTls ? nimbusSummary.get_tlsPort() : nimbusSummary.get_port();
+                    if (nimbusSummary.get_host().equals(host) && nimbusPortFromSummary == port) {
                         NimbusClient ret = client;
                         client = null;
                         return ret;
                     }
                     try {
-                        return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), timeout, asUser);
+                        return new NimbusClient(conf, nimbusSummary.get_host(), nimbusPortFromSummary, timeout, asUser, useTls);
                     } catch (TTransportException e) {
                         throw new RuntimeException("Failed to create a nimbus client for the leader " + leaderNimbus, e);
                     }

@@ -26,9 +26,11 @@ import org.slf4j.LoggerFactory;
 public class NimbusInfo implements Serializable {
     private static final long serialVersionUID = 2161446155116099333L;
     private static final Logger LOG = LoggerFactory.getLogger(NimbusInfo.class);
-    private static final Pattern HOST_PORT_PATTERN = Pattern.compile("^(.*):([0-9]+)$");
+    private static final Pattern NON_TLS_HOST_PORT_PATTERN_FALLBACK = Pattern.compile("^(.*):([0-9]+)$");
+    private static final Pattern TLS_HOST_PORT_PATTERN = Pattern.compile("^(.*):([0-9]+):([0-9]+)$");
     private String host;
     private int port;
+    private int tlsPort;
     private boolean isLeader;
 
     public NimbusInfo(String host, int port, boolean isLeader) {
@@ -43,12 +45,24 @@ public class NimbusInfo implements Serializable {
         this.isLeader = isLeader;
     }
 
+    public NimbusInfo(String host, int port, int tlsPort, boolean isLeader) {
+        this(host, port, isLeader);
+        this.tlsPort = tlsPort;
+    }
+
     public static NimbusInfo parse(String nimbusInfo) {
-        Matcher m = HOST_PORT_PATTERN.matcher(nimbusInfo);
-        if (!m.matches()) {
-            throw new RuntimeException("nimbusInfo should have format of host:port, invalid string " + nimbusInfo);
+        Matcher m = TLS_HOST_PORT_PATTERN.matcher(nimbusInfo);
+        if (m.matches()) {
+            return new NimbusInfo(m.group(1), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)), false);
+        } else {
+            LOG.info("nimbusInfo {} doesn't match the format of host:port:tlsPort; fall back to the non-tls format host:port", nimbusInfo);
+            m = NON_TLS_HOST_PORT_PATTERN_FALLBACK.matcher(nimbusInfo);
+            if (m.matches()) {
+                return new NimbusInfo(m.group(1), Integer.parseInt(m.group(2)), false);
+            } else {
+                throw new RuntimeException("nimbusInfo should have format of host:port:tlsPort or host:port, invalid string " + nimbusInfo);
+            }
         }
-        return new NimbusInfo(m.group(1), Integer.valueOf(m.group(2)), false);
     }
 
     public static NimbusInfo fromConf(Map<String, Object> conf) {
@@ -62,7 +76,8 @@ public class NimbusInfo implements Serializable {
             }
 
             int port = ObjectReader.getInt(conf.get(Config.NIMBUS_THRIFT_PORT), 6627);
-            return new NimbusInfo(host, port, false);
+            int tlsPort = ObjectReader.getInt(conf.get(Config.NIMBUS_THRIFT_TLS_PORT));
+            return new NimbusInfo(host, port, tlsPort, false);
 
         } catch (UnknownHostException e) {
             throw new RuntimeException("Something wrong with network/dns config, host cant figure out its name", e);
@@ -70,7 +85,7 @@ public class NimbusInfo implements Serializable {
     }
 
     public String toHostPortString() {
-        return String.format("%s:%s", host, port);
+        return String.format("%s:%s:%s", host, port, tlsPort);
     }
 
     public boolean isLeader() {
@@ -83,6 +98,10 @@ public class NimbusInfo implements Serializable {
 
     public int getPort() {
         return port;
+    }
+
+    public int getTlsPort() {
+        return tlsPort;
     }
 
     public String getHost() {
@@ -106,6 +125,11 @@ public class NimbusInfo implements Serializable {
         if (port != that.port) {
             return false;
         }
+
+        if (tlsPort != that.tlsPort) {
+            return false;
+        }
+
         return host.equals(that.host);
     }
 
@@ -113,6 +137,7 @@ public class NimbusInfo implements Serializable {
     public int hashCode() {
         int result = host.hashCode();
         result = 31 * result + port;
+        result = 31 * result + tlsPort;
         result = 31 * result + (isLeader ? 1 : 0);
         return result;
     }
@@ -122,6 +147,7 @@ public class NimbusInfo implements Serializable {
         return "NimbusInfo{"
                 + "host='" + host + '\''
                 + ", port=" + port
+                + ", tlsPort=" + tlsPort
                 + ", isLeader=" + isLeader
                 + '}';
     }

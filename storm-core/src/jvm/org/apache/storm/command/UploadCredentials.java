@@ -104,8 +104,15 @@ public class UploadCredentials {
             }
         }
 
-        // use the local setting for the login config rather than the topology's
+        /*
+          When a topology is submitted, some of its configs might be changed by nimbus for various reasons.
+          This topologyConf here comes from the topology after it is submitted to the cluster, so it might not be the same as
+          the configs set up on the CLI. For some configs, we want to use whatever is set up on the client side.
+          This includes java.security.auth.login.config and NIMBUS_THRIFT_CLIENT_USE_TLS.
+          We should look into finding a better solution for this.
+         */
         topologyConf.remove("java.security.auth.login.config");
+        topologyConf.remove(Config.NIMBUS_THRIFT_CLIENT_USE_TLS);
 
         boolean throwExceptionForEmptyCreds = (boolean) cl.get("e");
         boolean hasCreds = StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap, (String) cl.get("u"));

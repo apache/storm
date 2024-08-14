@@ -165,6 +165,7 @@
         <asm.version>9.6</asm.version>
         <checker-qual.version>3.42.0</checker-qual.version>
         <error_prone_annotations.version>2.25.0</error_prone_annotations.version>
+        <bouncycastle.version>1.70</bouncycastle.version>
     </properties>
 
     <modules>
@@ -1011,6 +1012,11 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <!-- Hadoop dependencies. Specified here so HDFS/HBase don't import older versions of these jars in their projects-->
             <dependency>

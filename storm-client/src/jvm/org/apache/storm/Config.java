@@ -1105,6 +1105,208 @@ public class Config extends HashMap<String, Object> {
      */
     @IsInteger
     public static final String STORM_THRIFT_SOCKET_TIMEOUT_MS = "storm.thrift.socket.timeout.ms";
+
+    /**
+     * Which port the Thrift TLS interface of Nimbus should run on.
+     * Clients can connect to this port to upload jars and submit topologies.
+     * Default value is 0 and it means thrift TLS is not configured.
+     */
+    @IsInteger
+    @IsPositiveNumber(includeZero = true)
+    public static final String NIMBUS_THRIFT_TLS_PORT = "nimbus.thrift.tls.port";
+
+    /**
+     * The Nimbus transport plug-in for Thrift client/server TLS communication.
+     * Default to {@link #STORM_THRIFT_TRANSPORT_PLUGIN} if not configured.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN = "nimbus.thrift.tls.transport";
+
+    /**
+     * Whether the TLS Server requires the client to provide its cert or not when TLS is enabled.
+     * Meaning whether the SSL connection is mTLS, or one-way TLS.
+     * The default value is set false.
+     */
+    @IsBoolean
+    public static final String NIMBUS_THRIFT_TLS_CLIENT_AUTH_REQUIRED = "nimbus.thrift.tls.client.auth.required";
+
+    /**
+     * The path to the keystore that the nimbus TLS server uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PATH = "nimbus.thrift.tls.server.keystore.path";
+
+    /**
+     * The password of the keystore that the nimbus TLS server uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD = "nimbus.thrift.tls.server.keystore.password";
+
+    /**
+     * Launch only the tls server.
+     */
+    @IsBoolean
+    public static final String NIMBUS_THRIFT_TLS_SERVER_ONLY = "nimbus.thrift.tls.server.only";
+
+    /**
+     * The path to the truststore that the nimbus TLS server uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PATH = "nimbus.thrift.tls.server.truststore.path";
+
+    /**
+     * The password of the truststore that the nimbus TLS server uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD = "nimbus.thrift.tls.server.truststore.password";
+
+    /**
+     * The path to the keystore that the nimbus TLS client uses.
+     * It is important to not set nimbus.thrift.tls.client.key.path
+     * and nimbus.thrift.tls.client.cert.path in order to use client keystore
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_CLIENT_KEYSTORE_PATH = "nimbus.thrift.tls.client.keystore.path";
+
+    /**
+     * The password of the keystore that the nimbus TLS client uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_CLIENT_KEYSTORE_PASSWORD = "nimbus.thrift.tls.client.keystore.password";
+
+    /**
+     * The path to the key that the nimbus TLS client uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_CLIENT_KEY_PATH = "nimbus.thrift.tls.client.key.path";
+
+    /**
+     * The path of the certificate that the nimbus TLS client uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_CLIENT_CERT_PATH = "nimbus.thrift.tls.client.cert.path";
+
+    /**
+     * The path to the truststore that the nimbus TLS client uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_CLIENT_TRUSTSTORE_PATH = "nimbus.thrift.tls.client.truststore.path";
+
+    /**
+     * The password of the truststore that the nimbus TLS client uses.
+     */
+    @IsString
+    public static final String NIMBUS_THRIFT_TLS_CLIENT_TRUSTSTORE_PASSWORD = "nimbus.thrift.tls.client.truststore.password";
+
+    /**
+     * The number of threads that should be used by the nimbus thrift TLS server.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    public static final String NIMBUS_THRIFT_TLS_THREADS = "nimbus.thrift.tls.threads";
+
+    /**
+     * The maximum buffer size thrift TLS should use when reading messages.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    public static final String NIMBUS_THRIFT_TLS_MAX_BUFFER_SIZE = "nimbus.thrift.tls.max_buffer_size";
+
+    /**
+     * How long before a Thrift TLS Client socket hangs before timeout and restart the socket.
+     */
+    @IsInteger
+    public static final String STORM_THRIFT_TLS_SOCKET_TIMEOUT_MS = "storm.thrift.tls.socket.timeout.ms";
+
+    /**
+     * Whether the workers of the topology should use TLS or non-TLS thrift to connect to nimbus.
+     * It is achieved by changing the value of {@link #NIMBUS_THRIFT_CLIENT_USE_TLS} for workers.
+     * Nimbus will adjust this value in topology conf during submission, so that the value will only be set true if
+     * both Nimbus conf and topology conf have it set as true.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_WORKER_NIMBUS_THRIFT_CLIENT_USE_TLS = "topology.worker.nimbus.thrift.client.use.tls";
+
+    /**
+     * Whether the nimbus client should use TLS or non-TLS thrift to connect to nimbus.
+     */
+    @IsBoolean
+    public static final String NIMBUS_THRIFT_CLIENT_USE_TLS = "nimbus.thrift.client.use.tls";
+
+    /**
+     * Whether the TLS Server requires the client to provide its cert or not when TLS is enabled.
+     * Meaning whether the SSL connection is mTLS, or one-way TLS.
+     * The default value is set false.
+     */
+    @IsBoolean
+    public static final String SUPERVISOR_THRIFT_TLS_CLIENT_AUTH_REQUIRED = "supervisor.thrift.tls.client.auth.required";
+
+    /**
+     * The path to the keystore that the supervisor TLS server uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_SERVER_KEYSTORE_PATH = "supervisor.thrift.tls.server.keystore.path";
+
+    /**
+     * The password of the keystore that the supervisor TLS server uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD = "supervisor.thrift.tls.server.keystore.password";
+
+    /**
+     * The path to the truststore that the supervisor TLS server uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_SERVER_TRUSTSTORE_PATH = "supervisor.thrift.tls.server.truststore.path";
+
+    /**
+     * The password of the truststore that the supervisor TLS server uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD = "supervisor.thrift.tls.server.truststore.password";
+
+    /**
+     * The path to the keystore that the supervisor TLS client uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_CLIENT_KEYSTORE_PATH = "supervisor.thrift.tls.client.keystore.path";
+
+    /**
+     * The password of the keystore that the supervisor TLS client uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_CLIENT_KEYSTORE_PASSWORD = "supervisor.thrift.tls.client.keystore.password";
+
+    /**
+     * The path to the truststore that the supervisor TLS client uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_CLIENT_TRUSTSTORE_PATH = "supervisor.thrift.tls.client.truststore.path";
+
+    /**
+     * The password of the truststore that the supervisor TLS client uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_CLIENT_TRUSTSTORE_PASSWORD = "supervisor.thrift.tls.client.truststore.password";
+
+    /**
+     * The path to the key that the supervisor TLS client uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_CLIENT_KEY_PATH = "supervisor.thrift.tls.client.key.path";
+
+    /**
+     * The path of the certificate that the supervisor TLS client uses.
+     */
+    @IsString
+    public static final String SUPERVISOR_THRIFT_TLS_CLIENT_CERT_PATH = "supervisor.thrift.tls.client.cert.path";
+
+    /**
+     * Whether the supervisor clients should use TLS or non-TLS.
+     */
+    @IsBoolean
+    public static final String SUPERVISOR_THRIFT_CLIENT_USE_TLS = "supervisor.thrift.client.use.tls";
+
     /**
      * The DRPC transport plug-in for Thrift client/server communication.
      */
@@ -1518,6 +1720,63 @@ public class Config extends HashMap<String, Object> {
      */
     @IsInteger
     public static final String STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS = "storm.messaging.netty.client_worker_threads";
+
+    /**
+     * Netty based messaging: Enables TLS connections between workers.
+     */
+    @IsBoolean
+    public static final String STORM_MESSAGING_NETTY_TLS_ENABLE = "storm.messaging.netty.tls.enable";
+
+    /**
+     * Netty based messaging: When using TLS connections, adds validation that open SSL libraries are available.
+     */
+    @IsBoolean
+    public static final String STORM_MESSAGING_NETTY_TLS_REQUIRE_OPEN_SSL = "storm.messaging.netty.tls.require.open.ssl";
+
+    /**
+     * Netty based messaging: Specifies the TLS ciphers to be used when enabled.
+     */
+    @IsStringOrStringList
+    public static final String STORM_MESSAGING_NETTY_TLS_CIPHERS = "storm.messaging.netty.tls.ciphers";
+
+    /**
+     * Netty based messaging: Specifies the truststore when TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_TRUSTSTORE_PATH = "storm.messaging.netty.tls.truststore.path";
+
+    /**
+     * Netty based messaging: Specifies the truststore password when TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_TRUSTSTORE_PASSWORD = "storm.messaging.netty.tls.truststore.password";
+
+    /**
+     * Netty based messaging: Specifies the keystore when TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_KEYSTORE_PATH = "storm.messaging.netty.tls.keystore.path";
+
+    /**
+     * Netty based messaging: Specifies the keystore password when TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_KEYSTORE_PASSWORD = "storm.messaging.netty.tls.keystore.password";
+
+
+    /**
+     * Netty based messaging: Specifies the protocols TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_SSL_PROTOCOLS = "storm.messaging.netty.tls.ssl.protocols";
+
+    /**
+     * Netty based messaging: Specifies the frequency for checking to reload certs.
+     */
+    @IsInteger
+    public static final String STORM_MESSAGING_NETTY_TLS_RELOAD_FREQUENCY_MSECS = "storm.messaging.netty.tls.reload.frequency.msecs";
+
+    /**
     /**
      * Netty based messaging: The number of milliseconds that a Netty client will retry flushing messages that are already
      * buffered to be sent.

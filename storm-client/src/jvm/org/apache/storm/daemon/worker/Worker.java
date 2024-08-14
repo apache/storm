@@ -134,7 +134,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         if (supervisorIfaceSupplier == null) {
             this.supervisorIfaceSupplier = () -> {
                 try {
-                    return SupervisorClient.getConfiguredClient(topologyConf, Utils.hostname(), supervisorPort);
+                    return SupervisorClient.Builder.withConf(topologyConf)
+                            .withHostName(Utils.hostname()).withPort(supervisorPort).createSupervisorClient();
                 } catch (UnknownHostException e) {
                     throw Utils.wrapInRuntime(e);
                 }
