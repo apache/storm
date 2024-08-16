@@ -15,6 +15,7 @@ package org.apache.storm.trident.spout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
@@ -61,6 +62,9 @@ public interface IPartitionedTridentSpout<PartitionsT, PartitionT extends ISpout
          * reconstruct this partition/batch in the future.
          */
         X emitPartitionBatchNew(TransactionAttempt tx, TridentCollector collector, PartitionT partition, X lastPartitionMeta);
+
+        Map<PartitionT, X> emitPartitionBatchNew(TransactionAttempt tx, TridentCollector collector, Set<PartitionT> partitions,
+                                                 Map<PartitionT, X> lastPartitionMetaMap);
 
         /**
          * This method is called when this task is responsible for a new set of partitions. Should be used to manage things like connections

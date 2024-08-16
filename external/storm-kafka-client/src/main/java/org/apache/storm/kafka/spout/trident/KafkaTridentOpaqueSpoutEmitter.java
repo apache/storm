@@ -19,6 +19,8 @@ package org.apache.storm.kafka.spout.trident;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
@@ -37,10 +39,12 @@ public class KafkaTridentOpaqueSpoutEmitter<K, V> implements IOpaquePartitionedT
     }
 
     @Override
-    public Map<String, Object> emitPartitionBatch(TransactionAttempt tx, TridentCollector collector,
-        KafkaTridentSpoutTopicPartition partition, Map<String, Object> lastPartitionMeta) {
-        return emitter.emitPartitionBatchNew(tx, collector, partition, lastPartitionMeta);
+    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitPartitionBatch(TransactionAttempt tx,
+        TridentCollector collector, Set<KafkaTridentSpoutTopicPartition> partitions, Map<KafkaTridentSpoutTopicPartition,
+        Map<String, Object>> lastPartitionMetaMap) {
+        return emitter.emitPartitionBatchNew(tx, collector, partitions, lastPartitionMetaMap);
     }
+
 
     @Override
     public void refreshPartitions(List<KafkaTridentSpoutTopicPartition> partitionResponsibilities) {

@@ -13,8 +13,10 @@
 package org.apache.storm.trident.spout;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
@@ -138,22 +140,36 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
                 emitter.refreshPartitions(taskPartitions);
                 savedCoordinatorMeta = coordinatorMeta;
             }
+            Map<ISpoutPartition, Object> prevStateMap = new HashMap<>();
+            Set<ISpoutPartition> partitions = new HashSet<>();
             for (EmitterPartitionState s : partitionStates.values()) {
-                RotatingTransactionalState state = s.rotatingState;
-                final ISpoutPartition partition = s.partition;
-                Object meta = state.getStateOrCreate(tx.getTransactionId(),
-                        new RotatingTransactionalState.StateInitializer() {
-                            @Override
-                            public Object init(long txid, Object lastState) {
-                                return emitter.emitPartitionBatchNew(tx, collector, partition, lastState);
-                            }
-                        });
-                // it's null if one of:
-                //   a) a later transaction batch was emitted before this, so we should skip this batch
-                //   b) if didn't exist and was created (in which case the StateInitializer was invoked and
-                //      it was emitted
-                if (meta != null) {
-                    emitter.emitPartitionBatch(tx, collector, partition, meta);
+                prevStateMap.put(s.partition, s.rotatingState.getPreviousState(tx.getTransactionId()));
+                partitions.add(s.partition);
+            }
+            boolean allMatch = true;
+            for (EmitterPartitionState emitterPartitionState : partitionStates.values()) {
+                if (emitterPartitionState.rotatingState.getState(tx.getTransactionId()) == null) {
+                    allMatch = false;
+                    break;
+                }
+            }
+            // allMatch is true only if none of the partitions has a pre-existing state for the current txid
+            if (allMatch) {
+                Map<ISpoutPartition, Object> partitionBatchMeta = emitter.emitPartitionBatchNew(tx, collector, partitions, prevStateMap);
+                for (Map.Entry<ISpoutPartition, Object> entry : partitionBatchMeta.entrySet()) {
+                    ISpoutPartition partition = entry.getKey();
+                    partitionStates.get(partition.getId()).rotatingState.getStateOrCreate(tx.getTransactionId(),
+                            new RotatingTransactionalState.StateInitializer() {
+                                @Override
+                                public Object init(long txid, Object lastState) {
+                                    return entry.getValue();
+                                }
+                            });
+                }
+            } else {
+                for (Map.Entry<String, EmitterPartitionState> entry : partitionStates.entrySet()) {
+                    EmitterPartitionState s = entry.getValue();
+                    emitter.emitPartitionBatch(tx, collector, s.partition, s.rotatingState.getState(tx.getTransactionId()));
                 }
             }
             LOG.debug("Emitted Batch. [tx = {}], [coordinatorMeta = {}], [collector = {}]", tx, coordinatorMeta, collector);
