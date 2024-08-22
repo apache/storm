@@ -67,7 +67,7 @@
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <!-- Java EE packages. On JDK8 and below this is a part of java,
         but JDK9+ it is not there by default. -->

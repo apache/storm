@@ -251,7 +251,7 @@ public class ThroughputVsLatency {
         metricServer.serve();
         String url = metricServer.getUrl();
 
-        NimbusClient client = NimbusClient.getConfiguredClient(sysConf);
+        NimbusClient client = NimbusClient.Builder.withConf(sysConf).build();
         conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
         conf.registerMetricsConsumer(HttpForwardingMetricsConsumer.class, url, 1);
         Map<String, String> workerMetrics = new HashMap<>();

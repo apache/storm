@@ -12,14 +12,11 @@
 
 package org.apache.storm.utils;
 
-import static org.apache.storm.Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN;
-
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
-import org.apache.storm.Thrift;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.security.auth.ReqContext;
@@ -44,43 +41,74 @@ public class NimbusClient extends ThriftClient {
     public final boolean isLocal;
     private final Nimbus.Iface client;
 
-    /**
-     * Constructor, Please try to use `getConfiguredClient` instead of calling this directly.
-     * @param conf the conf for the client.
-     * @param host the host the client is to talk to.
-     * @param port the port the client is to talk to.
-     * @throws TTransportException on any error.
-     */
-    @Deprecated
-    public NimbusClient(Map<String, Object> conf, String host, int port) throws TTransportException {
-        this(conf, host, port, null, null);
+    public static class Builder {
+        private Map<String, Object> conf;
+        private String asUser;
+        private Integer timeout;
+        private boolean forDaemon = false;
+
+        private Builder(Map<String, Object> conf) {
+            this.conf = conf;
+        }
+
+        public static Builder withConf(Map<String, Object> conf) {
+            return new Builder(conf);
+        }
+
+        public Builder asUser(String asUser) {
+            this.asUser = asUser;
+            return this;
+        }
+
+        public Builder withTimeout(Integer timeout) {
+            this.timeout = timeout;
+            return this;
+        }
+
+        public Builder forDaemon() {
+            this.forDaemon = true;
+            return this;
+        }
+
+        public NimbusClient buildWithNimbusHostPort(String host, Integer port) throws TTransportException {
+            return new NimbusClient(conf, host, port, timeout, asUser, false);
+        }
+
+        public NimbusClient build()  {
+            return createNimbusClient(conf, asUser, timeout);
+        }
     }
 
     /**
-     * Constructor, Please try to use `getConfiguredClient` instead of calling this directly.
+     * Constructor.
      * @param conf the conf for the client.
      * @param host the host the client is to talk to.
      * @param port the port the client is to talk to.
      * @param timeout the timeout to use when connecting.
      * @throws TTransportException on any error.
+     * @deprecated use {@link Builder #buildWithNimbusHostPort()} instead.
      */
+    @Deprecated
     public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
         this(conf, host, port, timeout, null);
     }
 
     /**
-     * Constructor, Please try to use `getConfiguredClientAs` instead of calling this directly.
+     * Constructor.
      * @param conf the conf for the client.
      * @param host the host the client is to talk to.
      * @param port the port the client is to talk to.
      * @param timeout the timeout to use when connecting.
      * @param asUser the name of the user you want to impersonate (use with caution as it is not always supported).
      * @throws TTransportException on any error.
+     * @deprecated use {@link Builder #buildWithNimbusHostPort()} instead.
      */
+    @Deprecated
     public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
         this(conf, host, port, timeout, asUser, false);
     }
 
+    @Deprecated
     public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser, boolean useTls)
             throws TTransportException {
         super(conf, useTls ? ThriftConnectionType.NIMBUS_TLS : ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
@@ -89,11 +117,13 @@ public class NimbusClient extends ThriftClient {
     }
 
     /**
-     * Constructor, Please try to use `getConfiguredClient` instead of calling this directly.
+     * Constructor.
      * @param conf the conf for the client.
      * @param host the host the client is to talk to.
      * @throws TTransportException on any error.
+     * @deprecated use {@link Builder #buildWithNimbusHostPort()} instead.
      */
+    @Deprecated
     public NimbusClient(Map<String, Object> conf, String host) throws TTransportException {
         this(conf, host, null, null, null);
     }
@@ -128,7 +158,7 @@ public class NimbusClient extends ThriftClient {
      * @throws Exception on any kind of error.
      */
     public static void withConfiguredClient(WithNimbus cb, Map<String, Object> conf) throws Exception {
-        try (NimbusClient client = getConfiguredClientAs(conf, null)) {
+        try (NimbusClient client = NimbusClient.Builder.withConf(conf).build()) {
             cb.run(client.getClient());
         }
     }
@@ -137,7 +167,9 @@ public class NimbusClient extends ThriftClient {
      * Get a nimbus client as configured by conf.
      * @param conf the configuration to use.
      * @return the client, don't forget to close it when done.
+     * @deprecated use {@link Builder #build()} instead.
      */
+    @Deprecated
     public static NimbusClient getConfiguredClient(Map<String, Object> conf) {
         return getConfiguredClientAs(conf, null);
     }
@@ -147,7 +179,9 @@ public class NimbusClient extends ThriftClient {
      * @param conf the configuration to use.
      * @param timeout the timeout to use when connecting.
      * @return the client, don't forget to close it when done.
+     * @deprecated use {@link Builder #build()} instead.
      */
+    @Deprecated
     public static NimbusClient getConfiguredClient(Map<String, Object> conf, Integer timeout) {
         return getConfiguredClientAs(conf, null, timeout);
     }
@@ -178,7 +212,9 @@ public class NimbusClient extends ThriftClient {
      * @param conf the configuration to use.
      * @param asUser the user to impersonate (this does not always work).
      * @return the client, don't forget to close it when done.
+     * @deprecated use {@link Builder #build()} instead.
      */
+    @Deprecated
     public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser) {
         return getConfiguredClientAs(conf, asUser, null);
     }
@@ -189,8 +225,14 @@ public class NimbusClient extends ThriftClient {
      * @param asUser the user to impersonate (this does not always work).
      * @param timeout the timeout to use when connecting.
      * @return the client, don't forget to close it when done.
+     * @deprecated use {@link Builder #build()} instead.
      */
+    @Deprecated
     public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser, Integer timeout) {
+        return createNimbusClient(conf, asUser, timeout);
+    }
+
+    private static NimbusClient createNimbusClient(Map<String, Object> conf, String asUser, Integer timeout) {
         Nimbus.Iface override = _localOverrideClient;
         if (override != null) {
             return new NimbusClient(override);
@@ -218,8 +260,9 @@ public class NimbusClient extends ThriftClient {
         List<String> seeds = (List<String>) conf.get(Config.NIMBUS_SEEDS);
 
         boolean useTls = ObjectReader.getBoolean(conf.get(Config.NIMBUS_THRIFT_CLIENT_USE_TLS), false);
-        if (useTls && null == ObjectReader.getString(conf.get(NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN))) {
-            throw new RuntimeException(NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN + " must be set to use a transport plugin that supports tls");
+        if (useTls && null == ObjectReader.getString(conf.get(Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN))) {
+            throw new RuntimeException(Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN
+                    + " must be set to use a transport plugin that supports tls");
         }
 
         int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
@@ -231,7 +274,6 @@ public class NimbusClient extends ThriftClient {
             NimbusClient client = null;
             try {
                 client = new NimbusClient(conf, host, configuredPortToUse, timeout, asUser, useTls);
-
                 nimbusSummary = client.getClient().getLeader();
                 if (nimbusSummary != null) {
                     String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port() + ":" + nimbusSummary.get_tlsPort();

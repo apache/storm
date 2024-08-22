@@ -105,6 +105,7 @@
         <guava.version>33.0.0-jre</guava.version>
         <auto-service.version>1.0-rc4</auto-service.version>
         <netty.version>4.1.107.Final</netty.version>
+        <netty-tcnative.version>2.0.61.Final</netty-tcnative.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.23.0</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
@@ -165,7 +166,7 @@
         <asm.version>9.6</asm.version>
         <checker-qual.version>3.42.0</checker-qual.version>
         <error_prone_annotations.version>2.25.0</error_prone_annotations.version>
-        <bouncycastle.version>1.70</bouncycastle.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
     </properties>
 
     <modules>
@@ -1015,7 +1016,7 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
             <!-- Hadoop dependencies. Specified here so HDFS/HBase don't import older versions of these jars in their projects-->

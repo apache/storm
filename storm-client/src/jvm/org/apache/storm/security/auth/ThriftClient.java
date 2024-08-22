@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 public class ThriftClient implements AutoCloseable {
     protected TProtocol protocol;
+
     protected boolean retryForever = false;
     private TTransport transport;
     private String host;
@@ -152,6 +153,7 @@ public class ThriftClient implements AutoCloseable {
         try {
             LOG.debug("Thrift client connecting to host={} port={}", host, port);
             if (type.isTlsEnabled()) {
+                LOG.debug("Tls is enabled");
                 TSSLTransportFactory.TSSLTransportParameters params =
                         new TSSLTransportFactory.TSSLTransportParameters();
                 if (type.getClientTrustStorePath(conf) != null && type.getClientTrustStorePassword(conf) != null) {

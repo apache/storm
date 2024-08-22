@@ -46,7 +46,7 @@ public class Helper {
 
     public static void collectMetricsAndKill(String topologyName, Integer pollInterval, int duration) throws Exception {
         Map<String, Object> clusterConf = Utils.readStormConfig();
-        Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+        Nimbus.Iface client = NimbusClient.Builder.withConf(clusterConf).build().getClient();
         try (BasicMetricsCollector metricsCollector = new BasicMetricsCollector(topologyName, clusterConf)) {
 
             if (duration > 0) {
@@ -72,7 +72,7 @@ public class Helper {
      */
     public static void setupShutdownHook(final String topoName) {
         Map<String, Object> clusterConf = Utils.readStormConfig();
-        final Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+        final Nimbus.Iface client = NimbusClient.Builder.withConf(clusterConf).build().getClient();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

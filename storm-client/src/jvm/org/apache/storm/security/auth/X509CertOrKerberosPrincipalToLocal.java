@@ -41,7 +41,7 @@ public class X509CertOrKerberosPrincipalToLocal implements IPrincipalToLocal {
                     x509CertPrincipalToLocal.getClass().getCanonicalName(), principalName, localName);
         } catch (RuntimeException e) {
             //ignore x509CertPrincipalToLocal error.
-            LOG.debug("Error reading localName from x509CertPrincipalToLocal. The error will be ignored. Error: " + e.getMessage());
+            LOG.debug("Error reading localName from x509CertPrincipalToLocal. The error will be ignored. Error: {}", e.getMessage());
         }
 
         if (localName == null) {

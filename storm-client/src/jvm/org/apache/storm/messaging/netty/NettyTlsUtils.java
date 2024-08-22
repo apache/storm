@@ -56,33 +56,38 @@ public class NettyTlsUtils {
                     Arrays.asList("TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_AES_128_GCM_SHA256")));
         }
 
-        String keystorePath = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_KEYSTORE_PATH));
-        String keystorePassword = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_KEYSTORE_PASSWORD));
-        String truststorePath = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_TRUSTSTORE_PATH));
-        String truststorePassword = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_TRUSTSTORE_PASSWORD));
 
         String protocols = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_SSL_PROTOCOLS), "TLSv1.3");
 
         SslContext sslContext = null;
         try {
             SslContextBuilder builder;
-            ReloadableX509KeyManager reloadableX509KeyManager = new ReloadableX509KeyManager(keystorePath, keystorePassword);
             if (forServer) {
-                builder = SslContextBuilder.forServer(reloadableX509KeyManager);
+                LOG.info("Building SSL context for Netty server");
+                String keystorePath = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_KEYSTORE_PATH));
+                String keystorePassword = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_KEYSTORE_PASSWORD));
+                String truststorePath = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_TRUSTSTORE_PATH));
+                String truststorePassword = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_TRUSTSTORE_PASSWORD));
+                builder = SslContextBuilder.forServer(new ReloadableX509KeyManager(keystorePath, keystorePassword))
+                        .trustManager(new ReloadableX509TrustManager(truststorePath, truststorePassword))
+                        .clientAuth(ClientAuth.REQUIRE);
             } else {
+                LOG.info("Building SSL context for Netty client");
+                String clientKeystorePath = ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_CLIENT_KEYSTORE_PATH));
+                String clientKeystorePassword =
+                        ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_CLIENT_KEYSTORE_PASSWORD));
+                String clientTruststorePath =
+                        ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_CLIENT_TRUSTSTORE_PATH));
+                String clientTruststorePassword =
+                        ObjectReader.getString(topoConf.get(Config.STORM_MESSAGING_NETTY_TLS_CLIENT_TRUSTSTORE_PASSWORD));
                 builder = SslContextBuilder.forClient();
-                builder.keyManager(reloadableX509KeyManager);
-            }
-
-            if (forServer) {
-                builder.clientAuth(ClientAuth.REQUIRE);
+                builder.keyManager(new ReloadableX509KeyManager(clientKeystorePath, clientKeystorePassword))
+                        .trustManager(new ReloadableX509TrustManager(clientTruststorePath, clientTruststorePassword));
             }
 
             builder.ciphers(ciphers)
-                    .trustManager(new ReloadableX509TrustManager(truststorePath, truststorePassword))
                     .startTls(false)
                     .protocols(protocols);
-
             if (requireOpenSsl) {
                 builder.sslProvider(SslProvider.OPENSSL);
             }

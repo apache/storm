@@ -1719,7 +1719,8 @@ public class Config extends HashMap<String, Object> {
      * Netty based messaging: The # of worker threads for the client.
      */
     @IsInteger
-    public static final String STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS = "storm.messaging.netty.client_worker_threads";
+    public static final String STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS =
+            "storm.messaging.netty.client_worker_threads";
 
     /**
      * Netty based messaging: Enables TLS connections between workers.
@@ -1763,18 +1764,37 @@ public class Config extends HashMap<String, Object> {
     @IsString
     public static final String STORM_MESSAGING_NETTY_TLS_KEYSTORE_PASSWORD = "storm.messaging.netty.tls.keystore.password";
 
+    /**
+     * Netty based messaging: Specifies the client truststore when TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_CLIENT_TRUSTSTORE_PATH = "storm.messaging.netty.tls.client.truststore.path";
+
+    /**
+     * Netty based messaging: Specifies the client truststore password when TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_CLIENT_TRUSTSTORE_PASSWORD =
+            "storm.messaging.netty.tls.client.truststore.password";
+
+    /**
+     * Netty based messaging: Specifies the client keystore when TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_CLIENT_KEYSTORE_PATH = "storm.messaging.netty.tls.client.keystore.path";
+
+    /**
+     * Netty based messaging: Specifies the client keystore password when TLS is enabled.
+     */
+    @IsString
+    public static final String STORM_MESSAGING_NETTY_TLS_CLIENT_KEYSTORE_PASSWORD =
+            "storm.messaging.netty.tls.client.keystore.password";
 
     /**
      * Netty based messaging: Specifies the protocols TLS is enabled.
      */
     @IsString
     public static final String STORM_MESSAGING_NETTY_TLS_SSL_PROTOCOLS = "storm.messaging.netty.tls.ssl.protocols";
-
-    /**
-     * Netty based messaging: Specifies the frequency for checking to reload certs.
-     */
-    @IsInteger
-    public static final String STORM_MESSAGING_NETTY_TLS_RELOAD_FREQUENCY_MSECS = "storm.messaging.netty.tls.reload.frequency.msecs";
 
     /**
     /**

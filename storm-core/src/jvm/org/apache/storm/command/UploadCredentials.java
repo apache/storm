@@ -71,7 +71,7 @@ public class UploadCredentials {
 
         Map<String, Object> topologyConf = new HashMap<>();
         //Try to get the topology conf from nimbus, so we can reuse it.
-        try (NimbusClient nc = NimbusClient.getConfiguredClient(new HashMap<>())) {
+        try (NimbusClient nc = NimbusClient.Builder.withConf(new HashMap<>()).build()) {
             Nimbus.Iface client = nc.getClient();
             TopologySummary topo = client.getTopologySummaryByName(topologyName);
             //We found the topology, lets get the conf

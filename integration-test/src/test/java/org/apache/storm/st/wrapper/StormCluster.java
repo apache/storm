@@ -47,7 +47,7 @@ public class StormCluster {
 
     public StormCluster() {
         Map<String, Object> conf = getConfig();
-        this.client = NimbusClient.getConfiguredClient(conf).getClient();
+        this.client = NimbusClient.Builder.withConf(conf).build().getClient();
     }
 
     public static Map<String, Object> getConfig() {

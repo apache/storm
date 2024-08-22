@@ -28,7 +28,7 @@ public class X509CertPrincipalToLocal implements IPrincipalToLocal {
     private static final Logger LOG = LoggerFactory.getLogger(X509CertPrincipalToLocal.class);
 
     public static final String X509_CERT_PRINCIPAL_TO_LOCAL_REGEX = "x509.cert.principal.to.local.regex";
-    Pattern pattern;
+    private Pattern pattern;
 
     private static String extractCn(final String subjectPrincipal) {
         if (subjectPrincipal == null) {
@@ -68,4 +68,6 @@ public class X509CertPrincipalToLocal implements IPrincipalToLocal {
         }
         throw new AccessControlException("Invalid principal " + principalName);
     }
+
+
 }
