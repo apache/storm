@@ -71,11 +71,11 @@ public interface IOpaquePartitionedTridentSpout<PartitionsT, PartitionT extends 
         /**
          * Emit a batch of tuples for a list of partitions/transactions.
          *
-         * <p>Return the metadata describing this batch that will be used as lastPartitionMeta for defining the
+         * <p>Return the map of metadata describing this batch that will be used as lastPartitionMeta for defining the
          * parameters of the next batch for each partition.
          */
-        Map<PartitionT, M> emitPartitionBatch(TransactionAttempt tx, TridentCollector collector,
-            Set<PartitionT> partitions, Map<PartitionT, M> lastPartitionMetaMap);
+        Map<PartitionT, M> emitNewBatch(TransactionAttempt tx, TridentCollector collector,
+            Set<PartitionT> partitions, Map<PartitionT, M> lastBatchMetaMap);
 
         /**
          * This method is called when this task is responsible for a new set of partitions. Should be used to manage things like connections

@@ -44,16 +44,10 @@ public class KafkaTridentTransactionalSpoutEmitter<K, V> implements IPartitioned
     }
 
     @Override
-    public Map<String, Object> emitPartitionBatchNew(TransactionAttempt tx, TridentCollector collector,
-        KafkaTridentSpoutTopicPartition partition, Map<String, Object> lastPartitionMeta) {
-        return emitter.emitPartitionBatchNew(tx, collector, partition, lastPartitionMeta);
-    }
-
-    @Override
-    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitPartitionBatchNew(TransactionAttempt tx,
+    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitBatchNew(TransactionAttempt tx,
         TridentCollector collector, Set<KafkaTridentSpoutTopicPartition> partitions,
         Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> lastPartitionMetaMap) {
-        return emitter.emitPartitionBatchNew(tx, collector, partitions, lastPartitionMetaMap);
+        return emitter.emitNewBatch(tx, collector, partitions, lastPartitionMetaMap);
     }
 
     @Override
@@ -62,8 +56,8 @@ public class KafkaTridentTransactionalSpoutEmitter<K, V> implements IPartitioned
     }
 
     @Override
-    public void emitPartitionBatch(TransactionAttempt tx, TridentCollector collector,
-        KafkaTridentSpoutTopicPartition partition, Map<String, Object> partitionMeta) {
+    public void reEmitPartitionBatch(TransactionAttempt tx, TridentCollector collector,
+                                     KafkaTridentSpoutTopicPartition partition, Map<String, Object> partitionMeta) {
         emitter.reEmitPartitionBatch(tx, collector, partition, partitionMeta);
     }
 

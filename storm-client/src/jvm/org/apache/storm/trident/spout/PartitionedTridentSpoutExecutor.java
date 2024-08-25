@@ -155,7 +155,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
             }
             // allMatch is true only if none of the partitions has a pre-existing state for the current txid
             if (allMatch) {
-                Map<ISpoutPartition, Object> partitionBatchMeta = emitter.emitPartitionBatchNew(tx, collector, partitions, prevStateMap);
+                Map<ISpoutPartition, Object> partitionBatchMeta = emitter.emitBatchNew(tx, collector, partitions, prevStateMap);
                 for (Map.Entry<ISpoutPartition, Object> entry : partitionBatchMeta.entrySet()) {
                     ISpoutPartition partition = entry.getKey();
                     partitionStates.get(partition.getId()).rotatingState.getStateOrCreate(tx.getTransactionId(),
@@ -169,7 +169,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
             } else {
                 for (Map.Entry<String, EmitterPartitionState> entry : partitionStates.entrySet()) {
                     EmitterPartitionState s = entry.getValue();
-                    emitter.emitPartitionBatch(tx, collector, s.partition, s.rotatingState.getState(tx.getTransactionId()));
+                    emitter.reEmitPartitionBatch(tx, collector, s.partition, s.rotatingState.getState(tx.getTransactionId()));
                 }
             }
             LOG.debug("Emitted Batch. [tx = {}], [coordinatorMeta = {}], [collector = {}]", tx, coordinatorMeta, collector);

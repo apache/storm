@@ -164,13 +164,16 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
     /**
      * Emit a new batch.
      */
-    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitPartitionBatchNew(TransactionAttempt tx,
-        TridentCollector collector, Collection<KafkaTridentSpoutTopicPartition> partitions, Map<KafkaTridentSpoutTopicPartition,
-        Map<String, Object>> lastPartitionMetaMap) {
+    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitNewBatch(TransactionAttempt tx,
+        TridentCollector collector, Set<KafkaTridentSpoutTopicPartition> partitions,
+        Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> lastBatchMetaMap) {
+
+        LOG.debug("Processing batch: [transaction = {}], [currBatchPartitions = {}], [lastBatchMetadata = {}], [collector = {}]",
+                tx, partitions, lastBatchMetaMap, collector);
 
         Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> ret = new HashMap<>();
 
-        seekAllPartitions(partitions, lastPartitionMetaMap);
+        seekAllPartitions(partitions, lastBatchMetaMap);
 
         ConsumerRecords<K, V> poll = consumer.poll(Duration.ofMillis(pollTimeoutMs));
         for (KafkaTridentSpoutTopicPartition partition : partitions) {
@@ -194,58 +197,11 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
                         topologyContext.getStormId()).toMap());
             }
         }
-
-        return ret;
-    }
-
-    public Map<String, Object> emitPartitionBatchNew(TransactionAttempt tx, TridentCollector collector,
-        KafkaTridentSpoutTopicPartition currBatchPartition, Map<String, Object> lastBatch) {
-
-        LOG.debug("Processing batch: [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], [collector = {}]",
-            tx, currBatchPartition, lastBatch, collector);
-
-        final TopicPartition currBatchTp = currBatchPartition.getTopicPartition();
-
-        throwIfEmittingForUnassignedPartition(currBatchTp);
-
-        KafkaTridentSpoutBatchMetadata lastBatchMeta = lastBatch == null ? null : KafkaTridentSpoutBatchMetadata.fromMap(lastBatch);
-        KafkaTridentSpoutBatchMetadata currentBatch = lastBatchMeta;
-        Collection<TopicPartition> pausedTopicPartitions = Collections.emptySet();
-
-        try {
-            // pause other topic-partitions to only poll from current topic-partition
-            pausedTopicPartitions = pauseTopicPartitions(currBatchTp);
-
-            seek(currBatchTp, lastBatchMeta);
-
-            final List<ConsumerRecord<K, V>> records = consumer.poll(pollTimeoutMs).records(currBatchTp);
-            LOG.debug("Polled [{}] records from Kafka.", records.size());
-
-            if (!records.isEmpty()) {
-                for (ConsumerRecord<K, V> record : records) {
-                    emitTuple(collector, record);
-                }
-                // build new metadata based on emitted records
-                currentBatch = new KafkaTridentSpoutBatchMetadata(
-                    records.get(0).offset(),
-                    records.get(records.size() - 1).offset(),
-                    topologyContext.getStormId());
-            } else {
-                //Build new metadata based on the consumer position.
-                //We want the next emit to start at the current consumer position,
-                //so make a meta that indicates that position - 1 is the last emitted offset
-                //This helps us avoid cases like STORM-3279, and simplifies the seek logic.
-                long lastEmittedOffset = consumer.position(currBatchTp) - 1;
-                currentBatch = new KafkaTridentSpoutBatchMetadata(lastEmittedOffset, lastEmittedOffset, topologyContext.getStormId());
-            }
-        } finally {
-            consumer.resume(pausedTopicPartitions);
-            LOG.trace("Resumed topic-partitions {}", pausedTopicPartitions);
+        for (KafkaTridentSpoutTopicPartition kttp : ret.keySet()) {
+            LOG.debug("Emitted batch: [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], "
+                    + "[currBatchMetadata = {}], [collector = {}]", tx, kttp, lastBatchMetaMap.get(kttp), ret.get(kttp), collector);
         }
-        LOG.debug("Emitted batch: [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], "
-            + "[currBatchMetadata = {}], [collector = {}]", tx, currBatchPartition, lastBatch, currentBatch, collector);
-
-        return currentBatch.toMap();
+        return ret;
     }
 
     private void seekAllPartitions(Collection<KafkaTridentSpoutTopicPartition> partitions,

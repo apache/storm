@@ -163,12 +163,11 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
                 partitions.add(s.partition);
             }
 
-            Map<ISpoutPartition, Object> partitionMetaMap = emitter.emitPartitionBatch(tx, collector, partitions, prevStateMap);
-            LOG.info("emitter ret : " + partitionMetaMap);
+            Map<ISpoutPartition, Object> partitionMetaMap = emitter.emitNewBatch(tx, collector, partitions, prevStateMap);
             for (Map.Entry<ISpoutPartition, Object> partitionMeta : partitionMetaMap.entrySet()) {
                 metas.put(partitionMeta.getKey().getId(), partitionMeta.getValue());
             }
-            LOG.info("Emitted Batch. [transaction = {}], [coordinatorMeta = {}], [collector = {}], [{}]",
+            LOG.debug("Emitted Batch. [transaction = {}], [coordinatorMeta = {}], [collector = {}], [{}]",
                       tx, coordinatorMeta, collector, this);
         }
 
