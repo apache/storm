@@ -57,7 +57,7 @@ public class KafkaTridentTransactionalSpoutEmitter<K, V> implements IPartitioned
 
     @Override
     public void reEmitPartitionBatch(TransactionAttempt tx, TridentCollector collector,
-                                     KafkaTridentSpoutTopicPartition partition, Map<String, Object> partitionMeta) {
+        KafkaTridentSpoutTopicPartition partition, Map<String, Object> partitionMeta) {
         emitter.reEmitPartitionBatch(tx, collector, partition, partitionMeta);
     }
 

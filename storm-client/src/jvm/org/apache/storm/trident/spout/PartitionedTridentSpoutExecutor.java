@@ -146,30 +146,31 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
                 prevStateMap.put(s.partition, s.rotatingState.getPreviousState(tx.getTransactionId()));
                 partitions.add(s.partition);
             }
-            boolean allMatch = true;
+            boolean isNewBatch = true;
             for (EmitterPartitionState emitterPartitionState : partitionStates.values()) {
-                if (emitterPartitionState.rotatingState.getState(tx.getTransactionId()) == null) {
-                    allMatch = false;
+                if (emitterPartitionState.rotatingState.getState(tx.getTransactionId()) != null) {
+                    isNewBatch = false;
                     break;
                 }
             }
-            // allMatch is true only if none of the partitions has a pre-existing state for the current txid
-            if (allMatch) {
-                Map<ISpoutPartition, Object> partitionBatchMeta = emitter.emitBatchNew(tx, collector, partitions, prevStateMap);
-                for (Map.Entry<ISpoutPartition, Object> entry : partitionBatchMeta.entrySet()) {
+            if (isNewBatch) {
+                Map<ISpoutPartition, Object> partitionToBatchMeta = emitter.emitBatchNew(tx, collector, partitions, prevStateMap);
+                for (Map.Entry<ISpoutPartition, Object> entry : partitionToBatchMeta.entrySet()) {
                     ISpoutPartition partition = entry.getKey();
+                    Object batchMeta = entry.getValue();
                     partitionStates.get(partition.getId()).rotatingState.getStateOrCreate(tx.getTransactionId(),
                             new RotatingTransactionalState.StateInitializer() {
                                 @Override
                                 public Object init(long txid, Object lastState) {
-                                    return entry.getValue();
+                                    return batchMeta;
                                 }
                             });
                 }
             } else {
                 for (Map.Entry<String, EmitterPartitionState> entry : partitionStates.entrySet()) {
                     EmitterPartitionState s = entry.getValue();
-                    emitter.reEmitPartitionBatch(tx, collector, s.partition, s.rotatingState.getState(tx.getTransactionId()));
+                    Object partitionBatchMeta = s.rotatingState.getState(tx.getTransactionId());
+                    emitter.reEmitPartitionBatch(tx, collector, s.partition, partitionBatchMeta);
                 }
             }
             LOG.debug("Emitted Batch. [tx = {}], [coordinatorMeta = {}], [collector = {}]", tx, coordinatorMeta, collector);
