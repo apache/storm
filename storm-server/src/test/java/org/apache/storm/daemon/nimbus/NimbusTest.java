@@ -105,7 +105,7 @@ public class NimbusTest {
 
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, false);
-
+        conf.put(Config.TOPOLOGY_WORKER_NIMBUS_THRIFT_CLIENT_USE_TLS, false);
         conf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, "a");
         Map<String, Object> topoConf = new HashMap<>();
         topoConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, "b");

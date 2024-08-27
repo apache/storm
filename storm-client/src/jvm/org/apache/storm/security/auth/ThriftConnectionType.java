@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -24,9 +24,27 @@ public enum ThriftConnectionType {
     NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, Config.NIMBUS_QUEUE_SIZE,
            Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, Config.STORM_THRIFT_SOCKET_TIMEOUT_MS,
            WorkerTokenServiceType.NIMBUS, true),
+    NIMBUS_TLS(Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_TLS_PORT, Config.NIMBUS_QUEUE_SIZE,
+            Config.NIMBUS_THRIFT_TLS_THREADS, Config.NIMBUS_THRIFT_TLS_MAX_BUFFER_SIZE, Config.STORM_THRIFT_TLS_SOCKET_TIMEOUT_MS,
+            false, null, false,
+            true, Config.NIMBUS_THRIFT_TLS_CLIENT_AUTH_REQUIRED,
+            Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PATH, Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD,
+            Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PATH, Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD,
+            Config.NIMBUS_THRIFT_TLS_CLIENT_KEYSTORE_PATH, Config.NIMBUS_THRIFT_TLS_CLIENT_KEYSTORE_PASSWORD,
+            Config.NIMBUS_THRIFT_TLS_CLIENT_TRUSTSTORE_PATH, Config.NIMBUS_THRIFT_TLS_CLIENT_TRUSTSTORE_PASSWORD,
+            Config.NIMBUS_THRIFT_TLS_CLIENT_KEY_PATH, Config.NIMBUS_THRIFT_TLS_CLIENT_CERT_PATH),
     SUPERVISOR(Config.SUPERVISOR_THRIFT_TRANSPORT_PLUGIN, Config.SUPERVISOR_THRIFT_PORT, Config.SUPERVISOR_QUEUE_SIZE,
                Config.SUPERVISOR_THRIFT_THREADS, Config.SUPERVISOR_THRIFT_MAX_BUFFER_SIZE,
                Config.SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS, WorkerTokenServiceType.SUPERVISOR, false),
+    SUPERVISOR_TLS(Config.SUPERVISOR_THRIFT_TRANSPORT_PLUGIN, Config.SUPERVISOR_THRIFT_PORT, Config.SUPERVISOR_QUEUE_SIZE,
+            Config.SUPERVISOR_THRIFT_THREADS, Config.SUPERVISOR_THRIFT_MAX_BUFFER_SIZE, Config.SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS,
+            false, null, false,
+            true, Config.SUPERVISOR_THRIFT_TLS_CLIENT_AUTH_REQUIRED,
+            Config.SUPERVISOR_THRIFT_TLS_SERVER_KEYSTORE_PATH, Config.SUPERVISOR_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD,
+            Config.SUPERVISOR_THRIFT_TLS_SERVER_TRUSTSTORE_PATH, Config.SUPERVISOR_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD,
+            Config.SUPERVISOR_THRIFT_TLS_CLIENT_KEYSTORE_PATH, Config.SUPERVISOR_THRIFT_TLS_CLIENT_KEYSTORE_PASSWORD,
+            Config.SUPERVISOR_THRIFT_TLS_CLIENT_TRUSTSTORE_PATH, Config.SUPERVISOR_THRIFT_TLS_CLIENT_TRUSTSTORE_PASSWORD,
+            Config.SUPERVISOR_THRIFT_TLS_CLIENT_KEY_PATH, Config.SUPERVISOR_THRIFT_TLS_CLIENT_CERT_PATH),
     //A DRPC token only works for the invocations transport, not for the basic thrift transport.
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
          Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, null, false),
@@ -43,6 +61,18 @@ public enum ThriftConnectionType {
     private final boolean isFake;
     private final WorkerTokenServiceType wtType;
     private final boolean impersonationAllowed;
+    private final boolean tlsEnabled;
+    private final String clientAuthRequiredConf;
+    private final String serverKeyStorePathConf;
+    private final String serverKeyStorePasswordConf;
+    private final String serverTrustStorePathConf;
+    private final String serverTrustStorePasswordConf;
+    private final String clientKeyStorePathConf;
+    private final String clientKeyStorePasswordConf;
+    private final String clientTrustStorePathConf;
+    private final String clientTrustStorePasswordConf;
+    private final String clientKeyPathConf;
+    private final String clientCertPathConf;
 
     ThriftConnectionType() {
         this(null, null, null, null, null, null, true, null, false);
@@ -57,6 +87,19 @@ public enum ThriftConnectionType {
     ThriftConnectionType(String transConf, String portConf, String queueConf,
                          String threadsConf, String buffConf, String socketTimeoutConf, boolean isFake,
                          WorkerTokenServiceType wtType, boolean impersonationAllowed) {
+        this(transConf, portConf, queueConf, threadsConf, buffConf, socketTimeoutConf, isFake, wtType, impersonationAllowed,
+                false, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    ThriftConnectionType(String transConf, String portConf, String queueConf,
+                         String threadsConf, String buffConf, String socketTimeoutConf, boolean isFake,
+                         WorkerTokenServiceType wtType, boolean impersonationAllowed,
+                         boolean tlsEnabled, String clientAuthRequiredConf,
+                         String serverKeyStorePathConf, String serverKeyStorePasswordConf,
+                         String serverTrustStorePathConf, String serverTrustStorePasswordConf,
+                         String clientKeyStorePathConf, String clientKeyStorePasswordConf,
+                         String clientTrustStorePathConf, String clientTrustStorePasswordConf,
+                         String clientKeyPathConf, String clientCertPathConf) {
         this.transConf = transConf;
         this.portConf = portConf;
         this.queueConf = queueConf;
@@ -66,6 +109,19 @@ public enum ThriftConnectionType {
         this.isFake = isFake;
         this.wtType = wtType;
         this.impersonationAllowed = impersonationAllowed;
+
+        this.tlsEnabled = tlsEnabled;
+        this.clientAuthRequiredConf = clientAuthRequiredConf;
+        this.serverKeyStorePathConf = serverKeyStorePathConf;
+        this.serverKeyStorePasswordConf = serverKeyStorePasswordConf;
+        this.serverTrustStorePathConf = serverTrustStorePathConf;
+        this.serverTrustStorePasswordConf = serverTrustStorePasswordConf;
+        this.clientKeyStorePathConf = clientKeyStorePathConf;
+        this.clientKeyStorePasswordConf = clientKeyStorePasswordConf;
+        this.clientTrustStorePathConf = clientTrustStorePathConf;
+        this.clientTrustStorePasswordConf = clientTrustStorePasswordConf;
+        this.clientKeyPathConf = clientKeyPathConf;
+        this.clientCertPathConf = clientCertPathConf;
     }
 
     public boolean isFake() {
@@ -130,4 +186,57 @@ public enum ThriftConnectionType {
     public boolean isImpersonationAllowed() {
         return impersonationAllowed;
     }
+
+    public boolean isTlsEnabled() {
+        return tlsEnabled;
+    }
+
+    public boolean isClientAuthRequired(Map<String, Object> conf) {
+        boolean clientAuthRequired = false;
+        if (tlsEnabled) {
+            clientAuthRequired = ObjectReader.getBoolean(conf.get(clientAuthRequiredConf), false);
+        }
+        return clientAuthRequired;
+    }
+
+    public String getServerKeyStorePath(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(serverKeyStorePathConf), null);
+    }
+
+    public String getServerKeyStorePassword(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(serverKeyStorePasswordConf), null);
+    }
+
+    public String getServerTrustStorePath(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(serverTrustStorePathConf), null);
+    }
+
+    public String getServerTrustStorePassword(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(serverTrustStorePasswordConf), null);
+    }
+
+    public String getClientKeyStorePath(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(clientKeyStorePathConf), null);
+    }
+
+    public String getClientKeyStorePassword(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(clientKeyStorePasswordConf), null);
+    }
+
+    public String getClientTrustStorePath(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(clientTrustStorePathConf), null);
+    }
+
+    public String getClientTrustStorePassword(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(clientTrustStorePasswordConf), null);
+    }
+
+    public String getClientKeyPath(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(clientKeyPathConf), null);
+    }
+
+    public String getClientCertPath(Map<String, Object> conf) {
+        return ObjectReader.getString(conf.get(clientCertPathConf), null);
+    }
+
 }

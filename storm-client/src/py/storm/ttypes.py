@@ -2681,16 +2681,18 @@ class NimbusSummary(object):
      - uptime_secs
      - isLeader
      - version
+     - tlsPort
 
     """
 
 
-    def __init__(self, host=None, port=None, uptime_secs=None, isLeader=None, version=None,):
+    def __init__(self, host=None, port=None, uptime_secs=None, isLeader=None, version=None, tlsPort=None,):
         self.host = host
         self.port = port
         self.uptime_secs = uptime_secs
         self.isLeader = isLeader
         self.version = version
+        self.tlsPort = tlsPort
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -2726,6 +2728,11 @@ class NimbusSummary(object):
                     self.version = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
+            elif fid == 6:
+                if ftype == TType.I32:
+                    self.tlsPort = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -2755,6 +2762,10 @@ class NimbusSummary(object):
         if self.version is not None:
             oprot.writeFieldBegin('version', TType.STRING, 5)
             oprot.writeString(self.version.encode('utf-8') if sys.version_info[0] == 2 else self.version)
+            oprot.writeFieldEnd()
+        if self.tlsPort is not None:
+            oprot.writeFieldBegin('tlsPort', TType.I32, 6)
+            oprot.writeI32(self.tlsPort)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -11181,6 +11192,7 @@ NimbusSummary.thrift_spec = (
     (3, TType.I32, 'uptime_secs', None, None, ),  # 3
     (4, TType.BOOL, 'isLeader', None, None, ),  # 4
     (5, TType.STRING, 'version', 'UTF8', None, ),  # 5
+    (6, TType.I32, 'tlsPort', None, None, ),  # 6
 )
 all_structs.append(ClusterSummary)
 ClusterSummary.thrift_spec = (

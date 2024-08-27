@@ -110,7 +110,7 @@ public class StormApiResource {
     @Produces("application/json")
     public Response getClusterConfiguration(@QueryParam(callbackParameterName) String callback) throws TException {
         clusterConfigurationRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     nimbusClient.getClient().getNimbusConf(),
                     callback, false, Response.Status.OK
@@ -127,7 +127,7 @@ public class StormApiResource {
     @Produces("application/json")
     public Response getClusterSummary(@QueryParam(callbackParameterName) String callback) throws TException {
         clusterSummaryRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             String user = servletRequest.getRemoteUser();
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getClusterSummary(
@@ -146,7 +146,7 @@ public class StormApiResource {
     @Produces("application/json")
     public Response getNimbusSummary(@QueryParam(callbackParameterName) String callback) throws TException {
         nimbusSummaryRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getNimbusSummary(
                             nimbusClient.getClient().getClusterInfo(), config),
@@ -164,7 +164,7 @@ public class StormApiResource {
     @Produces("application/json")
     public Response getOwnerResources(@QueryParam(callbackParameterName) String callback) throws TException {
         getOwnerResourceSummariesMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getOwnerResourceSummaries(
                             nimbusClient.getClient().getOwnerResourceSummaries(null), config),
@@ -183,7 +183,7 @@ public class StormApiResource {
     public Response getOwnerResource(@PathParam("id") String id,
                                      @QueryParam(callbackParameterName) String callback) throws TException {
         getOwnerResourceSummariesMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getOwnerResourceSummary(
                             nimbusClient.getClient().getOwnerResourceSummaries(id), nimbusClient.getClient(),
@@ -200,7 +200,7 @@ public class StormApiResource {
     @Path("/history/summary")
     @Produces("application/json")
     public Response getHistorySummary(@QueryParam(callbackParameterName) String callback) throws TException {
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             String user = servletRequest.getRemoteUser();
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyHistoryInfo(
@@ -220,7 +220,7 @@ public class StormApiResource {
     public Response getSupervisorSummary(@Context SecurityContext securityContext,
                                          @QueryParam(callbackParameterName) String callback) throws TException {
         supervisorSummaryRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getSupervisorSummary(
                             nimbusClient.getClient().getClusterInfo().get_supervisors(),
@@ -243,7 +243,7 @@ public class StormApiResource {
                                   @QueryParam("sys") boolean sys,
                                   @QueryParam(callbackParameterName) String callback) throws TException {
         supervisorRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getSupervisorPageInfo(
                             nimbusClient.getClient().getSupervisorPageInfo(id, host, sys),
@@ -264,7 +264,7 @@ public class StormApiResource {
     public Response getTopologySummary(@Context SecurityContext securityContext,
                                        @QueryParam(callbackParameterName) String callback) throws TException {
         allTopologiesSummaryRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getAllTopologiesSummary(
                             nimbusClient.getClient().getTopologySummaries(),
@@ -287,7 +287,7 @@ public class StormApiResource {
                                 @QueryParam("sys") boolean sys,
                                 @QueryParam(callbackParameterName) String callback) throws TException {
         topologyPageRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologySummary(
                             nimbusClient.getClient().getTopologyPageInfo(id, window, sys),
@@ -308,7 +308,7 @@ public class StormApiResource {
     @Produces("application/json")
     public Response getTopologyWorkers(@PathParam("id") String id,
         @QueryParam(callbackParameterName) String callback) throws TException {
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             id = Utils.urlDecodeUtf8(id);
             return UIHelpers.makeStandardResponse(
                 UIHelpers.getTopologyWorkers(
@@ -332,7 +332,7 @@ public class StormApiResource {
                                        @QueryParam(callbackParameterName) String callback) throws TException {
         topologyMetricRequestMeter.mark();
         String user = servletRequest.getRemoteUser();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologySummary(
                             nimbusClient.getClient().getTopologyPageInfo(id, window, sys), window, config, user
@@ -352,7 +352,7 @@ public class StormApiResource {
     public Response getTopologyLag(@PathParam("id") String id,
                                    @QueryParam(callbackParameterName) String callback) throws TException {
         topologyLagRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyLag(nimbusClient.getClient().getTopology(id), config),
                     callback
@@ -373,7 +373,7 @@ public class StormApiResource {
                                                  @DefaultValue(":all-time") @QueryParam("window") String window
     ) throws TException {
         mkVisualizationDataRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getBuildVisualization(nimbusClient.getClient(), config, window, id, sys),
                     callback
@@ -394,7 +394,7 @@ public class StormApiResource {
                                              @DefaultValue(":all-time") @QueryParam("window") String window
     ) throws TException {
         buildVisualizationRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getVisualizationData(nimbusClient.getClient(), window, id, sys),
                     callback
@@ -419,7 +419,7 @@ public class StormApiResource {
                                          @DefaultValue(":all-time") @QueryParam("window") String window
                                          ) throws TException {
         componentPageRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             String user = servletRequest.getRemoteUser();
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getComponentPage(
@@ -441,7 +441,7 @@ public class StormApiResource {
     public Response getTopologyLogconfig(@PathParam("id") String id,
                                          @QueryParam(callbackParameterName) String callback) throws TException {
         logConfigRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopolgoyLogConfig(nimbusClient.getClient().getLogConfig(id)),
                     callback
@@ -460,7 +460,7 @@ public class StormApiResource {
     public Response putTopologyLogconfig(@PathParam("id") String id, String body,
                                          @QueryParam(callbackParameterName) String callback) throws TException {
         topologyOpResponseMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.putTopologyLogLevel(nimbusClient.getClient(),
                             ((Map<String, Map>) JSONValue.parse(body)).get("namedLoggerLevels"), id),
@@ -479,7 +479,7 @@ public class StormApiResource {
     public Response putTopologyActivate(@PathParam("id") String id,
                                         @QueryParam(callbackParameterName) String callback) throws TException {
         activateTopologyRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.putTopologyActivate(nimbusClient.getClient(), id),
                     callback
@@ -497,7 +497,7 @@ public class StormApiResource {
     public Response putTopologyDeactivate(@PathParam("id") String id,
                                           @QueryParam(callbackParameterName) String callback) throws TException {
         deactivateTopologyRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.putTopologyDeactivate(nimbusClient.getClient(), id),
                     callback
@@ -517,7 +517,7 @@ public class StormApiResource {
                                                @PathParam("spct") String spct,
                                                @QueryParam(callbackParameterName) String callback) throws TException {
         debugTopologyRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.putTopologyDebugActionSpct(
                             nimbusClient.getClient(), id, action, spct, ""
@@ -541,7 +541,7 @@ public class StormApiResource {
             @PathParam("spct") String spct,
             @QueryParam(callbackParameterName) String callback) throws TException {
         componentOpResponseRequestMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
 
                     UIHelpers.putTopologyDebugActionSpct(
@@ -563,7 +563,7 @@ public class StormApiResource {
                                          @PathParam("wait-time") String waitTime,
                                          @QueryParam(callbackParameterName) String callback) throws TException {
         topologyOpResponseMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.putTopologyRebalance(
                             nimbusClient.getClient(), id, waitTime
@@ -585,7 +585,7 @@ public class StormApiResource {
         @PathParam("wait-time") String waitTime,
         @QueryParam(callbackParameterName) String callback) throws TException {
         topologyOpResponseMeter.mark();
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                 UIHelpers.putTopologyKill(nimbusClient.getClient(), id, waitTime),
                 callback
@@ -604,7 +604,7 @@ public class StormApiResource {
                                               @PathParam("host-port") String hostPort,
                                               @PathParam("timeout") String timeout,
                                               @QueryParam(callbackParameterName) String callback) throws TException {
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyProfilingStart(nimbusClient.getClient(), id, hostPort, timeout, config),
                     callback
@@ -622,7 +622,7 @@ public class StormApiResource {
     public Response getTopologyProfilingStop(@PathParam("id") String id,
                                              @PathParam("host-port") String hostPort,
                                              @QueryParam(callbackParameterName) String callback) throws TException {
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyProfilingStop(nimbusClient.getClient(), id, hostPort, config),
                     callback
@@ -640,7 +640,7 @@ public class StormApiResource {
     public Response getTopologyProfilingDumpProfile(@PathParam("id") String id,
                                                     @PathParam("host-port") String hostPort,
                                                     @QueryParam(callbackParameterName) String callback) throws TException {
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyProfilingDump(nimbusClient.getClient(), id, hostPort, config),
                     callback
@@ -658,7 +658,7 @@ public class StormApiResource {
     public Response getTopologyProfilingDumpJstack(@PathParam("id") String id,
                                                    @PathParam("host-port") String hostPort,
                                                    @QueryParam(callbackParameterName) String callback) throws TException {
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyProfilingDumpJstack(
                             nimbusClient.getClient(), id, hostPort, config
@@ -678,7 +678,7 @@ public class StormApiResource {
     public Response getTopologyProfilingRestartWorker(@PathParam("id") String id,
                                                       @PathParam("host-port") String hostPort,
                                                       @QueryParam(callbackParameterName) String callback) throws TException {
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyProfilingRestartWorker(
                             nimbusClient.getClient(), id, hostPort, config
@@ -698,7 +698,7 @@ public class StormApiResource {
     public Response getTopologyProfilingDumpheap(@PathParam("id") String id,
                                                  @PathParam("host-port") String hostPort,
                                                  @QueryParam(callbackParameterName) String callback) throws TException {
-        try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(config)) {
+        try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
             return UIHelpers.makeStandardResponse(
                     UIHelpers.getTopologyProfilingDumpHeap(
                             nimbusClient.getClient(), id, hostPort, config

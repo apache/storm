@@ -140,14 +140,6 @@ public class UtilsTest {
                                          1024.0);
     }
 
-    public void getConfiguredClientThrowsRuntimeExceptionOnBadArgsTest() throws TTransportException {
-        Map<String, Object> config = ConfigUtils.readStormConfig();
-        config.put(Config.STORM_NIMBUS_RETRY_TIMES, 0);
-
-        Exception e = assertThrows(RuntimeException.class, () -> new NimbusClient(config, "", 65535));
-        assertEquals(TTransportException.class, e.getCause(), "Cause is not TTransportException " + e);
-    }
-
     @Test
     public void isZkAuthenticationConfiguredStormServerTest() {
         assertFalse(

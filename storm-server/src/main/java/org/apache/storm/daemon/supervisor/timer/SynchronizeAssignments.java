@@ -86,33 +86,6 @@ public class SynchronizeAssignments implements Runnable {
         this.readClusterState.run();
     }
 
-    /**
-     * Used by {@link Supervisor} to fetch assignments when start up.
-     * @param supervisor {@link Supervisor}
-     */
-    public void getAssignmentsFromMasterUntilSuccess(Supervisor supervisor) {
-        boolean success = false;
-        while (!success) {
-            try (NimbusClient master = NimbusClient.getConfiguredClient(supervisor.getConf())) {
-                SupervisorAssignments assignments = master.getClient().getSupervisorAssignments(supervisor.getAssignmentId());
-                assignedAssignmentsToLocal(supervisor.getStormClusterState(), Collections.singletonList(assignments));
-                success = true;
-            } catch (Exception t) {
-                // just ignore the exception
-            }
-            if (!success) {
-                LOG.info("Waiting for a success sync of assignments from master...");
-                try {
-                    Time.sleep(5000L);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-        }
-
-    }
-
     public List<SupervisorAssignments> getAllAssignmentsFromNumaSupervisors(
             Nimbus.Iface nimbus, String node
     ) throws TException {
@@ -149,7 +122,7 @@ public class SynchronizeAssignments implements Runnable {
                 LOG.error("Get assignments from local master exception", e);
             }
         } else {
-            try (NimbusClient master = NimbusClient.getConfiguredClient(conf)) {
+            try (NimbusClient master = NimbusClient.Builder.withConf(conf).forDaemon().build()) {
                 List<SupervisorAssignments> supervisorAssignmentsList = getAllAssignmentsFromNumaSupervisors(master.getClient(), node);
                 LOG.debug("Sync an assignments from master, will start to sync with assignments: {}", supervisorAssignmentsList);
                 assignedAssignmentsToLocal(clusterState, supervisorAssignmentsList);

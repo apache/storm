@@ -129,7 +129,8 @@ public class BlobStoreUtils {
                 break;
             }
             LOG.debug("Download blob key: {}, NimbusInfo {}", key, nimbusInfo);
-            try (NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
+            try (NimbusClient client = NimbusClient.Builder.withConf(conf).forDaemon()
+                    .buildWithNimbusHostPort(nimbusInfo.getHost(), nimbusInfo.getPort())) {
                 rbm = client.getClient().getBlobMeta(key);
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
@@ -177,7 +178,8 @@ public class BlobStoreUtils {
             if (isSuccess) {
                 break;
             }
-            try (NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
+            try (NimbusClient client = NimbusClient.Builder.withConf(conf).forDaemon().buildWithNimbusHostPort(nimbusInfo.getHost(),
+                    nimbusInfo.getPort())) {
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
                 try (InputStreamWithMeta in = remoteBlobStore.getBlob(key)) {
@@ -235,7 +237,8 @@ public class BlobStoreUtils {
 
     public static void createStateInZookeeper(Map<String, Object> conf, String key, NimbusInfo nimbusInfo) throws TTransportException {
         ClientBlobStore cb = new NimbusBlobStore();
-        cb.setClient(conf, new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null));
+        cb.setClient(conf, NimbusClient.Builder.withConf(conf).forDaemon().buildWithNimbusHostPort(
+                nimbusInfo.getHost(), nimbusInfo.getPort()));
         cb.createStateInZookeeper(key);
     }
 
