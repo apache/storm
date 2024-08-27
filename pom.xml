@@ -100,12 +100,12 @@
         <snakeyaml.version>2.2</snakeyaml.version>
         <httpclient.version>4.5.14</httpclient.version>
         <httpclient.core.version>4.4.16</httpclient.core.version>
-        <jctools.version>2.0.1</jctools.version>
+        <jctools.version>4.0.5</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>33.0.0-jre</guava.version>
         <auto-service.version>1.0-rc4</auto-service.version>
-        <netty.version>4.1.107.Final</netty.version>
         <netty-tcnative.version>2.0.61.Final</netty-tcnative.version>
+        <netty.version>4.1.112.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.23.0</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
@@ -120,7 +120,7 @@
         <hbase.version>2.5.6-hadoop3</hbase.version>
         <kryo.version>5.6.0</kryo.version>
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
-        <joda-time.version>2.12.5</joda-time.version>
+        <joda-time.version>2.12.7</joda-time.version>
         <thrift.version>0.19.0</thrift.version>
         <junit.jupiter.version>5.10.3</junit.jupiter.version>
         <surefire.version>3.0.0-M5</surefire.version>
@@ -132,10 +132,10 @@
         <jedis.version>5.1.0</jedis.version>
         <activemq.version>5.18.3</activemq.version>
 
-        <jackson.version>2.16.1</jackson.version>
-        <jackson.databind.version>2.16.1</jackson.databind.version>
+        <jackson.version>2.17.2</jackson.version>
+        <jackson.databind.version>2.17.2</jackson.databind.version>
         <storm.kafka.client.version>3.6.0</storm.kafka.client.version>
-        <testcontainers.version>1.19.6</testcontainers.version>
+        <testcontainers.version>1.20.1</testcontainers.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude.groups>PerformanceTest</java.unit.test.exclude.groups>
@@ -1639,7 +1639,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>3.4.0</version>
                 <configuration>
                     <reportsDirectories>
                         <file>${project.build.directory}/test-reports</file>
