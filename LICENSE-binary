@@ -1017,9 +1017,9 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Bouncy Castle Licence
 
-        * Bouncy Castle ASN.1 Extension and Utility APIs (org.bouncycastle:bcutil-jdk15on:1.70 - https://www.bouncycastle.org/java.html)
-        * Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk15on:1.70 - http://www.bouncycastle.org/java.html)
-        * Bouncy Castle Provider (org.bouncycastle:bcprov-jdk15on:1.70 - http://www.bouncycastle.org/java.html)
+        * Bouncy Castle ASN.1 Extension and Utility APIs (org.bouncycastle:bcutil-jdk15on:1.78.1 - https://www.bouncycastle.org/java.html)
+        * Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk15on:1.78.1 - http://www.bouncycastle.org/java.html)
+        * Bouncy Castle Provider (org.bouncycastle:bcprov-jdk15on:1.78.1 - http://www.bouncycastle.org/java.html)
 
     BSD 2-Clause license
 
