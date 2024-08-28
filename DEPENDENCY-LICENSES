@@ -347,6 +347,7 @@ List of third-party dependencies grouped by their license type.
         * Netty/Resolver (io.netty:netty-resolver:4.1.112.Final - https://netty.io/netty-resolver/)
         * Netty/TomcatNative [BoringSSL - Static] (io.netty:netty-tcnative-boringssl-static:2.0.65.Final - https://github.com/netty/netty-tcnative/netty-tcnative-boringssl-static/)
         * Netty/TomcatNative [OpenSSL - Classes] (io.netty:netty-tcnative-classes:2.0.65.Final - https://github.com/netty/netty-tcnative/netty-tcnative-classes/)
+        * Netty/TomcatNative [OpenSSL - Dynamic] (io.netty:netty-tcnative:2.0.65.Final - https://github.com/netty/netty-tcnative/netty-tcnative/)
         * Netty/Transport/Classes/Epoll (io.netty:netty-transport-classes-epoll:4.1.112.Final - https://netty.io/netty-transport-classes-epoll/)
         * Netty/Transport/Classes/KQueue (io.netty:netty-transport-classes-kqueue:4.1.112.Final - https://netty.io/netty-transport-classes-kqueue/)
         * Netty/Transport/Native/Epoll (io.netty:netty-transport-native-epoll:4.1.112.Final - https://netty.io/netty-transport-native-epoll/)
@@ -468,9 +469,9 @@ List of third-party dependencies grouped by their license type.
 
     Bouncy Castle Licence
 
-        * Bouncy Castle ASN.1 Extension and Utility APIs (org.bouncycastle:bcutil-jdk15on:1.70 - https://www.bouncycastle.org/java.html)
-        * Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk15on:1.70 - https://www.bouncycastle.org/java.html)
-        * Bouncy Castle Provider (org.bouncycastle:bcprov-jdk15on:1.70 - https://www.bouncycastle.org/java.html)
+        * Bouncy Castle ASN.1 Extension and Utility APIs (org.bouncycastle:bcutil-jdk18on:1.78.1 - https://www.bouncycastle.org/java.html)
+        * Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk18on:1.78.1 - https://www.bouncycastle.org/java.html)
+        * Bouncy Castle Provider (org.bouncycastle:bcprov-jdk18on:1.78.1 - https://www.bouncycastle.org/java.html)
 
     BSD-2-Clause
 
