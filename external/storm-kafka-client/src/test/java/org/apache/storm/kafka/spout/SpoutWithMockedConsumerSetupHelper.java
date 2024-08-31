@@ -38,6 +38,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.MockAdminClient;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.ClientFactory;
@@ -93,7 +94,7 @@ public class SpoutWithMockedConsumerSetupHelper {
 
             @Override
             public Admin createAdmin(Map<String, Object> adminProps) {
-                return null;
+                return new MockAdminClient();
             }
         };
         KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, clientFactory, assigner);

@@ -70,6 +70,8 @@ public class KafkaSpoutRebalanceTest {
     private SpoutOutputCollector collectorMock;
     @Mock
     private KafkaConsumer<String, String> consumerMock;
+    @Mock
+    private Admin adminMock;
     private ClientFactory<String, String> clientFactory;
     @Mock
     private TopicFilter topicFilterMock;
@@ -86,7 +88,7 @@ public class KafkaSpoutRebalanceTest {
 
             @Override
             public Admin createAdmin(Map<String, Object> adminProps) {
-                return null;
+                return adminMock;
             }
         };
         final Answer<Object> set = invocation -> new HashSet<>();

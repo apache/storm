@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.MockAdminClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.MockConsumer;
@@ -57,6 +58,7 @@ public class KafkaTridentSpoutEmitterPartitioningTest {
     public TopologyContext topologyContextMock;
 
     private final MockConsumer<String, String> consumer = new MockConsumer<>(OffsetResetStrategy.NONE);
+    private final MockAdminClient adminClient = new MockAdminClient();
     private final TopicPartitionSerializer tpSerializer = new TopicPartitionSerializer();
     
     @Test
@@ -72,7 +74,7 @@ public class KafkaTridentSpoutEmitterPartitioningTest {
 
             @Override
             public Admin createAdmin(Map<String, Object> adminProps) {
-                return null;
+                return adminClient;
             }
         }, new TopicAssigner());
         
@@ -119,7 +121,7 @@ public class KafkaTridentSpoutEmitterPartitioningTest {
 
             @Override
             public Admin createAdmin(Map<String, Object> adminProps) {
-                return null;
+                return adminClient;
             }
         }, new TopicAssigner());
         
@@ -153,7 +155,7 @@ public class KafkaTridentSpoutEmitterPartitioningTest {
 
             @Override
             public Admin createAdmin(Map<String, Object> adminProps) {
-                return null;
+                return adminClient;
             }
         }, assignerMock);
         

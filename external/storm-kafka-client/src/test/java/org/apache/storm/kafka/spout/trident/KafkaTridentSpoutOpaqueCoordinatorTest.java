@@ -51,6 +51,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
     @Test
     public void testCanGetPartitions() {
         KafkaConsumer<String, String> mockConsumer = mock(KafkaConsumer.class);
+        Admin mockAdmin = mock(Admin.class);
         TopicPartition expectedPartition = new TopicPartition("test", 0);
         TopicFilter mockFilter = mock(TopicFilter.class);
         when(mockFilter.getAllSubscribedPartitions(any())).thenReturn(Collections.singleton(expectedPartition));
@@ -66,7 +67,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
 
             @Override
             public Admin createAdmin(Map<String, Object> adminProps) {
-                return null;
+                return mockAdmin;
             }
         });
 
@@ -83,6 +84,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
     public void testCanUpdatePartitions() {
         try (SimulatedTime ignored1 = new SimulatedTime()) {
             KafkaConsumer<String, String> mockConsumer = mock(KafkaConsumer.class);
+            Admin mockAdmin = mock(Admin.class);
             TopicPartition expectedPartition = new TopicPartition("test", 0);
             TopicPartition addedLaterPartition = new TopicPartition("test-2", 0);
             HashSet<TopicPartition> allPartitions = new HashSet<>();
@@ -104,7 +106,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
 
                 @Override
                 public Admin createAdmin(Map<String, Object> adminProps) {
-                    return null;
+                    return mockAdmin;
                 }
             });
 
