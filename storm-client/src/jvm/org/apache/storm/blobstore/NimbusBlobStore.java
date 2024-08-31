@@ -44,7 +44,7 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
 
     @Override
     public void prepare(Map<String, Object> conf) {
-        this.client = NimbusClient.getConfiguredClient(conf);
+        this.client = NimbusClient.Builder.withConf(conf).build();
         if (conf != null) {
             this.bufferSize = ObjectReader.getInt(conf.get(Config.STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES), bufferSize);
         }

@@ -358,13 +358,13 @@ public class ClientAuthUtils {
     /**
      * Check if worker tokens should be enabled on the server side or not.
      *
-     * @param server a Thrift server to know if the transport support tokens or not.  No need to create a token if the transport does not
-     *               support it.
-     * @param conf   the daemon configuration to be sure the tokens are secure.
+     * @param multiThriftServer a collection of Thrift servers to know if the transport support tokens or not.
+     *                          No need to create a token if the transport does not support it.
+     * @param conf the daemon configuration to be sure the tokens are secure.
      * @return true if we can enable them, else false.
      */
-    public static boolean areWorkerTokensEnabledServer(ThriftServer server, Map<String, Object> conf) {
-        return server.supportsWorkerTokens() && willWorkerTokensBeStoredSecurely(conf);
+    public static boolean areWorkerTokensEnabledServer(MultiThriftServer<?> multiThriftServer, Map<String, Object> conf) {
+        return multiThriftServer.supportsWorkerTokens() && willWorkerTokensBeStoredSecurely(conf);
     }
 
     /**

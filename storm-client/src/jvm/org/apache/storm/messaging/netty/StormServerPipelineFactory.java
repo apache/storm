@@ -20,21 +20,29 @@ import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.shade.io.netty.channel.Channel;
 import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
 import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
+import org.apache.storm.shade.io.netty.handler.ssl.SslContext;
 
 class StormServerPipelineFactory extends ChannelInitializer<Channel> {
 
     private final Map<String, Object> topoConf;
     private final Server server;
+    private final SslContext sslContext;
 
-    StormServerPipelineFactory(Map<String, Object> topoConf, Server server) {
+    StormServerPipelineFactory(Map<String, Object> topoConf, Server server, SslContext sslContext) {
         this.topoConf = topoConf;
         this.server = server;
+        this.sslContext = sslContext;
     }
 
     @Override
     protected void initChannel(Channel ch) throws Exception {
         // Create a default pipeline implementation.
         ChannelPipeline pipeline = ch.pipeline();
+
+        if (this.sslContext != null) {
+            // Add SSL handler first to encrypt and decrypt everything.
+            pipeline.addLast("ssl", sslContext.newHandler(ch.alloc()));
+        }
 
         // Decoder
         pipeline.addLast("decoder", new MessageDecoder(new KryoValuesDeserializer(topoConf)));

@@ -23,7 +23,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>2.6.4-SNAPSHOT</version>
+        <version>2.6.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -135,6 +135,23 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative</artifactId>
+            <version>${netty-tcnative.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative-boringssl-static</artifactId>
+            <version>${netty-tcnative.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -301,6 +318,66 @@
                         <relocation>
                             <pattern>uk.org.lidalia.sysoutslf4j</pattern>
                             <shadedPattern>org.apache.storm.shade.uk.org.lidalia.sysoutslf4j</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_tcnative_osx_aarch_64.jnilib</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_tcnative_osx_aarch_64.jnilib</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_transport_native_epoll_x86_64.so</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_transport_native_epoll_x86_64.so</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_transport_native_epoll_aarch_64.so</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_transport_native_epoll_aarch_64.so</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_transport_native_epoll_riscv64.so</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_transport_native_epoll_riscv64.so</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_transport_native_kqueue_x86_64.jnilib</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_transport_native_kqueue_x86_64.jnilib</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_transport_native_kqueue_aarch_64.jnilib</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_transport_native_kqueue_aarch_64.jnilib</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_resolver_dns_native_macos_x86_64.jnilib</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_resolver_dns_native_macos_x86_64.jnilib</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_resolver_dns_native_macos_aarch_64.jnilib</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_resolver_dns_native_macos_aarch_64.jnilib</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_tcnative_osx_x86_64.jnilib</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_tcnative_osx_x86_64.jnilib</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_tcnative_linux_x86_64.so</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_tcnative_linux_x86_64.so</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/libnetty_tcnative_linux_aarch_64.so</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_tcnative_linux_aarch_64.so</shadedPattern>
+                            <rawString>true</rawString>
+                        </relocation>
+                        <relocation>
+                            <pattern>META-INF/native/netty_tcnative_windows_x86_64.dll</pattern>
+                            <shadedPattern>META-INF/native/liborg_apache_storm_shade_netty_tcnative_windows_x86_64.dll</shadedPattern>
+                            <rawString>true</rawString>
                         </relocation>
                     </relocations>
                     <filters>
