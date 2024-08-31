@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.kafka.KafkaUnitExtension;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ClientFactoryDefault;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
@@ -86,7 +86,7 @@ public class MaxUncommittedOffsetTest {
         //The spout must be able to reemit all retriable tuples, even if the maxPollRecords is set to a low value compared to maxUncommittedOffsets.
         assertThat("Current tests require maxPollRecords < maxUncommittedOffsets", maxPollRecords, lessThanOrEqualTo(maxUncommittedOffsets));
         spout = new KafkaSpout<>(spoutConfig);
-        new ConsumerFactoryDefault<String, String>().createConsumer(spoutConfig.getKafkaProps());
+        new ClientFactoryDefault<String, String>().createConsumer(spoutConfig.getKafkaProps());
     }
 
     private void prepareSpout(int msgCount) throws Exception {

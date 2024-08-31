@@ -31,11 +31,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
 import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.kafka.spout.subscription.TopicFilter;
@@ -58,10 +62,19 @@ public class KafkaTridentSpoutEmitterPartitioningTest {
     @Test
     public void testGetOrderedPartitionsIsConsistent() {
         KafkaTridentSpoutEmitter<String, String> emitter = new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
-                .build(),
-            topologyContextMock,
-            config -> consumer, new TopicAssigner());
+                SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
+                        .build(),
+                topologyContextMock, new ClientFactory<String, String>() {
+            @Override
+            public Consumer<String, String> createConsumer(Map<String, Object> consumerProps) {
+                return consumer;
+            }
+
+            @Override
+            public Admin createAdmin(Map<String, Object> adminProps) {
+                return null;
+            }
+        }, new TopicAssigner());
         
         Set<TopicPartition> allPartitions = new HashSet<>();
         int numPartitions = 10;
@@ -96,10 +109,19 @@ public class KafkaTridentSpoutEmitterPartitioningTest {
             });
         
         KafkaTridentSpoutEmitter<String, String> emitter = new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(mock(TopicFilter.class), partitionerMock, -1)
-                .build(),
-            topologyContextMock,
-            config -> consumer, new TopicAssigner());
+                SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(mock(TopicFilter.class), partitionerMock, -1)
+                        .build(),
+                topologyContextMock, new ClientFactory<String, String>() {
+            @Override
+            public Consumer<String, String> createConsumer(Map<String, Object> consumerProps) {
+                return consumer;
+            }
+
+            @Override
+            public Admin createAdmin(Map<String, Object> adminProps) {
+                return null;
+            }
+        }, new TopicAssigner());
         
         List<KafkaTridentSpoutTopicPartition> allPartitions = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
@@ -121,10 +143,19 @@ public class KafkaTridentSpoutEmitterPartitioningTest {
         TopicAssigner assignerMock = mock(TopicAssigner.class);
         
         KafkaTridentSpoutEmitter<String, String> emitter = new KafkaTridentSpoutEmitter<>(
-            SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
-                .build(),
-            topologyContextMock,
-            config -> consumer, assignerMock);
+                SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
+                        .build(),
+                topologyContextMock, new ClientFactory<String, String>() {
+            @Override
+            public Consumer<String, String> createConsumer(Map<String, Object> consumerProps) {
+                return consumer;
+            }
+
+            @Override
+            public Admin createAdmin(Map<String, Object> adminProps) {
+                return null;
+            }
+        }, assignerMock);
         
         List<KafkaTridentSpoutTopicPartition> allPartitions = new ArrayList<>();
         for (int i = 0; i < 10; i++) {

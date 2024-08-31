@@ -26,9 +26,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
-import org.apache.storm.kafka.spout.internal.ConsumerFactory;
-import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
+import org.apache.storm.kafka.spout.internal.ClientFactoryDefault;
 import org.apache.storm.kafka.spout.internal.Timer;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;
@@ -55,13 +54,13 @@ public class KafkaTridentSpoutCoordinator<K, V> implements
      * @param kafkaSpoutConfig The spout config to use
      */
     public KafkaTridentSpoutCoordinator(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig) {
-        this(kafkaSpoutConfig, new ConsumerFactoryDefault<>());
+        this(kafkaSpoutConfig, new ClientFactoryDefault<>());
     }
     
-    KafkaTridentSpoutCoordinator(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig, ConsumerFactory<K, V> consumerFactory) {
+    KafkaTridentSpoutCoordinator(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig, ClientFactory<K, V> clientFactory) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
         this.refreshAssignmentTimer = new Timer(TIMER_DELAY_MS, kafkaSpoutConfig.getPartitionRefreshPeriodMs(), TimeUnit.MILLISECONDS);
-        this.consumer = consumerFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
+        this.consumer = clientFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
         LOG.debug("Created {}", this.toString());
     }
 
