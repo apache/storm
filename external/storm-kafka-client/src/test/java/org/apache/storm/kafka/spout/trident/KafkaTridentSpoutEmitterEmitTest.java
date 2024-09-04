@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.MockAdminClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -41,6 +43,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.SpoutWithMockedConsumerSetupHelper;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.kafka.spout.trident.config.builder.SingleTopicKafkaTridentSpoutConfiguration;
 import org.apache.storm.task.TopologyContext;
@@ -72,6 +75,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
     public TridentCollector collectorMock = mock(TridentCollector.class);
 
     private final MockConsumer<String, String> consumer = new MockConsumer<>(OffsetResetStrategy.NONE);
+    private final MockAdminClient adminClient = new MockAdminClient();
     private final TopicPartition partition = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0);
     private final String topologyId = "topologyId";
     private final long firstOffsetInKafka = 0;
@@ -89,7 +93,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         records.forEach(record -> consumer.addRecord(record));
     }
 
-    private KafkaTridentSpoutEmitter<String, String> createEmitter(Consumer<String,String> kafkaConsumer, FirstPollOffsetStrategy firstPollOffsetStrategy) {
+    private KafkaTridentSpoutEmitter<String, String> createEmitter(Consumer<String,String> kafkaConsumer, Admin adminClient, FirstPollOffsetStrategy firstPollOffsetStrategy) {
         return new KafkaTridentSpoutEmitter<>(
                 SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(-1)
                         .setRecordTranslator(r -> new Values(r.offset()), new Fields("offset"))
@@ -98,11 +102,21 @@ public class KafkaTridentSpoutEmitterEmitTest {
                         .setStartTimeStamp(startTimeStamp)
                         .build(),
                 topologyContextMock,
-                config -> kafkaConsumer, new TopicAssigner());
+                new ClientFactory<String, String>() {
+                    @Override
+                    public Consumer<String, String> createConsumer(Map<String, Object> consumerProps) {
+                        return kafkaConsumer;
+                    }
+
+                    @Override
+                    public Admin createAdmin(Map<String, Object> adminProps) {
+                        return adminClient;
+                    }
+                }, new TopicAssigner());
     }
 
     private KafkaTridentSpoutEmitter<String, String> createEmitter(FirstPollOffsetStrategy firstPollOffsetStrategy) {
-        return createEmitter(consumer,firstPollOffsetStrategy);
+        return createEmitter(consumer,adminClient,firstPollOffsetStrategy);
     }
 
     private Map<String, Object> doEmitNewBatchTest(FirstPollOffsetStrategy firstPollOffsetStrategy, TridentCollector collectorMock, TopicPartition tp, Map<String, Object> previousBatchMeta) {
@@ -339,7 +353,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         topicPartitionMap.put(partition, newRecords);
         when(kafkaConsumer.poll(pollTimeout)).thenReturn(new ConsumerRecords<>(topicPartitionMap));
 
-        KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(kafkaConsumer, FirstPollOffsetStrategy.TIMESTAMP);
+        KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(kafkaConsumer, adminClient, FirstPollOffsetStrategy.TIMESTAMP);
         TransactionAttempt txid = new TransactionAttempt(0L, 0);
         KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(partition);
         Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());

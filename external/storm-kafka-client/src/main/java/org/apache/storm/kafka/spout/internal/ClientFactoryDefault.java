@@ -16,13 +16,22 @@
 
 package org.apache.storm.kafka.spout.internal;
 
-import java.io.Serializable;
 import java.util.Map;
-import org.apache.kafka.clients.consumer.Consumer;
 
-/**
- * This is here to enable testing.
- */
-public interface ConsumerFactory<K, V> extends Serializable {
-    Consumer<K, V> createConsumer(Map<String, Object> consumerProps);
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+
+public class ClientFactoryDefault<K, V> implements ClientFactory<K, V> {
+
+    @Override
+    public KafkaConsumer<K, V> createConsumer(Map<String, Object> consumerProps) {
+        return new KafkaConsumer<>(consumerProps);
+    }
+
+    @Override
+    public Admin createAdmin(Map<String, Object> adminProps) {
+        return Admin.create(adminProps);
+    }
+
 }

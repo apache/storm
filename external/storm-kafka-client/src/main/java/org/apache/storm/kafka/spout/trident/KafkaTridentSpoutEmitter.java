@@ -46,8 +46,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.RecordTranslator;
 import org.apache.storm.kafka.spout.TopicPartitionComparator;
-import org.apache.storm.kafka.spout.internal.ConsumerFactory;
-import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
+import org.apache.storm.kafka.spout.internal.ClientFactoryDefault;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.operation.TridentCollector;
@@ -82,14 +82,14 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
      * @param topologyContext The topology context
      */
     public KafkaTridentSpoutEmitter(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig, TopologyContext topologyContext) {
-        this(kafkaSpoutConfig, topologyContext, new ConsumerFactoryDefault<>(), new TopicAssigner());
+        this(kafkaSpoutConfig, topologyContext, new ClientFactoryDefault<>(), new TopicAssigner());
     }
 
     @VisibleForTesting
     KafkaTridentSpoutEmitter(KafkaTridentSpoutConfig<K, V> kafkaSpoutConfig, TopologyContext topologyContext,
-        ConsumerFactory<K, V> consumerFactory, TopicAssigner topicAssigner) {
+                             ClientFactory<K, V> clientFactory, TopicAssigner topicAssigner) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
-        this.consumer = consumerFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
+        this.consumer = clientFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
         this.topologyContext = topologyContext;
         this.translator = kafkaSpoutConfig.getTranslator();
         this.topicAssigner = topicAssigner;
