@@ -74,7 +74,7 @@ public interface IOpaquePartitionedTridentSpout<PartitionsT, PartitionT extends 
          * <p>Return the map of metadata describing this batch that will be used as lastPartitionMeta for defining the
          * parameters of the next batch for each partition.
          */
-        Map<PartitionT, M> emitNewBatch(TransactionAttempt tx, TridentCollector collector,
+        Map<PartitionT, M> emitBatchNew(TransactionAttempt tx, TridentCollector collector,
             Set<PartitionT> partitions, Map<PartitionT, M> lastBatchMetaMap);
 
         /**

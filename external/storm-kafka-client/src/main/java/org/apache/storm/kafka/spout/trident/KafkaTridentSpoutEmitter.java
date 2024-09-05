@@ -164,14 +164,14 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
     /**
      * Emit a new batch.
      */
-    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitNewBatch(TransactionAttempt tx,
+    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitBatchNew(TransactionAttempt tx,
         TridentCollector collector, Set<KafkaTridentSpoutTopicPartition> partitions,
         Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> lastBatchMetaMap) {
 
         LOG.debug("Processing batch: [transaction = {}], [currBatchPartitions = {}], [lastBatchMetadata = {}], [collector = {}]",
                 tx, partitions, lastBatchMetaMap, collector);
 
-        Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> ret = new HashMap<>();
+        Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> partitionToBatchMeta = new HashMap<>();
 
         seekAllPartitions(partitions, lastBatchMetaMap);
 
@@ -183,7 +183,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
                     emitTuple(collector, record);
                 }
                 // build new metadata based on emitted records
-                ret.put(partition, new KafkaTridentSpoutBatchMetadata(
+                partitionToBatchMeta.put(partition, new KafkaTridentSpoutBatchMetadata(
                         records.get(0).offset(),
                         records.get(records.size() - 1).offset(),
                         topologyContext.getStormId()).toMap());
@@ -193,15 +193,15 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
                 //so make a meta that indicates that position - 1 is the last emitted offset
                 //This helps us avoid cases like STORM-3279, and simplifies the seek logic.
                 long lastEmittedOffset = consumer.position(partition.getTopicPartition()) - 1;
-                ret.put(partition, new KafkaTridentSpoutBatchMetadata(lastEmittedOffset, lastEmittedOffset,
+                partitionToBatchMeta.put(partition, new KafkaTridentSpoutBatchMetadata(lastEmittedOffset, lastEmittedOffset,
                         topologyContext.getStormId()).toMap());
             }
         }
-        for (KafkaTridentSpoutTopicPartition kttp : ret.keySet()) {
+        for (KafkaTridentSpoutTopicPartition kttp : partitionToBatchMeta.keySet()) {
             LOG.debug("Emitted batch: [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], "
-                    + "[currBatchMetadata = {}], [collector = {}]", tx, kttp, lastBatchMetaMap.get(kttp), ret.get(kttp), collector);
+                    + "[currBatchMetadata = {}], [collector = {}]", tx, kttp, lastBatchMetaMap.get(kttp), partitionToBatchMeta.get(kttp), collector);
         }
-        return ret;
+        return partitionToBatchMeta;
     }
 
     private void seekAllPartitions(Collection<KafkaTridentSpoutTopicPartition> partitions,

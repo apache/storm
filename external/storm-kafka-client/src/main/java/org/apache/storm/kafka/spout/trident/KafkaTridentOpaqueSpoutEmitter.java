@@ -39,10 +39,10 @@ public class KafkaTridentOpaqueSpoutEmitter<K, V> implements IOpaquePartitionedT
     }
 
     @Override
-    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitNewBatch(TransactionAttempt tx,
+    public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitBatchNew(TransactionAttempt tx,
         TridentCollector collector, Set<KafkaTridentSpoutTopicPartition> partitions,
         Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> lastBatchMetaMap) {
-        return emitter.emitNewBatch(tx, collector, partitions, lastBatchMetaMap);
+        return emitter.emitBatchNew(tx, collector, partitions, lastBatchMetaMap);
     }
 
 

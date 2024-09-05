@@ -47,7 +47,7 @@ public class KafkaTridentTransactionalSpoutEmitter<K, V> implements IPartitioned
     public Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> emitBatchNew(TransactionAttempt tx,
         TridentCollector collector, Set<KafkaTridentSpoutTopicPartition> partitions,
         Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> lastPartitionMetaMap) {
-        return emitter.emitNewBatch(tx, collector, partitions, lastPartitionMetaMap);
+        return emitter.emitBatchNew(tx, collector, partitions, lastPartitionMetaMap);
     }
 
     @Override
