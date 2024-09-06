@@ -199,7 +199,8 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
         }
         for (KafkaTridentSpoutTopicPartition kttp : partitionToBatchMeta.keySet()) {
             LOG.debug("Emitted batch: [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], "
-                    + "[currBatchMetadata = {}], [collector = {}]", tx, kttp, lastBatchMetaMap.get(kttp), partitionToBatchMeta.get(kttp), collector);
+                    + "[currBatchMetadata = {}], [collector = {}]", tx, kttp, lastBatchMetaMap.get(kttp),
+                    partitionToBatchMeta.get(kttp), collector);
         }
         return partitionToBatchMeta;
     }
