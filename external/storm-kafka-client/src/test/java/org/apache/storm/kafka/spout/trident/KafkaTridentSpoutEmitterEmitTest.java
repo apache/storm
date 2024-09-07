@@ -25,6 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -121,10 +122,15 @@ public class KafkaTridentSpoutEmitterEmitTest {
 
     private Map<String, Object> doEmitNewBatchTest(FirstPollOffsetStrategy firstPollOffsetStrategy, TridentCollector collectorMock, TopicPartition tp, Map<String, Object> previousBatchMeta) {
         KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(firstPollOffsetStrategy);
-
         TransactionAttempt txid = new TransactionAttempt(10L, 0);
+        return emitBatchNew(emitter,txid,collectorMock,tp, previousBatchMeta);
+    }
+
+    private Map<String, Object> emitBatchNew(KafkaTridentSpoutEmitter<String, String> emitter, TransactionAttempt txid, TridentCollector collectorMock, TopicPartition tp, Map<String, Object> previousBatchMeta) {
         KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(tp);
-        return emitter.emitPartitionBatchNew(txid, collectorMock, kttp, previousBatchMeta);
+        Map<KafkaTridentSpoutTopicPartition, Map<String, Object>> lastBatchMetaMap = new HashMap<>();
+        lastBatchMetaMap.put(kttp, previousBatchMeta);
+        return emitter.emitBatchNew(txid, collectorMock, Collections.singleton(kttp), lastBatchMetaMap).get(kttp);
     }
 
     @Test
@@ -180,7 +186,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         //Emit 10 empty batches, simulating no new records being present in Kafka
         for (int i = 0; i < 10; i++) {
             TransactionAttempt txid = new TransactionAttempt((long) i, 0);
-            lastBatchMeta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, lastBatchMeta);
+            lastBatchMeta = emitBatchNew(emitter, txid, collectorMock, partition, lastBatchMeta);
             KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(lastBatchMeta);
             assertThat("Since the first poll strategy is LATEST, the meta should indicate that the last message has already been emitted", deserializedMeta.getFirstOffset(), is(lastOffsetInKafka));
             assertThat("Since the first poll strategy is LATEST, the meta should indicate that the last message has already been emitted", deserializedMeta.getLastOffset(), is(lastOffsetInKafka));
@@ -190,8 +196,8 @@ public class KafkaTridentSpoutEmitterEmitTest {
         int numNewRecords = 10;
         List<ConsumerRecord<String, String>> newRecords = SpoutWithMockedConsumerSetupHelper.createRecords(partition, firstNewRecordOffset, numNewRecords);
         newRecords.forEach(consumer::addRecord);
-        lastBatchMeta = emitter.emitPartitionBatchNew(new TransactionAttempt(11L, 0), collectorMock, kttp, lastBatchMeta);
-
+        TransactionAttempt txid = new TransactionAttempt(11L, 0);
+        lastBatchMeta = emitBatchNew(emitter,txid, collectorMock, partition, lastBatchMeta);
         verify(collectorMock, times(numNewRecords)).emit(emitCaptor.capture());
         List<List<Object>> emits = emitCaptor.getAllValues();
         assertThat(emits.get(0).get(0), is(firstNewRecordOffset));
@@ -242,8 +248,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         KafkaTridentSpoutBatchMetadata preRedeployLastMeta = new KafkaTridentSpoutBatchMetadata(firstEmittedOffset, firstEmittedOffset + emittedRecords - 1, "an old topology");
         KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(FirstPollOffsetStrategy.LATEST);
         TransactionAttempt txid = new TransactionAttempt(0L, 0);
-        KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(partition);
-        Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preRedeployLastMeta.toMap());
+        Map<String, Object> meta = emitBatchNew(emitter,txid, collectorMock, partition, preRedeployLastMeta.toMap());
 
         verify(collectorMock, never()).emit(anyList());
         KafkaTridentSpoutBatchMetadata deserializedMeta = KafkaTridentSpoutBatchMetadata.fromMap(meta);
@@ -254,7 +259,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         int numNewRecords = 10;
         List<ConsumerRecord<String, String>> newRecords = SpoutWithMockedConsumerSetupHelper.createRecords(partition, firstNewRecordOffset, numNewRecords);
         newRecords.forEach(consumer::addRecord);
-        meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, meta);
+        meta = emitBatchNew(emitter,txid, collectorMock, partition, meta);
 
         verify(collectorMock, times(numNewRecords)).emit(emitCaptor.capture());
         List<List<Object>> emits = emitCaptor.getAllValues();
@@ -278,8 +283,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         KafkaTridentSpoutBatchMetadata preExecutorRestartLastMeta = new KafkaTridentSpoutBatchMetadata(preRestartEmittedOffset, preRestartEmittedOffset + lastBatchEmittedRecords - 1, topologyId);
         KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(firstPollOffsetStrategy);
         TransactionAttempt txid = new TransactionAttempt(0L, 0);
-        KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(partition);
-        Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());
+        Map<String, Object> meta = emitBatchNew(emitter,txid, collectorMock, partition, preExecutorRestartLastMeta.toMap());
 
         long firstEmittedOffset = preRestartEmittedOffset + lastBatchEmittedRecords;
         int emittedRecords = recordsInKafka - preRestartEmittedRecords;
@@ -302,8 +306,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         KafkaTridentSpoutBatchMetadata preExecutorRestartLastMeta = new KafkaTridentSpoutBatchMetadata(preRestartEmittedOffset, preRestartEmittedOffset + preRestartEmittedRecords - 1, "Some older topology");
         KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(FirstPollOffsetStrategy.EARLIEST);
         TransactionAttempt txid = new TransactionAttempt(0L, 0);
-        KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(partition);
-        Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());
+        Map<String, Object> meta = emitBatchNew(emitter, txid, collectorMock, partition, preExecutorRestartLastMeta.toMap());
 
         verify(collectorMock, times(recordsInKafka)).emit(emitCaptor.capture());
         List<List<Object>> emits = emitCaptor.getAllValues();
@@ -325,7 +328,7 @@ public class KafkaTridentSpoutEmitterEmitTest {
         KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(FirstPollOffsetStrategy.LATEST);
         TransactionAttempt txid = new TransactionAttempt(0L, 0);
         KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(partition);
-        Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());
+        Map<String, Object> meta = emitBatchNew(emitter,txid, collectorMock, partition, preExecutorRestartLastMeta.toMap());
 
         verify(collectorMock, never()).emit(anyList());
     }
@@ -351,12 +354,11 @@ public class KafkaTridentSpoutEmitterEmitTest {
         HashMap<TopicPartition, List<ConsumerRecord<String, String>>> topicPartitionMap = new HashMap<>();
         List<ConsumerRecord<String, String>> newRecords = SpoutWithMockedConsumerSetupHelper.createRecords(partition, timeStampStartOffset, recordsInKafka);
         topicPartitionMap.put(partition, newRecords);
-        when(kafkaConsumer.poll(pollTimeout)).thenReturn(new ConsumerRecords<>(topicPartitionMap));
+        when(kafkaConsumer.poll(Duration.ofMillis(pollTimeout))).thenReturn(new ConsumerRecords<>(topicPartitionMap));
 
         KafkaTridentSpoutEmitter<String, String> emitter = createEmitter(kafkaConsumer, adminClient, FirstPollOffsetStrategy.TIMESTAMP);
         TransactionAttempt txid = new TransactionAttempt(0L, 0);
-        KafkaTridentSpoutTopicPartition kttp = new KafkaTridentSpoutTopicPartition(partition);
-        Map<String, Object> meta = emitter.emitPartitionBatchNew(txid, collectorMock, kttp, preExecutorRestartLastMeta.toMap());
+        Map<String, Object> meta = emitBatchNew(emitter,txid, collectorMock, partition, preExecutorRestartLastMeta.toMap());
 
         verify(collectorMock, times(recordsInKafka)).emit(emitCaptor.capture());
         verify(kafkaConsumer, times(1)).seek(partition, timeStampStartOffset);

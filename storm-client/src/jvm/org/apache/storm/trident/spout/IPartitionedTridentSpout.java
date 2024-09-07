@@ -15,6 +15,7 @@ package org.apache.storm.trident.spout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
@@ -57,10 +58,11 @@ public interface IPartitionedTridentSpout<PartitionsT, PartitionT extends ISpout
         List<PartitionT> getOrderedPartitions(PartitionsT allPartitionInfo);
 
         /**
-         * Emit a batch of tuples for a partition/transaction that's never been emitted before. Return the metadata that can be used to
+         * Emit a batch of tuples for the partitions that's never been emitted before. Return the metadata that can be used to
          * reconstruct this partition/batch in the future.
          */
-        X emitPartitionBatchNew(TransactionAttempt tx, TridentCollector collector, PartitionT partition, X lastPartitionMeta);
+        Map<PartitionT, X> emitBatchNew(TransactionAttempt tx, TridentCollector collector, Set<PartitionT> partitions,
+            Map<PartitionT, X> lastPartitionMetaMap);
 
         /**
          * This method is called when this task is responsible for a new set of partitions. Should be used to manage things like connections
@@ -72,7 +74,7 @@ public interface IPartitionedTridentSpout<PartitionsT, PartitionT extends ISpout
          * Emit a batch of tuples for a partition/transaction that has been emitted before, using the metadata created when it was first
          * emitted.
          */
-        void emitPartitionBatch(TransactionAttempt tx, TridentCollector collector, PartitionT partition, X partitionMeta);
+        void reEmitPartitionBatch(TransactionAttempt tx, TridentCollector collector, PartitionT partition, X partitionMeta);
 
         /**
          * Get the partitions assigned to the given task.
