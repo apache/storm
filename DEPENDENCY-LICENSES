@@ -443,13 +443,13 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, Eclipse Public License - Version 2.0
 
-        * Jetty :: Http Utility (org.eclipse.jetty:jetty-http:11.0.23 - https://eclipse.dev/jetty/jetty-http)
-        * Jetty :: IO Utility (org.eclipse.jetty:jetty-io:11.0.23 - https://eclipse.dev/jetty/jetty-io)
-        * Jetty :: Security (org.eclipse.jetty:jetty-security:11.0.23 - https://eclipse.dev/jetty/jetty-security)
-        * Jetty :: Server Core (org.eclipse.jetty:jetty-server:11.0.23 - https://eclipse.dev/jetty/jetty-server)
-        * Jetty :: Servlet Handling (org.eclipse.jetty:jetty-servlet:11.0.23 - https://eclipse.dev/jetty/jetty-servlet)
-        * Jetty :: Utilities (org.eclipse.jetty:jetty-util:11.0.23 - https://eclipse.dev/jetty/jetty-util)
-        * Jetty :: Utility Servlets and Filters (org.eclipse.jetty:jetty-servlets:11.0.23 - https://eclipse.dev/jetty/jetty-servlets)
+        * Jetty :: Http Utility (org.eclipse.jetty:jetty-http:11.0.23 - https://jetty.org/jetty-http)
+        * Jetty :: IO Utility (org.eclipse.jetty:jetty-io:11.0.23 - https://jetty.org/jetty-io)
+        * Jetty :: Security (org.eclipse.jetty:jetty-security:11.0.23 - https://jetty.org/jetty-security)
+        * Jetty :: Server Core (org.eclipse.jetty:jetty-server:11.0.23 - https://jetty.org/jetty-server)
+        * Jetty :: Servlet Handling (org.eclipse.jetty:jetty-servlet:11.0.23 - https://jetty.org/jetty-servlet)
+        * Jetty :: Utilities (org.eclipse.jetty:jetty-util:11.0.23 - https://jetty.org/jetty-util)
+        * Jetty :: Utility Servlets and Filters (org.eclipse.jetty:jetty-servlets:11.0.23 - https://jetty.org/jetty-servlets)
 
     Apache License, Version 2.0, GNU General Public License, version 2
 
