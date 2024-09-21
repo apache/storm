@@ -19,6 +19,7 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.codahale.metrics.Meter;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
@@ -32,7 +33,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -44,6 +44,7 @@ import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.DaemonCommon;
 import org.apache.storm.daemon.StormCommon;
+import org.apache.storm.daemon.common.FileWatcher;
 import org.apache.storm.daemon.supervisor.timer.ReportWorkerHeartbeats;
 import org.apache.storm.daemon.supervisor.timer.SupervisorHealthCheck;
 import org.apache.storm.daemon.supervisor.timer.SupervisorHeartbeat;
@@ -63,6 +64,7 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.security.auth.IAuthorizer;
+import org.apache.storm.security.auth.MultiThriftServer;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
@@ -115,7 +117,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private volatile boolean active;
     private EventManager eventManager;
     private ReadClusterState readState;
-    private ThriftServer thriftServer;
+    private FileWatcher keyStoreWatcher;
+    private MultiThriftServer<ThriftServer> multiThriftServer;
+
     //used for local cluster heartbeating
     private Nimbus.Iface localNimbus;
     //Passed to workers in local clusters, exposed by thrift server in distributed mode
@@ -471,8 +475,13 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
 
         TProcessor processor = new org.apache.storm.generated.Supervisor.Processor<>(supervisorThriftInterface);
-        this.thriftServer = new ThriftServer(conf, processor, ThriftConnectionType.SUPERVISOR);
-        this.thriftServer.serve();
+        boolean useTls = ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_THRIFT_CLIENT_USE_TLS), false);
+        ThriftConnectionType type = useTls ? ThriftConnectionType.SUPERVISOR_TLS : ThriftConnectionType.SUPERVISOR;
+
+        String confPath = ThriftConnectionType.SUPERVISOR_TLS.getServerKeyStorePath(conf);
+        this.multiThriftServer = new MultiThriftServer<>("supervisor-thrift-server");
+        this.multiThriftServer.add(new ThriftServer(conf, processor, type));
+        this.multiThriftServer.serve();
     }
 
     /**
@@ -505,8 +514,11 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             }
             asyncLocalizer.close();
             getStormClusterState().disconnect();
-            if (thriftServer != null) {
-                this.thriftServer.stop();
+            if (this.multiThriftServer != null) {
+                this.multiThriftServer.stop();
+            }
+            if (this.keyStoreWatcher != null) {
+                this.keyStoreWatcher.stop();
             }
         } catch (Exception e) {
             LOG.error("Error Shutting down", e);

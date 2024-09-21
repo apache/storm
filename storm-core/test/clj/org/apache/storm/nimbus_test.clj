@@ -1878,7 +1878,7 @@
   (let [inactive-topos (list "topo2" "topo3")
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
-        conf {NIMBUS-MONITOR-FREQ-SECS 10 NIMBUS-TOPOLOGY-BLOBSTORE-DELETION-DELAY-MS 0}]
+        conf {NIMBUS-MONITOR-FREQ-SECS 10 NIMBUS-TOPOLOGY-BLOBSTORE-DELETION-DELAY-MS 0 NIMBUS-THRIFT-TLS-PORT 0}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
                     (zkLeaderElectorImpl [conf zk blob-store tc cluster-state acls metrics-registry submitLock] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil (StormMetricsRegistry.)))]
@@ -1916,7 +1916,7 @@
   (let [inactive-topos ()
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
-        conf {NIMBUS-MONITOR-FREQ-SECS 10}]
+        conf {NIMBUS-MONITOR-FREQ-SECS 10 NIMBUS-THRIFT-TLS-PORT 0}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
                     (zkLeaderElectorImpl [conf zk blob-store tc cluster-state acls metrics-registry submitLock] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil (StormMetricsRegistry.)))]
@@ -1947,7 +1947,8 @@
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
         mock-tc (Mockito/mock TopoCache)
-        nimbus (Nimbus. {NIMBUS-MONITOR-FREQ-SECS 10} nil mock-state nil mock-blob-store mock-tc (MockLeaderElector. ) nil (StormMetricsRegistry.))]
+        nimbus (Nimbus. {NIMBUS-MONITOR-FREQ-SECS 10 NIMBUS-THRIFT-TLS-PORT 0}
+                        nil mock-state nil mock-blob-store mock-tc (MockLeaderElector. ) nil (StormMetricsRegistry.))]
     (let [supervisor1-topologies (clojurify-structure (Nimbus/topologiesOnSupervisor assignments "super1"))
           user1-topologies (clojurify-structure (.filterAuthorized nimbus "getTopology" supervisor1-topologies))
           supervisor2-topologies (clojurify-structure (Nimbus/topologiesOnSupervisor assignments "super2"))
@@ -1968,7 +1969,8 @@
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
         mock-tc (Mockito/mock TopoCache)
-        nimbus (Nimbus. {NIMBUS-MONITOR-FREQ-SECS 10} nil mock-state nil mock-blob-store mock-tc (MockLeaderElector. ) nil (StormMetricsRegistry.))]
+        nimbus (Nimbus. {NIMBUS-MONITOR-FREQ-SECS 10 NIMBUS-THRIFT-TLS-PORT 0}
+                         nil mock-state nil mock-blob-store mock-tc (MockLeaderElector. ) nil (StormMetricsRegistry.))]
     (.thenReturn (Mockito/when (.readTopoConf mock-tc (Mockito/eq "authorized") (ArgumentMatchers/any))) {TOPOLOGY-NAME "authorized"})
     (.thenReturn (Mockito/when (.readTopoConf mock-tc (Mockito/eq "topo1") (ArgumentMatchers/any))) {TOPOLOGY-NAME "topo1"})
     (.setAuthorizationHandler nimbus (reify IAuthorizer (permit [this context operation topo-conf] (= "authorized" (get topo-conf TOPOLOGY-NAME)))))

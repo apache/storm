@@ -99,7 +99,7 @@ public class ReportWorkerHeartbeats implements Runnable {
                 LOG.error("Send local supervisor heartbeats error", tex);
             }
         } else {
-            try (NimbusClient master = NimbusClient.getConfiguredClient(conf)) {
+            try (NimbusClient master = NimbusClient.Builder.withConf(conf).forDaemon().build()) {
                 master.getClient().sendSupervisorWorkerHeartbeats(supervisorWorkerHeartbeats);
             } catch (Exception t) {
                 LOG.error("Send worker heartbeats to master exception", t);

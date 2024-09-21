@@ -93,7 +93,7 @@ public class HdfsSpoutTopology {
         Map<String, Object> clusterConf = Utils.readStormConfig();
         String topologyName = args[0];
         StormSubmitter.submitTopologyWithProgressBar(topologyName, conf, builder.createTopology());
-        Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+        Nimbus.Iface client = NimbusClient.Builder.withConf(clusterConf).build().getClient();
 
         // 4 - Print metrics every 30 sec, kill topology after 20 min
         for (int i = 0; i < 40; i++) {

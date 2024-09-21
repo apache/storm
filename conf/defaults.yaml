@@ -39,6 +39,7 @@ storm.cluster.mode: "distributed" # can be distributed or local
 storm.local.mode.zmq: false
 storm.thrift.transport: "org.apache.storm.security.auth.SimpleTransportPlugin"
 storm.thrift.socket.timeout.ms: 600000
+storm.thrift.tls.socket.timeout.ms: 600000
 storm.principal.tolocal: "org.apache.storm.security.auth.DefaultPrincipalToLocal"
 storm.group.mapping.service: "org.apache.storm.security.auth.ShellBasedGroupsMapping"
 storm.group.mapping.service.params: null
@@ -63,6 +64,13 @@ nimbus.seeds : ["localhost"]
 nimbus.thrift.port: 6627
 nimbus.thrift.threads: 64
 nimbus.thrift.max_buffer_size: 1048576
+nimbus.thrift.tls.port: 0
+nimbus.thrift.tls.threads: 64
+nimbus.thrift.tls.max_buffer_size: 1048576
+nimbus.thrift.client.use.tls: false
+nimbus.thrift.tls.transport: "org.apache.storm.security.auth.tls.TlsTransportPlugin"
+nimbus.thrift.tls.client.auth.required: true
+topology.worker.nimbus.thrift.client.use.tls: false
 nimbus.childopts: "-Xmx1024m"
 nimbus.task.timeout.secs: 30
 nimbus.supervisor.timeout.secs: 60

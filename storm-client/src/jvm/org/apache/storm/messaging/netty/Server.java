@@ -30,7 +30,6 @@ import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IStatefulObject;
-import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.shade.io.netty.bootstrap.ServerBootstrap;
 import org.apache.storm.shade.io.netty.buffer.PooledByteBufAllocator;
@@ -42,6 +41,7 @@ import org.apache.storm.shade.io.netty.channel.group.ChannelGroup;
 import org.apache.storm.shade.io.netty.channel.group.DefaultChannelGroup;
 import org.apache.storm.shade.io.netty.channel.nio.NioEventLoopGroup;
 import org.apache.storm.shade.io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.apache.storm.shade.io.netty.handler.ssl.SslContext;
 import org.apache.storm.shade.io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
@@ -97,6 +97,8 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
         LOG.info("Create Netty Server " + netty_name() + ", buffer_size: " + bufferSize + ", maxWorkers: " + maxWorkers);
 
+        SslContext sslContext = NettyTlsUtils.createSslContext(topoConf, true);
+
         int backlog = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
         bootstrap = new ServerBootstrap()
             .group(bossEventLoopGroup, workerEventLoopGroup)
@@ -107,7 +109,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             .childOption(ChannelOption.SO_RCVBUF, bufferSize)
             .childOption(ChannelOption.SO_KEEPALIVE, true)
             .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-            .childHandler(new StormServerPipelineFactory(topoConf, this));
+            .childHandler(new StormServerPipelineFactory(topoConf, this, sslContext));
 
         // Bind and start to accept incoming connections.
         try {

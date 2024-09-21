@@ -105,7 +105,7 @@ public class FastWordCountTopology {
 
         Map<String, Object> clusterConf = Utils.readStormConfig();
         clusterConf.putAll(Utils.readCommandLineOpts());
-        Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+        Nimbus.Iface client = NimbusClient.Builder.withConf(clusterConf).build().getClient();
 
         //Sleep for 5 mins
         for (int i = 0; i < 10; i++) {

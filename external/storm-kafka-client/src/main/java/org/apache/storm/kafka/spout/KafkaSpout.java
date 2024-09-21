@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.Validate;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -50,9 +51,9 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.RetriableException;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig.ProcessingGuarantee;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
+import org.apache.storm.kafka.spout.internal.ClientFactoryDefault;
 import org.apache.storm.kafka.spout.internal.CommitMetadataManager;
-import org.apache.storm.kafka.spout.internal.ConsumerFactory;
-import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
 import org.apache.storm.kafka.spout.internal.Timer;
 import org.apache.storm.kafka.spout.metrics2.KafkaOffsetMetricManager;
@@ -77,10 +78,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     // Kafka
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
-    private final ConsumerFactory<K, V> kafkaConsumerFactory;
+    private final ClientFactory<K, V> kafkaClientFactory;
     private final TopicAssigner topicAssigner;
     private transient Consumer<K, V> consumer;
 
+    private transient Admin admin;
     // Bookkeeping
     // Strategy to determine the fetch offset of the first realized by the spout upon activation
     private transient FirstPollOffsetStrategy firstPollOffsetStrategy;
@@ -108,12 +110,12 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient KafkaSpoutConsumerRebalanceListener rebalanceListener;
 
     public KafkaSpout(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
-        this(kafkaSpoutConfig, new ConsumerFactoryDefault<>(), new TopicAssigner());
+        this(kafkaSpoutConfig, new ClientFactoryDefault<>(), new TopicAssigner());
     }
 
     @VisibleForTesting
-    KafkaSpout(KafkaSpoutConfig<K, V> kafkaSpoutConfig, ConsumerFactory<K, V> kafkaConsumerFactory, TopicAssigner topicAssigner) {
-        this.kafkaConsumerFactory = kafkaConsumerFactory;
+    KafkaSpout(KafkaSpoutConfig<K, V> kafkaSpoutConfig, ClientFactory<K, V> kafkaClientFactory, TopicAssigner topicAssigner) {
+        this.kafkaClientFactory = kafkaClientFactory;
         this.topicAssigner = topicAssigner;
         this.kafkaSpoutConfig = kafkaSpoutConfig;
     }
@@ -146,11 +148,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         rebalanceListener = new KafkaSpoutConsumerRebalanceListener();
 
-        consumer = kafkaConsumerFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
+        consumer = kafkaClientFactory.createConsumer(kafkaSpoutConfig.getKafkaProps());
+        admin = kafkaClientFactory.createAdmin(kafkaSpoutConfig.getKafkaProps());
+
 
         tupleListener.open(conf, context);
         this.kafkaOffsetMetricManager
-            = new KafkaOffsetMetricManager<>(() -> Collections.unmodifiableMap(offsetManagers), () -> consumer, context);
+            = new KafkaOffsetMetricManager<>(() -> Collections.unmodifiableMap(offsetManagers), () -> admin, context);
 
         LOG.info("Kafka Spout opened with the following configuration: {}", kafkaSpoutConfig);
     }
@@ -663,6 +667,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             commitIfNecessary();
         } finally {
             //remove resources
+            admin.close();
             consumer.close();
         }
     }

@@ -301,19 +301,19 @@ public class AssignmentDistributionService implements Closeable {
                 }
             } else {
                 // distributed mode
-                try (SupervisorClient client = SupervisorClient.getConfiguredClient(service.getConf(),
-                                                                                    assignments.getHost(), assignments.getServerPort())) {
+                try (SupervisorClient client = SupervisorClient.Builder.withConf(service.getConf())
+                                .withHostName(assignments.getHost()).withPort(assignments.getServerPort()).createSupervisorClient()) {
                     try {
                         client.getIface().sendSupervisorAssignments(assignments.getAssignments());
                         service.sendAssignmentCallback.nodeAssignmentSent(assignments.getNode(), true);
                     } catch (Exception e) {
                         assignments.getMetricsRegistry().getMeter(Constants.NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS).mark();
-                        LOG.error("Exception when trying to send assignments to node {}: {}", assignments.getNode(), e.getMessage());
+                        LOG.error("Exception when trying to send assignments to node {}", assignments.getNode(), e);
                         service.sendAssignmentCallback.nodeAssignmentSent(assignments.getNode(), false);
                     }
                 } catch (Throwable e) {
                     //just ignore any error/exception.
-                    LOG.error("Exception to create supervisor client for node {}: {}", assignments.getNode(), e.getMessage());
+                    LOG.error("Exception to create supervisor client for node {}", assignments.getNode(), e);
                 }
             }
         }

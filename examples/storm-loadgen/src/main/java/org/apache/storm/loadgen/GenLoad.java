@@ -210,7 +210,7 @@ public class GenLoad {
         metricServer.serve();
         String url = metricServer.getUrl();
         int exitStatus = -1;
-        try (NimbusClient client = NimbusClient.getConfiguredClient(conf);
+        try (NimbusClient client = NimbusClient.Builder.withConf(conf).build();
              ScopedTopologySet topoNames = new ScopedTopologySet(client.getClient())) {
             for (String topoFile : cmd.getArgList()) {
                 try {

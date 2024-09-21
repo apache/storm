@@ -73,7 +73,7 @@ public class EstimateThroughput {
         List<TopologyLoadConf> regular = new ArrayList<>();
         List<TopologyLoadConf> trident = new ArrayList<>();
 
-        try (NimbusClient nc = NimbusClient.getConfiguredClient(conf)) {
+        try (NimbusClient nc = NimbusClient.Builder.withConf(conf).build()) {
             Nimbus.Iface client = nc.getClient();
             List<String> topologyNames = cmd.getArgList();
 

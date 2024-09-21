@@ -26,9 +26,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
-import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.ListOffsetsResult;
+import org.apache.kafka.clients.admin.OffsetSpec;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.RetriableException;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
@@ -49,17 +53,17 @@ import org.slf4j.LoggerFactory;
 public class KafkaOffsetPartitionMetrics<K, V> implements MetricSet {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaOffsetPartitionMetrics.class);
     private final Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier;
-    private final Supplier<Consumer<K, V>> consumerSupplier;
+    private final Supplier<Admin> adminSupplier;
 
     private TopicPartition topicPartition;
     private KafkaOffsetTopicMetrics topicMetrics;
 
     public KafkaOffsetPartitionMetrics(Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier,
-                                       Supplier<Consumer<K, V>> consumerSupplier,
+                                       Supplier<Admin> adminSupplier,
                                        TopicPartition topicPartition,
                                        KafkaOffsetTopicMetrics topicMetrics) {
         this.offsetManagerSupplier = offsetManagerSupplier;
-        this.consumerSupplier = consumerSupplier;
+        this.adminSupplier = adminSupplier;
         this.topicPartition = topicPartition;
         this.topicMetrics = topicMetrics;
 
@@ -170,16 +174,16 @@ public class KafkaOffsetPartitionMetrics<K, V> implements MetricSet {
     }
 
     private Map<TopicPartition, Long> getBeginningOffsets(Set<TopicPartition> topicPartitions) {
-        Consumer<K, V> consumer = consumerSupplier.get();
-        if (consumer == null) {
-            LOG.error("Kafka consumer object is null, returning 0.");
+        Admin admin = adminSupplier.get();
+        if (admin == null) {
+            LOG.error("Kafka admin object is null, returning 0.");
             return Collections.EMPTY_MAP;
         }
 
         Map<TopicPartition, Long> beginningOffsets;
         try {
-            beginningOffsets = consumer.beginningOffsets(topicPartitions);
-        } catch (RetriableException e) {
+            beginningOffsets = getOffsets(admin, topicPartitions, OffsetSpec.earliest());
+        } catch (RetriableException | ExecutionException | InterruptedException e) {
             LOG.error("Failed to get offset from Kafka for topic partitions: {}.", topicPartition, e);
             return Collections.EMPTY_MAP;
         }
@@ -187,19 +191,37 @@ public class KafkaOffsetPartitionMetrics<K, V> implements MetricSet {
     }
 
     private Map<TopicPartition, Long> getEndOffsets(Set<TopicPartition> topicPartitions) {
-        Consumer<K, V> consumer = consumerSupplier.get();
-        if (consumer == null) {
-            LOG.error("Kafka consumer object is null, returning 0.");
+        Admin admin = adminSupplier.get();
+        if (admin == null) {
+            LOG.error("Kafka admin object is null, returning 0.");
             return Collections.EMPTY_MAP;
         }
 
         Map<TopicPartition, Long> endOffsets;
         try {
-            endOffsets = consumer.endOffsets(topicPartitions);
-        } catch (RetriableException e) {
+            endOffsets = getOffsets(admin, topicPartitions, OffsetSpec.latest());
+        } catch (RetriableException | ExecutionException | InterruptedException e) {
             LOG.error("Failed to get offset from Kafka for topic partitions: {}.", topicPartition, e);
             return Collections.EMPTY_MAP;
         }
         return endOffsets;
+    }
+
+    private static Map<TopicPartition, Long> getOffsets(Admin admin, Set<TopicPartition> topicPartitions, OffsetSpec offsetSpec)
+        throws InterruptedException, ExecutionException {
+
+        Map<TopicPartition, OffsetSpec> offsetSpecMap = new HashMap<>();
+        for (TopicPartition topicPartition : topicPartitions) {
+            offsetSpecMap.put(topicPartition, offsetSpec);
+        }
+        Map<TopicPartition, Long> ret = new HashMap<>();
+        ListOffsetsResult listOffsetsResult = admin.listOffsets(offsetSpecMap);
+        KafkaFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> all = listOffsetsResult.all();
+        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionListOffsetsResultInfoMap = all.get();
+        for (Map.Entry<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> entry :
+                topicPartitionListOffsetsResultInfoMap.entrySet()) {
+            ret.put(entry.getKey(), entry.getValue().offset());
+        }
+        return ret;
     }
 }

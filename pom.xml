@@ -26,7 +26,7 @@
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>2.6.4-SNAPSHOT</version>
+    <version>2.6.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -59,7 +59,7 @@
         <connection>git@github.com:apache/storm.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</developerConnection>
         <url>https://github.com/apache/storm</url>
-        <tag>v2.6.2</tag>
+        <tag>v2.6.4</tag>
     </scm>
 
     <issueManagement>
@@ -104,11 +104,12 @@
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>33.0.0-jre</guava.version>
         <auto-service.version>1.0-rc4</auto-service.version>
+        <netty-tcnative.version>2.0.65.Final</netty-tcnative.version>
         <netty.version>4.1.112.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.23.0</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <metrics.version>4.2.26</metrics.version>
+        <metrics.version>4.2.27</metrics.version>
         <mockito.version>4.11.0</mockito.version>
         <zookeeper.version>3.9.2</zookeeper.version>
         <snappy.version>1.1.10.4</snappy.version>
@@ -165,6 +166,7 @@
         <asm.version>9.6</asm.version>
         <checker-qual.version>3.42.0</checker-qual.version>
         <error_prone_annotations.version>2.25.0</error_prone_annotations.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
     </properties>
 
     <modules>
@@ -1011,6 +1013,11 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <!-- Hadoop dependencies. Specified here so HDFS/HBase don't import older versions of these jars in their projects-->
             <dependency>

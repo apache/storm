@@ -143,7 +143,7 @@ public class StormSubmitter {
             return false;
         }
         try {
-            try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
+            try (NimbusClient client = NimbusClient.Builder.withConf(conf).build()) {
                 LOG.info("Uploading new credentials to {}", name);
                 Credentials creds = new Credentials(fullCreds);
                 if (expectedUser != null) {
@@ -264,7 +264,7 @@ public class StormSubmitter {
         }
         try {
             String serConf = JSONValue.toJSONString(topoConf);
-            try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
+            try (NimbusClient client = NimbusClient.Builder.withConf(conf).asUser(asUser).build()) {
                 if (!isTopologyNameAllowed(name, client)) {
                     throw new RuntimeException("Topology name " + name + " is either not allowed or it already exists on the cluster");
                 }
@@ -528,7 +528,7 @@ public class StormSubmitter {
                 "Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
         }
 
-        try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
+        try (NimbusClient client = NimbusClient.Builder.withConf(conf).asUser(asUser).build()) {
             return submitJarAs(conf, localJar, listener, client);
         }
     }

@@ -19,22 +19,31 @@ import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.shade.io.netty.channel.Channel;
 import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
 import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
+import org.apache.storm.shade.io.netty.handler.ssl.SslContext;
 
 class StormClientPipelineFactory extends ChannelInitializer<Channel> {
     private final Client client;
     private final AtomicBoolean[] remoteBpStatus;
     private final Map<String, Object> conf;
+    private final SslContext sslContext;
 
-    StormClientPipelineFactory(Client client, AtomicBoolean[] remoteBpStatus, Map<String, Object> conf) {
+    StormClientPipelineFactory(Client client, AtomicBoolean[] remoteBpStatus, Map<String, Object> conf,
+                               SslContext sslContext) {
         this.client = client;
         this.remoteBpStatus = remoteBpStatus;
         this.conf = conf;
+        this.sslContext = sslContext;
     }
 
     @Override
     protected void initChannel(Channel ch) throws Exception {
         // Create a default pipeline implementation.
         ChannelPipeline pipeline = ch.pipeline();
+
+        if (this.sslContext != null) {
+            // Add SSL handler first to encrypt and decrypt everything.
+            pipeline.addLast("ssl", sslContext.newHandler(ch.alloc()));
+        }
 
         // Decoder
         pipeline.addLast("decoder", new MessageDecoder(new KryoValuesDeserializer(conf)));

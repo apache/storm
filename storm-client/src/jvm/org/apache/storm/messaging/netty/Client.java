@@ -49,6 +49,7 @@ import org.apache.storm.shade.io.netty.channel.ChannelOption;
 import org.apache.storm.shade.io.netty.channel.EventLoopGroup;
 import org.apache.storm.shade.io.netty.channel.WriteBufferWaterMark;
 import org.apache.storm.shade.io.netty.channel.socket.nio.NioSocketChannel;
+import org.apache.storm.shade.io.netty.handler.ssl.SslContext;
 import org.apache.storm.shade.io.netty.util.HashedWheelTimer;
 import org.apache.storm.shade.io.netty.util.Timeout;
 import org.apache.storm.shade.io.netty.util.TimerTask;
@@ -146,6 +147,8 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
         int maxWaitMs = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, -1);
 
+        SslContext sslContext = NettyTlsUtils.createSslContext(topoConf, false);
+
         // Initiate connection to remote destination
         this.eventLoopGroup = eventLoopGroup;
         // Initiate connection to remote destination
@@ -157,7 +160,7 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
             .option(ChannelOption.SO_KEEPALIVE, true)
             .option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(lowWatermark, highWatermark))
             .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-            .handler(new StormClientPipelineFactory(this, remoteBpStatus, topoConf));
+            .handler(new StormClientPipelineFactory(this, remoteBpStatus, topoConf, sslContext));
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
