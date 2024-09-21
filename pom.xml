@@ -94,7 +94,7 @@
         <commons-text.version>1.11.0</commons-text.version>
         <commons-cli.version>1.4</commons-cli.version>
         <curator.version>5.7.0</curator.version>
-        <jetty.version>11.0.21</jetty.version>
+        <jetty.version>11.0.23</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.6.0</carbonite.version>
         <snakeyaml.version>2.2</snakeyaml.version>
