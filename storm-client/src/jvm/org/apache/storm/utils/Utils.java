@@ -1195,7 +1195,8 @@ public class Utils {
     }
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
-        try (NimbusClient client = NimbusClient.getConfiguredClientAs(topoConf, asUser)) {
+        NimbusClient.Builder builder = NimbusClient.Builder.withConf(topoConf).asUser(asUser);
+        try (NimbusClient client = builder.build()) {
             return client.getClient().getTopologyInfoByName(name);
         } catch (NotAliveException notAliveException) {
             return null;

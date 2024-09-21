@@ -166,7 +166,8 @@ public class AuthTest {
                                                Class<? extends Exception> expectedException) {
         Map<String, Object> badConf = new HashMap<>(conf);
         badConf.put("java.security.auth.login.config", jaas);
-        try (NimbusClient client = new NimbusClient(badConf, "localhost", server.getPort(), NIMBUS_TIMEOUT)) {
+        try (NimbusClient client = NimbusClient.Builder.withConf(badConf).withTimeout(NIMBUS_TIMEOUT)
+                .buildWithNimbusHostPort("localhost", server.getPort())) {
             client.getClient().activate("bad_auth_test_topology");
             fail("An exception should have been thrown trying to connect.");
         } catch (Exception e) {
@@ -189,7 +190,8 @@ public class AuthTest {
     public static void tryConnectAs(Map<String, Object> conf, ThriftServer server, Subject subject, String topoId)
         throws PrivilegedActionException {
         Subject.doAs(subject, (PrivilegedExceptionAction<Void>) () -> {
-            try (NimbusClient client = new NimbusClient(conf, "localhost", server.getPort(), NIMBUS_TIMEOUT)) {
+            try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                    .buildWithNimbusHostPort("localhost", server.getPort())) {
                 client.getClient().activate(topoId); //Yes this should be a topo name, but it makes this simpler...
             }
             return null;
@@ -235,7 +237,8 @@ public class AuthTest {
         withServer(SimpleTransportPlugin.class,
                    impl,
                    (ThriftServer server, Map<String, Object> conf) -> {
-                       try (NimbusClient client = new NimbusClient(conf, "localhost", server.getPort(), NIMBUS_TIMEOUT)) {
+                       try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                               .buildWithNimbusHostPort("localhost", server.getPort())) {
                            client.getClient().activate("security_auth_test_topology");
                        }
 
@@ -244,7 +247,8 @@ public class AuthTest {
                        badConf.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, DigestSaslTransportPlugin.class.getName());
                        badConf.put("java.security.auth.login.config", DIGEST_JAAS_CONF);
                        badConf.put(Config.STORM_NIMBUS_RETRY_TIMES, 0);
-                       try (NimbusClient client = new NimbusClient(badConf, "localhost", server.getPort(), NIMBUS_TIMEOUT)) {
+                       try (NimbusClient client = NimbusClient.Builder.withConf(badConf).withTimeout(NIMBUS_TIMEOUT)
+                               .buildWithNimbusHostPort("localhost", server.getPort())) {
                            client.getClient().activate("bad_security_auth_test_topology");
                            fail("An exception should have been thrown trying to connect.");
                        } catch (Exception e) {
@@ -271,7 +275,8 @@ public class AuthTest {
                    DigestSaslTransportPlugin.class,
                    impl,
                    (ThriftServer server, Map<String, Object> conf) -> {
-                       try (NimbusClient client = new NimbusClient(conf, "localhost", server.getPort(), NIMBUS_TIMEOUT)) {
+                       try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                               .buildWithNimbusHostPort("localhost", server.getPort())) {
                            client.getClient().activate("security_auth_test_topology");
                        }
 
@@ -280,7 +285,8 @@ public class AuthTest {
                        //Verify simple is rejected...
                        Map<String, Object> badTransport = new HashMap<>(conf);
                        badTransport.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, SimpleTransportPlugin.class.getName());
-                       try (NimbusClient client = new NimbusClient(badTransport, "localhost", server.getPort(), NIMBUS_TIMEOUT)) {
+                       try (NimbusClient client = NimbusClient.Builder.withConf(badTransport).withTimeout(NIMBUS_TIMEOUT)
+                               .buildWithNimbusHostPort("localhost", server.getPort())) {
                            client.getClient().activate("bad_security_auth_test_topology");
                            fail("An exception should have been thrown trying to connect.");
                        } catch (Exception e) {
@@ -329,7 +335,8 @@ public class AuthTest {
                            try (Time.SimulatedTime ignored = new Time.SimulatedTime()) {
                                conf.put(Config.STORM_NIMBUS_RETRY_TIMES, 0);
                                //We cannot connect if there is no client section in the jaas conf...
-                               try (NimbusClient client = new NimbusClient(conf, "localhost", server.getPort(), NIMBUS_TIMEOUT)) {
+                               try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                                       .buildWithNimbusHostPort("localhost", server.getPort())) {
                                    client.getClient().activate("bad_auth_test_topology");
                                    fail("We should not be able to connect without a token...");
                                } catch (Exception e) {

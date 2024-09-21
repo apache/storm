@@ -34,13 +34,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.ConsumerFactory;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
 import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.kafka.spout.subscription.TopicFilter;
@@ -71,7 +70,9 @@ public class KafkaSpoutRebalanceTest {
     private SpoutOutputCollector collectorMock;
     @Mock
     private KafkaConsumer<String, String> consumerMock;
-    private ConsumerFactory<String, String> consumerFactory;
+    @Mock
+    private Admin adminMock;
+    private ClientFactory<String, String> clientFactory;
     @Mock
     private TopicFilter topicFilterMock;
     @Mock
@@ -79,7 +80,17 @@ public class KafkaSpoutRebalanceTest {
 
     @BeforeEach
     public void setUp() {
-        consumerFactory = (kafkaSpoutConfig) -> consumerMock;
+        clientFactory = new ClientFactory<String, String>() {
+            @Override
+            public Consumer<String, String> createConsumer(Map<String, Object> consumerProps) {
+                return consumerMock;
+            }
+
+            @Override
+            public Admin createAdmin(Map<String, Object> adminProps) {
+                return adminMock;
+            }
+        };
         final Answer<Object> set = invocation -> new HashSet<>();
         doAnswer(set).when(topicFilterMock).getAllSubscribedPartitions(any());
         doAnswer(set).when(partitionerMock).getPartitionsForThisTask(any(), any());
@@ -135,7 +146,7 @@ public class KafkaSpoutRebalanceTest {
             TopicAssigner assignerMock = mock(TopicAssigner.class);
             KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(topicFilterMock, partitionerMock, -1)
                 .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
-                .build(), consumerFactory, assignerMock);
+                .build(), clientFactory, assignerMock);
             String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
             TopicPartition partitionThatWillBeRevoked = new TopicPartition(topic, 1);
             TopicPartition assignedPartition = new TopicPartition(topic, 2);
@@ -169,7 +180,7 @@ public class KafkaSpoutRebalanceTest {
         KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(topicFilterMock, partitionerMock, -1)
             .setOffsetCommitPeriodMs(10)
             .setRetry(retryServiceMock)
-            .build(), consumerFactory, assignerMock);
+            .build(), clientFactory, assignerMock);
         String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
         TopicPartition partitionThatWillBeRevoked = new TopicPartition(topic, 1);
         TopicPartition assignedPartition = new TopicPartition(topic, 2);
@@ -204,7 +215,7 @@ public class KafkaSpoutRebalanceTest {
         TopicAssigner assignerMock = mock(TopicAssigner.class);
         KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(topicFilterMock, partitionerMock, -1)
             .setFirstPollOffsetStrategy(FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST)
-            .build(), consumerFactory, assignerMock);
+            .build(), clientFactory, assignerMock);
         String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
         TopicPartition assignedPartition = new TopicPartition(topic, 1);
         TopicPartition newPartition = new TopicPartition(topic, 2);

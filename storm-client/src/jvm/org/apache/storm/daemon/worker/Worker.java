@@ -134,7 +134,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         if (supervisorIfaceSupplier == null) {
             this.supervisorIfaceSupplier = () -> {
                 try {
-                    return SupervisorClient.getConfiguredClient(topologyConf, Utils.hostname(), supervisorPort);
+                    return SupervisorClient.Builder.withConf(topologyConf)
+                            .withHostName(Utils.hostname()).withPort(supervisorPort).createSupervisorClient();
                 } catch (UnknownHostException e) {
                     throw Utils.wrapInRuntime(e);
                 }
@@ -491,7 +492,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         } catch (Exception tr1) {
             //If any error/exception thrown, report directly to nimbus.
             LOG.warn("Exception when send heartbeat to local supervisor", tr1.getMessage());
-            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(topologyConf)) {
+            try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(topologyConf).build()) {
                 nimbusClient.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
             } catch (Exception tr2) {
                 //if any error/exception thrown, just ignore.

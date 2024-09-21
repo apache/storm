@@ -345,7 +345,7 @@ public class CaptureLoad {
         LOG.info("Will save captured topologies to {}", baseOut);
         baseOut.mkdirs();
 
-        try (NimbusClient nc = NimbusClient.getConfiguredClient(conf)) {
+        try (NimbusClient nc = NimbusClient.Builder.withConf(conf).build()) {
             Nimbus.Iface client = nc.getClient();
             List<String> topologyNames = cmd.getArgList();
 

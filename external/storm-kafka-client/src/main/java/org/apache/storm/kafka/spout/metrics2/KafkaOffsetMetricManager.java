@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
 import org.apache.storm.task.TopologyContext;
@@ -36,17 +36,17 @@ import org.slf4j.LoggerFactory;
 public class KafkaOffsetMetricManager<K, V> {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaOffsetMetricManager.class);
     private final Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier;
-    private final Supplier<Consumer<K, V>> consumerSupplier;
+    private final Supplier<Admin> adminSupplier;
     private TopologyContext topologyContext;
 
     private Map<String, KafkaOffsetTopicMetrics> topicMetricsMap;
     private Map<TopicPartition, KafkaOffsetPartitionMetrics> topicPartitionMetricsMap;
 
     public KafkaOffsetMetricManager(Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier,
-                                    Supplier<Consumer<K, V>> consumerSupplier,
+                                    Supplier<Admin> adminSupplier,
                                     TopologyContext topologyContext) {
         this.offsetManagerSupplier = offsetManagerSupplier;
-        this.consumerSupplier = consumerSupplier;
+        this.adminSupplier = adminSupplier;
         this.topologyContext = topologyContext;
 
         this.topicMetricsMap = new HashMap<>();
@@ -68,7 +68,7 @@ public class KafkaOffsetMetricManager<K, V> {
                 }
 
                 KafkaOffsetPartitionMetrics topicPartitionMetricSet
-                    = new KafkaOffsetPartitionMetrics<>(offsetManagerSupplier, consumerSupplier, topicPartition, topicMetrics);
+                    = new KafkaOffsetPartitionMetrics<>(offsetManagerSupplier, adminSupplier, topicPartition, topicMetrics);
                 topicPartitionMetricsMap.put(topicPartition, topicPartitionMetricSet);
                 topologyContext.registerMetricSet("kafkaOffset", topicPartitionMetricSet);
             }

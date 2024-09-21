@@ -28,13 +28,16 @@ import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.KafkaUnitExtension;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.ConsumerFactory;
-import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
+import org.apache.storm.kafka.spout.internal.ClientFactoryDefault;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -60,6 +63,8 @@ public abstract class KafkaSpoutAbstractTest {
     final long commitOffsetPeriodMs;
 
     private KafkaConsumer<String, String> consumerSpy;
+
+    private Admin adminSpy;
     KafkaSpout<String, String> spout;
 
     @Captor
@@ -81,6 +86,8 @@ public abstract class KafkaSpoutAbstractTest {
 
         consumerSpy = createConsumerSpy();
 
+        adminSpy = createAdminSpy();
+
         spout = new KafkaSpout<>(spoutConfig, createConsumerFactory(), new TopicAssigner());
 
         simulatedTime = new Time.SimulatedTime();
@@ -90,19 +97,26 @@ public abstract class KafkaSpoutAbstractTest {
         return consumerSpy;
     }
 
-    private ConsumerFactory<String, String> createConsumerFactory() {
+    private ClientFactory<String, String> createConsumerFactory() {
 
-        return new ConsumerFactory<String, String>() {
+        return new ClientFactory<String, String>() {
             @Override
             public KafkaConsumer<String, String> createConsumer(Map<String, Object> consumerProps) {
                 return consumerSpy;
             }
-
+            @Override
+            public Admin createAdmin(Map<String, Object> adminProps) {
+                return adminSpy;
+            }
         };
     }
 
     KafkaConsumer<String, String> createConsumerSpy() {
-        return spy(new ConsumerFactoryDefault<String, String>().createConsumer(spoutConfig.getKafkaProps()));
+        return spy(new ClientFactoryDefault<String, String>().createConsumer(spoutConfig.getKafkaProps()));
+    }
+
+    Admin createAdminSpy(){
+        return spy(new ClientFactoryDefault<String,String>().createAdmin(spoutConfig.getKafkaProps()));
     }
 
     @AfterEach

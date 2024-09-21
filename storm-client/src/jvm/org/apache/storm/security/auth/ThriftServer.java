@@ -90,11 +90,27 @@ public class ThriftServer {
     }
 
     /**
+     * Get type.
+     * @return The type of server
+     */
+    public ThriftConnectionType getType() {
+        return type;
+    }
+
+    /**
      * Check if worker tokens are supported by this thrift server.
      *
      * @return true if they are else false.
      */
     public boolean supportsWorkerTokens() {
         return areWorkerTokensSupported;
+    }
+
+    public Map<String, Object> getConf() {
+        return conf;
+    }
+
+    public TProcessor getProcessor() {
+        return processor;
     }
 }

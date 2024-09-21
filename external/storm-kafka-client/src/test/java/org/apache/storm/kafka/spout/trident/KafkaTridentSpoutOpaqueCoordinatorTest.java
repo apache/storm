@@ -31,8 +31,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
 import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.apache.storm.kafka.spout.trident.config.builder.SingleTopicKafkaTridentSpoutConfiguration;
@@ -47,6 +51,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
     @Test
     public void testCanGetPartitions() {
         KafkaConsumer<String, String> mockConsumer = mock(KafkaConsumer.class);
+        Admin mockAdmin = mock(Admin.class);
         TopicPartition expectedPartition = new TopicPartition("test", 0);
         TopicFilter mockFilter = mock(TopicFilter.class);
         when(mockFilter.getAllSubscribedPartitions(any())).thenReturn(Collections.singleton(expectedPartition));
@@ -54,9 +59,19 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
         KafkaTridentSpoutConfig<String, String> spoutConfig = 
             SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(mockFilter, mock(ManualPartitioner.class), -1)
                 .build();
-        KafkaTridentSpoutCoordinator<String, String> coordinator = new KafkaTridentSpoutCoordinator<>(spoutConfig, ignored -> mockConsumer);
+        KafkaTridentSpoutCoordinator<String, String> coordinator = new KafkaTridentSpoutCoordinator<>(spoutConfig, new ClientFactory<String, String>() {
+            @Override
+            public Consumer<String, String> createConsumer(Map<String, Object> consumerProps) {
+                return mockConsumer;
+            }
 
-        List<Map<String, Object>> partitionsForBatch = coordinator.getPartitionsForBatch();
+            @Override
+            public Admin createAdmin(Map<String, Object> adminProps) {
+                return mockAdmin;
+            }
+        });
+
+                List < Map < String, Object >> partitionsForBatch = coordinator.getPartitionsForBatch();
 
         List<TopicPartition> tps = deserializePartitions(partitionsForBatch);
 
@@ -69,6 +84,7 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
     public void testCanUpdatePartitions() {
         try (SimulatedTime ignored1 = new SimulatedTime()) {
             KafkaConsumer<String, String> mockConsumer = mock(KafkaConsumer.class);
+            Admin mockAdmin = mock(Admin.class);
             TopicPartition expectedPartition = new TopicPartition("test", 0);
             TopicPartition addedLaterPartition = new TopicPartition("test-2", 0);
             HashSet<TopicPartition> allPartitions = new HashSet<>();
@@ -82,9 +98,19 @@ public class KafkaTridentSpoutOpaqueCoordinatorTest {
             KafkaTridentSpoutConfig<String, String> spoutConfig = 
                 SingleTopicKafkaTridentSpoutConfiguration.createKafkaSpoutConfigBuilder(mockFilter, mock(ManualPartitioner.class), -1)
                     .build();
-            KafkaTridentSpoutCoordinator<String, String> coordinator = new KafkaTridentSpoutCoordinator<>(spoutConfig, ignored -> mockConsumer);
+            KafkaTridentSpoutCoordinator<String, String> coordinator = new KafkaTridentSpoutCoordinator<>(spoutConfig, new ClientFactory<String, String>() {
+                @Override
+                public Consumer<String, String> createConsumer(Map<String, Object> consumerProps) {
+                    return mockConsumer;
+                }
 
-            List<Map<String, Object>> partitionsForBatch = coordinator.getPartitionsForBatch();
+                @Override
+                public Admin createAdmin(Map<String, Object> adminProps) {
+                    return mockAdmin;
+                }
+            });
+
+            List < Map < String, Object >> partitionsForBatch = coordinator.getPartitionsForBatch();
 
             List<TopicPartition> firstBatchTps = deserializePartitions(partitionsForBatch);
             
