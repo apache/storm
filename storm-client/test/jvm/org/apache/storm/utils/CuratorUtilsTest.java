@@ -45,16 +45,16 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CuratorUtilsTest {
-    public static final Logger LOG = LoggerFactory.getLogger(CuratorUtilsTest.class);
-    static final int JUTE_MAXBUFFER = 400000000;
-    static final int SECURE_CLIENT_PORT = 6065;
-    public static final boolean DELETE_DATA_DIRECTORY_ON_CLOSE = true;
+    private static final Logger LOG = LoggerFactory.getLogger(CuratorUtilsTest.class);
+    private static final int JUTE_MAXBUFFER = 400000000;
+    private static final int SECURE_CLIENT_PORT = 6065;
+    private static final boolean DELETE_DATA_DIRECTORY_ON_CLOSE = true;
     static final File ZK_DATA_DIR = new File("testZkSSLClientConnectionDataDir");
     private static final int SERVER_ID = 1;
     private static final int TICK_TIME = 100;
     private static final int MAX_CLIENT_CNXNS = 10;
-    public static final int ELECTION_PORT = -1;
-    public static final int QUORUM_PORT = -1;
+    private static final int ELECTION_PORT = -1;
+    private static final int QUORUM_PORT = -1;
 
     private TestingServer server;
 
@@ -161,13 +161,13 @@ public class CuratorUtilsTest {
 
         this.server = new TestingServer(spec, false);
         Map<String, Object> conf = new HashMap<>();
-        conf.put(Config.ZK_SSL_KEYSTORE_LOCATION,
+        conf.put(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PATH,
                 testDataPath + "testKeyStore.jks");
-        conf.put(Config.ZK_SSL_KEYSTORE_PASSWORD, "testpass");
-        conf.put(Config.ZK_SSL_TRUSTSTORE_LOCATION,
+        conf.put(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD, "testpass");
+        conf.put(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH,
                 testDataPath + "testTrustStore.jks");
-        conf.put(Config.ZK_SSL_TRUSTSTORE_PASSWORD, "testpass");
-        conf.put(Config.ZK_SSL_HOSTNAME_VERIFICATION, false);
+        conf.put(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD, "testpass");
+        conf.put(Config.STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION, false);
         return conf;
     }
 
@@ -187,11 +187,11 @@ public class CuratorUtilsTest {
         CuratorFramework curatorFramework = builder.build();
         curatorFramework.start();
         ZooKeeper zk = curatorFramework.getZookeeperClient().getZooKeeper();
-        validateSSLConfiguration(ObjectReader.getString(conf.get(Config.ZK_SSL_KEYSTORE_LOCATION)),
-                ObjectReader.getString(conf.get(Config.ZK_SSL_KEYSTORE_PASSWORD)),
-                ObjectReader.getString(conf.get(Config.ZK_SSL_TRUSTSTORE_LOCATION)),
-                ObjectReader.getString(conf.get(Config.ZK_SSL_TRUSTSTORE_PASSWORD)),
-                ObjectReader.getBoolean(conf.get(Config.ZK_SSL_HOSTNAME_VERIFICATION), true),
+        validateSSLConfiguration(ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PATH)),
+                ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD)),
+                ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH)),
+                ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD)),
+                ObjectReader.getBoolean(conf.get(Config.STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION), true),
                 zk);
         this.server.close();
     }
@@ -234,39 +234,39 @@ public class CuratorUtilsTest {
       Validate that the null values are converted into empty strings by the class.
      */
         Map<String, Object> conf = new HashMap<>();
-        CuratorUtils.TruststoreKeystore truststoreKeystore =
-                new CuratorUtils.TruststoreKeystore(conf);
+        CuratorUtils.SslConf zkSslConf =
+                CuratorUtils.getSslConf(conf);
 
         assertEquals("",
-                truststoreKeystore.getKeystoreLocation(), "Validate that null value is converted to empty string.");
+                zkSslConf.getKeystoreLocation(), "Validate that null value is converted to empty string.");
         assertEquals("",
-                truststoreKeystore.getKeystorePassword(), "Validate that null value is converted to empty string.");
+                zkSslConf.getKeystorePassword(), "Validate that null value is converted to empty string.");
         assertEquals("",
-                truststoreKeystore.getTruststoreLocation(), "Validate that null value is converted to empty string.");
+                zkSslConf.getTruststoreLocation(), "Validate that null value is converted to empty string.");
         assertEquals("",
-                truststoreKeystore.getTruststorePassword(), "Validate that null value is converted to empty string.");
+                zkSslConf.getTruststorePassword(), "Validate that null value is converted to empty string.");
         assertEquals(true,
-                truststoreKeystore.getHostnameVerification(), "Validate that null value is converted to false.");
+                zkSslConf.getHostnameVerification(), "Validate that null value is converted to false.");
 
 
         //Validate that non-null values will remain intact
-        conf.put(Config.ZK_SSL_KEYSTORE_LOCATION, "/keystore.jks");
-        conf.put(Config.ZK_SSL_KEYSTORE_PASSWORD, "keystorePassword");
-        conf.put(Config.ZK_SSL_TRUSTSTORE_LOCATION, "/truststore.jks");
-        conf.put(Config.ZK_SSL_TRUSTSTORE_PASSWORD, "truststorePassword");
-        conf.put(Config.ZK_SSL_HOSTNAME_VERIFICATION, false);
+        conf.put(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PATH, "/keystore.jks");
+        conf.put(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD, "keystorePassword");
+        conf.put(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH, "/truststore.jks");
+        conf.put(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD, "truststorePassword");
+        conf.put(Config.STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION, false);
 
-        CuratorUtils.TruststoreKeystore truststoreKeystore1 =
-                new CuratorUtils.TruststoreKeystore(conf);
+        zkSslConf =
+                CuratorUtils.getSslConf(conf);
         assertEquals("/keystore.jks",
-                truststoreKeystore1.getKeystoreLocation(), "Validate that non-null value kept intact.");
+                zkSslConf.getKeystoreLocation(), "Validate that non-null value kept intact.");
         assertEquals("keystorePassword",
-                truststoreKeystore1.getKeystorePassword(), "Validate that non-null value kept intact.");
+                zkSslConf.getKeystorePassword(), "Validate that non-null value kept intact.");
         assertEquals("/truststore.jks",
-                truststoreKeystore1.getTruststoreLocation(), "Validate that non-null value kept intact.");
+                zkSslConf.getTruststoreLocation(), "Validate that non-null value kept intact.");
         assertEquals("truststorePassword",
-                truststoreKeystore1.getTruststorePassword(), "Validate that non-null value kept intact.");
+                zkSslConf.getTruststorePassword(), "Validate that non-null value kept intact.");
         assertEquals(false,
-                truststoreKeystore1.getHostnameVerification(), "Validate that non-null value kept intact.");
+                zkSslConf.getHostnameVerification(), "Validate that non-null value kept intact.");
     }
 }

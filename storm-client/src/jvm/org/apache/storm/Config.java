@@ -1425,19 +1425,19 @@ public class Config extends HashMap<String, Object> {
     public static final String ZK_SSL_ENABLE = "storm.zookeeper.ssl.enable";
     /** Keystore location for ZooKeeper client connection over SSL. */
     @IsString
-    public static final String ZK_SSL_KEYSTORE_LOCATION = "storm.zookeeper.ssl.keystore.location";
+    public static final String STORM_ZOOKEEPER_SSL_KEYSTORE_PATH = "storm.zookeeper.ssl.keystore.path";
     /** Keystore password for ZooKeeper client connection over SSL. */
     @IsString
-    public static final String ZK_SSL_KEYSTORE_PASSWORD = "storm.zookeeper.ssl.keystore.password";
+    public static final String STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD = "storm.zookeeper.ssl.keystore.password";
     /** Truststore location for ZooKeeper client connection over SSL. */
     @IsString
-    public static final String ZK_SSL_TRUSTSTORE_LOCATION = "storm.zookeeper.ssl.truststore.location";
+    public static final String STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH = "storm.zookeeper.ssl.truststore.path";
     /** Truststore password for ZooKeeper client connection over SSL.  */
     @IsString
-    public static final String ZK_SSL_TRUSTSTORE_PASSWORD = "storm.zookeeper.ssl.truststore.password";
+    public static final String STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD = "storm.zookeeper.ssl.truststore.password";
     /** Enable or disable hostname verification.*/
     @IsBoolean
-    public static final String ZK_SSL_HOSTNAME_VERIFICATION = "storm.zookeeper.ssl.hostnameVerification";
+    public static final String STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION = "storm.zookeeper.ssl.hostnameVerification";
     /**
      * The delegate for serializing metadata, should be used for serialized objects stored in zookeeper and on disk. This is NOT used for
      * compressing serialized tuples sent between topologies.

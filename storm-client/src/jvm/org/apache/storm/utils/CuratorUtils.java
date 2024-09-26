@@ -91,10 +91,10 @@ public class CuratorUtils {
         }
         boolean sslEnabled = ObjectReader.getBoolean(conf.get(Config.ZK_SSL_ENABLE), false);
         if (sslEnabled) {
-            TruststoreKeystore truststoreKeystore = new TruststoreKeystore(conf);
+            SslConf sslConf = new SslConf(conf);
             ZKClientConfig zkClientConfig = new ZKClientConfig();
             try {
-                setSslConfiguration(zkClientConfig, truststoreKeystore);
+                setSslConfiguration(zkClientConfig, new ClientX509Util(), sslConf);
             } catch (ConfigurationException e) {
                 throw new RuntimeException(e);
             }
@@ -105,66 +105,65 @@ public class CuratorUtils {
     /**
      * Configure ZooKeeper Client with SSL/TLS connection.
      * @param zkClientConfig ZooKeeper Client configuration
-     * @param truststoreKeystore The truststore and keystore configs
+     * @param x509Util The X509 utility
+     * @param sslConf The truststore and keystore configs
      */
     private static void setSslConfiguration(ZKClientConfig zkClientConfig,
-                                            TruststoreKeystore truststoreKeystore) throws ConfigurationException {
-        setSslConfiguration(zkClientConfig, new ClientX509Util(), truststoreKeystore);
-    }
-
-    private static void setSslConfiguration(ZKClientConfig zkClientConfig,
-                                            ClientX509Util x509Util, TruststoreKeystore truststoreKeystore)
+                                            ClientX509Util x509Util, SslConf sslConf)
             throws ConfigurationException {
-        validateSslConfiguration(truststoreKeystore);
+        validateSslConfiguration(sslConf);
         LOG.info("Configuring the ZooKeeper client to use SSL/TLS encryption for connecting to the "
                 + "ZooKeeper server.");
         LOG.debug("Configuring the ZooKeeper client with {} location: {}.",
-                truststoreKeystore.keystoreLocation,
-                Config.ZK_SSL_KEYSTORE_LOCATION);
+                sslConf.keystoreLocation,
+                Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PATH);
         LOG.debug("Configuring the ZooKeeper client with {} location: {}.",
-                truststoreKeystore.truststoreLocation,
-                Config.ZK_SSL_TRUSTSTORE_LOCATION);
+                sslConf.truststoreLocation,
+                Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH);
 
         zkClientConfig.setProperty(ZKClientConfig.SECURE_CLIENT, "true");
         zkClientConfig.setProperty(ZKClientConfig.ZOOKEEPER_CLIENT_CNXN_SOCKET,
                 CLIENT_CNXN);
         zkClientConfig.setProperty(x509Util.getSslKeystoreLocationProperty(),
-                truststoreKeystore.keystoreLocation);
+                sslConf.keystoreLocation);
         zkClientConfig.setProperty(x509Util.getSslKeystorePasswdProperty(),
-                truststoreKeystore.keystorePassword);
+                sslConf.keystorePassword);
         zkClientConfig.setProperty(x509Util.getSslTruststoreLocationProperty(),
-                truststoreKeystore.truststoreLocation);
+                sslConf.truststoreLocation);
         zkClientConfig.setProperty(x509Util.getSslTruststorePasswdProperty(),
-                truststoreKeystore.truststorePassword);
+                sslConf.truststorePassword);
         zkClientConfig.setProperty(x509Util.getSslHostnameVerificationEnabledProperty(),
-                truststoreKeystore.hostnameVerification.toString());
+                sslConf.hostnameVerification.toString());
     }
 
-    private static void validateSslConfiguration(TruststoreKeystore truststoreKeystore) throws ConfigurationException {
-        if (StringUtils.isEmpty(truststoreKeystore.keystoreLocation)) {
+    private static void validateSslConfiguration(SslConf sslConf) throws ConfigurationException {
+        if (StringUtils.isEmpty(sslConf.getKeystoreLocation())) {
             throw new ConfigurationException(
                     "The keystore location parameter is empty for the ZooKeeper client connection.");
         }
-        if (StringUtils.isEmpty(truststoreKeystore.keystorePassword)) {
+        if (StringUtils.isEmpty(sslConf.getKeystorePassword())) {
             throw new ConfigurationException(
                     "The keystore password parameter is empty for the ZooKeeper client connection.");
         }
-        if (StringUtils.isEmpty(truststoreKeystore.truststoreLocation)) {
+        if (StringUtils.isEmpty(sslConf.getTruststoreLocation())) {
             throw new ConfigurationException(
                     "The truststore location parameter is empty for the ZooKeeper client connection" + ".");
         }
-        if (StringUtils.isEmpty(truststoreKeystore.truststorePassword)) {
+        if (StringUtils.isEmpty(sslConf.getTruststorePassword())) {
             throw new ConfigurationException(
                     "The truststore password parameter is empty for the ZooKeeper client connection" + ".");
         }
     }
 
-
+    public static SslConf getSslConf(Map<String, Object> conf) {
+        return new SslConf(conf);
+    }
     /**
      * Helper class to contain the Truststore/Keystore paths for the ZK client connection over
      * SSL/TLS.
      */
-    public static class TruststoreKeystore {
+
+    static final class SslConf {
         private final String keystoreLocation;
         private final String keystorePassword;
         private final String truststoreLocation;
@@ -176,12 +175,12 @@ public class CuratorUtils {
          *
          * @param conf configuration map
          */
-        public TruststoreKeystore(Map<String, Object> conf) {
-            keystoreLocation = ObjectReader.getString(conf.get(Config.ZK_SSL_KEYSTORE_LOCATION), "");
-            keystorePassword = ObjectReader.getString(conf.get(Config.ZK_SSL_KEYSTORE_PASSWORD), "");
-            truststoreLocation = ObjectReader.getString(conf.get(Config.ZK_SSL_TRUSTSTORE_LOCATION), "");
-            truststorePassword = ObjectReader.getString(conf.get(Config.ZK_SSL_TRUSTSTORE_PASSWORD), "");
-            hostnameVerification = ObjectReader.getBoolean(conf.get(Config.ZK_SSL_HOSTNAME_VERIFICATION), true);
+        private SslConf(Map<String, Object> conf) {
+            keystoreLocation = ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PATH), "");
+            keystorePassword = ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD), "");
+            truststoreLocation = ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH), "");
+            truststorePassword = ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD), "");
+            hostnameVerification = ObjectReader.getBoolean(conf.get(Config.STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION), true);
         }
 
         public String getKeystoreLocation() {
