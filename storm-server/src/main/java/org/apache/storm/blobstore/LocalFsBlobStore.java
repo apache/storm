@@ -291,7 +291,7 @@ public class LocalFsBlobStore extends BlobStore {
         rbm.set_settable(meta);
         try {
             LocalFsBlobStoreFile pf = fbs.read(DATA_PREFIX + key);
-            rbm.set_version(pf.getModTime());
+            rbm.set_version(pf.getVersion());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
