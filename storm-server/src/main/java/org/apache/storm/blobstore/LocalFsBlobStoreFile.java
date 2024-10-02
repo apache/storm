@@ -22,8 +22,10 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.regex.Matcher;
+
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.shade.org.apache.commons.codec.digest.DigestUtils;
+
 
 public class LocalFsBlobStoreFile extends BlobStoreFile {
 
@@ -77,7 +79,7 @@ public class LocalFsBlobStoreFile extends BlobStoreFile {
     @Override
     public long getVersion() throws IOException {
         try (FileInputStream fis = new FileInputStream(path)) {
-            byte[] bytes = DigestUtils.sha1(fis);
+            byte[] bytes = DigestUtils.sha256(fis);
             return Arrays.hashCode(bytes);
         }
     }
