@@ -12,7 +12,7 @@
 
 package org.apache.storm.blobstore;
 
-import org.apache.storm.shade.org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,14 +42,14 @@ class LocalFsBlobStoreFileTest {
 
     @Test
     void testGetVersion() throws IOException {
-        long expectedVersion = Arrays.hashCode(DigestUtils.sha1("Content for SHA hash"));
+        long expectedVersion = Arrays.hashCode(DigestUtils.sha256("Content for SHA hash"));
         long actualVersion = blobStoreFile.getVersion();
         assertEquals(expectedVersion, actualVersion, "The version should match the expected hash code.");
     }
 
     @Test
     void testGetVersion_Mismatch() throws IOException {
-        long expectedVersion = Arrays.hashCode(DigestUtils.sha1("Different content"));
+        long expectedVersion = Arrays.hashCode(DigestUtils.sha256("Different content"));
         long actualVersion = blobStoreFile.getVersion();
         assertNotEquals(expectedVersion, actualVersion, "The version shouldn't match the hash code of different content.");
     }
