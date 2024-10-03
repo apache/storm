@@ -12,9 +12,6 @@
 
 package org.apache.storm.blobstore;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.storm.generated.SettableBlobMeta;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,6 +23,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.regex.Matcher;
 import java.util.zip.CRC32C;
 import java.util.zip.Checksum;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.storm.generated.SettableBlobMeta;
 
 
 public class LocalFsBlobStoreFile extends BlobStoreFile {
