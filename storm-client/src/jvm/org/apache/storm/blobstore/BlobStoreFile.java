@@ -42,6 +42,10 @@ public abstract class BlobStoreFile {
 
     public abstract long getModTime() throws IOException;
 
+    public long getVersion() throws IOException {
+        return getModTime();
+    }
+
     public abstract InputStream getInputStream() throws IOException;
 
     public abstract OutputStream getOutputStream() throws IOException;
