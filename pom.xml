@@ -125,7 +125,7 @@
         <junit.jupiter.version>5.10.3</junit.jupiter.version>
         <surefire.version>3.0.0-M5</surefire.version>
         <awaitility.version>4.2.1</awaitility.version>
-        <hdrhistogram.version>2.1.10</hdrhistogram.version>
+        <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>2.2</hamcrest.version>
         <elasticsearch.version>7.17.13</elasticsearch.version>
         <calcite.version>1.16.0</calcite.version>
