@@ -107,7 +107,7 @@
         <netty-tcnative.version>2.0.65.Final</netty-tcnative.version>
         <netty.version>4.1.112.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j.version>2.23.0</log4j.version>
+        <log4j.version>2.24.1</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
         <metrics.version>4.2.27</metrics.version>
         <mockito.version>4.11.0</mockito.version>
