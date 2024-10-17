@@ -38,8 +38,8 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.KafkaUnitExtension;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.ConsumerFactory;
-import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
+import org.apache.storm.kafka.spout.internal.ClientFactoryDefault;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -76,12 +76,12 @@ public class KafkaSpoutReactivationTest {
                 .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
                 .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords)
                 .build();
-        ConsumerFactory<String, String> consumerFactory = new ConsumerFactoryDefault<>();
-        this.consumerSpy = spy(consumerFactory.createConsumer(spoutConfig.getKafkaProps()));
-        ConsumerFactory<String, String> consumerFactoryMock = mock(ConsumerFactory.class);
-        when(consumerFactoryMock.createConsumer(any()))
+        ClientFactory<String, String> clientFactory = new ClientFactoryDefault<>();
+        this.consumerSpy = spy(clientFactory.createConsumer(spoutConfig.getKafkaProps()));
+        ClientFactory<String, String> clientFactoryMock = mock(ClientFactory.class);
+        when(clientFactoryMock.createConsumer(any()))
             .thenReturn(consumerSpy);
-        this.spout = new KafkaSpout<>(spoutConfig, consumerFactoryMock, new TopicAssigner());
+        this.spout = new KafkaSpout<>(spoutConfig, clientFactoryMock, new TopicAssigner());
         SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitExtension.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, messageCount);
         SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
     }

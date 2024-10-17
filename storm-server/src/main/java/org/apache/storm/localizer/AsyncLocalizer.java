@@ -197,7 +197,7 @@ public class AsyncLocalizer implements AutoCloseable {
             throw new AssertionError("All user archives require a user present");
         }
         ConcurrentMap<String, LocalizedResource> keyToResource = userArchives.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
-        return keyToResource.computeIfAbsent(key, 
+        return keyToResource.computeIfAbsent(key,
             (k) -> new LocalizedResource(key, localBaseDir, true, fsOps, conf, user, metricsRegistry));
     }
 
@@ -206,7 +206,7 @@ public class AsyncLocalizer implements AutoCloseable {
             throw new AssertionError("All user archives require a user present");
         }
         ConcurrentMap<String, LocalizedResource> keyToResource = userFiles.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
-        return keyToResource.computeIfAbsent(key, 
+        return keyToResource.computeIfAbsent(key,
             (k) -> new LocalizedResource(key, localBaseDir, false, fsOps, conf, user, metricsRegistry));
     }
 
@@ -335,13 +335,11 @@ public class AsyncLocalizer implements AutoCloseable {
                 }
             }
             for (CompletableFuture<?> f : futures) {
-                try {
-                    f.get();
-                } catch (Exception e) {
-                    updateBlobExceptions.mark();
-                    LOG.warn("Could not update blob ({}), will retry again later." , e.getClass().getName());
-                }
+                f.get();
             }
+        } catch (Exception e) {
+            updateBlobExceptions.mark();
+            LOG.warn("Could not update blob ({}), will retry again later.", e.getClass().getName());
         }
     }
 

@@ -1419,6 +1419,25 @@ public class Config extends HashMap<String, Object> {
      */
     @IsString
     public static final String STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME = "storm.zookeeper.topology.auth.scheme";
+
+    /** Enable SSL/TLS for ZooKeeper client connection. */
+    @IsBoolean
+    public static final String ZK_SSL_ENABLE = "storm.zookeeper.ssl.enable";
+    /** Keystore location for ZooKeeper client connection over SSL. */
+    @IsString
+    public static final String STORM_ZOOKEEPER_SSL_KEYSTORE_PATH = "storm.zookeeper.ssl.keystore.path";
+    /** Keystore password for ZooKeeper client connection over SSL. */
+    @IsString
+    public static final String STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD = "storm.zookeeper.ssl.keystore.password";
+    /** Truststore location for ZooKeeper client connection over SSL. */
+    @IsString
+    public static final String STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH = "storm.zookeeper.ssl.truststore.path";
+    /** Truststore password for ZooKeeper client connection over SSL.  */
+    @IsString
+    public static final String STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD = "storm.zookeeper.ssl.truststore.password";
+    /** Enable or disable hostname verification.*/
+    @IsBoolean
+    public static final String STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION = "storm.zookeeper.ssl.hostnameVerification";
     /**
      * The delegate for serializing metadata, should be used for serialized objects stored in zookeeper and on disk. This is NOT used for
      * compressing serialized tuples sent between topologies.

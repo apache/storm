@@ -26,7 +26,7 @@
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>2.6.5-SNAPSHOT</version>
+    <version>2.7.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -59,7 +59,7 @@
         <connection>git@github.com:apache/storm.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</developerConnection>
         <url>https://github.com/apache/storm</url>
-        <tag>v2.6.4</tag>
+        <tag>v2.7.0</tag>
     </scm>
 
     <issueManagement>
@@ -94,7 +94,7 @@
         <commons-text.version>1.11.0</commons-text.version>
         <commons-cli.version>1.4</commons-cli.version>
         <curator.version>5.7.0</curator.version>
-        <jetty.version>11.0.21</jetty.version>
+        <jetty.version>11.0.23</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <carbonite.version>1.6.0</carbonite.version>
         <snakeyaml.version>2.2</snakeyaml.version>
@@ -109,7 +109,7 @@
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.23.0</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <metrics.version>4.2.26</metrics.version>
+        <metrics.version>4.2.27</metrics.version>
         <mockito.version>4.11.0</mockito.version>
         <zookeeper.version>3.9.2</zookeeper.version>
         <snappy.version>1.1.10.4</snappy.version>
@@ -1639,7 +1639,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.4.0</version>
+                <version>3.5.0</version>
                 <configuration>
                     <reportsDirectories>
                         <file>${project.build.directory}/test-reports</file>
