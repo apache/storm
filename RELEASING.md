@@ -151,13 +151,18 @@ Thanks!
 ```agsl
 Subject: [VOTE][RESULT] Storm [VERSION] Release Candidate [N]
 
-Storm [VERSION] RC-N was approved for release with [m] binding +1 and [n] non-binding +1.
+Dear Community,
 
-Storm [VERSION] release artifacts are available in Maven Central Repository.
+The voting for releasing Apache Storm [VERSION] Release Candidate [N] has passed with # +1 votes (# binding) and # +0 or -1 votes.
++1 votes:
+* ###### / binding
+* ############
 
- Release is available here https://dist.apache.org/repos/dist/release/storm/apache-storm-[VERSION]
- Release notes are here: https://dist.apache.org/repos/dist/release/storm/apache-storm-[VERSION]/RELEASE_NOTES.html
- Also see: https://storm.apache.org for updated information on this [VERSION] and prior releases.
+Vote thread can be found at:
+https://lists.apache.org/thread.html/##############
+
+Thanks everyone for taking the time to review and vote for the release!
+We will continue the rest of release process and send out the announcement email in the coming days.
 
 Thanks to everyone who contributed to this release.
 
