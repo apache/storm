@@ -1328,7 +1328,7 @@
                     <!--To support checkstyle goals. For example: "mvn checkstyle:checkstyle"-->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.6.0</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.storm</groupId>
