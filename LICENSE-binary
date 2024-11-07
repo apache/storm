@@ -790,7 +790,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:4.0.7 - http://www.dropwizard.io/4.0.7/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
         * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:4.0.7 - http://www.dropwizard.io/4.0.7/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
         * Ehcache (org.ehcache:ehcache:3.8.2 - http://ehcache.org)
-        * error-prone annotations (com.google.errorprone:error_prone_annotations:2.25.0 - https://errorprone.info/error_prone_annotations)
+        * error-prone annotations (com.google.errorprone:error_prone_annotations:2.35.1 - https://errorprone.info/error_prone_annotations)
         * Esri Geometry API for Java (com.esri.geometry:esri-geometry-api:2.0.0 - https://github.com/Esri/geometry-api-java)
         * fastinfoset (com.sun.xml.fastinfoset:FastInfoset:1.2.15 - http://fi.java.net)
         * fastutil (it.unimi.dsi:fastutil:6.5.6 - http://fasutil.dsi.unimi.it/)
@@ -1091,7 +1091,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Eclipse Public License, Version 1.0
 
-        * clojure (org.clojure:clojure:1.11.2 - http://clojure.org/)
+        * clojure (org.clojure:clojure:1.12.0 - http://clojure.org/)
         * core.specs.alpha (org.clojure:core.specs.alpha:0.2.62 - https://github.com/clojure/build.poms/core.specs.alpha)
         * spec.alpha (org.clojure:spec.alpha:0.3.218 - https://github.com/clojure/build.poms/spec.alpha)
         * tools.logging (org.clojure:tools.logging:0.2.3 - http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/tools.logging)
