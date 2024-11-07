@@ -110,7 +110,7 @@
         <log4j.version>2.24.1</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
         <metrics.version>4.2.28</metrics.version>
-        <mockito.version>4.11.0</mockito.version>
+        <mockito.version>5.14.2</mockito.version>
         <zookeeper.version>3.9.2</zookeeper.version>
         <snappy.version>1.1.10.4</snappy.version>
         <jline.version>0.9.94</jline.version>
@@ -122,7 +122,7 @@
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
         <joda-time.version>2.12.7</joda-time.version>
         <thrift.version>0.19.0</thrift.version>
-        <junit.jupiter.version>5.10.3</junit.jupiter.version>
+        <junit.jupiter.version>5.11.3</junit.jupiter.version>
         <surefire.version>3.0.0-M5</surefire.version>
         <awaitility.version>4.2.1</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
@@ -134,7 +134,7 @@
 
         <jackson.version>2.18.1</jackson.version>
         <jackson.databind.version>2.18.1</jackson.databind.version>
-        <storm.kafka.client.version>3.8.1</storm.kafka.client.version>
+        <storm.kafka.client.version>3.9.0</storm.kafka.client.version>
         <testcontainers.version>1.20.1</testcontainers.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
@@ -1196,7 +1196,7 @@
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
-                <version>1.11.3</version>
+                <version>1.12.0</version>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
