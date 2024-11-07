@@ -18,13 +18,17 @@
 
 package org.apache.storm.utils;
 
+import java.io.IOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -42,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.storm.utils.Utils.handleUncaughtException;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UtilsTest {
@@ -471,6 +476,45 @@ public class UtilsTest {
         });
         if (!testFailures.isEmpty()) {
             fail(String.join("\n", testFailures));
+        }
+    }
+
+    @Test
+    public void testHandleUncaughtExceptionSwallowsCausedAndDerivedExceptions() {
+        Set<Class<?>> allowedExceptions = new HashSet<>(Arrays.asList(new Class<?>[]{ IOException.class }));
+        try {
+            handleUncaughtException(new IOException(), allowedExceptions, false);
+        } catch(Throwable unexpected) {
+            fail("Should have swallowed IOException!", unexpected);
+        }
+
+        try {
+            handleUncaughtException(new SocketException(), allowedExceptions, false);
+        } catch(Throwable unexpected) {
+            fail("Should have swallowed Throwable derived from IOException!", unexpected);
+        }
+
+        try {
+            handleUncaughtException(new TTransportException(new IOException()), allowedExceptions, false);
+        } catch(Throwable unexpected) {
+            fail("Should have swallowed Throwable caused by an IOException!", unexpected);
+        }
+
+        try {
+            handleUncaughtException(new TTransportException(new SocketException()), allowedExceptions, false);
+        } catch(Throwable unexpected) {
+            fail("Should have swallowed Throwable caused by a Throwable derived from IOException!", unexpected);
+        }
+
+        Throwable t = new NullPointerException();
+        String expectationMessage = "Should have thrown an Error() with a cause of NullPointerException";
+        try {
+            handleUncaughtException(t, allowedExceptions, false);
+            fail(expectationMessage);
+        } catch(Error expected) {
+            assertEquals(expected.getCause(), t, expectationMessage);
+        } catch(Throwable unexpected) {
+            fail(expectationMessage, unexpected);
         }
     }
 }
