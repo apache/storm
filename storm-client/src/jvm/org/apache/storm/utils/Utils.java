@@ -652,9 +652,11 @@ public class Utils {
             }
         }
 
-        if (allowedExceptions.contains(t.getClass())) {
-            LOG.info("Swallowing {} {}", t.getClass(), t);
-            return;
+        for (Class<?> classType : allowedExceptions) {
+            if (Utils.exceptionCauseIsInstanceOf(classType, t)) {
+                LOG.info("Swallowing {} {}", t.getClass(), t);
+                return;
+            }
         }
 
         if (worker && isAllowedWorkerException(t)) {
