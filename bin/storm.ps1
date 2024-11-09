@@ -64,6 +64,6 @@ if(Test-Path $StormEnvPath) {
 }
 
 $ArgsForProcess = @(([io.path]::combine("$STORM_BIN_DIR", "storm.py"))) + $args
-Start-Process -FilePath python3 -ArgumentList $ArgsForProcess -Wait -NoNewWindow
+& python3 $ArgsForProcess
 
 exit $LastExitCode
