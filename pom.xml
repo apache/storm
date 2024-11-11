@@ -152,7 +152,7 @@
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
-        <jaxb-version>2.3.0</jaxb-version>
+        <jaxb-version>2.3.1</jaxb-version>
         <activation-version>1.1.1</activation-version>
         <rocksdb-jni-version>9.7.3</rocksdb-jni-version>
         <json-smart.version>2.5.1</json-smart.version>
