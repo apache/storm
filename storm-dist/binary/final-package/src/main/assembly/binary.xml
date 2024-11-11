@@ -145,13 +145,6 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../../external/storm-elasticsearch</directory>
-            <outputDirectory>external/storm-elasticsearch</outputDirectory>
-            <includes>
-                <include>README.*</include>
-            </includes>
-        </fileSet>
 
         <fileSet>
             <directory>${project.basedir}/../../../external/flux</directory>

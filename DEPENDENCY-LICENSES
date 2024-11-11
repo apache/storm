@@ -85,13 +85,11 @@ List of third-party dependencies grouped by their license type.
         * Apache HBase Relocated (Shaded) Third-party Miscellaneous Libs (org.apache.hbase.thirdparty:hbase-shaded-miscellaneous:4.1.9 - https://hbase.apache.org/hbase-shaded-miscellaneous)
         * Apache HBase - Shaded Protocol (org.apache.hbase:hbase-protocol-shaded:2.6.1-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-protocol-shaded)
         * Apache HBase Unsafe Wrapper (org.apache.hbase.thirdparty:hbase-unsafe:4.1.9 - https://hbase.apache.org/hbase-unsafe)
-        * Apache HttpAsyncClient (org.apache.httpcomponents:httpasyncclient:4.1.5 - http://hc.apache.org/httpcomponents-asyncclient)
         * Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.14 - http://hc.apache.org/httpcomponents-client-ga)
         * Apache HttpClient (org.apache.httpcomponents.client5:httpclient5:5.2.1 - https://hc.apache.org/httpcomponents-client-5.0.x/5.2.1/httpclient5/)
         * Apache HttpComponents Core HTTP/1.1 (org.apache.httpcomponents.core5:httpcore5:5.2 - https://hc.apache.org/httpcomponents-core-5.2.x/5.2/httpcore5/)
         * Apache HttpComponents Core HTTP/2 (org.apache.httpcomponents.core5:httpcore5-h2:5.2 - https://hc.apache.org/httpcomponents-core-5.2.x/5.2/httpcore5-h2/)
         * Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
-        * Apache HttpCore NIO (org.apache.httpcomponents:httpcore-nio:4.4.15 - http://hc.apache.org/httpcomponents-core-ga)
         * Apache Ivy (org.apache.ivy:ivy:2.4.0 - http://ant.apache.org/ivy/)
         * Apache Kafka (org.apache.kafka:kafka-clients:3.9.0 - https://kafka.apache.org)
         * Apache Log4j 1.x Compatibility API (org.apache.logging.log4j:log4j-1.2-api:2.24.1 - https://logging.apache.org/log4j/2.x/log4j/log4j-1.2-api/)
@@ -136,7 +134,6 @@ List of third-party dependencies grouped by their license type.
         * Commons Lang (commons-lang:commons-lang:2.6 - http://commons.apache.org/lang/)
         * Commons Logging (commons-logging:commons-logging:1.1.3 - http://commons.apache.org/proper/commons-logging/)
         * Commons Pool (commons-pool:commons-pool:1.5.4 - http://commons.apache.org/pool/)
-        * compiler (com.github.spullara.mustache.java:compiler:0.9.6 - http://github.com/spullara/mustache.java)
         * Curator Client (org.apache.curator:curator-client:5.7.1 - https://curator.apache.org/curator-client)
         * Curator Framework (org.apache.curator:curator-framework:5.7.1 - https://curator.apache.org/curator-framework)
         * Curator Recipes (org.apache.curator:curator-recipes:5.7.1 - https://curator.apache.org/curator-recipes)
@@ -202,13 +199,11 @@ List of third-party dependencies grouped by their license type.
         * Hive Upgrade Acid (org.apache.hive:hive-upgrade-acid:3.1.3 - https://www.apache.org/hive-upgrade-acid/)
         * Hive Vector-Code-Gen Utilities (org.apache.hive:hive-vector-code-gen:3.1.3 - https://hive.apache.org/hive-vector-code-gen)
         * HPPC Collections (com.carrotsearch:hppc:0.7.2 - http://labs.carrotsearch.com/hppc.html/hppc)
-        * HPPC Collections (com.carrotsearch:hppc:0.8.1 - http://labs.carrotsearch.com/hppc.html/hppc)
         * j2html (com.j2html:j2html:1.6.0 - http://j2html.com)
         * J2ObjC Annotations (com.google.j2objc:j2objc-annotations:3.0.0 - https://github.com/google/j2objc/)
         * Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.18.1 - https://github.com/FasterXML/jackson)
         * Jackson-core (com.fasterxml.jackson.core:jackson-core:2.18.1 - https://github.com/FasterXML/jackson-core)
         * jackson-databind (com.fasterxml.jackson.core:jackson-databind:2.18.1 - https://github.com/FasterXML/jackson)
-        * Jackson dataformat: CBOR (com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.18.1 - https://github.com/FasterXML/jackson-dataformats-binary)
         * Jackson dataformat: Smile (com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.18.1 - https://github.com/FasterXML/jackson-dataformats-binary)
         * Jackson-dataformat-YAML (com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.1 - https://github.com/FasterXML/jackson-dataformats-text)
         * Jackson datatype: Guava (com.fasterxml.jackson.datatype:jackson-datatype-guava:2.18.1 - https://github.com/FasterXML/jackson-datatypes-collections)
@@ -248,19 +243,6 @@ List of third-party dependencies grouped by their license type.
         * Kerby PKIX Project (org.apache.kerby:kerby-pkix:2.0.3 - https://directory.apache.org/kerby/kerby-pkix)
         * Kerby Util (org.apache.kerby:kerby-util:2.0.3 - https://directory.apache.org/kerby/kerby-common/kerby-util)
         * Logging (commons-logging:commons-logging:1.0.3 - http://jakarta.apache.org/commons/logging/)
-        * Lucene Common Analyzers (org.apache.lucene:lucene-analyzers-common:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-analyzers-common)
-        * Lucene Core (org.apache.lucene:lucene-core:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-core)
-        * Lucene Grouping (org.apache.lucene:lucene-grouping:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-grouping)
-        * Lucene Highlighter (org.apache.lucene:lucene-highlighter:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-highlighter)
-        * Lucene Join (org.apache.lucene:lucene-join:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-join)
-        * Lucene Memory (org.apache.lucene:lucene-backward-codecs:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-backward-codecs)
-        * Lucene Memory (org.apache.lucene:lucene-memory:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-memory)
-        * Lucene Miscellaneous (org.apache.lucene:lucene-misc:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-misc)
-        * Lucene Queries (org.apache.lucene:lucene-queries:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-queries)
-        * Lucene QueryParsers (org.apache.lucene:lucene-queryparser:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-queryparser)
-        * Lucene Sandbox (org.apache.lucene:lucene-sandbox:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-sandbox)
-        * Lucene Spatial 3D (org.apache.lucene:lucene-spatial3d:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-spatial3d)
-        * Lucene Suggest (org.apache.lucene:lucene-suggest:8.11.1 - https://lucene.apache.org/lucene-parent/lucene-suggest)
         * LZ4 and xxHash (org.lz4:lz4-java:1.8.0 - https://github.com/lz4/lz4-java)
         * Maven Artifact (org.apache.maven:maven-artifact:3.6.0 - https://maven.apache.org/ref/3.6.0/maven-artifact/)
         * Maven Artifact (org.apache.maven:maven-artifact:3.8.1 - https://maven.apache.org/ref/3.8.1/maven-artifact/)
@@ -359,7 +341,6 @@ List of third-party dependencies grouped by their license type.
         * Prometheus Metrics Tracer Initializer (io.prometheus:prometheus-metrics-tracer-initializer:1.3.3 - http://github.com/prometheus/client_java/prometheus-metrics-tracer/prometheus-metrics-tracer-initializer)
         * Prometheus Metrics Tracer OpenTelemetry (io.prometheus:prometheus-metrics-tracer-otel:1.3.3 - http://github.com/prometheus/client_java/prometheus-metrics-tracer/prometheus-metrics-tracer-otel)
         * Prometheus Metrics Tracer OpenTelemetry Agent (io.prometheus:prometheus-metrics-tracer-otel-agent:1.3.3 - http://github.com/prometheus/client_java/prometheus-metrics-tracer/prometheus-metrics-tracer-otel-agent)
-        * rest (org.elasticsearch.client:elasticsearch-rest-client:7.17.13 - https://github.com/elastic/elasticsearch.git)
         * sigar (org.fusesource:sigar:1.6.4 - http://fusesource.com/sigar/)
         * SLF4J 1 Binding for Log4j API (org.apache.logging.log4j:log4j-slf4j-impl:2.24.1 - https://logging.apache.org/log4j/2.x/log4j/log4j-slf4j-impl/)
         * SnakeYAML (org.yaml:snakeyaml:2.2 - https://bitbucket.org/snakeyaml/snakeyaml)
@@ -374,7 +355,6 @@ List of third-party dependencies grouped by their license type.
         * Spring Messaging (org.springframework:spring-messaging:5.3.27 - https://github.com/spring-projects/spring-framework)
         * Spring Transaction (org.springframework:spring-tx:5.3.27 - https://github.com/spring-projects/spring-framework)
         * StAX API (stax:stax-api:1.0.1 - http://stax.codehaus.org/)
-        * T-Digest (com.tdunning:t-digest:3.2 - https://github.com/tdunning/t-digest)
         * Tephra API (co.cask.tephra:tephra-api:0.6.0 - https://github.com/caskdata/tephra/tephra-api)
         * Tephra Core (co.cask.tephra:tephra-core:0.6.0 - https://github.com/caskdata/tephra/tephra-core)
         * Tephra HBase 1.0 Compatibility (co.cask.tephra:tephra-hbase-compat-1.0:0.6.0 - https://github.com/caskdata/tephra/tephra-hbase-compat-1.0)
@@ -425,10 +405,6 @@ List of third-party dependencies grouped by their license type.
     Apache License, Version 2.0, LGPL 2.1, MPL 1.1
 
         * Javassist (org.javassist:javassist:3.30.2-GA - https://www.javassist.org/)
-
-    Apache License, Version 2.0, LGPL-2.1-or-later
-
-        * Java Native Access (net.java.dev.jna:jna:5.10.0 - https://github.com/java-native-access/jna)
 
     Apache License (v2.0)
 
@@ -564,26 +540,6 @@ List of third-party dependencies grouped by their license type.
         * Jakarta Expression Language Implementation (org.glassfish:jakarta.el:4.0.2 - https://projects.eclipse.org/projects/ee4j.el)
         * jms (jakarta.jms:jakarta.jms-api:2.0.2 - https://projects.eclipse.org/projects/ee4j.jms)
 
-    Elastic License 2.0
-
-        * rest-high-level (org.elasticsearch.client:elasticsearch-rest-high-level-client:7.17.13 - https://github.com/elastic/elasticsearch.git)
-
-    Elastic License 2.0, Server Side Public License, v 1
-
-        * aggs-matrix-stats (org.elasticsearch.plugin:aggs-matrix-stats-client:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * elasticsearch-cli (org.elasticsearch:elasticsearch-cli:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * elasticsearch-core (org.elasticsearch:elasticsearch-core:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * elasticsearch-geo (org.elasticsearch:elasticsearch-geo:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * elasticsearch-lz4 (org.elasticsearch:elasticsearch-lz4:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * elasticsearch-plugin-classloader (org.elasticsearch:elasticsearch-plugin-classloader:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * elasticsearch-secure-sm (org.elasticsearch:elasticsearch-secure-sm:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * elasticsearch-x-content (org.elasticsearch:elasticsearch-x-content:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * lang-mustache (org.elasticsearch.plugin:lang-mustache-client:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * mapper-extras (org.elasticsearch.plugin:mapper-extras-client:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * parent-join (org.elasticsearch.plugin:parent-join-client:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * rank-eval (org.elasticsearch.plugin:rank-eval-client:7.17.13 - https://github.com/elastic/elasticsearch.git)
-        * server (org.elasticsearch:elasticsearch:7.17.13 - https://github.com/elastic/elasticsearch.git)
-
     MIT License
 
         * argparse4j (net.sourceforge.argparse4j:argparse4j:0.9.0 - https://argparse4j.github.io)
@@ -591,7 +547,6 @@ List of third-party dependencies grouped by their license type.
         * JCodings (org.jruby.jcodings:jcodings:1.0.58 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Jedis (redis.clients:jedis:5.1.0 - https://github.com/redis/jedis)
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
-        * JOpt Simple (net.sf.jopt-simple:jopt-simple:5.0.2 - http://pholser.github.io/jopt-simple)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.36 - http://www.slf4j.org)
         * Microsoft JDBC Driver for SQL Server (com.microsoft.sqlserver:mssql-jdbc:6.2.1.jre7 - https://github.com/Microsoft/mssql-jdbc)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.36 - http://www.slf4j.org)
