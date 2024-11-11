@@ -243,9 +243,6 @@ The implementation of GetTime2 is here:
 ```
 package org.apache.storm.sql.runtime.functions.scalar.datetime;
 
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-
 public class GetTime2 {
     public static Long evaluate(String dateString, String dateFormat) {
         try {
