@@ -857,6 +857,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * JDO API (javax.jdo:jdo-api:3.0.1 - http://db.apache.org/jdo)
         * JDO API (org.datanucleus:javax.jdo:3.2.0-m3 - http://www.datanucleus.org/#/javax.jdo)
         * Jettison (org.codehaus.jettison:jettison:1.5.4 - no url defined)
+        * Joda-Time (joda-time:joda-time:2.12.7 - https://www.joda.org/joda-time/)
         * jsonschema2pojo-core (org.jsonschema2pojo:jsonschema2pojo-core:1.0.2 - https://github.com/joelittlejohn/jsonschema2pojo/jsonschema2pojo-core)
         * JPam (net.sf.jpam:jpam:1.1 - http://jpam.sf.net)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.5.1 - https://urielch.github.io/)
