@@ -127,7 +127,7 @@
         <awaitility.version>4.2.1</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <elasticsearch.version>7.17.13</elasticsearch.version>
+        <elasticsearch.version>7.17.25</elasticsearch.version>
         <calcite.version>1.16.0</calcite.version>
         <jedis.version>5.1.0</jedis.version>
         <activemq.version>5.18.3</activemq.version>
