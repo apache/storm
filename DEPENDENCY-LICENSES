@@ -229,7 +229,6 @@ List of third-party dependencies grouped by their license type.
         * JDO API (javax.jdo:jdo-api:3.0.1 - http://db.apache.org/jdo)
         * JDO API (org.datanucleus:javax.jdo:3.2.0-m3 - http://www.datanucleus.org/#/javax.jdo)
         * Jettison (org.codehaus.jettison:jettison:1.5.4 - https://github.com/jettison-json/jettison)
-        * Joda-Time (joda-time:joda-time:2.12.7 - https://www.joda.org/joda-time/)
         * JPam (net.sf.jpam:jpam:1.1 - http://jpam.sf.net)
         * jsonschema2pojo-core (org.jsonschema2pojo:jsonschema2pojo-core:1.0.2 - https://github.com/joelittlejohn/jsonschema2pojo/jsonschema2pojo-core)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.5.1 - https://urielch.github.io/)

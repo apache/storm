@@ -120,7 +120,6 @@
         <hbase.version>2.6.1-hadoop3</hbase.version>
         <kryo.version>5.6.0</kryo.version>
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
-        <joda-time.version>2.12.7</joda-time.version>
         <thrift.version>0.19.0</thrift.version>
         <junit.jupiter.version>5.11.3</junit.jupiter.version>
         <surefire.version>3.0.0-M5</surefire.version>
@@ -690,11 +689,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-                <version>${joda-time.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>

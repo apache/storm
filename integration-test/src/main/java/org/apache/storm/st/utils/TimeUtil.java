@@ -17,10 +17,11 @@
 
 package org.apache.storm.st.utils;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,13 +44,13 @@ public class TimeUtil {
         }
     }
 
-    public static DateTime floor(DateTime dateTime, int sec) {
-        long modValue = dateTime.getMillis() % (1000 * sec);
-        return dateTime.minus(modValue);
+    public static ZonedDateTime floor(ZonedDateTime dateTime, int sec) {
+        long modValue = dateTime.toInstant().toEpochMilli() % (1000 * sec);
+        return dateTime.minus(Duration.ofMillis(modValue));
     }
 
-    public static DateTime ceil(DateTime dateTime, int sec) {
-        long modValue = dateTime.getMillis() % (1000 * sec);
-        return dateTime.minus(modValue).plusSeconds(sec);
+    public static ZonedDateTime ceil(ZonedDateTime dateTime, int sec) {
+        long modValue = dateTime.toInstant().toEpochMilli() % (1000 * sec);
+        return dateTime.minus(Duration.ofMillis(modValue)).plusSeconds(sec);
     }
 }
