@@ -52,7 +52,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 11
+          java-version: 17
       - name: Set up Maven # We need to avoid default-http-blocker at the moment until we fix it ;-)
         uses: stCarolas/setup-maven@v5
         with:
