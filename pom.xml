@@ -1340,7 +1340,7 @@
                             <artifactId>checkstyle</artifactId>
                             <!-- If you change this, you should also update the storm_checkstyle.xml file to be
                             based on the google_checks.xml from the version of checkstyle you are choosing. -->
-                            <version>8.2</version>
+                            <version>10.20.1</version>
                         </dependency>
                     </dependencies>
                     <executions>
