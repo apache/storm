@@ -96,20 +96,9 @@ But small change will not affect the user experience. We will notify the user wh
 * [Apache HBase Integration](storm-hbase.html)
 * [Apache HDFS Integration](storm-hdfs.html)
 * [Apache Hive Integration](storm-hive.html)
-* [Apache Solr Integration](storm-solr.html)
-* [Apache Cassandra Integration](storm-cassandra.html)
-* [Apache RocketMQ Integration](storm-rocketmq.html)
 * [JDBC Integration](storm-jdbc.html)
 * [JMS Integration](storm-jms.html)
-* [MQTT Integration](storm-mqtt.html)
 * [Redis Integration](storm-redis.html)
-* [Event Hubs Intergration](storm-eventhubs.html)
-* [Elasticsearch Integration](storm-elasticsearch.html)
-* [Mongodb Integration](storm-mongodb.html)
-* [OpenTSDB Integration](storm-opentsdb.html)
-* [Kinesis Integration](storm-kinesis.html)
-* [PMML Integration](storm-pmml.html)
-* [Kestrel Integration](Kestrel-and-Storm.html)
 
 #### Container, Resource Management System Integration
 
