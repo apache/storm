@@ -60,3 +60,7 @@ hs_err_pid*
 # Test jars for zip slip
 !/storm-server/src/test/resources/evil-path-traversal.jar
 !/storm-server/src/test/resources/evil-path-traversal-resources.jar
+
+m2
+install.txt
+install-shade.txt
