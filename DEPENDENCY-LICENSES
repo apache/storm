@@ -346,7 +346,7 @@ List of third-party dependencies grouped by their license type.
         * sigar (org.fusesource:sigar:1.6.4 - http://fusesource.com/sigar/)
         * SLF4J 1 Binding for Log4j API (org.apache.logging.log4j:log4j-slf4j-impl:2.24.1 - https://logging.apache.org/log4j/2.x/log4j/log4j-slf4j-impl/)
         * SnakeYAML (org.yaml:snakeyaml:2.2 - https://bitbucket.org/snakeyaml/snakeyaml)
-        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.4 - https://github.com/xerial/snappy-java)
+        * snappy-java (org.xerial.snappy:snappy-java:1.1.10.7 - https://github.com/xerial/snappy-java)
         * Spring AOP (org.springframework:spring-aop:5.3.27 - https://github.com/spring-projects/spring-framework)
         * Spring Beans (org.springframework:spring-beans:5.3.27 - https://github.com/spring-projects/spring-framework)
         * Spring Commons Logging Bridge (org.springframework:spring-jcl:5.3.27 - https://github.com/spring-projects/spring-framework)
