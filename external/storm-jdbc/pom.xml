@@ -35,10 +35,6 @@
         </developer>
     </developers>
 
-    <properties>
-        <hikari.version>6.1.0</hikari.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -57,8 +53,6 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>${hikari.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.hsqldb</groupId>
