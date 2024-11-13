@@ -149,7 +149,7 @@
         <dropwizard.version>4.0.10</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.1.8</caffeine.version>
-        <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
+        <jakarta-jaxb-version>4.0.2</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
         <jaxb-version>2.3.1</jaxb-version>
