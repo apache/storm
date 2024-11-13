@@ -1031,7 +1031,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version
+                <version>${bouncycastle.version}</version>
             </dependency>
             <!-- Hadoop dependencies. Specified here so HDFS/HBase don't import older versions of these jars in their projects-->
             <dependency>
