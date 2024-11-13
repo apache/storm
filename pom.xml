@@ -120,6 +120,7 @@
         <hdfs.version>${hadoop.version}</hdfs.version>
         <hbase.version>2.6.1-hadoop3</hbase.version>
         <kryo.version>5.6.2</kryo.version>
+        <objensis.version>3.4</objensis.version>
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
         <joda-time.version>2.12.7</joda-time.version>
         <thrift.version>0.19.0</thrift.version>
@@ -571,6 +572,11 @@
                 <groupId>com.esotericsoftware</groupId>
                 <artifactId>kryo</artifactId>
                 <version>${kryo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.objenesis</groupId>
+                <artifactId>objenesis</artifactId>
+                <version>${objensis.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-cli</groupId>

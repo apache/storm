@@ -939,7 +939,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Netty/Transport/Native/Unix/Common (io.netty:netty-transport-native-unix-common:4.1.112.Final - https://netty.io/netty-transport-native-unix-common/)
         * Netty/Transport (io.netty:netty-transport:4.1.112.Final - https://netty.io/netty-transport/)
         * Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.37.2 - https://bitbucket.org/connect2id/nimbus-jose-jwt)
-        * Objenesis (org.objenesis:objenesis:2.5.1 - http://objenesis.org)
         * Objenesis (org.objenesis:objenesis:3.4 - http://objenesis.org/objenesis)
         * opencsv (net.sf.opencsv:opencsv:2.3 - http://opencsv.sf.net)
         * Open JSON (com.tdunning:json:1.8 - https://github.com/tdunning/open-json)

@@ -317,7 +317,7 @@ List of third-party dependencies grouped by their license type.
         * Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.37.2 - https://bitbucket.org/connect2id/nimbus-jose-jwt)
         * Objenesis (org.objenesis:objenesis:3.4 - http://objenesis.org/objenesis)
         * opencsv (net.sf.opencsv:opencsv:2.3 - http://opencsv.sf.net)
-        * Open JSON (com.tdunning:json:1.8 - https://github.com/tdunning/open-json)
+        * Open JSON (com.tdunning:json:1.8 - https://github.com/tdunning/ open-json)
         * OpenTelemetry Java (io.opentelemetry:opentelemetry-api:1.15.0 - https://github.com/open-telemetry/opentelemetry-java)
         * OpenTelemetry Java (io.opentelemetry:opentelemetry-context:1.15.0 - https://github.com/open-telemetry/opentelemetry-java)
         * OpenTelemetry Java (io.opentelemetry:opentelemetry-semconv:1.15.0-alpha - https://github.com/open-telemetry/opentelemetry-java)
