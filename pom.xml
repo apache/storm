@@ -1415,7 +1415,7 @@
                 <plugin>
                     <groupId>com.theoryinpractise</groupId>
                     <artifactId>clojure-maven-plugin</artifactId>
-                    <version>1.8.4</version>
+                    <version>1.9.3</version>
                     <extensions>true</extensions>
                 </plugin>
                 <plugin>
