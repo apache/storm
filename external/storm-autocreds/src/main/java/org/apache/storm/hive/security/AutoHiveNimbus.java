@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
  * Auto credentials nimbus plugin for Hive implementation. This class automatically
  * gets Hive delegation tokens and push it to user's topology.
  */
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     private static final Logger LOG = LoggerFactory.getLogger(AutoHiveNimbus.class);
 

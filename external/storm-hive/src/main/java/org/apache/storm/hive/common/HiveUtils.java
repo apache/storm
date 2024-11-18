@@ -27,6 +27,7 @@ import org.apache.storm.hive.security.AutoHive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class HiveUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveUtils.class);
 

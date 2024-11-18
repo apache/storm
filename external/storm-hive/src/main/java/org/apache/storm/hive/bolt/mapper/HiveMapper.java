@@ -26,6 +26,7 @@ import org.apache.storm.tuple.Tuple;
  * Maps a <code>org.apache.storm.tuple.Tupe</code> object
  * to a row in an Hive table.
  */
+@Deprecated(since = "2.7.1", forRemoval = true)
 public interface HiveMapper extends Serializable {
 
     /**

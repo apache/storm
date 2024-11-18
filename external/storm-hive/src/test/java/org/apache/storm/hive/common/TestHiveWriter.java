@@ -44,6 +44,7 @@ import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class TestHiveWriter {
     public static final String PART1_NAME = "city";
     public static final String PART2_NAME = "state";

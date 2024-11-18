@@ -43,6 +43,7 @@ import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class HiveBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(HiveBolt.class);
     @VisibleForTesting

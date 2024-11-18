@@ -57,6 +57,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class TestHiveBolt {
     final static String dbName = "testdb";
     final static String tblName = "test_table";

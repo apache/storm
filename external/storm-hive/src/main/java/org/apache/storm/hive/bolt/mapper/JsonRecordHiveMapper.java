@@ -28,6 +28,7 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class JsonRecordHiveMapper implements HiveMapper {
     private static final Logger LOG = LoggerFactory.getLogger(JsonRecordHiveMapper.class);
     private Fields columnFields;

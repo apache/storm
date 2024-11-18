@@ -29,6 +29,7 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class DelimitedRecordHiveMapper implements HiveMapper {
     private static final Logger LOG = LoggerFactory.getLogger(DelimitedRecordHiveMapper.class);
     private static final String DEFAULT_FIELD_DELIMITER = ",";

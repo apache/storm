@@ -29,6 +29,7 @@ import org.apache.storm.common.AbstractHadoopAutoCreds;
  * Auto credentials plugin for Hive implementation. This class provides a way to automatically
  * push credentials to a topology and to retrieve them in the worker.
  */
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class AutoHive extends AbstractHadoopAutoCreds {
     @Override
     public void doPrepare(Map<String, Object> conf) {

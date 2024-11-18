@@ -20,7 +20,7 @@ import org.apache.storm.trident.state.StateFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class HiveStateFactory implements StateFactory {
     private static final Logger LOG = LoggerFactory.getLogger(HiveStateFactory.class);
     private HiveOptions options;

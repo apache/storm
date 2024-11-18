@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Command tool of Hive credential renewer.
  */
+@Deprecated(since = "2.7.1", forRemoval = true)
 public final class AutoHiveCommand {
     private static final Logger LOG = LoggerFactory.getLogger(AutoHiveCommand.class);
 

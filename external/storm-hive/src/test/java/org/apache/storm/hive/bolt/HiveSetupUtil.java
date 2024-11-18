@@ -45,6 +45,7 @@ import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.thrift.TException;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class HiveSetupUtil {
     private final static String txnMgr = "org.apache.hadoop.hive.ql.lockmgr.DbTxnManager";
 

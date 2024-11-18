@@ -17,6 +17,7 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.BaseStateUpdater;
 import org.apache.storm.trident.tuple.TridentTuple;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class HiveUpdater extends BaseStateUpdater<HiveState> {
     @Override
     public void updateState(HiveState state, List<TridentTuple> tuples, TridentCollector collector) {

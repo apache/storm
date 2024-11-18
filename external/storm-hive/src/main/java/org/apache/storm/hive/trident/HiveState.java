@@ -39,6 +39,7 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class HiveState implements State {
     private static final Logger LOG = LoggerFactory.getLogger(HiveState.class);
     private HiveOptions options;

@@ -22,6 +22,7 @@ package org.apache.storm.hive.security;
  * This class provides util methods for storm-hdfs connector communicating
  * with secured Hive.
  */
+@Deprecated(since = "2.7.1", forRemoval = true)
 public final class HiveSecurityUtil {
     public static final String HIVE_KEYTAB_FILE_KEY = "hive.keytab.file";
     public static final String HIVE_PRINCIPAL_KEY = "hive.kerberos.principal";

@@ -15,6 +15,7 @@ package org.apache.storm.hive.common;
 import java.io.Serializable;
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
 
+@Deprecated(since = "2.7.1", forRemoval = true)
 public class HiveOptions implements Serializable {
     /**
      * Half of the default Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS
