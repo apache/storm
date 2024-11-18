@@ -128,7 +128,7 @@
         <surefire.version>3.5.2</surefire.version>
         <awaitility.version>4.2.2</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
-        <hamcrest.version>2.2</hamcrest.version>
+        <hamcrest.version>3.0</hamcrest.version>
         <calcite.version>1.16.0</calcite.version>
         <jedis.version>5.2.0</jedis.version>
         <activemq.version>5.18.3</activemq.version>
