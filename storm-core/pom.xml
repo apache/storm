@@ -34,7 +34,7 @@
         <worker-launcher.build.dir>${project.build.directory}/native/worker-launcher</worker-launcher.build.dir>
         <worker-launcher.additional_cflags />
         <argLine />
-        <conjure.version>2.1.3</conjure.version>
+        <conjure.version>2.2.0</conjure.version>
     </properties>
 
     <dependencies>
