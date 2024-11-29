@@ -28,16 +28,16 @@ package org.apache.storm.generated;
 public class AlreadyAliveException extends org.apache.storm.thrift.TException implements org.apache.storm.thrift.TBase<AlreadyAliveException, AlreadyAliveException._Fields>, java.io.Serializable, Cloneable, Comparable<AlreadyAliveException> {
   private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("AlreadyAliveException");
 
-  private static final org.apache.storm.thrift.protocol.TField MSG_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("msg", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
+  private static final org.apache.storm.thrift.protocol.TField MESSAGE_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("message", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
 
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new AlreadyAliveExceptionStandardSchemeFactory();
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new AlreadyAliveExceptionTupleSchemeFactory();
 
-  private @org.apache.storm.thrift.annotation.Nullable java.lang.String msg; // required
+  private @org.apache.storm.thrift.annotation.Nullable java.lang.String message; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
-    MSG((short)1, "msg");
+    MESSAGE((short)1, "message");
 
     private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -53,8 +53,8 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
     @org.apache.storm.thrift.annotation.Nullable
     public static _Fields findByThriftId(int fieldId) {
       switch(fieldId) {
-        case 1: // MSG
-          return MSG;
+        case 1: // MESSAGE
+          return MESSAGE;
         default:
           return null;
       }
@@ -101,7 +101,7 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
   public static final java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.MSG, new org.apache.storm.thrift.meta_data.FieldMetaData("msg", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
+    tmpMap.put(_Fields.MESSAGE, new org.apache.storm.thrift.meta_data.FieldMetaData("message", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
     org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(AlreadyAliveException.class, metaDataMap);
@@ -111,18 +111,18 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
   }
 
   public AlreadyAliveException(
-    java.lang.String msg)
+    java.lang.String message)
   {
     this();
-    this.msg = msg;
+    this.message = message;
   }
 
   /**
    * Performs a deep copy on <i>other</i>.
    */
   public AlreadyAliveException(AlreadyAliveException other) {
-    if (other.is_set_msg()) {
-      this.msg = other.msg;
+    if (other.isSetMessage()) {
+      this.message = other.message;
     }
   }
 
@@ -133,41 +133,41 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
 
   @Override
   public void clear() {
-    this.msg = null;
+    this.message = null;
   }
 
   @org.apache.storm.thrift.annotation.Nullable
-  public java.lang.String get_msg() {
-    return this.msg;
+  public java.lang.String getMessage() {
+    return this.message;
   }
 
-  public void set_msg(@org.apache.storm.thrift.annotation.Nullable java.lang.String msg) {
-    this.msg = msg;
+  public void setMessage(@org.apache.storm.thrift.annotation.Nullable java.lang.String message) {
+    this.message = message;
   }
 
-  public void unset_msg() {
-    this.msg = null;
+  public void unsetMessage() {
+    this.message = null;
   }
 
-  /** Returns true if field msg is set (has been assigned a value) and false otherwise */
-  public boolean is_set_msg() {
-    return this.msg != null;
+  /** Returns true if field message is set (has been assigned a value) and false otherwise */
+  public boolean isSetMessage() {
+    return this.message != null;
   }
 
-  public void set_msg_isSet(boolean value) {
+  public void setMessageIsSet(boolean value) {
     if (!value) {
-      this.msg = null;
+      this.message = null;
     }
   }
 
   @Override
   public void setFieldValue(_Fields field, @org.apache.storm.thrift.annotation.Nullable java.lang.Object value) {
     switch (field) {
-    case MSG:
+    case MESSAGE:
       if (value == null) {
-        unset_msg();
+        unsetMessage();
       } else {
-        set_msg((java.lang.String)value);
+        setMessage((java.lang.String)value);
       }
       break;
 
@@ -178,8 +178,8 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
   @Override
   public java.lang.Object getFieldValue(_Fields field) {
     switch (field) {
-    case MSG:
-      return get_msg();
+    case MESSAGE:
+      return getMessage();
 
     }
     throw new java.lang.IllegalStateException();
@@ -193,8 +193,8 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
     }
 
     switch (field) {
-    case MSG:
-      return is_set_msg();
+    case MESSAGE:
+      return isSetMessage();
     }
     throw new java.lang.IllegalStateException();
   }
@@ -212,12 +212,12 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
     if (this == that)
       return true;
 
-    boolean this_present_msg = true && this.is_set_msg();
-    boolean that_present_msg = true && that.is_set_msg();
-    if (this_present_msg || that_present_msg) {
-      if (!(this_present_msg && that_present_msg))
+    boolean this_present_message = true && this.isSetMessage();
+    boolean that_present_message = true && that.isSetMessage();
+    if (this_present_message || that_present_message) {
+      if (!(this_present_message && that_present_message))
         return false;
-      if (!this.msg.equals(that.msg))
+      if (!this.message.equals(that.message))
         return false;
     }
 
@@ -228,9 +228,9 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
   public int hashCode() {
     int hashCode = 1;
 
-    hashCode = hashCode * 8191 + ((is_set_msg()) ? 131071 : 524287);
-    if (is_set_msg())
-      hashCode = hashCode * 8191 + msg.hashCode();
+    hashCode = hashCode * 8191 + ((isSetMessage()) ? 131071 : 524287);
+    if (isSetMessage())
+      hashCode = hashCode * 8191 + message.hashCode();
 
     return hashCode;
   }
@@ -243,12 +243,12 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
 
     int lastComparison = 0;
 
-    lastComparison = java.lang.Boolean.compare(is_set_msg(), other.is_set_msg());
+    lastComparison = java.lang.Boolean.compare(isSetMessage(), other.isSetMessage());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (is_set_msg()) {
-      lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.msg, other.msg);
+    if (isSetMessage()) {
+      lastComparison = org.apache.storm.thrift.TBaseHelper.compareTo(this.message, other.message);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -277,11 +277,11 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
     java.lang.StringBuilder sb = new java.lang.StringBuilder("AlreadyAliveException(");
     boolean first = true;
 
-    sb.append("msg:");
-    if (this.msg == null) {
+    sb.append("message:");
+    if (this.message == null) {
       sb.append("null");
     } else {
-      sb.append(this.msg);
+      sb.append(this.message);
     }
     first = false;
     sb.append(")");
@@ -290,8 +290,8 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
 
   public void validate() throws org.apache.storm.thrift.TException {
     // check for required fields
-    if (!is_set_msg()) {
-      throw new org.apache.storm.thrift.protocol.TProtocolException("Required field 'msg' is unset! Struct:" + toString());
+    if (!isSetMessage()) {
+      throw new org.apache.storm.thrift.protocol.TProtocolException("Required field 'message' is unset! Struct:" + toString());
     }
 
     // check for sub-struct validity
@@ -333,10 +333,10 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
           break;
         }
         switch (schemeField.id) {
-          case 1: // MSG
+          case 1: // MESSAGE
             if (schemeField.type == org.apache.storm.thrift.protocol.TType.STRING) {
-              struct.msg = iprot.readString();
-              struct.set_msg_isSet(true);
+              struct.message = iprot.readString();
+              struct.setMessageIsSet(true);
             } else { 
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
@@ -355,9 +355,9 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
       struct.validate();
 
       oprot.writeStructBegin(STRUCT_DESC);
-      if (struct.msg != null) {
-        oprot.writeFieldBegin(MSG_FIELD_DESC);
-        oprot.writeString(struct.msg);
+      if (struct.message != null) {
+        oprot.writeFieldBegin(MESSAGE_FIELD_DESC);
+        oprot.writeString(struct.message);
         oprot.writeFieldEnd();
       }
       oprot.writeFieldStop();
@@ -378,14 +378,14 @@ public class AlreadyAliveException extends org.apache.storm.thrift.TException im
     @Override
     public void write(org.apache.storm.thrift.protocol.TProtocol prot, AlreadyAliveException struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-      oprot.writeString(struct.msg);
+      oprot.writeString(struct.message);
     }
 
     @Override
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, AlreadyAliveException struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-      struct.msg = iprot.readString();
-      struct.set_msg_isSet(true);
+      struct.message = iprot.readString();
+      struct.setMessageIsSet(true);
     }
   }
 

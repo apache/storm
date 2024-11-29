@@ -1536,28 +1536,28 @@
       (try
         (.getTopology nimbus id)
         (catch NotAliveException e
-           (is (= id (.get_msg e)))
+           (is (= id (.getMessage e)))
         )
       )
 
       (is (thrown? NotAliveException (.getTopologyConf nimbus id)))
       (try (.getTopologyConf nimbus id)
         (catch NotAliveException e
-           (is (= id (.get_msg e)))
+           (is (= id (.getMessage e)))
         )
       )
 
       (is (thrown? NotAliveException (.getTopologyInfo nimbus id)))
       (try (.getTopologyInfo nimbus id)
         (catch NotAliveException e
-           (is (= id (.get_msg e)))
+           (is (= id (.getMessage e)))
         )
       )
 
       (is (thrown? NotAliveException (.getUserTopology nimbus id)))
       (try (.getUserTopology nimbus id)
         (catch NotAliveException e
-           (is (= id (.get_msg e)))
+           (is (= id (.getMessage e)))
         )
       )
     )
