@@ -29,7 +29,7 @@
     <artifactId>storm-jms-examples</artifactId>
 
     <properties>
-        <spring.version>5.3.27</spring.version>
+        <spring.version>6.1.14</spring.version>
     </properties>
     <dependencies>
         <dependency>
