@@ -166,7 +166,7 @@
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.7.1</asm.version>
         <checker-qual.version>3.48.2</checker-qual.version>
-        <error_prone_annotations.version>2.35.1</error_prone_annotations.version>
+        <error_prone_annotations.version>2.36.0</error_prone_annotations.version>
         <bouncycastle.version>1.79</bouncycastle.version>
     </properties>
 
