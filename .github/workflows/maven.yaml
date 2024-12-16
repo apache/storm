@@ -47,7 +47,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -57,10 +57,6 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
-      - name: Set up Maven #We need to avoid default-http-blocker at the moment until we fix it ;-)
-        uses: stCarolas/setup-maven@v5
-        with:
-          maven-version: 3.6.3
       - name: Ensure a clean state without storm artifacts
         run: rm -rf ~/.m2/repository/org/apache/storm
       - name: Set up project dependencies
