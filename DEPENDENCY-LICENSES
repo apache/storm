@@ -22,13 +22,9 @@ List of third-party dependencies grouped by their license type.
 
         * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.18.3 - http://activemq.apache.org/activemq-client)
         * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
-        * aircompressor (io.airlift:aircompressor:0.10 - http://github.com/airlift/aircompressor)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.28 - https://metrics.dropwizard.io/metrics-annotation)
-        * Apache Ant Core (org.apache.ant:ant:1.9.1 - http://ant.apache.org/)
-        * Apache Ant Launcher (org.apache.ant:ant-launcher:1.9.1 - http://ant.apache.org/)
         * Apache Avro (org.apache.avro:avro:1.12.0 - https://avro.apache.org)
         * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
-        * Apache Calcite Avatica (Shaded) (org.apache.calcite.avatica:avatica:1.11.0 - https://calcite.apache.org/avatica/avatica)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.9.0 - https://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.17.1 - https://commons.apache.org/proper/commons-codec/)
@@ -48,29 +44,13 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Net (commons-net:commons-net:3.9.0 - https://commons.apache.org/proper/commons-net/)
         * Apache Commons Pool (org.apache.commons:commons-pool2:2.12.0 - https://commons.apache.org/proper/commons-pool/)
         * Apache Commons Text (org.apache.commons:commons-text:1.12.0 - https://commons.apache.org/proper/commons-text)
-        * Apache Curator (org.apache.curator:apache-curator:2.12.0 - http://curator.apache.org)
-        * Apache Derby Database Engine and Embedded JDBC Driver (org.apache.derby:derby:10.14.1.0 - http://db.apache.org/derby/)
-        * Apache Groovy (org.codehaus.groovy:groovy-all:2.4.11 - http://groovy-lang.org)
         * Apache Hadoop Annotations (org.apache.hadoop:hadoop-annotations:3.4.1 - no url defined)
-        * Apache Hadoop Archives (org.apache.hadoop:hadoop-archives:3.4.1 - no url defined)
         * Apache Hadoop Auth (org.apache.hadoop:hadoop-auth:3.4.1 - no url defined)
         * Apache Hadoop Client API (org.apache.hadoop:hadoop-client-api:3.4.1 - no url defined)
         * Apache Hadoop Client Runtime (org.apache.hadoop:hadoop-client-runtime:3.4.1 - no url defined)
         * Apache Hadoop Common (org.apache.hadoop:hadoop-common:3.4.1 - no url defined)
-        * Apache Hadoop HDFS (org.apache.hadoop:hadoop-hdfs:3.4.1 - no url defined)
-        * Apache Hadoop HDFS Client (org.apache.hadoop:hadoop-hdfs-client:3.4.1 - no url defined)
-        * Apache Hadoop MapReduce Core (org.apache.hadoop:hadoop-mapreduce-client-core:3.4.1 - no url defined)
-        * Apache Hadoop Registry (org.apache.hadoop:hadoop-registry:3.4.1 - no url defined)
         * Apache Hadoop shaded Guava (org.apache.hadoop.thirdparty:hadoop-shaded-guava:1.3.0 - https://www.apache.org/hadoop-thirdparty/hadoop-shaded-guava/)
         * Apache Hadoop shaded Protobuf (org.apache.hadoop.thirdparty:hadoop-shaded-protobuf_3_25:1.3.0 - https://www.apache.org/hadoop-thirdparty/hadoop-shaded-protobuf_3_25/)
-        * Apache Hadoop YARN API (org.apache.hadoop:hadoop-yarn-api:3.4.1 - no url defined)
-        * Apache Hadoop YARN ApplicationHistoryService (org.apache.hadoop:hadoop-yarn-server-applicationhistoryservice:3.4.1 - no url defined)
-        * Apache Hadoop YARN Client (org.apache.hadoop:hadoop-yarn-client:3.4.1 - no url defined)
-        * Apache Hadoop YARN Common (org.apache.hadoop:hadoop-yarn-common:3.4.1 - no url defined)
-        * Apache Hadoop YARN Registry (org.apache.hadoop:hadoop-yarn-registry:3.4.1 - no url defined)
-        * Apache Hadoop YARN ResourceManager (org.apache.hadoop:hadoop-yarn-server-resourcemanager:3.4.1 - no url defined)
-        * Apache Hadoop YARN Server Common (org.apache.hadoop:hadoop-yarn-server-common:3.4.1 - no url defined)
-        * Apache Hadoop YARN Web Proxy (org.apache.hadoop:hadoop-yarn-server-web-proxy:3.4.1 - no url defined)
         * Apache HBase - Client (org.apache.hbase:hbase-client:2.6.1-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-client)
         * Apache HBase - Common (org.apache.hbase:hbase-common:2.6.1-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-common)
         * Apache HBase - Hadoop Compatibility (org.apache.hbase:hbase-hadoop-compat:2.6.1-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-hadoop-compat)
@@ -90,39 +70,23 @@ List of third-party dependencies grouped by their license type.
         * Apache HttpComponents Core HTTP/1.1 (org.apache.httpcomponents.core5:httpcore5:5.2 - https://hc.apache.org/httpcomponents-core-5.2.x/5.2/httpcore5/)
         * Apache HttpComponents Core HTTP/2 (org.apache.httpcomponents.core5:httpcore5-h2:5.2 - https://hc.apache.org/httpcomponents-core-5.2.x/5.2/httpcore5-h2/)
         * Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
-        * Apache Ivy (org.apache.ivy:ivy:2.4.0 - http://ant.apache.org/ivy/)
         * Apache Kafka (org.apache.kafka:kafka-clients:3.9.0 - https://kafka.apache.org)
-        * Apache Log4j 1.x Compatibility API (org.apache.logging.log4j:log4j-1.2-api:2.24.3 - https://logging.apache.org/log4j/2.x/log4j/log4j-1.2-api/)
         * Apache Log4j API (org.apache.logging.log4j:log4j-api:2.24.3 - https://logging.apache.org/log4j/2.x/log4j/log4j-api/)
         * Apache Log4j Core (org.apache.logging.log4j:log4j-core:2.24.3 - https://logging.apache.org/log4j/2.x/log4j/log4j-core/)
-        * Apache Log4j Web (org.apache.logging.log4j:log4j-web:2.24.3 - https://logging.apache.org/log4j/2.x/log4j/log4j-web/)
         * Apache Maven Shade Plugin (org.apache.maven.plugins:maven-shade-plugin:3.6.0 - https://maven.apache.org/plugins/maven-shade-plugin/)
         * Apache Maven Shared Utils (org.apache.maven.shared:maven-shared-utils:3.2.1 - https://maven.apache.org/shared/maven-shared-utils/)
-        * Apache Parquet Hadoop Bundle (org.apache.parquet:parquet-hadoop-bundle:1.10.0 - https://parquet.apache.org)
-        * Apache Thrift (org.apache.thrift:libfb303:0.9.3 - http://thrift.apache.org)
         * Apache Thrift (org.apache.thrift:libthrift:0.19.0 - http://thrift.apache.org)
-        * Apache Twill API (org.apache.twill:twill-api:0.6.0-incubating - http://twill.incubator.apache.org/twill-api)
-        * Apache Twill common library (org.apache.twill:twill-common:0.6.0-incubating - http://twill.incubator.apache.org/twill-common)
-        * Apache Twill core library (org.apache.twill:twill-core:0.6.0-incubating - http://twill.incubator.apache.org/twill-core)
-        * Apache Twill discovery service API (org.apache.twill:twill-discovery-api:0.6.0-incubating - http://twill.incubator.apache.org/twill-discovery-api)
-        * Apache Twill discovery service implementations (org.apache.twill:twill-discovery-core:0.6.0-incubating - http://twill.incubator.apache.org/twill-discovery-core)
-        * Apache Twill ZooKeeper client library (org.apache.twill:twill-zookeeper:0.6.0-incubating - http://twill.incubator.apache.org/twill-zookeeper)
         * Apache XBean :: Spring (org.apache.xbean:xbean-spring:4.26 - http://geronimo.apache.org/maven/xbean/4.26/xbean-spring)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.13.0 - https://yetus.apache.org/audience-annotations)
         * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.3 - http://zookeeper.apache.org/zookeeper-jute)
         * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.3 - http://zookeeper.apache.org/zookeeper)
-        * Arrow Format (org.apache.arrow:arrow-format:0.8.0 - http://arrow.apache.org/arrow-format/)
-        * Arrow Memory (org.apache.arrow:arrow-memory:0.8.0 - http://arrow.apache.org/arrow-memory/)
-        * Arrow Vectors (org.apache.arrow:arrow-vector:0.8.0 - http://arrow.apache.org/arrow-vector/)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:2.5.1 - https://urielch.github.io/)
         * Auto Common Libraries (com.google.auto:auto-common:1.2.1 - https://github.com/google/auto/tree/master/common)
         * AutoService (com.google.auto.service:auto-service-annotations:1.1.1 - https://github.com/google/auto/tree/main/service)
         * AutoService Processor (com.google.auto.service:auto-service:1.1.1 - https://github.com/google/auto/tree/main/service)
-        * BoneCP :: Core Library (com.jolbox:bonecp:0.8.0.RELEASE - http://jolbox.com/bonecp)
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.1.8 - https://github.com/ben-manes/caffeine)
         * Calcite Core (org.apache.calcite:calcite-core:1.16.0 - https://calcite.apache.org/calcite-core)
-        * Calcite Druid (org.apache.calcite:calcite-druid:1.16.0 - https://calcite.apache.org/calcite-druid)
         * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.16.0 - https://calcite.apache.org/calcite-linq4j)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
         * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
@@ -130,17 +94,11 @@ List of third-party dependencies grouped by their license type.
         * com.helger:profiler (com.helger:profiler:1.1.1 - https://github.com/phax/profiler)
         * com.yahoo.datasketches:memory (com.yahoo.datasketches:memory:0.9.0 - https://datasketches.github.io/memory/)
         * com.yahoo.datasketches:sketches-core (com.yahoo.datasketches:sketches-core:0.9.0 - https://datasketches.github.io/sketches-core/)
-        * Commons Daemon (commons-daemon:commons-daemon:1.0.13 - http://commons.apache.org/daemon/)
-        * Commons DBCP (commons-dbcp:commons-dbcp:1.4 - http://commons.apache.org/dbcp/)
         * Commons Lang (commons-lang:commons-lang:2.6 - http://commons.apache.org/lang/)
         * Commons Logging (commons-logging:commons-logging:1.1.3 - http://commons.apache.org/proper/commons-logging/)
-        * Commons Pool (commons-pool:commons-pool:1.5.4 - http://commons.apache.org/pool/)
         * Curator Client (org.apache.curator:curator-client:5.7.1 - https://curator.apache.org/curator-client)
         * Curator Framework (org.apache.curator:curator-framework:5.7.1 - https://curator.apache.org/curator-framework)
         * Curator Recipes (org.apache.curator:curator-recipes:5.7.1 - https://curator.apache.org/curator-recipes)
-        * DataNucleus Core (org.datanucleus:datanucleus-core:4.1.17 - http://www.datanucleus.org/#/datanucleus-core)
-        * DataNucleus JDO API plugin (org.datanucleus:datanucleus-api-jdo:4.2.4 - http://www.datanucleus.org/#/datanucleus-api-jdo)
-        * DataNucleus RDBMS plugin (org.datanucleus:datanucleus-rdbms:4.1.19 - http://www.datanucleus.org/#/datanucleus-rdbms)
         * Dropwizard (io.dropwizard:dropwizard-core:4.0.10 - http://www.dropwizard.io/4.0.10/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-core)
         * Dropwizard Asset Bundle (io.dropwizard:dropwizard-assets:4.0.10 - http://www.dropwizard.io/4.0.10/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-assets)
         * Dropwizard Configuration Support (io.dropwizard:dropwizard-configuration:4.0.10 - http://www.dropwizard.io/4.0.10/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-configuration)
@@ -155,50 +113,19 @@ List of third-party dependencies grouped by their license type.
         * Dropwizard Servlet Support (io.dropwizard:dropwizard-servlets:4.0.10 - http://www.dropwizard.io/4.0.10/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-servlets)
         * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:4.0.10 - http://www.dropwizard.io/4.0.10/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
         * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:4.0.10 - http://www.dropwizard.io/4.0.10/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
-        * Ehcache (org.ehcache:ehcache:3.8.2 - http://ehcache.org)
         * error-prone annotations (com.google.errorprone:error_prone_annotations:2.35.1 - https://errorprone.info/error_prone_annotations)
         * Esri Geometry API for Java (com.esri.geometry:esri-geometry-api:2.0.0 - https://github.com/Esri/geometry-api-java)
-        * fastinfoset (com.sun.xml.fastinfoset:FastInfoset:1.2.15 - http://fi.java.net)
-        * fastutil (it.unimi.dsi:fastutil:6.5.6 - http://fasutil.dsi.unimi.it/)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.1 - http://findbugs.sourceforge.net/)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
-        * fst (de.ruedigermoeller:fst:2.50 - http://ruedigermoeller.github.io/fast-serialization/)
-        * Google Guice - Core Library (com.google.inject:guice:3.0 - http://code.google.com/p/google-guice/guice/)
         * Google Guice - Core Library (com.google.inject:guice:4.2.1 - https://github.com/google/guice/guice)
-        * Google Guice - Core Library (com.google.inject:guice:4.2.3 - https://github.com/google/guice/guice)
-        * Google Guice - Extensions - AssistedInject (com.google.inject.extensions:guice-assistedinject:3.0 - http://code.google.com/p/google-guice/extensions-parent/guice-assistedinject/)
-        * Google Guice - Extensions - Servlet (com.google.inject.extensions:guice-servlet:4.2.3 - https://github.com/google/guice/extensions-parent/guice-servlet)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.28 - https://metrics.dropwizard.io/metrics-graphite)
         * Gson (com.google.code.gson:gson:2.11.0 - https://github.com/google/gson)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:33.3.1-jre - https://github.com/google/guava)
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.2 - https://github.com/google/guava/failureaccess)
         * Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)
-        * Hadoop Metrics2 Reporter for Dropwizard Metrics (com.github.joshelser:dropwizard-metrics-hadoop-metrics2-reporter:0.1.2 - https://github.com/joshelser/dropwizard-hadoop-metrics2)
         * hawtbuf (org.fusesource.hawtbuf:hawtbuf:1.11 - http://hawtbuf.fusesource.org/hawtbuf)
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:7.0.5.Final - http://hibernate.org/validator/hibernate-validator)
         * HikariCP (com.zaxxer:HikariCP:6.2.0 - https://github.com/brettwooldridge/HikariCP)
-        * Hive Classifications (org.apache.hive:hive-classification:3.1.3 - https://hive.apache.org/hive-classification)
-        * Hive Common (org.apache.hive:hive-common:3.1.3 - https://hive.apache.org/hive-common)
-        * Hive HCatalog Core (org.apache.hive.hcatalog:hive-hcatalog-core:3.1.3 - https://hive.apache.org/hive-hcatalog/hive-hcatalog-core)
-        * Hive HCatalog Server Extensions (org.apache.hive.hcatalog:hive-hcatalog-server-extensions:3.1.3 - https://hive.apache.org/hive-hcatalog/hive-hcatalog-server-extensions)
-        * Hive HCatalog Streaming (org.apache.hive.hcatalog:hive-hcatalog-streaming:3.1.3 - https://hive.apache.org/hive-hcatalog/hive-hcatalog-streaming)
-        * Hive HCatalog Webhcat Java Client (org.apache.hive.hcatalog:hive-webhcat-java-client:3.1.3 - https://hive.apache.org/hive-hcatalog/hive-webhcat-java-client)
-        * Hive Llap Client (org.apache.hive:hive-llap-client:3.1.3 - https://hive.apache.org/hive-llap-client)
-        * Hive Llap Common (org.apache.hive:hive-llap-common:3.1.3 - https://hive.apache.org/hive-llap-common)
-        * Hive Llap Tez (org.apache.hive:hive-llap-tez:3.1.3 - https://hive.apache.org/hive-llap-tez)
-        * Hive Metastore (org.apache.hive:hive-metastore:3.1.3 - https://hive.apache.org/hive-metastore)
-        * Hive Query Language (org.apache.hive:hive-exec:3.1.3 - https://hive.apache.org/hive-exec)
-        * Hive Serde (org.apache.hive:hive-serde:3.1.3 - https://hive.apache.org/hive-serde)
-        * Hive Service RPC (org.apache.hive:hive-service-rpc:3.1.3 - https://hive.apache.org/hive-service-rpc)
-        * Hive Shims (org.apache.hive:hive-shims:3.1.3 - https://hive.apache.org/hive-shims)
-        * Hive Shims 0.23 (org.apache.hive.shims:hive-shims-0.23:3.1.3 - https://hive.apache.org/hive-shims-0.23)
-        * Hive Shims Common (org.apache.hive.shims:hive-shims-common:3.1.3 - https://hive.apache.org/hive-shims-common)
-        * Hive Shims Scheduler (org.apache.hive.shims:hive-shims-scheduler:3.1.3 - https://hive.apache.org/hive-shims-scheduler)
-        * Hive Standalone Metastore (org.apache.hive:hive-standalone-metastore:3.1.3 - https://www.apache.org/hive-standalone-metastore/)
-        * Hive Storage API (org.apache.hive:hive-storage-api:2.7.0 - https://www.apache.org/hive-storage-api/)
-        * Hive Upgrade Acid (org.apache.hive:hive-upgrade-acid:3.1.3 - https://www.apache.org/hive-upgrade-acid/)
-        * Hive Vector-Code-Gen Utilities (org.apache.hive:hive-vector-code-gen:3.1.3 - https://hive.apache.org/hive-vector-code-gen)
-        * HPPC Collections (com.carrotsearch:hppc:0.7.2 - http://labs.carrotsearch.com/hppc.html/hppc)
         * j2html (com.j2html:j2html:1.6.0 - http://j2html.com)
         * J2ObjC Annotations (com.google.j2objc:j2objc-annotations:3.0.0 - https://github.com/google/j2objc/)
         * Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.18.1 - https://github.com/FasterXML/jackson)
@@ -212,11 +139,8 @@ List of third-party dependencies grouped by their license type.
         * Jackson Integration for Metrics (io.dropwizard.metrics:metrics-json:4.2.28 - https://metrics.dropwizard.io/metrics-json)
         * Jackson Jakarta-RS: base (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base:2.18.1 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-base)
         * Jackson Jakarta-RS: JSON (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider:2.18.1 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-json-provider)
-        * Jackson-JAXRS: base (com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.18.1 - https://github.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-base)
-        * Jackson-JAXRS: JSON (com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.18.1 - https://github.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-json-provider)
         * Jackson module: Blackbird (com.fasterxml.jackson.module:jackson-module-blackbird:2.18.1 - https://github.com/FasterXML/jackson-modules-base)
         * Jackson module: Jakarta XML Bind Annotations (jakarta.xml.bind) (com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations:2.18.1 - https://github.com/FasterXML/jackson-modules-base)
-        * Jackson module: Old JAXB Annotations (javax.xml.bind) (com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.18.1 - https://github.com/FasterXML/jackson-modules-base)
         * Jackson-module-parameter-names (com.fasterxml.jackson.module:jackson-module-parameter-names:2.18.1 - https://github.com/FasterXML/jackson-modules-java8/jackson-module-parameter-names)
         * Jakarta Bean Validation API (jakarta.validation:jakarta.validation-api:3.0.2 - https://beanvalidation.org)
         * Jakarta Dependency Injection (jakarta.inject:jakarta.inject-api:2.0.1.MR - https://github.com/eclipse-ee4j/injection-api)
@@ -226,14 +150,8 @@ List of third-party dependencies grouped by their license type.
         * JCIP Annotations under Apache License (com.github.stephenc.jcip:jcip-annotations:1.0-1 - http://stephenc.github.com/jcip-annotations)
         * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:1.7.36 - http://www.slf4j.org)
         * jdependency (org.vafer:jdependency:2.10 - http://github.com/tcurdt/jdependency)
-        * JDO API (javax.jdo:jdo-api:3.0.1 - http://db.apache.org/jdo)
-        * JDO API (org.datanucleus:javax.jdo:3.2.0-m3 - http://www.datanucleus.org/#/javax.jdo)
         * Jettison (org.codehaus.jettison:jettison:1.5.4 - https://github.com/jettison-json/jettison)
-        * Joda-Time (joda-time:joda-time:2.12.7 - https://www.joda.org/joda-time/)
-        * JPam (net.sf.jpam:jpam:1.1 - http://jpam.sf.net)
-        * jsonschema2pojo-core (org.jsonschema2pojo:jsonschema2pojo-core:1.0.2 - https://github.com/joelittlejohn/jsonschema2pojo/jsonschema2pojo-core)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.5.1 - https://urielch.github.io/)
-        * JSR107 API and SPI (javax.cache:cache-api:1.1.1 - https://github.com/jsr107/jsr107spec)
         * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.28 - https://metrics.dropwizard.io/metrics-jvm)
         * Kerby ASN1 Project (org.apache.kerby:kerby-asn1:2.0.3 - https://directory.apache.org/kerby/kerby-common/kerby-asn1)
         * Kerby Config (org.apache.kerby:kerby-config:2.0.3 - https://directory.apache.org/kerby/kerby-common/kerby-config)
@@ -316,13 +234,9 @@ List of third-party dependencies grouped by their license type.
         * Netty/Transport (io.netty:netty-transport:4.1.115.Final - https://netty.io/netty-transport/)
         * Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.37.2 - https://bitbucket.org/connect2id/nimbus-jose-jwt)
         * Objenesis (org.objenesis:objenesis:3.4 - https://objenesis.org/objenesis)
-        * opencsv (net.sf.opencsv:opencsv:2.3 - http://opencsv.sf.net)
-        * Open JSON (com.tdunning:json:1.8 - https://github.com/tdunning/open-json)
         * OpenTelemetry Java (io.opentelemetry:opentelemetry-api:1.15.0 - https://github.com/open-telemetry/opentelemetry-java)
         * OpenTelemetry Java (io.opentelemetry:opentelemetry-context:1.15.0 - https://github.com/open-telemetry/opentelemetry-java)
         * OpenTelemetry Java (io.opentelemetry:opentelemetry-semconv:1.15.0-alpha - https://github.com/open-telemetry/opentelemetry-java)
-        * ORC Core (org.apache.orc:orc-core:1.5.8 - http://orc.apache.org/orc-core)
-        * ORC Shims (org.apache.orc:orc-shims:1.5.8 - http://orc.apache.org/orc-shims)
         * Plexus :: Component Annotations (org.codehaus.plexus:plexus-component-annotations:2.1.0 - http://codehaus-plexus.github.io/plexus-containers/plexus-component-annotations/)
         * Plexus Cipher: encryption/decryption Component (org.sonatype.plexus:plexus-cipher:1.4 - http://spice.sonatype.org/plexus-cipher)
         * Plexus Classworlds (org.codehaus.plexus:plexus-classworlds:2.6.0 - http://codehaus-plexus.github.io/plexus-classworlds/)
@@ -354,10 +268,6 @@ List of third-party dependencies grouped by their license type.
         * Spring JMS (org.springframework:spring-jms:5.3.27 - https://github.com/spring-projects/spring-framework)
         * Spring Messaging (org.springframework:spring-messaging:5.3.27 - https://github.com/spring-projects/spring-framework)
         * Spring Transaction (org.springframework:spring-tx:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * StAX API (stax:stax-api:1.0.1 - http://stax.codehaus.org/)
-        * Tephra API (co.cask.tephra:tephra-api:0.6.0 - https://github.com/caskdata/tephra/tephra-api)
-        * Tephra Core (co.cask.tephra:tephra-core:0.6.0 - https://github.com/caskdata/tephra/tephra-core)
-        * Tephra HBase 1.0 Compatibility (co.cask.tephra:tephra-hbase-compat-1.0:0.6.0 - https://github.com/caskdata/tephra/tephra-hbase-compat-1.0)
         * Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.4.2 - https://github.com/dropwizard/logback-throttling-appender/)
         * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.0 - https://github.com/FasterXML/woodstox)
 
@@ -384,9 +294,6 @@ List of third-party dependencies grouped by their license type.
 
         * Jetty :: Jakarta Servlet API and Schemas for JPMS and OSGi (org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:5.0.2 - https://eclipse.org/jetty/jetty-jakarta-servlet-api)
         * Jetty :: SetUID Java (org.eclipse.jetty.toolchain.setuid:jetty-setuid-java:1.0.4 - https://eclipse.org/jetty/jetty-setuid-parent/jetty-setuid-java)
-        * Jetty :: Websocket :: API (org.eclipse.jetty.websocket:websocket-api:9.4.53.v20231009 - https://eclipse.org/jetty/websocket-parent/websocket-api)
-        * Jetty :: Websocket :: Client (org.eclipse.jetty.websocket:websocket-client:9.4.53.v20231009 - https://eclipse.org/jetty/websocket-parent/websocket-client)
-        * Jetty :: Websocket :: Common (org.eclipse.jetty.websocket:websocket-common:9.4.53.v20231009 - https://eclipse.org/jetty/websocket-parent/websocket-common)
 
     Apache License, Version 2.0, Eclipse Public License - Version 2.0
 
@@ -405,10 +312,6 @@ List of third-party dependencies grouped by their license type.
     Apache License, Version 2.0, LGPL 2.1, MPL 1.1
 
         * Javassist (org.javassist:javassist:3.30.2-GA - https://www.javassist.org/)
-
-    Apache License (v2.0)
-
-        * FlatBuffers Java API (com.vlkan:flatbuffers:1.2.0-3f79e055 - https://github.com/vy/flatbuffers)
 
     Bouncy Castle Licence
 
@@ -432,61 +335,32 @@ List of third-party dependencies grouped by their license type.
         * Commons Compiler (org.codehaus.janino:commons-compiler:2.7.6 - http://docs.codehaus.org/display/JANINO/Home/commons-compiler)
         * dnsjava (dnsjava:dnsjava:3.6.1 - https://github.com/dnsjava/dnsjava)
         * Janino (org.codehaus.janino:janino:2.7.6 - http://docs.codehaus.org/display/JANINO/Home/janino)
-        * leveldbjni-all (org.fusesource.leveldbjni:leveldbjni-all:1.8 - http://leveldbjni.fusesource.org/leveldbjni-all)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
 
     BSD License
 
-        * ANTLR 3 Runtime (org.antlr:antlr-runtime:3.5.2 - http://www.antlr.org)
-        * ANTLR ST4 4.0.4 (org.antlr:ST4:4.0.4 - http://www.stringtemplate.org)
-        * Javolution (javolution:javolution:5.5.1 - http://javolution.org)
         * JLine (jline:jline:2.14.6 - http://nexus.sonatype.org/oss-repository-hosting.html/jline)
-        * JLine Bundle (org.jline:jline:3.9.0 - http://nexus.sonatype.org/oss-repository-hosting.html/jline-parent/jline)
         * Stax2 API (org.codehaus.woodstox:stax2-api:4.2.1 - http://github.com/FasterXML/stax2-api)
 
     CDDL/GPLv2+CE
 
         * JavaBeans Activation Framework API jar (javax.activation:javax.activation-api:1.2.0 - http://java.net/all/javax.activation-api/)
 
-    CDDL License
-
-        * jsr311-api (javax.ws.rs:jsr311-api:1.1.1 - https://jsr311.dev.java.net)
-
-    CDDL v1.1 / GPL v2 dual license
-
-        * Codemodel Core (com.sun.codemodel:codemodel:2.6 - http://codemodel.java.net/codemodel/)
-
     Common Development and Distribution License
 
         * Java Servlet API (javax.servlet:javax.servlet-api:3.1.0 - http://servlet-spec.java.net)
         * javax.annotation API (javax.annotation:javax.annotation-api:1.3.2 - http://jcp.org/en/jsr/detail?id=250)
-        * JAXB Runtime (org.glassfish.jaxb:jaxb-runtime:2.3.1 - http://jaxb.java.net/jaxb-runtime-parent/jaxb-runtime)
-        * TXW2 Runtime (org.glassfish.jaxb:txw2:2.3.1 - http://jaxb.java.net/jaxb-txw-parent/txw2)
 
     Common Development and Distribution License (CDDL) v1.0
 
         * JSR-250 Common Annotations for the JavaTM Platform (javax.annotation:jsr250-api:1.0 - http://jcp.org/aboutJava/communityprocess/final/jsr250/index.html)
 
-    Common Development and Distribution License (CDDL) v1.1
-
-        * Java Transaction API (javax.transaction:jta:1.1 - http://java.sun.com/products/jta)
-        * transaction-api (javax.transaction:transaction-api:1.1 - no url defined)
-
     Common Development and Distribution License (CDDL) v1.1, The GNU General Public License (GPL), Version 2, With Classpath Exception
 
-        * istack common utility code runtime (com.sun.istack:istack-commons-runtime:3.0.7 - http://java.net/istack-commons/istack-commons-runtime/)
         * jaxb-api (javax.xml.bind:jaxb-api:2.3.1 - https://github.com/javaee/jaxb-spec/jaxb-api)
         * JAXB RI (com.sun.xml.bind:jaxb-impl:2.2.3-1 - http://jaxb.java.net/)
-        * jersey-client (com.sun.jersey:jersey-client:1.19.4 - https://jersey.java.net/jersey-client/)
-        * jersey-core (com.sun.jersey:jersey-core:1.19.4 - https://jersey.java.net/jersey-core/)
-        * jersey-guice (com.sun.jersey.contribs:jersey-guice:1.19.4 - https://jersey.java.net/jersey-contribs/jersey-guice/)
         * jersey-json (com.github.pjfanning:jersey-json:1.22.0 - https://github.com/pjfanning/jersey-1.x)
-        * jersey-server (com.sun.jersey:jersey-server:1.19.4 - https://jersey.java.net/jersey-server/)
         * jersey-servlet (com.sun.jersey:jersey-servlet:1.19.4 - https://jersey.java.net/jersey-servlet/)
-
-    Dual license consisting of the CDDL v1.1 and GPL v2
-
-        * Extended StAX API (org.jvnet.staxex:stax-ex:1.8 - http://stax-ex.java.net/)
 
     Eclipse Distribution License, Version 1.0
 
@@ -539,7 +413,6 @@ List of third-party dependencies grouped by their license type.
         * Eclipse Expressly (org.glassfish.expressly:expressly:5.0.0 - https://projects.eclipse.org/projects/ee4j.expressly)
         * Jakarta Expression Language API (jakarta.el:jakarta.el-api:4.0.0 - https://projects.eclipse.org/projects/ee4j.el)
         * Jakarta Expression Language Implementation (org.glassfish:jakarta.el:4.0.2 - https://projects.eclipse.org/projects/ee4j.el)
-        * jms (jakarta.jms:jakarta.jms-api:2.0.2 - https://projects.eclipse.org/projects/ee4j.jms)
 
     MIT License
 
@@ -549,13 +422,8 @@ List of third-party dependencies grouped by their license type.
         * Jedis (redis.clients:jedis:5.2.0 - https://github.com/redis/jedis)
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.36 - http://www.slf4j.org)
-        * Microsoft JDBC Driver for SQL Server (com.microsoft.sqlserver:mssql-jdbc:6.2.1.jre7 - https://github.com/Microsoft/mssql-jdbc)
         * SLF4J API Module (org.slf4j:slf4j-api:1.7.36 - http://www.slf4j.org)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
-
-    Modified BSD License
-
-        * sqlline (sqlline:sqlline:1.3.0 - http://github.com/julianhyde/sqlline)
 
     Public Domain
 
