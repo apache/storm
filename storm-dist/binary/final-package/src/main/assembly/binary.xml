@@ -132,13 +132,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../../external/storm-hive</directory>
-            <outputDirectory>external/storm-hive</outputDirectory>
-            <includes>
-                <include>README.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../../../external/storm-eventhubs</directory>
             <outputDirectory>external/storm-eventhubs</outputDirectory>
             <includes>

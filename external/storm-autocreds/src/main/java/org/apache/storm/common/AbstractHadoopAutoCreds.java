@@ -27,7 +27,6 @@ import java.util.Set;
 import javax.security.auth.Subject;
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.util.Pair;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -53,7 +52,7 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
 
     @Override
     public void populateCredentials(Map<String, String> credentials) {
-        credentials.put(getCredentialKey(StringUtils.EMPTY),
+        credentials.put(getCredentialKey(""),
                 DatatypeConverter.printBase64Binary("dummy place holder".getBytes()));
     }
 

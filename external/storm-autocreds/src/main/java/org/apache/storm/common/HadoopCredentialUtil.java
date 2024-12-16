@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.util.Pair;
 import org.apache.hadoop.security.Credentials;
 import org.slf4j.Logger;
@@ -53,9 +52,9 @@ final class HadoopCredentialUtil {
                 }
             }
         } else {
-            Credentials cred = doGetCredentials(provider, credentials, StringUtils.EMPTY);
+            Credentials cred = doGetCredentials(provider, credentials, "");
             if (cred != null) {
-                res.add(new Pair(StringUtils.EMPTY, cred));
+                res.add(new Pair("", cred));
             }
         }
         return res;
