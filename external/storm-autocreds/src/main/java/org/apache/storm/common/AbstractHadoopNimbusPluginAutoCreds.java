@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -63,7 +62,7 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
                             DatatypeConverter.printBase64Binary(getHadoopCredentials(topologyConf, configKey)));
                 }
             } else {
-                credentials.put(getCredentialKey(StringUtils.EMPTY),
+                credentials.put(getCredentialKey(""),
                         DatatypeConverter.printBase64Binary(getHadoopCredentials(topologyConf, topologyOwnerPrincipal)));
             }
             LOG.info("Tokens added to credentials map.");
