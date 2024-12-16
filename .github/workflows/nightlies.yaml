@@ -52,11 +52,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
-      - name: Set up Maven # We need to avoid default-http-blocker at the moment until we fix it ;-)
-        uses: stCarolas/setup-maven@v5
-        with:
-          maven-version: 3.6.3
+          java-version: 20
       - name: Ensure a clean state without storm artifacts
         run: rm -rf ~/.m2/repository/org/apache/storm
       - name: Set up project dependencies
