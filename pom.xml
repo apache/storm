@@ -84,14 +84,14 @@
         <!-- dependency versions -->
         <clojure.version>1.12.0</clojure.version>
         <commons-compress.version>1.27.1</commons-compress.version>
-        <commons-io.version>2.17.0</commons-io.version>
+        <commons-io.version>2.18.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-exec.version>1.4.0</commons-exec.version>
         <commons-collections.version>4.4</commons-collections.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
         <commons-codec.version>1.17.1</commons-codec.version>
-        <commons-text.version>1.12.0</commons-text.version>
+        <commons-text.version>1.13.0</commons-text.version>
         <commons-cli.version>1.9.0</commons-cli.version>
         <curator.version>5.7.1</curator.version>
         <jetty.version>11.0.24</jetty.version>
@@ -109,12 +109,12 @@
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <metrics.version>4.2.28</metrics.version>
+        <metrics.version>4.2.29</metrics.version>
         <mockito.version>5.14.2</mockito.version>
         <zookeeper.version>3.9.3</zookeeper.version>
         <snappy.version>1.1.10.7</snappy.version>
         <jline.version>2.14.6</jline.version>
-        <hikari.version>6.2.0</hikari.version>
+        <hikari.version>6.2.1</hikari.version>
         <hadoop.version>3.4.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
         <hbase.version>2.6.1-hadoop3</hbase.version>
@@ -132,8 +132,8 @@
         <jedis.version>5.2.0</jedis.version>
         <activemq.version>5.18.3</activemq.version>
 
-        <jackson.version>2.18.1</jackson.version>
-        <jackson.databind.version>2.18.1</jackson.databind.version>
+        <jackson.version>2.18.2</jackson.version>
+        <jackson.databind.version>2.18.2</jackson.databind.version>
         <storm.kafka.client.version>3.9.0</storm.kafka.client.version>
         <testcontainers.version>1.20.4</testcontainers.version>
 
@@ -147,7 +147,7 @@
         <maven.version>3.9.9</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.9</jersey.version>
-        <dropwizard.version>4.0.10</dropwizard.version>
+        <dropwizard.version>4.0.11</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.1.8</caffeine.version>
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
@@ -157,15 +157,15 @@
         <activation-version>1.1.1</activation-version>
         <rocksdb-jni-version>9.7.3</rocksdb-jni-version>
         <json-smart.version>2.5.1</json-smart.version>
-        <byte-buddy.version>1.15.10</byte-buddy.version>
+        <byte-buddy.version>1.15.11</byte-buddy.version>
         <gson.version>2.11.0</gson.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.7.1</asm.version>
-        <checker-qual.version>3.48.2</checker-qual.version>
-        <error_prone_annotations.version>2.35.1</error_prone_annotations.version>
+        <checker-qual.version>3.48.3</checker-qual.version>
+        <error_prone_annotations.version>2.36.0</error_prone_annotations.version>
         <bouncycastle.version>1.79</bouncycastle.version>
     </properties>
 
@@ -1640,7 +1640,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.1</version>
+                <version>3.11.2</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
