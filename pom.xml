@@ -105,7 +105,7 @@
         <guava.version>33.3.1-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.69.Final</netty-tcnative.version>
-        <netty.version>4.1.115.Final</netty.version>
+        <netty.version>4.1.116.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
