@@ -14,11 +14,15 @@ package org.apache.storm.serialization;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.util.Util;
 import java.util.Map;
 import org.apache.storm.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class DefaultKryoFactory implements IKryoFactory {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultKryoFactory.class);
 
     @Override
     public Kryo getKryo(Map<String, Object> conf) {
@@ -51,6 +55,12 @@ public class DefaultKryoFactory implements IKryoFactory {
         @Override
         public Serializer getDefaultSerializer(Class type) {
             if (override) {
+                LOG.warn("Class is not registered: {}\n"
+                        + "Note: To register this class use: kryo.register({});\n"
+                        + "Falling back to java serialization.",
+                        Util.className(type), Util.className(type)
+                );
+
                 return new SerializableSerializer();
             } else {
                 return super.getDefaultSerializer(type);
