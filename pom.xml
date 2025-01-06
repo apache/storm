@@ -110,7 +110,7 @@
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>1.7.36</slf4j.version>
         <metrics.version>4.2.29</metrics.version>
-        <mockito.version>5.14.2</mockito.version>
+        <mockito.version>5.15.2</mockito.version>
         <zookeeper.version>3.9.3</zookeeper.version>
         <snappy.version>1.1.10.7</snappy.version>
         <jline.version>2.14.6</jline.version>
