@@ -665,7 +665,7 @@ The license texts of these dependencies can be found in the licenses directory.
     Apache License
 
         * carbonite (org.clojars.bipinprasad:carbonite:1.6.0 - https://github.com/bipinprasad/carbonite)
-        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:2.0.6 - http://www.slf4j.org)
+        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:2.0.16 - http://www.slf4j.org)
 
     Apache License, Version 2.0
 
@@ -775,7 +775,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * javax.inject (javax.inject:javax.inject:1 - http://code.google.com/p/atinject/)
         * JBoss Logging 3 (org.jboss.logging:jboss-logging:3.6.0.Final - http://www.jboss.org)
         * JCIP Annotations under Apache License (com.github.stephenc.jcip:jcip-annotations:1.0-1 - http://stephenc.github.com/jcip-annotations)
-        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.6 - http://www.slf4j.org)
+        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.16 - http://www.slf4j.org)
         * Jettison (org.codehaus.jettison:jettison:1.5.4 - no url defined)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.5.1 - https://urielch.github.io/)
         * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.29 - https://metrics.dropwizard.io/metrics-jvm)
@@ -998,8 +998,8 @@ The license texts of these dependencies can be found in the licenses directory.
         * Checker Qual (org.checkerframework:checker-qual:3.48.3 - https://checkerframework.org/)
         * JCodings (org.jruby.jcodings:jcodings:1.0.58 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
-        * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.6 - http://www.slf4j.org)
-        * SLF4J API Module (org.slf4j:slf4j-api:2.0.6 - http://www.slf4j.org)
+        * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.16 - http://www.slf4j.org)
+        * SLF4J API Module (org.slf4j:slf4j-api:2.0.16 - http://www.slf4j.org)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
 
     The Go license
