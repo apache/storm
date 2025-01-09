@@ -749,7 +749,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.29 - https://metrics.dropwizard.io/metrics-graphite)
         * Gson (com.google.code.gson:gson:2.11.0 - https://github.com/google/gson/gson)
-        * Guava: Google Core Libraries for Java (com.google.guava:guava:33.3.1-jre - https://github.com/google/guava)
+        * Guava: Google Core Libraries for Java (com.google.guava:guava:33.4.0-jre - https://github.com/google/guava)
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.2 - https://github.com/google/guava/failureaccess)
         * Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:7.0.5.Final - http://hibernate.org/validator/hibernate-validator)
