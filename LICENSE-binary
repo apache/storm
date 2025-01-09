@@ -995,7 +995,7 @@ The license texts of these dependencies can be found in the licenses directory.
     MIT License
 
         * argparse4j (net.sourceforge.argparse4j:argparse4j:0.9.0 - https://argparse4j.github.io)
-        * Checker Qual (org.checkerframework:checker-qual:3.48.3 - https://checkerframework.org/)
+        * Checker Qual (org.checkerframework:checker-qual:3.48.4 - https://checkerframework.org/)
         * JCodings (org.jruby.jcodings:jcodings:1.0.58 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.16 - http://www.slf4j.org)
