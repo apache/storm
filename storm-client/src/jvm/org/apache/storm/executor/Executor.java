@@ -285,6 +285,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         int taskId = addressedTuple.getDest();
 
         TupleImpl tuple = (TupleImpl) addressedTuple.getTuple();
+        String streamId = tuple.getSourceStreamId();
+        boolean isSpout = this instanceof SpoutExecutor;
         if (isDebug) {
             LOG.info("Processing received TUPLE: {} for TASK: {} ", tuple, taskId);
         }
@@ -292,6 +294,10 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         try {
             if (taskId != AddressedTuple.BROADCAST_DEST) {
                 tupleActionFn(taskId, tuple);
+            } else if (isSpout && streamId.equals(Constants.SYSTEM_TICK_STREAM_ID)) {
+                //taskId is irrelevant here. Ensures pending.rotate() is called once per tick.
+                tupleActionFn(taskIds.get(0), tuple);
+
             } else {
                 for (Integer t : taskIds) {
                     tupleActionFn(t, tuple);
