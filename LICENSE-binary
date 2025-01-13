@@ -674,7 +674,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.9.0 - http://commons.apache.org/proper/commons-cli/)
-        * Apache Commons Codec (commons-codec:commons-codec:1.17.1 - http://commons.apache.org/proper/commons-codec/)
+        * Apache Commons Codec (commons-codec:commons-codec:1.17.2 - http://commons.apache.org/proper/commons-codec/)
         * Apache Commons Collections (commons-collections:commons-collections:3.2.2 - http://commons.apache.org/collections/)
         * Apache Commons Collections (org.apache.commons:commons-collections4:4.4 - https://commons.apache.org/proper/commons-collections/)
         * Apache Commons Compress (org.apache.commons:commons-compress:1.27.1 - https://commons.apache.org/proper/commons-compress/)
