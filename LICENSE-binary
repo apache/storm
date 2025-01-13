@@ -865,22 +865,22 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Apache License, Version 2.0, BSD 2-Clause, Eclipse Distribution License, Version 1.0, Eclipse Public License, Version 2.0, jQuery license, MIT License, Modified BSD, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception, W3C license
 
-        * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
-        * jersey-container-grizzly2-servlet (org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-servlet)
-        * jersey-container-servlet (org.glassfish.jersey.containers:jersey-container-servlet:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet)
-        * jersey-container-servlet-core (org.glassfish.jersey.containers:jersey-container-servlet-core:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet-core)
-        * jersey-core-client (org.glassfish.jersey.core:jersey-client:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-client)
-        * jersey-ext-bean-validation (org.glassfish.jersey.ext:jersey-bean-validation:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-bean-validation)
-        * jersey-ext-metainf-services (org.glassfish.jersey.ext:jersey-metainf-services:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-metainf-services)
-        * jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-hk2)
+        * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
+        * jersey-container-grizzly2-servlet (org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-servlet)
+        * jersey-container-servlet (org.glassfish.jersey.containers:jersey-container-servlet:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet)
+        * jersey-container-servlet-core (org.glassfish.jersey.containers:jersey-container-servlet-core:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet-core)
+        * jersey-core-client (org.glassfish.jersey.core:jersey-client:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-client)
+        * jersey-ext-bean-validation (org.glassfish.jersey.ext:jersey-bean-validation:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-bean-validation)
+        * jersey-ext-metainf-services (org.glassfish.jersey.ext:jersey-metainf-services:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-metainf-services)
+        * jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-hk2)
 
     Apache License, Version 2.0, Eclipse Public License, Version 2.0, Modified BSD, The GNU General Public License (GPL), Version 2, With Classpath Exception
 
-        * jersey-core-server (org.glassfish.jersey.core:jersey-server:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
+        * jersey-core-server (org.glassfish.jersey.core:jersey-server:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
 
     Apache License, Version 2.0, Eclipse Public License, Version 2.0, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception
 
-        * jersey-core-common (org.glassfish.jersey.core:jersey-common:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
+        * jersey-core-common (org.glassfish.jersey.core:jersey-common:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
 
     Apache License, Version 2.0, Eclipse Public License - Version 1.0
 
