@@ -308,7 +308,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         NIMBUS_SUBJECT.getPrincipals().add(new NimbusPrincipal());
         NIMBUS_SUBJECT.setReadOnly();
     }
-    
+
     private static final TopologyStateTransition NOOP_TRANSITION = (arg, nimbus, topoId, base) -> null;
     private static final TopologyStateTransition INACTIVE_TRANSITION = (arg, nimbus, topoId, base) -> Nimbus.make(TopologyStatus.INACTIVE);
     private static final TopologyStateTransition ACTIVE_TRANSITION = (arg, nimbus, topoId, base) -> Nimbus.make(TopologyStatus.ACTIVE);
@@ -3218,7 +3218,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         ret.allComponents = new HashSet<>(ret.taskToComponent.values());
         return ret;
     }
-    
+
     @VisibleForTesting
     public boolean awaitLeadership(long timeout, TimeUnit timeUnit) throws InterruptedException {
         return leaderElector.awaitLeadership(timeout, timeUnit);
@@ -4109,6 +4109,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 state.setupBlob(key, ni, getVersionForKey(key, ni, zkClient));
             }
             LOG.debug("Created state in zookeeper {} {} {}", state, store, ni);
+        } catch (KeyNotFoundException e) {
+            LOG.warn("Key not found while creating state in zookeeper - key: " + key, e);
         } catch (Exception e) {
             LOG.warn("Exception while creating state in zookeeper - key: " + key, e);
             if (e instanceof TException) {
@@ -5313,7 +5315,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static class ClusterSummaryMetrics implements MetricSet {
         private static final String SUMMARY = "summary";
         private final Map<String, com.codahale.metrics.Metric> metrics = new HashMap<>();
-        
+
         public com.codahale.metrics.Metric put(String key, com.codahale.metrics.Metric value) {
             return metrics.put(MetricRegistry.name(SUMMARY, key), value);
         }
@@ -5323,12 +5325,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             return metrics;
         }
     }
-    
+
     private class ClusterSummaryMetricSet implements Runnable {
         private static final int CACHING_WINDOW = 5;
-        
+
         private final ClusterSummaryMetrics clusterSummaryMetrics = new ClusterSummaryMetrics();
-        
+
         private final Function<String, Histogram> registerHistogram = (name) -> {
             //This histogram reflects the data distribution across only one ClusterSummary, i.e.,
             // data distribution across all entities of a type (e.g., data from all nimbus/topologies) at one moment.

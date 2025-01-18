@@ -90,7 +90,7 @@
         <commons-exec.version>1.4.0</commons-exec.version>
         <commons-collections.version>4.4</commons-collections.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
-        <commons-codec.version>1.17.1</commons-codec.version>
+        <commons-codec.version>1.17.2</commons-codec.version>
         <commons-text.version>1.13.0</commons-text.version>
         <commons-cli.version>1.9.0</commons-cli.version>
         <curator.version>5.7.1</curator.version>
@@ -146,7 +146,7 @@
         <maven-resolver.version>1.9.22</maven-resolver.version>
         <maven.version>3.9.9</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
-        <jersey.version>3.1.9</jersey.version>
+        <jersey.version>3.1.10</jersey.version>
         <dropwizard.version>4.0.11</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.1.8</caffeine.version>
@@ -155,7 +155,7 @@
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
         <jaxb-version>2.3.1</jaxb-version>
         <activation-version>1.1.1</activation-version>
-        <rocksdb-jni-version>9.7.3</rocksdb-jni-version>
+        <rocksdb-jni-version>9.8.4</rocksdb-jni-version>
         <json-smart.version>2.5.1</json-smart.version>
         <byte-buddy.version>1.15.11</byte-buddy.version>
         <gson.version>2.11.0</gson.version>

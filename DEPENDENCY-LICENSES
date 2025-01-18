@@ -27,13 +27,13 @@ List of third-party dependencies grouped by their license type.
         * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.9.0 - https://commons.apache.org/proper/commons-cli/)
-        * Apache Commons Codec (commons-codec:commons-codec:1.17.1 - https://commons.apache.org/proper/commons-codec/)
+        * Apache Commons Codec (commons-codec:commons-codec:1.17.2 - https://commons.apache.org/proper/commons-codec/)
         * Apache Commons Collections (commons-collections:commons-collections:3.2.2 - http://commons.apache.org/collections/)
         * Apache Commons Collections (org.apache.commons:commons-collections4:4.4 - https://commons.apache.org/proper/commons-collections/)
         * Apache Commons Compress (org.apache.commons:commons-compress:1.27.1 - https://commons.apache.org/proper/commons-compress/)
         * Apache Commons Configuration (org.apache.commons:commons-configuration2:2.11.0 - https://commons.apache.org/proper/commons-configuration/)
         * Apache Commons Crypto (org.apache.commons:commons-crypto:1.1.0 - https://commons.apache.org/proper/commons-crypto/)
-        * Apache Commons CSV (org.apache.commons:commons-csv:1.12.0 - https://commons.apache.org/proper/commons-csv/)
+        * Apache Commons CSV (org.apache.commons:commons-csv:1.13.0 - https://commons.apache.org/proper/commons-csv/)
         * Apache Commons Exec (org.apache.commons:commons-exec:1.4.0 - https://commons.apache.org/proper/commons-exec/)
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * Apache Commons IO (commons-io:commons-io:2.18.0 - https://commons.apache.org/proper/commons-io/)
@@ -274,22 +274,22 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, BSD 2-Clause, Eclipse Distribution License, Version 1.0, Eclipse Public License, Version 2.0, jQuery license, MIT License, Modified BSD, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception, W3C license
 
-        * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
-        * jersey-container-grizzly2-servlet (org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-servlet)
-        * jersey-container-servlet (org.glassfish.jersey.containers:jersey-container-servlet:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet)
-        * jersey-container-servlet-core (org.glassfish.jersey.containers:jersey-container-servlet-core:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet-core)
-        * jersey-core-client (org.glassfish.jersey.core:jersey-client:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-client)
-        * jersey-ext-bean-validation (org.glassfish.jersey.ext:jersey-bean-validation:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-bean-validation)
-        * jersey-ext-metainf-services (org.glassfish.jersey.ext:jersey-metainf-services:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-metainf-services)
-        * jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-hk2)
+        * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
+        * jersey-container-grizzly2-servlet (org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-servlet)
+        * jersey-container-servlet (org.glassfish.jersey.containers:jersey-container-servlet:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet)
+        * jersey-container-servlet-core (org.glassfish.jersey.containers:jersey-container-servlet-core:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet-core)
+        * jersey-core-client (org.glassfish.jersey.core:jersey-client:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-client)
+        * jersey-ext-bean-validation (org.glassfish.jersey.ext:jersey-bean-validation:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-bean-validation)
+        * jersey-ext-metainf-services (org.glassfish.jersey.ext:jersey-metainf-services:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-metainf-services)
+        * jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-hk2)
 
     Apache License, Version 2.0, Eclipse Public License, Version 2.0, Modified BSD, The GNU General Public License (GPL), Version 2, With Classpath Exception
 
-        * jersey-core-server (org.glassfish.jersey.core:jersey-server:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
+        * jersey-core-server (org.glassfish.jersey.core:jersey-server:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
 
     Apache License, Version 2.0, Eclipse Public License, Version 2.0, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception
 
-        * jersey-core-common (org.glassfish.jersey.core:jersey-common:3.1.9 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
+        * jersey-core-common (org.glassfish.jersey.core:jersey-common:3.1.10 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
 
     Apache License, Version 2.0, Eclipse Public License - Version 1.0
 
@@ -308,7 +308,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, GNU General Public License, version 2
 
-        * RocksDB JNI (org.rocksdb:rocksdbjni:9.7.3 - https://rocksdb.org)
+        * RocksDB JNI (org.rocksdb:rocksdbjni:9.8.4 - https://rocksdb.org)
 
     Apache License, Version 2.0, LGPL 2.1, MPL 1.1
 
