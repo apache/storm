@@ -2,9 +2,9 @@
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
@@ -80,7 +81,7 @@ public class SpoutExecutor extends Executor {
         this.emittedCount = new MutableLong(0);
         this.emptyEmitStreak = new MutableLong(0);
         this.stats = new SpoutExecutorStats(
-            ConfigUtils.samplingRate(this.getTopoConf()), ObjectReader.getInt(this.getTopoConf().get(Config.NUM_STAT_BUCKETS)));
+                ConfigUtils.samplingRate(this.getTopoConf()), ObjectReader.getInt(this.getTopoConf().get(Config.NUM_STAT_BUCKETS)));
         this.skippedMaxSpoutMs = workerData.getMetricRegistry().rateCounter("__skipped-max-spout-ms", componentId,
                 taskIds.get(0));
         this.skippedInactiveMs = workerData.getMetricRegistry().rateCounter("__skipped-inactive-ms", componentId,
@@ -131,8 +132,8 @@ public class SpoutExecutor extends Executor {
             }
             ISpout spoutObject = (ISpout) taskData.getTaskObject();
             spoutOutputCollector = new SpoutOutputCollectorImpl(
-                spoutObject, this, taskData, emittedCount,
-                hasAckers, rand, hasEventLoggers, isDebug, pending);
+                    spoutObject, this, taskData, emittedCount,
+                    hasAckers, rand, hasEventLoggers, isDebug, pending);
             SpoutOutputCollector outputCollector = new SpoutOutputCollector(spoutOutputCollector);
             this.outputCollectors.add(outputCollector);
 
@@ -284,6 +285,29 @@ public class SpoutExecutor extends Executor {
     }
 
     @Override
+    protected void acceptTupleAction(int taskId, TupleImpl tuple) {
+
+        String streamId = tuple.getSourceStreamId();
+
+        try {
+            if (taskId != AddressedTuple.BROADCAST_DEST) {
+                tupleActionFn(taskId, tuple);
+            } else if (streamId.equals(Constants.SYSTEM_TICK_STREAM_ID)) {
+                //taskId is irrelevant here. Ensures pending.rotate() is called once per tick.
+                tupleActionFn(taskIds.get(0), tuple);
+
+            } else {
+                for (Integer t : taskIds) {
+                    tupleActionFn(t, tuple);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
     public void tupleActionFn(int taskId, TupleImpl tuple) throws Exception {
         String streamId = tuple.getSourceStreamId();
         if (Constants.SYSTEM_FLUSH_STREAM_ID.equals(streamId)) {
@@ -370,6 +394,6 @@ public class SpoutExecutor extends Executor {
 
     public long getThreadId() {
         return threadId;
-    }   
-    
+    }
+
 }
