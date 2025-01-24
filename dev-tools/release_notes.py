@@ -28,6 +28,7 @@ Generates release notes for a Storm release by generating an HTML doc containing
 
 import requests
 import sys
+import os
 
 if len(sys.argv) < 2:
     print("Usage: release_notes.py <milestone_id>", file=sys.stderr)
@@ -35,7 +36,11 @@ if len(sys.argv) < 2:
 
 # GitHub configuration
 GITHUB_API_BASE_URL = "https://api.github.com"
-GITHUB_TOKEN = "YOUR_PERSONAL_GITHUB_PAT"  # Replace with your GitHub PAT
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
+if not GITHUB_TOKEN:
+    print("Error: GITHUB_TOKEN environment variable not set.", file=sys.stderr)
+    sys.exit(1)
 
 # Input arguments
 owner = "apache"
