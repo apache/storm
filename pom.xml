@@ -63,8 +63,8 @@
     </scm>
 
     <issueManagement>
-        <system>jira</system>
-        <url>https://issues.apache.org/jira/browse/STORM</url>
+        <system>github</system>
+        <url>https://github.com/apache/storm/issues</url>
     </issueManagement>
 
     <properties>
