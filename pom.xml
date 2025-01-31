@@ -105,11 +105,11 @@
         <guava.version>33.4.0-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.69.Final</netty-tcnative.version>
-        <netty.version>4.1.116.Final</netty.version>
+        <netty.version>4.1.117.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>2.0.16</slf4j.version>
-        <metrics.version>4.2.29</metrics.version>
+        <metrics.version>4.2.30</metrics.version>
         <mockito.version>5.14.2</mockito.version>
         <zookeeper.version>3.9.3</zookeeper.version>
         <snappy.version>1.1.10.7</snappy.version>
@@ -147,15 +147,15 @@
         <maven.version>3.9.9</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.10</jersey.version>
-        <dropwizard.version>4.0.11</dropwizard.version>
+        <dropwizard.version>4.0.12</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
-        <caffeine.version>3.1.8</caffeine.version>
+        <caffeine.version>3.2.0</caffeine.version>
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
         <jaxb-version>2.3.1</jaxb-version>
         <activation-version>1.1.1</activation-version>
-        <rocksdb-jni-version>9.8.4</rocksdb-jni-version>
+        <rocksdb-jni-version>9.10.0</rocksdb-jni-version>
         <json-smart.version>2.5.1</json-smart.version>
         <byte-buddy.version>1.16.1</byte-buddy.version>
         <gson.version>2.11.0</gson.version>
@@ -166,7 +166,7 @@
         <asm.version>9.7.1</asm.version>
         <checker-qual.version>3.48.4</checker-qual.version>
         <error_prone_annotations.version>2.36.0</error_prone_annotations.version>
-        <bouncycastle.version>1.79</bouncycastle.version>
+        <bouncycastle.version>1.80</bouncycastle.version>
     </properties>
 
     <modules>
