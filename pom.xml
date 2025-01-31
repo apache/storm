@@ -147,7 +147,7 @@
         <maven.version>3.9.9</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.10</jersey.version>
-        <dropwizard.version>4.0.11</dropwizard.version>
+        <dropwizard.version>4.0.12</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.2.0</caffeine.version>
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
