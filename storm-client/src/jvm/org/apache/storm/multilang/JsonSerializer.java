@@ -154,9 +154,9 @@ public class JsonSerializer implements ISerializer {
 
         if (command.equals("log")) {
             Object logLevelObj = msg.get("level");
-            if (logLevelObj != null && logLevelObj instanceof Long) {
-                long logLevel = (Long) logLevelObj;
-                shellMsg.setLogLevel((int) logLevel);
+            if (logLevelObj != null && logLevelObj instanceof Number) {
+                int logLevel = ((Number) logLevelObj).intValue();
+                shellMsg.setLogLevel(logLevel);
             }
         }
 
