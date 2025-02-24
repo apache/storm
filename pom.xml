@@ -117,7 +117,7 @@
         <hikari.version>6.2.1</hikari.version>
         <hadoop.version>3.4.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
-        <hbase.version>2.6.1-hadoop3</hbase.version>
+        <hbase.version>2.6.2-hadoop3</hbase.version>
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.4</objensis.version>
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
