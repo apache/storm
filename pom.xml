@@ -132,7 +132,7 @@
         <jedis.version>5.2.0</jedis.version>
         <activemq.version>5.18.3</activemq.version>
 
-        <jackson.version>2.18.2</jackson.version>
+        <jackson.version>2.18.3</jackson.version>
         <jackson.databind.version>2.18.2</jackson.databind.version>
         <storm.kafka.client.version>3.9.0</storm.kafka.client.version>
         <testcontainers.version>1.20.5</testcontainers.version>
