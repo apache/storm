@@ -167,7 +167,7 @@ public class ReqContext {
     }
 
     /**
-     * Maps to Subject.currect() is available, otherwise maps to Subject.getSubject()
+     * Maps to Subject.current() is available, otherwise maps to Subject.getSubject()
      * @return the current subject
      */
     public static Subject currentSubject() {
