@@ -74,7 +74,7 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <!-- Test break with newer mockito atm -->
-            <version>4.11.0</version>
+            <version>5.16.1</version>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
