@@ -747,6 +747,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * error-prone annotations (com.google.errorprone:error_prone_annotations:2.37.0 - https://errorprone.info/error_prone_annotations)
         * Esri Geometry API for Java (com.esri.geometry:esri-geometry-api:2.0.0 - https://github.com/Esri/geometry-api-java)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.1 - http://findbugs.sourceforge.net/)
+        * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.30 - https://metrics.dropwizard.io/metrics-graphite)
         * Gson (com.google.code.gson:gson:2.12.1 - https://github.com/google/gson/gson)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:33.4.5-jre - https://github.com/google/guava)
