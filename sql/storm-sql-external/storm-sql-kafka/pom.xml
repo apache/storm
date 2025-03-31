@@ -29,7 +29,7 @@
     
     <properties>
         <!-- Required downgrade by calcite-core 1.15.0 -->
-        <guava.version>33.4.5-jre</guava.version>
+        <guava.version>33.4.6-jre</guava.version>
     </properties>
 
     <developers>
