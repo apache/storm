@@ -102,10 +102,10 @@
         <httpclient.core.version>4.4.16</httpclient.core.version>
         <jctools.version>4.0.5</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
-        <guava.version>33.4.5-jre</guava.version>
+        <guava.version>33.4.7-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.70.Final</netty-tcnative.version>
-        <netty.version>4.1.119.Final</netty.version>
+        <netty.version>4.2.0.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
@@ -114,14 +114,14 @@
         <zookeeper.version>3.9.3</zookeeper.version>
         <snappy.version>1.1.10.7</snappy.version>
         <jline.version>2.14.6</jline.version>
-        <hikari.version>6.2.1</hikari.version>
+        <hikari.version>6.3.0</hikari.version>
         <hadoop.version>3.4.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
         <hbase.version>2.6.2-hadoop3</hbase.version>
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.4</objensis.version>
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
-        <joda-time.version>2.13.1</joda-time.version>
+        <joda-time.version>2.14.0</joda-time.version>
         <thrift.version>0.19.0</thrift.version>
         <junit.jupiter.version>5.12.1</junit.jupiter.version>
         <surefire.version>3.5.2</surefire.version>
@@ -147,7 +147,7 @@
         <maven.version>3.9.9</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.10</jersey.version>
-        <dropwizard.version>4.0.12</dropwizard.version>
+        <dropwizard.version>4.0.13</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.2.0</caffeine.version>
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
@@ -157,14 +157,14 @@
         <activation-version>1.1.1</activation-version>
         <rocksdb-jni-version>9.10.0</rocksdb-jni-version>
         <json-smart.version>2.5.2</json-smart.version>
-        <byte-buddy.version>1.17.4</byte-buddy.version>
+        <byte-buddy.version>1.17.5</byte-buddy.version>
         <gson.version>2.12.1</gson.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
-        <asm.version>9.7.1</asm.version>
-        <checker-qual.version>3.49.1</checker-qual.version>
+        <asm.version>9.8</asm.version>
+        <checker-qual.version>3.49.2</checker-qual.version>
         <error_prone_annotations.version>2.37.0</error_prone_annotations.version>
         <bouncycastle.version>1.80</bouncycastle.version>
     </properties>
@@ -1650,7 +1650,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.5.2</version>
+                <version>3.5.3</version>
                 <configuration>
                     <reportsDirectories>
                         <file>${project.build.directory}/test-reports</file>
