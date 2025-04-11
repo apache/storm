@@ -655,7 +655,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Avro (org.apache.avro:avro:1.12.0 - https://avro.apache.org)
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.5 - https://commons.apache.org/proper/commons-fileupload/)
         * Apache Commons Lang (org.apache.commons:commons-lang3:3.17.0 - https://commons.apache.org/proper/commons-lang/)
-        * Apache Commons Text (org.apache.commons:commons-text:1.13.0 - https://commons.apache.org/proper/commons-text)
+        * Apache Commons Text (org.apache.commons:commons-text:1.13.1 - https://commons.apache.org/proper/commons-text)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.7 - https://github.com/xerial/snappy-java)
 
     AL 2.0, GPL v2, MPL 2.0
