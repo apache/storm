@@ -29,7 +29,7 @@
     
     <properties>
         <!-- Required downgrade by calcite-core 1.15.0 -->
-        <guava.version>33.4.0-jre</guava.version>
+        <guava.version>33.4.7-jre</guava.version>
     </properties>
 
     <developers>
@@ -119,7 +119,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.13.0</version>
+            <version>1.14.0</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
