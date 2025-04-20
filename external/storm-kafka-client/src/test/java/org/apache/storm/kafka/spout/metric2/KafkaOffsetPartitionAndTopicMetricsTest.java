@@ -101,6 +101,23 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         Gauge gBTotal= (Gauge) result.get("topicB/totalSpoutLag");
         assertEquals(gBTotal.getValue(),150L);
 
+        //get the metrics a second time. Values should be the same. In particular, the total values for the topic should not accumulate. Each call to getMetrics should reset the total values.
+
+        result = kafkaOffsetPartitionAndTopicMetrics.getMetrics();
+         g1= (Gauge) result.get("topicA/partition_1/spoutLag");
+         g2= (Gauge) result.get("topicA/partition_2/spoutLag");
+         g3= (Gauge) result.get("topicB/partition_1/spoutLag");
+         g4= (Gauge) result.get("topicB/partition_2/spoutLag");
+        assertEquals(g1.getValue(),10L);
+        assertEquals(g2.getValue(),30L);
+        assertEquals(g3.getValue(),100L);
+        assertEquals(g4.getValue(),50L);
+
+        gATotal= (Gauge) result.get("topicA/totalSpoutLag");
+        assertEquals(gATotal.getValue(),40L);
+        gBTotal= (Gauge) result.get("topicB/totalSpoutLag");
+        assertEquals(gBTotal.getValue(),150L);
+
 
     }
 }
