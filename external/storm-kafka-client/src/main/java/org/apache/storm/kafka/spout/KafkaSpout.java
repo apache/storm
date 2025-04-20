@@ -634,7 +634,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         boolean partitionChanged = topicAssigner.assignPartitions(consumer, assignedPartitions, rebalanceListener);
         if (partitionChanged && canRegisterMetrics()) {
             LOG.info("Partitions assignments has changed, updating metrics.");
-            kafkaOffsetMetricManager.registerMetricsForNewTopicPartitions(assignedPartitions);
+            kafkaOffsetMetricManager.registerPartitionAndTopicLevelMetrics(assignedPartitions);
         }
     }
 
