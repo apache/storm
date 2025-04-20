@@ -75,6 +75,13 @@ public class KafkaOffsetMetricManager<K, V> {
         }
     }
 
+    public void registerPartitionAndTopicLevelMetrics(Set<TopicPartition> newAssignment) {
+
+        KafkaOffsetPartitionAndTopicMetrics topicPartitionMetricSet
+                = new KafkaOffsetPartitionAndTopicMetrics<>(offsetManagerSupplier, adminSupplier,newAssignment);
+        topologyContext.registerMetricSet("kafkaOffset", topicPartitionMetricSet);
+    }
+
     public Map<TopicPartition, KafkaOffsetPartitionMetrics> getTopicPartitionMetricsMap() {
         return topicPartitionMetricsMap;
     }
