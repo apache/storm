@@ -54,31 +54,10 @@ public class KafkaOffsetMetricManager<K, V> {
         LOG.info("Running KafkaOffsetMetricManager");
     }
 
-    public void registerMetricsForNewTopicPartitions(Set<TopicPartition> newAssignment) {
-        for (TopicPartition topicPartition : newAssignment) {
-            if (!topicPartitionMetricsMap.containsKey(topicPartition)) {
-                LOG.info("Registering metric for topicPartition: {}", topicPartition);
-                // create topic level metrics for given topic if absent
-                String topic = topicPartition.topic();
-                KafkaOffsetTopicMetrics topicMetrics = topicMetricsMap.get(topic);
-                if (topicMetrics == null) {
-                    topicMetrics = new KafkaOffsetTopicMetrics(topic);
-                    topicMetricsMap.put(topic, topicMetrics);
-                    topologyContext.registerMetricSet("kafkaOffset", topicMetrics);
-                }
-
-                KafkaOffsetPartitionMetrics topicPartitionMetricSet
-                    = new KafkaOffsetPartitionMetrics<>(offsetManagerSupplier, adminSupplier, topicPartition, topicMetrics);
-                topicPartitionMetricsMap.put(topicPartition, topicPartitionMetricSet);
-                topologyContext.registerMetricSet("kafkaOffset", topicPartitionMetricSet);
-            }
-        }
-    }
-
     public void registerPartitionAndTopicLevelMetrics(Set<TopicPartition> newAssignment) {
 
         KafkaOffsetPartitionAndTopicMetrics topicPartitionMetricSet
-                = new KafkaOffsetPartitionAndTopicMetrics<>(offsetManagerSupplier, adminSupplier,newAssignment);
+                = new KafkaOffsetPartitionAndTopicMetrics(offsetManagerSupplier, adminSupplier,newAssignment);
         topologyContext.registerMetricSet("kafkaOffset", topicPartitionMetricSet);
     }
 

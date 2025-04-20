@@ -41,19 +41,20 @@ import java.util.function.Supplier;
  * topicName/totalRecordsInPartitions //total number of records in all the associated partitions of this spout
  * </p>
  */
-public class KafkaOffsetPartitionAndTopicMetrics <K, V> implements MetricSet {
+public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaOffsetPartitionAndTopicMetrics.class);
     private final Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier;
     private final Supplier<Admin> adminSupplier;
     private final Set<TopicPartition> assignment;
-    private Map<String, KafkaOffsetTopicMetrics> topicMetricsMap;
+    private final Map<String, KafkaOffsetTopicMetrics> topicMetricsMap;
 
 
     public KafkaOffsetPartitionAndTopicMetrics(Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier, Supplier<Admin> adminSupplier, Set<TopicPartition> assignment) {
         this.offsetManagerSupplier = offsetManagerSupplier;
         this.adminSupplier = adminSupplier;
         this.assignment = assignment;
+        this.topicMetricsMap=new HashMap<>();
     }
 
     @Override
@@ -151,7 +152,9 @@ public class KafkaOffsetPartitionAndTopicMetrics <K, V> implements MetricSet {
 
         }
 
-        metrics.putAll(topicMetricsMap);
+        for( KafkaOffsetTopicMetrics kafkaOffsetTopicMetrics  : topicMetricsMap.values()){
+            metrics.putAll(kafkaOffsetTopicMetrics.getMetrics());
+        }
 
         return metrics;
 
