@@ -39,7 +39,7 @@
         -->
         <storm-sql-hdfs.test.introspection.argLine>--add-opens java.security.jgss/sun.security.krb5=ALL-UNNAMED</storm-sql-hdfs.test.introspection.argLine>
         <!-- Required downgrade by calcite-core 1.16.0 https://mvnrepository.com/artifact/org.apache.calcite/calcite-core/1.16.0 -->
-        <guava.version.downgrade>33.4.7-jre</guava.version.downgrade>
+        <guava.version.downgrade>33.4.8-jre</guava.version.downgrade>
     </properties>
 
     <developers>
