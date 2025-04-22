@@ -18,8 +18,8 @@
 
 package org.apache.storm.jms.example;
 
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
 
 import org.apache.storm.jms.JmsProvider;
 

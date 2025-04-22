@@ -130,7 +130,7 @@
         <hamcrest.version>3.0</hamcrest.version>
         <calcite.version>1.16.0</calcite.version>
         <jedis.version>5.2.0</jedis.version>
-        <activemq.version>5.18.3</activemq.version>
+        <activemq.version>6.1.6</activemq.version>
 
         <jackson.version>2.18.3</jackson.version>
         <jackson.databind.version>2.18.3</jackson.databind.version>

@@ -13,7 +13,7 @@
 package org.apache.storm.jms.trident;
 
 import java.util.List;
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.BaseStateUpdater;
