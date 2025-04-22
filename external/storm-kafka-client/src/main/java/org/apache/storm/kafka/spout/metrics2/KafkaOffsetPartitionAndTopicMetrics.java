@@ -58,20 +58,20 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
     @Override
     public Map<String, Metric> getMetrics() {
 
-        Map<String, KafkaOffsetTopicMetrics> topicMetricsMap=new HashMap<>();
+        Map<String, KafkaOffsetTopicMetrics> topicMetricsMap = new HashMap<>();
 
         Map<String, Metric> metrics = new HashMap<>();
 
         for (TopicPartition topicPartition : assignment) {
 
-            String topic=topicPartition.topic();
+            String topic = topicPartition.topic();
             KafkaOffsetTopicMetrics topicMetrics = topicMetricsMap.get(topic);
             if (topicMetrics == null) {
                 topicMetrics = new KafkaOffsetTopicMetrics(topic);
                 topicMetricsMap.put(topic, topicMetrics);
             }
 
-            String metricPath = topicPartition.topic()  + "/partition_" + topicPartition.partition();
+            String metricPath = topicPartition.topic() + "/partition_" + topicPartition.partition();
             KafkaOffsetTopicMetrics finalTopicMetrics = topicMetrics;
             Gauge<Long> spoutLagGauge = () -> {
                 Map<TopicPartition, Long> endOffsets = getEndOffsets(Collections.singleton(topicPartition));
@@ -114,7 +114,7 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
 
                 OffsetManager offsetManager = offsetManagerSupplier.get().get(topicPartition);
                 Long ret = offsetManager.getLatestEmittedOffset();
-                finalTopicMetrics.totalLatestEmittedOffset+=ret;
+                finalTopicMetrics.totalLatestEmittedOffset += ret;
                 return ret;
             };
 
@@ -122,7 +122,7 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
 
                 OffsetManager offsetManager = offsetManagerSupplier.get().get(topicPartition);
                 Long ret = offsetManager.getCommittedOffset();
-                finalTopicMetrics.totalLatestCompletedOffset+=ret;
+                finalTopicMetrics.totalLatestCompletedOffset += ret;
                 return ret;
             };
 
@@ -139,7 +139,7 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
                 }
 
                 Long ret = endOffsets.get(topicPartition) - beginningOffsets.get(topicPartition);
-                finalTopicMetrics.totalRecordsInPartitions+=ret;
+                finalTopicMetrics.totalRecordsInPartitions += ret;
                 return ret;
             };
 
@@ -152,7 +152,7 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
 
         }
 
-        for( KafkaOffsetTopicMetrics kafkaOffsetTopicMetrics  : topicMetricsMap.values()){
+        for (KafkaOffsetTopicMetrics kafkaOffsetTopicMetrics : topicMetricsMap.values()) {
             metrics.putAll(kafkaOffsetTopicMetrics.getMetrics());
         }
 
