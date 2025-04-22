@@ -19,6 +19,7 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.MessageProducer;
 import jakarta.jms.Session;
+import java.util.Map;
 import org.apache.storm.jms.JmsMessageProducer;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.task.OutputCollector;
@@ -28,8 +29,6 @@ import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * A JmsBolt receives <code>org.apache.storm.tuple.Tuple</code> objects from a Storm

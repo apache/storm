@@ -14,10 +14,9 @@ package org.apache.storm.jms;
 
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
+import java.io.Serializable;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Values;
-
-import java.io.Serializable;
 
 /**
  * Interface to define classes that can produce a Storm <code>Values</code> objects

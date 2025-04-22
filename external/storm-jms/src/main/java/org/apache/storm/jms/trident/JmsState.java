@@ -19,6 +19,8 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.MessageProducer;
 import jakarta.jms.Session;
+import java.io.Serializable;
+import java.util.List;
 import org.apache.storm.jms.JmsMessageProducer;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.topology.FailedException;
@@ -27,9 +29,6 @@ import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.util.List;
 
 public class JmsState implements State {
 
