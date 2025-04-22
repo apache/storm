@@ -20,11 +20,12 @@ package org.apache.storm.jms.spout;
 
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.storm.jms.JmsProvider;
+
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.storm.jms.JmsProvider;
 
 public class MockJmsProvider implements JmsProvider {
     private static final long serialVersionUID = 1L;

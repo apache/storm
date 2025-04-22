@@ -12,9 +12,10 @@
 
 package org.apache.storm.jms;
 
-import java.io.Serializable;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
+
+import java.io.Serializable;
 
 /**
  * A <code>JmsProvider</code> object encapsulates the <code>ConnectionFactory</code>

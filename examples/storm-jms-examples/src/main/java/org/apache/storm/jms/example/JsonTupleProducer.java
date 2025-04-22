@@ -21,7 +21,6 @@ package org.apache.storm.jms.example;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
-
 import org.apache.storm.jms.JmsTupleProducer;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;

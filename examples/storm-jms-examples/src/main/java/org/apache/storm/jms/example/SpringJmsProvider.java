@@ -20,9 +20,7 @@ package org.apache.storm.jms.example;
 
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
-
 import org.apache.storm.jms.JmsProvider;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 

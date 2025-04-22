@@ -12,8 +12,6 @@
 
 package org.apache.storm.jms.trident;
 
-import java.io.Serializable;
-import java.util.List;
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
@@ -29,6 +27,9 @@ import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Serializable;
+import java.util.List;
 
 public class JmsState implements State {
 

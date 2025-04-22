@@ -12,10 +12,6 @@
 
 package org.apache.storm.jms.trident;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
@@ -39,6 +35,11 @@ import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Trident implementation of the JmsSpout.

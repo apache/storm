@@ -12,7 +12,6 @@
 
 package org.apache.storm.jms.bolt;
 
-import java.util.Map;
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
@@ -29,6 +28,8 @@ import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * A JmsBolt receives <code>org.apache.storm.tuple.Tuple</code> objects from a Storm
