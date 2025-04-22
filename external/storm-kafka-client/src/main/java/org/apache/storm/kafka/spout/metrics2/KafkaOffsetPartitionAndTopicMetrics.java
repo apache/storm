@@ -79,7 +79,7 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
                     LOG.error("Failed to get endOffsets from Kafka for topic partitions: {}.", topicPartition);
                     return 0L;
                 }
-                // add value to topic level metric
+
                 OffsetManager offsetManager = offsetManagerSupplier.get().get(topicPartition);
                 Long ret = endOffsets.get(topicPartition) - offsetManager.getCommittedOffset();
                 finalTopicMetrics.totalSpoutLag += ret;
@@ -92,7 +92,7 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
                     LOG.error("Failed to get beginningOffsets from Kafka for topic partitions: {}.", topicPartition);
                     return 0L;
                 }
-                // add value to topic level metric
+
                 Long ret = beginningOffsets.get(topicPartition);
                 finalTopicMetrics.totalEarliestTimeOffset += ret;
                 return ret;
@@ -104,14 +104,14 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
                     LOG.error("Failed to get endOffsets from Kafka for topic partitions: {}.", topicPartition);
                     return 0L;
                 }
-                // add value to topic level metric
+
                 Long ret = endOffsets.get(topicPartition);
                 finalTopicMetrics.totalLatestTimeOffset += ret;
                 return ret;
             };
 
             Gauge<Long> latestEmittedOffsetGauge = () -> {
-                // add value to topic level metric
+
                 OffsetManager offsetManager = offsetManagerSupplier.get().get(topicPartition);
                 Long ret = offsetManager.getLatestEmittedOffset();
                 finalTopicMetrics.totalLatestEmittedOffset+=ret;
@@ -119,7 +119,7 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
             };
 
             Gauge<Long> latestCompletedOffsetGauge = () -> {
-                // add value to topic level metric
+
                 OffsetManager offsetManager = offsetManagerSupplier.get().get(topicPartition);
                 Long ret = offsetManager.getCommittedOffset();
                 finalTopicMetrics.totalLatestCompletedOffset+=ret;
@@ -137,7 +137,7 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
                     LOG.error("Failed to get beginningOffsets from Kafka for topic partitions: {}.", topicPartition);
                     return 0L;
                 }
-                // add value to topic level metric
+
                 Long ret = endOffsets.get(topicPartition) - beginningOffsets.get(topicPartition);
                 finalTopicMetrics.totalRecordsInPartitions+=ret;
                 return ret;
