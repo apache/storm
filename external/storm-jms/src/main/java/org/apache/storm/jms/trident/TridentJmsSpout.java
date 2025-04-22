@@ -20,6 +20,10 @@ import jakarta.jms.Message;
 import jakarta.jms.MessageConsumer;
 import jakarta.jms.MessageListener;
 import jakarta.jms.Session;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.jms.JmsProvider;
@@ -35,11 +39,6 @@ import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Trident implementation of the JmsSpout.

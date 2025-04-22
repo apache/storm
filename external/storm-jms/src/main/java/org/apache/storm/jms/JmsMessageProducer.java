@@ -15,9 +15,9 @@ package org.apache.storm.jms;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.Session;
-import org.apache.storm.tuple.ITuple;
-
 import java.io.Serializable;
+
+import org.apache.storm.tuple.ITuple;
 
 /**
  * JmsMessageProducer implementations are responsible for translating
