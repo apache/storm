@@ -19,7 +19,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0
 
-        * ActiveMQ :: Client (org.apache.activemq:activemq-client:5.18.3 - http://activemq.apache.org/activemq-client)
+        * ActiveMQ :: Client (org.apache.activemq:activemq-client:6.1.6 - http://activemq.apache.org/activemq-client)
         * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.30 - https://metrics.dropwizard.io/metrics-annotation)
         * Apache Avro (org.apache.avro:avro:1.12.0 - https://avro.apache.org)
@@ -199,6 +199,8 @@ List of third-party dependencies grouped by their license type.
         * Metrics Integration for Logback (io.dropwizard.metrics:metrics-logback:4.2.30 - https://metrics.dropwizard.io/metrics-logback)
         * Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.2.30 - https://metrics.dropwizard.io/metrics-jmx)
         * Metrics Utility Jakarta Servlets (io.dropwizard.metrics:metrics-jakarta-servlets:4.2.30 - https://metrics.dropwizard.io/metrics-jakarta-servlets)
+        * micrometer-commons (io.micrometer:micrometer-commons:1.14.5 - https://github.com/micrometer-metrics/micrometer)
+        * micrometer-observation (io.micrometer:micrometer-observation:1.14.5 - https://github.com/micrometer-metrics/micrometer)
         * Netty/All-in-One (io.netty:netty-all:4.2.0.Final - https://netty.io/netty-all/)
         * Netty/Buffer (io.netty:netty-buffer:4.2.0.Final - https://netty.io/netty-buffer/)
         * Netty/Codec/Base (io.netty:netty-codec-base:4.2.0.Final - https://netty.io/netty-codec-base/)
@@ -267,15 +269,15 @@ List of third-party dependencies grouped by their license type.
         * SLF4J 2 Provider for Log4j API (org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3 - https://logging.apache.org/log4j/2.x/log4j/log4j-slf4j2-impl/)
         * SnakeYAML (org.yaml:snakeyaml:2.2 - https://bitbucket.org/snakeyaml/snakeyaml)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.7 - https://github.com/xerial/snappy-java)
-        * Spring AOP (org.springframework:spring-aop:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * Spring Beans (org.springframework:spring-beans:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * Spring Commons Logging Bridge (org.springframework:spring-jcl:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * Spring Context (org.springframework:spring-context:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * Spring Core (org.springframework:spring-core:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * Spring Expression Language (SpEL) (org.springframework:spring-expression:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * Spring JMS (org.springframework:spring-jms:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * Spring Messaging (org.springframework:spring-messaging:5.3.27 - https://github.com/spring-projects/spring-framework)
-        * Spring Transaction (org.springframework:spring-tx:5.3.27 - https://github.com/spring-projects/spring-framework)
+        * Spring AOP (org.springframework:spring-aop:6.2.6 - https://github.com/spring-projects/spring-framework)
+        * Spring Beans (org.springframework:spring-beans:6.2.6 - https://github.com/spring-projects/spring-framework)
+        * Spring Commons Logging Bridge (org.springframework:spring-jcl:6.2.6 - https://github.com/spring-projects/spring-framework)
+        * Spring Context (org.springframework:spring-context:6.2.6 - https://github.com/spring-projects/spring-framework)
+        * Spring Core (org.springframework:spring-core:6.2.6 - https://github.com/spring-projects/spring-framework)
+        * Spring Expression Language (SpEL) (org.springframework:spring-expression:6.2.6 - https://github.com/spring-projects/spring-framework)
+        * Spring JMS (org.springframework:spring-jms:6.2.6 - https://github.com/spring-projects/spring-framework)
+        * Spring Messaging (org.springframework:spring-messaging:6.2.6 - https://github.com/spring-projects/spring-framework)
+        * Spring Transaction (org.springframework:spring-tx:6.2.6 - https://github.com/spring-projects/spring-framework)
         * Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.4.2 - https://github.com/dropwizard/logback-throttling-appender/)
         * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.0 - https://github.com/FasterXML/woodstox)
 
@@ -419,7 +421,7 @@ List of third-party dependencies grouped by their license type.
 
     Eclipse Public License 2.0, GNU General Public License, version 2 with the GNU Classpath Exception
 
-        * Jakarta Messaging API (jakarta.jms:jakarta.jms-api:2.0.3 - https://projects.eclipse.org/projects/ee4j.jms)
+        * Jakarta Messaging API (jakarta.jms:jakarta.jms-api:3.1.0 - https://projects.eclipse.org/projects/ee4j.jms)
 
     Eclipse Public License v. 2.0, GNU General Public License, version 2 with the GNU Classpath Exception
 
