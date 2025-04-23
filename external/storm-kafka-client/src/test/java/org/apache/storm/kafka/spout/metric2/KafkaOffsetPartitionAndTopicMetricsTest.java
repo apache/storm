@@ -151,7 +151,27 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         admin = mock(Admin.class);
         when(admin.listOffsets(anyMap())).thenReturn(listOffsetsResultEarliest);
 
+        OffsetManager offsetManagerTaP1 = mock(OffsetManager.class);
+        when(offsetManagerTaP1.getLatestEmittedOffset()).thenReturn(50L);
+        when(offsetManagerTaP1.getCommittedOffset()).thenReturn(40L);
+
+        OffsetManager offsetManagerTaP2 = mock(OffsetManager.class);
+        when(offsetManagerTaP2.getLatestEmittedOffset()).thenReturn(100L);
+        when(offsetManagerTaP2.getCommittedOffset()).thenReturn(90L);
+
+        OffsetManager offsetManagerTbP1 = mock(OffsetManager.class);
+        when(offsetManagerTbP1.getLatestEmittedOffset()).thenReturn(150L);
+        when(offsetManagerTbP1.getCommittedOffset()).thenReturn(149L);
+
+        OffsetManager offsetManagerTbP2 = mock(OffsetManager.class);
+        when(offsetManagerTbP2.getLatestEmittedOffset()).thenReturn(200L);
+        when(offsetManagerTbP2.getCommittedOffset()).thenReturn(200L);
+
         offsetManagers = new HashMap<>();
+        offsetManagers.put(tAp1, offsetManagerTaP1);
+        offsetManagers.put(tAp2, offsetManagerTaP2);
+        offsetManagers.put(tBp1, offsetManagerTbP1);
+        offsetManagers.put(tBp2, offsetManagerTbP2);
 
         assignment = new HashSet<>();
         assignment.add(tAp1);
@@ -222,5 +242,33 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         assertEquals(300L, gATotal.getValue());
         gBTotal = (Gauge) result.get("topicB/totalLatestTimeOffset");
         assertEquals(700L, gBTotal.getValue());
+
+        g1 = (Gauge) result.get("topicA/partition_1/latestEmittedOffset");
+        g2 = (Gauge) result.get("topicA/partition_2/latestEmittedOffset");
+        g3 = (Gauge) result.get("topicB/partition_1/latestEmittedOffset");
+        g4 = (Gauge) result.get("topicB/partition_2/latestEmittedOffset");
+        assertEquals(50L, g1.getValue());
+        assertEquals(100L, g2.getValue());
+        assertEquals(150L, g3.getValue());
+        assertEquals(200L, g4.getValue());
+
+        gATotal = (Gauge) result.get("topicA/totalLatestEmittedOffset");
+        assertEquals(150L, gATotal.getValue());
+        gBTotal = (Gauge) result.get("topicB/totalLatestEmittedOffset");
+        assertEquals(350L, gBTotal.getValue());
+
+        g1 = (Gauge) result.get("topicA/partition_1/latestCompletedOffset");
+        g2 = (Gauge) result.get("topicA/partition_2/latestCompletedOffset");
+        g3 = (Gauge) result.get("topicB/partition_1/latestCompletedOffset");
+        g4 = (Gauge) result.get("topicB/partition_2/latestCompletedOffset");
+        assertEquals(40L, g1.getValue());
+        assertEquals(90L, g2.getValue());
+        assertEquals(149L, g3.getValue());
+        assertEquals(200L, g4.getValue());
+
+        gATotal = (Gauge) result.get("topicA/totalLatestCompletedOffset");
+        assertEquals(130L, gATotal.getValue());
+        gBTotal = (Gauge) result.get("topicB/totalLatestCompletedOffset");
+        assertEquals(349L, gBTotal.getValue());
     }
 }
