@@ -18,18 +18,18 @@
 
 package org.apache.storm.jms.spout;
 
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Session;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
 
 import org.apache.storm.Config;
 import org.apache.storm.jms.JmsProvider;
@@ -41,7 +41,6 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * A Storm <code>Spout</code> implementation that listens to a JMS topic or
@@ -116,9 +115,9 @@ public class JmsSpout extends BaseRichSpout {
      *
      * <p>Possible values:
      * <ul>
-     * <li>javax.jms.Session.AUTO_ACKNOWLEDGE</li>
-     * <li>javax.jms.Session.CLIENT_ACKNOWLEDGE</li>
-     * <li>javax.jms.Session.DUPS_OK_ACKNOWLEDGE</li>
+     * <li>jakarta.jms.Session.AUTO_ACKNOWLEDGE</li>
+     * <li>jakarta.jms.Session.CLIENT_ACKNOWLEDGE</li>
+     * <li>jakarta.jms.Session.DUPS_OK_ACKNOWLEDGE</li>
      * </ul>
      *
      * <p>Any other vendor specific modes are not supported.
@@ -139,7 +138,7 @@ public class JmsSpout extends BaseRichSpout {
                 break;
             default:
                 LOG.warn("Unsupported Acknowledge mode: "
-                    + mode + " (See javax.jms.Session for valid values)");
+                    + mode + " (See jakarta.jms.Session for valid values)");
         }
         jmsAcknowledgeMode = mode;
     }
@@ -153,7 +152,7 @@ public class JmsSpout extends BaseRichSpout {
             && jmsAcknowledgeMode != Session.CLIENT_ACKNOWLEDGE
             && jmsAcknowledgeMode != Session.SESSION_TRANSACTED) {
             LOG.warn("Unsupported Acknowledge mode: " + jmsAcknowledgeMode
-                + " (See javax.jms.Session for valid values)");
+                + " (See jakarta.jms.Session for valid values)");
 
             if (individualAcks) {
                 LOG.warn("Allowing vendor specific mode due "
@@ -186,7 +185,7 @@ public class JmsSpout extends BaseRichSpout {
      *
      * <p>Set the <code>JmsProvider</code>
      * implementation that this Spout will use to connect to
-     * a JMS <code>javax.jms.Desination</code>
+     * a JMS <code>jakarta.jms.Desination</code>
      *
      * @param provider the provider to use
      */
@@ -196,7 +195,7 @@ public class JmsSpout extends BaseRichSpout {
 
     /**
      * Set the <code>JmsTupleProducer</code>
-     * implementation that will convert <code>javax.jms.Message</code>
+     * implementation that will convert <code>jakarta.jms.Message</code>
      * object to <code>org.apache.storm.tuple.Values</code> objects
      * to be emitted.
      *
