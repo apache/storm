@@ -123,14 +123,14 @@
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
         <joda-time.version>2.14.0</joda-time.version>
         <thrift.version>0.19.0</thrift.version>
-        <junit.jupiter.version>5.12.1</junit.jupiter.version>
+        <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <surefire.version>3.5.3</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
         <calcite.version>1.16.0</calcite.version>
         <jedis.version>5.2.0</jedis.version>
-        <activemq.version>5.18.3</activemq.version>
+        <activemq.version>6.1.6</activemq.version>
 
         <jackson.version>2.18.3</jackson.version>
         <jackson.databind.version>2.18.3</jackson.databind.version>

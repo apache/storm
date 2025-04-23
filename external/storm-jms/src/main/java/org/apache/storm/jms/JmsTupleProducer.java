@@ -12,22 +12,22 @@
 
 package org.apache.storm.jms;
 
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
 import java.io.Serializable;
-import javax.jms.JMSException;
-import javax.jms.Message;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Values;
 
 /**
  * Interface to define classes that can produce a Storm <code>Values</code> objects
- * from a <code>javax.jms.Message</code> object>.
+ * from a <code>jakarta.jms.Message</code> object>.
  *
  * <p>Implementations are also responsible for declaring the output
  * fields they produce.
  *
  * <p>If for some reason the implementation can't process a message
- * (for example if it received a <code>javax.jms.ObjectMessage</code>
- * when it was expecting a <code>javax.jms.TextMessage</code> it should
+ * (for example if it received a <code>jakarta.jms.ObjectMessage</code>
+ * when it was expecting a <code>jakarta.jms.TextMessage</code> it should
  * return <code>null</code> to indicate to the <code>JmsSpout</code> that
  * the message could not be processed.
  *

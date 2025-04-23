@@ -12,14 +12,14 @@
 
 package org.apache.storm.jms.bolt;
 
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
 import java.util.Map;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
 import org.apache.storm.jms.JmsMessageProducer;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.task.OutputCollector;
@@ -39,12 +39,12 @@ import org.slf4j.LoggerFactory;
  * <li>A <code>JmsProvider</code> implementation.</li>
  * <li>A <code>JmsMessageProducer</code> implementation.</li>
  * </ol>
- * The <code>JmsProvider</code> provides the JMS <code>javax.jms.ConnectionFactory</code>
- * and <code>javax.jms.Destination</code> objects requied to publish JMS messages.
+ * The <code>JmsProvider</code> provides the JMS <code>jakarta.jms.ConnectionFactory</code>
+ * and <code>jakarta.jms.Destination</code> objects requied to publish JMS messages.
  *
  * <p>The JmsBolt uses a <code>JmsMessageProducer</code> to translate
  * <code>org.apache.storm.tuple.Tuple</code> objects into
- * <code>javax.jms.Message</code> objects for publishing.
+ * <code>jakarta.jms.Message</code> objects for publishing.
  *
  * <p>Both JmsProvider and JmsMessageProducer must be set, or the bolt will
  * fail upon deployment to a cluster.
@@ -57,7 +57,7 @@ public class JmsBolt extends BaseTickTupleAwareRichBolt {
 
     private boolean autoAck = true;
 
-    // javax.jms objects
+    // jakarta.jms objects
     private Connection connection;
     private Session session;
     private MessageProducer messageProducer;
@@ -94,12 +94,12 @@ public class JmsBolt extends BaseTickTupleAwareRichBolt {
      *
      * <p>Possible values:
      * <ul>
-     * <li>javax.jms.Session.AUTO_ACKNOWLEDGE</li>
-     * <li>javax.jms.Session.CLIENT_ACKNOWLEDGE</li>
-     * <li>javax.jms.Session.DUPS_OK_ACKNOWLEDGE</li>
+     * <li>jakarta.jms.Session.AUTO_ACKNOWLEDGE</li>
+     * <li>jakarta.jms.Session.CLIENT_ACKNOWLEDGE</li>
+     * <li>jakarta.jms.Session.DUPS_OK_ACKNOWLEDGE</li>
      * </ul>
      *
-     * @param acknowledgeMode (constant defined in javax.jms.Session)
+     * @param acknowledgeMode (constant defined in jakarta.jms.Session)
      */
     public void setJmsAcknowledgeMode(int acknowledgeMode) {
         this.jmsAcknowledgeMode = acknowledgeMode;
