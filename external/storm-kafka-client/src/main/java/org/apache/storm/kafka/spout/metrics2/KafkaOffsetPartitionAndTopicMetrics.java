@@ -3,6 +3,12 @@ package org.apache.storm.kafka.spout.metrics2;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
+import java.util.function.Supplier;
+import java.util.Collections;
+import java.util.concurrent.ExecutionException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.ListOffsetsResult;
 import org.apache.kafka.clients.admin.OffsetSpec;
@@ -13,12 +19,6 @@ import org.apache.storm.kafka.spout.internal.OffsetManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
 
 /**
  * This class is used compute the partition and topic level offset metrics.

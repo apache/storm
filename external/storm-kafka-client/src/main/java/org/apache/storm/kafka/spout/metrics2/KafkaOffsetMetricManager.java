@@ -18,6 +18,10 @@
 
 package org.apache.storm.kafka.spout.metrics2;
 
+import java.util.function.Supplier;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
@@ -25,10 +29,6 @@ import org.apache.storm.task.TopologyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * This class is used to manage both the partition and topic level offset metrics.
