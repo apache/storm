@@ -48,7 +48,9 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
     private final Supplier<Admin> adminSupplier;
     private final Set<TopicPartition> assignment;
 
-    public KafkaOffsetPartitionAndTopicMetrics(Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier, Supplier<Admin> adminSupplier, Set<TopicPartition> assignment) {
+    public KafkaOffsetPartitionAndTopicMetrics(Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier,
+                                               Supplier<Admin> adminSupplier,
+                                               Set<TopicPartition> assignment) {
         this.offsetManagerSupplier = offsetManagerSupplier;
         this.adminSupplier = adminSupplier;
         this.assignment = assignment;
