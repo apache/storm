@@ -35,7 +35,7 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
     }
 
     @Test
-    public void registerMetricsGetLatest() throws ExecutionException, InterruptedException {
+    public void registerMetricsGetSpoutLag() throws ExecutionException, InterruptedException {
 
         TopicPartition tAp1 = new TopicPartition("topicA", 1);
         TopicPartition tAp2 = new TopicPartition("topicA", 2);
@@ -125,7 +125,7 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
     }
 
     @Test
-    public void registerMetricsGetEarliest() throws ExecutionException, InterruptedException {
+    public void registerMetricsGetEarliestAndLatest() throws ExecutionException, InterruptedException {
 
         TopicPartition tAp1 = new TopicPartition("topicA", 1);
         TopicPartition tAp2 = new TopicPartition("topicA", 2);
@@ -137,9 +137,7 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         ListOffsetsResult.ListOffsetsResultInfo tBp1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
         ListOffsetsResult.ListOffsetsResultInfo tBp2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
 
-        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionEarliestListOffsetsResultInfoMap;
-
-        topicPartitionEarliestListOffsetsResultInfoMap = new HashMap<>();
+        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionEarliestListOffsetsResultInfoMap = new HashMap<>();
         topicPartitionEarliestListOffsetsResultInfoMap.put(tAp1, tAp1EarliestListOffsetsResultInfo);
         topicPartitionEarliestListOffsetsResultInfoMap.put(tAp2, tAp2EarliestListOffsetsResultInfo);
         topicPartitionEarliestListOffsetsResultInfoMap.put(tBp1, tBp1EarliestListOffsetsResultInfo);
@@ -194,5 +192,35 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         assertEquals(2L, gATotal.getValue());
         gBTotal = (Gauge) result.get("topicB/totalEarliestTimeOffset");
         assertEquals(2L, gBTotal.getValue());
+
+        //get the latest offsets
+
+        ListOffsetsResult.ListOffsetsResultInfo tAp1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(100, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo tAp2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(200, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo tBp1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(300, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo tBp2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(400, System.currentTimeMillis(), Optional.empty());
+
+        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionLatestListOffsetsResultInfoMap = new HashMap<>();
+        topicPartitionLatestListOffsetsResultInfoMap.put(tAp1, tAp1LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(tAp2, tAp2LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(tBp1, tBp1LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(tBp2, tBp2LatestListOffsetsResultInfo);
+
+        when(kafkaFuture.get()).thenReturn(topicPartitionLatestListOffsetsResultInfoMap);
+
+        result = kafkaOffsetPartitionAndTopicMetrics.getMetrics();
+        g1 = (Gauge) result.get("topicA/partition_1/latestTimeOffset");
+        g2 = (Gauge) result.get("topicA/partition_2/latestTimeOffset");
+        g3 = (Gauge) result.get("topicB/partition_1/latestTimeOffset");
+        g4 = (Gauge) result.get("topicB/partition_2/latestTimeOffset");
+        assertEquals(100L, g1.getValue());
+        assertEquals(200L, g2.getValue());
+        assertEquals(300L, g3.getValue());
+        assertEquals(400L, g4.getValue());
+
+        gATotal = (Gauge) result.get("topicA/totalLatestTimeOffset");
+        assertEquals(300L, gATotal.getValue());
+        gBTotal = (Gauge) result.get("topicB/totalLatestTimeOffset");
+        assertEquals(700L, gBTotal.getValue());
     }
 }

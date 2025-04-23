@@ -55,6 +55,24 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
 
     }
 
+    private static Map<TopicPartition, Long> getOffsets(Admin admin, Set<TopicPartition> topicPartitions, OffsetSpec offsetSpec)
+            throws InterruptedException, ExecutionException {
+
+        Map<TopicPartition, OffsetSpec> offsetSpecMap = new HashMap<>();
+        for (TopicPartition topicPartition : topicPartitions) {
+            offsetSpecMap.put(topicPartition, offsetSpec);
+        }
+        Map<TopicPartition, Long> ret = new HashMap<>();
+        ListOffsetsResult listOffsetsResult = admin.listOffsets(offsetSpecMap);
+        KafkaFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> all = listOffsetsResult.all();
+        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionListOffsetsResultInfoMap = all.get();
+        for (Map.Entry<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> entry :
+                topicPartitionListOffsetsResultInfoMap.entrySet()) {
+            ret.put(entry.getKey(), entry.getValue().offset());
+        }
+        return ret;
+    }
+
     @Override
     public Map<String, Metric> getMetrics() {
 
@@ -192,23 +210,5 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
             return Collections.EMPTY_MAP;
         }
         return endOffsets;
-    }
-
-    private static Map<TopicPartition, Long> getOffsets(Admin admin, Set<TopicPartition> topicPartitions, OffsetSpec offsetSpec)
-            throws InterruptedException, ExecutionException {
-
-        Map<TopicPartition, OffsetSpec> offsetSpecMap = new HashMap<>();
-        for (TopicPartition topicPartition : topicPartitions) {
-            offsetSpecMap.put(topicPartition, offsetSpec);
-        }
-        Map<TopicPartition, Long> ret = new HashMap<>();
-        ListOffsetsResult listOffsetsResult = admin.listOffsets(offsetSpecMap);
-        KafkaFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> all = listOffsetsResult.all();
-        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionListOffsetsResultInfoMap = all.get();
-        for (Map.Entry<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> entry :
-                topicPartitionListOffsetsResultInfoMap.entrySet()) {
-            ret.put(entry.getKey(), entry.getValue().offset());
-        }
-        return ret;
     }
 }
