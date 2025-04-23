@@ -1,5 +1,13 @@
 package org.apache.storm.kafka.spout.metric2;
 
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import org.apache.kafka.clients.admin.Admin;
@@ -13,9 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -25,7 +30,6 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
     private Set<TopicPartition> assignment;
     private Admin admin = mock(Admin.class);
     private HashMap<TopicPartition, OffsetManager> offsetManagers;
-    private ListOffsetsResult listOffsetsResultEarliest;
     private KafkaFuture kafkaFuture = mock(KafkaFuture.class);
 
     @BeforeEach
@@ -35,7 +39,7 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
     }
 
     @Test
-    public void registerMetricsGetSpoutLag() throws ExecutionException, InterruptedException {
+    public void registerMetricsGetSpoutLagAndPartitionRecords() throws ExecutionException, InterruptedException {
 
         TopicPartition tAp1 = new TopicPartition("topicA", 1);
         TopicPartition tAp2 = new TopicPartition("topicA", 2);
@@ -47,9 +51,7 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         ListOffsetsResult.ListOffsetsResultInfo tBp1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(300, System.currentTimeMillis(), Optional.empty());
         ListOffsetsResult.ListOffsetsResultInfo tBp2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(400, System.currentTimeMillis(), Optional.empty());
 
-        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionLatestListOffsetsResultInfoMap;
-
-        topicPartitionLatestListOffsetsResultInfoMap = new HashMap<>();
+        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionLatestListOffsetsResultInfoMap = new HashMap<>();
         topicPartitionLatestListOffsetsResultInfoMap.put(tAp1, tAp1LatestListOffsetsResultInfo);
         topicPartitionLatestListOffsetsResultInfoMap.put(tAp2, tAp2LatestListOffsetsResultInfo);
         topicPartitionLatestListOffsetsResultInfoMap.put(tBp1, tBp1LatestListOffsetsResultInfo);
@@ -57,11 +59,11 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
 
         when(kafkaFuture.get()).thenReturn(topicPartitionLatestListOffsetsResultInfoMap);
 
-        listOffsetsResultEarliest = mock(ListOffsetsResult.class);
-        when(listOffsetsResultEarliest.all()).thenReturn(kafkaFuture);
+        ListOffsetsResult listOffsetsResult = mock(ListOffsetsResult.class);
+        when(listOffsetsResult.all()).thenReturn(kafkaFuture);
 
         admin = mock(Admin.class);
-        when(admin.listOffsets(anyMap())).thenReturn(listOffsetsResultEarliest);
+        when(admin.listOffsets(anyMap())).thenReturn(listOffsetsResult);
 
         OffsetManager offsetManagerTaP1 = mock(OffsetManager.class);
         when(offsetManagerTaP1.getCommittedOffset()).thenReturn(90L);
@@ -94,15 +96,15 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         Gauge g2 = (Gauge) result.get("topicA/partition_2/spoutLag");
         Gauge g3 = (Gauge) result.get("topicB/partition_1/spoutLag");
         Gauge g4 = (Gauge) result.get("topicB/partition_2/spoutLag");
-        assertEquals(g1.getValue(), 10L);
-        assertEquals(g2.getValue(), 30L);
-        assertEquals(g3.getValue(), 100L);
-        assertEquals(g4.getValue(), 50L);
+        assertEquals(10L, g1.getValue());
+        assertEquals(30L, g2.getValue());
+        assertEquals(100L, g3.getValue());
+        assertEquals(50L, g4.getValue());
 
         Gauge gATotal = (Gauge) result.get("topicA/totalSpoutLag");
-        assertEquals(gATotal.getValue(), 40L);
+        assertEquals(40L, gATotal.getValue());
         Gauge gBTotal = (Gauge) result.get("topicB/totalSpoutLag");
-        assertEquals(gBTotal.getValue(), 150L);
+        assertEquals(150L, gBTotal.getValue());
 
         //get the metrics a second time. Values should be the same. In particular, the total values for the topic should not accumulate. Each call to getMetrics should reset the total values.
 
@@ -121,6 +123,39 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         gBTotal = (Gauge) result.get("topicB/totalSpoutLag");
         assertEquals(gBTotal.getValue(), 150L);
 
+        //get partition records
+
+        ListOffsetsResult.ListOffsetsResultInfo tAp1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo tAp2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(2, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo tBp1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(3, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo tBp2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(4, System.currentTimeMillis(), Optional.empty());
+
+        Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionEarliestListOffsetsResultInfoMap = new HashMap<>();
+        topicPartitionEarliestListOffsetsResultInfoMap.put(tAp1, tAp1EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(tAp2, tAp2EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(tBp1, tBp1EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(tBp2, tBp2EarliestListOffsetsResultInfo);
+
+        //mock consecutive calls. Each call to the recordsInPartition gauge will call kafkaFuture.get() twice
+        when(kafkaFuture.get()).thenReturn(topicPartitionLatestListOffsetsResultInfoMap, topicPartitionEarliestListOffsetsResultInfoMap,
+                topicPartitionLatestListOffsetsResultInfoMap, topicPartitionEarliestListOffsetsResultInfoMap,
+                topicPartitionLatestListOffsetsResultInfoMap, topicPartitionEarliestListOffsetsResultInfoMap,
+                topicPartitionLatestListOffsetsResultInfoMap, topicPartitionEarliestListOffsetsResultInfoMap);
+
+        result = kafkaOffsetPartitionAndTopicMetrics.getMetrics();
+        g1 = (Gauge) result.get("topicA/partition_1/recordsInPartition");
+        g2 = (Gauge) result.get("topicA/partition_2/recordsInPartition");
+        g3 = (Gauge) result.get("topicB/partition_1/recordsInPartition");
+        g4 = (Gauge) result.get("topicB/partition_2/recordsInPartition");
+        assertEquals(99L, g1.getValue());
+        assertEquals(198L, g2.getValue());
+        assertEquals(297L, g3.getValue());
+        assertEquals(396L, g4.getValue());
+
+        gATotal = (Gauge) result.get("topicA/totalRecordsInPartitions");
+        assertEquals(297L, gATotal.getValue());
+        gBTotal = (Gauge) result.get("topicB/totalRecordsInPartitions");
+        assertEquals(693L, gBTotal.getValue());
 
     }
 
@@ -145,11 +180,11 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
 
         when(kafkaFuture.get()).thenReturn(topicPartitionEarliestListOffsetsResultInfoMap);
 
-        listOffsetsResultEarliest = mock(ListOffsetsResult.class);
-        when(listOffsetsResultEarliest.all()).thenReturn(kafkaFuture);
+        ListOffsetsResult listOffsetsResult = mock(ListOffsetsResult.class);
+        when(listOffsetsResult.all()).thenReturn(kafkaFuture);
 
         admin = mock(Admin.class);
-        when(admin.listOffsets(anyMap())).thenReturn(listOffsetsResultEarliest);
+        when(admin.listOffsets(anyMap())).thenReturn(listOffsetsResult);
 
         OffsetManager offsetManagerTaP1 = mock(OffsetManager.class);
         when(offsetManagerTaP1.getLatestEmittedOffset()).thenReturn(50L);
