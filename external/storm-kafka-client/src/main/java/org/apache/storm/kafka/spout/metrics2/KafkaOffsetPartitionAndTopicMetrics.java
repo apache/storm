@@ -169,7 +169,6 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
             metrics.put(metricPath + "/" + "latestEmittedOffset", latestEmittedOffsetGauge);
             metrics.put(metricPath + "/" + "latestCompletedOffset", latestCompletedOffsetGauge);
             metrics.put(metricPath + "/" + "recordsInPartition", recordsInPartitionGauge);
-
         }
 
         for (KafkaOffsetTopicMetrics kafkaOffsetTopicMetrics : topicMetricsMap.values()) {
@@ -177,7 +176,6 @@ public class KafkaOffsetPartitionAndTopicMetrics implements MetricSet {
         }
 
         return metrics;
-
     }
 
     private Map<TopicPartition, Long> getBeginningOffsets(Set<TopicPartition> topicPartitions) {
