@@ -41,21 +41,21 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
     @Test
     public void registerMetricsGetSpoutLagAndPartitionRecords() throws ExecutionException, InterruptedException {
 
-        TopicPartition tAp1 = new TopicPartition("topicA", 1);
-        TopicPartition tAp2 = new TopicPartition("topicA", 2);
-        TopicPartition tBp1 = new TopicPartition("topicB", 1);
-        TopicPartition tBp2 = new TopicPartition("topicB", 2);
+        TopicPartition topicAPartition1 = new TopicPartition("topicA", 1);
+        TopicPartition topicAPartition2 = new TopicPartition("topicA", 2);
+        TopicPartition topicBPartition1 = new TopicPartition("topicB", 1);
+        TopicPartition topicBPartition2 = new TopicPartition("topicB", 2);
 
-        ListOffsetsResult.ListOffsetsResultInfo tAp1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(100, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tAp2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(200, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tBp1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(300, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tBp2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(400, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicAPartition1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(100, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicAPartition2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(200, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicBPartition1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(300, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicBPartition2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(400, System.currentTimeMillis(), Optional.empty());
 
         Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionLatestListOffsetsResultInfoMap = new HashMap<>();
-        topicPartitionLatestListOffsetsResultInfoMap.put(tAp1, tAp1LatestListOffsetsResultInfo);
-        topicPartitionLatestListOffsetsResultInfoMap.put(tAp2, tAp2LatestListOffsetsResultInfo);
-        topicPartitionLatestListOffsetsResultInfoMap.put(tBp1, tBp1LatestListOffsetsResultInfo);
-        topicPartitionLatestListOffsetsResultInfoMap.put(tBp2, tBp2LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(topicAPartition1, topicAPartition1LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(topicAPartition2, topicAPartition2LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(topicBPartition1, topicBPartition1LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(topicBPartition2, topicBPartition2LatestListOffsetsResultInfo);
 
         when(kafkaFuture.get()).thenReturn(topicPartitionLatestListOffsetsResultInfoMap);
 
@@ -65,29 +65,29 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         admin = mock(Admin.class);
         when(admin.listOffsets(anyMap())).thenReturn(listOffsetsResult);
 
-        OffsetManager offsetManagerTaP1 = mock(OffsetManager.class);
-        when(offsetManagerTaP1.getCommittedOffset()).thenReturn(90L);
+        OffsetManager offsetManagertopicAPartition1 = mock(OffsetManager.class);
+        when(offsetManagertopicAPartition1.getCommittedOffset()).thenReturn(90L);
 
-        OffsetManager offsetManagerTaP2 = mock(OffsetManager.class);
-        when(offsetManagerTaP2.getCommittedOffset()).thenReturn(170L);
+        OffsetManager offsetManagertopicAPartition2 = mock(OffsetManager.class);
+        when(offsetManagertopicAPartition2.getCommittedOffset()).thenReturn(170L);
 
-        OffsetManager offsetManagerTbP1 = mock(OffsetManager.class);
-        when(offsetManagerTbP1.getCommittedOffset()).thenReturn(200L);
+        OffsetManager offsetManagertopicBPartition1 = mock(OffsetManager.class);
+        when(offsetManagertopicBPartition1.getCommittedOffset()).thenReturn(200L);
 
-        OffsetManager offsetManagerTbP2 = mock(OffsetManager.class);
-        when(offsetManagerTbP2.getCommittedOffset()).thenReturn(350L);
+        OffsetManager offsetManagertopicBPartition2 = mock(OffsetManager.class);
+        when(offsetManagertopicBPartition2.getCommittedOffset()).thenReturn(350L);
 
         offsetManagers = new HashMap<>();
-        offsetManagers.put(tAp1, offsetManagerTaP1);
-        offsetManagers.put(tAp2, offsetManagerTaP2);
-        offsetManagers.put(tBp1, offsetManagerTbP1);
-        offsetManagers.put(tBp2, offsetManagerTbP2);
+        offsetManagers.put(topicAPartition1, offsetManagertopicAPartition1);
+        offsetManagers.put(topicAPartition2, offsetManagertopicAPartition2);
+        offsetManagers.put(topicBPartition1, offsetManagertopicBPartition1);
+        offsetManagers.put(topicBPartition2, offsetManagertopicBPartition2);
 
         assignment = new HashSet<>();
-        assignment.add(tAp1);
-        assignment.add(tAp2);
-        assignment.add(tBp1);
-        assignment.add(tBp2);
+        assignment.add(topicAPartition1);
+        assignment.add(topicAPartition2);
+        assignment.add(topicBPartition1);
+        assignment.add(topicBPartition2);
 
 
         KafkaOffsetPartitionAndTopicMetrics kafkaOffsetPartitionAndTopicMetrics = new KafkaOffsetPartitionAndTopicMetrics(() -> Collections.unmodifiableMap(offsetManagers), () -> admin, assignment);
@@ -125,16 +125,16 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
 
         //get partition records
 
-        ListOffsetsResult.ListOffsetsResultInfo tAp1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tAp2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(2, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tBp1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(3, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tBp2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(4, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicAPartition1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicAPartition2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(2, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicBPartition1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(3, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicBPartition2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(4, System.currentTimeMillis(), Optional.empty());
 
         Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionEarliestListOffsetsResultInfoMap = new HashMap<>();
-        topicPartitionEarliestListOffsetsResultInfoMap.put(tAp1, tAp1EarliestListOffsetsResultInfo);
-        topicPartitionEarliestListOffsetsResultInfoMap.put(tAp2, tAp2EarliestListOffsetsResultInfo);
-        topicPartitionEarliestListOffsetsResultInfoMap.put(tBp1, tBp1EarliestListOffsetsResultInfo);
-        topicPartitionEarliestListOffsetsResultInfoMap.put(tBp2, tBp2EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(topicAPartition1, topicAPartition1EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(topicAPartition2, topicAPartition2EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(topicBPartition1, topicBPartition1EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(topicBPartition2, topicBPartition2EarliestListOffsetsResultInfo);
 
         //mock consecutive calls. Each call to the recordsInPartition gauge will call kafkaFuture.get() twice
         when(kafkaFuture.get()).thenReturn(topicPartitionLatestListOffsetsResultInfoMap, topicPartitionEarliestListOffsetsResultInfoMap,
@@ -162,21 +162,21 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
     @Test
     public void registerMetricsGetEarliestAndLatest() throws ExecutionException, InterruptedException {
 
-        TopicPartition tAp1 = new TopicPartition("topicA", 1);
-        TopicPartition tAp2 = new TopicPartition("topicA", 2);
-        TopicPartition tBp1 = new TopicPartition("topicB", 1);
-        TopicPartition tBp2 = new TopicPartition("topicB", 2);
+        TopicPartition topicAPartition1 = new TopicPartition("topicA", 1);
+        TopicPartition topicAPartition2 = new TopicPartition("topicA", 2);
+        TopicPartition topicBPartition1 = new TopicPartition("topicB", 1);
+        TopicPartition topicBPartition2 = new TopicPartition("topicB", 2);
 
-        ListOffsetsResult.ListOffsetsResultInfo tAp1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tAp2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tBp1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tBp2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicAPartition1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicAPartition2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicBPartition1EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicBPartition2EarliestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(1, System.currentTimeMillis(), Optional.empty());
 
         Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionEarliestListOffsetsResultInfoMap = new HashMap<>();
-        topicPartitionEarliestListOffsetsResultInfoMap.put(tAp1, tAp1EarliestListOffsetsResultInfo);
-        topicPartitionEarliestListOffsetsResultInfoMap.put(tAp2, tAp2EarliestListOffsetsResultInfo);
-        topicPartitionEarliestListOffsetsResultInfoMap.put(tBp1, tBp1EarliestListOffsetsResultInfo);
-        topicPartitionEarliestListOffsetsResultInfoMap.put(tBp2, tBp2EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(topicAPartition1, topicAPartition1EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(topicAPartition2, topicAPartition2EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(topicBPartition1, topicBPartition1EarliestListOffsetsResultInfo);
+        topicPartitionEarliestListOffsetsResultInfoMap.put(topicBPartition2, topicBPartition2EarliestListOffsetsResultInfo);
 
         when(kafkaFuture.get()).thenReturn(topicPartitionEarliestListOffsetsResultInfoMap);
 
@@ -186,33 +186,33 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
         admin = mock(Admin.class);
         when(admin.listOffsets(anyMap())).thenReturn(listOffsetsResult);
 
-        OffsetManager offsetManagerTaP1 = mock(OffsetManager.class);
-        when(offsetManagerTaP1.getLatestEmittedOffset()).thenReturn(50L);
-        when(offsetManagerTaP1.getCommittedOffset()).thenReturn(40L);
+        OffsetManager offsetManagertopicAPartition1 = mock(OffsetManager.class);
+        when(offsetManagertopicAPartition1.getLatestEmittedOffset()).thenReturn(50L);
+        when(offsetManagertopicAPartition1.getCommittedOffset()).thenReturn(40L);
 
-        OffsetManager offsetManagerTaP2 = mock(OffsetManager.class);
-        when(offsetManagerTaP2.getLatestEmittedOffset()).thenReturn(100L);
-        when(offsetManagerTaP2.getCommittedOffset()).thenReturn(90L);
+        OffsetManager offsetManagertopicAPartition2 = mock(OffsetManager.class);
+        when(offsetManagertopicAPartition2.getLatestEmittedOffset()).thenReturn(100L);
+        when(offsetManagertopicAPartition2.getCommittedOffset()).thenReturn(90L);
 
-        OffsetManager offsetManagerTbP1 = mock(OffsetManager.class);
-        when(offsetManagerTbP1.getLatestEmittedOffset()).thenReturn(150L);
-        when(offsetManagerTbP1.getCommittedOffset()).thenReturn(149L);
+        OffsetManager offsetManagertopicBPartition1 = mock(OffsetManager.class);
+        when(offsetManagertopicBPartition1.getLatestEmittedOffset()).thenReturn(150L);
+        when(offsetManagertopicBPartition1.getCommittedOffset()).thenReturn(149L);
 
-        OffsetManager offsetManagerTbP2 = mock(OffsetManager.class);
-        when(offsetManagerTbP2.getLatestEmittedOffset()).thenReturn(200L);
-        when(offsetManagerTbP2.getCommittedOffset()).thenReturn(200L);
+        OffsetManager offsetManagertopicBPartition2 = mock(OffsetManager.class);
+        when(offsetManagertopicBPartition2.getLatestEmittedOffset()).thenReturn(200L);
+        when(offsetManagertopicBPartition2.getCommittedOffset()).thenReturn(200L);
 
         offsetManagers = new HashMap<>();
-        offsetManagers.put(tAp1, offsetManagerTaP1);
-        offsetManagers.put(tAp2, offsetManagerTaP2);
-        offsetManagers.put(tBp1, offsetManagerTbP1);
-        offsetManagers.put(tBp2, offsetManagerTbP2);
+        offsetManagers.put(topicAPartition1, offsetManagertopicAPartition1);
+        offsetManagers.put(topicAPartition2, offsetManagertopicAPartition2);
+        offsetManagers.put(topicBPartition1, offsetManagertopicBPartition1);
+        offsetManagers.put(topicBPartition2, offsetManagertopicBPartition2);
 
         assignment = new HashSet<>();
-        assignment.add(tAp1);
-        assignment.add(tAp2);
-        assignment.add(tBp1);
-        assignment.add(tBp2);
+        assignment.add(topicAPartition1);
+        assignment.add(topicAPartition2);
+        assignment.add(topicBPartition1);
+        assignment.add(topicBPartition2);
 
         KafkaOffsetPartitionAndTopicMetrics kafkaOffsetPartitionAndTopicMetrics = new KafkaOffsetPartitionAndTopicMetrics(() -> Collections.unmodifiableMap(offsetManagers), () -> admin, assignment);
         Map<String, Metric> result = kafkaOffsetPartitionAndTopicMetrics.getMetrics();
@@ -250,16 +250,16 @@ public class KafkaOffsetPartitionAndTopicMetricsTest {
 
         //get the latest offsets
 
-        ListOffsetsResult.ListOffsetsResultInfo tAp1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(100, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tAp2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(200, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tBp1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(300, System.currentTimeMillis(), Optional.empty());
-        ListOffsetsResult.ListOffsetsResultInfo tBp2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(400, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicAPartition1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(100, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicAPartition2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(200, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicBPartition1LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(300, System.currentTimeMillis(), Optional.empty());
+        ListOffsetsResult.ListOffsetsResultInfo topicBPartition2LatestListOffsetsResultInfo = new ListOffsetsResult.ListOffsetsResultInfo(400, System.currentTimeMillis(), Optional.empty());
 
         Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> topicPartitionLatestListOffsetsResultInfoMap = new HashMap<>();
-        topicPartitionLatestListOffsetsResultInfoMap.put(tAp1, tAp1LatestListOffsetsResultInfo);
-        topicPartitionLatestListOffsetsResultInfoMap.put(tAp2, tAp2LatestListOffsetsResultInfo);
-        topicPartitionLatestListOffsetsResultInfoMap.put(tBp1, tBp1LatestListOffsetsResultInfo);
-        topicPartitionLatestListOffsetsResultInfoMap.put(tBp2, tBp2LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(topicAPartition1, topicAPartition1LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(topicAPartition2, topicAPartition2LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(topicBPartition1, topicBPartition1LatestListOffsetsResultInfo);
+        topicPartitionLatestListOffsetsResultInfoMap.put(topicBPartition2, topicBPartition2LatestListOffsetsResultInfo);
 
         when(kafkaFuture.get()).thenReturn(topicPartitionLatestListOffsetsResultInfoMap);
 

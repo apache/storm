@@ -18,10 +18,10 @@
 
 package org.apache.storm.kafka.spout.metrics2;
 
-import java.util.function.Supplier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
