@@ -38,9 +38,8 @@ public class KafkaOffsetMetricManager<K, V> {
     private final Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier;
     private final Supplier<Admin> adminSupplier;
     private TopologyContext topologyContext;
+    private KafkaOffsetPartitionAndTopicMetrics kafkaOffsetPartitionAndTopicMetrics;
 
-    private Map<String, KafkaOffsetTopicMetrics> topicMetricsMap;
-    private Map<TopicPartition, KafkaOffsetPartitionMetrics> topicPartitionMetricsMap;
 
     public KafkaOffsetMetricManager(Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier,
                                     Supplier<Admin> adminSupplier,
@@ -48,9 +47,7 @@ public class KafkaOffsetMetricManager<K, V> {
         this.offsetManagerSupplier = offsetManagerSupplier;
         this.adminSupplier = adminSupplier;
         this.topologyContext = topologyContext;
-
-        this.topicMetricsMap = new HashMap<>();
-        this.topicPartitionMetricsMap = new HashMap<>();
+        
         LOG.info("Running KafkaOffsetMetricManager");
     }
 
@@ -58,14 +55,9 @@ public class KafkaOffsetMetricManager<K, V> {
 
         KafkaOffsetPartitionAndTopicMetrics topicPartitionMetricSet
                 = new KafkaOffsetPartitionAndTopicMetrics(offsetManagerSupplier, adminSupplier, newAssignment);
+        
+        this.kafkaOffsetPartitionAndTopicMetrics = topicPartitionMetricSet;
         topologyContext.registerMetricSet("kafkaOffset", topicPartitionMetricSet);
     }
 
-    public Map<TopicPartition, KafkaOffsetPartitionMetrics> getTopicPartitionMetricsMap() {
-        return topicPartitionMetricsMap;
-    }
-
-    public Map<String, KafkaOffsetTopicMetrics> getTopicMetricsMap() {
-        return topicMetricsMap;
-    }
 }
