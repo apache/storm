@@ -29,9 +29,12 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -65,6 +68,7 @@ public class KafkaSpoutReactivationTest {
     private final SpoutOutputCollector collector = mock(SpoutOutputCollector.class);
     private final long commitOffsetPeriodMs = 2_000;
     private Consumer<String, String> consumerSpy;
+    private Admin adminSpy;
     private KafkaSpout<String, String> spout;
     private final int maxPollRecords = 10;
 
@@ -78,9 +82,12 @@ public class KafkaSpoutReactivationTest {
                 .build();
         ClientFactory<String, String> clientFactory = new ClientFactoryDefault<>();
         this.consumerSpy = spy(clientFactory.createConsumer(spoutConfig.getKafkaProps()));
+        this.adminSpy = spy(clientFactory.createAdmin(spoutConfig.getKafkaProps()));
         ClientFactory<String, String> clientFactoryMock = mock(ClientFactory.class);
         when(clientFactoryMock.createConsumer(any()))
             .thenReturn(consumerSpy);
+        when(clientFactoryMock.createAdmin(any()))
+                .thenReturn(adminSpy);
         this.spout = new KafkaSpout<>(spoutConfig, clientFactoryMock, new TopicAssigner());
         SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitExtension.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, messageCount);
         SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
@@ -146,5 +153,24 @@ public class KafkaSpoutReactivationTest {
     public void testSpoutShouldResumeWhereItLeftOffWithEarliestStrategy() throws Exception {
         //With earliest, the spout should also resume where it left off, rather than restart at the earliest offset.
         doReactivationTest(FirstPollOffsetStrategy.EARLIEST);
+    }
+
+    @Test
+    public void testSpoutMustHandleGettingMetricsWhileDeactivated() throws Exception {
+        //Storm will try to get metrics from the spout even while deactivated, the spout must be able to handle this
+        prepareSpout(10, FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST);
+
+        for (int i = 0; i < 5; i++) {
+            KafkaSpoutMessageId msgId = emitOne();
+            spout.ack(msgId);
+        }
+
+        spout.deactivate();
+
+        Map<String, Metric> offsetMetric = spout.getKafkaOffsetMetricManager().getKafkaOffsetPartitionAndTopicMetrics().getMetrics();
+        Long partitionLag = (Long) ((Gauge) offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC + "/partition_0/spoutLag")).getValue();
+        Long spoutLag = (Long) ((Gauge) offsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC + "/totalSpoutLag")).getValue();
+        assertThat(partitionLag, is(5L));
+        assertThat(spoutLag, is(5L));
     }
 }
