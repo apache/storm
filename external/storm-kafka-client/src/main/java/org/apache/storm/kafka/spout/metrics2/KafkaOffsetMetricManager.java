@@ -38,6 +38,7 @@ public class KafkaOffsetMetricManager<K, V> {
     private final Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier;
     private final Supplier<Admin> adminSupplier;
     private TopologyContext topologyContext;
+
     private KafkaOffsetPartitionAndTopicMetrics kafkaOffsetPartitionAndTopicMetrics;
 
 
@@ -58,6 +59,10 @@ public class KafkaOffsetMetricManager<K, V> {
         
         this.kafkaOffsetPartitionAndTopicMetrics = topicPartitionMetricSet;
         topologyContext.registerMetricSet("kafkaOffset", topicPartitionMetricSet);
+    }
+
+    public KafkaOffsetPartitionAndTopicMetrics getKafkaOffsetPartitionAndTopicMetrics() {
+        return kafkaOffsetPartitionAndTopicMetrics;
     }
 
 }
