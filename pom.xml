@@ -129,7 +129,7 @@
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
         <calcite.version>1.16.0</calcite.version>
-        <jedis.version>5.2.0</jedis.version>
+        <jedis.version>6.0.0</jedis.version>
         <activemq.version>6.1.6</activemq.version>
 
         <jackson.version>2.18.3</jackson.version>
