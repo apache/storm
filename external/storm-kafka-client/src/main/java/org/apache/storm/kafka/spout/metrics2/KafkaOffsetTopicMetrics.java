@@ -41,7 +41,7 @@ public class KafkaOffsetTopicMetrics implements MetricSet {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaOffsetTopicMetrics.class);
 
-    private String topic;
+    private final String topic;
     long totalSpoutLag;
     long totalEarliestTimeOffset;
     long totalLatestTimeOffset;
@@ -114,26 +114,5 @@ public class KafkaOffsetTopicMetrics implements MetricSet {
         metrics.put(topic + "/" + "totalLatestCompletedOffset", totalLatestCompletedOffsetGauge);
         metrics.put(topic + "/" + "totalRecordsInPartitions", totalRecordsInPartitionsGauge);
         return metrics;
-    }
-
-    private class TopicMetrics {
-        long totalSpoutLag = 0L;
-        long totalEarliestTimeOffset = 0L;
-        long totalLatestTimeOffset = 0L;
-        long totalLatestEmittedOffset = 0L;
-        long totalLatestCompletedOffset = 0L;
-        long totalRecordsInPartitions = 0L;
-
-        public void incrementTotalSpoutLag(long offset) {
-            totalSpoutLag += offset;
-        }
-
-        public void incrementTotalEarliestTimeOffset(long offset) {
-            totalEarliestTimeOffset += offset;
-        }
-
-        public void incrementTotalLatestTimeOffset(long offset) {
-            totalLatestTimeOffset += offset;
-        }
     }
 }
