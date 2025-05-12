@@ -813,6 +813,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Netty/All-in-One (io.netty:netty-all:4.2.1.Final - https://netty.io/netty-all/)
         * Netty/Buffer (io.netty:netty-buffer:4.2.1.Final - https://netty.io/netty-buffer/)
         * Netty/Codec/Base (io.netty:netty-codec-base:4.2.1.Final - https://netty.io/netty-codec-base/)
+        * Netty/Codec/Classes/Quic (io.netty:netty-codec-classes-quic:4.2.1.Final - https://netty.io/netty-codec-classes-quic/)
         * Netty/Codec/Compression (io.netty:netty-codec-compression:4.2.1.Final - https://netty.io/netty-codec-compression/)
         * Netty/Codec/DNS (io.netty:netty-codec-dns:4.2.1.Final - https://netty.io/netty-codec-dns/)
         * Netty/Codec/HAProxy (io.netty:netty-codec-haproxy:4.2.1.Final - https://netty.io/netty-codec-haproxy/)
