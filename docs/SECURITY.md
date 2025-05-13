@@ -187,7 +187,113 @@ If users want to setup 2-way auth
 9. logviewer.https.want.client.auth (If this set to true server requests for client certificate authentication, but keeps the connection if no authentication provided)
 10. logviewer.https.need.client.auth (If this set to true server requires client to provide authentication)
 
+## Mutual TLS (mTLS) Support
 
+**Available since Storm 2.7.0 (STORM-4070)**
+
+Storm now supports mutual TLS for its internal Thrift RPC between Nimbus, Supervisors, and workers. mTLS goes beyond one-way TLS by requiring **both** sides to present and verify certificates, giving full two-way certificate authentication *and* encryption.
+
+### Example TLS Configuration
+
+### 1. Nimbus Settings
+
+```yaml
+# Thrift TLS Listener
+nimbus.thrift.tls.port: 6067
+nimbus.thrift.access.log.enabled: true
+nimbus.thrift.tls.server.only: true
+
+# Server-side certificates & truststore
+nimbus.thrift.tls.server.keystore.path: ~/tmp/ssl/server.keystore.jks
+nimbus.thrift.tls.server.keystore.password: password
+nimbus.thrift.tls.server.truststore.path: ~/tmp/ssl/server.truststore.jks
+nimbus.thrift.tls.server.truststore.password: password
+
+# Client-side certificates & transport plugin
+nimbus.thrift.client.use.tls: true
+nimbus.thrift.tls.client.keystore.path: ~/tmp/ssl/client.keystore.jks
+nimbus.thrift.tls.client.keystore.password: password
+nimbus.thrift.tls.client.truststore.path: ~/tmp/ssl/client.truststore.jks
+nimbus.thrift.tls.client.truststore.password: password
+nimbus.thrift.tls.transport: org.apache.storm.security.auth.tls.TlsTransportPlugin
+```
+### 2. Supervisor Settings
+
+```yaml
+# TLS transport plugin & client enable
+supervisor.thrift.transport: org.apache.storm.security.auth.tls.TlsTransportPlugin
+supervisor.thrift.client.use.tls: true
+
+# Supervisor as Thrift TLS server
+supervisor.thrift.tls.server.keystore.path: ~/tmp/ssl/server.keystore.jks
+supervisor.thrift.tls.server.keystore.password: password
+supervisor.thrift.tls.server.truststore.path: ~/tmp/ssl/server.truststore.jks
+supervisor.thrift.tls.server.truststore.password: password
+
+# Supervisor client settins
+supervisor.thrift.tls.client.keystore.path: ~/tmp/ssl/client.keystore.jks
+supervisor.thrift.tls.client.keystore.password: password
+supervisor.thrift.tls.client.truststore.path: ~/tmp/ssl/client.truststore.jks
+supervisor.thrift.tls.client.truststore.password: password
+```
+
+### 3. Worker Settings
+
+```yaml
+# Storm Netty messaging TLS (worker ↔ worker)
+storm.messaging.netty.tls.enable: true
+storm.messaging.netty.tls.require.open.ssl: true
+
+# Inbound (server-side) credentials
+storm.messaging.netty.tls.keystore.path: ~/tmp/ssl/server.keystore.jks
+storm.messaging.netty.tls.keystore.password: password
+storm.messaging.netty.tls.truststore.path: ~/tmp/ssl/server.truststore.jks
+storm.messaging.netty.tls.truststore.password: password
+
+# Outbound (client-side) credentials
+storm.messaging.netty.tls.client.keystore.path: ~/tmp/ssl/client.keystore.jks
+storm.messaging.netty.tls.client.keystore.password: password
+storm.messaging.netty.tls.client.truststore.path: ~/tmp/ssl/client.truststore.jks
+storm.messaging.netty.tls.client.truststore.password: password
+```
+
+### 4. Setting Descriptions
+
+| Setting                                           | Description                                                                                  |
+|---------------------------------------------------|----------------------------------------------------------------------------------------------|
+| `nimbus.thrift.tls.port`                         | Port on which Nimbus listens for TLS-encrypted Thrift connections (e.g., 6067)               |
+| `nimbus.thrift.tls.server.only`                   | Accept only TLS (disable plaintext Thrift)                                                   |
+| `nimbus.thrift.tls.server.keystore.path`          | Path to Nimbus server keystore (JKS)                                                        |
+| `nimbus.thrift.tls.server.keystore.password`      | Password for the Nimbus server keystore                                                     |
+| `nimbus.thrift.tls.server.truststore.path`        | Path to Nimbus server truststore                                                            |
+| `nimbus.thrift.tls.server.truststore.password`    | Password for the Nimbus truststore                                                          |
+| `nimbus.thrift.client.use.tls`                    | Enable TLS on Nimbus outbound Thrift calls                                                  |
+| `nimbus.thrift.tls.client.keystore.path`          | Path to Nimbus client keystore (for outbound connections)                                    |
+| `nimbus.thrift.tls.client.keystore.password`      | Password for the Nimbus client keystore                                                     |
+| `nimbus.thrift.tls.client.truststore.path`        | Path to Nimbus client truststore                                                            |
+| `nimbus.thrift.tls.client.truststore.password`    | Password for the Nimbus client truststore                                                   |
+| `nimbus.thrift.tls.transport`                     | TLS transport plugin class for Nimbus                                                       |
+| `storm.principal.tolocal`                         | Principal-to-local mapping class (for X.509 auth)                                           |
+| `supervisor.thrift.transport`                     | TLS transport plugin class for Supervisor Thrift                                            |
+| `supervisor.thrift.client.use.tls`                | Enable TLS for Supervisor outbound Thrift calls                                             |
+| `supervisor.thrift.tls.server.keystore.path`      | Path to Supervisor server keystore                                                          |
+| `supervisor.thrift.tls.server.keystore.password`  | Password for the Supervisor server keystore                                                 |
+| `supervisor.thrift.tls.server.truststore.path`    | Path to Supervisor server truststore                                                        |
+| `supervisor.thrift.tls.server.truststore.password`| Password for the Supervisor truststore                                                      |
+| `supervisor.thrift.tls.client.keystore.path`      | Path to Supervisor client keystore                                                          |
+| `supervisor.thrift.tls.client.keystore.password`  | Password for the Supervisor client keystore                                                 |
+| `supervisor.thrift.tls.client.truststore.path`    | Path to Supervisor client truststore                                                        |
+| `supervisor.thrift.tls.client.truststore.password`| Password for the Supervisor client truststore                                               |
+| `storm.messaging.netty.tls.enable`                | Enable TLS for Storm Netty messaging (inter-worker)                                         |
+| `storm.messaging.netty.tls.require.open.ssl`      | Require OpenSSL provider for Netty TLS                                                      |
+| `storm.messaging.netty.tls.keystore.path`         | Path to Netty server keystore                                                               |
+| `storm.messaging.netty.tls.keystore.password`     | Password for the Netty server keystore                                                      |
+| `storm.messaging.netty.tls.truststore.path`       | Path to Netty server truststore                                                             |
+| `storm.messaging.netty.tls.truststore.password`   | Password for the Netty server truststore                                                    |
+| `storm.messaging.netty.tls.client.keystore.path`  | Path to Netty client keystore                                                               |
+| `storm.messaging.netty.tls.client.keystore.password`| Password for the Netty client keystore                                                     |
+| `storm.messaging.netty.tls.client.truststore.path`| Path to Netty client truststore                                                             |
+| `storm.messaging.netty.tls.client.truststore.password`| Password for the Netty client truststore                                                  |
 
 
 ## Authentication (Kerberos)
