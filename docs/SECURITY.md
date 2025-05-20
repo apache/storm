@@ -191,7 +191,7 @@ If users want to setup 2-way auth
 
 **Available since Storm 2.7.0 (STORM-4070)**
 
-Storm now supports mutual TLS for its internal Thrift RPC between Nimbus, Supervisors, and workers. mTLS goes beyond one-way TLS by requiring **both** sides to present and verify certificates, giving full two-way certificate authentication *and* encryption.
+Storm now supports mutual TLS (mTLS) for internal Thrift RPC communication among Nimbus, Supervisors, and workers. Unlike one-way TLS, mTLS requires both parties to present and verify each other's certificates. This ensures full two-way certificate authentication and encryption.
 
 ### Example TLS Configuration
 
@@ -204,16 +204,16 @@ nimbus.thrift.access.log.enabled: true
 nimbus.thrift.tls.server.only: true
 
 # Server-side certificates & truststore
-nimbus.thrift.tls.server.keystore.path: ~/tmp/ssl/server.keystore.jks
+nimbus.thrift.tls.server.keystore.path: /etc/ssl/server.keystore.jks
 nimbus.thrift.tls.server.keystore.password: password
-nimbus.thrift.tls.server.truststore.path: ~/tmp/ssl/server.truststore.jks
+nimbus.thrift.tls.server.truststore.path: /etc/ssl//server.truststore.jks
 nimbus.thrift.tls.server.truststore.password: password
 
 # Client-side certificates & transport plugin
 nimbus.thrift.client.use.tls: true
-nimbus.thrift.tls.client.keystore.path: ~/tmp/ssl/client.keystore.jks
+nimbus.thrift.tls.client.keystore.path: /etc/ssl/client.keystore.jks
 nimbus.thrift.tls.client.keystore.password: password
-nimbus.thrift.tls.client.truststore.path: ~/tmp/ssl/client.truststore.jks
+nimbus.thrift.tls.client.truststore.path: /etc/ssl/client.truststore.jks
 nimbus.thrift.tls.client.truststore.password: password
 nimbus.thrift.tls.transport: org.apache.storm.security.auth.tls.TlsTransportPlugin
 ```
@@ -225,15 +225,15 @@ supervisor.thrift.transport: org.apache.storm.security.auth.tls.TlsTransportPlug
 supervisor.thrift.client.use.tls: true
 
 # Supervisor as Thrift TLS server
-supervisor.thrift.tls.server.keystore.path: ~/tmp/ssl/server.keystore.jks
+supervisor.thrift.tls.server.keystore.path: /etc/ssl/server.keystore.jks
 supervisor.thrift.tls.server.keystore.password: password
-supervisor.thrift.tls.server.truststore.path: ~/tmp/ssl/server.truststore.jks
+supervisor.thrift.tls.server.truststore.path: /etc/ssl/server.truststore.jks
 supervisor.thrift.tls.server.truststore.password: password
 
 # Supervisor client settins
-supervisor.thrift.tls.client.keystore.path: ~/tmp/ssl/client.keystore.jks
+supervisor.thrift.tls.client.keystore.path: /etc/ssl/client.keystore.jks
 supervisor.thrift.tls.client.keystore.password: password
-supervisor.thrift.tls.client.truststore.path: ~/tmp/ssl/client.truststore.jks
+supervisor.thrift.tls.client.truststore.path: /etc/ssl/client.truststore.jks
 supervisor.thrift.tls.client.truststore.password: password
 ```
 
@@ -245,15 +245,15 @@ storm.messaging.netty.tls.enable: true
 storm.messaging.netty.tls.require.open.ssl: true
 
 # Inbound (server-side) credentials
-storm.messaging.netty.tls.keystore.path: ~/tmp/ssl/server.keystore.jks
+storm.messaging.netty.tls.keystore.path: /etc/ssl/server.keystore.jks
 storm.messaging.netty.tls.keystore.password: password
-storm.messaging.netty.tls.truststore.path: ~/tmp/ssl/server.truststore.jks
+storm.messaging.netty.tls.truststore.path: /etc/ssl/server.truststore.jks
 storm.messaging.netty.tls.truststore.password: password
 
 # Outbound (client-side) credentials
-storm.messaging.netty.tls.client.keystore.path: ~/tmp/ssl/client.keystore.jks
+storm.messaging.netty.tls.client.keystore.path: /etc/ssl/client.keystore.jks
 storm.messaging.netty.tls.client.keystore.password: password
-storm.messaging.netty.tls.client.truststore.path: ~/tmp/ssl/client.truststore.jks
+storm.messaging.netty.tls.client.truststore.path: /etc/ssl/client.truststore.jks
 storm.messaging.netty.tls.client.truststore.password: password
 ```
 
@@ -262,8 +262,8 @@ storm.messaging.netty.tls.client.truststore.password: password
 | Setting                                           | Description                                                                                  |
 |---------------------------------------------------|----------------------------------------------------------------------------------------------|
 | `nimbus.thrift.tls.port`                         | Port on which Nimbus listens for TLS-encrypted Thrift connections (e.g., 6067)               |
-| `nimbus.thrift.tls.server.only`                   | Accept only TLS (disable plaintext Thrift)                                                   |
-| `nimbus.thrift.tls.server.keystore.path`          | Path to Nimbus server keystore (JKS)                                                        |
+| `nimbus.thrift.tls.server.only`                   | Nimbus accepts only secure TLS connections                                                  |
+| `nimbus.thrift.tls.server.keystore.path`          | Path to Nimbus server keystore                                                              |
 | `nimbus.thrift.tls.server.keystore.password`      | Password for the Nimbus server keystore                                                     |
 | `nimbus.thrift.tls.server.truststore.path`        | Path to Nimbus server truststore                                                            |
 | `nimbus.thrift.tls.server.truststore.password`    | Password for the Nimbus truststore                                                          |
