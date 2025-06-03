@@ -869,7 +869,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Plexus Interpolation API (org.codehaus.plexus:plexus-interpolation:1.27 - http://codehaus-plexus.github.io/plexus-interpolation/)
         * SnakeYAML (org.yaml:snakeyaml:2.2 - https://bitbucket.org/snakeyaml/snakeyaml)
         * Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.4.2 - https://github.com/dropwizard/logback-throttling-appender/)
-        * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.0 - https://github.com/FasterXML/woodstox)
+        * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.1 - https://github.com/FasterXML/woodstox)
 
     Apache License, Version 2.0, BSD 2-Clause, Eclipse Distribution License, Version 1.0, Eclipse Public License, Version 2.0, jQuery license, MIT License, Modified BSD, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception, W3C license
 
