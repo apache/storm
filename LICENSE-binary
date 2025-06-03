@@ -681,7 +681,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Commons Configuration (org.apache.commons:commons-configuration2:2.12.0 - https://commons.apache.org/proper/commons-configuration/)
         * Apache Commons Crypto (org.apache.commons:commons-crypto:1.1.0 - https://commons.apache.org/proper/commons-crypto/)
         * Apache Commons CSV (org.apache.commons:commons-csv:1.14.0 - http://commons.apache.org/proper/commons-csv/)
-        * Apache Commons Exec (org.apache.commons:commons-exec:1.4.0 - http://commons.apache.org/proper/commons-exec/)
+        * Apache Commons Exec (org.apache.commons:commons-exec:1.5.0 - http://commons.apache.org/proper/commons-exec/)
         * Apache Commons IO (commons-io:commons-io:2.19.0 - https://commons.apache.org/proper/commons-io/)
         * Apache Commons Logging (commons-logging:commons-logging:1.2 - http://commons.apache.org/proper/commons-logging/)
         * Apache Commons Net (commons-net:commons-net:3.9.0 - https://commons.apache.org/proper/commons-net/)
