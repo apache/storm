@@ -47,7 +47,6 @@ owner = "apache"
 repo = "storm"
 milestone = sys.argv[1]  # Milestone ID
 
-print(f"Fetching issues for milestone with id= '{milestone}'...")
 
 headers = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
