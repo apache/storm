@@ -660,7 +660,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     AL 2.0, GPL v2, MPL 2.0
 
-        * RabbitMQ Java Client (com.rabbitmq:amqp-client:5.24.0 - https://www.rabbitmq.com)
+        * RabbitMQ Java Client (com.rabbitmq:amqp-client:5.25.0 - https://www.rabbitmq.com)
 
     Apache License
 
@@ -670,7 +670,7 @@ The license texts of these dependencies can be found in the licenses directory.
     Apache License, Version 2.0
 
         * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
-        * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.30 - https://metrics.dropwizard.io/metrics-annotation)
+        * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.32 - https://metrics.dropwizard.io/metrics-annotation)
         * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.9.0 - http://commons.apache.org/proper/commons-cli/)
@@ -748,7 +748,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Esri Geometry API for Java (com.esri.geometry:esri-geometry-api:2.0.0 - https://github.com/Esri/geometry-api-java)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.1 - http://findbugs.sourceforge.net/)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
-        * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.30 - https://metrics.dropwizard.io/metrics-graphite)
+        * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.32 - https://metrics.dropwizard.io/metrics-graphite)
         * Gson (com.google.code.gson:gson:2.13.1 - https://github.com/google/gson)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:33.4.8-jre - https://github.com/google/guava)
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.3 - https://github.com/google/guava/failureaccess)
@@ -764,7 +764,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Jackson datatype: Guava (com.fasterxml.jackson.datatype:jackson-datatype-guava:2.19.0 - https://github.com/FasterXML/jackson-datatypes-collections)
         * Jackson datatype: jdk8 (com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.19.0 - https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8)
         * Jackson datatype: JSR310 (com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.0 - https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310)
-        * Jackson Integration for Metrics (io.dropwizard.metrics:metrics-json:4.2.30 - https://metrics.dropwizard.io/metrics-json)
+        * Jackson Integration for Metrics (io.dropwizard.metrics:metrics-json:4.2.32 - https://metrics.dropwizard.io/metrics-json)
         * Jackson Jakarta-RS: base (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base:2.19.0 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-base)
         * Jackson Jakarta-RS: JSON (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider:2.19.0 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-json-provider)
         * Jackson module: Blackbird (com.fasterxml.jackson.module:jackson-module-blackbird:2.19.0 - https://github.com/FasterXML/jackson-modules-base)
@@ -780,7 +780,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Jettison (org.codehaus.jettison:jettison:1.5.4 - no url defined)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.5.2 - https://urielch.github.io/)
         * JSpecify annotations (org.jspecify:jspecify:1.0.0 - http://jspecify.org/)
-        * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.30 - https://metrics.dropwizard.io/metrics-jvm)
+        * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.32 - https://metrics.dropwizard.io/metrics-jvm)
         * Kerby ASN1 Project (org.apache.kerby:kerby-asn1:2.0.3 - http://directory.apache.org/kerby/kerby-common/kerby-asn1)
         * Kerby Config (org.apache.kerby:kerby-config:2.0.3 - http://directory.apache.org/kerby/kerby-common/kerby-config)
         * Kerby-kerb core (org.apache.kerby:kerb-core:2.0.3 - http://directory.apache.org/kerby/kerby-kerb/kerb-core)
@@ -803,13 +803,13 @@ The license texts of these dependencies can be found in the licenses directory.
         * Maven Model (org.apache.maven:maven-model:3.9.9 - https://maven.apache.org/ref/3.6.0/maven-model/)
         * Maven Model Builder (org.apache.maven:maven-model-builder:3.9.9 - https://maven.apache.org/ref/3.9.9/maven-model-builder/)
         * Maven Repository Metadata Model (org.apache.maven:maven-repository-metadata:3.9.9 - https://maven.apache.org/ref/3.6.0/maven-repository-metadata/)
-        * Metrics Core (io.dropwizard.metrics:metrics-core:4.2.30 - https://metrics.dropwizard.io/metrics-core)
-        * Metrics Health Checks (io.dropwizard.metrics:metrics-healthchecks:4.2.30 - https://metrics.dropwizard.io/metrics-healthchecks)
-        * Metrics Integration for Jersey 3.x (io.dropwizard.metrics:metrics-jersey3:4.2.30 - https://metrics.dropwizard.io/metrics-jersey3)
-        * Metrics Integration for Jetty 11.x and higher (io.dropwizard.metrics:metrics-jetty11:4.2.30 - https://metrics.dropwizard.io/metrics-jetty11)
-        * Metrics Integration for Logback (io.dropwizard.metrics:metrics-logback:4.2.30 - https://metrics.dropwizard.io/metrics-logback)
-        * Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.2.30 - https://metrics.dropwizard.io/metrics-jmx)
-        * Metrics Utility Jakarta Servlets (io.dropwizard.metrics:metrics-jakarta-servlets:4.2.30 - https://metrics.dropwizard.io/metrics-jakarta-servlets)
+        * Metrics Core (io.dropwizard.metrics:metrics-core:4.2.32 - https://metrics.dropwizard.io/metrics-core)
+        * Metrics Health Checks (io.dropwizard.metrics:metrics-healthchecks:4.2.32 - https://metrics.dropwizard.io/metrics-healthchecks)
+        * Metrics Integration for Jersey 3.x (io.dropwizard.metrics:metrics-jersey3:4.2.32 - https://metrics.dropwizard.io/metrics-jersey3)
+        * Metrics Integration for Jetty 11.x and higher (io.dropwizard.metrics:metrics-jetty11:4.2.32 - https://metrics.dropwizard.io/metrics-jetty11)
+        * Metrics Integration for Logback (io.dropwizard.metrics:metrics-logback:4.2.32 - https://metrics.dropwizard.io/metrics-logback)
+        * Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.2.32 - https://metrics.dropwizard.io/metrics-jmx)
+        * Metrics Utility Jakarta Servlets (io.dropwizard.metrics:metrics-jakarta-servlets:4.2.32 - https://metrics.dropwizard.io/metrics-jakarta-servlets)
         * Netty/All-in-One (io.netty:netty-all:4.2.1.Final - https://netty.io/netty-all/)
         * Netty/Buffer (io.netty:netty-buffer:4.2.1.Final - https://netty.io/netty-buffer/)
         * Netty/Codec/Base (io.netty:netty-codec-base:4.2.1.Final - https://netty.io/netty-codec-base/)
