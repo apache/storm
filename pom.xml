@@ -26,7 +26,7 @@
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>2.8.1-SNAPSHOT</version>
+    <version>2.8.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -84,11 +84,11 @@
         <!-- dependency versions -->
         <clojure.version>1.12.0</clojure.version>
         <commons-compress.version>1.27.1</commons-compress.version>
-        <commons-io.version>2.18.0</commons-io.version>
+        <commons-io.version>2.19.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
-        <commons-exec.version>1.4.0</commons-exec.version>
-        <commons-collections.version>4.4</commons-collections.version>
+        <commons-exec.version>1.5.0</commons-exec.version>
+        <commons-collections.version>4.5.0</commons-collections.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
         <commons-codec.version>1.18.0</commons-codec.version>
         <commons-text.version>1.13.1</commons-text.version>
@@ -102,14 +102,14 @@
         <httpclient.core.version>4.4.16</httpclient.core.version>
         <jctools.version>4.0.5</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
-        <guava.version>33.4.7-jre</guava.version>
+        <guava.version>33.4.8-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
-        <netty-tcnative.version>2.0.70.Final</netty-tcnative.version>
-        <netty.version>4.2.0.Final</netty.version>
+        <netty-tcnative.version>2.0.72.Final</netty-tcnative.version>
+        <netty.version>4.2.1.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.24.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
-        <metrics.version>4.2.30</metrics.version>
+        <metrics.version>4.2.32</metrics.version>
         <mockito.version>5.14.2</mockito.version>
         <zookeeper.version>3.9.3</zookeeper.version>
         <snappy.version>1.1.10.7</snappy.version>
@@ -123,7 +123,7 @@
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
         <joda-time.version>2.14.0</joda-time.version>
         <thrift.version>0.19.0</thrift.version>
-        <junit.jupiter.version>5.12.2</junit.jupiter.version>
+        <junit.jupiter.version>5.13.0</junit.jupiter.version>
         <surefire.version>3.5.3</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
@@ -132,10 +132,10 @@
         <jedis.version>5.2.0</jedis.version>
         <activemq.version>6.1.6</activemq.version>
 
-        <jackson.version>2.18.3</jackson.version>
-        <jackson.databind.version>2.18.3</jackson.databind.version>
+        <jackson.version>2.19.0</jackson.version>
+        <jackson.databind.version>2.19.0</jackson.databind.version>
         <storm.kafka.client.version>3.9.0</storm.kafka.client.version>
-        <testcontainers.version>1.20.6</testcontainers.version>
+        <testcontainers.version>1.21.1</testcontainers.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude.groups>PerformanceTest</java.unit.test.exclude.groups>
@@ -143,11 +143,11 @@
         <clojure.test.set>!integration.*</clojure.test.set>
         <skipITs>true</skipITs>
 
-        <maven-resolver.version>1.9.22</maven-resolver.version>
+        <maven-resolver.version>1.9.23</maven-resolver.version>
         <maven.version>3.9.9</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.10</jersey.version>
-        <dropwizard.version>4.0.13</dropwizard.version>
+        <dropwizard.version>4.0.14</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.2.0</caffeine.version>
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
@@ -155,17 +155,17 @@
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
         <jaxb-version>2.3.1</jaxb-version>
         <activation-version>1.1.1</activation-version>
-        <rocksdb-jni-version>9.10.0</rocksdb-jni-version>
+        <rocksdb-jni-version>10.2.1</rocksdb-jni-version>
         <json-smart.version>2.5.2</json-smart.version>
         <byte-buddy.version>1.17.5</byte-buddy.version>
-        <gson.version>2.12.1</gson.version>
+        <gson.version>2.13.1</gson.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.8</asm.version>
-        <checker-qual.version>3.49.2</checker-qual.version>
-        <error_prone_annotations.version>2.37.0</error_prone_annotations.version>
+        <checker-qual.version>3.49.3</checker-qual.version>
+        <error_prone_annotations.version>2.38.0</error_prone_annotations.version>
         <bouncycastle.version>1.80</bouncycastle.version>
     </properties>
 
@@ -1257,7 +1257,7 @@
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
-                <version>7.1.0</version>
+                <version>7.1.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -1267,7 +1267,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.11.0</version>
+                <version>2.12.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1407,7 +1407,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.4.1</version>
+                    <version>3.5.0</version>
                     <executions>
                         <execution>
                             <id>cleanup</id>
@@ -1435,7 +1435,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.5.0</version>
+                    <version>3.5.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
