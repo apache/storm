@@ -58,7 +58,6 @@ import org.apache.storm.kafka.spout.internal.CommitMetadataManager;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
 import org.apache.storm.kafka.spout.internal.Timer;
 import org.apache.storm.kafka.spout.metrics2.KafkaOffsetMetricManager;
-import org.apache.storm.kafka.spout.metrics2.KafkaOffsetPartitionAndTopicMetrics;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -636,7 +635,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         boolean partitionChanged = topicAssigner.assignPartitions(consumer, assignedPartitions, rebalanceListener);
         if (partitionChanged && canRegisterMetrics()) {
             LOG.info("Partitions assignments has changed, updating metrics.");
-            kafkaOffsetMetricManager.registerPartitionAndTopicLevelMetrics(assignedPartitions);
+            kafkaOffsetMetricManager.registerMetricsForNewTopicPartitions(assignedPartitions);
         }
     }
 
