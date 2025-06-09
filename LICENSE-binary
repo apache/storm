@@ -794,7 +794,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Maven Artifact Resolver Connector Basic (org.apache.maven.resolver:maven-resolver-connector-basic:1.9.23 - https://maven.apache.org/resolver/maven-resolver-connector-basic/)
         * Maven Artifact Resolver Implementation (org.apache.maven.resolver:maven-resolver-impl:1.9.23 - https://maven.apache.org/resolver/maven-resolver-impl/)
         * Maven Artifact Resolver Named Locks (org.apache.maven.resolver:maven-resolver-named-locks:1.9.23 - https://maven.apache.org/resolver/maven-resolver-named-locks/)
-        * Maven Artifact Resolver Provider (org.apache.maven:maven-resolver-provider:3.9.9 - https://maven.apache.org/ref/3.9.9/maven-resolver-provider/)
+        * Maven Artifact Resolver Provider (org.apache.maven:maven-resolver-provider:3.9.10 - https://maven.apache.org/ref/3.9.10/maven-resolver-provider/)
         * Maven Artifact Resolver SPI (org.apache.maven.resolver:maven-resolver-spi:1.9.23 - https://maven.apache.org/resolver/maven-resolver-spi/)
         * Maven Artifact Resolver Transport File (org.apache.maven.resolver:maven-resolver-transport-file:1.9.23 - https://maven.apache.org/resolver/maven-resolver-transport-file/)
         * Maven Artifact Resolver Transport HTTP (org.apache.maven.resolver:maven-resolver-transport-http:1.9.23 - https://maven.apache.org/resolver/maven-resolver-transport-http/)
