@@ -84,7 +84,7 @@ List of third-party dependencies grouped by their license type.
         * Auto Common Libraries (com.google.auto:auto-common:1.2.1 - https://github.com/google/auto/tree/master/common)
         * AutoService (com.google.auto.service:auto-service-annotations:1.1.1 - https://github.com/google/auto/tree/main/service)
         * AutoService Processor (com.google.auto.service:auto-service:1.1.1 - https://github.com/google/auto/tree/main/service)
-        * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.0 - https://github.com/ben-manes/caffeine)
+        * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.1 - https://github.com/ben-manes/caffeine)
         * Calcite Core (org.apache.calcite:calcite-core:1.16.0 - https://calcite.apache.org/calcite-core)
         * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.16.0 - https://calcite.apache.org/calcite-linq4j)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
