@@ -842,6 +842,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Netty/Transport/Classes/Epoll (io.netty:netty-transport-classes-epoll:4.2.2.Final - https://netty.io/netty-transport-classes-epoll/)
         * Netty/Transport/Classes/io_uring (io.netty:netty-transport-classes-io_uring:4.2.2.Final - https://netty.io/netty-transport-classes-io_uring/)
         * Netty/Transport/Classes/KQueue (io.netty:netty-transport-classes-kqueue:4.2.2.Final - https://netty.io/netty-transport-classes-kqueue/)
+        * Netty/Transport/Native/Epoll (io.netty:netty-transport-native-epoll:4.2.2.Final - https://netty.io/netty-transport-native-epoll/)
         * Netty/Transport/Native/Unix/Common (io.netty:netty-transport-native-unix-common:4.2.2.Final - https://netty.io/netty-transport-native-unix-common/)
         * Netty/Transport/RXTX (io.netty:netty-transport-rxtx:4.2.2.Final - https://netty.io/netty-transport-rxtx/)
         * Netty/Transport/SCTP (io.netty:netty-transport-sctp:4.2.2.Final - https://netty.io/netty-transport-sctp/)
