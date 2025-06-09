@@ -144,7 +144,7 @@
         <skipITs>true</skipITs>
 
         <maven-resolver.version>1.9.23</maven-resolver.version>
-        <maven.version>3.9.9</maven.version>
+        <maven.version>3.9.10</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.10</jersey.version>
         <dropwizard.version>4.0.14</dropwizard.version>
