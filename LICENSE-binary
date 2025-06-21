@@ -934,7 +934,7 @@ The license texts of these dependencies can be found in the licenses directory.
     BSD License
 
         * JLine (jline:jline:2.14.6 - http://jline.sourceforge.net)
-        * Stax2 API (org.codehaus.woodstox:stax2-api:4.2.2 - http://github.com/FasterXML/stax2-api)
+        * Stax2 API (org.codehaus.woodstox:stax2-api:4.2.1 - http://github.com/FasterXML/stax2-api)
 
     CDDL/GPLv2+CE
 
