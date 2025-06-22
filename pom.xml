@@ -1428,7 +1428,7 @@
                             </goals>
                             <configuration>
                                 <excludeDefaultDirectories>true</excludeDefaultDirectories>
-                                maven-compiler-plugin <filesets>
+                                <filesets>
                                     <fileset>
                                         <directory>./logs/</directory>
                                     </fileset>
