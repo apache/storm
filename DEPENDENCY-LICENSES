@@ -19,7 +19,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0
 
-        * ActiveMQ :: Client (org.apache.activemq:activemq-client:6.1.6 - http://activemq.apache.org/activemq-client)
+        * ActiveMQ :: Client (org.apache.activemq:activemq-client:6.1.7 - http://activemq.apache.org/activemq-client)
         * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.32 - https://metrics.dropwizard.io/metrics-annotation)
         * Apache Avro (org.apache.avro:avro:1.12.0 - https://avro.apache.org)
