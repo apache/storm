@@ -710,7 +710,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Log4j API (org.apache.logging.log4j:log4j-api:2.25.0 - https://logging.apache.org/log4j/2.x/log4j-api/)
         * Apache Log4j Core (org.apache.logging.log4j:log4j-core:2.25.0 - https://logging.apache.org/log4j/2.x/log4j-core/)
         * Apache Log4j SLF4J Binding (org.apache.logging.log4j:log4j-slf4j2-impl:2.25.0 - https://logging.apache.org/log4j/2.x/log4j-slf4j2-impl/)
-        * Apache Thrift (org.apache.thrift:libthrift:0.19.0 - http://thrift.apache.org)
+        * Apache Thrift (org.apache.thrift:libthrift:0.22.0 - http://thrift.apache.org)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.13.0 - https://yetus.apache.org/audience-annotations)
         * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.3 - http://zookeeper.apache.org/zookeeper-jute)
