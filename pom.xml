@@ -135,7 +135,7 @@
         <jackson.version>2.19.1</jackson.version>
         <jackson.databind.version>2.19.1</jackson.databind.version>
         <storm.kafka.client.version>3.9.0</storm.kafka.client.version>
-        <testcontainers.version>1.21.2</testcontainers.version>
+        <testcontainers.version>1.21.3</testcontainers.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude.groups>PerformanceTest</java.unit.test.exclude.groups>
@@ -143,7 +143,7 @@
         <clojure.test.set>!integration.*</clojure.test.set>
         <skipITs>true</skipITs>
 
-        <maven-resolver.version>1.9.23</maven-resolver.version>
+        <maven-resolver.version>1.9.24</maven-resolver.version>
         <maven.version>3.9.10</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.10</jersey.version>
@@ -164,8 +164,8 @@
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.8</asm.version>
-        <checker-qual.version>3.49.4</checker-qual.version>
-        <error_prone_annotations.version>2.38.0</error_prone_annotations.version>
+        <checker-qual.version>3.49.5</checker-qual.version>
+        <error_prone_annotations.version>2.39.0</error_prone_annotations.version>
         <bouncycastle.version>1.81</bouncycastle.version>
     </properties>
 
@@ -1387,7 +1387,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.26.0</version>
+                    <version>3.27.0</version>
                     <configuration>
                         <targetJdk>${maven.compiler.target}</targetJdk>
                         <rulesets>
