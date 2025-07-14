@@ -106,17 +106,24 @@ public class ServerUtilsTest {
     private Collection<Long> getRunningProcessIds(String user) throws IOException {
         // get list of few running processes
         Collection<Long> pids = new ArrayList<>();
-        String cmd = ServerUtils.IS_ON_WINDOWS ? "tasklist" : (user == null) ? "ps -e" : "ps -U " + user ;
+        int pidIndex = 0;
+        String cmd;
+        if (ServerUtils.IS_ON_WINDOWS) {
+            cmd = "tasklist";
+            pidIndex = 1;
+        } else {
+            cmd = (user == null) ? "ps -e" : "ps -U " + user;
+        }
         Process p = Runtime.getRuntime().exec(cmd);
         try (BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
             while ((line = input.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty() || line.startsWith("PID")) {
+                if (line.isEmpty()) {
                     continue;
                 }
                 try {
-                    String pidStr = line.split("\\s")[0];
+                    String pidStr = line.split("\\s+")[pidIndex];
                     if (pidStr.equalsIgnoreCase("pid")) {
                         continue; // header line
                     }

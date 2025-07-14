@@ -130,7 +130,9 @@ public class BasicContainer extends Container {
         AdvancedFSOps ops, String profileCmd) throws IOException {
         super(type, conf, supervisorId, supervisorPort, port, assignment,
             resourceIsolationManager, workerId, topoConf, ops, metricsRegistry, containerMemoryTracker);
-        assert (localState != null);
+        if (localState == null) {
+            throw new IOException("LocalState parameter value is null");
+        }
         this.localState = localState;
 
         if (type.isRecovery() && !type.isOnlyKillable()) {
@@ -209,7 +211,11 @@ public class BasicContainer extends Container {
      */
     protected void createNewWorkerId() {
         type.assertFull();
-        assert (workerId == null);
+        if (workerId != null) {
+            String err =  "Incorrect usage of createNewWorkerId(), current workerId is " + workerId + ", expecting null";
+            LOG.error(err);
+            throw new AssertionError(err);
+        }
         synchronized (localState) {
             workerId = Utils.uuid();
             Map<String, Integer> workerToPort = localState.getApprovedWorkers();

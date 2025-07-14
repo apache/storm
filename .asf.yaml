@@ -31,3 +31,10 @@ github:
     - storm
     - streaming
     - distributed
+notifications:
+  commits:      commits@storm.apache.org
+  issues:       issues@storm.apache.org
+  pullrequests_status: issues@storm.apache.org
+  pullrequests_comment: issues@storm.apache.org
+  # Send dependabot PRs to commits@ instead
+  pullrequests_bot_dependabot: commits@storm.apache.org

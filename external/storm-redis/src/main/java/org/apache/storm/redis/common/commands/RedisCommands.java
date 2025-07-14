@@ -19,8 +19,9 @@
 package org.apache.storm.redis.common.commands;
 
 import java.util.Map;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
+
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
 /**
  * This interface represents Jedis methods exhaustively which are used on storm-redis.

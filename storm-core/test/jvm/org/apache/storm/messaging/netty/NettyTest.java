@@ -146,6 +146,7 @@ public class NettyTest {
         stormConf.put(Config.TOPOLOGY_TUPLE_SERIALIZER, "org.apache.storm.serialization.types.ListDelegateSerializer");
         stormConf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, false);
         stormConf.put(Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS, false);
+        stormConf.put(Config.STORM_MESSAGING_NETTY_FLUSH_TIMEOUT_MS, 600000);
         return stormConf;
     }
 

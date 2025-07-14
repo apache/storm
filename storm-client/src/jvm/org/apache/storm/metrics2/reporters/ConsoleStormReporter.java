@@ -15,16 +15,15 @@ package org.apache.storm.metrics2.reporters;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
+
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.apache.storm.Config;
 import org.apache.storm.daemon.metrics.ClientMetricsUtils;
 import org.apache.storm.metrics2.DimensionalReporter;
 import org.apache.storm.metrics2.MetricRegistryProvider;
-import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.metrics2.filters.StormMetricsFilter;
-import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,5 +101,10 @@ public class ConsoleStormReporter extends ScheduledStormReporter implements Dime
         for (Map.Entry<String, String> entry : dimensions.entrySet()) {
             System.out.println(entry.getKey() + " : " + entry.getValue());
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
     }
 }

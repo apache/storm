@@ -49,6 +49,7 @@ import org.apache.storm.shade.io.netty.channel.ChannelOption;
 import org.apache.storm.shade.io.netty.channel.EventLoopGroup;
 import org.apache.storm.shade.io.netty.channel.WriteBufferWaterMark;
 import org.apache.storm.shade.io.netty.channel.socket.nio.NioSocketChannel;
+import org.apache.storm.shade.io.netty.handler.ssl.SslContext;
 import org.apache.storm.shade.io.netty.util.HashedWheelTimer;
 import org.apache.storm.shade.io.netty.util.Timeout;
 import org.apache.storm.shade.io.netty.util.TimerTask;
@@ -69,8 +70,9 @@ import org.slf4j.LoggerFactory;
  * destination is currently unavailable.
  */
 public class Client extends ConnectionWithStatus implements ISaslClient {
-    private static final long PENDING_MESSAGES_FLUSH_TIMEOUT_MS = 600000L;
-    private static final long PENDING_MESSAGES_FLUSH_INTERVAL_MS = 1000L;
+    private final long pendingMessagesFlushTimeoutMs ;
+    private final long pendingMessagesFlushIntervalMs;
+    private final double pendingMessagesFlushFactor = 0.0016;
     /**
      * Periodically checks for connected channel in order to avoid loss of messages.
      */
@@ -145,6 +147,8 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
         int maxWaitMs = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, -1);
 
+        SslContext sslContext = NettyTlsUtils.createSslContext(topoConf, false);
+
         // Initiate connection to remote destination
         this.eventLoopGroup = eventLoopGroup;
         // Initiate connection to remote destination
@@ -156,12 +160,14 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
             .option(ChannelOption.SO_KEEPALIVE, true)
             .option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(lowWatermark, highWatermark))
             .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-            .handler(new StormClientPipelineFactory(this, remoteBpStatus, topoConf));
+            .handler(new StormClientPipelineFactory(this, remoteBpStatus, topoConf, sslContext));
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
         scheduleConnect(NO_DELAY_MS);
         int messageBatchSize = ObjectReader.getInt(topoConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
+        pendingMessagesFlushTimeoutMs = ObjectReader.getLong(topoConf.get(Config.STORM_MESSAGING_NETTY_FLUSH_TIMEOUT_MS), 600000L);
+        pendingMessagesFlushIntervalMs = (long) (pendingMessagesFlushFactor * pendingMessagesFlushTimeoutMs);
         batcher = new MessageBuffer(messageBatchSize);
         String clazz = (String) topoConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY);
         if (clazz == null) {
@@ -479,18 +485,18 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
 
     private void waitForPendingMessagesToBeSent() {
         LOG.info("waiting up to {} ms to send {} pending messages to {}",
-                 PENDING_MESSAGES_FLUSH_TIMEOUT_MS, pendingMessages.get(), dstAddressPrefixedName);
+                 pendingMessagesFlushTimeoutMs, pendingMessages.get(), dstAddressPrefixedName);
         long totalPendingMsgs = pendingMessages.get();
         long startMs = System.currentTimeMillis();
         while (pendingMessages.get() != 0) {
             try {
                 long deltaMs = System.currentTimeMillis() - startMs;
-                if (deltaMs > PENDING_MESSAGES_FLUSH_TIMEOUT_MS) {
+                if (deltaMs > pendingMessagesFlushTimeoutMs) {
                     LOG.error("failed to send all pending messages to {} within timeout, {} of {} messages were not "
                         + "sent", dstAddressPrefixedName, pendingMessages.get(), totalPendingMsgs);
                     break;
                 }
-                Thread.sleep(PENDING_MESSAGES_FLUSH_INTERVAL_MS);
+                Thread.sleep(pendingMessagesFlushIntervalMs);
             } catch (InterruptedException e) {
                 break;
             }

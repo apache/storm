@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.util.Map;
 import org.apache.storm.redis.common.commands.RedisCommands;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
 /**
  * Adapter class to make Jedis instance play with BinaryRedisCommands interface.

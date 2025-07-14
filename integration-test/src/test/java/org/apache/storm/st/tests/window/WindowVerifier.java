@@ -17,6 +17,8 @@
 package org.apache.storm.st.tests.window;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.storm.st.topology.TestableTopology;
@@ -27,8 +29,6 @@ import org.apache.storm.st.utils.TimeUtil;
 import org.apache.storm.st.wrapper.DecoratedLogLine;
 import org.apache.storm.st.wrapper.TopoWrap;
 import org.apache.storm.thrift.TException;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,8 +100,11 @@ public class WindowVerifier {
         final List<TimeDataWindow> allBoltLogLines = topo.getDeserializedDecoratedLogLines(boltName, TimeDataWindow::fromJson);
         assertTrue(allBoltLogLines.size() >= minBoltEmits,
                 "Expecting min " + minBoltEmits + " bolt emits, found: " + allBoltLogLines.size() + " \n\t" + allBoltLogLines);
-        
-        final DateTime firstWindowEndTime = TimeUtil.ceil(new DateTime(allSpoutLogLines.get(0).getDate()).withZone(DateTimeZone.UTC), slideSec);
+
+        ZonedDateTime firstWindowEndTime = TimeUtil.ceil(
+            ZonedDateTime.ofInstant(allSpoutLogLines.get(0).getDate().toInstant(), ZoneOffset.UTC),
+            slideSec
+        );
         final int numberOfWindows = allBoltLogLines.size();
         /*
          * Windows should be aligned to the slide size, starting at firstWindowEndTime - windowSec.
@@ -109,15 +112,15 @@ public class WindowVerifier {
          * This checks that the partitioned spout emits fall in the expected windows, based on the logs from the spout and bolt.
          */
         for (int i = 0; i < numberOfWindows; ++i) {
-            final DateTime windowEnd = firstWindowEndTime.plusSeconds(i * slideSec);
-            final DateTime  windowStart =  windowEnd.minusSeconds(windowSec);
+            final ZonedDateTime windowEnd = firstWindowEndTime.plusSeconds(i * slideSec);
+            final ZonedDateTime  windowStart =  windowEnd.minusSeconds(windowSec);
             LOG.info("Comparing window: " + windowStart + " to " + windowEnd + " iter " + (i+1) + "/" + numberOfWindows);
             
             final List<TimeData> expectedSpoutEmitsInWindow = allSpoutLogLines.stream()
                 .filter(spoutLog -> {
-                    DateTime spoutLogTime = new DateTime(spoutLog.getDate());
+                    final ZonedDateTime spoutLogTime = spoutLog.getDate().toInstant().atZone(ZoneOffset.UTC);
                     //The window boundaries are )windowStart, windowEnd)
-                    return spoutLogTime.isAfter(windowStart) && spoutLogTime.isBefore(windowEnd.plusMillis(1));
+                    return spoutLogTime.isAfter(windowStart) && spoutLogTime.isBefore(windowEnd.plusNanos(1_000_000));
                 }).collect(Collectors.toList());
             TimeDataWindow expectedWindow = new TimeDataWindow(expectedSpoutEmitsInWindow);
             

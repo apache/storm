@@ -111,9 +111,15 @@ public abstract class Container implements Killable {
         int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
         String workerId, Map<String, Object> topoConf, AdvancedFSOps ops,
         StormMetricsRegistry metricsRegistry, ContainerMemoryTracker containerMemoryTracker) throws IOException {
-        assert (type != null);
-        assert (conf != null);
-        assert (supervisorId != null);
+        if (type == null) {
+            throw new IOException("ContainerType parameter is null");
+        }
+        if (conf == null) {
+            throw new IOException("conf parameter value is null");
+        }
+        if (supervisorId == null) {
+            throw new IOException("SupervisorId parameter value is null");
+        }
 
         symlinksDisabled = (boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
 
@@ -137,14 +143,24 @@ public abstract class Container implements Killable {
         }
 
         if (this.type.isOnlyKillable()) {
-            assert (this.assignment == null);
-            assert (this.port <= 0);
-            assert (this.workerId != null);
+            if (this.assignment != null) {
+                throw new IOException("With ContainerType==OnlyKillable, expecting LocalAssignment member variable to be null");
+            }
+            if (this.port > 0) {
+                throw new IOException("With ContainerType==OnlyKillable, expecting port member variable <=0 but found " + this.port);
+            }
+            if (this.workerId == null) {
+                throw new IOException("With ContainerType==OnlyKillable, expecting WorkerId member variable to be assigned");
+            }
             topologyId = null;
             this.topoConf = null;
         } else {
-            assert (assignment != null);
-            assert (port > 0);
+            if (this.assignment == null) {
+                throw new IOException("With ContainerType!=OnlyKillable, expecting LocalAssignment member variable to be assigned");
+            }
+            if (this.port <= 0) {
+                throw new IOException("With ContainerType!=OnlyKillable, expecting port member variable >0 but found " + this.port);
+            }
             topologyId = assignment.get_topology_id();
             if (!this.ops.doRequiredTopoFilesExist(this.conf, topologyId)) {
                 LOG.info(
@@ -175,7 +191,9 @@ public abstract class Container implements Killable {
     }
 
     protected Map<String, Object> readTopoConf() throws IOException {
-        assert (topologyId != null);
+        if (topologyId == null) {
+            throw new IOException("Cannot readTopoConf: member variable topologyId is null");
+        }
         return ConfigUtils.readSupervisorStormConf(conf, topologyId);
     }
 

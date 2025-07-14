@@ -150,16 +150,22 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
                 prevCached = new HashMap<>();
             }
 
+            Map<ISpoutPartition, Object> prevStateMap = new HashMap<>();
+            Set<ISpoutPartition> partitions = new HashSet<>();
             for (Entry<String, EmitterPartitionState> e : partitionStates.entrySet()) {
-                String id = e.getKey();
                 EmitterPartitionState s = e.getValue();
                 s.rotatingState.removeState(tx.getTransactionId());
-                Object lastMeta = prevCached.get(id);
+                Object lastMeta = prevCached.get(s.partition.getId());
                 if (lastMeta == null) {
                     lastMeta = s.rotatingState.getLastState();
                 }
-                Object meta = emitter.emitPartitionBatch(tx, collector, s.partition, lastMeta);
-                metas.put(id, meta);
+                prevStateMap.put(s.partition, lastMeta);
+                partitions.add(s.partition);
+            }
+
+            Map<ISpoutPartition, Object> partitionMetaMap = emitter.emitBatchNew(tx, collector, partitions, prevStateMap);
+            for (Map.Entry<ISpoutPartition, Object> partitionMeta : partitionMetaMap.entrySet()) {
+                metas.put(partitionMeta.getKey().getId(), partitionMeta.getValue());
             }
             LOG.debug("Emitted Batch. [transaction = {}], [coordinatorMeta = {}], [collector = {}], [{}]",
                       tx, coordinatorMeta, collector, this);

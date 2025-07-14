@@ -35,10 +35,13 @@ storm.zookeeper.retry.interval: 1000
 storm.zookeeper.retry.intervalceiling.millis: 30000
 storm.zookeeper.auth.user: null
 storm.zookeeper.auth.password: null
+storm.zookeeper.ssl.enable: false
+storm.zookeeper.ssl.hostnameVerification: false
 storm.cluster.mode: "distributed" # can be distributed or local
 storm.local.mode.zmq: false
 storm.thrift.transport: "org.apache.storm.security.auth.SimpleTransportPlugin"
 storm.thrift.socket.timeout.ms: 600000
+storm.thrift.tls.socket.timeout.ms: 600000
 storm.principal.tolocal: "org.apache.storm.security.auth.DefaultPrincipalToLocal"
 storm.group.mapping.service: "org.apache.storm.security.auth.ShellBasedGroupsMapping"
 storm.group.mapping.service.params: null
@@ -63,6 +66,13 @@ nimbus.seeds : ["localhost"]
 nimbus.thrift.port: 6627
 nimbus.thrift.threads: 64
 nimbus.thrift.max_buffer_size: 1048576
+nimbus.thrift.tls.port: 0
+nimbus.thrift.tls.threads: 64
+nimbus.thrift.tls.max_buffer_size: 1048576
+nimbus.thrift.client.use.tls: false
+nimbus.thrift.tls.transport: "org.apache.storm.security.auth.tls.TlsTransportPlugin"
+nimbus.thrift.tls.client.auth.required: true
+topology.worker.nimbus.thrift.client.use.tls: false
 nimbus.childopts: "-Xmx1024m"
 nimbus.task.timeout.secs: 30
 nimbus.supervisor.timeout.secs: 60
@@ -222,6 +232,7 @@ task.credentials.poll.secs: 30
 storm.messaging.netty.server_worker_threads: 1
 storm.messaging.netty.client_worker_threads: 1
 storm.messaging.netty.buffer_size: 5242880 #5MB buffer
+storm.messaging.netty.flush_timeout_ms: 600000
 
 # The netty write buffer high watermark in bytes.
 # If the number of bytes queued in the netty's write buffer exceeds this value, the netty client will block
@@ -366,6 +377,7 @@ pacemaker.thrift.message.size.max: 10485760
 #default storm daemon metrics reporter plugins
 storm.daemon.metrics.reporter.plugins:
      - "org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter"
+storm.daemon.metrics.reporter.interval.secs: 10
 
 storm.metricstore.class: "org.apache.storm.metricstore.rocksdb.RocksDbStore"
 storm.metricprocessor.class: "org.apache.storm.metricstore.NimbusMetricProcessor"

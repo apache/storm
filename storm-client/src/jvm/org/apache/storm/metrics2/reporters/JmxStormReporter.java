@@ -12,8 +12,10 @@
 
 package org.apache.storm.metrics2.reporters;
 
-import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
+
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.daemon.metrics.ClientMetricsUtils;
@@ -81,6 +83,13 @@ public class JmxStormReporter implements StormReporter {
             reporter.stop();
         } else {
             throw new IllegalStateException("Attempt to stop without preparing " + getClass().getSimpleName());
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (reporter != null) {
+            reporter.close();
         }
     }
 }

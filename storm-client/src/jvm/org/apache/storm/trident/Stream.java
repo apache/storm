@@ -806,6 +806,15 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
         return this;
     }
 
+    /**
+     * Returns the label applied to the stream.
+     *
+     * @return the label applied to the stream.
+     */
+    public String getName() {
+        return name;
+    }
+
     @Override
     public Fields getOutputFields() {
         return node.allOutputFields;

@@ -232,9 +232,12 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     private Long getStoredCurrTransaction() {
         Long ret = INIT_TXID;
         for (TransactionalState state : states) {
-            Long curr = (Long) state.getData(CURRENT_TX);
-            if (curr != null && curr.compareTo(ret) > 0) {
-                ret = curr;
+            final Object o = state.getData(CURRENT_TX);
+            if (o instanceof Number) {
+                final Long curr = ((Number) o).longValue();
+                if (curr.compareTo(ret) > 0) {
+                    ret = curr;
+                }
             }
         }
         return ret;

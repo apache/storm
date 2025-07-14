@@ -19,11 +19,10 @@ package org.apache.storm.st.wrapper;
 
 import org.apache.storm.st.utils.AssertUtil;
 import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.apache.storm.st.utils.StringDecorator;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,22 +31,22 @@ import java.util.List;
  * This provides easy access to the log line timestamp and data.
  */
 public class DecoratedLogLine implements Comparable<DecoratedLogLine> {
-    private final DateTime logDate;
+    private final ZonedDateTime logDate;
     private final String data;
     private static final int DATE_LEN = "2016-05-04 23:38:10.702".length(); //format of date in worker logs
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     public DecoratedLogLine(String logLine) {
         final List<String> splitOnDecorator = Arrays.asList(StringDecorator.split2(StringUtils.strip(logLine)));
         AssertUtil.assertTwoElements(splitOnDecorator);
-        this.logDate = DATE_FORMAT.parseDateTime(splitOnDecorator.get(0).substring(0, DATE_LEN));
+        this.logDate = ZonedDateTime.parse(splitOnDecorator.get(0).substring(0, DATE_LEN), DATE_FORMAT);
         this.data = splitOnDecorator.get(1);
     }
 
     @Override
     public String toString() {
         return "LogData{" +
-                "logDate=" + DATE_FORMAT.print(logDate) +
+                "logDate=" + DATE_FORMAT.format(logDate) +
                 ", data='" + getData() + '\'' +
                 '}';
     }
@@ -61,7 +60,7 @@ public class DecoratedLogLine implements Comparable<DecoratedLogLine> {
         return data;
     }
 
-    public DateTime getLogDate() {
+    public ZonedDateTime getLogDate() {
         return logDate;
     }
 }

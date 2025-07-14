@@ -652,9 +652,11 @@ public class Utils {
             }
         }
 
-        if (allowedExceptions.contains(t.getClass())) {
-            LOG.info("Swallowing {} {}", t.getClass(), t);
-            return;
+        for (Class<?> classType : allowedExceptions) {
+            if (Utils.exceptionCauseIsInstanceOf(classType, t)) {
+                LOG.info("Swallowing {} {}", t.getClass(), t);
+                return;
+            }
         }
 
         if (worker && isAllowedWorkerException(t)) {
@@ -1195,7 +1197,8 @@ public class Utils {
     }
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
-        try (NimbusClient client = NimbusClient.getConfiguredClientAs(topoConf, asUser)) {
+        NimbusClient.Builder builder = NimbusClient.Builder.withConf(topoConf).asUser(asUser);
+        try (NimbusClient client = builder.build()) {
             return client.getClient().getTopologyInfoByName(name);
         } catch (NotAliveException notAliveException) {
             return null;

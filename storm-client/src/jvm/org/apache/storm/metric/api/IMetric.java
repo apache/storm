@@ -12,17 +12,31 @@
 
 package org.apache.storm.metric.api;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * Produces metrics.
+ * Usually, metric is a measurement identified by a name string.
+ * Dimensions are a collection of additional key-value metadata map containing extra information of this measurement.
+ * It is optional when customizing your metric by implementing this interface
  */
 public interface IMetric {
     /**
      * Get value and reset.
      *
      * @return an object that will be sent to
-     *     {@link IMetricsConsumer#handleDataPoints(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo,java.util.Collection)}.
+     *     {@link IMetricsConsumer#handleDataPoints(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo, java.util.Collection)}.
      *     If {@code null} is returned nothing will be sent. If this value can be reset, like with a counter, a side effect
      *     of calling this should be that the value is reset.
      */
     Object getValueAndReset();
+
+    /**
+     * Get dimension map. An empty map will be returned if metric is not dimensional.
+     * @return a K-V map of the additional metadata.
+     */
+    default Map<String, String> getDimensions() {
+        return Collections.emptyMap();
+    }
 }

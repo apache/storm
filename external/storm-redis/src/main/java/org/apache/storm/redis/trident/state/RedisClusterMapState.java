@@ -15,6 +15,8 @@ package org.apache.storm.redis.trident.state;
 import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.task.IMetricsContext;
@@ -31,6 +33,7 @@ import org.apache.storm.trident.state.map.OpaqueMap;
 import org.apache.storm.trident.state.map.SnapshottableMap;
 import org.apache.storm.trident.state.map.TransactionalMap;
 import org.apache.storm.tuple.Values;
+import redis.clients.jedis.Connection;
 import redis.clients.jedis.JedisCluster;
 
 /**
@@ -277,7 +280,7 @@ public class RedisClusterMapState<T> extends AbstractRedisMapState<T> {
      * RedisClusterMapState.Factory provides Redis Cluster environment version of StateFactory.
      */
     protected static class Factory implements StateFactory {
-        public static final redis.clients.jedis.JedisPoolConfig DEFAULT_POOL_CONFIG = new redis.clients.jedis.JedisPoolConfig();
+        public static final GenericObjectPoolConfig<Connection> DEFAULT_POOL_CONFIG = new GenericObjectPoolConfig<>();
 
         JedisClusterConfig jedisClusterConfig;
 
@@ -316,7 +319,7 @@ public class RedisClusterMapState<T> extends AbstractRedisMapState<T> {
          */
         @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-            JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
+            final JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
                                                          jedisClusterConfig.getTimeout(),
                                                          jedisClusterConfig.getTimeout(),
                                                          jedisClusterConfig.getMaxRedirections(),

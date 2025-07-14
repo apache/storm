@@ -18,7 +18,6 @@ package org.apache.storm.kafka.spout;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -27,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,12 +36,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.MockAdminClient;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.storm.kafka.spout.internal.ConsumerFactory;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
 import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.kafka.spout.subscription.TopicFilter;
@@ -86,8 +86,18 @@ public class SpoutWithMockedConsumerSetupHelper {
         final Answer<Object> set = invocation -> assignedPartitionsSet;
         doAnswer(set).when(consumerMock).assignment();
         
-        ConsumerFactory<K, V> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
-        KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory, assigner);
+        ClientFactory<K, V> clientFactory = new ClientFactory<K, V>() {
+            @Override
+            public Consumer<K, V> createConsumer(Map<String, Object> consumerProps) {
+                return consumerMock;
+            }
+
+            @Override
+            public Admin createAdmin(Map<String, Object> adminProps) {
+                return new MockAdminClient();
+            }
+        };
+        KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, clientFactory, assigner);
         
         spout.open(topoConf, contextMock, collectorMock);
         spout.activate();
@@ -152,7 +162,7 @@ public class SpoutWithMockedConsumerSetupHelper {
             records.put(tp, tpRecords);
         }
 
-        when(consumerMock.poll(anyLong()))
+        when(consumerMock.poll(any(Duration.class)))
             .thenReturn(new ConsumerRecords<>(records));
 
         for (int i = 0; i < totalOffsets; i++) {

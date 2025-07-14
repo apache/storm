@@ -29,17 +29,20 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.KafkaUnitExtension;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.ConsumerFactory;
-import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ClientFactory;
+import org.apache.storm.kafka.spout.internal.ClientFactoryDefault;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -65,6 +68,7 @@ public class KafkaSpoutReactivationTest {
     private final SpoutOutputCollector collector = mock(SpoutOutputCollector.class);
     private final long commitOffsetPeriodMs = 2_000;
     private Consumer<String, String> consumerSpy;
+    private Admin adminSpy;
     private KafkaSpout<String, String> spout;
     private final int maxPollRecords = 10;
 
@@ -76,12 +80,15 @@ public class KafkaSpoutReactivationTest {
                 .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
                 .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords)
                 .build();
-        ConsumerFactory<String, String> consumerFactory = new ConsumerFactoryDefault<>();
-        this.consumerSpy = spy(consumerFactory.createConsumer(spoutConfig.getKafkaProps()));
-        ConsumerFactory<String, String> consumerFactoryMock = mock(ConsumerFactory.class);
-        when(consumerFactoryMock.createConsumer(any()))
+        ClientFactory<String, String> clientFactory = new ClientFactoryDefault<>();
+        this.consumerSpy = spy(clientFactory.createConsumer(spoutConfig.getKafkaProps()));
+        this.adminSpy = spy(clientFactory.createAdmin(spoutConfig.getKafkaProps()));
+        ClientFactory<String, String> clientFactoryMock = mock(ClientFactory.class);
+        when(clientFactoryMock.createConsumer(any()))
             .thenReturn(consumerSpy);
-        this.spout = new KafkaSpout<>(spoutConfig, consumerFactoryMock, new TopicAssigner());
+        when(clientFactoryMock.createAdmin(any()))
+                .thenReturn(adminSpy);
+        this.spout = new KafkaSpout<>(spoutConfig, clientFactoryMock, new TopicAssigner());
         SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitExtension.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, messageCount);
         SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
     }
@@ -146,5 +153,25 @@ public class KafkaSpoutReactivationTest {
     public void testSpoutShouldResumeWhereItLeftOffWithEarliestStrategy() throws Exception {
         //With earliest, the spout should also resume where it left off, rather than restart at the earliest offset.
         doReactivationTest(FirstPollOffsetStrategy.EARLIEST);
+    }
+
+    @Test
+    public void testSpoutMustHandleGettingMetricsWhileDeactivated() throws Exception {
+        //Storm will try to get metrics from the spout even while deactivated, the spout must be able to handle this
+        prepareSpout(10, FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST);
+
+        for (int i = 0; i < 5; i++) {
+            KafkaSpoutMessageId msgId = emitOne();
+            spout.ack(msgId);
+        }
+        spout.deactivate();
+
+        Map<String, Metric> partitionsOffsetMetric = spout.getKafkaOffsetMetricManager().getTopicPartitionMetricsMap().get(new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC ,0)).getMetrics();
+        Long partitionLag = (Long) ((Gauge) partitionsOffsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC + "/partition_0/spoutLag")).getValue();
+        assertThat(partitionLag, is(5L));
+
+        Map<String, Metric> topicOffsetMetric = spout.getKafkaOffsetMetricManager().getTopicMetricsMap().get(SingleTopicKafkaSpoutConfiguration.TOPIC).getMetrics();
+        Long totalSpoutLag = (Long) ((Gauge) topicOffsetMetric.get(SingleTopicKafkaSpoutConfiguration.TOPIC + "/totalSpoutLag")).getValue();
+        assertThat(totalSpoutLag, is(5L));
     }
 }

@@ -33,7 +33,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
@@ -41,7 +41,6 @@ import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Utils;
-import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.Test;
 
 public class LogviewerLogPageHandlerTest {
@@ -70,19 +69,19 @@ public class LogviewerLogPageHandlerTest {
                 new WorkerLogs(stormConf, Paths.get(rootPath), metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
 
         final Response expectedAll = LogviewerResponseBuilder.buildSuccessJsonResponse(
-                Lists.newArrayList("topoA/port1/worker.log", "topoA/port2/worker.log", "topoB/port1/worker.log"),
+                List.of("topoA/port1/worker.log", "topoA/port2/worker.log", "topoB/port1/worker.log"),
                 null,
                 origin
         );
 
         final Response expectedFilterPort = LogviewerResponseBuilder.buildSuccessJsonResponse(
-                Lists.newArrayList("topoA/port1/worker.log", "topoB/port1/worker.log"),
+                List.of("topoA/port1/worker.log", "topoB/port1/worker.log"),
                 null,
                 origin
         );
 
         final Response expectedFilterTopoId = LogviewerResponseBuilder.buildSuccessJsonResponse(
-                Lists.newArrayList("topoB/port1/worker.log"),
+                List.of("topoB/port1/worker.log"),
                 null,
                 origin
         );
@@ -116,7 +115,7 @@ public class LogviewerLogPageHandlerTest {
 
             //The response should be empty, since you should not be able to list files outside the worker log root.
             final Response expected = LogviewerResponseBuilder.buildSuccessJsonResponse(
-                Lists.newArrayList(),
+                List.of(),
                 null,
                 origin
             );

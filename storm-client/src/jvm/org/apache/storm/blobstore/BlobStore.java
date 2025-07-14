@@ -444,7 +444,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
 
         @Override
         public long getVersion() throws IOException {
-            return part.getModTime();
+            return part.getVersion();
         }
 
         @Override

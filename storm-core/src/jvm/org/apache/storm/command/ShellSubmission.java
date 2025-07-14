@@ -33,7 +33,7 @@ public class ShellSubmission {
             System.exit(-1);
         }
         Map<String, Object> conf = ConfigUtils.readStormConfig();
-        try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
+        try (NimbusClient client = NimbusClient.Builder.withConf(conf).build()) {
             NimbusSummary ns = client.getClient().getLeader();
             String host = ns.get_host();
             int port = ns.get_port();

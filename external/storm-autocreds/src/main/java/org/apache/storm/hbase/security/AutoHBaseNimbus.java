@@ -33,12 +33,11 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.security.UserProvider;
-import org.apache.hadoop.hbase.security.token.TokenUtil;
+import org.apache.hadoop.hbase.security.token.ClientTokenUtil;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
-import org.apache.storm.Config;
 import org.apache.storm.common.AbstractHadoopNimbusPluginAutoCreds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +92,7 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
 
                 if (user.isHBaseSecurityEnabled(hbaseConf)) {
                     final Connection connection = ConnectionFactory.createConnection(hbaseConf, user);
-                    TokenUtil.obtainAndCacheToken(connection, user);
+                    ClientTokenUtil.obtainAndCacheToken(connection, user);
 
                     LOG.info("Obtained HBase tokens, adding to user credentials.");
 

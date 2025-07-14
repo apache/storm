@@ -29,16 +29,16 @@
     <asfext:pmc rdf:resource="http://storm.apache.org" />
     <shortdesc>Apache Storm is a distributed real-time computation system.</shortdesc>
     <description>Apache Storm is a distributed real-time computation system. Similar to how Hadoop provides a set of general primitives for doing batch processing, Storm provides a set of general primitives for doing real-time computation.</description>
-    <bug-database rdf:resource="https://issues.apache.org/jira/browse/STORM" />
+    <bug-database rdf:resource="https://github.com/apache/storm/issues" />
     <mailing-list rdf:resource="http://storm.apache.org/community.html" />
     <download-page rdf:resource="http://storm.apache.org/downloads.html" />
     <programming-language>Java</programming-language>
     <category rdf:resource="http://projects.apache.org/category/big-data" />
     <release>
       <Version>
-        <name>Apache Storm 2.6.0</name>
-        <created>2023-11-16</created>
-        <revision>2.6.0</revision>
+        <name>Apache Storm 2.8.1</name>
+        <created>2025-06-02</created>
+        <revision>2.8.1</revision>
       </Version>
     </release>
     <repository>

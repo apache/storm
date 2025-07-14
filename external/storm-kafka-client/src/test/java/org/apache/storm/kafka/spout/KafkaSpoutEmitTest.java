@@ -29,6 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,7 +81,7 @@ public class KafkaSpoutEmitTest {
         Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
         records.put(partition, SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, 10));
 
-        when(consumerMock.poll(anyLong()))
+        when(consumerMock.poll(any(Duration.class)))
             .thenReturn(new ConsumerRecords<>(records));
 
         spout.nextTuple();
@@ -100,7 +101,7 @@ public class KafkaSpoutEmitTest {
             //This is cheating a bit since maxPollRecords would normally spread this across multiple polls
             records.put(partition, SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, numRecords));
 
-            when(consumerMock.poll(anyLong()))
+            when(consumerMock.poll(any(Duration.class)))
                 .thenReturn(new ConsumerRecords<>(records));
 
             for (int i = 0; i < numRecords; i++) {
@@ -132,7 +133,7 @@ public class KafkaSpoutEmitTest {
             }
             InOrder inOrder = inOrder(consumerMock);
             inOrder.verify(consumerMock).seek(partition, failedOffsets.get(0));
-            inOrder.verify(consumerMock).poll(anyLong());
+            inOrder.verify(consumerMock).poll(any(Duration.class));
         }
     }
 
@@ -148,7 +149,7 @@ public class KafkaSpoutEmitTest {
             records.put(partitionTwo, SpoutWithMockedConsumerSetupHelper.createRecords(partitionTwo, 0, spoutConfig.getMaxUncommittedOffsets() + 1));
             int numMessages = spoutConfig.getMaxUncommittedOffsets()*2 + 1;
 
-            when(consumerMock.poll(anyLong()))
+            when(consumerMock.poll(any(Duration.class)))
                 .thenReturn(new ConsumerRecords<>(records));
 
             for (int i = 0; i < numMessages; i++) {
@@ -175,7 +176,7 @@ public class KafkaSpoutEmitTest {
             reset(collectorMock);
             
             Time.advanceTime(50);
-            when(consumerMock.poll(anyLong()))
+            when(consumerMock.poll(any(Duration.class)))
                 .thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition, SpoutWithMockedConsumerSetupHelper.createRecords(partition, failedMessageIdPartitionOne.get().offset(), 1))));
             
             spout.nextTuple();
@@ -187,7 +188,7 @@ public class KafkaSpoutEmitTest {
             //Should not seek on the paused partition
             inOrder.verify(consumerMock, never()).seek(eq(partitionTwo), anyLong());
             inOrder.verify(consumerMock).pause(Collections.singleton(partitionTwo));
-            inOrder.verify(consumerMock).poll(anyLong());
+            inOrder.verify(consumerMock).poll(any(Duration.class));
             inOrder.verify(consumerMock).resume(Collections.singleton(partitionTwo));
             
             reset(collectorMock);

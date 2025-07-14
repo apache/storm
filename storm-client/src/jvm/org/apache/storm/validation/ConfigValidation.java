@@ -417,6 +417,26 @@ public class ConfigValidation {
     }
 
     /**
+     * Validates a Long.
+     */
+    public static class LongValidator extends Validator {
+        @Override
+        public void validateField(String name, Object o) {
+            validateLong(name, o);
+        }
+
+        public void validateLong(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            if (o instanceof Number && ((Number) o).longValue() == ((Number) o).doubleValue()) {
+                return;
+            }
+            throw new IllegalArgumentException("Field " + name + " must be an Long within type range.");
+        }
+    }
+
+    /**
      * Validates an entry for ImpersonationAclUser.
      */
     public static class ImpersonationAclUserEntryValidator extends Validator {

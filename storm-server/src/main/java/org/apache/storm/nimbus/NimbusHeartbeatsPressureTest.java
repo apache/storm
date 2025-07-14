@@ -181,7 +181,7 @@ public class NimbusHeartbeatsPressureTest {
             this.tryTimes = tryTimes;
             this.runtimesBook = new double[tryTimes];
             try {
-                client = new NimbusClient(initializedConfig(), NIMBUS_HOST, NIMBUS_PORT, null, null);
+                client = NimbusClient.Builder.withConf(initializedConfig()).buildWithNimbusHostPort(NIMBUS_HOST, NIMBUS_PORT);
             } catch (TTransportException e) {
                 e.printStackTrace();
             }

@@ -23,7 +23,7 @@ import org.apache.storm.utils.NimbusLeaderNotFoundException;
 public class NimbusMetricProcessor implements WorkerMetricsProcessor {
     @Override
     public void processWorkerMetrics(Map<String, Object> conf, WorkerMetrics metrics) throws MetricException {
-        try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
+        try (NimbusClient client = NimbusClient.Builder.withConf(conf).forDaemon().build()) {
             client.getClient().processWorkerMetrics(metrics);
         } catch (TException | NimbusLeaderNotFoundException e) {
             throw new MetricException("Failed to process metrics", e);

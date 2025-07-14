@@ -17,7 +17,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,14 +34,8 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
         // Do nothing.
     }
 
-    /**
-     * Gets the user name from the request principal.
-     *
-     * @param req the servlet request
-     * @return the authenticated user, or null if none is authenticated
-     */
     @Override
-    public String getUserName(HttpServletRequest req) {
+    public String getUserName(jakarta.servlet.http.HttpServletRequest req) {
         String ret = null;
         if (req != null) {
             Principal princ = req.getUserPrincipal();
@@ -62,16 +55,8 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
         return ret;
     }
 
-    /**
-     * Populates a given context with a new Subject derived from the credentials in a servlet request.
-     *
-     * @param context the context to be populated
-     * @param req     the servlet request
-     * @return the context
-     */
     @Override
-    public ReqContext populateContext(ReqContext context,
-                                      HttpServletRequest req) {
+    public ReqContext populateContext(ReqContext context, jakarta.servlet.http.HttpServletRequest req) {
         String userName = getUserName(req);
 
         String doAsUser = req.getHeader("doAsUser");

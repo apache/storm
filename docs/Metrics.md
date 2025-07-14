@@ -303,13 +303,11 @@ Please refer to the [JVM documentation](https://docs.oracle.com/javase/8/docs/ap
 
 * There are metrics prefixed with `threads` providing the number of threads, daemon threads, blocked and deadlocked threads.
 
-##### Uptime
-
-* `uptimeSecs` reports the number of seconds the worker has been up for
-* `newWorkerEvent` is 1 when a worker is first started and 0 all other times.  This can be used to tell when a worker has crashed and is restarted.
-* `startTimeSecs` is when the worker started in seconds since the epoch
-
-##### doHeartbeat-calls
+##### Other worker metrics
 
 * `doHeartbeat-calls` is a meter that indicates the rate the worker is performing heartbeats.
+* `newWorkerEvent` is 1 when a worker is first started and 0 all other times.  This can be used to tell when a worker has crashed and is restarted.
+* `startTimeSecs` is when the worker started in seconds since the epoch
+* `uptimeSecs` reports the number of seconds the worker has been up for
+* `workerCpuUsage` reports the cpu usage of the worker as a percentage of cores.  1.0 indicates 1 cpu core.
 

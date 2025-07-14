@@ -18,9 +18,9 @@
 
 package org.apache.storm.daemon.ui.exceptionmappers;
 
-import javax.inject.Provider;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Provider;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.ui.UIHelpers;

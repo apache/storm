@@ -13,14 +13,16 @@
 package org.apache.storm.redis.bolt;
 
 import java.util.List;
+import java.util.Objects;
+
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.container.JedisCommandsContainer;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisFilterMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import redis.clients.jedis.GeoCoordinate;
-import redis.clients.jedis.JedisCommands;
 
 /**
  * Basic bolt for querying from Redis and filters out if key/field doesn't exist.
@@ -85,7 +87,7 @@ public class RedisFilterBolt extends AbstractRedisBolt {
         String key = filterMapper.getKeyFromTuple(input);
 
         boolean found;
-        JedisCommands jedisCommand = null;
+        JedisCommandsContainer jedisCommand = null;
         try {
             jedisCommand = getInstance();
 
@@ -112,7 +114,13 @@ public class RedisFilterBolt extends AbstractRedisBolt {
 
                 case GEO:
                     List<GeoCoordinate> geopos = jedisCommand.geopos(additionalKey, key);
-                    found = (geopos != null && geopos.size() > 0);
+                    if (geopos == null || geopos.isEmpty()) {
+                        found = false;
+                    } else {
+                        // If any entry is NOT null, then we have a match.
+                        found = geopos.stream()
+                            .anyMatch(Objects::nonNull);
+                    }
                     break;
 
                 default:
@@ -127,8 +135,6 @@ public class RedisFilterBolt extends AbstractRedisBolt {
         } catch (Exception e) {
             this.collector.reportError(e);
             this.collector.fail(input);
-        } finally {
-            returnInstance(jedisCommand);
         }
     }
 

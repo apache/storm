@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -73,7 +72,7 @@ public class HdfsManifestToResourcesPlugin implements OciManifestToResourcesPlug
         CacheLoader<Path, FileStatus> cacheLoader =
             new CacheLoader<Path, FileStatus>() {
                 @Override
-                public FileStatus load(@Nonnull Path path) throws Exception {
+                public FileStatus load(Path path) throws Exception {
                     return statBlob(path);
                 }
             };

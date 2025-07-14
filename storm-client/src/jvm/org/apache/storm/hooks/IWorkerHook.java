@@ -22,18 +22,7 @@ import org.apache.storm.task.WorkerUserContext;
  * when you want to execute operations before topology processing starts, or cleanup operations before your workers shut down.
  */
 public interface IWorkerHook extends Serializable {
-    /**
-     * This method is called when a worker is started.
-     *
-     * @param topoConf The Storm configuration for this worker
-     * @param context  This object can be used to get information about this worker's place within the topology
-     *
-     * @deprecated see {@link IWorkerHook#start(Map, WorkerUserContext)}
-     */
-    default void start(Map<String, Object> topoConf, WorkerTopologyContext context) {
-        // NOOP
-    }
-
+  
     /**
      * This method is called when a worker is started and can be used to do necessary prep-processing and allow initialization of shared
      * application state.
@@ -43,7 +32,7 @@ public interface IWorkerHook extends Serializable {
      * {@link WorkerUserContext#setResource(String, Object)} to set the shared application state.
      */
     default void start(Map<String, Object> topoConf, WorkerUserContext context) {
-        start(topoConf, context);
+         // NOOP
     }
 
     /**

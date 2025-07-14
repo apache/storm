@@ -121,6 +121,13 @@ public class ConfigValidationAnnotations {
         Class<?>[] entryValidatorClasses();
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface IsLong {
+        Class<?> validatorClass() default ConfigValidation.LongValidator.class;
+    }
+
+
     /**
      * Validates the type of each key and value in a map Validator with fields: validatorClass, keyValidatorClass, valueValidatorClass.
      */
