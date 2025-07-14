@@ -309,7 +309,8 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>javacc-maven-plugin</artifactId>
-                <version>3.1.1</version>
+                <!-- explicitly downgrade here -->
+                <version>2.4</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>

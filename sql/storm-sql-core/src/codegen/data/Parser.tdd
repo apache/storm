@@ -24,7 +24,8 @@
     "org.apache.calcite.sql.validate.*",
     "org.apache.calcite.util.*",
     "org.apache.storm.sql.parser.*",
-    "java.util.*"
+    "java.util.*",
+    "com.google.common.collect.Lists"
   ]
 
   # List of keywords.

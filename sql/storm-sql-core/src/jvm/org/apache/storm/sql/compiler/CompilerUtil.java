@@ -90,7 +90,8 @@ public class CompilerUtil {
         private RelDataType deriveRelDataType(SqlDataTypeSpec spec, RelDataTypeFactory typeFactory) {
             final String typeNameStr = spec.getTypeName().getSimple();
             final SqlTypeName sqlTypeName = SqlTypeName.get(typeNameStr.toUpperCase());
-            return typeFactory.createTypeWithNullability(typeFactory.createSqlType(sqlTypeName), spec.getNullable());
+            return typeFactory.createTypeWithNullability(typeFactory.createSqlType(sqlTypeName),
+                    spec.getNullable() != null && spec.getNullable());
         }
 
         private void interpretConstraint(ColumnConstraint constraint, int fieldIdx) {
