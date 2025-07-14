@@ -33,17 +33,20 @@ import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.Function;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
+import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
@@ -74,7 +77,7 @@ public class StormSqlContext {
         List<FieldInfo> fields = new ArrayList<>();
         for (ColumnDefinition col : n.fieldList()) {
             builder.field(col.name(), col.type(), col.constraint());
-            RelDataType dataType = col.type().deriveType(typeFactory);
+            RelDataType dataType = deriveRelDataType(col.type(), typeFactory);
             Class<?> javaType = (Class<?>) typeFactory.getJavaClass(dataType);
             ColumnConstraint constraint = col.constraint();
             boolean isPrimary = constraint != null && constraint instanceof ColumnConstraint.PrimaryKey;
@@ -97,6 +100,12 @@ public class StormSqlContext {
                 .tableName());
         }
         dataSources.put(n.tableName(), ds);
+    }
+
+    private RelDataType deriveRelDataType(SqlDataTypeSpec spec, RelDataTypeFactory typeFactory) {
+        final String typeNameStr = spec.getTypeName().getSimple();
+        final SqlTypeName sqlTypeName = SqlTypeName.get(typeNameStr.toUpperCase());
+        return typeFactory.createTypeWithNullability(typeFactory.createSqlType(sqlTypeName), spec.getNullable());
     }
 
     public void interpretCreateFunction(SqlCreateFunction sqlCreateFunction) throws ClassNotFoundException {

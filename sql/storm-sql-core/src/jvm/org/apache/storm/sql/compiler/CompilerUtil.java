@@ -81,10 +81,16 @@ public class CompilerUtil {
         }
 
         public TableBuilderInfo field(String name, SqlDataTypeSpec type, ColumnConstraint constraint) {
-            RelDataType dataType = type.deriveType(typeFactory);
+            RelDataType dataType = deriveRelDataType(type, typeFactory);
             interpretConstraint(constraint, fields.size());
             fields.add(new FieldType(name, dataType));
             return this;
+        }
+
+        private RelDataType deriveRelDataType(SqlDataTypeSpec spec, RelDataTypeFactory typeFactory) {
+            final String typeNameStr = spec.getTypeName().getSimple();
+            final SqlTypeName sqlTypeName = SqlTypeName.get(typeNameStr.toUpperCase());
+            return typeFactory.createTypeWithNullability(typeFactory.createSqlType(sqlTypeName), spec.getNullable());
         }
 
         private void interpretConstraint(ColumnConstraint constraint, int fieldIdx) {
