@@ -142,6 +142,16 @@
             <version>4.5.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <version>2.9.3</version>
+        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
@@ -258,28 +268,21 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>com.googlecode.fmpp-maven-plugin</groupId>
-                <artifactId>fmpp-maven-plugin</artifactId>
-                <version>1.0</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.freemarker</groupId>
-                        <artifactId>freemarker</artifactId>
-                        <version>2.3.34</version>
-                    </dependency>
-                </dependencies>
+            <plugin> <!-- generate sources from fmpp -->
+                <groupId>org.apache.drill.tools</groupId>
+                <artifactId>drill-fmpp-maven-plugin</artifactId>
+                <version>1.21.2</version>
                 <executions>
                     <execution>
-                        <id>generate-fmpp-sources</id>
+                        <id>generate-fmpp</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <cfgFile>${project.build.directory}/codegen/config.fmpp</cfgFile>
-                            <outputDirectory>target/generated-sources</outputDirectory>
-                            <templateDirectory>${project.build.directory}/codegen/templates</templateDirectory>
+                            <config>${project.build.directory}/codegen/config.fmpp</config>
+                            <output>${project.build.directory}/generated-sources</output>
+                            <templates>${project.build.directory}/codegen/templates</templates>
                         </configuration>
                     </execution>
                 </executions>
@@ -306,7 +309,8 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>javacc-maven-plugin</artifactId>
-                <version>3.1.1</version>
+                <!-- explicitly downgrade here -->
+                <version>2.4</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>

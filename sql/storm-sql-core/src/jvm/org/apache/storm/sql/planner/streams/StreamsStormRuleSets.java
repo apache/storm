@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import java.util.Iterator;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.rules.CalcMergeRule;
+import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.rules.FilterCalcMergeRule;
 import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
 import org.apache.calcite.rel.rules.FilterToCalcRule;
@@ -48,28 +49,28 @@ import org.apache.storm.sql.planner.streams.rules.StreamsScanRule;
 public class StreamsStormRuleSets {
     private static final ImmutableSet<RelOptRule> calciteToStormConversionRules =
         ImmutableSet.<RelOptRule>builder().add(
-            SortRemoveRule.INSTANCE,
+                CoreRules.SORT_REMOVE,
 
-            FilterToCalcRule.INSTANCE,
-            ProjectToCalcRule.INSTANCE,
-            FilterCalcMergeRule.INSTANCE,
-            ProjectCalcMergeRule.INSTANCE,
-            CalcMergeRule.INSTANCE,
+            CoreRules.FILTER_TO_CALC,
+            CoreRules.PROJECT_TO_CALC,
+            CoreRules.FILTER_CALC_MERGE,
+            CoreRules.PROJECT_CALC_MERGE,
+            CoreRules.CALC_MERGE,
 
             PruneEmptyRules.FILTER_INSTANCE,
             PruneEmptyRules.PROJECT_INSTANCE,
             PruneEmptyRules.UNION_INSTANCE,
 
-            ProjectFilterTransposeRule.INSTANCE,
-            FilterProjectTransposeRule.INSTANCE,
-            ProjectRemoveRule.INSTANCE,
+            CoreRules.PROJECT_FILTER_TRANSPOSE,
+            CoreRules.FILTER_PROJECT_TRANSPOSE,
+            CoreRules.PROJECT_REMOVE,
 
-            ReduceExpressionsRule.FILTER_INSTANCE,
-            ReduceExpressionsRule.PROJECT_INSTANCE,
-            ReduceExpressionsRule.CALC_INSTANCE,
+            CoreRules.FILTER_REDUCE_EXPRESSIONS,
+            CoreRules.PROJECT_REDUCE_EXPRESSIONS,
+            CoreRules.CALC_REDUCE_EXPRESSIONS,
 
             // merge and push unions rules
-            UnionEliminatorRule.INSTANCE,
+            CoreRules.UNION_REMOVE,
 
             StreamsScanRule.INSTANCE,
             StreamsFilterRule.INSTANCE,

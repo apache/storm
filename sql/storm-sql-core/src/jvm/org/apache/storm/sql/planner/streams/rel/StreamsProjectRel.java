@@ -26,6 +26,7 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.storm.sql.planner.StormRelUtils;
 import org.apache.storm.sql.planner.rel.StormProjectRelBase;
@@ -58,12 +59,14 @@ public class StreamsProjectRel extends StormProjectRelBase implements StreamsRel
         List<String> outputFieldNames = getRowType().getFieldNames();
         int outputCount = outputFieldNames.size();
 
-        List<RexNode> childExps = getChildExps();
-        RelDataType inputRowType = getInput(0).getRowType();
+        if (input instanceof RexCall) {
+            List<RexNode> childExps = ((RexCall) input).getOperands();
+            RelDataType inputRowType = getInput(0).getRowType();
 
-        ExecutableExpression projectionInstance = planCreator.createScalarInstance(childExps, inputRowType, projectionClassName);
-        EvaluationFunction evalFunc = new EvaluationFunction(projectionInstance, outputCount, planCreator.getDataContext());
-        final Stream<Values> finalStream = inputStream.map(evalFunc);
-        planCreator.addStream(finalStream);
+            ExecutableExpression projectionInstance = planCreator.createScalarInstance(childExps, inputRowType, projectionClassName);
+            EvaluationFunction evalFunc = new EvaluationFunction(projectionInstance, outputCount, planCreator.getDataContext());
+            final Stream<Values> finalStream = inputStream.map(evalFunc);
+            planCreator.addStream(finalStream);
+        }
     }
 }
