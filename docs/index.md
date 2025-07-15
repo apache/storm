@@ -38,18 +38,6 @@ We're also notifying it via annotating classes with marker interface `@Interface
 
 * [Streams API](Stream-API.html)
 
-#### SQL
-
-The Storm SQL integration allows users to run SQL queries over streaming data in Storm.  
-
-NOTE: Storm SQL is an `experimental` feature, so the internals of Storm SQL and supported features are subject to change. 
-But small change will not affect the user experience. We will notify the user when breaking UX change is introduced.
-
-* [Storm SQL overview](storm-sql.html)
-* [Storm SQL example](storm-sql-example.html)
-* [Storm SQL reference](storm-sql-reference.html)
-* [Storm SQL internal](storm-sql-internal.html)
-
 #### Flux
 
 * [Flux Data Driven Topology Builder](flux.html)

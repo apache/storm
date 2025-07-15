@@ -647,7 +647,6 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * Kryo (com.esotericsoftware:kryo:5.6.2 - https://github.com/EsotericSoftware/kryo/kryo)
         * MinLog (com.esotericsoftware:minlog:1.3.1 - https://github.com/EsotericSoftware/minlog)
-        * Protocol Buffers [Core] (com.google.protobuf:protobuf-java:3.3.0 - https://developers.google.com/protocol-buffers/protobuf-java/)
         * ReflectASM (com.esotericsoftware:reflectasm:1.11.9 - https://github.com/EsotericSoftware/reflectasm)
 
     Apache-2.0
@@ -669,9 +668,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Apache License, Version 2.0
 
-        * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.33 - https://metrics.dropwizard.io/metrics-annotation)
-        * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.9.0 - http://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.18.0 - http://commons.apache.org/proper/commons-codec/)
@@ -680,7 +677,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Commons Compress (org.apache.commons:commons-compress:1.27.1 - https://commons.apache.org/proper/commons-compress/)
         * Apache Commons Configuration (org.apache.commons:commons-configuration2:2.12.0 - https://commons.apache.org/proper/commons-configuration/)
         * Apache Commons Crypto (org.apache.commons:commons-crypto:1.1.0 - https://commons.apache.org/proper/commons-crypto/)
-        * Apache Commons CSV (org.apache.commons:commons-csv:1.14.0 - http://commons.apache.org/proper/commons-csv/)
         * Apache Commons Exec (org.apache.commons:commons-exec:1.5.0 - http://commons.apache.org/proper/commons-exec/)
         * Apache Commons IO (commons-io:commons-io:2.19.0 - https://commons.apache.org/proper/commons-io/)
         * Apache Commons Logging (commons-logging:commons-logging:1.2 - http://commons.apache.org/proper/commons-logging/)
@@ -717,15 +713,10 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.3 - http://zookeeper.apache.org/zookeeper)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:2.5.2 - https://urielch.github.io/)
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.2 - https://github.com/ben-manes/caffeine)
-        * Calcite Core (org.apache.calcite:calcite-core:1.16.0 - https://calcite.apache.org/calcite-core)
-        * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.16.0 - https://calcite.apache.org/calcite-linq4j)
         * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.7.0 - https://github.com/FasterXML/java-classmate)
         * com.helger:profiler (com.helger:profiler:1.1.1 - https://github.com/phax/profiler)
-        * com.yahoo.datasketches:memory (com.yahoo.datasketches:memory:0.9.0 - https://datasketches.github.io/memory/)
-        * com.yahoo.datasketches:sketches-core (com.yahoo.datasketches:sketches-core:0.9.0 - https://datasketches.github.io/sketches-core/)
         * Commons Lang (commons-lang:commons-lang:2.6 - http://commons.apache.org/lang/)
-        * Commons Logging (commons-logging:commons-logging:1.1.3 - http://commons.apache.org/proper/commons-logging/)
         * Commons Math (org.apache.commons:commons-math3:3.6.1 - http://commons.apache.org/math/)
         * Curator Client (org.apache.curator:curator-client:5.8.0 - https://curator.apache.org/curator-client)
         * Curator Framework (org.apache.curator:curator-framework:5.8.0 - https://curator.apache.org/curator-framework)
@@ -745,8 +736,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:4.0.14 - http://www.dropwizard.io/4.0.14/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
         * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:4.0.14 - http://www.dropwizard.io/4.0.14/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
         * error-prone annotations (com.google.errorprone:error_prone_annotations:2.40.0 - https://errorprone.info/error_prone_annotations)
-        * Esri Geometry API for Java (com.esri.geometry:esri-geometry-api:2.0.0 - https://github.com/Esri/geometry-api-java)
-        * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.1 - http://findbugs.sourceforge.net/)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.33 - https://metrics.dropwizard.io/metrics-graphite)
         * Gson (com.google.code.gson:gson:2.13.1 - https://github.com/google/gson)
@@ -927,8 +916,6 @@ The license texts of these dependencies can be found in the licenses directory.
 
     BSD 3-Clause License
 
-        * Commons Compiler (org.codehaus.janino:commons-compiler:2.7.6 - http://docs.codehaus.org/display/JANINO/Home/commons-compiler)
-        * Janino (org.codehaus.janino:janino:2.7.6 - http://docs.codehaus.org/display/JANINO/Home/janino)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
 
     BSD License

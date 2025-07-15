@@ -128,7 +128,6 @@
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <calcite.version>1.16.0</calcite.version>
         <jedis.version>5.2.0</jedis.version>
         <activemq.version>6.1.7</activemq.version>
 
@@ -505,7 +504,6 @@
 
                 <!-- The following modules have dependencies on external modules. -->
                 <module>flux</module>
-                <module>sql</module>
             </modules>
         </profile>
         <profile>
@@ -933,21 +931,6 @@
                 <version>${junit.jupiter.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.calcite</groupId>
-                <artifactId>calcite-core</artifactId>
-                <version>${calcite.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>ch.qos.reload4j</groupId>
-                        <artifactId>reload4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-reload4j</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
