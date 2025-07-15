@@ -315,7 +315,6 @@ def initialize_main_command():
     initialize_localconfvalue_subcommand(subparsers)
     initialize_remoteconfvalue_subcommand(subparsers)
     initialize_local_subcommand(subparsers)
-    initialize_sql_subcommand(subparsers)
     initialize_kill_subcommand(subparsers)
     initialize_upload_credentials_subcommand(subparsers)
     initialize_blobstore_subcommand(subparsers)
@@ -562,31 +561,6 @@ def initialize_upload_credentials_subcommand(subparsers):
 
     sub_parser.set_defaults(func=upload_credentials)
     add_common_options(sub_parser)
-
-
-def initialize_sql_subcommand(subparsers):
-    command_help = """Compiles the SQL statements into a Trident topology and submits it to Storm.
-    If user activates explain mode, SQL Runner analyzes each query statement
-    and shows query plan instead of submitting topology.
-    """
-
-    sub_parser = subparsers.add_parser("sql", help=command_help, formatter_class=SortingHelpFormatter)
-
-    add_client_jar_options(sub_parser)
-
-    sub_parser.add_argument("sql_file", metavar="sql-file")
-
-    group = sub_parser.add_mutually_exclusive_group(required=True)
-
-    group.add_argument(
-        "topology_name", metavar="topology-name",nargs='?'
-    )
-
-    group.add_argument("--explain", action="store_true", help="activate explain mode")
-
-    sub_parser.set_defaults(func=sql)
-    add_common_options(sub_parser, main_args=False)
-
 
 def initialize_blobstore_subcommand(subparsers):
     sub_parser = subparsers.add_parser("blobstore", formatter_class=SortingHelpFormatter)
