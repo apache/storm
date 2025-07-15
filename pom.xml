@@ -86,7 +86,7 @@
         <commons-compress.version>1.27.1</commons-compress.version>
         <commons-io.version>2.19.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.17.0</commons-lang3.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-exec.version>1.5.0</commons-exec.version>
         <commons-collections.version>4.5.0</commons-collections.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
@@ -107,7 +107,7 @@
         <netty-tcnative.version>2.0.72.Final</netty-tcnative.version>
         <netty.version>4.2.2.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j.version>2.25.0</log4j.version>
+        <log4j.version>2.25.1</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <metrics.version>4.2.33</metrics.version>
         <mockito.version>5.14.2</mockito.version>
@@ -149,7 +149,7 @@
         <jersey.version>3.1.10</jersey.version>
         <dropwizard.version>4.0.14</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
-        <caffeine.version>3.2.1</caffeine.version>
+        <caffeine.version>3.2.2</caffeine.version>
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
@@ -165,7 +165,7 @@
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.8</asm.version>
         <checker-qual.version>3.49.5</checker-qual.version>
-        <error_prone_annotations.version>2.39.0</error_prone_annotations.version>
+        <error_prone_annotations.version>2.40.0</error_prone_annotations.version>
         <bouncycastle.version>1.81</bouncycastle.version>
     </properties>
 
