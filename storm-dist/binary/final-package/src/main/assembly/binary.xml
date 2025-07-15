@@ -242,21 +242,6 @@
             </includes>
         </fileSet>
 
-        <!-- storm-sql -->
-        <fileSet>
-            <directory>${project.basedir}/../storm-sql-core-bin/target/sql-core/sql-core/lib-sql-core</directory>
-            <outputDirectory>lib-tools/sql/core</outputDirectory>
-            <includes>
-                <include>*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../storm-sql-runtime-bin/target/sql-runtime/sql-runtime/lib-sql-runtime</directory>
-            <outputDirectory>lib-tools/sql/runtime</outputDirectory>
-            <includes>
-                <include>*jar</include>
-            </includes>
-        </fileSet>
         <!-- Autocred plugins -->
         <fileSet>
             <directory>${project.basedir}/../storm-autocreds-bin/target/autocreds/autocreds/lib-autocreds</directory>

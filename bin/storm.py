@@ -1087,45 +1087,6 @@ def local(args):
         "org.apache.storm.LocalCluster", args,
         client=False, daemon=False, extrajvmopts=extrajvmopts)
 
-
-def sql(args):
-    local_jars = [arg for arg in args.jars.split(",") if arg]
-
-    artifact_to_file_jars = resolve_dependencies(
-        args.artifacts, args.artifactRepositories,
-        args.mavenLocalRepositoryDirectory, args.proxyUrl,
-        args.proxyUsername, args.proxyPassword
-    )
-
-    # include storm-sql-runtime jar(s) to local jar list
-    # --jars doesn't support wildcard so it should call get_jars_full
-    sql_runtime_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
-    local_jars.extend(sql_runtime_jars)
-
-    extra_jars = [USER_CONF_DIR, STORM_BIN_DIR]
-    extra_jars.extend(local_jars)
-    extra_jars.extend(artifact_to_file_jars.values())
-
-    # include this for running StormSqlRunner, but not for generated topology
-    sql_core_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
-    extra_jars.extend(sql_core_jars)
-
-    if args.explain:
-        sql_args = ["--file", args.sql_file, "--explain"]
-    else:
-        sql_args = ["--file", args.sql_file, "--topology", args.topology_name]
-
-    exec_storm_class(
-        "org.apache.storm.sql.StormSqlRunner", storm_config_opts=args.storm_config_opts,
-        jvmtype="-client",
-        extrajars=extra_jars,
-        main_class_args=sql_args,
-        daemon=False,
-        jvmopts=["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)],
-        overriding_conf_file=args.config)
-
-
 def kill(args):
     exec_storm_class(
         "org.apache.storm.command.KillTopology",
