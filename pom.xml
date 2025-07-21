@@ -84,7 +84,7 @@
         <!-- dependency versions -->
         <clojure.version>1.12.1</clojure.version>
         <commons-compress.version>1.27.1</commons-compress.version>
-        <commons-io.version>2.19.0</commons-io.version>
+        <commons-io.version>2.20.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-exec.version>1.5.0</commons-exec.version>
@@ -105,19 +105,19 @@
         <guava.version>33.4.8-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.72.Final</netty-tcnative.version>
-        <netty.version>4.2.2.Final</netty.version>
+        <netty.version>4.2.3.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.25.1</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <metrics.version>4.2.33</metrics.version>
         <mockito.version>5.14.2</mockito.version>
         <zookeeper.version>3.9.3</zookeeper.version>
-        <snappy.version>1.1.10.7</snappy.version>
+        <snappy.version>1.1.10.8</snappy.version>
         <jline.version>2.14.6</jline.version>
-        <hikari.version>6.3.0</hikari.version>
+        <hikari.version>6.3.1</hikari.version>
         <hadoop.version>3.4.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
-        <hbase.version>2.6.2-hadoop3</hbase.version>
+        <hbase.version>2.6.3-hadoop3</hbase.version>
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.4</objensis.version>
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
@@ -132,8 +132,8 @@
         <jedis.version>5.2.0</jedis.version>
         <activemq.version>6.1.7</activemq.version>
 
-        <jackson.version>2.19.1</jackson.version>
-        <jackson.databind.version>2.19.1</jackson.databind.version>
+        <jackson.version>2.19.2</jackson.version>
+        <jackson.databind.version>2.19.2</jackson.databind.version>
         <storm.kafka.client.version>3.9.0</storm.kafka.client.version>
         <testcontainers.version>1.21.3</testcontainers.version>
 
@@ -144,7 +144,7 @@
         <skipITs>true</skipITs>
 
         <maven-resolver.version>1.9.24</maven-resolver.version>
-        <maven.version>3.9.10</maven.version>
+        <maven.version>3.9.11</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.10</jersey.version>
         <dropwizard.version>4.0.14</dropwizard.version>
