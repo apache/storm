@@ -47,18 +47,6 @@ public interface IVersionInfo {
     String getDate();
 
     /**
-     * Get the name of the user that did the build.
-     * @return the name of the user that did the build.
-     */
-    String getUser();
-
-    /**
-     * Get the full SCM URL for the build.
-     * @return the SCM URL of the build.
-     */
-    String getUrl();
-
-    /**
      * Get the checksum of the source.
      * @return the checksum of the source.
      */
