@@ -86,16 +86,6 @@ public final class VersionInfo {
         }
 
         @Override
-        public String getUser() {
-            return info.getProperty("user", "Unknown");
-        }
-
-        @Override
-        public String getUrl() {
-            return info.getProperty("url", "Unknown");
-        }
-
-        @Override
         public String getSrcChecksum() {
             return info.getProperty("srcChecksum", "Unknown");
         }
@@ -104,7 +94,6 @@ public final class VersionInfo {
         public String getBuildVersion() {
             return this.getVersion()
                     + " from " + getRevision()
-                    + " by " + getUser()
                     + " source checksum " + getSrcChecksum();
         }
     }
@@ -224,22 +213,6 @@ public final class VersionInfo {
     }
 
     /**
-     * Get the name of the user that did the build.
-     * @return the name of the user that did the build.
-     */
-    public static String getUser() {
-        return OUR_FULL_VERSION.getUser();
-    }
-
-    /**
-     * Get the full SCM URL for the build.
-     * @return the SCM URL of the build.
-     */
-    public static String getUrl() {
-        return OUR_FULL_VERSION.getUrl();
-    }
-
-    /**
      * Get the checksum of the source.
      * @return the checksum of the source.
      */
@@ -257,9 +230,7 @@ public final class VersionInfo {
 
     public static void main(String[] args) {
         System.out.println("Storm " + getVersion());
-        System.out.println("URL " + getUrl() + " -r " + getRevision());
         System.out.println("Branch " + getBranch());
-        System.out.println("Compiled by " + getUser() + " on " + getDate());
         System.out.println("From source with checksum " + getSrcChecksum());
     }
 }

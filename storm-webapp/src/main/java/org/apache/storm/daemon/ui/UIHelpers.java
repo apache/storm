@@ -538,8 +538,6 @@ public class UIHelpers {
         ret.put("revision", info.getRevision());
         ret.put("branch", info.getBranch());
         ret.put("date", info.getDate());
-        ret.put("user", info.getUser());
-        ret.put("url", info.getUrl());
         ret.put("srcChecksum", info.getSrcChecksum());
         return ret;
     }
