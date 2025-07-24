@@ -1600,17 +1600,7 @@ public class Utils {
                         return "Unknown";
                     }
 
-                    @Override
-                    public String getUser() {
-                        return "Unknown";
-                    }
-
-                    @Override
-                    public String getUrl() {
-                        return "Unknown";
-                    }
-
-                    @Override
+                     @Override
                     public String getSrcChecksum() {
                         return "Unknown";
                     }
