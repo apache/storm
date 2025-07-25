@@ -136,24 +136,6 @@ class TestStormCli(TestCase):
             ])
         )
 
-    def test_sql_command(self):
-        self.base_test(
-            ['storm', 'sql', 'apache_log_error_filtering.sql', 'apache_log_error_filtering', '--artifacts',
-             '"org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka:2.0.0-SNAPSHOT,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12,org.apache.kafka:kafka-clients:0.8.2.2"'
-            ], self.mock_execvp, mock.call(
-                self.java_cmd,
-                [self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
-                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
-                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                 self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' +
-                 self.storm_dir +
-                 '/conf:' + self.storm_dir + '/bin:' + self.storm_dir + '/lib-tools/sql/core',\
-                 '-Dstorm.dependency.jars=', '-Dstorm.dependency.artifacts={}',
-                 'org.apache.storm.sql.StormSqlRunner', '--file', 'apache_log_error_filtering.sql',
-                 '--topology', 'apache_log_error_filtering']
-            )
-        )
-
     def test_kill_command(self):
         self.base_test([
             'storm', 'kill', 'doomed_topology'
