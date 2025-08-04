@@ -114,7 +114,7 @@
         <zookeeper.version>3.9.3</zookeeper.version>
         <snappy.version>1.1.10.8</snappy.version>
         <jline.version>2.14.6</jline.version>
-        <hikari.version>6.3.1</hikari.version>
+        <hikari.version>7.0.0</hikari.version>
         <hadoop.version>3.4.1</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
         <hbase.version>2.6.3-hadoop3</hbase.version>
