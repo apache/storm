@@ -26,6 +26,7 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.storm.sql.planner.StormRelUtils;
 import org.apache.storm.sql.planner.rel.StormFilterRelBase;
@@ -52,15 +53,17 @@ public class StreamsFilterRel extends StormFilterRelBase implements StreamsRel {
         StormRelUtils.getStormRelInput(input).streamsPlan(planCreator);
         Stream<Values> inputStream = planCreator.pop();
 
-        List<RexNode> childExps = getChildExps();
-        RelDataType inputRowType = getInput(0).getRowType();
+        if (input instanceof RexCall) {
+            List<RexNode> childExps = ((RexCall) input).getOperands();
+            RelDataType inputRowType = getInput(0).getRowType();
 
-        String filterClassName = StormRelUtils.getClassName(this);
-        ExecutableExpression filterInstance = planCreator.createScalarInstance(childExps, inputRowType, filterClassName);
+            String filterClassName = StormRelUtils.getClassName(this);
+            ExecutableExpression filterInstance = planCreator.createScalarInstance(childExps, inputRowType, filterClassName);
 
-        EvaluationFilter evalFilter = new EvaluationFilter(filterInstance, planCreator.getDataContext());
-        final Stream<Values> finalStream = inputStream.filter(evalFilter);
+            EvaluationFilter evalFilter = new EvaluationFilter(filterInstance, planCreator.getDataContext());
+            final Stream<Values> finalStream = inputStream.filter(evalFilter);
 
-        planCreator.addStream(finalStream);
+            planCreator.addStream(finalStream);
+        }
     }
 }

@@ -15,6 +15,7 @@ package org.apache.storm.sql.parser;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.StringReader;
 import org.apache.calcite.config.Lex;
+import org.apache.calcite.sql.parser.SqlAbstractParserImpl;
 import org.apache.storm.sql.parser.impl.StormParserImpl;
 
 public class StormParser {
@@ -34,7 +35,8 @@ public class StormParser {
          *  By default parser uses [ ] for quoting identifiers. Switching to DQID (double quoted identifiers)
          *  is needed for array and map access (m['x'] = 1 or arr[2] = 10 etc) to work.
          */
-        this.impl.switchTo("DQID");
+
+        this.impl.switchTo(SqlAbstractParserImpl.LexicalState.DQID);
     }
 
     @VisibleForTesting
