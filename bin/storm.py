@@ -315,7 +315,6 @@ def initialize_main_command():
     initialize_localconfvalue_subcommand(subparsers)
     initialize_remoteconfvalue_subcommand(subparsers)
     initialize_local_subcommand(subparsers)
-    initialize_sql_subcommand(subparsers)
     initialize_kill_subcommand(subparsers)
     initialize_upload_credentials_subcommand(subparsers)
     initialize_blobstore_subcommand(subparsers)
@@ -562,31 +561,6 @@ def initialize_upload_credentials_subcommand(subparsers):
 
     sub_parser.set_defaults(func=upload_credentials)
     add_common_options(sub_parser)
-
-
-def initialize_sql_subcommand(subparsers):
-    command_help = """Compiles the SQL statements into a Trident topology and submits it to Storm.
-    If user activates explain mode, SQL Runner analyzes each query statement
-    and shows query plan instead of submitting topology.
-    """
-
-    sub_parser = subparsers.add_parser("sql", help=command_help, formatter_class=SortingHelpFormatter)
-
-    add_client_jar_options(sub_parser)
-
-    sub_parser.add_argument("sql_file", metavar="sql-file")
-
-    group = sub_parser.add_mutually_exclusive_group(required=True)
-
-    group.add_argument(
-        "topology_name", metavar="topology-name",nargs='?'
-    )
-
-    group.add_argument("--explain", action="store_true", help="activate explain mode")
-
-    sub_parser.set_defaults(func=sql)
-    add_common_options(sub_parser, main_args=False)
-
 
 def initialize_blobstore_subcommand(subparsers):
     sub_parser = subparsers.add_parser("blobstore", formatter_class=SortingHelpFormatter)
@@ -1086,45 +1060,6 @@ def local(args):
     run_client_jar(
         "org.apache.storm.LocalCluster", args,
         client=False, daemon=False, extrajvmopts=extrajvmopts)
-
-
-def sql(args):
-    local_jars = [arg for arg in args.jars.split(",") if arg]
-
-    artifact_to_file_jars = resolve_dependencies(
-        args.artifacts, args.artifactRepositories,
-        args.mavenLocalRepositoryDirectory, args.proxyUrl,
-        args.proxyUsername, args.proxyPassword
-    )
-
-    # include storm-sql-runtime jar(s) to local jar list
-    # --jars doesn't support wildcard so it should call get_jars_full
-    sql_runtime_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
-    local_jars.extend(sql_runtime_jars)
-
-    extra_jars = [USER_CONF_DIR, STORM_BIN_DIR]
-    extra_jars.extend(local_jars)
-    extra_jars.extend(artifact_to_file_jars.values())
-
-    # include this for running StormSqlRunner, but not for generated topology
-    sql_core_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
-    extra_jars.extend(sql_core_jars)
-
-    if args.explain:
-        sql_args = ["--file", args.sql_file, "--explain"]
-    else:
-        sql_args = ["--file", args.sql_file, "--topology", args.topology_name]
-
-    exec_storm_class(
-        "org.apache.storm.sql.StormSqlRunner", storm_config_opts=args.storm_config_opts,
-        jvmtype="-client",
-        extrajars=extra_jars,
-        main_class_args=sql_args,
-        daemon=False,
-        jvmopts=["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)],
-        overriding_conf_file=args.config)
-
 
 def kill(args):
     exec_storm_class(

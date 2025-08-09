@@ -53,7 +53,7 @@ can be changed by setting the storm config `topology.state.checkpoint.interval.m
 5. For state persistence, use a state provider that supports persistence by setting the `topology.state.provider` in the
 storm config. E.g. for using Redis based key-value state implementation set `topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider`
 in storm.yaml. The provider implementation jar should be in the class path, which in this case means adding `storm-redis` 
-to dependency of your topology, or adding `--artifacts "org.apache.storm:storm-sql-redis:<storm-version>"` when submitting your topology with `storm jar`.
+to dependency of your topology.
 6. The state provider properties can be overridden by setting `topology.state.provider.config`. For Redis state this is a
 json config with the following properties.
 

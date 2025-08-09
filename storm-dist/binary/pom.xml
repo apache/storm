@@ -46,8 +46,6 @@
         <module>storm-client-bin</module>
         <module>storm-webapp-bin</module>
         <module>storm-autocreds-bin</module>
-        <module>storm-sql-core-bin</module>
-        <module>storm-sql-runtime-bin</module>
         <module>storm-submit-tools-bin</module>
         <module>storm-kafka-monitor-bin</module>
         <!-- Final package must be last, as it needs to copy files from the other modules -->

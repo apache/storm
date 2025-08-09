@@ -6,7 +6,6 @@ List of third-party dependencies grouped by their license type.
 
         * Kryo (com.esotericsoftware:kryo:5.6.2 - https://github.com/EsotericSoftware/kryo/kryo)
         * MinLog (com.esotericsoftware:minlog:1.3.1 - https://github.com/EsotericSoftware/minlog)
-        * Protocol Buffers [Core] (com.google.protobuf:protobuf-java:3.3.0 - https://developers.google.com/protocol-buffers/protobuf-java/)
         * ReflectASM (com.esotericsoftware:reflectasm:1.11.9 - https://github.com/EsotericSoftware/reflectasm)
 
     AL 2.0, GPL v2, MPL 2.0
@@ -20,10 +19,8 @@ List of third-party dependencies grouped by their license type.
     Apache License, Version 2.0
 
         * ActiveMQ :: Client (org.apache.activemq:activemq-client:6.1.7 - http://activemq.apache.org/activemq-client)
-        * Aggregate Designer Algorithm (net.hydromatic:aggdesigner-algorithm:6.0 - http://github.com/julianhyde/aggdesigner/aggdesigner-algorithm)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.33 - https://metrics.dropwizard.io/metrics-annotation)
         * Apache Avro (org.apache.avro:avro:1.12.0 - https://avro.apache.org)
-        * Apache Calcite Avatica (org.apache.calcite.avatica:avatica-core:1.11.0 - https://calcite.apache.org/avatica/avatica-core)
         * Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.9.4 - https://commons.apache.org/proper/commons-beanutils/)
         * Apache Commons CLI (commons-cli:commons-cli:1.9.0 - https://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.18.0 - https://commons.apache.org/proper/commons-codec/)
@@ -32,7 +29,6 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Compress (org.apache.commons:commons-compress:1.27.1 - https://commons.apache.org/proper/commons-compress/)
         * Apache Commons Configuration (org.apache.commons:commons-configuration2:2.12.0 - https://commons.apache.org/proper/commons-configuration/)
         * Apache Commons Crypto (org.apache.commons:commons-crypto:1.1.0 - https://commons.apache.org/proper/commons-crypto/)
-        * Apache Commons CSV (org.apache.commons:commons-csv:1.14.0 - https://commons.apache.org/proper/commons-csv/)
         * Apache Commons Exec (org.apache.commons:commons-exec:1.5.0 - https://commons.apache.org/proper/commons-exec/)
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.6.0 - https://commons.apache.org/proper/commons-fileupload/)
         * Apache Commons IO (commons-io:commons-io:2.20.0 - https://commons.apache.org/proper/commons-io/)
@@ -85,16 +81,11 @@ List of third-party dependencies grouped by their license type.
         * AutoService (com.google.auto.service:auto-service-annotations:1.1.1 - https://github.com/google/auto/tree/main/service)
         * AutoService Processor (com.google.auto.service:auto-service:1.1.1 - https://github.com/google/auto/tree/main/service)
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.2 - https://github.com/ben-manes/caffeine)
-        * Calcite Core (org.apache.calcite:calcite-core:1.16.0 - https://calcite.apache.org/calcite-core)
-        * Calcite Linq4j (org.apache.calcite:calcite-linq4j:1.16.0 - https://calcite.apache.org/calcite-linq4j)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
         * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.7.0 - https://github.com/FasterXML/java-classmate)
         * com.helger:profiler (com.helger:profiler:1.1.1 - https://github.com/phax/profiler)
-        * com.yahoo.datasketches:memory (com.yahoo.datasketches:memory:0.9.0 - https://datasketches.github.io/memory/)
-        * com.yahoo.datasketches:sketches-core (com.yahoo.datasketches:sketches-core:0.9.0 - https://datasketches.github.io/sketches-core/)
         * Commons Lang (commons-lang:commons-lang:2.6 - http://commons.apache.org/lang/)
-        * Commons Logging (commons-logging:commons-logging:1.1.3 - http://commons.apache.org/proper/commons-logging/)
         * Curator Client (org.apache.curator:curator-client:5.9.0 - https://curator.apache.org/curator-client)
         * Curator Framework (org.apache.curator:curator-framework:5.9.0 - https://curator.apache.org/curator-framework)
         * Curator Recipes (org.apache.curator:curator-recipes:5.9.0 - https://curator.apache.org/curator-recipes)
@@ -113,8 +104,6 @@ List of third-party dependencies grouped by their license type.
         * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:4.0.14 - http://www.dropwizard.io/4.0.14/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
         * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:4.0.14 - http://www.dropwizard.io/4.0.14/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
         * error-prone annotations (com.google.errorprone:error_prone_annotations:2.40.0 - https://errorprone.info/error_prone_annotations)
-        * Esri Geometry API for Java (com.esri.geometry:esri-geometry-api:2.0.0 - https://github.com/Esri/geometry-api-java)
-        * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.1 - http://findbugs.sourceforge.net/)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Google Guice - Core Library (com.google.inject:guice:4.2.1 - https://github.com/google/guice/guice)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.33 - https://metrics.dropwizard.io/metrics-graphite)
@@ -346,9 +335,7 @@ List of third-party dependencies grouped by their license type.
         * asm (org.ow2.asm:asm:9.8 - http://asm.ow2.io/)
         * asm-commons (org.ow2.asm:asm-commons:9.8 - http://asm.ow2.io/)
         * asm-tree (org.ow2.asm:asm-tree:9.8 - http://asm.ow2.io/)
-        * Commons Compiler (org.codehaus.janino:commons-compiler:2.7.6 - http://docs.codehaus.org/display/JANINO/Home/commons-compiler)
         * dnsjava (dnsjava:dnsjava:3.6.1 - https://github.com/dnsjava/dnsjava)
-        * Janino (org.codehaus.janino:janino:2.7.6 - http://docs.codehaus.org/display/JANINO/Home/janino)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
 
     BSD License
