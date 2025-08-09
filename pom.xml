@@ -91,7 +91,7 @@
         <commons-collections.version>4.5.0</commons-collections.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
         <commons-codec.version>1.19.0</commons-codec.version>
-        <commons-text.version>1.13.1</commons-text.version>
+        <commons-text.version>1.14.0</commons-text.version>
         <commons-cli.version>1.10.0</commons-cli.version>
         <curator.version>5.9.0</curator.version>
         <jetty.version>11.0.25</jetty.version>
