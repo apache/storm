@@ -156,7 +156,7 @@
         <activation-version>1.1.1</activation-version>
         <rocksdb-jni-version>10.2.1</rocksdb-jni-version>
         <json-smart.version>2.6.0</json-smart.version>
-        <byte-buddy.version>1.17.6</byte-buddy.version>
+        <byte-buddy.version>1.17.7</byte-buddy.version>
         <gson.version>2.13.1</gson.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
