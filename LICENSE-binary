@@ -659,7 +659,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     AL 2.0, GPL v2, MPL 2.0
 
-        * RabbitMQ Java Client (com.rabbitmq:amqp-client:5.25.0 - https://www.rabbitmq.com)
+        * RabbitMQ Java Client (com.rabbitmq:amqp-client:5.26.0 - https://www.rabbitmq.com)
 
     Apache License
 
