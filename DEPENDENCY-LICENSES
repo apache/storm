@@ -113,7 +113,7 @@ List of third-party dependencies grouped by their license type.
         * Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)
         * hawtbuf (org.fusesource.hawtbuf:hawtbuf:1.11 - http://hawtbuf.fusesource.org/hawtbuf)
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:7.0.5.Final - http://hibernate.org/validator/hibernate-validator)
-        * HikariCP (com.zaxxer:HikariCP:7.0.1 - https://github.com/brettwooldridge/HikariCP)
+        * HikariCP (com.zaxxer:HikariCP:7.0.2 - https://github.com/brettwooldridge/HikariCP)
         * j2html (com.j2html:j2html:1.6.0 - http://j2html.com)
         * J2ObjC Annotations (com.google.j2objc:j2objc-annotations:3.0.0 - https://github.com/google/j2objc/)
         * Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.19.2 - https://github.com/FasterXML/jackson)
