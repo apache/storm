@@ -132,7 +132,7 @@
         <activemq.version>6.1.7</activemq.version>
 
         <jackson.version>2.19.2</jackson.version>
-        <jackson.databind.version>2.19.2</jackson.databind.version>
+        <jackson.databind.version>2.20.0</jackson.databind.version>
         <storm.kafka.client.version>3.9.0</storm.kafka.client.version>
         <testcontainers.version>1.21.3</testcontainers.version>
 
