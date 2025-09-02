@@ -423,7 +423,7 @@ List of third-party dependencies grouped by their license type.
     MIT License
 
         * argparse4j (net.sourceforge.argparse4j:argparse4j:0.9.0 - https://argparse4j.github.io)
-        * Checker Qual (org.checkerframework:checker-qual:3.49.5 - https://checkerframework.org/)
+        * Checker Qual (org.checkerframework:checker-qual:3.50.0 - https://checkerframework.org/)
         * JCodings (org.jruby.jcodings:jcodings:1.0.58 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Jedis (redis.clients:jedis:5.2.0 - https://github.com/redis/jedis)
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
