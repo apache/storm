@@ -745,7 +745,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:7.0.5.Final - http://hibernate.org/validator/hibernate-validator)
         * j2html (com.j2html:j2html:1.6.0 - http://j2html.com)
         * J2ObjC Annotations (com.google.j2objc:j2objc-annotations:3.0.0 - https://github.com/google/j2objc/)
-        * Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.20.0 - https://github.com/FasterXML/jackson)
+        * Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.20 - https://github.com/FasterXML/jackson)
         * Jackson-core (com.fasterxml.jackson.core:jackson-core:2.20.0 - https://github.com/FasterXML/jackson-core)
         * jackson-databind (com.fasterxml.jackson.core:jackson-databind:2.20.0 - https://github.com/FasterXML/jackson)
         * Jackson dataformat: Smile (com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.20.0 - https://github.com/FasterXML/jackson-dataformats-binary)
