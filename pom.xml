@@ -82,7 +82,7 @@
         <license.outputDirectory>${project.basedir}</license.outputDirectory>
 
         <!-- dependency versions -->
-        <clojure.version>1.12.1</clojure.version>
+        <clojure.version>1.12.2</clojure.version>
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-io.version>2.20.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
@@ -111,7 +111,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <metrics.version>4.2.36</metrics.version>
         <mockito.version>5.14.2</mockito.version>
-        <zookeeper.version>3.9.3</zookeeper.version>
+        <zookeeper.version>3.9.4</zookeeper.version>
         <snappy.version>1.1.10.8</snappy.version>
         <jline.version>2.14.6</jline.version>
         <hikari.version>7.0.2</hikari.version>
@@ -131,8 +131,8 @@
         <jedis.version>5.2.0</jedis.version>
         <activemq.version>6.1.7</activemq.version>
 
-        <jackson.version>2.19.2</jackson.version>
-        <jackson.databind.version>2.19.2</jackson.databind.version>
+        <jackson.version>2.20.0</jackson.version>
+        <jackson.databind.version>2.20.0</jackson.databind.version>
         <storm.kafka.client.version>3.9.0</storm.kafka.client.version>
         <testcontainers.version>1.21.3</testcontainers.version>
 
@@ -146,7 +146,7 @@
         <maven.version>3.9.11</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.11</jersey.version>
-        <dropwizard.version>4.0.15</dropwizard.version>
+        <dropwizard.version>4.0.16</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.2.2</caffeine.version>
         <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
@@ -163,7 +163,7 @@
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.8</asm.version>
-        <checker-qual.version>3.49.5</checker-qual.version>
+        <checker-qual.version>3.50.0</checker-qual.version>
         <error_prone_annotations.version>2.41.0</error_prone_annotations.version>
         <bouncycastle.version>1.81</bouncycastle.version>
     </properties>
