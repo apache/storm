@@ -28,7 +28,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
+import kafka.server.KafkaRaftServer;
+import kafka.server.Server;
 import kafka.utils.TestUtils;
 import org.apache.curator.test.TestingServer;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -37,11 +38,12 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.utils.MockTime;
+import org.apache.kafka.common.utils.Time;
 import org.apache.storm.testing.TmpPath;
 
 public class KafkaUnit {
     private TestingServer zookeeper;
-    private KafkaServer kafkaServer;
+    private Server kafkaServer;
     private KafkaProducer<String, String> producer;
     private AdminClient kafkaAdminClient;
     private TmpPath kafkaDir;
@@ -52,19 +54,16 @@ public class KafkaUnit {
     }
 
     public void setUp() throws Exception {
-        // setup ZK
-        zookeeper = new TestingServer(true);
 
         // setup Broker
         kafkaDir = new TmpPath(Files.createTempDirectory("kafka-").toAbsolutePath().toString());
         Properties brokerProps = new Properties();
-        brokerProps.setProperty("zookeeper.connect", zookeeper.getConnectString());
         brokerProps.setProperty("broker.id", "0");
         brokerProps.setProperty("log.dirs", kafkaDir.getPath());
         brokerProps.setProperty("listeners", String.format("PLAINTEXT://%s:%d", KAFKA_HOST, KAFKA_PORT));
         brokerProps.setProperty("offsets.topic.replication.factor", "1");
         KafkaConfig config = new KafkaConfig(brokerProps);
-        kafkaServer = TestUtils.createServer(config, new MockTime());
+        kafkaServer= new KafkaRaftServer(config, Time.SYSTEM);
 
         // setup default Producer
         createProducer();
