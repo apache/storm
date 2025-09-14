@@ -236,7 +236,9 @@ public class KafkaSpoutRebalanceTest {
         
         //Set up committed so it looks like some messages have been committed on each partition
         long committedOffset = 500;
-        final Answer<Object> objectAnswer = invocation -> new OffsetAndMetadata(committedOffset);
+        final Map<TopicPartition, OffsetAndMetadata> mapAnswer = new HashMap<>();
+        mapAnswer.put(newPartition,new OffsetAndMetadata(committedOffset));
+        final Answer<Object> objectAnswer = invocation -> mapAnswer;
         lenient().doAnswer(objectAnswer).when(consumerMock).committed(Collections.singleton(newPartition));
         doAnswer(objectAnswer).when(consumerMock).committed(Collections.singleton(newPartition));
 
