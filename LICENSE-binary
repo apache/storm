@@ -907,7 +907,7 @@ The license texts of these dependencies can be found in the licenses directory.
     BSD 2-Clause license
 
         * dnsjava (dnsjava:dnsjava:3.6.1 - http://www.dnsjava.org)
-        * zstd-jni (com.github.luben:zstd-jni:1.5.6-4 - https://github.com/luben/zstd-jni)
+        * zstd-jni (com.github.luben:zstd-jni:1.5.6-10 - https://github.com/luben/zstd-jni)
 
     BSD-3-Clause
 
