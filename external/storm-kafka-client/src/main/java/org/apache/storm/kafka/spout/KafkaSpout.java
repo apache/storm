@@ -219,8 +219,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             // leave the acked offsets and consumer position as they were to resume where it left off
             newPartitions.removeAll(previousAssignment);
             for (TopicPartition newTp : newPartitions) {
-                final OffsetAndMetadata committedOffset = consumer.committed(newTp);
-                final long fetchOffset = doSeek(newTp, committedOffset);
+                final Map<TopicPartition, OffsetAndMetadata> committedOffset = consumer.committed(Collections.singleton(newTp));
+                final long fetchOffset = doSeek(newTp, committedOffset.get(newTp));
                 LOG.debug("Set consumer position to [{}] for topic-partition [{}] with [{}] and committed offset [{}]",
                         fetchOffset, newTp, firstPollOffsetStrategy, committedOffset);
                 if (isAtLeastOnceProcessing() && !offsetManagers.containsKey(newTp)) {

@@ -700,7 +700,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache HBase Unsafe Wrapper (org.apache.hbase.thirdparty:hbase-unsafe:4.1.11 - https://hbase.apache.org/hbase-unsafe)
         * Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.14 - http://hc.apache.org/httpcomponents-client-ga)
         * Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
-        * Apache Kafka (org.apache.kafka:kafka-clients:3.9.0 - https://kafka.apache.org)
+        * Apache Kafka (org.apache.kafka:kafka-clients:4.1.0 - https://kafka.apache.org)
         * Apache Log4j API (org.apache.logging.log4j:log4j-api:2.25.1 - https://logging.apache.org/log4j/2.x/log4j-api/)
         * Apache Log4j Core (org.apache.logging.log4j:log4j-core:2.25.1 - https://logging.apache.org/log4j/2.x/log4j-core/)
         * Apache Log4j SLF4J Binding (org.apache.logging.log4j:log4j-slf4j2-impl:2.25.1 - https://logging.apache.org/log4j/2.x/log4j-slf4j2-impl/)
@@ -906,7 +906,7 @@ The license texts of these dependencies can be found in the licenses directory.
     BSD 2-Clause license
 
         * dnsjava (dnsjava:dnsjava:3.6.1 - http://www.dnsjava.org)
-        * zstd-jni (com.github.luben:zstd-jni:1.5.6-4 - https://github.com/luben/zstd-jni)
+        * zstd-jni (com.github.luben:zstd-jni:1.5.6-10 - https://github.com/luben/zstd-jni)
 
     BSD-3-Clause
 

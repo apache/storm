@@ -138,7 +138,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements Serializable {
             LOG.debug("Seeking to offset [{}] for topic partition [{}]", seekOffset, currBatchTp);
             consumer.seek(currBatchTp, seekOffset);
 
-            final ConsumerRecords<K, V> records = consumer.poll(pollTimeoutMs);
+            final ConsumerRecords<K, V> records = consumer.poll(Duration.ofMillis(pollTimeoutMs));
             LOG.debug("Polled [{}] records from Kafka.", records.count());
 
             for (ConsumerRecord<K, V> record : records) {

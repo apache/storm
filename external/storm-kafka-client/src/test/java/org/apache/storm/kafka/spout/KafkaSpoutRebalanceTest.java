@@ -114,9 +114,9 @@ public class KafkaSpoutRebalanceTest {
 
         //Make the consumer return a single message for each partition
         when(consumerMock.poll(any(Duration.class)))
-            .thenReturn(new ConsumerRecords<>(Collections.singletonMap(partitionThatWillBeRevoked, SpoutWithMockedConsumerSetupHelper.createRecords(partitionThatWillBeRevoked, 0, 1))))
-            .thenReturn(new ConsumerRecords<>(Collections.singletonMap(assignedPartition, SpoutWithMockedConsumerSetupHelper.createRecords(assignedPartition, 0, 1))))
-            .thenReturn(new ConsumerRecords<>(Collections.emptyMap()));
+            .thenReturn(new ConsumerRecords<>(Collections.singletonMap(partitionThatWillBeRevoked, SpoutWithMockedConsumerSetupHelper.createRecords(partitionThatWillBeRevoked, 0, 1)), Map.of()))
+            .thenReturn(new ConsumerRecords<>(Collections.singletonMap(assignedPartition, SpoutWithMockedConsumerSetupHelper.createRecords(assignedPartition, 0, 1)), Map.of()))
+            .thenReturn(new ConsumerRecords<>(Collections.emptyMap(), Map.of()));
 
         //Emit the messages
         spout.nextTuple();
@@ -236,9 +236,11 @@ public class KafkaSpoutRebalanceTest {
         
         //Set up committed so it looks like some messages have been committed on each partition
         long committedOffset = 500;
-        final Answer<Object> objectAnswer = invocation -> new OffsetAndMetadata(committedOffset);
-        lenient().doAnswer(objectAnswer).when(consumerMock).committed(assignedPartition);
-        doAnswer(objectAnswer).when(consumerMock).committed(newPartition);
+        final Map<TopicPartition, OffsetAndMetadata> mapAnswer = new HashMap<>();
+        mapAnswer.put(newPartition,new OffsetAndMetadata(committedOffset));
+        final Answer<Object> objectAnswer = invocation -> mapAnswer;
+        lenient().doAnswer(objectAnswer).when(consumerMock).committed(Collections.singleton(newPartition));
+        doAnswer(objectAnswer).when(consumerMock).committed(Collections.singleton(newPartition));
 
         //Now rebalance and add a new partition
         consumerRebalanceListener.onPartitionsRevoked(assignedPartitions);
