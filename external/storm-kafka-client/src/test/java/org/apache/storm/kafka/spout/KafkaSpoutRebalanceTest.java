@@ -114,9 +114,9 @@ public class KafkaSpoutRebalanceTest {
 
         //Make the consumer return a single message for each partition
         when(consumerMock.poll(any(Duration.class)))
-            .thenReturn(new ConsumerRecords<>(Collections.singletonMap(partitionThatWillBeRevoked, SpoutWithMockedConsumerSetupHelper.createRecords(partitionThatWillBeRevoked, 0, 1))))
-            .thenReturn(new ConsumerRecords<>(Collections.singletonMap(assignedPartition, SpoutWithMockedConsumerSetupHelper.createRecords(assignedPartition, 0, 1))))
-            .thenReturn(new ConsumerRecords<>(Collections.emptyMap()));
+            .thenReturn(new ConsumerRecords<>(Collections.singletonMap(partitionThatWillBeRevoked, SpoutWithMockedConsumerSetupHelper.createRecords(partitionThatWillBeRevoked, 0, 1)), Map.of()))
+            .thenReturn(new ConsumerRecords<>(Collections.singletonMap(assignedPartition, SpoutWithMockedConsumerSetupHelper.createRecords(assignedPartition, 0, 1)), Map.of()))
+            .thenReturn(new ConsumerRecords<>(Collections.emptyMap(), Map.of()));
 
         //Emit the messages
         spout.nextTuple();
