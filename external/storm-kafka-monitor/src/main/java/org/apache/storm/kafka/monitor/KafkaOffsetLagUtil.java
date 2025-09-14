@@ -18,7 +18,12 @@
 
 package org.apache.storm.kafka.monitor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import net.minidev.json.JSONValue;
 import org.apache.commons.cli.CommandLine;
