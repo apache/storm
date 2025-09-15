@@ -1644,7 +1644,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.5.3</version>
+                <version>3.5.4</version>
                 <configuration>
                     <reportsDirectories>
                         <file>${project.build.directory}/test-reports</file>
