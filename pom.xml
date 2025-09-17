@@ -124,7 +124,7 @@
         <joda-time.version>2.14.0</joda-time.version>
         <thrift.version>0.22.0</thrift.version>
         <junit.jupiter.version>5.13.4</junit.jupiter.version>
-        <surefire.version>3.5.3</surefire.version>
+        <surefire.version>3.5.4</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
@@ -1644,7 +1644,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.5.3</version>
+                <version>3.5.4</version>
                 <configuration>
                     <reportsDirectories>
                         <file>${project.build.directory}/test-reports</file>
