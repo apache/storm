@@ -66,7 +66,7 @@ List of third-party dependencies grouped by their license type.
         * Apache Kafka (org.apache.kafka:kafka-clients:4.1.0 - https://kafka.apache.org)
         * Apache Log4j API (org.apache.logging.log4j:log4j-api:2.25.1 - https://logging.apache.org/log4j/2.x/)
         * Apache Log4j Core (org.apache.logging.log4j:log4j-core:2.25.1 - https://logging.apache.org/log4j/2.x/)
-        * Apache Maven Shade Plugin (org.apache.maven.plugins:maven-shade-plugin:3.6.0 - https://maven.apache.org/plugins/maven-shade-plugin/)
+        * Apache Maven Shade Plugin (org.apache.maven.plugins:maven-shade-plugin:3.6.1 - https://maven.apache.org/plugins/maven-shade-plugin/)
         * Apache Maven Shared Utils (org.apache.maven.shared:maven-shared-utils:3.2.1 - https://maven.apache.org/shared/maven-shared-utils/)
         * Apache Thrift (org.apache.thrift:libthrift:0.22.0 - https://thrift.apache.org/)
         * Apache XBean :: Spring (org.apache.xbean:xbean-spring:4.27 - http://geronimo.apache.org/maven/xbean/4.27/xbean-spring)
