@@ -736,7 +736,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * error-prone annotations (com.google.errorprone:error_prone_annotations:2.41.0 - https://errorprone.info/error_prone_annotations)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.36 - https://metrics.dropwizard.io/metrics-graphite)
-        * Gson (com.google.code.gson:gson:2.13.1 - https://github.com/google/gson)
+        * Gson (com.google.code.gson:gson:2.13.2 - https://github.com/google/gson)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:33.4.8-jre - https://github.com/google/guava)
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.3 - https://github.com/google/guava/failureaccess)
         * Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)
