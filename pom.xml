@@ -102,7 +102,7 @@
         <httpclient.core.version>4.4.16</httpclient.core.version>
         <jctools.version>4.0.5</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
-        <guava.version>33.4.8-jre</guava.version>
+        <guava.version>33.5.0-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.73.Final</netty-tcnative.version>
         <netty.version>4.2.6.Final</netty.version>
