@@ -94,7 +94,7 @@
         <commons-text.version>1.14.0</commons-text.version>
         <commons-cli.version>1.10.0</commons-cli.version>
         <curator.version>5.9.0</curator.version>
-        <jetty.version>11.0.26</jetty.version>
+        <jetty.version>12.1.1</jetty.version>
         <clojure.tools.logging.version>1.3.0</clojure.tools.logging.version>
         <carbonite.version>1.6.0</carbonite.version>
         <snakeyaml.version>2.2</snakeyaml.version>
@@ -120,7 +120,7 @@
         <hbase.version>2.6.3-hadoop3</hbase.version>
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.4</objensis.version>
-        <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
+        <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <joda-time.version>2.14.0</joda-time.version>
         <thrift.version>0.22.0</thrift.version>
         <junit.jupiter.version>5.13.4</junit.jupiter.version>
@@ -753,8 +753,8 @@
                 <version>${json-smart.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-bom</artifactId>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-bom</artifactId>
                 <version>${jetty.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
@@ -887,7 +887,7 @@
             </dependency>
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-jetty11</artifactId>
+                <artifactId>metrics-jetty12</artifactId>
                 <version>${metrics.version}</version>
             </dependency>
             <dependency>

@@ -13,6 +13,7 @@
 package org.apache.storm.security.auth.kerberos;
 
 import com.codahale.metrics.Gauge;
+import jakarta.xml.bind.DatatypeConverter;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,7 +27,6 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
-import javax.xml.bind.DatatypeConverter;
 import org.apache.storm.metric.api.IMetricsRegistrant;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;

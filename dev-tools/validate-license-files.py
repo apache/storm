@@ -28,8 +28,7 @@ import itertools
 import argparse
 
 project_root = Path(__file__).resolve().parent.parent
-update_dependency_licenses_cmd = ('mvn license:aggregate-add-third-party@generate-and-check-licenses' +
-                                  ' -Dlicense.skipAggregateAddThirdParty=false -B')
+update_dependency_licenses_cmd = ('mvn license:aggregate-add-third-party@generate-and-check-licenses -Dlicense.skipAggregateAddThirdParty=false -B')
 
 
 @contextmanager

@@ -11,12 +11,12 @@
 
 package org.apache.storm.metricstore.rocksdb;
 
+import jakarta.xml.bind.DatatypeConverter;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import javax.xml.bind.DatatypeConverter;
 import org.apache.storm.metricstore.AggLevel;
 import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
 import org.slf4j.Logger;
