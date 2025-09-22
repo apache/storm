@@ -98,6 +98,10 @@ import org.apache.storm.utils.TopologySpoutLag;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.VersionInfo;
 import org.apache.storm.utils.WebAppUtils;
+import org.eclipse.jetty.ee10.servlet.FilterHolder;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlets.CrossOriginFilter;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -106,10 +110,6 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import org.slf4j.Logger;
@@ -357,7 +357,7 @@ public class UIHelpers {
             if (params != null) {
                 servletHolder.setInitParameters(params);
             }
-            ServletContextHandler context = new ServletContextHandler(server, "/");
+            ServletContextHandler context = new ServletContextHandler("/");
             context.addServlet(servletHolder, "/");
             configFilters(context, filtersConfs);
             server.setHandler(context);

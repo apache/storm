@@ -12,6 +12,7 @@
 
 package org.apache.storm.security.auth;
 
+import jakarta.xml.bind.DatatypeConverter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import javax.security.auth.Subject;
-import javax.xml.bind.DatatypeConverter;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

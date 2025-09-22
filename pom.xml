@@ -94,7 +94,7 @@
         <commons-text.version>1.14.0</commons-text.version>
         <commons-cli.version>1.10.0</commons-cli.version>
         <curator.version>5.9.0</curator.version>
-        <jetty.version>11.0.26</jetty.version>
+        <jetty.version>12.1.1</jetty.version>
         <clojure.tools.logging.version>1.3.0</clojure.tools.logging.version>
         <carbonite.version>1.6.0</carbonite.version>
         <snakeyaml.version>2.2</snakeyaml.version>
@@ -102,14 +102,14 @@
         <httpclient.core.version>4.4.16</httpclient.core.version>
         <jctools.version>4.0.5</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
-        <guava.version>33.4.8-jre</guava.version>
+        <guava.version>33.5.0-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.73.Final</netty-tcnative.version>
         <netty.version>4.2.6.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.25.1</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
-        <metrics.version>4.2.36</metrics.version>
+        <metrics.version>4.2.37</metrics.version>
         <mockito.version>5.14.2</mockito.version>
         <zookeeper.version>3.9.4</zookeeper.version>
         <snappy.version>1.1.10.8</snappy.version>
@@ -120,7 +120,7 @@
         <hbase.version>2.6.3-hadoop3</hbase.version>
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.4</objensis.version>
-        <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
+        <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <joda-time.version>2.14.0</joda-time.version>
         <thrift.version>0.22.0</thrift.version>
         <junit.jupiter.version>5.13.4</junit.jupiter.version>
@@ -147,10 +147,10 @@
         <maven.version>3.9.11</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.11</jersey.version>
-        <dropwizard.version>4.0.16</dropwizard.version>
+        <dropwizard.version>5.0.0</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.2.2</caffeine.version>
-        <jakarta-jaxb-version>2.3.2</jakarta-jaxb-version>
+        <jakarta-jaxb-version>4.0.4</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
         <jaxb-version>2.3.1</jaxb-version>
@@ -165,8 +165,8 @@
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.8</asm.version>
         <checker-qual.version>3.51.0</checker-qual.version>
-        <error_prone_annotations.version>2.41.0</error_prone_annotations.version>
-        <bouncycastle.version>1.81</bouncycastle.version>
+        <error_prone_annotations.version>2.42.0</error_prone_annotations.version>
+        <bouncycastle.version>1.82</bouncycastle.version>
     </properties>
 
     <modules>
@@ -753,8 +753,8 @@
                 <version>${json-smart.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-bom</artifactId>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-bom</artifactId>
                 <version>${jetty.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
@@ -887,7 +887,7 @@
             </dependency>
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-jetty11</artifactId>
+                <artifactId>metrics-jetty12</artifactId>
                 <version>${metrics.version}</version>
             </dependency>
             <dependency>
@@ -1290,7 +1290,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.14.0</version>
+                    <version>3.14.1</version>
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
@@ -1634,7 +1634,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.3</version>
+                <version>3.12.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
