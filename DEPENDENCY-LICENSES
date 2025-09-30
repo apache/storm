@@ -370,7 +370,7 @@ List of third-party dependencies grouped by their license type.
 
     Eclipse Public License, Version 1.0
 
-        * clojure (org.clojure:clojure:1.12.2 - http://clojure.org/)
+        * clojure (org.clojure:clojure:1.12.3 - http://clojure.org/)
         * core.specs.alpha (org.clojure:core.specs.alpha:0.4.74 - https://github.com/clojure/build.poms/core.specs.alpha)
         * org.eclipse.sisu.inject (org.eclipse.sisu:org.eclipse.sisu.inject:0.3.4 - http://www.eclipse.org/sisu/org.eclipse.sisu.inject/)
         * org.eclipse.sisu.plexus (org.eclipse.sisu:org.eclipse.sisu.plexus:0.3.4 - http://www.eclipse.org/sisu/org.eclipse.sisu.plexus/)
