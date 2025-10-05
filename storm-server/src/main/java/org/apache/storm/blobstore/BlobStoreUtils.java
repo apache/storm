@@ -150,6 +150,7 @@ public class BlobStoreUtils {
                 throw new RuntimeException(exception);
             } catch (KeyAlreadyExistsException kae) {
                 LOG.info("KeyAlreadyExistsException Key: {} {}", key, kae);
+                isSuccess = true;
             } catch (KeyNotFoundException knf) {
                 // Catching and logging KeyNotFoundException because, if
                 // there is a subsequent update and delete, the non-leader
