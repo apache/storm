@@ -879,7 +879,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * Core :: HTTP (org.eclipse.jetty:jetty-http:12.1.2 - https://jetty.org/jetty-core/jetty-http)
         * Core :: IO (org.eclipse.jetty:jetty-io:12.1.2 - https://jetty.org/jetty-core/jetty-io)
-        * Core :: Security (org.eclipse.jetty:jetty-security:12.1.2 - https://jetty.org/jetty-core/jetty-security)
+        * Core :: Security (org.eclipse.jetty:jetty-security:12.1.1 - https://jetty.org/jetty-core/jetty-security)
         * Core :: Server (org.eclipse.jetty:jetty-server:12.1.2 - https://jetty.org/jetty-core/jetty-server)
         * Core :: Sessions (org.eclipse.jetty:jetty-session:12.1.2 - https://jetty.org/jetty-core/jetty-session)
         * Core :: Utilities (org.eclipse.jetty:jetty-util:12.1.2 - https://jetty.org/jetty-core/jetty-util)
