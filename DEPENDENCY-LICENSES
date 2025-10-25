@@ -20,7 +20,7 @@ List of third-party dependencies grouped by their license type.
 
         * ActiveMQ :: Client (org.apache.activemq:activemq-client:6.1.7 - http://activemq.apache.org/activemq-client)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.37 - https://metrics.dropwizard.io/metrics-annotation)
-        * Apache Avro (org.apache.avro:avro:1.12.0 - https://avro.apache.org)
+        * Apache Avro (org.apache.avro:avro:1.12.1 - https://avro.apache.org)
         * Apache Commons CLI (commons-cli:commons-cli:1.10.0 - https://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.19.0 - https://commons.apache.org/proper/commons-codec/)
         * Apache Commons Collections (commons-collections:commons-collections:3.2.2 - http://commons.apache.org/collections/)
@@ -35,7 +35,7 @@ List of third-party dependencies grouped by their license type.
         * Apache Commons Logging (commons-logging:commons-logging:1.3.5 - https://commons.apache.org/proper/commons-logging/)
         * Apache Commons Math (org.apache.commons:commons-math3:3.6.1 - http://commons.apache.org/proper/commons-math/)
         * Apache Commons Net (commons-net:commons-net:3.9.0 - https://commons.apache.org/proper/commons-net/)
-        * Apache Commons Pool (org.apache.commons:commons-pool2:2.12.0 - https://commons.apache.org/proper/commons-pool/)
+        * Apache Commons Pool (org.apache.commons:commons-pool2:2.12.1 - https://commons.apache.org/proper/commons-pool/)
         * Apache Commons Text (org.apache.commons:commons-text:1.14.0 - https://commons.apache.org/proper/commons-text)
         * Apache Hadoop Annotations (org.apache.hadoop:hadoop-annotations:3.4.2 - no url defined)
         * Apache Hadoop Auth (org.apache.hadoop:hadoop-auth:3.4.2 - no url defined)
@@ -260,15 +260,15 @@ List of third-party dependencies grouped by their license type.
         * SLF4J 2 Provider for Log4j API (org.apache.logging.log4j:log4j-slf4j2-impl:2.25.2 - https://logging.apache.org/log4j/2.x/)
         * SnakeYAML (org.yaml:snakeyaml:2.2 - https://bitbucket.org/snakeyaml/snakeyaml)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.8 - https://github.com/xerial/snappy-java)
-        * Spring AOP (org.springframework:spring-aop:6.2.11 - https://github.com/spring-projects/spring-framework)
-        * Spring Beans (org.springframework:spring-beans:6.2.11 - https://github.com/spring-projects/spring-framework)
-        * Spring Commons Logging Bridge (org.springframework:spring-jcl:6.2.11 - https://github.com/spring-projects/spring-framework)
-        * Spring Context (org.springframework:spring-context:6.2.11 - https://github.com/spring-projects/spring-framework)
-        * Spring Core (org.springframework:spring-core:6.2.11 - https://github.com/spring-projects/spring-framework)
-        * Spring Expression Language (SpEL) (org.springframework:spring-expression:6.2.11 - https://github.com/spring-projects/spring-framework)
-        * Spring JMS (org.springframework:spring-jms:6.2.11 - https://github.com/spring-projects/spring-framework)
-        * Spring Messaging (org.springframework:spring-messaging:6.2.11 - https://github.com/spring-projects/spring-framework)
-        * Spring Transaction (org.springframework:spring-tx:6.2.11 - https://github.com/spring-projects/spring-framework)
+        * Spring AOP (org.springframework:spring-aop:6.2.12 - https://github.com/spring-projects/spring-framework)
+        * Spring Beans (org.springframework:spring-beans:6.2.12 - https://github.com/spring-projects/spring-framework)
+        * Spring Commons Logging Bridge (org.springframework:spring-jcl:6.2.12 - https://github.com/spring-projects/spring-framework)
+        * Spring Context (org.springframework:spring-context:6.2.12 - https://github.com/spring-projects/spring-framework)
+        * Spring Core (org.springframework:spring-core:6.2.12 - https://github.com/spring-projects/spring-framework)
+        * Spring Expression Language (SpEL) (org.springframework:spring-expression:6.2.12 - https://github.com/spring-projects/spring-framework)
+        * Spring JMS (org.springframework:spring-jms:6.2.12 - https://github.com/spring-projects/spring-framework)
+        * Spring Messaging (org.springframework:spring-messaging:6.2.12 - https://github.com/spring-projects/spring-framework)
+        * Spring Transaction (org.springframework:spring-tx:6.2.12 - https://github.com/spring-projects/spring-framework)
         * Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.5.3 - https://github.com/dropwizard/logback-throttling-appender/)
         * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.1 - https://github.com/FasterXML/woodstox)
 
@@ -421,16 +421,17 @@ List of third-party dependencies grouped by their license type.
 
         * argparse4j (net.sourceforge.argparse4j:argparse4j:0.9.0 - https://argparse4j.github.io)
         * JCodings (org.jruby.jcodings:jcodings:1.0.58 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
-        * Jedis (redis.clients:jedis:5.2.0 - https://github.com/redis/jedis)
+        * Jedis (redis.clients:jedis:7.0.0 - https://github.com/redis/jedis)
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.17 - http://www.slf4j.org)
+        * redis-authx-core (redis.clients.authentication:redis-authx-core:0.1.1-beta2 - https://github.com/redis/redis-authx-core)
         * SLF4J API Module (org.slf4j:slf4j-api:2.0.17 - http://www.slf4j.org)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
 
     Public Domain
 
         * AOP alliance (aopalliance:aopalliance:1.0 - http://aopalliance.sourceforge.net)
-        * JSON in Java (org.json:json:20240303 - https://github.com/douglascrockford/JSON-java)
+        * JSON in Java (org.json:json:20250517 - https://github.com/douglascrockford/JSON-java)
 
     Revised BSD
 
