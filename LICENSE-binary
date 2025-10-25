@@ -824,6 +824,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Netty/Resolver/DNS/Classes/MacOS (io.netty:netty-resolver-dns-classes-macos:4.2.7.Final - https://netty.io/netty-resolver-dns-classes-macos/)
         * Netty/Resolver/DNS (io.netty:netty-resolver-dns:4.2.7.Final - https://netty.io/netty-resolver-dns/)
         * Netty/Resolver (io.netty:netty-resolver:4.2.7.Final - https://netty.io/netty-resolver/)
+        * Netty/TomcatNative [BoringSSL - Static] (io.netty:netty-tcnative-boringssl-static:2.0.74.Final - https://github.com/netty/netty-tcnative/netty-tcnative-boringssl-static/)
         * Netty/TomcatNative (io.netty:netty-tcnative:2.0.74.Final - https://github.com/netty/netty-tcnative)
         * Netty/Codec/Http3 (io.netty:netty-codec-http3:4.2.7.Final - https://netty.io/netty-codec-http3/)
         * Netty/Transport/Classes/Epoll (io.netty:netty-transport-classes-epoll:4.2.7.Final - https://netty.io/netty-transport-classes-epoll/)
