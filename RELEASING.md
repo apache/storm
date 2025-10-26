@@ -85,7 +85,9 @@ popd
 
 6. Create a directory in the dist svn repo for the release candidate: https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx
 
-7. Run `dev-tools/release_notes.py` for the release version, piping the output to a RELEASE_NOTES.html file. Move that file to the svn release directory, sign it, and generate checksums, e.g.
+7. Before generating the release notes, please double check if all merged pull requests for the version being released are assigned the milestone in question. They won't be placed in the release notes otherwise
+
+8. Run `dev-tools/release_notes.py` for the release version, piping the output to a RELEASE_NOTES.html file. Move that file to the svn release directory, sign it, and generate checksums, e.g.
 ```bash
 export GITHUB_TOKEN=MY_PERSONAL_ACCESS_TOKEN_FOR_GI
 python3 dev-tools/release_notes.py <id-of-the-github-milestone> > RELEASE_NOTES.html
