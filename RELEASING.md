@@ -106,7 +106,7 @@ To obtain the ID of a GitHub milestone:
 - Click on the milestone you want to create release notes for. 
 - Look at the URL in your browser. It will look like this: `https://github.com/apache/storm/milestone/40`, where the last number is the milestone ID.
 
-9. Move the release files from steps 4,5 and 7 to the svn directory from Step 6. Add and commit the files. 
+9. Move the release files from steps 4,5 and 8 to the svn directory from Step 6. Add and commit the files. 
 This makes them available in the Apache staging repo.
 
 10. Start the VOTE thread. The vote should follow the [ASF voting process](https://www.apache.org/foundation/voting.html). 
