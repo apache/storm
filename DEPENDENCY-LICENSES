@@ -69,7 +69,7 @@ List of third-party dependencies grouped by their license type.
         * Apache Maven Shade Plugin (org.apache.maven.plugins:maven-shade-plugin:3.6.1 - https://maven.apache.org/plugins/maven-shade-plugin/)
         * Apache Maven Shared Utils (org.apache.maven.shared:maven-shared-utils:3.2.1 - https://maven.apache.org/shared/maven-shared-utils/)
         * Apache Thrift (org.apache.thrift:libthrift:0.22.0 - https://thrift.apache.org/)
-        * Apache XBean :: Spring (org.apache.xbean:xbean-spring:4.27 - http://geronimo.apache.org/maven/xbean/4.27/xbean-spring)
+        * Apache XBean :: Spring (org.apache.xbean:xbean-spring:4.28 - http://geronimo.apache.org/maven/xbean/4.28/xbean-spring)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.13.0 - https://yetus.apache.org/audience-annotations)
         * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.4 - http://zookeeper.apache.org/zookeeper-jute)
