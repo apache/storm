@@ -18,7 +18,7 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0
 
-        * ActiveMQ :: Client (org.apache.activemq:activemq-client:6.1.7 - http://activemq.apache.org/activemq-client)
+        * ActiveMQ :: Client (org.apache.activemq:activemq-client:6.1.8 - http://activemq.apache.org/activemq-client)
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.37 - https://metrics.dropwizard.io/metrics-annotation)
         * Apache Avro (org.apache.avro:avro:1.12.1 - https://avro.apache.org)
         * Apache Commons CLI (commons-cli:commons-cli:1.10.0 - https://commons.apache.org/proper/commons-cli/)
