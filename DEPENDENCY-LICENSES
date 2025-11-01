@@ -101,7 +101,7 @@ List of third-party dependencies grouped by their license type.
         * Dropwizard Servlet Support (io.dropwizard:dropwizard-servlets:5.0.0 - http://www.dropwizard.io/5.0.0/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-servlets)
         * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:5.0.0 - http://www.dropwizard.io/5.0.0/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
         * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:5.0.0 - http://www.dropwizard.io/5.0.0/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
-        * error-prone annotations (com.google.errorprone:error_prone_annotations:2.42.0 - https://errorprone.info/error_prone_annotations)
+        * error-prone annotations (com.google.errorprone:error_prone_annotations:2.43.0 - https://errorprone.info/error_prone_annotations)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Google Guice - Core Library (com.google.inject:guice:4.2.1 - https://github.com/google/guice/guice)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.37 - https://metrics.dropwizard.io/metrics-graphite)
