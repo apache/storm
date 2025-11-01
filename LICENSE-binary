@@ -879,12 +879,12 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * Core :: HTTP (org.eclipse.jetty:jetty-http:12.1.3- https://jetty.org/jetty-core/jetty-http)
         * Core :: IO (org.eclipse.jetty:jetty-io:12.1.3- https://jetty.org/jetty-core/jetty-io)
-        * Core :: Security (org.eclipse.jetty:jetty-security:12.1.3- https://jetty.org/jetty-core/jetty-security)
-        * Core :: Server (org.eclipse.jetty:jetty-server:12.1.3- https://jetty.org/jetty-core/jetty-server)
-        * Core :: Sessions (org.eclipse.jetty:jetty-session:12.1.3- https://jetty.org/jetty-core/jetty-session)
-        * Core :: Utilities (org.eclipse.jetty:jetty-util:12.1.3- https://jetty.org/jetty-core/jetty-util)
-        * EE10 :: Servlet (org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.3- https://jetty.org/jetty-ee10/jetty-ee10-servlet)
-        * EE10 :: Utility Servlets and Filters (org.eclipse.jetty.ee10:jetty-ee10-servlets:12.1.3- https://jetty.org/jetty-ee10/jetty-ee10-servlets)
+        * Core :: Security (org.eclipse.jetty:jetty-security:12.1.3 - https://jetty.org/jetty-core/jetty-security)
+        * Core :: Server (org.eclipse.jetty:jetty-server:12.1.3 - https://jetty.org/jetty-core/jetty-server)
+        * Core :: Sessions (org.eclipse.jetty:jetty-session:12.1.3 - https://jetty.org/jetty-core/jetty-session)
+        * Core :: Utilities (org.eclipse.jetty:jetty-util:12.1.3 - https://jetty.org/jetty-core/jetty-util)
+        * EE10 :: Servlet (org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.3 - https://jetty.org/jetty-ee10/jetty-ee10-servlet)
+        * EE10 :: Utility Servlets and Filters (org.eclipse.jetty.ee10:jetty-ee10-servlets:12.1.3 - https://jetty.org/jetty-ee10/jetty-ee10-servlets)
         * Jetty :: SetUID JNA (org.eclipse.jetty.toolchain.setuid:jetty-setuid-jna:2.0.3 - https://eclipse.org/jetty/jetty-setuid-jna)
 
     Apache License, Version 2.0, GNU General Public License, version 2
