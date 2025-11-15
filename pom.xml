@@ -90,7 +90,7 @@
         <commons-exec.version>1.5.0</commons-exec.version>
         <commons-collections.version>4.5.0</commons-collections.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
-        <commons-codec.version>1.19.0</commons-codec.version>
+        <commons-codec.version>1.20.0</commons-codec.version>
         <commons-text.version>1.14.0</commons-text.version>
         <commons-cli.version>1.10.0</commons-cli.version>
         <curator.version>5.9.0</curator.version>
@@ -123,7 +123,7 @@
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <joda-time.version>2.14.0</joda-time.version>
         <thrift.version>0.22.0</thrift.version>
-        <junit.jupiter.version>6.0.0</junit.jupiter.version>
+        <junit.jupiter.version>6.0.1</junit.jupiter.version>
         <surefire.version>3.5.4</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
@@ -149,7 +149,7 @@
         <jersey.version>3.1.11</jersey.version>
         <dropwizard.version>5.0.0</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
-        <caffeine.version>3.2.2</caffeine.version>
+        <caffeine.version>3.2.3</caffeine.version>
         <jakarta-jaxb-version>4.0.4</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
@@ -164,7 +164,7 @@
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.9</asm.version>
-        <checker-qual.version>3.51.1</checker-qual.version>
+        <checker-qual.version>3.52.0</checker-qual.version>
         <error_prone_annotations.version>2.43.0</error_prone_annotations.version>
         <bouncycastle.version>1.82</bouncycastle.version>
     </properties>
