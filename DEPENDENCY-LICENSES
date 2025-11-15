@@ -274,22 +274,22 @@ List of third-party dependencies grouped by their license type.
 
     Apache License, Version 2.0, BSD 2-Clause, Eclipse Distribution License, Version 1.0, Eclipse Public License, Version 2.0, jQuery license, MIT License, Modified BSD, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception, W3C license
 
-        * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
-        * jersey-container-grizzly2-servlet (org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-servlet)
-        * jersey-container-servlet (org.glassfish.jersey.containers:jersey-container-servlet:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet)
+        * jersey-container-grizzly2-http (org.glassfish.jersey.containers:jersey-container-grizzly2-http:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-http)
+        * jersey-container-grizzly2-servlet (org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-grizzly2-servlet)
+        * jersey-container-servlet (org.glassfish.jersey.containers:jersey-container-servlet:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet)
         * jersey-container-servlet-core (org.glassfish.jersey.containers:jersey-container-servlet-core:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-container-servlet-core)
-        * jersey-core-client (org.glassfish.jersey.core:jersey-client:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-client)
-        * jersey-ext-bean-validation (org.glassfish.jersey.ext:jersey-bean-validation:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-bean-validation)
-        * jersey-ext-metainf-services (org.glassfish.jersey.ext:jersey-metainf-services:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-metainf-services)
-        * jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-hk2)
+        * jersey-core-client (org.glassfish.jersey.core:jersey-client:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-client)
+        * jersey-ext-bean-validation (org.glassfish.jersey.ext:jersey-bean-validation:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-bean-validation)
+        * jersey-ext-metainf-services (org.glassfish.jersey.ext:jersey-metainf-services:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-metainf-services)
+        * jersey-inject-hk2 (org.glassfish.jersey.inject:jersey-hk2:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/project/jersey-hk2)
 
     Apache License, Version 2.0, Eclipse Public License, Version 2.0, Modified BSD, The GNU General Public License (GPL), Version 2, With Classpath Exception
 
-        * jersey-core-server (org.glassfish.jersey.core:jersey-server:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
+        * jersey-core-server (org.glassfish.jersey.core:jersey-server:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-server)
 
     Apache License, Version 2.0, Eclipse Public License, Version 2.0, Public Domain, The GNU General Public License (GPL), Version 2, With Classpath Exception
 
-        * jersey-core-common (org.glassfish.jersey.core:jersey-common:3.1.11 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
+        * jersey-core-common (org.glassfish.jersey.core:jersey-common:4.0.0 - https://projects.eclipse.org/projects/ee4j.jersey/jersey-common)
 
     Apache License, Version 2.0, Eclipse Public License - Version 2.0
 
@@ -396,13 +396,14 @@ List of third-party dependencies grouped by their license type.
 
     Eclipse Public License, Version 2.0, The GNU General Public License (GPL), Version 2, With Classpath Exception
 
-        * aopalliance version 1.0 repackaged as a module (org.glassfish.hk2.external:aopalliance-repackaged:3.0.6 - https://github.com/eclipse-ee4j/glassfish-hk2/external/aopalliance-repackaged)
+        * aopalliance version 1.0 repackaged as a module (org.glassfish.hk2.external:aopalliance-repackaged:4.0.0-M3 - https://github.com/eclipse-ee4j/glassfish-hk2/external/aopalliance-repackaged)
         * HK2 API module (org.glassfish.hk2:hk2-api:3.0.6 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-api)
-        * HK2 Implementation Utilities (org.glassfish.hk2:hk2-utils:3.0.6 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-utils)
+        * HK2 Implementation Utilities (org.glassfish.hk2:hk2-utils:4.0.0-M3 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-utils)
+        * HK2 OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:3.0.0 - https://projects.eclipse.org/projects/ee4j/hk2-extra-parent/osgi-resource-locator)
         * Jakarta Annotations API (jakarta.annotation:jakarta.annotation-api:2.1.1 - https://projects.eclipse.org/projects/ee4j.ca)
+        * Jakarta Annotations API (jakarta.annotation:jakarta.annotation-api:3.0.0 - https://projects.eclipse.org/projects/ee4j.ca)
         * Jakarta Servlet (jakarta.servlet:jakarta.servlet-api:6.1.0 - https://projects.eclipse.org/projects/ee4j.servlet)
-        * OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
-        * ServiceLocator Default Implementation (org.glassfish.hk2:hk2-locator:3.0.6 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-locator)
+        * ServiceLocator Default Implementation (org.glassfish.hk2:hk2-locator:4.0.0-M3 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-locator)
 
     Eclipse Public License (EPL) 1.0, GNU Lesser General Public License Version 2.1, February 1999
 
