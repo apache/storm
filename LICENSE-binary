@@ -710,7 +710,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache ZooKeeper - Jute (org.apache.zookeeper:zookeeper-jute:3.9.4 - http://zookeeper.apache.org/zookeeper-jute)
         * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.4 - http://zookeeper.apache.org/zookeeper)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:2.6.0 - https://urielch.github.io/)
-        * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.2 - https://github.com/ben-manes/caffeine)
+        * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.3 - https://github.com/ben-manes/caffeine)
         * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.7.0 - https://github.com/FasterXML/java-classmate)
         * com.helger:profiler (com.helger:profiler:1.1.1 - https://github.com/phax/profiler)
