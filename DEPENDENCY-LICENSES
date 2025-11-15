@@ -78,7 +78,7 @@ List of third-party dependencies grouped by their license type.
         * Auto Common Libraries (com.google.auto:auto-common:1.2.1 - https://github.com/google/auto/tree/master/common)
         * AutoService (com.google.auto.service:auto-service-annotations:1.1.1 - https://github.com/google/auto/tree/main/service)
         * AutoService Processor (com.google.auto.service:auto-service:1.1.1 - https://github.com/google/auto/tree/main/service)
-        * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.2 - https://github.com/ben-manes/caffeine)
+        * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.3 - https://github.com/ben-manes/caffeine)
         * CDI APIs (javax.enterprise:cdi-api:1.0 - http://www.seamframework.org/Weld/cdi-api)
         * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.7.0 - https://github.com/FasterXML/java-classmate)
