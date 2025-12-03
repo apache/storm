@@ -30,7 +30,7 @@
     <name>storm-metrics-prometheus</name>
 
     <properties>
-        <prometheus.client.version>1.4.2</prometheus.client.version>
+        <prometheus.client.version>1.4.3</prometheus.client.version>
     </properties>
 
     <dependencies>
