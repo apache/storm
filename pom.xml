@@ -86,7 +86,7 @@
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-io.version>2.21.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.19.0</commons-lang3.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-exec.version>1.5.0</commons-exec.version>
         <commons-collections.version>4.5.0</commons-collections.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
