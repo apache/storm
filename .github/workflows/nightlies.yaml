@@ -60,7 +60,7 @@ jobs:
       - name: Package binaries
         run: mvn package -f storm-dist/binary/pom.xml -Dgpg.skip
       - name: Upload to nightlies.apache.org
-        uses: burnett01/rsync-deployments@0c902521b8b9135f0dae7841a01d7d3b19629cb2 # 8.0.2
+        uses: burnett01/rsync-deployments@0dc935cdecc5f5e571865e60d2a6cdc673704823
         with:
           switches: -avzh --update --delete --progress --include='*.zip' --include='*.tar.gz' --exclude='*'
           path: storm-dist/binary/final-package/target/
