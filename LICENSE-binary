@@ -942,7 +942,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * clojure (org.clojure:clojure:1.12.3 - http://clojure.org/)
         * core.specs.alpha (org.clojure:core.specs.alpha:0.4.74 - https://github.com/clojure/build.poms/core.specs.alpha)
         * spec.alpha (org.clojure:spec.alpha:0.5.238 - https://github.com/clojure/build.poms/spec.alpha)
-        * tools.logging (org.clojure:tools.logging:1.3.0 - https://github.com/clojure/build.poms/tools.logging)
+        * tools.logging (org.clojure:tools.logging:1.3.1 - https://github.com/clojure/build.poms/tools.logging)
 
     Eclipse Public License, Version 1.0, GNU Lesser General Public License
 
