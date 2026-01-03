@@ -335,9 +335,9 @@ List of third-party dependencies grouped by their license type.
 
     BSD 3-Clause License
 
-        * asm (org.ow2.asm:asm:9.9 - http://asm.ow2.io/)
-        * asm-commons (org.ow2.asm:asm-commons:9.9 - http://asm.ow2.io/)
-        * asm-tree (org.ow2.asm:asm-tree:9.9 - http://asm.ow2.io/)
+        * asm (org.ow2.asm:asm:9.9.1 - http://asm.ow2.io/)
+        * asm-commons (org.ow2.asm:asm-commons:9.9.1 - http://asm.ow2.io/)
+        * asm-tree (org.ow2.asm:asm-tree:9.9.1 - http://asm.ow2.io/)
         * dnsjava (dnsjava:dnsjava:3.6.1 - https://github.com/dnsjava/dnsjava)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
 
