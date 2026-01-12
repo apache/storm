@@ -49,7 +49,7 @@ jobs:
         with:
           node-version: 20
       - name: Set up Ruby
-        uses: ruby/setup-ruby@d5f787ce339eb0767271bc01d922e85644c2c8ab # v1.280.0
+        uses: ruby/setup-ruby@675dd7ba1b06c8786a1480d89c384f5620a42647 # v1.281.0
         with:
           ruby-version: '2.7'
       - name: Set up JDK ${{ matrix.java }}
