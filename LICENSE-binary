@@ -789,7 +789,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Metrics Health Checks (io.dropwizard.metrics:metrics-healthchecks:4.2.38 - https://metrics.dropwizard.io/metrics-healthchecks)
         * Metrics Integration for Jersey 3.x (io.dropwizard.metrics:metrics-jersey3:4.2.38 - https://metrics.dropwizard.io/metrics-jersey3)
         * Metrics Integration for Jetty 12.x and higher (io.dropwizard.metrics:metrics-jetty12:4.2.38 - https://metrics.dropwizard.io/metrics-jetty12)
-        * Metrics Integration for Jetty 12.x and higher with Jakarta EE 10 (io.dropwizard.metrics:metrics-jetty12-ee10:4.2.37 - https://metrics.dropwizard.io/metrics-jetty12-ee10)
+        * Metrics Integration for Jetty 12.x and higher with Jakarta EE 10 (io.dropwizard.metrics:metrics-jetty12-ee10:4.2.38 - https://metrics.dropwizard.io/metrics-jetty12-ee10)
         * Metrics Integration for Logback (io.dropwizard.metrics:metrics-logback:4.2.38 - https://metrics.dropwizard.io/metrics-logback)
         * Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.2.38 - https://metrics.dropwizard.io/metrics-jmx)
         * Metrics Utility Jakarta Servlets (io.dropwizard.metrics:metrics-jakarta-servlets:4.2.38 - https://metrics.dropwizard.io/metrics-jakarta-servlets)
