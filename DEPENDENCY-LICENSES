@@ -232,7 +232,7 @@ List of third-party dependencies grouped by their license type.
         * Netty/Transport/UDT (io.netty:netty-transport-udt:4.2.9.Final - https://netty.io/netty-transport-udt/)
         * Netty/Transport (io.netty:netty-transport:4.2.9.Final - https://netty.io/netty-transport/)
         * Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.37.2 - https://bitbucket.org/connect2id/nimbus-jose-jwt)
-        * Objenesis (org.objenesis:objenesis:3.4 - https://objenesis.org/objenesis)
+        * Objenesis (org.objenesis:objenesis:3.5 - https://objenesis.org/objenesis)
         * OpenTelemetry Java (io.opentelemetry:opentelemetry-api:1.49.0 - https://github.com/open-telemetry/opentelemetry-java)
         * OpenTelemetry Java (io.opentelemetry:opentelemetry-context:1.49.0 - https://github.com/open-telemetry/opentelemetry-java)
         * OpenTelemetry Semantic Conventions Java (io.opentelemetry.semconv:opentelemetry-semconv:1.29.0-alpha - https://github.com/open-telemetry/semantic-conventions-java)
