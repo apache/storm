@@ -29,7 +29,7 @@
     <artifactId>storm-jms-examples</artifactId>
 
     <properties>
-        <spring.version>7.0.2</spring.version>
+        <spring.version>7.0.3</spring.version>
     </properties>
     <dependencies>
         <dependency>
@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.apache.xbean</groupId>
             <artifactId>xbean-spring</artifactId>
-            <version>4.29</version>
+            <version>4.30</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
