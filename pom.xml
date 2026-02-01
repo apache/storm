@@ -146,7 +146,7 @@
         <maven-resolver.version>1.9.25</maven-resolver.version>
         <maven.version>3.9.12</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
-        <jersey.version>3.1.11</jersey.version>
+        <jersey.version>4.0.2</jersey.version>
         <dropwizard.version>5.0.1</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.2.3</caffeine.version>
