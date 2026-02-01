@@ -90,7 +90,7 @@
         <commons-exec.version>1.6.0</commons-exec.version>
         <commons-collections.version>4.5.0</commons-collections.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
-        <commons-codec.version>1.20.0</commons-codec.version>
+        <commons-codec.version>1.21.0</commons-codec.version>
         <commons-text.version>1.15.0</commons-text.version>
         <commons-cli.version>1.11.0</commons-cli.version>
         <curator.version>5.9.0</curator.version>
