@@ -1291,8 +1291,6 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.14.1</version>
                     <configuration>
-                        <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
                         <generatedSourcesDirectory>${project.build.directory}/generated-sources
                         </generatedSourcesDirectory>
                     </configuration>
