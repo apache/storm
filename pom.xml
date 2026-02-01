@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>35</version>
+        <version>37</version>
     </parent>
 
     <groupId>org.apache.storm</groupId>
@@ -68,8 +68,7 @@
     </issueManagement>
 
     <properties>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.source>${maven.compiler.target}</maven.compiler.source>
+        <javaVersion>17</javaVersion>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
 
@@ -1292,8 +1291,6 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.14.1</version>
                     <configuration>
-                        <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
                         <generatedSourcesDirectory>${project.build.directory}/generated-sources
                         </generatedSourcesDirectory>
                     </configuration>
