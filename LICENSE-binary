@@ -877,9 +877,9 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Apache License, Version 2.0, Eclipse Public License - Version 2.0
 
-        * Core :: Security (org.eclipse.jetty:jetty-security:12.1.1 - https://jetty.org/jetty-core/jetty-security)
-        * Core :: Server (org.eclipse.jetty:jetty-server:12.1.1 - https://jetty.org/jetty-core/jetty-server)
-        * Core :: Utilities (org.eclipse.jetty:jetty-util:12.1.1 - https://jetty.org/jetty-core/jetty-util)
+        * Core :: Security (org.eclipse.jetty:jetty-security:12.1.5 - https://jetty.org/jetty-core/jetty-security)
+        * Core :: Server (org.eclipse.jetty:jetty-server:12.1.5 - https://jetty.org/jetty-core/jetty-server)
+        * Core :: Utilities (org.eclipse.jetty:jetty-util:12.1.5 - https://jetty.org/jetty-core/jetty-util)
         * Jetty :: SetUID JNA (org.eclipse.jetty.toolchain.setuid:jetty-setuid-jna:2.0.3 - https://eclipse.org/jetty/jetty-setuid-jna)
 
     Apache License, Version 2.0, GNU General Public License, version 2
