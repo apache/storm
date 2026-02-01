@@ -68,8 +68,7 @@
     </issueManagement>
 
     <properties>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.source>${maven.compiler.target}</maven.compiler.source>
+        <javaVersion>17</javaVersion>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
 

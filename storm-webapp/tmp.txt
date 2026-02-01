@@ -1,0 +1,204 @@
+[[1;34mINFO[m] Scanning for projects...
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m-------------------< [0;36morg.apache.storm:storm-webapp[0;1m >--------------------[m
+[[1;34mINFO[m] [1mBuilding Storm Webapp 2.8.4-SNAPSHOT[m
+[[1;34mINFO[m] [1m--------------------------------[ jar ]---------------------------------[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-dependency-plugin:3.8.1:tree[m [1m(default-cli)[m @ [36mstorm-webapp[0;1m ---[m
+[[1;34mINFO[m] org.apache.storm:storm-webapp:jar:2.8.4-SNAPSHOT
+[[1;34mINFO[m] +- org.apache.storm:storm-core:jar:2.8.4-SNAPSHOT:provided
+[[1;34mINFO[m] |  +- com.esotericsoftware:kryo:jar:5.6.2:provided
+[[1;34mINFO[m] |  |  +- com.esotericsoftware:reflectasm:jar:1.11.9:provided
+[[1;34mINFO[m] |  |  \- com.esotericsoftware:minlog:jar:1.3.1:provided
+[[1;34mINFO[m] |  +- org.apache.storm:storm-clojure:jar:2.8.4-SNAPSHOT:provided
+[[1;34mINFO[m] |  |  +- org.clojure:tools.logging:jar:1.3.1:provided
+[[1;34mINFO[m] |  |  |  \- org.clojure:clojure:jar:1.12.4:provided
+[[1;34mINFO[m] |  |  |     +- org.clojure:spec.alpha:jar:0.5.238:provided
+[[1;34mINFO[m] |  |  |     \- org.clojure:core.specs.alpha:jar:0.4.74:provided
+[[1;34mINFO[m] |  |  \- org.clojars.bipinprasad:carbonite:jar:1.6.0:provided
+[[1;34mINFO[m] |  |     \- com.twitter:chill-java:jar:0.9.5:provided
+[[1;34mINFO[m] |  +- org.apache.storm:storm-server:jar:2.8.4-SNAPSHOT:provided
+[[1;34mINFO[m] |  |  +- org.apache.storm:storm-client:jar:2.8.4-SNAPSHOT:provided
+[[1;34mINFO[m] |  |  |  +- org.apache.storm:storm-shaded-deps:jar:2.8.4-SNAPSHOT:provided
+[[1;34mINFO[m] |  |  |  +- org.bouncycastle:bcpkix-jdk18on:jar:1.83:provided
+[[1;34mINFO[m] |  |  |  |  \- org.bouncycastle:bcutil-jdk18on:jar:1.83:provided
+[[1;34mINFO[m] |  |  |  |     \- org.bouncycastle:bcprov-jdk18on:jar:1.83:provided
+[[1;34mINFO[m] |  |  |  +- com.sun.activation:jakarta.activation:jar:1.2.1:provided
+[[1;34mINFO[m] |  |  |  +- javax.annotation:javax.annotation-api:jar:1.3.2:provided
+[[1;34mINFO[m] |  |  |  \- io.dropwizard.metrics:metrics-graphite:jar:4.2.38:provided
+[[1;34mINFO[m] |  |  |     \- com.rabbitmq:amqp-client:jar:5.28.0:provided
+[[1;34mINFO[m] |  |  |        +- io.netty:netty-transport:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        |  +- io.netty:netty-common:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        |  +- io.netty:netty-buffer:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        |  \- io.netty:netty-resolver:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        +- io.netty:netty-codec:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        |  +- io.netty:netty-codec-base:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        |  +- io.netty:netty-codec-compression:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        |  +- io.netty:netty-codec-protobuf:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        |  \- io.netty:netty-codec-marshalling:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |        \- io.netty:netty-handler:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  |           \- io.netty:netty-transport-native-unix-common:jar:4.2.9.Final:provided
+[[1;34mINFO[m] |  |  +- org.apache.commons:commons-exec:jar:1.6.0:provided
+[[1;34mINFO[m] |  |  +- org.apache.commons:commons-compress:jar:1.28.0:provided
+[[1;34mINFO[m] |  |  |  \- org.apache.commons:commons-lang3:jar:3.20.0:compile
+[[1;34mINFO[m] |  |  +- org.rocksdb:rocksdbjni:jar:10.2.1:provided
+[[1;34mINFO[m] |  |  +- jline:jline:jar:2.14.6:provided
+[[1;34mINFO[m] |  |  +- org.apache.commons:commons-collections4:jar:4.5.0:provided
+[[1;34mINFO[m] |  |  +- org.yaml:snakeyaml:jar:2.2:compile
+[[1;34mINFO[m] |  |  \- org.apache.httpcomponents:httpclient:jar:4.5.14:provided
+[[1;34mINFO[m] |  |     +- org.apache.httpcomponents:httpcore:jar:4.4.16:provided
+[[1;34mINFO[m] |  |     \- commons-logging:commons-logging:jar:1.3.5:provided
+[[1;34mINFO[m] |  +- commons-cli:commons-cli:jar:1.11.0:provided
+[[1;34mINFO[m] |  +- commons-io:commons-io:jar:2.21.0:provided
+[[1;34mINFO[m] |  +- commons-lang:commons-lang:jar:2.6:provided
+[[1;34mINFO[m] |  +- com.google.guava:guava:jar:33.5.0-jre:compile
+[[1;34mINFO[m] |  |  +- com.google.guava:failureaccess:jar:1.0.3:compile
+[[1;34mINFO[m] |  |  +- com.google.guava:listenablefuture:jar:9999.0-empty-to-avoid-conflict-with-guava:compile
+[[1;34mINFO[m] |  |  +- com.google.errorprone:error_prone_annotations:jar:2.46.0:compile
+[[1;34mINFO[m] |  |  \- com.google.j2objc:j2objc-annotations:jar:3.1:compile
+[[1;34mINFO[m] |  +- org.apache.logging.log4j:log4j-api:jar:2.25.3:compile
+[[1;34mINFO[m] |  +- org.slf4j:log4j-over-slf4j:jar:2.0.17:runtime
+[[1;34mINFO[m] |  +- org.eclipse.jetty:jetty-server:jar:12.1.6:compile
+[[1;34mINFO[m] |  +- org.eclipse.jetty:jetty-util:jar:12.1.6:compile
+[[1;34mINFO[m] |  +- com.fasterxml.jackson.core:jackson-core:jar:2.21.0:compile
+[[1;34mINFO[m] |  +- com.fasterxml.jackson.dataformat:jackson-dataformat-smile:jar:2.21.0:provided
+[[1;34mINFO[m] |  +- commons-fileupload:commons-fileupload:jar:1.6.0:provided
+[[1;34mINFO[m] |  +- commons-codec:commons-codec:jar:1.21.0:provided
+[[1;34mINFO[m] |  \- org.apache.hadoop:hadoop-auth:jar:3.4.2:provided
+[[1;34mINFO[m] |     +- com.nimbusds:nimbus-jose-jwt:jar:9.37.2:provided
+[[1;34mINFO[m] |     |  \- com.github.stephenc.jcip:jcip-annotations:jar:1.0-1:provided
+[[1;34mINFO[m] |     +- org.apache.zookeeper:zookeeper:jar:3.9.4:provided
+[[1;34mINFO[m] |     |  +- org.apache.zookeeper:zookeeper-jute:jar:3.9.4:provided
+[[1;34mINFO[m] |     |  \- org.apache.yetus:audience-annotations:jar:0.12.0:provided
+[[1;34mINFO[m] |     +- org.apache.curator:curator-framework:jar:5.9.0:provided
+[[1;34mINFO[m] |     |  \- org.apache.curator:curator-client:jar:5.9.0:provided
+[[1;34mINFO[m] |     +- org.apache.kerby:kerb-core:jar:2.0.3:provided
+[[1;34mINFO[m] |     |  \- org.apache.kerby:kerby-pkix:jar:2.0.3:provided
+[[1;34mINFO[m] |     |     +- org.apache.kerby:kerby-asn1:jar:2.0.3:provided
+[[1;34mINFO[m] |     |     \- org.apache.kerby:kerby-util:jar:2.0.3:provided
+[[1;34mINFO[m] |     +- org.apache.kerby:kerb-util:jar:2.0.3:provided
+[[1;34mINFO[m] |     |  +- org.apache.kerby:kerby-config:jar:2.0.3:provided
+[[1;34mINFO[m] |     |  \- org.apache.kerby:kerb-crypto:jar:2.0.3:provided
+[[1;34mINFO[m] |     \- org.apache.hadoop.thirdparty:hadoop-shaded-guava:jar:1.4.0:provided
+[[1;34mINFO[m] +- net.minidev:json-smart:jar:2.6.0:compile
+[[1;34mINFO[m] |  \- net.minidev:accessors-smart:jar:2.6.0:compile
+[[1;34mINFO[m] |     \- org.ow2.asm:asm:jar:9.9.1:compile
+[[1;34mINFO[m] +- org.apache.logging.log4j:log4j-slf4j2-impl:jar:2.25.3:provided
+[[1;34mINFO[m] +- org.apache.logging.log4j:log4j-core:jar:2.25.3:compile
+[[1;34mINFO[m] +- io.dropwizard.metrics:metrics-core:jar:4.2.38:compile
+[[1;34mINFO[m] +- org.mockito:mockito-core:jar:5.14.2:test
+[[1;34mINFO[m] |  +- net.bytebuddy:byte-buddy:jar:1.18.4:test
+[[1;34mINFO[m] |  +- net.bytebuddy:byte-buddy-agent:jar:1.18.4:test
+[[1;34mINFO[m] |  \- org.objenesis:objenesis:jar:3.5:provided
+[[1;34mINFO[m] +- org.hamcrest:hamcrest:jar:3.0:test
+[[1;34mINFO[m] +- org.slf4j:slf4j-api:jar:2.0.17:compile
+[[1;34mINFO[m] +- com.fasterxml.jackson.core:jackson-databind:jar:2.20.1:compile
+[[1;34mINFO[m] |  \- com.fasterxml.jackson.core:jackson-annotations:jar:2.21:compile
+[[1;34mINFO[m] +- io.dropwizard:dropwizard-core:jar:5.0.1:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-util:jar:5.0.1:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-jackson:jar:5.0.1:compile
+[[1;34mINFO[m] |  |  +- com.github.ben-manes.caffeine:caffeine:jar:3.2.3:compile
+[[1;34mINFO[m] |  |  +- com.fasterxml.jackson.datatype:jackson-datatype-guava:jar:2.21.0:compile
+[[1;34mINFO[m] |  |  +- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.21.0:compile
+[[1;34mINFO[m] |  |  +- com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.21.0:compile
+[[1;34mINFO[m] |  |  +- com.fasterxml.jackson.module:jackson-module-parameter-names:jar:2.21.0:compile
+[[1;34mINFO[m] |  |  \- com.fasterxml.jackson.module:jackson-module-blackbird:jar:2.21.0:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-validation:jar:5.0.1:compile
+[[1;34mINFO[m] |  |  +- com.fasterxml:classmate:jar:1.7.3:compile
+[[1;34mINFO[m] |  |  +- org.hibernate.validator:hibernate-validator:jar:8.0.3.Final:compile
+[[1;34mINFO[m] |  |  \- org.glassfish.expressly:expressly:jar:5.0.0:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-configuration:jar:5.0.1:compile
+[[1;34mINFO[m] |  |  +- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.21.0:compile
+[[1;34mINFO[m] |  |  \- org.apache.commons:commons-text:jar:1.15.0:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-logging:jar:5.0.1:compile
+[[1;34mINFO[m] |  |  +- io.dropwizard.metrics:metrics-logback:jar:4.2.38:compile
+[[1;34mINFO[m] |  |  +- org.slf4j:jul-to-slf4j:jar:2.0.17:compile
+[[1;34mINFO[m] |  |  +- io.dropwizard.logback:logback-throttling-appender:jar:1.5.3:compile
+[[1;34mINFO[m] |  |  \- org.slf4j:jcl-over-slf4j:jar:2.0.17:runtime
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-metrics:jar:5.0.1:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-jersey:jar:5.0.1:compile
+[[1;34mINFO[m] |  |  +- org.glassfish.jersey.ext:jersey-metainf-services:jar:4.0.2:runtime
+[[1;34mINFO[m] |  |  +- io.dropwizard.metrics:metrics-jersey3:jar:4.2.38:compile
+[[1;34mINFO[m] |  |  \- org.glassfish.hk2:hk2-api:jar:3.0.6:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-servlets:jar:5.0.1:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-jetty:jar:5.0.1:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-lifecycle:jar:5.0.1:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-health:jar:5.0.1:compile
+[[1;34mINFO[m] |  +- io.dropwizard.metrics:metrics-annotation:jar:4.2.38:compile
+[[1;34mINFO[m] |  +- io.dropwizard.metrics:metrics-jetty12:jar:4.2.38:compile
+[[1;34mINFO[m] |  +- io.dropwizard.metrics:metrics-jetty12-ee10:jar:4.2.38:compile
+[[1;34mINFO[m] |  +- io.dropwizard.metrics:metrics-jvm:jar:4.2.38:compile
+[[1;34mINFO[m] |  +- io.dropwizard.metrics:metrics-jmx:jar:4.2.38:compile
+[[1;34mINFO[m] |  +- io.dropwizard.metrics:metrics-jakarta-servlets:jar:4.2.38:compile
+[[1;34mINFO[m] |  |  +- io.dropwizard.metrics:metrics-json:jar:4.2.38:compile
+[[1;34mINFO[m] |  |  \- com.helger:profiler:jar:1.1.1:compile
+[[1;34mINFO[m] |  +- io.dropwizard.metrics:metrics-healthchecks:jar:4.2.38:compile
+[[1;34mINFO[m] |  +- io.dropwizard:dropwizard-request-logging:jar:5.0.1:compile
+[[1;34mINFO[m] |  |  +- ch.qos.logback.access:logback-access-common:jar:2.0.9:compile
+[[1;34mINFO[m] |  |  \- ch.qos.logback.access:logback-access-jetty12:jar:2.0.9:compile
+[[1;34mINFO[m] |  +- org.jspecify:jspecify:jar:1.0.0:compile
+[[1;34mINFO[m] |  +- jakarta.servlet:jakarta.servlet-api:jar:6.1.0:compile
+[[1;34mINFO[m] |  +- jakarta.validation:jakarta.validation-api:jar:3.0.2:compile
+[[1;34mINFO[m] |  +- net.sourceforge.argparse4j:argparse4j:jar:0.9.0:compile
+[[1;34mINFO[m] |  +- org.eclipse.jetty:jetty-security:jar:12.1.5:compile
+[[1;34mINFO[m] |  +- org.eclipse.jetty.toolchain.setuid:jetty-setuid-jna:jar:2.0.3:compile
+[[1;34mINFO[m] |  |  \- net.java.dev.jna:jna-jpms:jar:5.14.0:compile
+[[1;34mINFO[m] |  +- jakarta.inject:jakarta.inject-api:jar:2.0.1:compile
+[[1;34mINFO[m] |  +- org.glassfish.jersey.core:jersey-common:jar:4.0.2:compile
+[[1;34mINFO[m] |  |  \- org.glassfish.hk2:osgi-resource-locator:jar:3.0.0:compile
+[[1;34mINFO[m] |  \- org.glassfish.jersey.ext:jersey-bean-validation:jar:4.0.2:compile
+[[1;34mINFO[m] |     +- org.jboss.logging:jboss-logging:jar:3.6.1.Final:compile
+[[1;34mINFO[m] |     \- jakarta.el:jakarta.el-api:jar:5.0.1:compile
+[[1;34mINFO[m] +- io.dropwizard:dropwizard-assets:jar:5.0.1:compile
+[[1;34mINFO[m] +- com.j2html:j2html:jar:1.6.0:compile
+[[1;34mINFO[m] +- io.dropwizard:dropwizard-testing:jar:5.0.1:test
+[[1;34mINFO[m] |  +- com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider:jar:2.21.0:compile
+[[1;34mINFO[m] |  |  +- com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base:jar:2.21.0:compile
+[[1;34mINFO[m] |  |  \- com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations:jar:2.21.0:compile
+[[1;34mINFO[m] |  +- ch.qos.logback:logback-classic:jar:1.5.26:test
+[[1;34mINFO[m] |  |  \- ch.qos.logback:logback-core:jar:1.5.26:test
+[[1;34mINFO[m] |  +- org.glassfish.jersey.containers:jersey-container-servlet-core:jar:3.1.11:compile
+[[1;34mINFO[m] |  +- org.glassfish.jersey.connectors:jersey-apache5-connector:jar:4.0.2:test
+[[1;34mINFO[m] |  +- org.apache.httpcomponents.client5:httpclient5:jar:5.5.2:test
+[[1;34mINFO[m] |  |  +- org.apache.httpcomponents.core5:httpcore5:jar:5.3.6:test
+[[1;34mINFO[m] |  |  \- org.apache.httpcomponents.core5:httpcore5-h2:jar:5.3.6:test
+[[1;34mINFO[m] |  +- org.glassfish.jersey.core:jersey-client:jar:4.0.2:compile
+[[1;34mINFO[m] |  +- org.glassfish.jersey.core:jersey-server:jar:4.0.2:compile
+[[1;34mINFO[m] |  +- org.glassfish.jersey.test-framework:jersey-test-framework-core:jar:4.0.2:test
+[[1;34mINFO[m] |  |  +- org.glassfish.jersey.media:jersey-media-jaxb:jar:4.0.2:test
+[[1;34mINFO[m] |  |  \- org.junit.jupiter:junit-jupiter:jar:6.0.2:test
+[[1;34mINFO[m] |  |     \- org.junit.jupiter:junit-jupiter-params:jar:6.0.2:test
+[[1;34mINFO[m] |  +- org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory:jar:4.0.2:test
+[[1;34mINFO[m] |  +- jakarta.activation:jakarta.activation-api:jar:1.2.1:compile
+[[1;34mINFO[m] |  \- jakarta.xml.bind:jakarta.xml.bind-api:jar:4.0.4:compile
+[[1;34mINFO[m] +- jakarta.ws.rs:jakarta.ws.rs-api:jar:3.1.0:compile
+[[1;34mINFO[m] +- org.eclipse.jetty.ee10:jetty-ee10-servlet:jar:12.1.6:compile
+[[1;34mINFO[m] |  \- org.eclipse.jetty:jetty-session:jar:12.1.6:compile
+[[1;34mINFO[m] +- org.eclipse.jetty.ee10:jetty-ee10-servlets:jar:12.1.6:compile
+[[1;34mINFO[m] |  +- org.eclipse.jetty:jetty-http:jar:12.1.6:compile
+[[1;34mINFO[m] |  \- org.eclipse.jetty:jetty-io:jar:12.1.6:compile
+[[1;34mINFO[m] +- org.glassfish.jersey.containers:jersey-container-grizzly2-http:jar:4.0.2:compile
+[[1;34mINFO[m] |  \- org.glassfish.grizzly:grizzly-http-server:jar:4.0.2:compile
+[[1;34mINFO[m] |     \- org.glassfish.grizzly:grizzly-http:jar:4.0.2:compile
+[[1;34mINFO[m] |        \- org.glassfish.grizzly:grizzly-framework:jar:4.0.2:compile
+[[1;34mINFO[m] +- org.glassfish.jersey.inject:jersey-hk2:jar:4.0.2:compile
+[[1;34mINFO[m] |  +- org.glassfish.hk2:hk2-locator:jar:4.0.0-M3:compile
+[[1;34mINFO[m] |  |  +- org.glassfish.hk2.external:aopalliance-repackaged:jar:4.0.0-M3:compile
+[[1;34mINFO[m] |  |  \- org.glassfish.hk2:hk2-utils:jar:4.0.0-M3:compile
+[[1;34mINFO[m] |  +- org.javassist:javassist:jar:3.30.2-GA:compile
+[[1;34mINFO[m] |  \- jakarta.annotation:jakarta.annotation-api:jar:3.0.0:compile
+[[1;34mINFO[m] +- org.glassfish.jersey.containers:jersey-container-grizzly2-servlet:jar:4.0.2:compile
+[[1;34mINFO[m] |  +- org.glassfish.jersey.containers:jersey-container-servlet:jar:4.0.2:compile
+[[1;34mINFO[m] |  \- org.glassfish.grizzly:grizzly-http-servlet:jar:4.0.2:compile
+[[1;34mINFO[m] \- org.junit.jupiter:junit-jupiter-engine:jar:6.0.2:test
+[[1;34mINFO[m]    +- org.junit.platform:junit-platform-engine:jar:6.0.2:test
+[[1;34mINFO[m]    |  +- org.opentest4j:opentest4j:jar:1.3.0:test
+[[1;34mINFO[m]    |  \- org.junit.platform:junit-platform-commons:jar:6.0.2:test
+[[1;34mINFO[m]    +- org.junit.jupiter:junit-jupiter-api:jar:6.0.2:test
+[[1;34mINFO[m]    \- org.apiguardian:apiguardian-api:jar:1.1.2:test
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] [1;32mBUILD SUCCESS[m
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] Total time:  1.815 s
+[[1;34mINFO[m] Finished at: 2026-02-01T20:00:29Z
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
