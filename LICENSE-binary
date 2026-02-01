@@ -727,7 +727,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Dropwizard Servlet Support (io.dropwizard:dropwizard-servlets:5.0.0 - http://www.dropwizard.io/5.0.0/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-servlets)
         * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:5.0.0 - http://www.dropwizard.io/5.0.0/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
         * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:5.0.0 - http://www.dropwizard.io/5.0.0/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
-        * error-prone annotations (com.google.errorprone:error_prone_annotations:2.45.0 - https://errorprone.info/error_prone_annotations)
+        * error-prone annotations (com.google.errorprone:error_prone_annotations:2.46.0 - https://errorprone.info/error_prone_annotations)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.37 - https://metrics.dropwizard.io/metrics-graphite)
         * Gson (com.google.code.gson:gson:2.13.2 - https://github.com/google/gson)
