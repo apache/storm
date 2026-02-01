@@ -183,7 +183,7 @@ List of third-party dependencies grouped by their license type.
         * Metrics Health Checks (io.dropwizard.metrics:metrics-healthchecks:4.2.38 - https://metrics.dropwizard.io/metrics-healthchecks)
         * Metrics Integration for Jersey 3.x (io.dropwizard.metrics:metrics-jersey3:4.2.38 - https://metrics.dropwizard.io/metrics-jersey3)
         * Metrics Integration for Jetty 12.x and higher (io.dropwizard.metrics:metrics-jetty12:4.2.38 - https://metrics.dropwizard.io/metrics-jetty12)
-        * Metrics Integration for Jetty 12.x and higher with Jakarta EE 10 (io.dropwizard.metrics:metrics-jetty12-ee10:4.2.37 - https://metrics.dropwizard.io/metrics-jetty12-ee10)
+        * Metrics Integration for Jetty 12.x and higher with Jakarta EE 10 (io.dropwizard.metrics:metrics-jetty12-ee10:4.2.38 - https://metrics.dropwizard.io/metrics-jetty12-ee10)
         * Metrics Integration for Logback (io.dropwizard.metrics:metrics-logback:4.2.38 - https://metrics.dropwizard.io/metrics-logback)
         * Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.2.38 - https://metrics.dropwizard.io/metrics-jmx)
         * Metrics Utility Jakarta Servlets (io.dropwizard.metrics:metrics-jakarta-servlets:4.2.38 - https://metrics.dropwizard.io/metrics-jakarta-servlets)
@@ -287,6 +287,7 @@ List of third-party dependencies grouped by their license type.
 
         * Core :: HTTP (org.eclipse.jetty:jetty-http:12.1.6 - https://jetty.org/jetty-core/jetty-http)
         * Core :: IO (org.eclipse.jetty:jetty-io:12.1.6 - https://jetty.org/jetty-core/jetty-io)
+        * Core :: Security (org.eclipse.jetty:jetty-security:12.1.5 - https://jetty.org/jetty-core/jetty-security)
         * Core :: Security (org.eclipse.jetty:jetty-security:12.1.6 - https://jetty.org/jetty-core/jetty-security)
         * Core :: Server (org.eclipse.jetty:jetty-server:12.1.6 - https://jetty.org/jetty-core/jetty-server)
         * Core :: Sessions (org.eclipse.jetty:jetty-session:12.1.6 - https://jetty.org/jetty-core/jetty-session)
