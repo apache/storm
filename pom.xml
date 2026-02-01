@@ -164,7 +164,7 @@
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.9.1</asm.version>
-        <checker-qual.version>3.52.1</checker-qual.version>
+        <checker-qual.version>3.53.0</checker-qual.version>
         <error_prone_annotations.version>2.45.0</error_prone_annotations.version>
         <bouncycastle.version>1.83</bouncycastle.version>
     </properties>
