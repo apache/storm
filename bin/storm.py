@@ -230,7 +230,7 @@ def resolve_dependencies(artifacts, artifact_repositories, maven_local_repos_dir
     try:
         out_dict = json.loads(output)
         return out_dict
-    except:
+    except Exception:
         raise RuntimeError(f"dependency handler returns non-json response: sysout<{output}>", )
 
 
@@ -1126,7 +1126,7 @@ def set_log_level(args):
             if ":" in new_value:
                 _, timeout = new_value.split(":")
                 int(timeout)
-        except:
+        except Exception:
             raise argparse.ArgumentTypeError("Should be in the form[logger name]=[log level][:optional timeout]")
     exec_storm_class(
         "org.apache.storm.command.SetLogLevel",
@@ -1152,7 +1152,7 @@ def rebalance(args):
             new_value = int(new_value)
             if new_value < 0:
                 raise argparse.ArgumentTypeError("Executor count should be > 0")
-        except:
+        except Exception:
             raise argparse.ArgumentTypeError("Should be in the form component_name=new_executor_count")
     exec_storm_class(
         "org.apache.storm.command.Rebalance",

@@ -1735,7 +1735,7 @@ def check_dependencies():
     try:
         command = ["setfattr", "--version"]
         shell_command(command, False, False, True)
-    except:
+    except Exception:
         logging.error("Could not find setfattr . Make sure it is installed and present on the PATH")
         return 1
 
