@@ -38,7 +38,7 @@ def print_error_reports_from_report_file(file_path):
     tree = ElementTree()
     try:
         tree.parse(file_path)
-    except:
+    except Exception:
         print("-" * 50)
         print("Error parsing %s"%file_path)
         f = open(file_path, "r")
