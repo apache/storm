@@ -40,9 +40,13 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.TupleUtils;
 import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TridentBoltExecutor implements IRichBolt {
     public static final String COORD_STREAM_PREFIX = "$coord-";
+    private static final Logger LOG = LoggerFactory.getLogger(TridentBoltExecutor.class);
+
     Map<GlobalStreamId, String> batchGroupIds;
     Map<String, CoordSpec> coordSpecs;
     Map<String, CoordCondition> coordConditions;
@@ -160,7 +164,8 @@ public class TridentBoltExecutor implements IRichBolt {
             if (tracked.receivedTuples == tracked.expectedTupleCount) {
                 finishBatch(tracked, tuple);
             } else {
-                //TODO: add logging that not all tuples were received
+                LOG.warn("Failing batch {}: expected {} tuples but only received {}", 
+                         tracked.info.batchId, tracked.expectedTupleCount, tracked.receivedTuples);
                 failBatch(tracked);
                 collector.fail(tuple);
                 failed = true;
