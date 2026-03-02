@@ -110,7 +110,7 @@ public class LocalFsBlobStore extends BlobStore {
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to initialize cluster state for LocalFsBlobStore", e);
         }
         timer = new Timer("BLOB-STORE-TIMER", true);
         this.leaderElector = leaderElector;
