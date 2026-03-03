@@ -51,6 +51,7 @@ import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.security.auth.DefaultPrincipalToLocal;
+import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ReflectionUtils;
@@ -791,18 +792,21 @@ public class AsyncLocalizerTest {
     }
 
     @Test
-    public void testKeyNotFoundException() {
-        assertThrows(KeyNotFoundException.class, () -> {
-            Map<String, Object> conf = Utils.readStormConfig();
-            String key1 = "key1";
-            conf.put(Config.STORM_LOCAL_DIR, "target");
-            LocalFsBlobStore bs = new LocalFsBlobStore();
-            LocalFsBlobStore spy = spy(bs);
-            Mockito.doReturn(true).when(spy).checkForBlobOrDownload(key1);
-            Mockito.doNothing().when(spy).checkForBlobUpdate(key1);
-            spy.prepare(conf, null, null, null);
-            spy.getBlob(key1, null);
-        });
+    public void testKeyNotFoundException() throws Exception {
+        try (InProcessZookeeper zk = new InProcessZookeeper()) {
+            assertThrows(KeyNotFoundException.class, () -> {
+                Map<String, Object> conf = Utils.readStormConfig();
+                String key1 = "key1";
+                conf.put(Config.STORM_LOCAL_DIR, "target");
+                conf.put(Config.STORM_ZOOKEEPER_PORT, zk.getPort());
+                LocalFsBlobStore bs = new LocalFsBlobStore();
+                LocalFsBlobStore spy = spy(bs);
+                Mockito.doReturn(true).when(spy).checkForBlobOrDownload(key1);
+                Mockito.doNothing().when(spy).checkForBlobUpdate(key1);
+                spy.prepare(conf, null, null, null);
+                spy.getBlob(key1, null);
+            });
+        }
     }
 
     @Test
