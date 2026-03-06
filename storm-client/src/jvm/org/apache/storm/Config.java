@@ -479,7 +479,7 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_EVENTLOGGER_EXECUTORS = "topology.eventlogger.executors";
     /**
      * The maximum size in MB for the event logger file before it rotates.
-     * If not specified, a default of 1000 MB is used.
+     * If not specified, a default of 100 MB is used.
      */
     @IsInteger
     @IsPositiveNumber
