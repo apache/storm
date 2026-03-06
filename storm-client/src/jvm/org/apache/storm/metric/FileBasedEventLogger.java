@@ -90,9 +90,8 @@ public class FileBasedEventLogger implements IEventLogger {
                             dirty = false;
                         }
                     }
-                } catch (IOException ex) {
+                } catch (Exception ex) {
                     LOG.error("Error flushing " + eventLogPath, ex);
-                    throw new RuntimeException(ex);
                 }
             }
         };
@@ -133,8 +132,7 @@ public class FileBasedEventLogger implements IEventLogger {
     public void log(EventInfo event) {
         try {
             String logMessage = buildLogMessage(event);
-            byte[] logBytes = logMessage.getBytes(StandardCharsets.UTF_8);
-            int writeLength = logBytes.length + System.lineSeparator().length();
+            int writeLength = logMessage.length() + System.lineSeparator().length();
 
             synchronized (writeLock) {
                 if (currentFileSize + writeLength > maxFileSize) {
@@ -157,8 +155,16 @@ public class FileBasedEventLogger implements IEventLogger {
     private void rotateFiles() throws IOException {
         eventLogWriter.close();
 
+        // Delete any files that exceed maxRetainedFiles (e.g. if the config was
+        // lowered)
+        int i = maxRetainedFiles;
+        while (Files.exists(Paths.get(eventLogPath.toString() + "." + i))) {
+            Files.delete(Paths.get(eventLogPath.toString() + "." + i));
+            i++;
+        }
+
         // Shift existing rotated files
-        for (int i = maxRetainedFiles - 1; i >= 1; i--) {
+        for (i = maxRetainedFiles - 1; i >= 1; i--) {
             Path src = Paths.get(eventLogPath.toString() + "." + i);
             Path dst = Paths.get(eventLogPath.toString() + "." + (i + 1));
             if (Files.exists(src)) {
