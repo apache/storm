@@ -43,6 +43,7 @@ public class FileBasedEventLogger implements IEventLogger {
     private static final Logger LOG = LoggerFactory.getLogger(FileBasedEventLogger.class);
 
     private static final int FLUSH_INTERVAL_MILLIS = 1000;
+    private static final long BYTES_PER_MB = 1024L * 1024L;
     private static final int DEFAULT_ROTATION_SIZE_MB = 100;
     private static final int DEFAULT_MAX_RETAINED_FILES = 5;
 
@@ -50,6 +51,7 @@ public class FileBasedEventLogger implements IEventLogger {
     private BufferedWriter eventLogWriter;
     private ScheduledExecutorService flushScheduler;
     private volatile boolean dirty = false;
+    private final Object writeLock = new Object();
 
     // File rotation configs
     private long maxFileSize;
@@ -82,9 +84,11 @@ public class FileBasedEventLogger implements IEventLogger {
             @Override
             public void run() {
                 try {
-                    if (dirty) {
-                        eventLogWriter.flush();
-                        dirty = false;
+                    synchronized (writeLock) {
+                        if (dirty && eventLogWriter != null) {
+                            eventLogWriter.flush();
+                            dirty = false;
+                        }
                     }
                 } catch (IOException ex) {
                     LOG.error("Error flushing " + eventLogPath, ex);
@@ -104,7 +108,7 @@ public class FileBasedEventLogger implements IEventLogger {
 
         int rotationSizeMb = ObjectReader.getInt(conf.get(Config.TOPOLOGY_EVENTLOGGER_ROTATION_SIZE_MB),
                 DEFAULT_ROTATION_SIZE_MB);
-        this.maxFileSize = rotationSizeMb * 1024L * 1024L;
+        this.maxFileSize = rotationSizeMb * BYTES_PER_MB;
         this.maxRetainedFiles = ObjectReader.getInt(conf.get(Config.TOPOLOGY_EVENTLOGGER_MAX_RETAINED_FILES),
                 DEFAULT_MAX_RETAINED_FILES);
 
@@ -132,14 +136,18 @@ public class FileBasedEventLogger implements IEventLogger {
             byte[] logBytes = logMessage.getBytes(StandardCharsets.UTF_8);
             int writeLength = logBytes.length + System.lineSeparator().length();
 
-            if (currentFileSize + writeLength > maxFileSize) {
-                rotateFiles();
-            }
+            synchronized (writeLock) {
+                if (currentFileSize + writeLength > maxFileSize) {
+                    rotateFiles();
+                }
 
-            eventLogWriter.write(logMessage);
-            eventLogWriter.newLine();
-            currentFileSize += writeLength;
-            dirty = true;
+                if (eventLogWriter != null) {
+                    eventLogWriter.write(logMessage);
+                    eventLogWriter.newLine();
+                    currentFileSize += writeLength;
+                    dirty = true;
+                }
+            }
         } catch (IOException ex) {
             LOG.error("Error logging event {}", event, ex);
             throw new RuntimeException(ex);
@@ -175,14 +183,18 @@ public class FileBasedEventLogger implements IEventLogger {
 
     @Override
     public void close() {
-        try {
-            eventLogWriter.close();
+        closeFlushScheduler();
 
+        try {
+            synchronized (writeLock) {
+                if (eventLogWriter != null) {
+                    eventLogWriter.close();
+                    eventLogWriter = null;
+                }
+            }
         } catch (IOException ex) {
             LOG.error("Error closing event log.", ex);
         }
-
-        closeFlushScheduler();
     }
 
     private void closeFlushScheduler() {
