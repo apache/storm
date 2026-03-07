@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.SupervisorWorkerHeartbeat;
@@ -72,7 +73,16 @@ public class HeartbeatCache {
             isTimedOut = Time.deltaSecs(getNimbusTimeSecs()) >= timeout;
         }
 
-        public synchronized void updateFromHb(Integer timeout, Map<String, Object> newBeat) {
+        // Used for RPC heartbeats: nimbusTimeSecs is refreshed on every heartbeat so that
+        // idle-but-alive executors (whose stats TIME_SECS may not advance) are not falsely timed out.
+        public synchronized void updateFromRpcHb(Integer timeout) {
+            nimbusTimeSecs = Time.currentTimeSecs();
+            updateTimeout(timeout);
+        }
+
+        // Used for ZK heartbeats: nimbusTimeSecs is only refreshed when the executor's stats
+        // TIME_SECS advances, preserving zombie detection for legacy topologies.
+        public synchronized void updateFromZkHb(Integer timeout, Map<String, Object> newBeat) {
             if (newBeat != null) {
                 Integer newReportedTime = (Integer) newBeat.getOrDefault(ClientStatsUtil.TIME_SECS, 0);
                 if (!newReportedTime.equals(executorReportedTimeSecs)) {
@@ -96,6 +106,7 @@ public class HeartbeatCache {
 
     /**
      * Add an empty topology to the cache for testing purposes.
+     *
      * @param topoId the id of the topology to add.
      */
     @VisibleForTesting
@@ -105,6 +116,7 @@ public class HeartbeatCache {
 
     /**
      * Get the number of topologies with cached heartbeats.
+     *
      * @return the number of topologies with cached heartbeats.
      */
     @VisibleForTesting
@@ -114,6 +126,7 @@ public class HeartbeatCache {
 
     /**
      * Get the topology ids with cached heartbeats.
+     *
      * @return the set of topology ids with cached heartbeats.
      */
     @VisibleForTesting
@@ -123,6 +136,7 @@ public class HeartbeatCache {
 
     /**
      * Remove a specific topology from the cache.
+     *
      * @param topoId the id of the topology to remove.
      */
     public void removeTopo(String topoId) {
@@ -131,7 +145,8 @@ public class HeartbeatCache {
 
     /**
      * Go through all executors and time them out if needed.
-     * @param topoId the id of the topology to look at.
+     *
+     * @param topoId          the id of the topology to look at.
      * @param taskTimeoutSecs the timeout to know if they are too old.
      */
     public void timeoutOldHeartbeats(String topoId, Integer taskTimeoutSecs) {
@@ -143,10 +158,11 @@ public class HeartbeatCache {
 
     /**
      * Update the cache with heartbeats from a worker through zookeeper.
-     * @param topoId the id to the topology.
+     *
+     * @param topoId        the id to the topology.
      * @param executorBeats the HB data.
-     * @param allExecutors the executors.
-     * @param timeout the timeout.
+     * @param allExecutors  the executors.
+     * @param timeout       the timeout.
      */
     public void updateFromZkHeartbeat(String topoId, Map<List<Integer>, Map<String, Object>> executorBeats,
                                       Set<List<Integer>> allExecutors, Integer timeout) {
@@ -158,12 +174,13 @@ public class HeartbeatCache {
         for (List<Integer> executor : allExecutors) {
             final Map<String, Object> newBeat = executorBeats.get(executor);
             ExecutorCache currBeat = topoCache.computeIfAbsent(executor, (k) -> new ExecutorCache(newBeat));
-            currBeat.updateFromHb(timeout, newBeat);
+            currBeat.updateFromZkHb(timeout, newBeat);
         }
     }
 
     /**
      * Update the heartbeats for a given worker.
+     *
      * @param workerHeartbeat the heartbeats from the worker.
      * @param taskTimeoutSecs the timeout we should be looking at.
      */
@@ -176,22 +193,23 @@ public class HeartbeatCache {
             List<Integer> executor = Arrays.asList(executorInfo.get_task_start(), executorInfo.get_task_end());
             final Map<String, Object> newBeat = executorBeats.get(executor);
             ExecutorCache currBeat = topoCache.computeIfAbsent(executor, (k) -> new ExecutorCache(newBeat));
-            currBeat.updateFromHb(taskTimeoutSecs, newBeat);
+            currBeat.updateFromRpcHb(taskTimeoutSecs);
         }
     }
 
     /**
      * Get all of the alive executors for a given topology.
-     * @param topoId the id of the topology we are looking for.
-     * @param allExecutors all of the executors for this topology.
-     * @param assignment the current topology assignment.
+     *
+     * @param topoId         the id of the topology we are looking for.
+     * @param allExecutors   all of the executors for this topology.
+     * @param assignment     the current topology assignment.
      * @param taskLaunchSecs timeout for right after a worker is launched.
      * @return the set of tasks that are alive.
      */
     public Set<List<Integer>> getAliveExecutors(String topoId, Set<List<Integer>> allExecutors, Assignment assignment, int taskLaunchSecs) {
         Map<List<Integer>, ExecutorCache> topoCache = cache.computeIfAbsent(topoId, MAKE_MAP);
         LOG.debug("Computing alive executors for {}\nExecutors: {}\nAssignment: {}\nHeartbeat cache: {}",
-            topoId, allExecutors, assignment, topoCache);
+                topoId, allExecutors, assignment, topoCache);
 
         Set<List<Integer>> ret = new HashSet<>();
         Map<List<Long>, Long> execToStartTimes = assignment.get_executor_start_time_secs();
