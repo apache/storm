@@ -35,6 +35,8 @@ import org.apache.storm.shade.org.yaml.snakeyaml.LoaderOptions;
 import org.apache.storm.shade.org.yaml.snakeyaml.Yaml;
 import org.apache.storm.shade.org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extensions of this class takes a reference to one or more configuration files. The main() method should call ConfigurableTopology.start()
@@ -60,6 +62,7 @@ import org.apache.storm.utils.Utils;
  * </pre>
  **/
 public abstract class ConfigurableTopology {
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigurableTopology.class);
 
     protected Config conf = new Config();
 
@@ -120,7 +123,7 @@ public abstract class ConfigurableTopology {
             StormSubmitter.submitTopology(name, conf,
                                           builder.createTopology());
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Failed to submit topology {}", name, e);
             return -1;
         }
         return 0;

@@ -30,6 +30,7 @@ import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.shade.org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.testing.InProcessZookeeper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,7 @@ public class LocalFsBlobStoreSynchronizerTest {
     private static Map<String, Object> conf = new HashMap<>();
 
     private File baseFile;
+    private InProcessZookeeper zk;
 
     // Method which initializes nimbus admin
     @BeforeAll
@@ -55,13 +57,15 @@ public class LocalFsBlobStoreSynchronizerTest {
     }
 
     @BeforeEach
-    public void init() {
+    public void init() throws Exception {
         baseFile = new File("target/blob-store-test-" + UUID.randomUUID());
+        zk = new InProcessZookeeper();
     }
 
     @AfterEach
-    public void cleanUp() throws IOException {
+    public void cleanUp() throws Exception {
         FileUtils.deleteDirectory(baseFile);
+        zk.close();
     }
 
     private LocalFsBlobStore initLocalFs() {
@@ -70,6 +74,7 @@ public class LocalFsBlobStoreSynchronizerTest {
         conf.putAll(Utils.readStormConfig());
         conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
         conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "org.apache.storm.security.auth.DefaultPrincipalToLocal");
+        conf.put(Config.STORM_ZOOKEEPER_PORT, zk.getPort());
         store.prepare(conf, null, null, null);
         return store;
     }

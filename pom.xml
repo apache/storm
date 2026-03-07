@@ -99,7 +99,7 @@
         <snakeyaml.version>2.2</snakeyaml.version>
         <httpclient.version>4.5.14</httpclient.version>
         <httpclient.core.version>4.4.16</httpclient.core.version>
-        <jctools.version>4.0.5</jctools.version>
+        <jctools.version>4.0.6</jctools.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>33.5.0-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
@@ -114,7 +114,7 @@
         <snappy.version>1.1.10.8</snappy.version>
         <jline.version>2.14.6</jline.version>
         <hikari.version>7.0.2</hikari.version>
-        <hadoop.version>3.4.2</hadoop.version>
+        <hadoop.version>3.4.3</hadoop.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
         <hbase.version>2.6.4-hadoop3</hbase.version>
         <kryo.version>5.6.2</kryo.version>
@@ -122,13 +122,13 @@
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <joda-time.version>2.14.0</joda-time.version>
         <thrift.version>0.22.0</thrift.version>
-        <junit.jupiter.version>6.0.2</junit.jupiter.version>
-        <surefire.version>3.5.4</surefire.version>
+        <junit.jupiter.version>6.0.3</junit.jupiter.version>
+        <surefire.version>3.5.5</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <jedis.version>7.2.1</jedis.version>
-        <activemq.version>6.2.0</activemq.version>
+        <jedis.version>7.3.0</jedis.version>
+        <activemq.version>6.2.1</activemq.version>
         <commons-logging.version>1.3.5</commons-logging.version>
 
         <jackson.version>2.21.0</jackson.version>
@@ -142,29 +142,29 @@
         <clojure.test.set>!integration.*</clojure.test.set>
         <skipITs>true</skipITs>
 
-        <maven-resolver.version>1.9.25</maven-resolver.version>
+        <maven-resolver.version>1.9.27</maven-resolver.version>
         <maven.version>3.9.12</maven.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>3.1.11</jersey.version>
         <dropwizard.version>5.0.1</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.2.3</caffeine.version>
-        <jakarta-jaxb-version>4.0.4</jakarta-jaxb-version>
+        <jakarta-jaxb-version>4.0.5</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
         <jaxb-version>2.3.1</jaxb-version>
         <activation-version>1.1.1</activation-version>
         <rocksdb-jni-version>10.2.1</rocksdb-jni-version>
         <json-smart.version>2.6.0</json-smart.version>
-        <byte-buddy.version>1.18.4</byte-buddy.version>
+        <byte-buddy.version>1.18.5</byte-buddy.version>
         <gson.version>2.13.2</gson.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
         <asm.version>9.9.1</asm.version>
-        <checker-qual.version>3.53.0</checker-qual.version>
-        <error_prone_annotations.version>2.46.0</error_prone_annotations.version>
+        <checker-qual.version>3.53.1</checker-qual.version>
+        <error_prone_annotations.version>2.48.0</error_prone_annotations.version>
         <bouncycastle.version>1.83</bouncycastle.version>
     </properties>
 
@@ -1289,7 +1289,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.14.1</version>
+                    <version>3.15.0</version>
                     <configuration>
                         <generatedSourcesDirectory>${project.build.directory}/generated-sources
                         </generatedSourcesDirectory>
@@ -1641,7 +1641,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.5.4</version>
+                <version>3.5.5</version>
                 <configuration>
                     <reportsDirectories>
                         <file>${project.build.directory}/test-reports</file>
