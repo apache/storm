@@ -368,7 +368,7 @@ List of third-party dependencies grouped by their license type.
 
     Eclipse Distribution License, Version 1.0
 
-        * Jakarta XML Binding API (jakarta.xml.bind:jakarta.xml.bind-api:4.0.4 - https://github.com/jakartaee/jaxb-api/jakarta.xml.bind-api)
+        * Jakarta XML Binding API (jakarta.xml.bind:jakarta.xml.bind-api:4.0.5 - https://github.com/jakartaee/jaxb-api/jakarta.xml.bind-api)
         * JavaBeans Activation Framework (com.sun.activation:jakarta.activation:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation)
         * JavaBeans Activation Framework API jar (jakarta.activation:jakarta.activation-api:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation-api)
 
