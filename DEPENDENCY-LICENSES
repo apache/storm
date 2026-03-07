@@ -116,7 +116,6 @@ List of third-party dependencies grouped by their license type.
         * J2ObjC Annotations (com.google.j2objc:j2objc-annotations:3.1 - https://github.com/google/j2objc/)
         * Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.21 - https://github.com/FasterXML/jackson)
         * Jackson-core (com.fasterxml.jackson.core:jackson-core:2.21.1 - https://github.com/FasterXML/jackson-core)
-        * jackson-databind (com.fasterxml.jackson.core:jackson-databind:2.20.1 - https://github.com/FasterXML/jackson)
         * jackson-databind (com.fasterxml.jackson.core:jackson-databind:2.21.1 - https://github.com/FasterXML/jackson)
         * Jackson dataformat: Smile (com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.21.1 - https://github.com/FasterXML/jackson-dataformats-binary)
         * Jackson-dataformat-YAML (com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.21.1 - https://github.com/FasterXML/jackson-dataformats-text)
