@@ -131,7 +131,7 @@ List of third-party dependencies grouped by their license type.
         * Jackson-module-parameter-names (com.fasterxml.jackson.module:jackson-module-parameter-names:2.21.0 - https://github.com/FasterXML/jackson-modules-java8/jackson-module-parameter-names)
         * Jakarta Bean Validation API (jakarta.validation:jakarta.validation-api:3.0.2 - https://beanvalidation.org)
         * Jakarta Dependency Injection (jakarta.inject:jakarta.inject-api:2.0.1 - https://github.com/eclipse-ee4j/injection-api)
-        * Java Concurrency Tools Core Library (org.jctools:jctools-core:4.0.5 - https://github.com/JCTools)
+        * Java Concurrency Tools Core Library (org.jctools:jctools-core:4.0.6 - https://github.com/JCTools)
         * javax.inject (javax.inject:javax.inject:1 - http://code.google.com/p/atinject/)
         * JBoss Logging 3 (org.jboss.logging:jboss-logging:3.6.1.Final - http://www.jboss.org)
         * JCIP Annotations under Apache License (com.github.stephenc.jcip:jcip-annotations:1.0-1 - http://stephenc.github.com/jcip-annotations)
