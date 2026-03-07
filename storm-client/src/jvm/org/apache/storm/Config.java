@@ -478,6 +478,20 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_EVENTLOGGER_EXECUTORS = "topology.eventlogger.executors";
     /**
+     * The maximum size in MB for the event logger file before it rotates.
+     * If not specified, a default of 100 MB is used.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    public static final String TOPOLOGY_EVENTLOGGER_ROTATION_SIZE_MB = "topology.eventlogger.rotation.size.mb";
+    /**
+     * The maximum number of retained files for the event logger.
+     * If not specified, a default of 5 is used.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    public static final String TOPOLOGY_EVENTLOGGER_MAX_RETAINED_FILES = "topology.eventlogger.max.retained.files";
+    /**
      * The maximum amount of time given to the topology to fully process a message emitted by a spout. If the message is not acked within
      * this time frame, Storm will fail the message on the spout. Some spouts implementations will then replay the message at a later time.
      */
