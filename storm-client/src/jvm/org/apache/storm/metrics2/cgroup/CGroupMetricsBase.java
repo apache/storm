@@ -21,7 +21,7 @@ import org.apache.storm.container.cgroup.CgroupCenter;
 import org.apache.storm.container.cgroup.CgroupCoreFactory;
 import org.apache.storm.container.cgroup.SubSystemType;
 import org.apache.storm.container.cgroup.core.CgroupCore;
-import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

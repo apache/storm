@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.shade.org.apache.commons.lang.NotImplementedException;
+import org.apache.storm.shade.org.apache.commons.lang3.NotImplementedException;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.MessageId;

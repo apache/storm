@@ -15,7 +15,6 @@ package org.apache.storm.trident.windowing;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.shade.com.google.common.collect.Lists;
-import org.apache.storm.shade.org.apache.commons.lang.IllegalClassException;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
@@ -46,7 +45,7 @@ public class WindowsStateUpdater implements StateUpdater<WindowsState> {
             try {
                 Object fieldValue = tuple.getValueByField(WindowTridentProcessor.TRIGGER_FIELD_NAME);
                 if (!(fieldValue instanceof WindowTridentProcessor.TriggerInfo)) {
-                    throw new IllegalClassException(WindowTridentProcessor.TriggerInfo.class, fieldValue.getClass());
+                    throw new ClassCastException("Expected WindowTridentProcessor.TriggerInfo but found " + fieldValue.getClass());
                 }
                 WindowTridentProcessor.TriggerInfo triggerInfo = (WindowTridentProcessor.TriggerInfo) fieldValue;
                 String triggerCompletedKey =

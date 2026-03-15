@@ -58,8 +58,8 @@ import java.util.zip.GZIPInputStream;
 
 import net.minidev.json.JSONAware;
 
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.common.JsonResponseBuilder;

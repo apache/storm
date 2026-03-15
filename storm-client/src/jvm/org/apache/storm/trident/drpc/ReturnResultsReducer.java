@@ -22,7 +22,7 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DistributedRPCInvocations;
 import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.shade.net.minidev.json.parser.ParseException;
-import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.trident.drpc.ReturnResultsReducer.ReturnResultsState;

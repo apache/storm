@@ -19,7 +19,7 @@
 package org.apache.storm.security.auth;
 
 import java.util.Map;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.ReflectionUtils;
 

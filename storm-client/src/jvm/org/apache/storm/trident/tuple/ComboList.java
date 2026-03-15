@@ -15,7 +15,7 @@ package org.apache.storm.trident.tuple;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.List;
-import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class ComboList extends AbstractList<Object> {
     Pointer[] index;

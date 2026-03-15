@@ -18,7 +18,7 @@
 package org.apache.storm.st.wrapper;
 
 import org.apache.storm.st.utils.AssertUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.st.utils.StringDecorator;
 
 import java.time.ZonedDateTime;

@@ -17,7 +17,7 @@
 
 package org.apache.storm.st.utils;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class provides a method to pass data from the test bolts and spouts to the test method, via the worker log.

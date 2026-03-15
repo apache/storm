@@ -42,7 +42,7 @@ import org.apache.storm.hooks.SubmitterHookException;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.shade.net.minidev.json.JSONValue;
-import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.BufferFileInputStream;
 import org.apache.storm.utils.NimbusClient;

@@ -41,7 +41,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.submit.dependency.AetherUtils;
 import org.apache.storm.submit.dependency.DependencyResolver;
 import org.eclipse.aether.artifact.Artifact;

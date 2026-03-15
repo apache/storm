@@ -33,7 +33,7 @@ import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.security.auth.sasl.SimpleSaslServerCallbackHandler;
 import org.apache.storm.security.auth.workertoken.WorkerTokenAuthorizer;
 import org.apache.storm.security.auth.workertoken.WorkerTokenClientCallbackHandler;
-import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 import org.apache.storm.shade.org.apache.zookeeper.server.auth.KerberosName;
 import org.apache.storm.thrift.transport.TSaslClientTransport;
 import org.apache.storm.thrift.transport.TSaslServerTransport;

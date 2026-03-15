@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import javax.naming.ConfigurationException;
 import org.apache.storm.Config;
-import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.shade.org.apache.curator.framework.api.ACLProvider;
