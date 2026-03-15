@@ -43,8 +43,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -359,7 +359,7 @@ public class TopoWrap {
             FileUtils.forceMkdir(logDir);
             FileUtils.write(logFile, urlContent, StandardCharsets.UTF_8);
         } catch (Throwable throwable) {
-            LOG.info("Caught exception: " + ExceptionUtils.getFullStackTrace(throwable));
+            LOG.info("Caught exception: " + ExceptionUtils.getStackTrace(throwable));
         }
     }
 

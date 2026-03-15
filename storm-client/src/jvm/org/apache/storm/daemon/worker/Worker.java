@@ -60,7 +60,7 @@ import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.shade.com.google.common.base.Preconditions;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
-import org.apache.storm.shade.org.apache.commons.lang.ObjectUtils;
+import org.apache.storm.shade.org.apache.commons.lang3.ObjectUtils;
 import org.apache.storm.shade.uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.utils.ConfigUtils;

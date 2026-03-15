@@ -83,7 +83,6 @@ List of third-party dependencies grouped by their license type.
         * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.7.3 - https://github.com/FasterXML/java-classmate)
         * com.helger:profiler (com.helger:profiler:1.1.1 - https://github.com/phax/profiler)
-        * Commons Lang (commons-lang:commons-lang:2.6 - http://commons.apache.org/lang/)
         * Curator Client (org.apache.curator:curator-client:5.9.0 - https://curator.apache.org/curator-client)
         * Curator Framework (org.apache.curator:curator-framework:5.9.0 - https://curator.apache.org/curator-framework)
         * Curator Recipes (org.apache.curator:curator-recipes:5.9.0 - https://curator.apache.org/curator-recipes)

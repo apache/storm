@@ -41,7 +41,7 @@ import org.apache.storm.generated.StormBase;
 import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.shade.org.apache.commons.lang.StringUtils;
+import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionState;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.Watcher;

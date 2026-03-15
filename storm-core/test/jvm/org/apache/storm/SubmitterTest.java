@@ -16,7 +16,7 @@
 
 package org.apache.storm;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;

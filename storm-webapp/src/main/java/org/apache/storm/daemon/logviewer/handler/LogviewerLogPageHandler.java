@@ -35,7 +35,7 @@ import static j2html.TagCreator.text;
 import static j2html.TagCreator.title;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 import com.codahale.metrics.Meter;
 import j2html.attributes.Attr;
@@ -65,7 +65,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
@@ -239,8 +239,8 @@ public class LogviewerLogPageHandler {
                     start = Long.valueOf(fileLength - length).intValue();
                 }
 
-                String logString = isTxtFile(fileName) ? escapeHtml(pageFile(absFile.toString(), isZipFile, fileLength, start, length)) :
-                    escapeHtml("This is a binary file and cannot display! You may download the full file.");
+                String logString = isTxtFile(fileName) ? escapeHtml4(pageFile(absFile.toString(), isZipFile, fileLength, start, length)) :
+                    escapeHtml4("This is a binary file and cannot display! You may download the full file.");
 
                 List<DomContent> bodyContents = new ArrayList<>();
                 if (StringUtils.isNotEmpty(grep)) {
@@ -317,8 +317,8 @@ public class LogviewerLogPageHandler {
                 start = Long.valueOf(fileLength - length).intValue();
             }
 
-            String logString = isTxtFile(fileName) ? escapeHtml(pageFile(file.toString(), isZipFile, fileLength, start, length)) :
-                    escapeHtml("This is a binary file and cannot display! You may download the full file.");
+            String logString = isTxtFile(fileName) ? escapeHtml4(pageFile(file.toString(), isZipFile, fileLength, start, length)) :
+                    escapeHtml4("This is a binary file and cannot display! You may download the full file.");
 
             List<DomContent> bodyContents = new ArrayList<>();
             if (StringUtils.isNotEmpty(grep)) {
@@ -371,12 +371,12 @@ public class LogviewerLogPageHandler {
         }
 
         finalBodyContents.add(div(p("Note: the drop-list shows at most 1024 files for each worker directory.")).withClass("ui-note"));
-        finalBodyContents.add(h3(escapeHtml(fileName)));
+        finalBodyContents.add(h3(escapeHtml4(fileName)));
         finalBodyContents.addAll(bodyContents);
 
         return html(
                 head(
-                        title(escapeHtml(fileName) + " - Storm Log Viewer"),
+                        title(escapeHtml4(fileName) + " - Storm Log Viewer"),
                         link().withRel("stylesheet").withHref("/css/bootstrap-3.3.1.min.css"),
                         link().withRel("stylesheet").withHref("/css/jquery.dataTables.1.10.4.min.css"),
                         link().withRel("stylesheet").withHref("/css/style.css")

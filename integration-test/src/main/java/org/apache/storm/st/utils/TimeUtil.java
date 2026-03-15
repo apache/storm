@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public class TimeUtil {
         try {
             TimeUnit.SECONDS.sleep(sec);
         } catch (InterruptedException e) {
-            log.warn("Caught exception: " + ExceptionUtils.getFullStackTrace(e));
+            log.warn("Caught exception: " + ExceptionUtils.getStackTrace(e));
         }
     }
 
@@ -40,7 +40,7 @@ public class TimeUtil {
         try {
             TimeUnit.MILLISECONDS.sleep(milliSec);
         } catch (InterruptedException e) {
-            log.warn("Caught exception: " + ExceptionUtils.getFullStackTrace(e));
+            log.warn("Caught exception: " + ExceptionUtils.getStackTrace(e));
         }
     }
 

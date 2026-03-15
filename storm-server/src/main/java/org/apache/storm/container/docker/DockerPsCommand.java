@@ -20,7 +20,7 @@ package org.apache.storm.container.docker;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class DockerPsCommand extends DockerCommand {
     private static final String PS_COMMAND = "ps";

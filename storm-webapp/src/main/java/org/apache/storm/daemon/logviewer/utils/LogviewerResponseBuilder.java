@@ -20,7 +20,7 @@ package org.apache.storm.daemon.logviewer.utils;
 
 import static j2html.TagCreator.body;
 import static j2html.TagCreator.h2;
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 import com.codahale.metrics.Meter;
 import com.google.common.io.ByteStreams;
@@ -144,7 +144,7 @@ public class LogviewerResponseBuilder {
     }
 
     private static String buildUnauthorizedUserHtml(String user) {
-        String content = "User '" + escapeHtml(user) + "' is not authorized.";
+        String content = "User '" + escapeHtml4(user) + "' is not authorized.";
         return body(h2(content)).render();
     }
 

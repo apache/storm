@@ -25,7 +25,7 @@ import org.apache.storm.coordination.BatchOutputCollector;
 import org.apache.storm.coordination.BatchOutputCollectorImpl;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
-import org.apache.storm.shade.org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.storm.shade.org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.storm.task.IOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
