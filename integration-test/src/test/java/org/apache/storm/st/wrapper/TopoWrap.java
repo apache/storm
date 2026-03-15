@@ -359,7 +359,7 @@ public class TopoWrap {
             FileUtils.forceMkdir(logDir);
             FileUtils.write(logFile, urlContent, StandardCharsets.UTF_8);
         } catch (Throwable throwable) {
-            LOG.info("Caught exception: " + ExceptionUtils.getFullStackTrace(throwable));
+            LOG.info("Caught exception: " + ExceptionUtils.getStackTrace(throwable));
         }
     }
 

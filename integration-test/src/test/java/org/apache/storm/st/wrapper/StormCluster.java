@@ -95,7 +95,7 @@ public class StormCluster {
                 log.info("Topology killed: " + topologyName);
                 return;
             } catch (TException e) {
-                log.warn("Couldn't kill topology: " + topologyName + ", going to retry soon. Exception: " + ExceptionUtils.getFullStackTrace(e));
+                log.warn("Couldn't kill topology: " + topologyName + ", going to retry soon. Exception: " + ExceptionUtils.getStackTrace(e));
                 Thread.sleep(TimeUnit.SECONDS.toMillis(2));
             }
         }
