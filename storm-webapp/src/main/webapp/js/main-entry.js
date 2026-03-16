@@ -28,7 +28,7 @@
 require('bootstrap/dist/css/bootstrap.min.css');
 require('datatables.net-dt/css/dataTables.dataTables.css');
 require('datatables.net-bs/css/dataTables.bootstrap.css');
-require('../lib/jsonFormatter.min.css');
+require('../lib/jsonFormatter.css');
 require('../css/style.css');
 
 // --- jQuery (must be first, made global for inline scripts) ---
@@ -88,7 +88,7 @@ $.url = function (param) {
 require('jquery-blockui');
 
 // --- JSON Formatter (project-local jQuery plugin, no npm equivalent) ---
-require('../lib/jsonFormatter.min.js');
+require('../lib/jsonFormatter.js');
 
 // --- npm libraries ---
 require('typeahead.js');

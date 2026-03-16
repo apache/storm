@@ -266,8 +266,6 @@
                                 <!-- storm-webapp static assets and frontend build artifacts -->
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/images/*
                                 </exclude>
-                                <exclude>**/src/main/webapp/lib/jsonFormatter.min.js</exclude>
-                                <exclude>**/src/main/webapp/lib/jsonFormatter.min.css</exclude>
                                 <!-- npm / webpack artifacts -->
                                 <exclude>**/node_modules/**</exclude>
                                 <exclude>**/package-lock.json</exclude>
