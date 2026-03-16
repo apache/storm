@@ -284,7 +284,7 @@ function getStatic(url, cb) {
     return $.ajax({
         url: url,
         data: {
-            '_ts': '${packageTimestamp}'
+            '_ts': typeof PACKAGE_TIMESTAMP !== 'undefined' ? PACKAGE_TIMESTAMP : ''
         },
         success: cb
     });
@@ -618,9 +618,37 @@ function getPageRenderedTimestamp(eId) {
 function setStormUITitle(uiTitle, clusterConfig) { 
     title = clusterConfig["ui.title"]; 
     $(document).prop('title', title); 
-    getStatic("/templates/title-template.html", function(template) { 
-        jsError(function() { 
-            uiTitle.append(Mustache.render($(template).filter("#title-template").html(),{title:title})); 
-        }); 
-    }); 
+    getStatic("/templates/title-template.html", function(template) {
+        jsError(function() {
+            uiTitle.append(Mustache.render($(template).filter("#title-template").html(),{title:title}));
+        });
+    });
 };
+
+// --- Expose functions to window for use by inline <script> blocks in HTML pages ---
+if (typeof window !== 'undefined') {
+  window.dtAutoPage = dtAutoPage;
+  window.toggleSys = toggleSys;
+  window.ensureInt = ensureInt;
+  window.sendRequest = sendRequest;
+  window.confirmComponentAction = confirmComponentAction;
+  window.confirmAction = confirmAction;
+  window.formatConfigData = formatConfigData;
+  window.formatErrorTimeSecs = formatErrorTimeSecs;
+  window.renderToggleSys = renderToggleSys;
+  window.topologyActionJson = topologyActionJson;
+  window.componentActionJson = componentActionJson;
+  window.topologyActionButton = topologyActionButton;
+  window.getStatic = getStatic;
+  window.makeSupervisorWorkerStatsTable = makeSupervisorWorkerStatsTable;
+  window.makeTopologyWorkerStatsTable = makeTopologyWorkerStatsTable;
+  window.makeWorkerStatsTable = makeWorkerStatsTable;
+  window.makeOwnerSummaryTable = makeOwnerSummaryTable;
+  window.open_visualization = open_visualization;
+  window.show_visualization = show_visualization;
+  window.hide_visualization = hide_visualization;
+  window.jsError = jsError;
+  window.getResourceGuaranteeRemainingFormat = getResourceGuaranteeRemainingFormat;
+  window.getPageRenderedTimestamp = getPageRenderedTimestamp;
+  window.setStormUITitle = setStormUITitle;
+}

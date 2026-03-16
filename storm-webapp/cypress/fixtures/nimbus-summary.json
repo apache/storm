@@ -1,0 +1,14 @@
+{
+  "nimbuses": [
+    {
+      "host": "nimbus-host-1",
+      "port": 6627,
+      "status": "Leader",
+      "nimbusUpTime": "3d 2h 15m 30s",
+      "nimbusUpTimeSeconds": 267330,
+      "nimbusLogLink": "http://nimbus-host-1:8000/daemonlog?file=nimbus.log",
+      "version": "2.8.5-SNAPSHOT",
+      "isLeader": true
+    }
+  ]
+}

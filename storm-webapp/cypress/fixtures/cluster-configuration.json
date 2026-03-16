@@ -1,0 +1,7 @@
+{
+  "ui.pagination": 20,
+  "ui.title": "Storm UI - Test",
+  "topology.debug": false,
+  "storm.zookeeper.port": 2181,
+  "nimbus.thrift.port": 6627
+}
