@@ -682,3 +682,53 @@ Also, there are several configurations for topology Zookeeper authentication:
 | storm.zookeeper.topology.auth.payload | A string representing the payload for topology Zookeeper authentication. |
 
 Note: If storm.zookeeper.topology.auth.payload isn't set, Storm will generate a ZooKeeper secret payload for MD5-digest with generateZookeeperDigestSecretPayload() method.
+
+
+### SSL Setup for Apache Storm
+
+Apache Storm supports SSL (Secure Socket Layer) to provide encrypted communication between cluster components such as Nimbus, Supervisors, Workers, and the Storm UI. Enabling SSL helps protect sensitive data transmitted within the Storm cluster.
+
+#### Step 1: Generate a Keystore
+
+A keystore stores the server's private key and certificate. Use the Java `keytool` command to generate a keystore.
+
+keytool -genkeypair -alias storm -keyalg RSA -keysize 2048 -keystore keystore.jks
+
+This command creates a file named `keystore.jks` which contains the private key and certificate.
+
+#### Step 2: Export the Certificate
+
+Export the certificate from the keystore.
+
+keytool -export -alias storm -file storm.cer -keystore keystore.jks
+
+This generates a certificate file named `storm.cer`.
+
+#### Step 3: Create a Truststore
+
+Import the certificate into a truststore so other components can trust the server certificate.
+
+keytool -import -alias storm -file storm.cer -keystore truststore.jks
+
+#### Step 4: Configure storm.yaml
+
+Add the following configuration properties to the `storm.yaml` file.
+
+storm.ssl.keystore.path: "/path/to/keystore.jks"
+storm.ssl.keystore.password: "your_keystore_password"
+
+storm.ssl.truststore.path: "/path/to/truststore.jks"
+storm.ssl.truststore.password: "your_truststore_password"
+
+These settings enable SSL communication between Storm components.
+
+#### Step 5: Enable HTTPS for Storm UI
+
+To enable secure access to the Storm UI, configure the following properties.
+
+storm.ui.https.keystore.path: "/path/to/keystore.jks"
+storm.ui.https.keystore.password: "your_keystore_password"
+
+#### Step 6: Restart the Storm Cluster
+
+After updating the configuration, restart Nimbus and Supervisor services for the SSL configuration to take effect.
