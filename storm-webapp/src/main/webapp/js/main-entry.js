@@ -36,6 +36,34 @@ var $ = require('jquery');
 window.$ = $;
 window.jQuery = $;
 
+// --- jQuery 4 compatibility shims for APIs removed in jQuery 4.0 ---
+// These are used by inline <script> blocks in the HTML pages and by
+// jQuery plugins (e.g. jquery-blockui) that haven't been updated for jQuery 4.
+if (!$.parseJSON) {
+  $.parseJSON = JSON.parse;
+}
+if (!$.trim) {
+  $.trim = function (str) { return str == null ? '' : String(str).trim(); };
+}
+if (!$.isArray) {
+  $.isArray = Array.isArray;
+}
+if (!$.isFunction) {
+  $.isFunction = function (obj) { return typeof obj === 'function'; };
+}
+if (!$.isNumeric) {
+  $.isNumeric = function (obj) { return !isNaN(parseFloat(obj)) && isFinite(obj); };
+}
+if (!$.type) {
+  $.type = function (obj) {
+    if (obj == null) return obj + '';
+    var t = typeof obj;
+    return t === 'object' || t === 'function'
+      ? Object.prototype.toString.call(obj).slice(8, -1).toLowerCase()
+      : t;
+  };
+}
+
 // --- DataTables + Bootstrap 3 integration ---
 require('datatables.net');
 require('datatables.net-bs');
@@ -48,7 +76,7 @@ $.mustache = function (template, view, partials) {
 };
 $.fn.mustache = function (view, partials) {
   return $(this).map(function (i, elm) {
-    var template = $.trim($(elm).html());
+    var template = $(elm).html().trim();
     var output = $.mustache(template, view, partials);
     return $(output).get();
   });

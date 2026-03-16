@@ -203,7 +203,7 @@
 
 -----------------------------------------------------------------------
 
-For jQuery 3.5.1 (bundled via npm package "jquery" into storm-webapp webpack output)
+For jQuery 4.0.0 (bundled via npm package "jquery" into storm-webapp webpack output)
 
 MIT license selected:
 
@@ -280,7 +280,7 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For js-yaml 3.14.1 (bundled via npm package "js-yaml" into storm-webapp webpack output)
+For js-yaml 4.1.1 (bundled via npm package "js-yaml" into storm-webapp webpack output)
 
 (The MIT License)
 
@@ -330,7 +330,7 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For cytoscape 3.30.4 and cytoscape-dagre 2.5.0 (bundled via npm packages "cytoscape"
+For cytoscape 3.33.1 and cytoscape-dagre 2.5.0 (bundled via npm packages "cytoscape"
 and "cytoscape-dagre" into storm-webapp webpack output)
 
 Copyright (c) 2016 The Cytoscape Consortium
@@ -408,7 +408,7 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For moment.js 2.29.4 (bundled via npm package "moment" into storm-webapp webpack output)
+For moment.js 2.30.1 (bundled via npm package "moment" into storm-webapp webpack output)
 
 Copyright (c) 2011-2014 Tim Wood, Iskren Chernev, Moment.js contributors
 
