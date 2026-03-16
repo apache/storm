@@ -421,10 +421,12 @@ var makeWorkerStatsTable = function (response, elId, parentId, type) {
     var initializeComponents = function (){
         var show = $.cookies.get("showComponents") || false;
 
-        // toggle all components visibile/invisible
-        $(elId + ' tr').each(function (){
-            var dt = $(elId).dataTable();
-            showComponents(dt.api().row(this), show);
+        // toggle all components visible/invisible (tbody rows only)
+        $(elId + ' tbody tr').each(function (){
+            var row = $(elId).DataTable().row(this);
+            if (row.node()) {
+                showComponents(row, show);
+            }
         });
     };
 
@@ -469,14 +471,17 @@ function renderToggleComponents(div, targetTable) {
 }
 
 function showComponents(row, open) {
-    var tr = $(this).closest('tr');
+    if (!row || !row.node()) return;
+    var tr = $(row.node());
     if (!open) {
         // This row is already open - close it
-        row.child.hide();
+        if (row.child.isShown()) {
+            row.child.hide();
+        }
         tr.removeClass('shown');
     } else {
         // Open this row
-        row.child (format (row.data())).show();
+        row.child(format(row.data())).show();
         tr.addClass('shown');
     }
 }
@@ -489,9 +494,11 @@ function toggleComponents(elId) {
     exDate.setDate(exDate.getDate() + 365);
 
     $.cookies.set('showComponents', show, {'path':'/', 'expiresAt':exDate.toUTCString()});
-    $(elId + ' tr').each(function (){
-        var dt = $(elId).dataTable();
-        showComponents(dt.api().row(this), show);
+    $(elId + ' tbody tr').each(function (){
+        var row = $(elId).DataTable().row(this);
+        if (row.node()) {
+            showComponents(row, show);
+        }
     });
 }
 

@@ -29,6 +29,11 @@ var $ = require('jquery');
 window.$ = $;
 window.jQuery = $;
 
+// --- jQuery 4 compatibility shims ---
+if (!$.parseJSON) { $.parseJSON = JSON.parse; }
+if (!$.trim) { $.trim = function (s) { return s == null ? '' : String(s).trim(); }; }
+if (!$.isFunction) { $.isFunction = function (o) { return typeof o === 'function'; }; }
+
 // --- Mustache + jQuery integration ---
 var Mustache = require('mustache');
 window.Mustache = Mustache;

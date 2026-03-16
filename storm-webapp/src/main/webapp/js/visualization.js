@@ -170,7 +170,7 @@ function handleNodeClickEvent(nodeId) {
 
     // Render and display template.
     var template = $('#bolt_info_template').html();
-    var html = Mustache.to_html(template, nodeDetails);
+    var html = Mustache.render(template, nodeDetails);
     $("#bolt-details").html(html);
 
     // Ensure slider is viewable
@@ -293,11 +293,13 @@ function updateAvailableStreams() {
             }
             // Render template
             var template = $('#stream_selector_template').html();
-            var html = Mustache.to_html(template, {"checked": checked, "streamName": streamName, "streamNameSanitized": streamIdSanitized});
+            var html = Mustache.render(template, {"checked": checked, "streamName": streamName, "streamNameSanitized": streamIdSanitized});
             container.append(html);
 
             // keep list of streams in sorted order
-            jQuery("#available-streams li").sort(asc_sort).appendTo('#available-streams');
+            var items = jQuery("#available-streams li").get();
+            items.sort(asc_sort);
+            jQuery(items).appendTo('#available-streams');
         }
     });
 }
@@ -359,6 +361,10 @@ function secondsToString(seconds) {
 function asc_sort(a, b){
     return ($(b).text()) < ($(a).text()) ? 1 : -1;
 }
+
+// Expose for Cypress testing and inline script access
+window.visNS = visNS;
+window.checkStream = checkStream;
 
 $(document).ready(function() {
     visNS.networkContainer = document.getElementById("mynetwork");

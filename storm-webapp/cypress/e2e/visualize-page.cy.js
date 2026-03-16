@@ -17,7 +17,9 @@
 
 describe('Storm UI - Topology Visualization Page', () => {
   beforeEach(() => {
-    cy.visit('/visualize.html?id=word-count-1-1234567890&sys=false');
+    cy.intercept('GET', '/api/v1/topology/*/visualization*').as('vizApi');
+    cy.visit('/visualize.html?id=word-count-1-1234567890&sys=true');
+    cy.wait('@vizApi');
   });
 
   it('loads the visualize bundle', () => {
@@ -33,14 +35,30 @@ describe('Storm UI - Topology Visualization Page', () => {
     });
   });
 
-  it('fetches topology visualization data from the API', () => {
-    // Intercept the visualization API call to verify it was made
-    cy.intercept('GET', '/api/v1/topology/*/visualization*').as('vizApi');
-    cy.visit('/visualize.html?id=word-count-1-1234567890&sys=false');
-    cy.wait('@vizApi').its('response.statusCode').should('be.oneOf', [200, 304]);
+  it('renders the network visualization container', () => {
+    cy.get('#mynetwork').should('exist');
   });
 
-  it('shows the stream selector panel', () => {
-    cy.get('#available-streams').should('exist');
+  it('populates stream selector with discovered streams', () => {
+    // The mock data has multiple streams: default, counts, __ack_init, __ack_ack
+    cy.get('#available-streams li', { timeout: 5000 }).should('have.length.greaterThan', 0);
+  });
+
+  it('renders stream checkboxes that can be toggled', () => {
+    cy.get('#available-streams input[type="checkbox"]', { timeout: 5000 })
+      .should('have.length.greaterThan', 0);
+    // System streams (__ack_*) should be unchecked by default
+    // Stream panel is a slide-out, checkboxes may be offscreen
+    cy.get('#available-streams input[type="checkbox"]').first().click({ force: true });
+  });
+
+  it('creates a vis.js network from the topology data', () => {
+    cy.window().then((win) => {
+      // visNS is set by visualization.js
+      expect(win.visNS).to.exist;
+      expect(win.visNS.nodes).to.exist;
+      // Nodes should have been populated from the API response
+      expect(win.visNS.nodes.length).to.be.greaterThan(0);
+    });
   });
 });

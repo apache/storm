@@ -15,20 +15,7 @@
  * limitations under the License.
  */
 
-// Collect JS errors from the app for debugging
-const jsErrors = [];
-
-Cypress.on('uncaught:exception', (err, runnable) => {
-  jsErrors.push(err.message);
-  // Let the error propagate so tests fail visibly
-  return false;
-});
-
-// Make collected errors available in tests
-Cypress.Commands.add('getJsErrors', () => {
-  return cy.wrap(jsErrors);
-});
-
-beforeEach(() => {
-  jsErrors.length = 0;
-});
+// Let uncaught JS exceptions in the application FAIL the Cypress test.
+// Returning true (or not returning) causes Cypress to treat the exception
+// as a test failure, which is exactly what we want — it ensures jQuery 4
+// compatibility issues (removed APIs, etc.) are caught.
