@@ -12,7 +12,7 @@
     "test:e2e": "start-server-and-test test:server http://localhost:3088 cypress:run"
   },
   "dependencies": {
-    "bootstrap": "3.3.1",
+    "bootstrap": "5.0.0",
     "cytoscape": "3.33.1",
     "cytoscape-dagre": "2.5.0",
     "dagre": "0.8.5",
