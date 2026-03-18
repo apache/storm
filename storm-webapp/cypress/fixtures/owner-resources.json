@@ -1,0 +1,18 @@
+{
+  "owners": [
+    {
+      "owner": "testuser",
+      "totalTopologies": 2,
+      "totalExecutors": 30,
+      "totalWorkers": 6,
+      "totalMemoryUsage": 3072.0,
+      "memoryGuarantee": 4096.0,
+      "memoryGuaranteeRemaining": 1024.0,
+      "totalCpuUsage": 450.0,
+      "cpuGuarantee": 600.0,
+      "cpuGuaranteeRemaining": 150.0,
+      "isolatedNodes": 0
+    }
+  ],
+  "schedulerDisplayResource": true
+}
