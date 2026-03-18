@@ -195,6 +195,14 @@ If users want to setup 2-way auth
 
 Storm now supports mutual TLS (mTLS) for internal Thrift RPC communication among Nimbus, Supervisors, and workers. Unlike one-way TLS, mTLS requires both parties to present and verify each other's certificates. This ensures full two-way certificate authentication and encryption.
 
+### Overview of TLS Configuration
+
+Storm provides TLS support for securing internal communication between Nimbus, Supervisors, and workers. This is achieved using existing configuration properties for Thrift-based RPC communication and Netty-based messaging.
+
+The TLS setup requires configuring keystore and truststore paths along with enabling TLS flags for each component. Nimbus and Supervisors use Thrift TLS settings, while workers use Netty TLS settings.
+
+The following sections provide example configurations for each component.
+
 ### Example TLS Configuration
 
 ### 1. Nimbus Settings
