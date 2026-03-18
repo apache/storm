@@ -30,12 +30,4 @@
             <unpack>false</unpack>
         </dependencySet>
     </dependencySets>
-
-    <files>
-        <file>
-            <source>../../../external/storm-kafka-monitor/README.md</source>
-            <outputDirectory>.</outputDirectory>
-        </file>
-    </files>
-    
 </assembly>
