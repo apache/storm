@@ -128,9 +128,11 @@ UI,DRPC and LOGVIEWER allows users to configure ssl .
 
 ### UI
 
+These configurations enable HTTPS for the Storm UI, allowing secure communication between users and the cluster.
+
 For UI users needs to set following config in storm.yaml. Generating keystores with proper keys and certs should be taken care by the user before this step.
 
-1. ui.https.port 
+1. ui.https.port (Port for HTTPS UI access)
 2. ui.https.keystore.type (example "jks")
 3. ui.https.keystore.path (example "/etc/ssl/storm_keystore.jks")
 4. ui.https.keystore.password (keystore password)
@@ -192,6 +194,14 @@ If users want to setup 2-way auth
 **Available since Storm 2.7.0 (STORM-4070)**
 
 Storm now supports mutual TLS (mTLS) for internal Thrift RPC communication among Nimbus, Supervisors, and workers. Unlike one-way TLS, mTLS requires both parties to present and verify each other's certificates. This ensures full two-way certificate authentication and encryption.
+
+### Overview of TLS Configuration
+
+Storm provides TLS support for securing internal communication between Nimbus, Supervisors, and workers. This is achieved using existing configuration properties for Thrift-based RPC communication and Netty-based messaging.
+
+The TLS setup requires configuring keystore and truststore paths along with enabling TLS flags for each component. Nimbus and Supervisors use Thrift TLS settings, while workers use Netty TLS settings.
+
+The following sections provide example configurations for each component.
 
 ### Example TLS Configuration
 
@@ -682,3 +692,5 @@ Also, there are several configurations for topology Zookeeper authentication:
 | storm.zookeeper.topology.auth.payload | A string representing the payload for topology Zookeeper authentication. |
 
 Note: If storm.zookeeper.topology.auth.payload isn't set, Storm will generate a ZooKeeper secret payload for MD5-digest with generateZookeeperDigestSecretPayload() method.
+
+
