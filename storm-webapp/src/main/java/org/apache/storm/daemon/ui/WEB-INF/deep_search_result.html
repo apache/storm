@@ -16,6 +16,7 @@
      limitations under the License.
     -->
 <meta charset="UTF-8">
+<script>!function(){var m=document.cookie.match(/(?:^|;\s*)stormTheme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(!t)t=window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.setAttribute("data-bs-theme",t)}()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Storm UI</title>
 <link href="/dist/main.bundle.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
@@ -100,7 +101,7 @@ $(document).ready(function() {
                   displayKey: 'value',
                   source: findIds
                 });
-                $('#search-form [data-toggle="tooltip"]').tooltip();
+                $('#search-form [data-bs-toggle="tooltip"]').tooltip();
             });
         });
 

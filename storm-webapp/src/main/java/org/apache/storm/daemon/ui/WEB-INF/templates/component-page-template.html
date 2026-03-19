@@ -20,43 +20,43 @@
     <thead>
       <tr>
         <th>
-          <span data-toggle="tooltip" data-placement="right" title="The ID assigned to a the Component by the Topology.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The ID assigned to a the Component by the Topology.">
             Id
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
             Topology
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="Executors are threads in a Worker process.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Executors are threads in a Worker process.">
             Executors
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
             Tasks
           </span>
         </th>
         {{#schedulerDisplayResource}}
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The amount on heap memory in megabytes requested to run a single executor of this component.">
+          <span data-bs-toggle="tooltip" data-bs-placement="above" title="The amount on heap memory in megabytes requested to run a single executor of this component.">
             Requested On-heap Memory
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The amount off heap memory in megabytes requested to run a single executor of this component.">
+          <span data-bs-toggle="tooltip" data-bs-placement="above" title="The amount off heap memory in megabytes requested to run a single executor of this component.">
             Requested Off-heap Memory
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The amount of CPU resources requested to run a single executor of this component. Every 100 means 1 core.">
+          <span data-bs-toggle="tooltip" data-bs-placement="above" title="The amount of CPU resources requested to run a single executor of this component. Every 100 means 1 core.">
             Requested CPU
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The generic resources requested to run a single executor of this component.">
+          <span data-bs-toggle="tooltip" data-bs-placement="above" title="The generic resources requested to run a single executor of this component.">
             Requested Generic Resources
           </span>
         </th>
@@ -64,7 +64,7 @@
         {{/schedulerDisplayResource}}
         {{#eventLogLink}}
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="Click on the link below to open the logviewer and view the events emitted by this component.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Click on the link below to open the logviewer and view the events emitted by this component.">
             Debug
           </span>
         </th>
@@ -95,32 +95,32 @@
     <thead>
       <tr>
         <th class="header headerSortDown">
-          <span data-toggle="tooltip" data-placement="right" title="The past period of time for which the statistics apply. Click on a value to set the window for this page.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The past period of time for which the statistics apply. Click on a value to set the window for this page.">
             Window
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuples emitted that sent to one or more bolts." data-toggle="tooltip" data-placement="top">
+          <span title="The number of Tuples emitted that sent to one or more bolts." data-bs-toggle="tooltip" data-bs-placement="top">
             Transferred
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
             Complete latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
             Acked
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done." data-toggle="tooltip" data-placement="left">
+          <span title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done." data-bs-toggle="tooltip" data-bs-placement="left">
             Failed
           </span>
         </th>
@@ -146,32 +146,32 @@
     <thead>
       <tr>
         <th class="header headerSortDown">
-          <span data-original-title="The name of the Tuple stream given in the Topolgy, or &quot;default&quot; if none was given." data-toggle="tooltip" data-placement="right">
+          <span title="The name of the Tuple stream given in the Topolgy, or &quot;default&quot; if none was given." data-bs-toggle="tooltip" data-bs-placement="right">
             Stream
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuples emitted that sent to one or more bolts." data-toggle="tooltip" data-placement="top">
+          <span title="The number of Tuples emitted that sent to one or more bolts." data-bs-toggle="tooltip" data-bs-placement="top">
             Transferred
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done." data-toggle="tooltip" data-placement="top">
+          <span title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done." data-bs-toggle="tooltip" data-bs-placement="top">
             Complete latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done." data-toggle="tooltip" data-placement="top">
+          <span title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done." data-bs-toggle="tooltip" data-bs-placement="top">
             Acked
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done." data-toggle="tooltip" data-placement="left">
+          <span title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done." data-bs-toggle="tooltip" data-bs-placement="left">
             Failed
           </span>
         </th>
@@ -197,52 +197,52 @@
     <thead>
       <tr>
         <th class="header headerSortDown">
-          <span data-toggle="tooltip" data-placement="right" title="The unique executor ID.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The unique executor ID.">
             Id
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="right" title="The length of time an Executor (thread) has been alive.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The length of time an Executor (thread) has been alive.">
             Uptime
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
             Host
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The port number used by the Worker to which an Executor is assigned. Click on the port number to open the logviewer page for this Worker." data-toggle="tooltip" data-placement="top">
+          <span title="The port number used by the Worker to which an Executor is assigned. Click on the port number to open the logviewer page for this Worker." data-bs-toggle="tooltip" data-bs-placement="top">
             Port
           </span>
         </th>
         <th class="header">
-          <span data-original-title="Select workers on which to perform actions. Selecting any row will automatically select all executors belonging to the same worker." data-toggle="tooltip" data-placement="top">
+          <span title="Select workers on which to perform actions. Selecting any row will automatically select all executors belonging to the same worker." data-bs-toggle="tooltip" data-bs-placement="top">
             Actions
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuples emitted." data-toggle="tooltip" data-placement="top">
+          <span title="The number of Tuples emitted." data-bs-toggle="tooltip" data-bs-placement="top">
             Emitted
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
             Complete latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
             Acked
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done." data-toggle="tooltip" data-placement="left">
+          <span title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done." data-bs-toggle="tooltip" data-bs-placement="left">
             Failed
           </span>
         </th>
@@ -273,7 +273,7 @@
     <thead>
       <tr>
         <th class="header">
-          <span data-original-title="The status of a running profiler or the timeout for one you're starting (in minutes)" data-toggle="tooltip">
+          <span title="The status of a running profiler or the timeout for one you're starting (in minutes)" data-bs-toggle="tooltip">
             Status / Timeout (Minutes)
           </span>
         </th>
@@ -320,42 +320,42 @@
     <thead>
       <tr>
         <th class="header headerSortDown">
-          <span data-toggle="tooltip" data-placement="right" title="The past period of time for which the statistics apply. Click on a value to set the window for this page.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The past period of time for which the statistics apply. Click on a value to set the window for this page.">
             Window
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple." data-toggle="tooltip" data-placement="top">
+          <span title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple." data-bs-toggle="tooltip" data-bs-placement="top">
             Execute latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of incoming Tuples processed.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of incoming Tuples processed.">
             Executed
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received." data-toggle="tooltip" data-placement="top">
+          <span title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received." data-bs-toggle="tooltip" data-bs-placement="top">
             Process latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuples acknowledged by this Bolt." data-toggle="tooltip" data-placement="top">
+          <span title="The number of Tuples acknowledged by this Bolt." data-bs-toggle="tooltip" data-bs-placement="top">
             Acked
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of tuples Failed by this Bolt." data-toggle="tooltip" data-placement="left">
+          <span title="The number of tuples Failed by this Bolt." data-bs-toggle="tooltip" data-bs-placement="left">
             Failed
           </span>
         </th>
@@ -383,37 +383,37 @@
     <thead>
       <tr>
         <th class="header headerSortDown">
-          <span data-toggle="tooltip" data-placement="right" title="The ID assigned to a the Component by the Topology.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The ID assigned to a the Component by the Topology.">
             Component
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="right" title="The name of the Tuple stream given in the Topolgy, or &quot;default&quot; if none was given.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The name of the Tuple stream given in the Topolgy, or &quot;default&quot; if none was given.">
             Stream
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple.">
             Execute latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of incoming Tuples processed.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of incoming Tuples processed.">
             Executed
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received." data-toggle="tooltip" data-placement="top">
+          <span title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received." data-bs-toggle="tooltip" data-bs-placement="top">
             Process latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples acknowledged by this Bolt.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples acknowledged by this Bolt.">
             Acked
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of tuples Failed by this Bolt." data-toggle="tooltip" data-placement="left">
+          <span title="The number of tuples Failed by this Bolt." data-bs-toggle="tooltip" data-bs-placement="left">
             Failed
           </span>
         </th>
@@ -440,17 +440,17 @@
     <thead>
       <tr>
         <th class="header headerSortDown">
-          <span data-toggle="tooltip" data-placement="right" title="The name of the Tuple stream given in the Topolgy, or &quot;default&quot; if none was given.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The name of the Tuple stream given in the Topolgy, or &quot;default&quot; if none was given.">
             Stream
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
@@ -473,67 +473,67 @@
     <thead>
       <tr>
         <th class="header headerSortDown">
-          <span data-toggle="tooltip" data-placement="right" title="The unique executor ID.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The unique executor ID.">
             Id
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The length of time an Executor (thread) has been alive." data-toggle="tooltip" data-placement="right">
+          <span title="The length of time an Executor (thread) has been alive." data-bs-toggle="tooltip" data-bs-placement="right">
             Uptime
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
             Host
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The port number used by the Worker to which an Executor is assigned. Click on the port number to open the logviewer page for this Worker.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The port number used by the Worker to which an Executor is assigned. Click on the port number to open the logviewer page for this Worker.">
             Port
           </span>
         </th>
         <th class="header">
-          <span data-original-title="Select workers on which to perform actions. Selecting any row will automatically select all executors belonging to the same worker." data-toggle="tooltip" data-placement="top">
+          <span title="Select workers on which to perform actions. Selecting any row will automatically select all executors belonging to the same worker." data-bs-toggle="tooltip" data-bs-placement="top">
             Debug
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="If this is around 1.0, the corresponding Bolt is running as fast as it can, so you may want to increase the Bolt's parallelism. This is (number executed * average execute latency) / measurement time.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="If this is around 1.0, the corresponding Bolt is running as fast as it can, so you may want to increase the Bolt's parallelism. This is (number executed * average execute latency) / measurement time.">
             Capacity (last 10m)
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple." data-toggle="tooltip" data-placement="top">
+          <span title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple." data-bs-toggle="tooltip" data-bs-placement="top">
             Execute latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of incoming Tuples processed.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of incoming Tuples processed.">
             Executed
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received." data-toggle="tooltip" data-placement="top">
+          <span title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received." data-bs-toggle="tooltip" data-bs-placement="top">
             Process latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of Tuples acknowledged by this Bolt." data-toggle="tooltip" data-placement="top">
+          <span title="The number of Tuples acknowledged by this Bolt." data-bs-toggle="tooltip" data-bs-placement="top">
             Acked
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The number of tuples Failed by this Bolt." data-toggle="tooltip" data-placement="left">
+          <span title="The number of tuples Failed by this Bolt." data-bs-toggle="tooltip" data-bs-placement="left">
             Failed
           </span>
         </th>
@@ -591,12 +591,12 @@
   <h2>Component actions</h2>
   <p id="component-actions">
     {{#loggersDisabled}}
-    <span style="display:inline-block;" data-toggle="tooltip" title="" data-original-title="To debug, set topology.eventlogger.executors to a value > 0">
+    <span style="display:inline-block;" data-bs-toggle="tooltip" title="" title="To debug, set topology.eventlogger.executors to a value > 0">
     {{/loggersDisabled}}
-      <input {{startDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default">
+      <input {{startDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-secondary">
     {{#loggersDisabled}}
     </span>
     {{/loggersDisabled}}
-    <input {{stopDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/disable', false, 0, 'sampling percentage', 'stop debugging')" type="button" value="Stop Debug" class="btn btn-default">
+    <input {{stopDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/disable', false, 0, 'sampling percentage', 'stop debugging')" type="button" value="Stop Debug" class="btn btn-secondary">
   </p>
 </script>

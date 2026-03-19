@@ -62,3 +62,16 @@ describe('Storm UI - Flux Viewer Page', () => {
     cy.get('#cy canvas').should('exist');
   });
 });
+
+describe('Storm UI - Flux Viewer (Dark Mode)', () => {
+  it('respects dark theme from cookie', () => {
+    cy.setCookie('stormTheme', 'dark');
+    cy.visit('/flux.html');
+    cy.document().its('documentElement')
+      .should('have.attr', 'data-bs-theme', 'dark');
+    cy.get('body').should(($body) => {
+      const bg = window.getComputedStyle($body[0]).backgroundColor;
+      expect(bg).to.equal('rgb(33, 37, 41)');
+    });
+  });
+});

@@ -19,6 +19,10 @@
  * Webpack entry point for the Flux topology viewer page (flux.html).
  */
 
+// --- CSS ---
+require('bootstrap/dist/css/bootstrap.min.css');
+require('../css/style.css');
+
 // --- jQuery ---
 var $ = require('jquery');
 window.$ = $;

@@ -17,6 +17,7 @@
 -->
 <html><head>
 <meta charset="UTF-8">
+<script>!function(){var m=document.cookie.match(/(?:^|;\s*)stormTheme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(!t)t=window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.setAttribute("data-bs-theme",t)}()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Storm UI</title>
 <link href="/dist/main.bundle.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
@@ -189,7 +190,7 @@ $(document).ready(function() {
         var uiUser = $("#ui-user");
         getStatic("/templates/user-template.html", function(template) {
             uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
-            $('#ui-user [data-toggle="tooltip"]').tooltip()
+            $('#ui-user [data-bs-toggle="tooltip"]').tooltip()
         });
 
         var topologyUrl = "/api/v1/topology/"+topologyId;
@@ -357,13 +358,13 @@ $(document).ready(function() {
                   errorCells[i].style.whiteSpace = "pre";
                 }
             });
-            $('#component-summary [data-toggle="tooltip"]').tooltip();
-            $('#component-actions [data-toggle="tooltip"]').tooltip();
-            $('#component-stats-detail [data-toggle="tooltip"]').tooltip();
-            $('#component-input-stats [data-toggle="tooltip"]').tooltip();
-            $('#component-output-stats [data-toggle="tooltip"]').tooltip();
-            $('#component-executor-stats [data-toggle="tooltip"]').tooltip();
-            $('#component-errors [data-toggle="tooltip"]').tooltip();
+            $('#component-summary [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-actions [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-stats-detail [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-input-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-output-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-executor-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-errors [data-bs-toggle="tooltip"]').tooltip();
         });
     });
 });

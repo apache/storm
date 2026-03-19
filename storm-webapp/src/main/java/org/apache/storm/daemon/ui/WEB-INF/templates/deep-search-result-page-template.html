@@ -44,19 +44,19 @@
 <script id="search-form-template" type="text/html">
   <div id="search-form-container" class="search-box">
     <form action="deep_search_result.html" id="search-box">
-      <div class="row"  data-toggle="tooltip" data-placement="bottom" title="The ID of the topology, can be a regex for search, i.e. '.' lists everything">
+      <div class="row"  data-bs-toggle="tooltip" data-bs-placement="bottom" title="The ID of the topology, can be a regex for search, i.e. '.' lists everything">
         <div class="col-md-2">Topology Id:</div>
         <div class="col-md-10">
           <input class="expand-box" id="search-id" name="id" class="typeahead" type="text" placeholder="Topology-ID" value="{{id}}" number="50">
         </div>
       </div>
-      <div class="row" data-toggle="tooltip" data-placement="bottom" title="Exact search string to look for (NOT A REGEX)">
+      <div class="row" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Exact search string to look for (NOT A REGEX)">
         <div class="col-md-2">Search:</div>
         <div class="col-md-10">
           <input class="expand-box" type="text" name="search" value="{{search}}" placeholder="Search" number="50">
         </div>
       </div>
-      <div class="row" data-toggle="tooltip" data-placement="bottom" title="Search older logs that have rotated and may have been compressed.  This could take much longer.">
+      <div class="row" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Search older logs that have rotated and may have been compressed.  This could take much longer.">
         <div class="col-md-2">Search archived logs:</div>
         <div class="col-md-10"><input type="checkbox" name="search-archived" {{search_archived}}></div>
       </div>
