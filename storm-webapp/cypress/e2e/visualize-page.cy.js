@@ -62,3 +62,50 @@ describe('Storm UI - Topology Visualization Page', () => {
     });
   });
 });
+
+describe('Storm UI - Topology Visualization (Dark Mode)', () => {
+  beforeEach(() => {
+    cy.setCookie('stormTheme', 'dark');
+    cy.intercept('GET', '/api/v1/topology/*/visualization*').as('vizApi');
+    cy.visit('/visualize.html?id=word-count-1-1234567890&sys=true');
+    cy.wait('@vizApi');
+  });
+
+  it('applies dark theme to the page', () => {
+    cy.document().its('documentElement')
+      .should('have.attr', 'data-bs-theme', 'dark');
+  });
+
+  it('gives the network container a dark background', () => {
+    cy.get('#mynetwork').should(($el) => {
+      const bg = window.getComputedStyle($el[0]).backgroundColor;
+      expect(bg).to.equal('rgb(33, 37, 41)');
+    });
+  });
+
+  it('renders nodes and streams in dark mode without errors', () => {
+    cy.window().then((win) => {
+      expect(win.visNS).to.exist;
+      expect(win.visNS.nodes.length).to.be.greaterThan(0);
+    });
+    cy.get('#available-streams li', { timeout: 5000 })
+      .should('have.length.greaterThan', 0);
+  });
+
+  it('switching to light mode gives network container a light background', () => {
+    // Start in dark mode (from beforeEach), then switch to light
+    cy.document().its('documentElement')
+      .should('have.attr', 'data-bs-theme', 'dark');
+
+    // Simulate theme toggle by setting the attribute directly
+    cy.document().then((doc) => {
+      doc.documentElement.setAttribute('data-bs-theme', 'light');
+    });
+
+    cy.get('#mynetwork').should(($el) => {
+      const bg = window.getComputedStyle($el[0]).backgroundColor;
+      // Must be white (light mode), NOT dark
+      expect(bg).to.equal('rgb(255, 255, 255)');
+    });
+  });
+});

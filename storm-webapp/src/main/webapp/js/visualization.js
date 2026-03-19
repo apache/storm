@@ -111,11 +111,51 @@ function parseResponse(json) {
     }
 }
 
+function getThemeOptions() {
+    var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    if (isDark) {
+        return {
+            edges: {
+                color: { color: '#8b949e', highlight: '#58a6ff', hover: '#58a6ff' },
+                font: { color: '#c9d1d9' },
+                shadow: { enabled: true, color: 'rgba(255,255,255,0.1)', size: 10, x: 5, y: 5 }
+            },
+            nodes: {
+                font: { color: '#c9d1d9' },
+                shadow: { enabled: true, color: 'rgba(255,255,255,0.1)', size: 10, x: 5, y: 5 }
+            }
+        };
+    }
+    return {
+        edges: {
+            color: { color: '#848484', highlight: '#2B7CE9', hover: '#2B7CE9' },
+            font: { color: '#343434' },
+            shadow: { enabled: true, color: 'rgba(0,0,0,0.5)', size: 10, x: 5, y: 5 }
+        },
+        nodes: {
+            font: { color: '#343434' },
+            shadow: { enabled: true, color: 'rgba(0,0,0,0.5)', size: 10, x: 5, y: 5 }
+        }
+    };
+}
+
+function applyThemeToNetwork() {
+    if (visNS.network) {
+        visNS.network.setOptions(getThemeOptions());
+    }
+}
+
 function createNetwork() {
     var data = {
         "nodes": visNS.nodes,
         "edges": visNS.edges
     };
+
+    // Merge theme-dependent colors into options
+    var themeOpts = getThemeOptions();
+    $.extend(true, visNS.options.edges, themeOpts.edges);
+    $.extend(true, visNS.options.nodes, themeOpts.nodes);
+
     // Create network
     visNS.network = new vis.Network(visNS.networkContainer, data, visNS.options);
 
@@ -129,6 +169,14 @@ function createNetwork() {
 
     // Then disable layout
     visNS.network.setOptions({layout: {hierarchical: false } });
+
+    // Watch for theme changes and update network colors
+    new MutationObserver(function() {
+        applyThemeToNetwork();
+    }).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-bs-theme']
+    });
 }
 
 function handleClickEvent(params) {

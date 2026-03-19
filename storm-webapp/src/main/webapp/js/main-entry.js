@@ -27,7 +27,7 @@
 // --- CSS ---
 require('bootstrap/dist/css/bootstrap.min.css');
 require('datatables.net-dt/css/dataTables.dataTables.css');
-require('datatables.net-bs/css/dataTables.bootstrap.css');
+require('datatables.net-bs5/css/dataTables.bootstrap5.css');
 require('../lib/jsonFormatter.css');
 require('../css/style.css');
 
@@ -66,7 +66,7 @@ if (!$.type) {
 
 // --- DataTables + Bootstrap 3 integration ---
 require('datatables.net');
-require('datatables.net-bs');
+require('datatables.net-bs5');
 
 // --- Mustache + jQuery integration ---
 var Mustache = require('mustache');
@@ -120,9 +120,26 @@ require('../lib/jsonFormatter.js');
 
 // --- npm libraries ---
 require('typeahead.js');
-require('bootstrap');
 var moment = require('moment');
 window.moment = moment;
+
+// --- Bootstrap 5 (vanilla JS, no jQuery plugin) ---
+var bootstrap = require('bootstrap/dist/js/bootstrap.bundle.js');
+window.bootstrap = bootstrap;
+
+// --- Bootstrap 5 tooltip shim ---
+// The inline HTML scripts call $('[data-toggle="tooltip"]').tooltip() or
+// $('[data-bs-toggle="tooltip"]').tooltip(). Bootstrap 5 uses vanilla JS,
+// so we shim the jQuery .tooltip() method.
+$.fn.tooltip = $.fn.tooltip || function () {
+  return this.each(function () {
+    // Support both BS3 data-toggle and BS5 data-bs-toggle attributes
+    if (this.getAttribute('data-bs-toggle') === 'tooltip' ||
+        this.getAttribute('data-toggle') === 'tooltip') {
+      new bootstrap.Tooltip(this);
+    }
+  });
+};
 
 // --- Custom Storm UI code ---
 require('./script');

@@ -15,8 +15,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// --- Dark/light theme support ---
+// Uses document.cookie directly so it works before $.cookies shim is loaded
+// and also on pages that don't use the main entry point.
+(function() {
+    function getCookie(name) {
+        var match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+        return match ? decodeURIComponent(match[1]) : null;
+    }
+    function setCookie(name, value) {
+        var d = new Date();
+        d.setFullYear(d.getFullYear() + 1);
+        document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' + d.toUTCString();
+    }
+    var saved = getCookie('stormTheme');
+    if (!saved) {
+        saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-bs-theme', saved);
+
+    window.toggleTheme = function() {
+        var current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        var next = (current === 'dark') ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', next);
+        setCookie('stormTheme', next);
+        var btn = document.getElementById('theme-toggle-btn');
+        if (btn) {
+            btn.value = (next === 'dark') ? 'Light Mode' : 'Dark Mode';
+        }
+    };
+})();
+
+// Update the theme toggle button label whenever it appears in the DOM.
+// The button is rendered asynchronously by Mustache templates loaded via AJAX,
+// so we use a MutationObserver to catch it.
+function updateThemeButtonLabel() {
+    var current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+    var btn = document.getElementById('theme-toggle-btn');
+    if (btn) {
+        btn.value = (current === 'dark') ? 'Light Mode' : 'Dark Mode';
+    }
+}
+
+(function() {
+    var observer = new MutationObserver(function() { updateThemeButtonLabel(); });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+
 $(function () {
     $(".js-only").show();
+    updateThemeButtonLabel();
 });
 
 //Add in custom sorting for some data types
@@ -191,7 +239,7 @@ function confirmAction(id, name, action, param, defaultParamValue, paramText, ac
 }
 
 $(function () {
-  $('[data-toggle="tooltip"]').tooltip()
+  $('[data-bs-toggle="tooltip"]').tooltip()
 })
 
 function formatConfigData(data) {
@@ -222,9 +270,9 @@ function formatErrorTimeSecs(response){
 function renderToggleSys(div) {
     var sys = $.cookies.get("sys") || false;
     if(sys) {
-       div.append("<span data-original-title=\"Use this to toggle inclusion of storm system components.\" class=\"tip right\"><input onclick=\"toggleSys()\" value=\"Hide System Stats\" type=\"button\" class=\"btn btn-default\"></span>");
+       div.append("<span title=\"Use this to toggle inclusion of storm system components.\" class=\"tip right\"><input onclick=\"toggleSys()\" value=\"Hide System Stats\" type=\"button\" class=\"btn btn-secondary\"></span>");
     } else {
-       div.append("<span class=\"tip right\" title=\"Use this to toggle inclusion of storm system components.\"><input onclick=\"toggleSys()\" value=\"Show System Stats\" type=\"button\" class=\"btn btn-default\"></span>");
+       div.append("<span class=\"tip right\" title=\"Use this to toggle inclusion of storm system components.\"><input onclick=\"toggleSys()\" value=\"Show System Stats\" type=\"button\" class=\"btn btn-secondary\"></span>");
     }
 }
 
@@ -303,7 +351,7 @@ var formatComponents = function (row) {
     var result = '';
     Object.keys(row.componentNumTasks || {}).sort().forEach (function (component){
         var numTasks = row.componentNumTasks[component];
-        result += '<a class="worker-component-button btn btn-xs btn-primary" href="/component.html?id=' + 
+        result += '<a class="worker-component-button btn btn-sm btn-primary" href="/component.html?id=' + 
                         component + '&topology_id=' + row.topologyId + '">';
         result += component;
         result += '<span class="badge">' + numTasks + '</span>';
@@ -377,7 +425,7 @@ var makeWorkerStatsTable = function (response, elId, parentId, type) {
 
             if (type == 'display') {
                 // show a button to toggle the component row
-                return '<button class="btn btn-xs btn-info details-control" type="button">' +
+                return '<button class="btn btn-sm btn-info details-control" type="button">' +
                        components.length + ' components</button>';
             }
 
@@ -459,7 +507,7 @@ var makeWorkerStatsTable = function (response, elId, parentId, type) {
         toggleComponents(elId);
     });
 
-    $(elId + ' [data-toggle="tooltip"]').tooltip();
+    $(elId + ' [data-bs-toggle="tooltip"]').tooltip();
 };
 
 function renderToggleComponents(div, targetTable) {
@@ -615,7 +663,7 @@ var makeOwnerSummaryTable = function(response, elId, parentId) {
         columns: columns,
     });
 
-    $(elId + ' [data-toggle="tooltip"]').tooltip();
+    $(elId + ' [data-bs-toggle="tooltip"]').tooltip();
 };
 
 function getPageRenderedTimestamp(eId) {

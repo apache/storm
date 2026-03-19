@@ -39,18 +39,12 @@
     width:5em;
 }
 
-body,
-.dataTables_wrapper label,
-div.dataTables_info[role="status"],
-.btn-default
-{
-    color: #6d6d6d;
-}
+/* Let Bootstrap 5 theme handle body/text/link colors via data-bs-theme */
 
 table.dataTable thead th,
 table.dataTable.no-footer
 {
-    border-color: #d5d5d5;
+    border-color: var(--bs-border-color);
 }
 
 .table > tbody > tr > td {
@@ -64,15 +58,7 @@ table.dataTable {
 td {
     border-bottom-style: solid;
     border-bottom-width: 1px;
-    border-color: #d5d5d5;
-}
-
-a {
-    color: #0069d6;
-}
-
-a:hover {
-    color: #0050a3;
+    border-color: var(--bs-border-color);
 }
 
 h1
@@ -82,7 +68,6 @@ h1
 
 h2
 {
-    color: #404040;
     font-weight: bold;
 }
 
@@ -141,14 +126,14 @@ PRE.jsonFormatter-codeContainer {
 }
 
 div#visualization {
-    color: #333;
+    color: var(--bs-body-color);
     font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
     font-size: 14px;
     line-height: 1.42857;
 }
 
 div#visualization a, div#visualization a:visited {
-    color: blue;
+    color: var(--bs-link-color);
 }
 
 div#visualization ul {
@@ -261,3 +246,54 @@ div#visualization summary {
     color: red;
     font-weight: bold;
 }
+
+/* --- Dark mode overrides for Storm-specific styles --- */
+/* Bootstrap 5 handles body, text, link, border, and heading colors
+   automatically via data-bs-theme="dark". Only Storm-specific components
+   need explicit dark mode overrides below. */
+
+/* DataTables uses :root.dark for its dark theme, but Bootstrap 5 uses
+   [data-bs-theme="dark"]. Bridge the two so DataTables respects BS5 dark mode. */
+[data-bs-theme="dark"] {
+    --dt-html-background: #212529;
+    --dt-row-background: #212529;
+    --dt-row-stripe-background: #2c3034;
+    --dt-column-ordering-background: rgba(255, 255, 255, 0.02);
+    --dt-foreground-color: #c9d1d9;
+    --dt-border-color: #30363d;
+}
+
+[data-bs-theme="dark"] table.dataTable thead .sorting_asc,
+[data-bs-theme="dark"] table.dataTable thead .sorting_desc {
+    background-color: rgba(56, 139, 253, 0.15);
+}
+
+[data-bs-theme="dark"] PRE.jsonFormatter-codeContainer .jsonFormatter-propertyName {
+    color: #ff7b72;
+}
+
+[data-bs-theme="dark"] PRE.jsonFormatter-codeContainer .jsonFormatter-string {
+    color: #7ee787;
+}
+
+[data-bs-theme="dark"] PRE.jsonFormatter-codeContainer .jsonFormatter-number {
+    color: #d2a8ff;
+}
+
+[data-bs-theme="dark"] PRE.jsonFormatter-codeContainer .jsonFormatter-objectBrace {
+    color: #7ee787;
+}
+
+[data-bs-theme="dark"] PRE.jsonFormatter-codeContainer .jsonFormatter-arrayBrace {
+    color: #79c0ff;
+}
+
+[data-bs-theme="dark"] div#visualization #streams_slideout_inner,
+[data-bs-theme="dark"] div#visualization #bolt_slideout_inner {
+    background: #2d5a1e;
+}
+
+#mynetwork {
+    background-color: var(--bs-body-bg, #fff);
+}
+

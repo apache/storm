@@ -522,10 +522,10 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For Bootstrap 3.3.1 (bundled via npm package "bootstrap" into storm-webapp webpack output)
+For Bootstrap 5.3.8 (bundled via npm package "bootstrap" into storm-webapp webpack output)
 
-Bootstrap v3.3.1 (http://getbootstrap.com)
-Copyright 2011-2014 Twitter, Inc.
+Bootstrap v5.3.8 (https://getbootstrap.com)
+Copyright 2011-2025 The Bootstrap Authors.
 Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
 
 -----------------------------------------------------------------------

@@ -68,3 +68,4 @@ install-shade.txt
 # Frontend build (storm-webapp)
 node_modules/
 storm-webapp/node/
+tmp

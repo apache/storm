@@ -18,6 +18,7 @@
 
 <html><head>
 <meta charset="UTF-8">
+<script>!function(){var m=document.cookie.match(/(?:^|;\s*)stormTheme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(!t)t=window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.setAttribute("data-bs-theme",t)}()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Storm UI</title>
 <link href="/dist/main.bundle.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
@@ -281,7 +282,7 @@ $(document).ready(function() {
         var uiUser = $("#ui-user");
         getStatic("/templates/user-template.html", function(template) {
             uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
-            $('#ui-user [data-toggle="tooltip"]').tooltip();
+            $('#ui-user [data-bs-toggle="tooltip"]').tooltip();
         });
 
         var topologySummary = $("#topology-summary");
@@ -429,13 +430,13 @@ $(document).ready(function() {
                 errorTime[i].title = "Elapsed Time Since Error: " + time;
               }
             }
-            $('#topology-summary [data-toggle="tooltip"]').tooltip();
-            $('#topology-stats [data-toggle="tooltip"]').tooltip();
-            $('#spout-stats [data-toggle="tooltip"]').tooltip();
-            $('#bolt-stats [data-toggle="tooltip"]').tooltip();
-            $('#topology-configuration [data-toggle="tooltip"]').tooltip();
-            $('#topology-actions [data-toggle="tooltip"]').tooltip();
-            $('#topology-visualization [data-toggle="tooltip"]').tooltip();
+            $('#topology-summary [data-bs-toggle="tooltip"]').tooltip();
+            $('#topology-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#spout-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#bolt-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#topology-configuration [data-bs-toggle="tooltip"]').tooltip();
+            $('#topology-actions [data-bs-toggle="tooltip"]').tooltip();
+            $('#topology-visualization [data-bs-toggle="tooltip"]').tooltip();
 
             var lagUrl = "/api/v1/topology/"+topologyId+"/lag";
             $.getJSON(lagUrl,function(lagResponse,status,jqXHR) {
