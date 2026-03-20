@@ -19,37 +19,37 @@
   <thead>
     <tr>
       <th>
-        <span data-toggle="tooltip" data-placement="right" title="The version of storm installed on the UI node. (Hopefully, this is the same on all storm nodes!)">
+        <span data-bs-toggle="tooltip" data-bs-placement="right" title="The version of storm installed on the UI node. (Hopefully, this is the same on all storm nodes!)">
           Version
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The number of nodes in the cluster currently.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of nodes in the cluster currently.">
           Supervisors
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Total number of Slots. Slots are Workers (processes).">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total number of Slots. Slots are Workers (processes).">
           Used slots
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Total number of Slots. Slots are Workers (processes).">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total number of Slots. Slots are Workers (processes).">
           Free slots
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Total number of Slots. Slots are Workers (processes).">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total number of Slots. Slots are Workers (processes).">
           Total slots
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Executors are threads in a Worker process.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Executors are threads in a Worker process.">
           Executors
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
           Tasks
         </span>
       </th>
@@ -58,7 +58,7 @@
   <tbody>
     <tr>
       <td>
-          <div data-toggle="toggle">
+          <div data-storm-toggle="details">
             {{#stormVersionInfo}}
             <a toggle="link">{{version}}</a>
             <div toggle="details">
@@ -69,7 +69,7 @@
           </div>
           {{/stormVersionInfo}}
           {{#alternativeWorkerVersions}}
-          <div data-toggle="toggle">
+          <div data-storm-toggle="details">
               Topologies matching {{versionMatch}} will run under <a toggle="link">{{version}}</a>.
               <div toggle="details">
                   URL: {{url}}
@@ -95,20 +95,20 @@
         <thead>
         <tr>
             <th>
-                <span data-toggle="tooltip" data-placement="right" title="nimbus host name.">Host</span>
+                <span data-bs-toggle="tooltip" data-bs-placement="right" title="nimbus host name.">Host</span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="Nimbus Thrift port number.">Port</span>
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="Nimbus Thrift port number.">Port</span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="Leader if this host is leader, Not a Leader for all other live hosts,
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="Leader if this host is leader, Not a Leader for all other live hosts,
                 note that these hosts may or may not be in leader lock queue, and Dead for hosts that are part of nimbus.seeds list but are not alive.">Status</span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="Storm version this nimbus host is running.">Version</span>
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="Storm version this nimbus host is running.">Version</span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="left" title="Time since this nimbus host has been running.">Uptime</span>
+                <span data-bs-toggle="tooltip" data-bs-placement="left" title="Time since this nimbus host has been running.">Uptime</span>
             </th>
         </tr>
         </thead>
@@ -130,52 +130,52 @@
       <thead>
       <tr>
         <th>
-            <span data-toggle="tooltip" data-placement="right" title="Total Available Memory in Cluster in MB.">
+            <span data-bs-toggle="tooltip" data-bs-placement="right" title="Total Available Memory in Cluster in MB.">
               Total Memory (MB)
             </span>
         </th>
         <th>
-            <span data-toggle="tooltip" data-placement="right" title="Total Available Memory in Cluster in MB.">
+            <span data-bs-toggle="tooltip" data-bs-placement="right" title="Total Available Memory in Cluster in MB.">
               Total Available Memory (MB)
             </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="right" title="Total Fragmented Memory in Cluster in MB.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="Total Fragmented Memory in Cluster in MB.">
             Total Fragmented Memory (MB)
           </span>
         </th>
         <th>
-            <span data-toggle="tooltip" data-placement="top" title="Percent Utilization of Memory Resources in Cluster.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Percent Utilization of Memory Resources in Cluster.">
               Memory Utilization (%)
             </span>
         </th>
         <th>
-            <span data-toggle="tooltip" data-placement="top" title="Total CPU Resources in Cluster. Every 100 means 1 core.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total CPU Resources in Cluster. Every 100 means 1 core.">
               Total CPU (%)
             </span>
         </th>
         <th>
-            <span data-toggle="tooltip" data-placement="top" title="Total Available CPU Resources in Cluster. Every 100 means 1 core.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total Available CPU Resources in Cluster. Every 100 means 1 core.">
               Available CPU (%)
             </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="Total Fragmented CPU Resources in Cluster. Every 100 means 1 core.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total Fragmented CPU Resources in Cluster. Every 100 means 1 core.">
             Fragmented CPU (%)
           </span>
         </th>
         <th>
-            <span data-toggle="tooltip" data-placement="top" title="Percent Utilization of CPU Resources in Cluster.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Percent Utilization of CPU Resources in Cluster.">
              CPU Utilization (%)
             </span>
         </th>
         <th>
-        <span data-toggle="tooltip" data-placement="top" title="Total Generic Resources in Cluster.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total Generic Resources in Cluster.">
              Total Generic Resources
             </span>
         </th>
         <th>
-        <span data-toggle="tooltip" data-placement="top" title="Available Generic Resources in Cluster.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Available Generic Resources in Cluster.">
              Available Generic Resources
             </span>
         </th>
@@ -204,53 +204,53 @@
         Owner
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Total number of topologies owned by user.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total number of topologies owned by user.">
           Total Topologies
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Total number of executors used by user.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total number of executors used by user.">
           Total Executors
       </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Total number of workers used by user.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total number of workers used by user.">
           Total Workers
       </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The amount of memory resource (in MB) used by user.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of memory resource (in MB) used by user.">
           Memory Usage (MB)
         </span>
       </th>
       {{#schedulerDisplayResource}}
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The amount of memory resource (in MB) guaranteed to user.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of memory resource (in MB) guaranteed to user.">
             Memory Guarantee (MB)
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The amount of guaranteed memory resources (in MB) remaining.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of guaranteed memory resources (in MB) remaining.">
           Memory Guarantee Remaining (MB)
         </span>
       </th>
       <th>
-          <span data-toggle="tooltip" data-placement="top" title="Total CPU Resource Assigned on behalf of Owner. Every 100 means 1 core.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total CPU Resource Assigned on behalf of Owner. Every 100 means 1 core.">
            CPU Usage (%)
           </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resource (every 100 means 1 core) guaranteed to user.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of CPU resource (every 100 means 1 core) guaranteed to user.">
             CPU Guarantee (%)
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The amount of guaranteed CPU resource (every 100 means 1 core) remaining.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of guaranteed CPU resource (every 100 means 1 core) remaining.">
           CPU Guarantee Remaining (%)
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The amount of isolated nodes user may use">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of isolated nodes user may use">
           Isolated Nodes Guarantee
         </span>
       </th>
@@ -266,74 +266,74 @@
     <thead>
       <tr>
         <th>
-          <span data-toggle="tooltip" data-placement="right" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
+          <span data-bs-toggle="tooltip" data-bs-placement="right" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
             Name
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="The user that submitted the Topology, if authentication is enabled.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The user that submitted the Topology, if authentication is enabled.">
             Owner
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="The status can be one of ACTIVE, INACTIVE, KILLED, or REBALANCING.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The status can be one of ACTIVE, INACTIVE, KILLED, or REBALANCING.">
             Status
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="The time since the Topology was submitted.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The time since the Topology was submitted.">
             Uptime
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="The number of Workers (processes).">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Workers (processes).">
             Num workers
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="Executors are threads in a Worker process.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Executors are threads in a Worker process.">
             Num executors
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
             Num tasks
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="Number of nimbus hosts on which this topology's code is replicated. ">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Number of nimbus hosts on which this topology's code is replicated. ">
             Replication count
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="Assigned Total Memory by Scheduler.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Assigned Total Memory by Scheduler.">
             Assigned Mem (MB)
           </span>
         </th>
         {{#schedulerDisplayResource}}
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
             Assigned CPU (%)
           </span>
         </th>
         {{/schedulerDisplayResource}}
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="Assigned Generic Rescources by Scheduler.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Assigned Generic Rescources by Scheduler.">
             Assigned Generic Resources
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="left" title="This shows information from the scheduler about the latest attempt to schedule the Topology on the cluster.">
+          <span data-bs-toggle="tooltip" data-bs-placement="left" title="This shows information from the scheduler about the latest attempt to schedule the Topology on the cluster.">
             Scheduler Info
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="left" title="The version of this topology">
+          <span data-bs-toggle="tooltip" data-bs-placement="left" title="The version of this topology">
             Topology Version
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="left" title="The version of the storm client that this topology request (was launched with)">
+          <span data-bs-toggle="tooltip" data-bs-placement="left" title="The version of the storm client that this topology request (was launched with)">
             Storm Version
           </span>
         </th>
@@ -368,93 +368,93 @@
   <thead>
     <tr>
       <th>
-        <span data-toggle="tooltip" data-placement="right" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
+        <span data-bs-toggle="tooltip" data-bs-placement="right" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
           Host
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="A unique identifier given to a Supervisor when it joins the cluster.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="A unique identifier given to a Supervisor when it joins the cluster.">
           Id
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The length of time a Supervisor has been registered to the cluster.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The length of time a Supervisor has been registered to the cluster.">
           Uptime
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Total number of Slots. Slots are Workers (processes).">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total number of Slots. Slots are Workers (processes).">
           Slots
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="Total number of Slots. Slots are Workers (processes).">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="Total number of Slots. Slots are Workers (processes).">
           Used slots
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="The number of Slots available. Slots are Workers (processes).">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="The number of Slots available. Slots are Workers (processes).">
           Avail slots
         </span>
       </th>
       {{#schedulerDisplayResource}}
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The total memory capacity of a supervisor in megabytes.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The total memory capacity of a supervisor in megabytes.">
           Total Mem (MB)
         </span>
       </th>
       {{/schedulerDisplayResource}}
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="The amount of memory that has been allocated in megabytes.">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="The amount of memory that has been allocated in megabytes.">
           Used Mem (MB)
         </span>
       </th>
       {{#schedulerDisplayResource}}
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="The amount of Memory available in megabytes.">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="The amount of Memory available in megabytes.">
           Avail Mem (MB)
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="The total CPU capacity of a supervisor. Every 100 means one core.">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="The total CPU capacity of a supervisor. Every 100 means one core.">
           Total CPU (%)
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="The amount of CPU that has been allocated. Every 100 means one core.">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="The amount of CPU that has been allocated. Every 100 means one core.">
           Used CPU (%)
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="The amount of CPU that is available. Every 100 means one core.">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="The amount of CPU that is available. Every 100 means one core.">
           Avail CPU (%)
         </span>
       </th>
 
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="The generic resources capacity of a supervisor.">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="The generic resources capacity of a supervisor.">
           Total Generic Resources
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="The generic resources that have been allocated.">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="The generic resources that have been allocated.">
           Used Generic Resources
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="The generic resources that are available.">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="The generic resources that are available.">
           Avail Generic Resources
         </span>
       </th>
 
       {{/schedulerDisplayResource}}
       <th>
-        <span data-toggle="tooltip" data-placement="left" title="Version">
+        <span data-bs-toggle="tooltip" data-bs-placement="left" title="Version">
           Version
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="top" title="Whether this supervisor is blacklisted or not">
+        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Whether this supervisor is blacklisted or not">
           Blacklisted
         </span>
       </th>

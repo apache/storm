@@ -22,22 +22,22 @@
                 Owner
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="above" title="Total number of topologies owned by owner.">
+                <span data-bs-toggle="tooltip" data-bs-placement="above" title="Total number of topologies owned by owner.">
                     Total Topologies
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="above" title="Total number of tasks used by owner.">
+                <span data-bs-toggle="tooltip" data-bs-placement="above" title="Total number of tasks used by owner.">
                     Total Tasks
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="above" title="Total number of executors used by owner.">
+                <span data-bs-toggle="tooltip" data-bs-placement="above" title="Total number of executors used by owner.">
                     Total Executors
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="above" title="Total number of workers used by owner.">
+                <span data-bs-toggle="tooltip" data-bs-placement="above" title="Total number of workers used by owner.">
                     Total Workers
                 </span>
             </th>
@@ -71,7 +71,7 @@
                 Total Mem (MB)
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="Total CPU Resource. Every 100 means 1 core.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="Total CPU Resource. Every 100 means 1 core.">
                     Total CPU (%)
                 </span>
             </th>
@@ -101,17 +101,17 @@
         <thead>
         <tr>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resource (every 100 means 1 core) guaranteed to owner.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of CPU resource (every 100 means 1 core) guaranteed to owner.">
                     CPU Guarantee (%)
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resource (every 100 means 1 core) used by owner.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of CPU resource (every 100 means 1 core) used by owner.">
                     CPU Usage (%)
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The amount of guaranteed CPU resource (every 100 means 1 core) remaining.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of guaranteed CPU resource (every 100 means 1 core) remaining.">
                     CPU Guarantee Remaining (%)
                 </span>
             </th>
@@ -127,17 +127,17 @@
         <thead>
         <tr>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The amount of memory resource (in MB) guaranteed to owner.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of memory resource (in MB) guaranteed to owner.">
                     Memory Guarantee (MB)
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The amount of memory resource (in MB) used by owner.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of memory resource (in MB) used by owner.">
                     Memory Usage (MB)
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The amount of guaranteed memory resources (in MB) remaining.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of guaranteed memory resources (in MB) remaining.">
                     Memory Guarantee Remaining (MB)
                 </span>
             </th>
@@ -158,64 +158,64 @@
         <thead>
         <tr>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
                     Name
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The owner that submitted the Topology, if authentication is enabled.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The owner that submitted the Topology, if authentication is enabled.">
                     Owner
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The status can be one of ACTIVE, INACTIVE, KILLED, or REBALANCING.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The status can be one of ACTIVE, INACTIVE, KILLED, or REBALANCING.">
                     Status
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The time since the Topology was submitted.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The time since the Topology was submitted.">
                     Uptime
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="The number of Workers (processes).">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of Workers (processes).">
                     Num workers
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="Executors are threads in a Worker process.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="Executors are threads in a Worker process.">
                     Num executors
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
                     Num tasks
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="Assigned Total Memory by Scheduler.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="Assigned Total Memory by Scheduler.">
                     Assigned Mem (MB)
                 </span>
             </th>
             {{#schedulerDisplayResource}}
             <th>
-                <span data-toggle="tooltip" data-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
                     Assigned CPU (%)
                 </span>
             </th>
             {{/schedulerDisplayResource}}
             <th>
-                <span data-toggle="tooltip" data-placement="left" title="This shows information from the scheduler about the latest attempt to schedule the Topology on the cluster.">
+                <span data-bs-toggle="tooltip" data-bs-placement="left" title="This shows information from the scheduler about the latest attempt to schedule the Topology on the cluster.">
                     Scheduler Info
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="left" title="The version of this topology">
+                <span data-bs-toggle="tooltip" data-bs-placement="left" title="The version of this topology">
                     Topology Version
                 </span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="left" title="The version of the storm client that this topology request (was launched with)">
+                <span data-bs-toggle="tooltip" data-bs-placement="left" title="The version of the storm client that this topology request (was launched with)">
                     Storm Version
                 </span>
             </th>

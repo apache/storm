@@ -19,88 +19,88 @@
       <thead>
         <tr>
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
               Host
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="A unique identifier given to a Supervisor when it joins the cluster.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="A unique identifier given to a Supervisor when it joins the cluster.">
               Supervisor Id
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="The length of time a Supervisor has been registered to the cluster.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="The length of time a Supervisor has been registered to the cluster.">
               Uptime
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="Slots are Workers (processes).">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Slots are Workers (processes).">
               Slots
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="Slots are Workers (processes).">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Slots are Workers (processes).">
               Used slots
             </span>
           </th>
           {{#schedulerDisplayResource}}
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="Memory capacity of a supervisor.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Memory capacity of a supervisor.">
               Total Mem (MB)
             </span>
           </th>
           {{/schedulerDisplayResource}}
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="Memory that has been allocated.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Memory that has been allocated.">
               Used Mem (MB)
             </span>
           </th>
           {{#schedulerDisplayResource}}
           <th>
-            <span data-toggle="tooltip" data-placement="left" title="The amount of Memory available in megabytes.">
+            <span data-bs-toggle="tooltip" data-bs-placement="left" title="The amount of Memory available in megabytes.">
               Avail Mem (MB)
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="CPU capacity of a supervisor. Every 100 means one core.">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="CPU capacity of a supervisor. Every 100 means one core.">
               Total CPU (%)
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="CPU that has been allocated. Every 100 means one core">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="CPU that has been allocated. Every 100 means one core">
               Used CPU (%)
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="left" title="The amount of CPU that is available. Every 100 means one core.">
+            <span data-bs-toggle="tooltip" data-bs-placement="left" title="The amount of CPU that is available. Every 100 means one core.">
               Avail CPU (%)
             </span>
           </th>
 
           <th>
-            <span data-toggle="tooltip" data-placement="left" title="The generic resources capacity of a supervisor.">
+            <span data-bs-toggle="tooltip" data-bs-placement="left" title="The generic resources capacity of a supervisor.">
               Total Generic Resources
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="left" title="The generic resources that have been allocated.">
+            <span data-bs-toggle="tooltip" data-bs-placement="left" title="The generic resources that have been allocated.">
               Used Generic Resources
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="left" title="The generic resources that are available.">
+            <span data-bs-toggle="tooltip" data-bs-placement="left" title="The generic resources that are available.">
               Avail Generic Resources
             </span>
           </th>
 
           {{/schedulerDisplayResource}}
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="Version">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Version">
               Version
             </span>
           </th>
           <th>
-            <span data-toggle="tooltip" data-placement="top" title="Whether this supervisor is blacklisted or not">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Whether this supervisor is blacklisted or not">
               Blacklisted
             </span>
           </th>
@@ -139,49 +139,49 @@
     <thead>
       <tr>
         <th class="header headerSortDown">
-          <span data-toggle="tooltip" data-placement="top" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
             Topology Name
           </span>
         </th>
         <th class="header">
-          <span data-original-title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)" data-toggle="tooltip" data-placement="top">
+          <span title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)" data-bs-toggle="tooltip" data-bs-placement="top">
             Host
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="top" title="The user that submitted the Topology, if authentication is enabled.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The user that submitted the Topology, if authentication is enabled.">
             Owner
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The port number used by the Worker. Click on the port number to open the logviewer page for this Worker.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The port number used by the Worker. Click on the port number to open the logviewer page for this Worker.">
             Port 
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The length of time a Worker has been alive.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The length of time a Worker has been alive.">
             Uptime
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The number of executors.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The number of executors.">
             Num executors
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="Assigned Total Memory by Scheduler.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Assigned Total Memory by Scheduler.">
             Assigned Mem (MB)
           </span>
         </th>
         {{#schedulerDisplayResource}}
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
             Assigned CPU (%)
           </span>
         </th>
         {{/schedulerDisplayResource}}
         <th class="header">
-          <span data-toggle="tooltip" data-placement="top" title="The components running in this worker and the number of tasks per component.">
+          <span data-bs-toggle="tooltip" data-bs-placement="top" title="The components running in this worker and the number of tasks per component.">
             Components
           </span>
         </th>

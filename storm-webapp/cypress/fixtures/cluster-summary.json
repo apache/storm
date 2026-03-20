@@ -1,0 +1,22 @@
+{
+  "stormVersion": "2.8.5-SNAPSHOT",
+  "nimbusUptime": "3d 2h 15m 30s",
+  "nimbusUptimeSeconds": 267330,
+  "supervisors": 3,
+  "topologies": 2,
+  "slotsTotal": 12,
+  "slotsUsed": 6,
+  "slotsFree": 6,
+  "executorsTotal": 30,
+  "tasksTotal": 30,
+  "schedulerDisplayResource": true,
+  "totalMem": 12288.0,
+  "totalCpu": 1200.0,
+  "availMem": 6144.0,
+  "availCpu": 600.0,
+  "memAssignedPercentUtil": 50.0,
+  "cpuAssignedPercentUtil": 50.0,
+  "user": "testuser",
+  "bugtracker-url": "https://github.com/apache/storm/issues",
+  "central-log-url": ""
+}

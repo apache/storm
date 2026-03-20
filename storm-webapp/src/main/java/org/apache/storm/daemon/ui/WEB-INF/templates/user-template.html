@@ -16,26 +16,29 @@
 -->
 <script id="user-template" type="text/html">
  <div class="ui-user">
-     <span data-toggle="tooltip" data-placement="bottom" data-original-title="Storm Flux YAML Viewer">
+     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="Storm Flux YAML Viewer">
          <a href="/flux.html" target="_blank"><img src="/images/flux.png" class="image_pre_format"></a>
      </span>
      {{#central-log-url}}
-        <span data-toggle="tooltip" data-placement="bottom" data-original-title="Link to Central Logging">
+        <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="Link to Central Logging">
                 <a href="{{central-log-url}}" target="_blank"><image src="/images/statistic.png" class="image_pre_format"/></a>
         </span>
       {{/central-log-url}}
      {{#bugtracker-url}}
-        <span data-toggle="tooltip" data-placement="bottom" data-original-title="Submit BUG for Help and tracking the issue.">
+        <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="Submit BUG for Help and tracking the issue.">
                 <a href="{{bugtracker-url}}" target="_blank"><image src="/images/bug.png" class="image_pre_format"/></a>
         </span>
      {{/bugtracker-url}}
-     <span data-toggle="tooltip" data-placement="bottom" data-original-title="Search through all logs for any topology.">
+     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="Search through all logs for any topology.">
              <a href="/deep_search_result.html" target="_blank"><image src="/images/search.png" class="image_pre_format"/></a>
      </span>
      {{#user}}
-        <span data-toggle="tooltip" data-placement="bottom" data-original-title="This should be you.">
+        <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="This should be you.">
                 User: {{user}}
         </span>
      {{/user}}
+     <span>
+        <input onclick="toggleTheme()" id="theme-toggle-btn" type="button" class="btn btn-sm btn-outline-secondary">
+     </span>
  </div>
 </script>

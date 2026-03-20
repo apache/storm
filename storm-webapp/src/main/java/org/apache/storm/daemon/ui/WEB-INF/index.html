@@ -17,22 +17,11 @@
      limitations under the License.
     -->
 <meta charset="UTF-8">
+<script>!function(){var m=document.cookie.match(/(?:^|;\s*)stormTheme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(!t)t=window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.setAttribute("data-bs-theme",t)}()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Storm UI</title>
-<link href="/css/bootstrap-3.3.1.min.css" rel="stylesheet" type="text/css">
-<link href="/css/jquery.dataTables.1.10.4.min.css" rel="stylesheet" type="text/css">
-<link href="/css/dataTables.bootstrap.css" rel="stylesheet" type="text/css">
-<link href="/css/jsonFormatter.min.css" rel="stylesheet" type="text/css">
-<link href="/css/style.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
-<script src="/js/jquery-3.5.1.min.js" type="text/javascript"></script>
-<script src="/js/jquery.dataTables.1.10.4.min.js" type="text/javascript"></script>
-<script src="/js/jquery.cookies.2.2.0.min.js" type="text/javascript"></script>
-<script src="/js/jquery.mustache.js" type="text/javascript"></script>
-<script src="/js/bootstrap-3.3.1.min.js" type="text/javascript"></script>
-<script src="/js/jquery.blockUI.min.js" type="text/javascript"></script>
-<script src="/js/dataTables.bootstrap.min.js" type="text/javascript"></script>
-<script src="/js/jsonFormatter.min.js" type="text/javascript"></script>
-<script src="/js/script.js?_ts=${packageTimestamp}" type="text/javascript"></script>
+<link href="/dist/main.bundle.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
+<script src="/dist/main.bundle.js?_ts=${packageTimestamp}" type="text/javascript"></script>
 </head>
 <body>
 <div class="container-fluid">
@@ -142,14 +131,14 @@ $(document).ready(function() {
                 getStatic("/templates/user-template.html", function(template) {
                     jsError(function() {
                         uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
-                        $('#ui-user [data-toggle="tooltip"]').tooltip()
+                        $('#ui-user [data-bs-toggle="tooltip"]').tooltip()
                     });
                 });
 
                 jsError(function() {
                     clusterSummary.append(Mustache.render($(indexTemplate).filter("#cluster-summary-template").html(),response));
-                    $('#cluster-summary [data-toggle="tooltip"]').tooltip();
-                    $('#cluster-summary [data-toggle="toggle"]').each(function(index) {
+                    $('#cluster-summary [data-bs-toggle="tooltip"]').tooltip();
+                    $('#cluster-summary [data-storm-toggle="details"]').each(function(index) {
                         var details = $(this).find('[toggle="details"]')
                         details.hide()
                         $(this).find('[toggle="link"]').on("click", function() {
@@ -160,12 +149,12 @@ $(document).ready(function() {
 
                 jsError(function() {
                     clusterResources.append(Mustache.render($(indexTemplate).filter("#cluster-resources-template").html(),response));
-                    $('#cluster-resources [data-toggle="tooltip"]').tooltip();
+                    $('#cluster-resources [data-bs-toggle="tooltip"]').tooltip();
                 });
 
                 jsError(function() {
                     var displayResource = response["schedulerDisplayResource"];
-                    $('#cluster-resources [data-toggle="tooltip"]').tooltip();
+                    $('#cluster-resources [data-bs-toggle="tooltip"]').tooltip();
                     if (!displayResource){
                         $('#cluster-resources-header').hide();
                         $('#cluster-resources').hide();
@@ -183,7 +172,7 @@ $(document).ready(function() {
                         {type: "time-str", targets: [4]}
                       ]
                     });
-                    $('#nimbus-summary [data-toggle="tooltip"]').tooltip();
+                    $('#nimbus-summary [data-bs-toggle="tooltip"]').tooltip();
                 });
             });
 
@@ -204,7 +193,7 @@ $(document).ready(function() {
                         {type: "time-str", targets: [3]}
                       ]
                     });
-                    $('#topology-summary [data-toggle="tooltip"]').tooltip();
+                    $('#topology-summary [data-bs-toggle="tooltip"]').tooltip();
                 });
             });
 
@@ -219,7 +208,7 @@ $(document).ready(function() {
                         {type: "time-str", targets: [2]}
                       ]
                     });
-                    $('#supervisor-summary [data-toggle="tooltip"]').tooltip();
+                    $('#supervisor-summary [data-bs-toggle="tooltip"]').tooltip();
                 });
             });
 
@@ -229,7 +218,7 @@ $(document).ready(function() {
                 $('#nimbus-configuration-table td').jsonFormatter();
                 //key, value
                 dtAutoPage("#nimbus-configuration-table", {});
-                $('#nimbus-configuration [data-toggle="tooltip"]').tooltip();
+                $('#nimbus-configuration [data-bs-toggle="tooltip"]').tooltip();
             });
         });
     });

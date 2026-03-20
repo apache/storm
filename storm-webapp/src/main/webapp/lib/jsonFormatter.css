@@ -1,0 +1,46 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Styles for the jsonFormatter jQuery plugin */
+PRE.jsonFormatter-codeContainer { margin-top: 0; margin-bottom: 0; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-objectBrace { color: #0a0; font-weight: bold; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-arrayBrace { color: #03f; font-weight: bold; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-propertyName { color: #c00; font-weight: bold; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-string { color: #077; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-number { color: #a0a; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-boolean { color: #00f; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-function { color: #a63; font-style: italic; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-null { color: #00f; }
+PRE.jsonFormatter-codeContainer .jsonFormatter-coma { color: #000; font-weight: bold; }
+
+PRE.jsonFormatter-codeContainer .jsonFormatter-expander {
+  display: inline-block;
+  width: 16px;
+  height: 11px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+PRE.jsonFormatter-codeContainer .jsonFormatter-expanded::before {
+  content: '\25BC'; /* down triangle */
+  font-size: 10px;
+  color: #666;
+}
+PRE.jsonFormatter-codeContainer .jsonFormatter-collapsed::before {
+  content: '\25B6'; /* right triangle */
+  font-size: 10px;
+  color: #666;
+}

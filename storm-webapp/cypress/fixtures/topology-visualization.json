@@ -1,0 +1,46 @@
+{
+  "spout": {
+    ":type": "spout",
+    ":capacity": 0.0,
+    ":latency": "5.123",
+    ":stats": [
+      {":host": "supervisor-host-1", ":port": 6700, ":uptime_secs": 106210}
+    ],
+    ":inputs": []
+  },
+  "split": {
+    ":type": "bolt",
+    ":capacity": 0.150,
+    ":latency": "0.020",
+    ":stats": [
+      {":host": "supervisor-host-1", ":port": 6700, ":uptime_secs": 106210}
+    ],
+    ":inputs": [
+      {":component": "spout", ":stream": "default", ":sani-stream": "default", ":grouping": "shuffle"}
+    ]
+  },
+  "count": {
+    ":type": "bolt",
+    ":capacity": 0.200,
+    ":latency": "0.010",
+    ":stats": [
+      {":host": "supervisor-host-1", ":port": 6700, ":uptime_secs": 106210}
+    ],
+    ":inputs": [
+      {":component": "split", ":stream": "default", ":sani-stream": "default", ":grouping": "fields"},
+      {":component": "split", ":stream": "counts", ":sani-stream": "counts", ":grouping": "fields"}
+    ]
+  },
+  "__acker": {
+    ":type": "bolt",
+    ":capacity": 0.010,
+    ":latency": "0.001",
+    ":stats": [
+      {":host": "supervisor-host-1", ":port": 6700, ":uptime_secs": 106210}
+    ],
+    ":inputs": [
+      {":component": "spout", ":stream": "__ack_init", ":sani-stream": "__ack_init", ":grouping": "fields"},
+      {":component": "count", ":stream": "__ack_ack", ":sani-stream": "__ack_ack", ":grouping": "fields"}
+    ]
+  }
+}

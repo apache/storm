@@ -1,0 +1,49 @@
+{
+  "topologies": [
+    {
+      "id": "word-count-1-1234567890",
+      "encodedId": "word-count-1-1234567890",
+      "name": "word-count",
+      "status": "ACTIVE",
+      "uptime": "1d 5h 30m 10s",
+      "uptimeSeconds": 106210,
+      "tasksTotal": 15,
+      "workersTotal": 3,
+      "executorsTotal": 15,
+      "replicationCount": 1,
+      "requestedMemOnHeap": 1024.0,
+      "requestedMemOffHeap": 0.0,
+      "requestedTotalMem": 1024.0,
+      "requestedCpu": 150.0,
+      "assignedMemOnHeap": 1024.0,
+      "assignedMemOffHeap": 0.0,
+      "assignedTotalMem": 1024.0,
+      "assignedCpu": 150.0,
+      "owner": "testuser",
+      "schedulerInfo": ""
+    },
+    {
+      "id": "kafka-ingest-2-9876543210",
+      "encodedId": "kafka-ingest-2-9876543210",
+      "name": "kafka-ingest",
+      "status": "ACTIVE",
+      "uptime": "2d 10h 0m 0s",
+      "uptimeSeconds": 208800,
+      "tasksTotal": 15,
+      "workersTotal": 3,
+      "executorsTotal": 15,
+      "replicationCount": 1,
+      "requestedMemOnHeap": 2048.0,
+      "requestedMemOffHeap": 0.0,
+      "requestedTotalMem": 2048.0,
+      "requestedCpu": 300.0,
+      "assignedMemOnHeap": 2048.0,
+      "assignedMemOffHeap": 0.0,
+      "assignedTotalMem": 2048.0,
+      "assignedCpu": 300.0,
+      "owner": "testuser",
+      "schedulerInfo": ""
+    }
+  ],
+  "schedulerDisplayResource": true
+}

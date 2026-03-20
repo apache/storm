@@ -1,0 +1,32 @@
+{
+  "id": "split",
+  "encodedId": "split",
+  "topologyId": "word-count-1-1234567890",
+  "encodedTopologyId": "word-count-1-1234567890",
+  "name": "split",
+  "componentType": "bolt",
+  "topologyStatus": "ACTIVE",
+  "executors": 6,
+  "tasks": 6,
+  "windowHint": "All time",
+  "debug": false,
+  "samplingPct": 10,
+  "eventLoggerCount": 0,
+  "profilingAndDebuggingCapable": true,
+  "profileActionEnabled": false,
+  "profilerActive": [],
+  "schedulerDisplayResource": false,
+  "boltStats": [
+    {"windowPretty": "All time", "window": ":all-time", "emitted": 7200000, "transferred": 7200000, "executeLatency": "0.020", "executed": 2400000, "processLatency": "0.015", "acked": 2400000, "failed": 0, "capacity": "0.150"}
+  ],
+  "inputStats": [
+    {"component": "spout", "encodedComponent": "spout", "stream": "default", "executeLatency": "0.020", "processLatency": "0.015", "executed": 2400000, "acked": 2400000, "failed": 0}
+  ],
+  "outputStats": [
+    {"stream": "default", "emitted": 7200000, "transferred": 7200000}
+  ],
+  "executorStats": [
+    {"id": "[2, 2]", "encodedId": "%5B2%2C+2%5D", "uptime": "1d 5h 30m 10s", "uptimeSeconds": 106210, "host": "supervisor-host-1", "port": 6700, "emitted": 1200000, "transferred": 1200000, "capacity": "0.150", "executeLatency": "0.020", "executed": 400000, "processLatency": "0.015", "acked": 400000, "failed": 0, "workerLogLink": "http://supervisor-host-1:8000/log?file=worker.log"}
+  ],
+  "componentErrors": []
+}

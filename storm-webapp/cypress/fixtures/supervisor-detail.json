@@ -1,0 +1,38 @@
+{
+  "id": "supervisor-1",
+  "host": "supervisor-host-1",
+  "uptime": "5d 3h 20m 0s",
+  "uptimeSeconds": 443400,
+  "slotsTotal": 4,
+  "slotsUsed": 2,
+  "totalMem": 4096.0,
+  "usedMem": 2048.0,
+  "availMem": 2048.0,
+  "totalCpu": 400.0,
+  "usedCpu": 200.0,
+  "availCpu": 200.0,
+  "totalGenericResources": {},
+  "usedGenericResources": {},
+  "availGenericResources": {},
+  "version": "2.8.5-SNAPSHOT",
+  "blacklisted": false,
+  "schedulerDisplayResource": true,
+  "workers": [
+    {
+      "host": "supervisor-host-1",
+      "port": 6700,
+      "supervisorId": "supervisor-1",
+      "topologyId": "word-count-1-1234567890",
+      "topologyName": "word-count",
+      "owner": "testuser",
+      "uptime": "1d 5h 30m 10s",
+      "uptimeSeconds": 106210,
+      "executorsTotal": 5,
+      "assignedMemOnHeap": 1024.0,
+      "assignedMemOffHeap": 0.0,
+      "assignedCpu": 100.0,
+      "workerLogLink": "http://supervisor-host-1:8000/log?file=worker.log",
+      "componentNumTasks": {"spout": 1, "split": 2, "count": 2}
+    }
+  ]
+}

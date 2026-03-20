@@ -26,7 +26,7 @@
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>2.8.5-SNAPSHOT</version>
+    <version>2.8.6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -59,7 +59,7 @@
         <connection>git@github.com:apache/storm.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/storm.git</developerConnection>
         <url>https://github.com/apache/storm</url>
-        <tag>v2.8.4</tag>
+        <tag>v2.8.5</tag>
     </scm>
 
     <issueManagement>
@@ -263,68 +263,13 @@
                                 <!-- Used as part of GitHub action build -->
                                 <exclude>install.txt</exclude>
                                 <exclude>storm-shaded-deps/install-shade.txt</exclude>
-                                <!-- the following are in the LICENSE file -->
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.dataTables.1.10.4.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jquery.dataTables.1.10.4.min.css
-                                </exclude>
+                                <!-- storm-webapp static assets and frontend build artifacts -->
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/images/*
                                 </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/bootstrap-3.3.1.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/bootstrap-3.3.1.min.css
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/dataTables.bootstrap.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/dataTables.bootstrap.css
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jsonFormatter.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jsonFormatter.min.css
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery-3.5.1.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.cookies.2.2.0.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/moment.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.blockUI.min.js
-                                </exclude>
-                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/url.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.mustache.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/typeahead.jquery.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/cytoscape-dagre.js
-                                </exclude>
-                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/dagre.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/esprima.min.js
-                                </exclude>
-                                <exclude>
-                                    **/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/js-yaml.min.js
-                                </exclude>
-                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/vis.min.js
-                                </exclude>
-                                <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/vis.min.css
-                                </exclude>
+                                <!-- npm / webpack artifacts -->
+                                <exclude>**/node_modules/**</exclude>
+                                <exclude>**/package-lock.json</exclude>
+                                <exclude>**/storm-webapp/node/**</exclude>
                                 <exclude>**/src/main/resources/Audit.50.csv</exclude>
                                 <exclude>
                                     **/src/main/resources/KNIME_PMML_4.1_Examples_single_audit_logreg.xml

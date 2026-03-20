@@ -64,3 +64,8 @@ hs_err_pid*
 m2
 install.txt
 install-shade.txt
+
+# Frontend build (storm-webapp)
+node_modules/
+storm-webapp/node/
+tmp

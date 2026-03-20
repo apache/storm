@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: ~/.m2/repository
           key: nightlies-maven-${{ hashFiles('**/pom.xml') }}
@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: 16
       - name: Set up Ruby
-        uses: ruby/setup-ruby@dffb23f65a78bba8db45d387d5ea1bbd6be3ef18 # v1.293.0
+        uses: ruby/setup-ruby@319994f95fa847cf3fb3cd3dbe89f6dcde9f178f # v1.295.0
         with:
           ruby-version: '2.7'
       - name: Set up JDK ${{ matrix.java }}

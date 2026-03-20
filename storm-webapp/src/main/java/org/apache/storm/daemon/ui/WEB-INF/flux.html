@@ -17,6 +17,7 @@
      limitations under the License.
     -->
 <meta charset="UTF-8">
+<script>!function(){var m=document.cookie.match(/(?:^|;\s*)stormTheme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(!t)t=window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.setAttribute("data-bs-theme",t)}()</script>
     <title>Storm Flux Viewer</title>
     <style>
       body {
@@ -26,6 +27,8 @@
 
       textarea {
         font-size: 16px;
+        background-color: var(--bs-body-bg);
+        color: var(--bs-body-color);
       }
 
       .cy {
@@ -33,16 +36,11 @@
         height: 80%;
         z-index: 999;
         float: left;
-	border: 1px solid black;
+        border: 1px solid var(--bs-border-color);
       }
     </style>
-    <script src="/js/jquery-3.5.1.min.js"></script>
-    <script src="/js/cytoscape.min.js"></script>
-    <script src="/js/dagre.min.js"></script>
-    <script src="/js/cytoscape-dagre.js"></script>
-
-    <script src="/js/esprima.min.js"></script>
-    <script src="/js/js-yaml.min.js"></script>
+    <link href="/dist/flux.bundle.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
+    <script src="/dist/flux.bundle.js?_ts=${packageTimestamp}"></script>
     <script type="text/javascript">
       function toCytoscapeGraph(doc) {
         var nodes = [];

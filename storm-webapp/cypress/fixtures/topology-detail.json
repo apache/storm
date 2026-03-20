@@ -1,0 +1,107 @@
+{
+  "id": "word-count-1-1234567890",
+  "encodedId": "word-count-1-1234567890",
+  "name": "word-count",
+  "status": "ACTIVE",
+  "uptime": "1d 5h 30m 10s",
+  "uptimeSeconds": 106210,
+  "tasksTotal": 15,
+  "workersTotal": 3,
+  "executorsTotal": 15,
+  "msgTimeout": 30,
+  "windowHint": "All time",
+  "debug": false,
+  "samplingPct": 10,
+  "schedulerDisplayResource": true,
+  "replicationCount": 1,
+  "requestedMemOnHeap": 1024.0,
+  "requestedCpu": 150.0,
+  "assignedMemOnHeap": 1024.0,
+  "assignedCpu": 150.0,
+  "topologyStats": [
+    {"windowPretty": "10m 0s", "window": "600", "emitted": 12000, "transferred": 12000, "completeLatency": "5.123", "acked": 6000, "failed": 0},
+    {"windowPretty": "3h 0m 0s", "window": "10800", "emitted": 180000, "transferred": 180000, "completeLatency": "4.567", "acked": 90000, "failed": 0},
+    {"windowPretty": "1d 0h 0m 0s", "window": "86400", "emitted": 1200000, "transferred": 1200000, "completeLatency": "4.890", "acked": 600000, "failed": 0},
+    {"windowPretty": "All time", "window": ":all-time", "emitted": 2400000, "transferred": 2400000, "completeLatency": "4.800", "acked": 1200000, "failed": 0}
+  ],
+  "spouts": [
+    {
+      "spoutId": "spout",
+      "encodedSpoutId": "spout",
+      "executors": 3,
+      "tasks": 3,
+      "emitted": 2400000,
+      "transferred": 2400000,
+      "completeLatency": "4.800",
+      "acked": 1200000,
+      "failed": 0,
+      "errorHost": "",
+      "errorPort": "",
+      "errorWorkerLogLink": "",
+      "errorLapsedSecs": null,
+      "lastError": ""
+    }
+  ],
+  "bolts": [
+    {
+      "boltId": "split",
+      "encodedBoltId": "split",
+      "executors": 6,
+      "tasks": 6,
+      "emitted": 7200000,
+      "transferred": 7200000,
+      "capacity": "0.150",
+      "executeLatency": "0.020",
+      "executed": 2400000,
+      "processLatency": "0.015",
+      "acked": 2400000,
+      "failed": 0,
+      "errorHost": "",
+      "errorPort": "",
+      "errorWorkerLogLink": "",
+      "errorLapsedSecs": null,
+      "lastError": ""
+    },
+    {
+      "boltId": "count",
+      "encodedBoltId": "count",
+      "executors": 6,
+      "tasks": 6,
+      "emitted": 7200000,
+      "transferred": 0,
+      "capacity": "0.200",
+      "executeLatency": "0.010",
+      "executed": 7200000,
+      "processLatency": "0.008",
+      "acked": 7200000,
+      "failed": 0,
+      "errorHost": "",
+      "errorPort": "",
+      "errorWorkerLogLink": "",
+      "errorLapsedSecs": null,
+      "lastError": ""
+    }
+  ],
+  "configuration": {
+    "topology.workers": 3,
+    "topology.eventlogger.executors": 0
+  },
+  "workers": [
+    {
+      "host": "supervisor-host-1",
+      "port": 6700,
+      "supervisorId": "supervisor-1",
+      "topologyId": "word-count-1-1234567890",
+      "topologyName": "word-count",
+      "owner": "testuser",
+      "uptime": "1d 5h 30m 10s",
+      "uptimeSeconds": 106210,
+      "executorsTotal": 5,
+      "assignedMemOnHeap": 341.3,
+      "assignedMemOffHeap": 0.0,
+      "assignedCpu": 50.0,
+      "workerLogLink": "http://supervisor-host-1:8000/log?file=word-count-1-1234567890%2F6700%2Fworker.log",
+      "componentNumTasks": {"spout": 1, "split": 2, "count": 2}
+    }
+  ]
+}

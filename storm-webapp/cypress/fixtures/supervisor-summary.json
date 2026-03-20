@@ -1,0 +1,33 @@
+{
+  "supervisors": [
+    {
+      "id": "supervisor-1",
+      "host": "supervisor-host-1",
+      "uptime": "5d 3h 20m 0s",
+      "uptimeSeconds": 443400,
+      "slotsTotal": 4,
+      "slotsUsed": 2,
+      "totalMem": 4096.0,
+      "usedMem": 2048.0,
+      "totalCpu": 400.0,
+      "usedCpu": 200.0,
+      "version": "2.8.5-SNAPSHOT",
+      "blacklisted": false
+    },
+    {
+      "id": "supervisor-2",
+      "host": "supervisor-host-2",
+      "uptime": "5d 3h 20m 0s",
+      "uptimeSeconds": 443400,
+      "slotsTotal": 4,
+      "slotsUsed": 2,
+      "totalMem": 4096.0,
+      "usedMem": 1024.0,
+      "totalCpu": 400.0,
+      "usedCpu": 150.0,
+      "version": "2.8.5-SNAPSHOT",
+      "blacklisted": false
+    }
+  ],
+  "schedulerDisplayResource": true
+}

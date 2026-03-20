@@ -17,22 +17,11 @@
 -->
 <html><head>
 <meta charset="UTF-8">
+<script>!function(){var m=document.cookie.match(/(?:^|;\s*)stormTheme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(!t)t=window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.setAttribute("data-bs-theme",t)}()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Storm UI</title>
-<link href="/css/bootstrap-3.3.1.min.css" rel="stylesheet" type="text/css">
-<link href="/css/jquery.dataTables.1.10.4.min.css" rel="stylesheet" type="text/css">
-<link href="/css/dataTables.bootstrap.css" rel="stylesheet" type="text/css">
-<link href="/css/style.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
-<script src="/js/jquery-3.5.1.min.js" type="text/javascript"></script>
-<script src="/js/jquery.dataTables.1.10.4.min.js" type="text/javascript"></script>
-<script src="/js/jquery.cookies.2.2.0.min.js" type="text/javascript"></script>
-<script src="/js/jquery.mustache.js" type="text/javascript"></script>
-<script src="/js/url.min.js" type="text/javascript"></script>
-<script src="/js/bootstrap-3.3.1.min.js" type="text/javascript"></script>
-<script src="/js/jquery.blockUI.min.js" type="text/javascript"></script>
-<script src="/js/moment.min.js" type="text/javascript"></script>
-<script src="/js/dataTables.bootstrap.min.js" type="text/javascript"></script>
-<script src="/js/script.js?_ts=${packageTimestamp}" type="text/javascript"></script>
+<link href="/dist/main.bundle.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
+<script src="/dist/main.bundle.js?_ts=${packageTimestamp}" type="text/javascript"></script>
 </head>
 <body>
 <div class="container-fluid">
@@ -201,7 +190,7 @@ $(document).ready(function() {
         var uiUser = $("#ui-user");
         getStatic("/templates/user-template.html", function(template) {
             uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
-            $('#ui-user [data-toggle="tooltip"]').tooltip()
+            $('#ui-user [data-bs-toggle="tooltip"]').tooltip()
         });
 
         var topologyUrl = "/api/v1/topology/"+topologyId;
@@ -369,13 +358,13 @@ $(document).ready(function() {
                   errorCells[i].style.whiteSpace = "pre";
                 }
             });
-            $('#component-summary [data-toggle="tooltip"]').tooltip();
-            $('#component-actions [data-toggle="tooltip"]').tooltip();
-            $('#component-stats-detail [data-toggle="tooltip"]').tooltip();
-            $('#component-input-stats [data-toggle="tooltip"]').tooltip();
-            $('#component-output-stats [data-toggle="tooltip"]').tooltip();
-            $('#component-executor-stats [data-toggle="tooltip"]').tooltip();
-            $('#component-errors [data-toggle="tooltip"]').tooltip();
+            $('#component-summary [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-actions [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-stats-detail [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-input-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-output-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-executor-stats [data-bs-toggle="tooltip"]').tooltip();
+            $('#component-errors [data-bs-toggle="tooltip"]').tooltip();
         });
     });
 });

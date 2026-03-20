@@ -203,7 +203,7 @@
 
 -----------------------------------------------------------------------
 
-For jQuery 3.5.1 (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery-3.5.1.min.js)
+For jQuery 4.0.0 (bundled via npm package "jquery" into storm-webapp webpack output)
 
 MIT license selected:
 
@@ -230,7 +230,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For jQuery Cookies 2.2.0 (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.cookies.2.2.0.min.js)
+For js-cookie (bundled via npm package "js-cookie" into storm-webapp webpack output;
+replaces the former jQuery Cookies 2.2.0 plugin)
 
 Copyright (c) 2005 - 2010, James Auldridge
 
@@ -255,7 +256,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For typeahead jquery 0.10.5 (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/typeahead.jquery.min.js)
+For typeahead.js 0.11.1 (bundled via npm package "typeahead.js" into storm-webapp webpack output)
 
 Copyright (c) 2013-2014 Twitter, Inc
 
@@ -279,7 +280,7 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For js-yaml.min.js (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/js-yaml.min.js)
+For js-yaml 4.1.1 (bundled via npm package "js-yaml" into storm-webapp webpack output)
 
 (The MIT License)
 
@@ -305,7 +306,7 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For dagre.min.js (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/dagre.min.js)
+For dagre 0.8.5 (bundled via npm package "dagre" into storm-webapp webpack output)
 
 Copyright (c) 2012-2014 Chris Pettitt
 
@@ -329,7 +330,8 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For cytoscape.min.js and cytoscape-dagre.js (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/cytoscape.min.js and storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/cytoscape-dagre.js)
+For cytoscape 3.33.1 and cytoscape-dagre 2.5.0 (bundled via npm packages "cytoscape"
+and "cytoscape-dagre" into storm-webapp webpack output)
 
 Copyright (c) 2016 The Cytoscape Consortium
 
@@ -353,7 +355,7 @@ SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For esprima.js (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/esprima.min.js)
+For esprima 4.0.1 (bundled via npm package "esprima" into storm-webapp webpack output)
 
 Copyright JS Foundation and other contributors, https://js.foundation/
 
@@ -379,7 +381,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -----------------------------------------------------------------------
 
-For mustache.js (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.mustache.js)
+For mustache.js 4.2.0 (bundled via npm package "mustache" into storm-webapp webpack output)
 
 The MIT License
 
@@ -406,7 +408,7 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For moment.js (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/moment.min.js)
+For moment.js 2.30.1 (bundled via npm package "moment" into storm-webapp webpack output)
 
 Copyright (c) 2011-2014 Tim Wood, Iskren Chernev, Moment.js contributors
 
@@ -434,18 +436,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For Jquery url plugin (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/url.min.js)
+For domurl 2.3.4 (bundled via npm package "domurl" into storm-webapp webpack output;
+replaces the former jQuery URL plugin v1.8.6)
 
-Jquery Url (A Jquery plugin for URL parser) v1.8.6
-Source repository: https://github.com/websanova/js-url
-Licensed under an MIT-style license. Seehttps://github.com/websanova/js-url#license for details.
+Source repository: https://github.com/Mikhus/domurl
+Licensed under an MIT-style license. See https://github.com/Mikhus/domurl/blob/master/LICENSE for details.
 
 -----------------------------------------------------------------------
 
 
-For jquery.blockUI.min.js (storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.blockUI.min.js)
+For jQuery BlockUI 2.7.0 (bundled via npm package "jquery-blockui" into storm-webapp webpack output)
 
-jQuery BlockUI; v20131009
 http://jquery.malsup.com/block/
 Copyright (c) 2013 M. Alsup; Dual licensed: MIT/GPL
 
@@ -468,12 +469,8 @@ use the BlockUI plugin in commercial projects as long as the copyright header is
 
 -----------------------------------------------------------------------
 
-For jquery dataTables v1.10.4
-
-(storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.dataTables.1.10.4.min.js
-storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jquery.dataTables.1.10.4.min.css
-storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/images/{{back, forward}_{disabled, enabled, enabled_hover}}.png
-storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/images/{sort_{asc, asc_disabled, both, desc, desc_disabled}}.png)
+For DataTables 2.3.7 (bundled via npm packages "datatables.net" and "datatables.net-dt"
+into storm-webapp webpack output)
 
 Copyright (c) 2008-2013 SpryMedia Limited
 http://datatables.net
@@ -498,15 +495,11 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For jquery dataTables bootstrap integration
-
-(storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jquery.dataTables.1.10.4.min.js
-storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/dataTables.bootstrap.min.js
-storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/dataTables.bootstrap.css)
+For DataTables Bootstrap 3 integration 2.3.7 (bundled via npm package "datatables.net-bs"
+into storm-webapp webpack output)
 
 Copyright (c) 2013-2014 SpryMedia Limited
 http://datatables.net/license
-https://github.com/DataTables/Plugins/tree/master/integration/bootstrap/3
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -529,42 +522,11 @@ THE SOFTWARE.
 
 -----------------------------------------------------------------------
 
-For bootstrap v3.3.1
-(storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/bootstrap-3.3.1.min.js
-storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/bootstrap-3.3.1.min.css)
+For Bootstrap 5.3.8 (bundled via npm package "bootstrap" into storm-webapp webpack output)
 
-Bootstrap v3.3.1 (http://getbootstrap.com)
-Copyright 2011-2014 Twitter, Inc.
+Bootstrap v5.3.8 (https://getbootstrap.com)
+Copyright 2011-2025 The Bootstrap Authors.
 Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-
------------------------------------------------------------------------
-
-For jQuery JSONFormatter 1.0.1 2015-02-28
-(storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/jsonFormatter.min.js
-storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/jsonFormatter.min.css)
-http://www.jqueryscript.net/other/jQuery-Plugin-For-Pretty-JSON-Formatting-jsonFormatter.htmlA
-
-The MIT License (MIT)
-
-Copyright (c) 2015 Matthew Heironimus
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 
 -----------------------------------------------------------------------
 
@@ -607,9 +569,7 @@ This product bundles PMML Sample Files, which are available under a
 
 -----------------------------------------------------------------------
 
-For vis.js 4.16.1 2016-04-18
-(storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/js/vis.min.js
-storm-webapp/src/main/java/org/apache/storm/daemon/ui/WEB-INF/css/vis.min.css)
+For vis.js 4.21.0 (bundled via npm package "vis" into storm-webapp webpack output)
 
 vis.js
 https://github.com/almende/vis
