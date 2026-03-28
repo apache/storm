@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.storm.Config;
@@ -49,6 +50,7 @@ import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.junit.jupiter.api.Test;
+import org.awaitility.Awaitility;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -160,9 +162,8 @@ public class ClusterStateTest {
 
             // closing state1 (the creator) should remove the ephemeral node
             state1.close();
-            // give ZK time to process the session close
-            Thread.sleep(500);
-            assertNull(state2.get_data("/a", false));
+            Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .until(() -> state2.get_data("/a", false) == null);
 
             state2.close();
         }
@@ -181,22 +182,10 @@ public class ClusterStateTest {
         };
 
         Map<String, Object> readAndReset() {
-            long start = System.currentTimeMillis();
-            while (true) {
-                Map<String, Object> val = lastEvent.getAndSet(null);
-                if (val != null) {
-                    return val;
-                }
-                if (System.currentTimeMillis() - start > 30000) {
-                    throw new RuntimeException("Waited too long for callback to fire");
-                }
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                }
-            }
+            Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(10, TimeUnit.MILLISECONDS)
+                .until(() -> lastEvent.get() != null);
+            return lastEvent.getAndSet(null);
         }
     }
 
@@ -460,9 +449,8 @@ public class ClusterStateTest {
 
             // disconnecting state2 removes its ephemeral supervisor node
             state2.disconnect();
-            // give ZK time to process session close
-            Thread.sleep(500);
-            assertEquals(Set.of("1"), new HashSet<>(state1.supervisors(null)));
+            Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .until(() -> new HashSet<>(state1.supervisors(null)).equals(Set.of("1")));
 
             state1.disconnect();
         }
