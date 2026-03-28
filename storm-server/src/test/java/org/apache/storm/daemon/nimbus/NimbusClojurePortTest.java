@@ -18,6 +18,9 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,15 +28,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import javax.security.auth.Subject;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.Thrift;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.Credentials;
@@ -41,6 +47,7 @@ import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.LogConfig;
 import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
+import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.NotAliveException;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormBase;
@@ -50,8 +57,13 @@ import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.security.auth.IAuthorizer;
+import org.apache.storm.nimbus.ILeaderElector;
+import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.testing.TestPlannerBolt;
 import org.apache.storm.testing.TestPlannerSpout;
+import org.apache.storm.testing.TmpPath;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -392,7 +404,244 @@ public class NimbusClojurePortTest {
         assertEquals(Set.of(), Nimbus.topoIdsToClean(mockState, store, new HashMap<>()));
     }
 
+    // --- Batch 7b: Cleanup, supervisor, submit-invalid, clean-inbox tests ---
+
+    @Test
+    public void doCleanupRemovesInactiveZnodes() throws Exception {
+        IStormClusterState mockState = mockClusterState(null, null);
+        BlobStore mockBlobStore = Mockito.mock(BlobStore.class);
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        conf.put(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS, 0);
+        conf.put(Config.NIMBUS_THRIFT_TLS_PORT, 0);
+
+        Nimbus nimbus = Mockito.spy(new Nimbus(conf, null, mockState, null, mockBlobStore, null,
+            mockLeaderElector(), null, new StormMetricsRegistry()));
+        nimbus.getHeartbeatsCache().addEmptyTopoForTests("topo2");
+        nimbus.getHeartbeatsCache().addEmptyTopoForTests("topo3");
+        Mockito.when(mockBlobStore.storedTopoIds()).thenReturn(new HashSet<>(List.of("topo2", "topo3")));
+
+        nimbus.doCleanup();
+
+        // removed heartbeats znode
+        Mockito.verify(mockState).teardownHeartbeats("topo2");
+        Mockito.verify(mockState).teardownHeartbeats("topo3");
+
+        // removed topo errors znode
+        Mockito.verify(mockState).teardownTopologyErrors("topo2");
+        Mockito.verify(mockState).teardownTopologyErrors("topo3");
+
+        // removed topo directories
+        Mockito.verify(nimbus).forceDeleteTopoDistDir("topo2");
+        Mockito.verify(nimbus).forceDeleteTopoDistDir("topo3");
+
+        // removed blob store topo keys
+        Mockito.verify(nimbus).rmTopologyKeys("topo2");
+        Mockito.verify(nimbus).rmTopologyKeys("topo3");
+
+        // removed topology dependencies
+        Mockito.verify(nimbus).rmDependencyJarsInTopology("topo2");
+        Mockito.verify(nimbus).rmDependencyJarsInTopology("topo3");
+
+        // remove topos from heartbeat cache
+        assertEquals(0, nimbus.getHeartbeatsCache().getNumToposCached());
+    }
+
+    @Test
+    public void doCleanupDoesNotTeardownActiveTopos() throws Exception {
+        IStormClusterState mockState = mockClusterState(null, null);
+        BlobStore mockBlobStore = Mockito.mock(BlobStore.class);
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        conf.put(Config.NIMBUS_THRIFT_TLS_PORT, 0);
+
+        Nimbus nimbus = Mockito.spy(new Nimbus(conf, null, mockState, null, mockBlobStore, null,
+            mockLeaderElector(), null, new StormMetricsRegistry()));
+        nimbus.getHeartbeatsCache().addEmptyTopoForTests("topo1");
+        nimbus.getHeartbeatsCache().addEmptyTopoForTests("topo2");
+        Mockito.when(mockBlobStore.storedTopoIds()).thenReturn(Set.of());
+
+        nimbus.doCleanup();
+
+        Mockito.verify(mockState, Mockito.never()).teardownHeartbeats(Mockito.any());
+        Mockito.verify(mockState, Mockito.never()).teardownTopologyErrors(Mockito.any());
+        Mockito.verify(nimbus, Mockito.times(0)).forceDeleteTopoDistDir(ArgumentMatchers.any());
+        Mockito.verify(nimbus, Mockito.times(0)).rmTopologyKeys(ArgumentMatchers.any());
+
+        assertEquals(2, nimbus.getHeartbeatsCache().getNumToposCached());
+        assertTrue(nimbus.getHeartbeatsCache().getTopologyIds().contains("topo1"));
+        assertTrue(nimbus.getHeartbeatsCache().getTopologyIds().contains("topo2"));
+    }
+
+    @Test
+    public void userTopologiesForSupervisor() throws Exception {
+        Assignment assignment = new Assignment();
+        assignment.set_executor_node_port(Map.of(
+            List.of(1L, 1L), new NodeInfo("super1", Set.of(1L)),
+            List.of(2L, 2L), new NodeInfo("super2", Set.of(2L))));
+
+        Assignment assignment2 = new Assignment();
+        assignment2.set_executor_node_port(Map.of(
+            List.of(1L, 1L), new NodeInfo("super2", Set.of(2L)),
+            List.of(2L, 2L), new NodeInfo("super2", Set.of(2L))));
+
+        Map<String, Assignment> assignments = Map.of("topo1", assignment, "topo2", assignment2);
+
+        IStormClusterState mockState = mockClusterState(null, null);
+        BlobStore mockBlobStore = Mockito.mock(BlobStore.class);
+        TopoCache mockTc = Mockito.mock(TopoCache.class);
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        conf.put(Config.NIMBUS_THRIFT_TLS_PORT, 0);
+        Nimbus nimbus = new Nimbus(conf, null, mockState, null, mockBlobStore, mockTc,
+            mockLeaderElector(), null, new StormMetricsRegistry());
+
+        List<String> super1Topos = Nimbus.topologiesOnSupervisor(assignments, "super1");
+        Set<String> user1Topos = nimbus.filterAuthorized("getTopology", super1Topos);
+        assertEquals(List.of("topo1"), super1Topos);
+        assertEquals(Set.of("topo1"), user1Topos);
+
+        List<String> super2Topos = Nimbus.topologiesOnSupervisor(assignments, "super2");
+        Set<String> user2Topos = nimbus.filterAuthorized("getTopology", super2Topos);
+        assertEquals(new HashSet<>(List.of("topo1", "topo2")), new HashSet<>(super2Topos));
+        assertEquals(Set.of("topo1", "topo2"), user2Topos);
+    }
+
+    @Test
+    public void userTopologiesForSupervisorWithUnauthorizedUser() throws Exception {
+        Assignment assignment = new Assignment();
+        assignment.set_executor_node_port(Map.of(
+            List.of(1L, 1L), new NodeInfo("super1", Set.of(1L)),
+            List.of(2L, 2L), new NodeInfo("super2", Set.of(2L))));
+
+        Assignment assignment2 = new Assignment();
+        assignment2.set_executor_node_port(Map.of(
+            List.of(1L, 1L), new NodeInfo("super1", Set.of(2L)),
+            List.of(2L, 2L), new NodeInfo("super2", Set.of(2L))));
+
+        Map<String, Assignment> assignments = Map.of("topo1", assignment, "authorized", assignment2);
+
+        IStormClusterState mockState = mockClusterState(null, null);
+        BlobStore mockBlobStore = Mockito.mock(BlobStore.class);
+        TopoCache mockTc = Mockito.mock(TopoCache.class);
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        conf.put(Config.NIMBUS_THRIFT_TLS_PORT, 0);
+        Nimbus nimbus = new Nimbus(conf, null, mockState, null, mockBlobStore, mockTc,
+            mockLeaderElector(), null, new StormMetricsRegistry());
+
+        Mockito.when(mockTc.readTopoConf(Mockito.eq("authorized"), ArgumentMatchers.any()))
+            .thenReturn(Map.of(Config.TOPOLOGY_NAME, "authorized"));
+        Mockito.when(mockTc.readTopoConf(Mockito.eq("topo1"), ArgumentMatchers.any()))
+            .thenReturn(Map.of(Config.TOPOLOGY_NAME, "topo1"));
+
+        nimbus.setAuthorizationHandler(new IAuthorizer() {
+            @Override
+            public void prepare(Map<String, Object> conf) {}
+
+            @Override
+            public boolean permit(org.apache.storm.security.auth.ReqContext context, String operation, Map<String, Object> topoConf) {
+                return "authorized".equals(topoConf.get(Config.TOPOLOGY_NAME));
+            }
+        });
+
+        List<String> superTopos = Nimbus.topologiesOnSupervisor(assignments, "super1");
+        Set<String> userTopos = nimbus.filterAuthorized("getTopology", superTopos);
+
+        assertEquals(new HashSet<>(List.of("topo1", "authorized")), new HashSet<>(superTopos));
+        assertEquals(Set.of("authorized"), userTopos);
+    }
+
+    @Test
+    public void testCleanInbox() throws Exception {
+        try (Time.SimulatedTime ignored = new Time.SimulatedTime();
+             TmpPath tmpPath = new TmpPath()) {
+            String dirLocation = tmpPath.getPath();
+
+            Time.advanceTimeSecs(100);
+            createFile(dirLocation, "a.jar", 20);
+            createFile(dirLocation, "b.jar", 20);
+            createFile(dirLocation, "c.jar", 0);
+
+            assertJarFiles(dirLocation, "a.jar", "b.jar", "c.jar");
+            Nimbus.cleanInbox(dirLocation, 10);
+            assertJarFiles(dirLocation, "c.jar");
+
+            // Clean again, c.jar should stay
+            Time.advanceTimeSecs(5);
+            Nimbus.cleanInbox(dirLocation, 10);
+            assertJarFiles(dirLocation, "c.jar");
+
+            // Advance time, clean again, c.jar should be deleted
+            Time.advanceTimeSecs(5);
+            Nimbus.cleanInbox(dirLocation, 10);
+            assertJarFiles(dirLocation);
+        }
+    }
+
+    @Test
+    public void testSubmitInvalid() throws Exception {
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .withDaemonConf(Map.of(
+                    DaemonConfig.SUPERVISOR_ENABLE, false,
+                    Config.TOPOLOGY_ACKER_EXECUTORS, 0,
+                    Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0,
+                    DaemonConfig.NIMBUS_EXECUTORS_PER_TOPOLOGY, 8,
+                    DaemonConfig.NIMBUS_SLOTS_PER_TOPOLOGY, 8))
+                .build()) {
+            // Invalid topology name with slash
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 1, Map.of(Config.TOPOLOGY_TASKS, 1))),
+                Map.of());
+            assertThrows(InvalidTopologyException.class, () ->
+                cluster.submitTopology("test/aaa", Map.of(), topology));
+
+            // Too many executors
+            StormTopology topology2 = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 16, Map.of(Config.TOPOLOGY_TASKS, 16))),
+                Map.of());
+            assertThrows(InvalidTopologyException.class, () ->
+                cluster.submitTopology("test", Map.of(Config.TOPOLOGY_WORKERS, 3), topology2));
+
+            // Too many workers
+            StormTopology topology3 = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 5, Map.of(Config.TOPOLOGY_TASKS, 5))),
+                Map.of());
+            assertThrows(InvalidTopologyException.class, () ->
+                cluster.submitTopology("test", Map.of(Config.TOPOLOGY_WORKERS, 16), topology3));
+        }
+    }
+
     // --- Helper methods ---
+
+    private static void createFile(String dirLocation, String name, int secondsAgo) throws IOException {
+        File f = new File(dirLocation + "/" + name);
+        FileUtils.touch(f);
+        long t = Time.currentTimeMillis() - (secondsAgo * 1000L);
+        f.setLastModified(t);
+    }
+
+    private static void assertJarFiles(String dirLocation, String... expectedFiles) {
+        File dir = new File(dirLocation);
+        Set<String> actual = Arrays.stream(dir.listFiles())
+            .map(File::getName)
+            .filter(name -> name.endsWith(".jar"))
+            .collect(Collectors.toSet());
+        assertEquals(Set.of(expectedFiles), actual);
+    }
+
+    private static ILeaderElector mockLeaderElector() {
+        ILeaderElector elector = Mockito.mock(ILeaderElector.class);
+        try {
+            Mockito.when(elector.isLeader()).thenReturn(true);
+            Mockito.when(elector.getLeader()).thenReturn(new NimbusInfo("test-host", 9999, false));
+            Mockito.when(elector.getAllNimbuses()).thenReturn(List.of());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return elector;
+    }
 
     private static IStormClusterState mockClusterState(List<String> activeTopos, List<String> inactiveTopos) {
         return mockClusterState(activeTopos, inactiveTopos, inactiveTopos, inactiveTopos, null);
