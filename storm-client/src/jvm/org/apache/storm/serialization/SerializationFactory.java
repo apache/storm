@@ -101,7 +101,7 @@ public class SerializationFactory {
                 try {
                     Class klass = Class.forName(klassName);
                     IKryoDecorator decorator = (IKryoDecorator) klass.newInstance();
-                    decorator.decorate(k);
+                    decorator.decorate(k, conf);
                 } catch (ClassNotFoundException e) {
                     if (skipMissing) {
                         LOG.info("Could not find kryo decorator named " + klassName + ". Skipping registration...");

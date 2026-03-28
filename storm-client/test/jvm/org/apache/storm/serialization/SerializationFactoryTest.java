@@ -55,4 +55,26 @@ public class SerializationFactoryTest {
 
     }
 
+    @Test
+    public void test_registers_decorator_with_conf() {
+        Map<String, Object> conf = Utils.readDefaultConfig();
+        conf.put(Config.TOPOLOGY_KRYO_DECORATORS, java.util.Collections.singletonList(MockKryoDecorator.class.getName()));
+        conf.put("test_key", "test_value");
+        Kryo kryo = SerializationFactory.getKryo(conf);
+        assertEquals(com.esotericsoftware.kryo.serializers.DefaultSerializers.StringSerializer.class,
+                kryo.getSerializer(MockSerObject.class).getClass());
+    }
+
+    public static class MockKryoDecorator implements IKryoDecorator {
+        @Override
+        public void decorate(Kryo k, Map<String, Object> conf) {
+            if ("test_value".equals(conf.get("test_key"))) {
+                k.register(MockSerObject.class, new com.esotericsoftware.kryo.serializers.DefaultSerializers.StringSerializer());
+            }
+        }
+    }
+
+    public static class MockSerObject {
+    }
+
 }
