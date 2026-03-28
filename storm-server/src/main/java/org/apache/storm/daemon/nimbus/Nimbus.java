@@ -4643,6 +4643,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             } else {
                 supervisorIds = Arrays.asList(superId);
             }
+            if (supervisorIds == null) {
+                supervisorIds = Collections.emptyList();
+            }
             SupervisorPageInfo pageInfo = new SupervisorPageInfo();
             Map<String, Assignment> topoToAssignment = state.assignmentsInfo();
             for (String sid : supervisorIds) {
