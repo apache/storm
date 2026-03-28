@@ -109,16 +109,16 @@ if __name__ == "__main__":
             print(f"Unresolved issue: {issue['number']:5d} {issue['state']:10s} {issue_link(issue)}", file=sys.stderr)
         sys.exit(1)
 
-    # Group issues by labels
+    # Group issues by labels, assigning each issue to only its first label
+    # to avoid duplicates when an issue has multiple labels
     issues_by_label = {}
     unlabeled_issues = []
     for issue in issues:
-        if issue["labels"]:  # If the issue has labels
-            for label in issue["labels"]:
-                label_name = label["name"]
-                issues_by_label.setdefault(label_name, []).append(issue)
+        if issue["labels"]:
+            primary_label = issue["labels"][0]["name"]
+            issues_by_label.setdefault(primary_label, []).append(issue)
         else:
-            unlabeled_issues.append(issue)  # Add to the unlabeled list if no labels exist
+            unlabeled_issues.append(issue)
 
     # Add unlabeled issues under a special "No Label" category
     if unlabeled_issues:
