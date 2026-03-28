@@ -58,13 +58,19 @@ import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IAuthorizer;
+import org.apache.storm.daemon.StormCommon;
+import org.apache.storm.generated.Credentials;
+import org.apache.storm.generated.OwnerResourceSummary;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.scheduler.INimbus;
 import org.apache.storm.testing.TestPlannerBolt;
 import org.apache.storm.testing.TestPlannerSpout;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
+
+import net.minidev.json.JSONValue;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
@@ -613,7 +619,351 @@ public class NimbusClojurePortTest {
         }
     }
 
+    // --- Batch 7c: Assignment/scheduling tests ---
+
+    @Test
+    public void testAssignment() throws Exception {
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .withSupervisors(4)
+                .withDaemonConf(Map.of(
+                    DaemonConfig.SUPERVISOR_ENABLE, false,
+                    Config.TOPOLOGY_ACKER_EXECUTORS, 0,
+                    Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0))
+                .build()) {
+            IStormClusterState state = cluster.getClusterState();
+
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(false), 3)),
+                Map.of("2", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), 4),
+                       "3", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("2", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt())));
+
+            StormTopology topology2 = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 12)),
+                Map.of("2", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), 6),
+                       "3", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareGlobalGrouping()),
+                            new TestPlannerBolt(), 8),
+                       "4", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareGlobalGrouping(),
+                                   Utils.getGlobalStreamId("2", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), 4)));
+
+            cluster.submitTopology("mystorm", Map.of(Config.TOPOLOGY_WORKERS, 4), topology);
+            cluster.advanceClusterTime(11);
+
+            Map<String, List<Integer>> taskInfo = stormComponentToTaskInfo(cluster, "mystorm");
+            checkConsistency(cluster, "mystorm", true);
+
+            assertEquals(1, state.assignments(null).size());
+            assertEquals(1, taskInfo.get("1").size());
+            assertEquals(4, taskInfo.get("2").size());
+            assertEquals(1, taskInfo.get("3").size());
+            assertEquals(4, stormNumWorkers(state, "mystorm"));
+
+            cluster.submitTopology("storm2", Map.of(Config.TOPOLOGY_WORKERS, 20), topology2);
+            cluster.advanceClusterTime(11);
+            checkConsistency(cluster, "storm2", true);
+
+            assertEquals(2, state.assignments(null).size());
+            Map<String, List<Integer>> taskInfo2 = stormComponentToTaskInfo(cluster, "storm2");
+            assertEquals(12, taskInfo2.get("1").size());
+            assertEquals(6, taskInfo2.get("2").size());
+            assertEquals(8, taskInfo2.get("3").size());
+            assertEquals(4, taskInfo2.get("4").size());
+            assertEquals(8, stormNumWorkers(state, "storm2"));
+        }
+    }
+
+    @Test
+    public void testZeroExecutorOrTasks() throws Exception {
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .withSupervisors(6)
+                .withDaemonConf(Map.of(
+                    DaemonConfig.SUPERVISOR_ENABLE, false,
+                    Config.TOPOLOGY_ACKER_EXECUTORS, 0,
+                    Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0))
+                .build()) {
+            IStormClusterState state = cluster.getClusterState();
+
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(false), 3,
+                            Map.of(Config.TOPOLOGY_TASKS, 0))),
+                Map.of("2", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), 1, Map.of(Config.TOPOLOGY_TASKS, 2)),
+                       "3", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("2", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), null, Map.of(Config.TOPOLOGY_TASKS, 5))));
+
+            cluster.submitTopology("mystorm", Map.of(Config.TOPOLOGY_WORKERS, 4), topology);
+            cluster.advanceClusterTime(11);
+
+            Map<String, List<Integer>> taskInfo = stormComponentToTaskInfo(cluster, "mystorm");
+            checkConsistency(cluster, "mystorm", true);
+
+            assertEquals(0, taskInfo.getOrDefault("1", List.of()).size());
+            assertEquals(2, taskInfo.get("2").size());
+            assertEquals(5, taskInfo.get("3").size());
+            assertEquals(2, stormNumWorkers(state, "mystorm")); // only 2 executors
+        }
+    }
+
+    @Test
+    public void testOverParallelismAssignment() throws Exception {
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .withSupervisors(2)
+                .withPortsPerSupervisor(5)
+                .withDaemonConf(Map.of(
+                    DaemonConfig.SUPERVISOR_ENABLE, false,
+                    Config.TOPOLOGY_ACKER_EXECUTORS, 0,
+                    Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0))
+                .build()) {
+            IStormClusterState state = cluster.getClusterState();
+
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 21)),
+                Map.of("2", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), 9),
+                       "3", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), 2),
+                       "4", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), 10)));
+
+            cluster.submitTopology("test", Map.of(Config.TOPOLOGY_WORKERS, 7), topology);
+            cluster.advanceClusterTime(11);
+
+            Map<String, List<Integer>> taskInfo = stormComponentToTaskInfo(cluster, "test");
+            checkConsistency(cluster, "test", true);
+
+            assertEquals(21, taskInfo.get("1").size());
+            assertEquals(9, taskInfo.get("2").size());
+            assertEquals(2, taskInfo.get("3").size());
+            assertEquals(10, taskInfo.get("4").size());
+            assertEquals(7, stormNumWorkers(state, "test"));
+        }
+    }
+
+    @Test
+    public void testGetOwnerResourceSummaries() throws Exception {
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .withSupervisors(1)
+                .withPortsPerSupervisor(12)
+                .withDaemonConf(Map.of(
+                    DaemonConfig.SUPERVISOR_ENABLE, false,
+                    DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10,
+                    Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 30,
+                    Config.TOPOLOGY_ACKER_EXECUTORS, 0,
+                    Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0))
+                .build()) {
+            Nimbus nimbus = cluster.getNimbus();
+
+            // test for 0-topology case
+            cluster.advanceClusterTime(11);
+            List<OwnerResourceSummary> summaries = nimbus.getOwnerResourceSummaries(null);
+            assertTrue(summaries.isEmpty());
+
+            // test for 1-topology case
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 3)),
+                Map.of());
+            cluster.submitTopology("test", Map.of(
+                Config.TOPOLOGY_WORKERS, 3,
+                Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 90), topology);
+            cluster.advanceClusterTime(11);
+
+            summaries = nimbus.getOwnerResourceSummaries(null);
+            OwnerResourceSummary summary = summaries.get(0);
+            assertEquals(3, summary.get_total_workers());
+            assertEquals(3, summary.get_total_executors());
+            assertEquals(1, summary.get_total_topologies());
+
+            // test for many-topology case
+            StormTopology topology2 = Thrift.buildTopology(
+                Map.of("2", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 4)),
+                Map.of());
+            StormTopology topology3 = Thrift.buildTopology(
+                Map.of("3", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 5)),
+                Map.of());
+
+            cluster.submitTopology("test2", Map.of(
+                Config.TOPOLOGY_WORKERS, 4, Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 90), topology2);
+            cluster.submitTopology("test3", Map.of(
+                Config.TOPOLOGY_WORKERS, 3, Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 90), topology3);
+            cluster.advanceClusterTime(11);
+
+            summaries = nimbus.getOwnerResourceSummaries(null);
+            summary = summaries.get(0);
+            assertEquals(10, summary.get_total_workers());
+            assertEquals(12, summary.get_total_executors());
+            assertEquals(3, summary.get_total_topologies());
+
+            // test for specific owner
+            summaries = nimbus.getOwnerResourceSummaries(System.getProperty("user.name"));
+            summary = summaries.get(0);
+            assertEquals(10, summary.get_total_workers());
+            assertEquals(12, summary.get_total_executors());
+            assertEquals(3, summary.get_total_topologies());
+
+            // test for other user
+            String otherUser = "not-" + System.getProperty("user.name");
+            summaries = nimbus.getOwnerResourceSummaries(otherUser);
+            summary = summaries.get(0);
+            assertEquals(0, summary.get_total_workers());
+            assertEquals(0, summary.get_total_executors());
+            assertEquals(0, summary.get_total_topologies());
+        }
+    }
+
+    @Test
+    public void testAutoCredentials() throws Exception {
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .withSupervisors(6)
+                .withDaemonConf(Map.of(
+                    DaemonConfig.SUPERVISOR_ENABLE, false,
+                    Config.TOPOLOGY_ACKER_EXECUTORS, 0,
+                    Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0,
+                    DaemonConfig.NIMBUS_CREDENTIAL_RENEW_FREQ_SECS, 10,
+                    Config.NIMBUS_CREDENTIAL_RENEWERS, List.of("org.apache.storm.MockAutoCred"),
+                    Config.NIMBUS_AUTO_CRED_PLUGINS, List.of("org.apache.storm.MockAutoCred")))
+                .build()) {
+            IStormClusterState state = cluster.getClusterState();
+            String topologyName = "test-auto-cred-storm";
+
+            SubmitOptions submitOptions = new SubmitOptions(TopologyInitialStatus.INACTIVE);
+            submitOptions.set_creds(new Credentials(new HashMap<>()));
+
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(false), 3)),
+                Map.of("2", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("1", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt(), 4),
+                       "3", Thrift.prepareBoltDetails(
+                            Map.of(Utils.getGlobalStreamId("2", null), Thrift.prepareNoneGrouping()),
+                            new TestPlannerBolt())));
+
+            cluster.submitTopologyWithOpts(topologyName, Map.of(
+                Config.TOPOLOGY_WORKERS, 4,
+                Config.TOPOLOGY_AUTO_CREDENTIALS, List.of("org.apache.storm.MockAutoCred")),
+                topology, submitOptions);
+
+            Map<String, String> credentials = getCredentials(cluster, topologyName);
+            // check that the credentials have nimbus auto generated cred
+            assertEquals("nimbusTestCred", credentials.get("nimbusCredTestKey"));
+
+            // advance cluster time so the renewers can execute
+            cluster.advanceClusterTime(20);
+
+            // check that renewed credentials replace the original credential
+            Map<String, String> renewedCreds = getCredentials(cluster, topologyName);
+            assertEquals("renewedNimbusTestCred", renewedCreds.get("nimbusCredTestKey"));
+            assertEquals("renewedGatewayTestCred", renewedCreds.get("gatewayCredTestKey"));
+        }
+    }
+
     // --- Helper methods ---
+
+    // --- Cluster state helpers (ported from Clojure nimbus_test.clj) ---
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> fromJson(String str) {
+        if (str == null) return null;
+        return (Map<String, Object>) JSONValue.parse(str);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, List<Integer>> stormComponentToTaskInfo(LocalCluster cluster, String stormName) throws Exception {
+        IStormClusterState state = cluster.getClusterState();
+        String stormId = state.getTopoId(stormName).get();
+        Nimbus nimbus = cluster.getNimbus();
+        StormTopology userTopology = nimbus.getUserTopology(stormId);
+        Map<String, Object> topoConf = fromJson(nimbus.getTopologyConf(stormId));
+        Map<Integer, String> taskToComponent = StormCommon.stormTaskInfo(userTopology, topoConf);
+
+        // reverse: component -> list of task ids
+        Map<String, List<Integer>> result = new HashMap<>();
+        for (Map.Entry<Integer, String> entry : taskToComponent.entrySet()) {
+            result.computeIfAbsent(entry.getValue(), k -> new java.util.ArrayList<>()).add(entry.getKey());
+        }
+        return result;
+    }
+
+    private static int stormNumWorkers(IStormClusterState state, String stormName) {
+        String stormId = state.getTopoId(stormName).get();
+        Assignment assignment = state.assignmentInfo(stormId, null);
+        return Utils.reverseMap(assignment.get_executor_node_port()).size();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> getCredentials(LocalCluster cluster, String stormName) {
+        IStormClusterState state = cluster.getClusterState();
+        String stormId = state.getTopoId(stormName).get();
+        Credentials creds = state.credentials(stormId, null);
+        if (creds == null) return null;
+        return new HashMap<>(creds.get_creds());
+    }
+
+    private static void checkConsistency(LocalCluster cluster, String stormName, boolean shouldBeAssigned) throws Exception {
+        IStormClusterState state = cluster.getClusterState();
+        String stormId = state.getTopoId(stormName).get();
+        Nimbus nimbus = cluster.getNimbus();
+
+        StormTopology userTopology = nimbus.getUserTopology(stormId);
+        Map<String, Object> topoConf = fromJson(nimbus.getTopologyConf(stormId));
+        Map<Integer, String> taskToComponent = StormCommon.stormTaskInfo(userTopology, topoConf);
+        Set<Integer> taskIds = taskToComponent.keySet();
+
+        Assignment assignment = state.assignmentInfo(stormId, null);
+        Map<List<Long>, NodeInfo> executorNodePort = assignment.get_executor_node_port();
+
+        // Collect assigned tasks
+        Set<Integer> assignedTasks = new HashSet<>();
+        for (List<Long> executor : executorNodePort.keySet()) {
+            long start = executor.get(0);
+            long end = executor.get(1);
+            for (long t = start; t <= end; t++) {
+                assignedTasks.add((int) t);
+            }
+        }
+
+        if (shouldBeAssigned) {
+            assertEquals(taskIds, assignedTasks);
+            Map<Integer, NodeInfo> taskToNodePort = StormCommon.taskToNodeport(executorNodePort);
+            for (int t : taskIds) {
+                assertNotNull(taskToNodePort.get(t));
+            }
+        }
+
+        // All node+ports should be non-null
+        for (NodeInfo np : executorNodePort.values()) {
+            assertNotNull(np);
+        }
+
+        // All nodes should be in node_host
+        Set<String> allNodes = new HashSet<>();
+        for (NodeInfo np : executorNodePort.values()) {
+            allNodes.add(np.get_node());
+        }
+        assertEquals(allNodes, assignment.get_node_host().keySet());
+
+        // All executors should have start times
+        for (List<Long> executor : executorNodePort.keySet()) {
+            assertNotNull(assignment.get_executor_start_time_secs().get(executor));
+        }
+    }
 
     private static void createFile(String dirLocation, String name, int secondsAgo) throws IOException {
         File f = new File(dirLocation + "/" + name);
