@@ -57,8 +57,6 @@ class VersionedStoreTest {
             vs.succeedVersion(v1);
             writeToFile(v1);
 
-            Thread.sleep(100);
-
             String v2 = vs.createVersion();
             vs.succeedVersion(v2);
             writeToFile(v2);
