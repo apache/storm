@@ -201,7 +201,7 @@ public class SequenceFileReader<KeyT extends Writable, ValueT extends Writable> 
             }
             ++currentRecord;
             prevRecordEndOffset = currRecordEndOffset;
-            currentRecord = newBytePosition;
+            currRecordEndOffset = newBytePosition;
         }
 
         @Override
