@@ -2515,7 +2515,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 // will be treated as free slot in the scheduler code.
                 if (!id.equals(scratchTopoId)) {
                     Assignment currentAssignment = state.assignmentInfo(id, null);
-                    if (!currentAssignment.is_set_owner()) {
+                    if (currentAssignment != null && !currentAssignment.is_set_owner()) {
                         TopologyDetails td = tds.get(id);
                         if (td != null) {
                             currentAssignment.set_owner(td.getTopologySubmitter());
