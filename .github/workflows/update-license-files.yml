@@ -13,56 +13,70 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Java CI with Maven
+name: Update License Files
 
 on:
-  pull_request:
-    branches: [ "master" ]
   push:
     branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-        java: [ 17, 21 ]
-        module: [ Client, Server, Core, External, Integration-Test ]
-        experimental: [false]
-      fail-fast: false
+  update-license-files:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.10'
-      - name: Set up Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: 20
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@4dc28cf14d77b0afa6832d9765ac422dbf0dfedd # v1.298.0
-        with:
-          ruby-version: '2.7'
-      - name: Set up JDK ${{ matrix.java }}
+
+      - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           distribution: temurin
-          java-version: ${{ matrix.java }}
-      - name: Ensure a clean state without storm artifacts
+          java-version: 17
+
+      - name: Ensure clean state without storm artifacts
         run: rm -rf ~/.m2/repository/org/apache/storm
-      - name: Set up project dependencies
-        run: /bin/bash ./dev-tools/gitact/gitact-install.sh `pwd`
-      - name: Run build
-        run: |
-          export JDK_VERSION=${{ matrix.java }} 
-          export USER=github
-          /bin/bash ./dev-tools/gitact/gitact-script.sh `pwd` ${{ matrix.module }};
+
+      - name: Build Storm
+        run: mvn clean install -B -DskipTests -Dcheckstyle.skip -Dpmd.skip
+        env:
+          MAVEN_OPTS: -Xmx2048m
+
+      - name: Update license files
+        run: python3 dev-tools/update-license-files.py --skip-build-storm
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Regenerate license files after dependency changes"
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: true
+          branch: update-license-files
+          delete-branch: true
+          title: "[Automated] Update license files after dependency changes"
+          body: |
+            This PR was automatically generated after a push to master caused
+            license files to become out of date.
+
+            Updated files:
+            - `DEPENDENCY-LICENSES`
+            - `LICENSE-binary` (binary dependencies section)
+
+            Please review the changes and merge if correct.
+          labels: dependencies
