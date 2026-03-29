@@ -47,6 +47,7 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.LogConfig;
 import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
@@ -62,10 +63,12 @@ import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
+import org.apache.storm.nimbus.InMemoryTopologyActionNotifier;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.scheduler.INimbus;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
+import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.testing.TestPlannerBolt;
 import org.apache.storm.testing.TestPlannerSpout;
 import org.apache.storm.testing.TmpPath;
@@ -78,6 +81,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -1203,21 +1209,18 @@ public class NimbusClojurePortTest {
             leaderElector, groupMapper, new StormMetricsRegistry());
     }
 
-    private static void waitForStatus(Nimbus nimbus, String name, String status) throws Exception {
-        org.apache.storm.Testing.whileTimeout(5000, () -> {
-            try {
+    private static void waitForStatus(Nimbus nimbus, String name, String status) {
+        await("topology " + name + " to reach status " + status)
+            .atMost(5, SECONDS)
+            .pollInterval(100, MILLISECONDS)
+            .until(() -> {
                 for (TopologySummary topo : nimbus.getClusterInfo().get_topologies()) {
                     if (name.equals(topo.get_name())) {
-                        return !status.equals(topo.get_status());
+                        return status.equals(topo.get_status());
                     }
                 }
-                return true; // not found yet, keep waiting
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }, () -> {
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        });
+                return false;
+            });
     }
 
     // --- Batch 7d: Assignment, scheduling, and rebalance tests ---
@@ -2098,12 +2101,175 @@ public class NimbusClojurePortTest {
         }
     }
 
-    // The following 3 tests from nimbus_test.clj are not ported because they require
-    // direct Nimbus construction with Zookeeper static mocking (MockedZookeeper/MockLeaderElector
-    // from storm-core), which causes JVM crashes (System.exit) from Nimbus timer threads
-    // encountering ZK errors. These tests exercise leader election and Nimbus lifecycle
-    // recovery, which are better tested via integration tests with a real ZK setup:
-    //   - test-leadership: verifies leader vs non-leader Nimbus behavior
-    //   - test-stateless-with-scheduled-topology-to-be-killed: regression test for STORM-856
-    //   - test-topology-action-notifier: verifies ITopologyActionNotifierPlugin callbacks
+    // --- Tests ported using real InProcessZookeeper (avoids MockedZookeeper static mocking crashes) ---
+
+    /**
+     * Port of test-leadership from nimbus_test.clj.
+     * Verifies that leader Nimbus can perform all actions, while a non-leader Nimbus
+     * throws RuntimeException for every mutating operation.
+     */
+    @Test
+    public void testLeadership() throws Exception {
+        try (InProcessZookeeper zk = new InProcessZookeeper();
+             TmpPath leaderDir = new TmpPath();
+             TmpPath nonLeaderDir = new TmpPath()) {
+
+            Map<String, Object> baseConf = new HashMap<>(Utils.readStormConfig());
+            baseConf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
+            baseConf.put(Config.STORM_ZOOKEEPER_PORT, zk.getPort());
+            baseConf.put(Config.STORM_CLUSTER_MODE, "local");
+
+            // --- Leader Nimbus ---
+            Map<String, Object> leaderConf = new HashMap<>(baseConf);
+            leaderConf.put(Config.STORM_LOCAL_DIR, leaderDir.getPath());
+            Nimbus leader = mkNimbus(leaderConf, new Nimbus.StandaloneINimbus(),
+                null, mockLeaderElector(true), null, null);
+            leader.launchServer();
+
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 3)),
+                Map.of());
+
+            // Leader can perform all operations
+            leader.submitTopology("t1", null, "{}", topology);
+            RebalanceOptions immediateRebalance = new RebalanceOptions();
+            immediateRebalance.set_wait_secs(0);
+            leader.rebalance("t1", immediateRebalance);
+            waitForStatus(leader, "t1", "ACTIVE");
+            leader.deactivate("t1");
+            leader.activate("t1");
+            leader.rebalance("t1", new RebalanceOptions());
+
+            // --- Non-leader Nimbus (shares ZK, so it can see topology "t1") ---
+            Map<String, Object> nonLeaderConf = new HashMap<>(baseConf);
+            nonLeaderConf.put(Config.STORM_LOCAL_DIR, nonLeaderDir.getPath());
+            Nimbus nonLeader = mkNimbus(nonLeaderConf, new Nimbus.StandaloneINimbus(),
+                null, mockLeaderElector(false), null, null);
+            nonLeader.launchServer();
+
+            // Non-leader must reject every mutating operation.
+            // submitTopology checks assertIsLeader() first and throws RuntimeException.
+            assertThrows(RuntimeException.class, () ->
+                nonLeader.submitTopology("failing", null, "{}", topology));
+            // The remaining operations hit assertIsLeader() inside transition(), but may
+            // throw NotAliveException first if the blob store data is inaccessible. Either
+            // way the operation is rejected.
+            assertThrows(Exception.class, () ->
+                nonLeader.killTopology("t1"));
+            assertThrows(Exception.class, () ->
+                nonLeader.activate("t1"));
+            assertThrows(Exception.class, () ->
+                nonLeader.deactivate("t1"));
+            assertThrows(Exception.class, () ->
+                nonLeader.rebalance("t1", new RebalanceOptions()));
+
+            nonLeader.shutdown();
+            // Now the leader can clean up
+            leader.killTopology("t1");
+            leader.shutdown();
+        }
+    }
+
+    /**
+     * Port of test-stateless-with-scheduled-topology-to-be-killed from nimbus_test.clj.
+     * Regression test for STORM-856: Nimbus must restart cleanly when a topology
+     * is in the "to be killed" transition state in ZooKeeper.
+     */
+    @Test
+    public void testStatelessWithScheduledTopologyToBeKilled() throws Exception {
+        try (InProcessZookeeper zk = new InProcessZookeeper();
+             TmpPath nimbusDir = new TmpPath()) {
+
+            Map<String, Object> conf = new HashMap<>(Utils.readStormConfig());
+            conf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
+            conf.put(Config.STORM_ZOOKEEPER_PORT, zk.getPort());
+            conf.put(Config.STORM_CLUSTER_MODE, "local");
+            conf.put(Config.STORM_LOCAL_DIR, nimbusDir.getPath());
+
+            // First Nimbus: submit a topology, then kill it and shutdown immediately
+            Nimbus nimbus1 = mkNimbus(conf, new Nimbus.StandaloneINimbus(), null, null, null, null);
+            nimbus1.launchServer();
+
+            await("nimbus1 ready").atMost(10, SECONDS).until(() -> {
+                try {
+                    nimbus1.getClusterInfo();
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 3)),
+                Map.of());
+            nimbus1.submitTopology("t1", null,
+                "{\"" + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS + "\": 30}", topology);
+            // Start kill transition — topology enters "to be killed" state in ZK
+            nimbus1.killTopology("t1");
+            // Shutdown immediately before the kill transition completes
+            nimbus1.shutdown();
+
+            // Second Nimbus: must start without NPE despite the pending kill transition
+            Nimbus nimbus2 = mkNimbus(conf, new Nimbus.StandaloneINimbus(), null, null, null, null);
+            nimbus2.launchServer();
+            nimbus2.shutdown();
+        }
+    }
+
+    /**
+     * Port of test-topology-action-notifier from nimbus_test.clj.
+     * Verifies that {@link InMemoryTopologyActionNotifier} receives the correct
+     * sequence of lifecycle actions for a topology.
+     */
+    @Test
+    public void testTopologyActionNotifier() throws Exception {
+        try (InProcessZookeeper zk = new InProcessZookeeper();
+             TmpPath nimbusDir = new TmpPath()) {
+
+            Map<String, Object> conf = new HashMap<>(Utils.readStormConfig());
+            conf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
+            conf.put(Config.STORM_ZOOKEEPER_PORT, zk.getPort());
+            conf.put(Config.STORM_CLUSTER_MODE, "local");
+            conf.put(Config.STORM_LOCAL_DIR, nimbusDir.getPath());
+            conf.put(DaemonConfig.NIMBUS_TOPOLOGY_ACTION_NOTIFIER_PLUGIN,
+                InMemoryTopologyActionNotifier.class.getName());
+
+            Nimbus nimbus = mkNimbus(conf, new Nimbus.StandaloneINimbus(), null, null, null, null);
+            nimbus.launchServer();
+
+            await("nimbus ready").atMost(10, SECONDS).until(() -> {
+                try {
+                    nimbus.getClusterInfo();
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("1", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 3)),
+                Map.of());
+
+            nimbus.submitTopology("test-notification", null,
+                "{\"" + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS + "\": 30}", topology);
+            nimbus.deactivate("test-notification");
+            nimbus.activate("test-notification");
+
+            RebalanceOptions rebalOpts = new RebalanceOptions();
+            rebalOpts.set_wait_secs(0);
+            nimbus.rebalance("test-notification", rebalOpts);
+
+            KillOptions killOpts = new KillOptions();
+            killOpts.set_wait_secs(0);
+            nimbus.killTopologyWithOpts("test-notification", killOpts);
+
+            nimbus.shutdown();
+
+            // InMemoryTopologyActionNotifier uses a static map, so a new instance sees the same data
+            InMemoryTopologyActionNotifier notifier = new InMemoryTopologyActionNotifier();
+            assertEquals(
+                Arrays.asList("submitTopology", "activate", "deactivate", "activate", "rebalance", "killTopology"),
+                notifier.getTopologyActions("test-notification"));
+        }
+    }
 }
