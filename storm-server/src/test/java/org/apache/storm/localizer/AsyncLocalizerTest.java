@@ -58,6 +58,7 @@ import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -737,10 +738,10 @@ public class AsyncLocalizerTest {
 
             lrsrcSet = localizer.getUserFiles().get(user1);
             assertEquals(2, lrsrcSet.size(), "local resource set size wrong");
-            long end = System.currentTimeMillis() + 100;
-            while ((end - System.currentTimeMillis()) >= 0 && keyFile2.exists()) {
-                Thread.sleep(1);
-            }
+            Awaitility.await("keyFile2 to be deleted")
+                .atMost(5, TimeUnit.SECONDS)
+                .pollInterval(1, TimeUnit.MILLISECONDS)
+                .until(() -> !keyFile2.exists());
             assertTrue(keyFile.exists(), "blob deleted");
             assertFalse(keyFile2.exists(), "blob not deleted");
             assertTrue(keyFile3.exists(), "blob deleted");

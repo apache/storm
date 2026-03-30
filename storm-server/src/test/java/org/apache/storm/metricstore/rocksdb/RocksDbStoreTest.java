@@ -26,6 +26,7 @@ import org.apache.storm.metricstore.Metric;
 import org.apache.storm.metricstore.MetricException;
 import org.apache.storm.metricstore.MetricStore;
 import org.apache.storm.metricstore.MetricStoreConfig;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -313,15 +314,11 @@ public class RocksDbStoreTest {
         assertTrue(list.contains(m2));
     }
 
-    private void waitForInsertFinish(Metric m) throws Exception {
+    private void waitForInsertFinish(Metric m) {
         Metric last = new Metric(m);
-        int attempts = 0;
-        do {
-            Thread.sleep(1);
-            attempts++;
-            if (attempts > 5000) {
-                throw new Exception("Insertion timing out");
-            }
-        } while (!store.populateValue(last));
+        Awaitility.await("metric insertion to complete")
+            .atMost(5, java.util.concurrent.TimeUnit.SECONDS)
+            .pollInterval(1, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .until(() -> store.populateValue(last));
     }
 }

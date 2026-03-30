@@ -87,30 +87,32 @@ public class MetricsIntegrationTest {
     }
 
     private static void waitForAtLeastNBuckets(int n, String compId, String metricName,
-                                                LocalCluster cluster) throws Exception {
-        Testing.whileTimeout(Testing.TEST_TIMEOUT_MS,
-            () -> {
-                Map<Integer, Collection<Object>> taskIdToBuckets =
-                    FakeMetricConsumer.getTaskIdToBuckets(compId, metricName);
-                if (n != 0 && taskIdToBuckets == null) {
-                    return true;
-                }
-                if (taskIdToBuckets == null) {
-                    return false;
-                }
-                for (Collection<Object> buckets : taskIdToBuckets.values()) {
-                    if (buckets.size() < n) {
-                        return true;
-                    }
-                }
-                return false;
-            },
-            () -> {
+                                                LocalCluster cluster) {
+        Awaitility.with()
+            .pollInterval(10, TimeUnit.MILLISECONDS)
+            .conditionEvaluationListener(condition -> {
                 try {
                     cluster.advanceClusterTime(1);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
+            })
+            .atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .until(() -> {
+                Map<Integer, Collection<Object>> taskIdToBuckets =
+                    FakeMetricConsumer.getTaskIdToBuckets(compId, metricName);
+                if (n != 0 && taskIdToBuckets == null) {
+                    return false;
+                }
+                if (taskIdToBuckets == null) {
+                    return true;
+                }
+                for (Collection<Object> buckets : taskIdToBuckets.values()) {
+                    if (buckets.size() < n) {
+                        return false;
+                    }
+                }
+                return true;
             });
     }
 

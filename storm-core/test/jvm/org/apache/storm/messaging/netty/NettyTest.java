@@ -21,6 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThan;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,6 +46,7 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.utils.Utils;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,43 +64,24 @@ public class NettyTest {
      * manually that the server and the client connections are ready before we commence testing. If we don't do this, then we will lose the
      * first messages being sent between the client and the server, which will fail the tests.
      */
-    private void waitUntilReady(IConnection... connections) throws Exception {
+    private void waitUntilReady(IConnection... connections) {
         LOG.info("Waiting until all Netty connections are ready...");
-        int intervalMs = 10;
-        int maxWaitMs = 5000;
-        int waitedMs = 0;
-        while (true) {
-            if (Arrays.stream(connections)
-                .allMatch(WorkerState::isConnectionReady)) {
-                LOG.info("All Netty connections are ready");
-                break;
-            }
-            if (waitedMs > maxWaitMs) {
-                throw new RuntimeException("Netty connections were not ready within " + maxWaitMs + " ms");
-            }
-            Thread.sleep(intervalMs);
-            waitedMs += intervalMs;
-        }
+        Awaitility.await("all Netty connections to be ready")
+            .atMost(5, TimeUnit.SECONDS)
+            .pollInterval(10, TimeUnit.MILLISECONDS)
+            .until(() -> Arrays.stream(connections).allMatch(WorkerState::isConnectionReady));
+        LOG.info("All Netty connections are ready");
     }
 
     private IConnectionCallback mkConnectionCallback(Consumer<TaskMessage> myFn) {
         return (batch) -> batch.forEach(myFn::accept);
     }
 
-    private Runnable sleep() {
-        return () -> {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw Utils.wrapInRuntime(e);
-            }
-        };
-    }
-
     private void waitForNotNull(AtomicReference<TaskMessage> response) {
-        Testing.whileTimeout(Testing.TEST_TIMEOUT_MS,
-            () -> response.get() == null,
-            sleep());
+        Awaitility.await("response to be non-null")
+            .atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .pollInterval(10, TimeUnit.MILLISECONDS)
+            .until(() -> response.get() != null);
     }
 
     private void send(IConnection client, int taskId, byte[] messageBytes) {
@@ -199,9 +182,10 @@ public class NettyTest {
                 List<Integer> tasks = new ArrayList<>();
                 tasks.add(1);
                 tasks.add(2);
-                Testing.whileTimeout(Testing.TEST_TIMEOUT_MS,
-                    () -> client.getLoad(tasks).isEmpty(),
-                    sleep());
+                Awaitility.await("client to receive load metrics")
+                    .atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                    .pollInterval(10, TimeUnit.MILLISECONDS)
+                    .until(() -> !client.getLoad(tasks).isEmpty());
                 Map<Integer, Load> load = client.getLoad(tasks);
                 assertThat(load.get(1).getBoltLoad(), is(0.0));
                 assertThat(load.get(2).getBoltLoad(), is(1.0));
@@ -326,11 +310,12 @@ public class NettyTest {
                 IntStream.range(1, numMessages)
                     .forEach(i -> send(client, taskId, String.valueOf(i).getBytes(StandardCharsets.UTF_8)));
 
-                Testing.whileTimeout(Testing.TEST_TIMEOUT_MS,
-                    () -> responses.size() < numMessages - 1,
-                    () -> {
+                Awaitility.await("all batch messages to be received")
+                    .atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                    .pollInterval(10, TimeUnit.MILLISECONDS)
+                    .until(() -> {
                         LOG.info("{} of {} received", responses.size(), numMessages - 1);
-                        sleep().run();
+                        return responses.size() >= numMessages - 1;
                     });
                 IntStream.range(1, numMessages)
                     .forEach(i -> assertThat(new String(responses.get(i - 1).message(), StandardCharsets.UTF_8), is(String.valueOf(i))));
