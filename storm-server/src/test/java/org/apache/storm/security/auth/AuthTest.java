@@ -41,6 +41,7 @@ import org.apache.storm.security.auth.digest.DigestSaslTransportPlugin;
 import org.apache.storm.security.auth.workertoken.WorkerTokenManager;
 import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.thrift.transport.TTransportException;
+import org.awaitility.Awaitility;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Time;
@@ -143,15 +144,10 @@ public class AuthTest {
             LOG.info("Starting Serving...");
             server.serve();
         }).start();
-        Testing.whileTimeout(
-            () -> !server.isServing(),
-            () -> {
-                try {
-                    Time.sleep(100);
-                } catch (InterruptedException e) {
-                    //Ignored
-                }
-            });
+        Awaitility.await("ThriftServer to start serving")
+            .atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .pollInterval(100, TimeUnit.MILLISECONDS)
+            .until(server::isServing);
         try {
             LOG.info("Starting to run {}", body);
             body.accept(server, conf);

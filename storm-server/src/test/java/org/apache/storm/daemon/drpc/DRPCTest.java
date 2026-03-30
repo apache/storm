@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 import org.apache.storm.Config;
 import org.apache.storm.generated.AuthorizationException;
@@ -39,6 +40,7 @@ import org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer;
 import org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer.AclFunctionEntry;
 import org.apache.storm.security.auth.authorizer.DenyAuthorizer;
 import org.apache.storm.utils.Time;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -66,18 +68,20 @@ public class DRPCTest {
         exec.shutdownNow();
     }
 
-    public static DRPCRequest getNextAvailableRequest(DRPC server, String func) throws Exception {
-        DRPCRequest request = null;
-        long timedout = System.currentTimeMillis() + 5_000;
-        while (System.currentTimeMillis() < timedout) {
-            request = server.fetchRequest(func);
-            if (request != null && request.get_request_id() != null && !request.get_request_id().isEmpty()) {
-                return request;
-            }
-            Thread.sleep(1);
-        }
-        fail("Test timed out waiting for a request on " + func);
-        return request;
+    public static DRPCRequest getNextAvailableRequest(DRPC server, String func) {
+        AtomicReference<DRPCRequest> result = new AtomicReference<>();
+        Awaitility.await("DRPC request on " + func)
+            .atMost(5, TimeUnit.SECONDS)
+            .pollInterval(1, TimeUnit.MILLISECONDS)
+            .until(() -> {
+                DRPCRequest req = server.fetchRequest(func);
+                if (req != null && req.get_request_id() != null && !req.get_request_id().isEmpty()) {
+                    result.set(req);
+                    return true;
+                }
+                return false;
+            });
+        return result.get();
     }
 
     @Test
