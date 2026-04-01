@@ -22,16 +22,10 @@ on:
     branches: [ "master" ]
 
 jobs:
+  # Compile once on the minimum supported JDK and share artifacts with test jobs
   build:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-        java: [ 17, 21 ]
-        module: [ Client, Server, Core, External, Integration-Test ]
-        experimental: [false]
-      fail-fast: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
@@ -44,25 +38,60 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.10'
-      - name: Set up Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - name: Set up JDK 17
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
-          node-version: 20
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@3ff19f5e2baf30647122352b96108b1fbe250c64 # v1.299.0
+          distribution: temurin
+          java-version: 17
+      - name: Ensure a clean state without storm artifacts
+        run: rm -rf ~/.m2/repository/org/apache/storm
+      - name: Build project (compile + install, skip tests)
+        run: /bin/bash ./dev-tools/gitact/gitact-install.sh `pwd`
+      - name: RAT license check
+        run: mvn --batch-mode apache-rat:check -Prat
+      - name: Upload Storm artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          ruby-version: '2.7'
+          name: storm-build-artifacts
+          path: ~/.m2/repository/org/apache/storm/
+          retention-days: 1
+
+  # Run tests on multiple JDKs using pre-built artifacts from the build job
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        java: [ 17, 21 ]
+        module: [ Client, Server, Core, External, Integration-Test ]
+        experimental: [false]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Download Storm artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: storm-build-artifacts
+          path: ~/.m2/repository/org/apache/storm/
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.10'
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
-      - name: Ensure a clean state without storm artifacts
-        run: rm -rf ~/.m2/repository/org/apache/storm
-      - name: Set up project dependencies
-        run: /bin/bash ./dev-tools/gitact/gitact-install.sh `pwd`
-      - name: Run build
+      - name: Run tests
         run: |
-          export JDK_VERSION=${{ matrix.java }} 
+          export JDK_VERSION=${{ matrix.java }}
           export USER=github
-          /bin/bash ./dev-tools/gitact/gitact-script.sh `pwd` ${{ matrix.module }};
+          /bin/bash ./dev-tools/gitact/gitact-test.sh `pwd` ${{ matrix.module }};
