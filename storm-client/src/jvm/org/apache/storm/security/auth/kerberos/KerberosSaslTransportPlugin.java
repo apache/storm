@@ -14,7 +14,6 @@ package org.apache.storm.security.auth.kerberos;
 
 import java.io.IOException;
 import java.security.Principal;
-import org.apache.storm.security.auth.SubjectCompat;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -28,6 +27,7 @@ import javax.security.sasl.Sasl;
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.messaging.netty.Login;
 import org.apache.storm.security.auth.ClientAuthUtils;
+import org.apache.storm.security.auth.SubjectCompat;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.security.auth.sasl.SimpleSaslServerCallbackHandler;
 import org.apache.storm.security.auth.workertoken.WorkerTokenAuthorizer;

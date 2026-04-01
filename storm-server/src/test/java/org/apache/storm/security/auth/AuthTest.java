@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.Principal;
-import org.apache.storm.security.auth.SubjectCompat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

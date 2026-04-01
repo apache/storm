@@ -14,7 +14,6 @@ package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
 import java.security.Principal;
-import org.apache.storm.security.auth.SubjectCompat;
 import java.util.Map;
 import java.util.TreeMap;
 import javax.security.auth.Subject;
@@ -27,6 +26,7 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 import org.apache.storm.security.auth.ClientAuthUtils;
+import org.apache.storm.security.auth.SubjectCompat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
