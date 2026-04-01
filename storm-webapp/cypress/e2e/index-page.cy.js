@@ -79,4 +79,12 @@ describe('Storm UI - Index Page', () => {
   it('shows the page rendered timestamp', () => {
     cy.get('#page-rendered-at-timestamp').should('contain', 'Page rendered at:');
   });
+
+  it('does not display scientific notation in topology summary table', () => {
+    cy.get('#topology-summary-table').within(() => {
+      cy.get('td').each(($td) => {
+        expect($td.text()).not.to.match(/\de[+]\d/i);
+      });
+    });
+  });
 });

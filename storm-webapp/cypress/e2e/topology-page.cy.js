@@ -46,4 +46,32 @@ describe('Storm UI - Topology Detail Page', () => {
   it('renders topology action buttons', () => {
     cy.get('input[type="button"]').should('have.length.greaterThan', 0);
   });
+
+  it('formats large numbers with commas, not scientific notation', () => {
+    cy.get('#topology-stats-table').within(() => {
+      cy.contains('td', '200,000,000,000').should('exist');
+      cy.contains('td', '100,000,000,000').should('exist');
+      cy.get('td').each(($td) => {
+        expect($td.text()).not.to.match(/\de[+]\d/i);
+      });
+    });
+  });
+
+  it('formats large spout numbers with commas, not scientific notation', () => {
+    cy.get('#spout-stats-table').within(() => {
+      cy.contains('td', '200,000,000,000').should('exist');
+      cy.get('td').each(($td) => {
+        expect($td.text()).not.to.match(/\de[+]\d/i);
+      });
+    });
+  });
+
+  it('formats large bolt numbers with commas, not scientific notation', () => {
+    cy.get('#bolt-stats-table').within(() => {
+      cy.contains('td', '600,000,000,000').should('exist');
+      cy.get('td').each(($td) => {
+        expect($td.text()).not.to.match(/\de[+]\d/i);
+      });
+    });
+  });
 });
