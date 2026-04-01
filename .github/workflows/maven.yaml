@@ -48,7 +48,7 @@ jobs:
       - name: Build project (compile + install, skip tests)
         run: /bin/bash ./dev-tools/gitact/gitact-install.sh `pwd`
       - name: RAT license check
-        run: mvn --batch-mode apache-rat:check -Prat
+        run: mvn --batch-mode test -Prat -DskipTests -Dcheckstyle.skip -Dpmd.skip
       - name: Upload Storm artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
