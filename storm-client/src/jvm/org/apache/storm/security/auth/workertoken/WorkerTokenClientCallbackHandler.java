@@ -12,12 +12,12 @@
 
 package org.apache.storm.security.auth.workertoken;
 
-import java.security.AccessController;
 import java.util.Base64;
 import javax.security.auth.Subject;
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.security.auth.ClientAuthUtils;
+import org.apache.storm.security.auth.SubjectCompat;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.sasl.SimpleSaslClientCallbackHandler;
 
@@ -49,7 +49,7 @@ public class WorkerTokenClientCallbackHandler extends SimpleSaslClientCallbackHa
         WorkerTokenServiceType serviceType = type.getWtType();
         WorkerToken ret = null;
         if (serviceType != null) {
-            Subject subject = Subject.getSubject(AccessController.getContext());
+            Subject subject = SubjectCompat.currentSubject();
             if (subject != null) {
                 ret = ClientAuthUtils.findWorkerToken(subject, serviceType);
             }

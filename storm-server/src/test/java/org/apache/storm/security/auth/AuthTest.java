@@ -16,8 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.Principal;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import org.apache.storm.security.auth.SubjectCompat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -184,8 +183,8 @@ public class AuthTest {
     }
 
     public static void tryConnectAs(Map<String, Object> conf, ThriftServer server, Subject subject, String topoId)
-        throws PrivilegedActionException {
-        Subject.doAs(subject, (PrivilegedExceptionAction<Void>) () -> {
+        throws Exception {
+        SubjectCompat.doAs(subject, () -> {
             try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
                     .buildWithNimbusHostPort("localhost", server.getPort())) {
                 client.getClient().activate(topoId); //Yes this should be a topo name, but it makes this simpler...
@@ -195,7 +194,7 @@ public class AuthTest {
     }
 
     public static Subject testConnectWithTokenFor(WorkerTokenManager wtMan, Map<String, Object> conf, ThriftServer server,
-                                                  String user, String topoId) throws PrivilegedActionException {
+                                                  String user, String topoId) throws Exception {
         WorkerToken wt = wtMan.createOrUpdateTokenFor(WorkerTokenServiceType.NIMBUS, user, topoId);
         Subject subject = createSubjectWith(wt);
         tryConnectAs(conf, server, subject, topoId);

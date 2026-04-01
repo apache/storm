@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
-import java.security.PrivilegedExceptionAction;
+import org.apache.storm.security.auth.SubjectCompat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -202,7 +202,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         autoCreds = ClientAuthUtils.getAutoCredentials(topologyConf);
         subject = ClientAuthUtils.populateSubject(null, autoCreds, initCreds);
 
-        Subject.doAs(subject, (PrivilegedExceptionAction<Object>)
+        SubjectCompat.doAs(subject,
             () -> loadWorker(stateStorage, stormClusterState, initCreds, initialCredentials)
         );
 
