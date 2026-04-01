@@ -39,4 +39,32 @@ describe('Storm UI - Component Detail Page', () => {
       expect(win.moment).to.exist;
     });
   });
+
+  it('formats large numbers with commas in bolt stats table', () => {
+    cy.get('#bolt-stats-table').within(() => {
+      cy.contains('td', '600,000,000,000').should('exist');
+      cy.contains('td', '200,000,000,000').should('exist');
+      cy.get('td').each(($td) => {
+        expect($td.text()).not.to.match(/\de[+]\d/i);
+      });
+    });
+  });
+
+  it('formats large numbers with commas in output stats table', () => {
+    cy.get('#bolt-output-stats-table').within(() => {
+      cy.contains('td', '600,000,000,000').should('exist');
+      cy.get('td').each(($td) => {
+        expect($td.text()).not.to.match(/\de[+]\d/i);
+      });
+    });
+  });
+
+  it('formats large numbers with commas in input stats table', () => {
+    cy.get('#bolt-input-stats-table').within(() => {
+      cy.contains('td', '200,000,000,000').should('exist');
+      cy.get('td').each(($td) => {
+        expect($td.text()).not.to.match(/\de[+]\d/i);
+      });
+    });
+  });
 });
