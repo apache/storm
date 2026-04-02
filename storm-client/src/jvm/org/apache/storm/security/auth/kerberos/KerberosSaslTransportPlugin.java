@@ -14,8 +14,6 @@ package org.apache.storm.security.auth.kerberos;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -29,6 +27,7 @@ import javax.security.sasl.Sasl;
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.messaging.netty.Login;
 import org.apache.storm.security.auth.ClientAuthUtils;
+import org.apache.storm.security.auth.SubjectCompat;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
 import org.apache.storm.security.auth.sasl.SimpleSaslServerCallbackHandler;
 import org.apache.storm.security.auth.workertoken.WorkerTokenAuthorizer;
@@ -200,23 +199,19 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
         //open Sasl transport with the login credential
         try {
-            Subject.doAs(subject,
-                    new PrivilegedExceptionAction<Void>() {
-                        @Override
-                        public Void run() {
-                            try {
-                                LOG.debug("do as:" + principal);
-                                sasalTransport.open();
-                            } catch (Exception e) {
-                                LOG.error("Client failed to open SaslClientTransport to interact with a server during "
-                                                + "session initiation: "
-                                                + e,
-                                        e);
-                        }
-                        return null;
-                    }
-                });
-        } catch (PrivilegedActionException e) {
+            SubjectCompat.doAs(subject, () -> {
+                try {
+                    LOG.debug("do as:" + principal);
+                    sasalTransport.open();
+                } catch (Exception e) {
+                    LOG.error("Client failed to open SaslClientTransport to interact with a server during "
+                                    + "session initiation: "
+                                    + e,
+                            e);
+                }
+                return null;
+            });
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -265,20 +260,19 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         @Override
         public TTransport getTransport(final TTransport trans) {
             try {
-                return Subject.doAs(subject,
-                    (PrivilegedExceptionAction<TTransport>) () -> {
-                        try {
-                            return wrapped.getTransport(trans);
-                        } catch (Exception e) {
-                            LOG.debug("Storm server failed to open transport to interact with a client during "
-                                            + "session initiation: "
-                                            + e,
-                                    e);
-                            return new NoOpTTrasport(null);
-                        }
-                    });
-            } catch (PrivilegedActionException e) {
-                LOG.error("Storm server experienced a PrivilegedActionException exception while creating a transport "
+                return SubjectCompat.doAs(subject, () -> {
+                    try {
+                        return wrapped.getTransport(trans);
+                    } catch (Exception e) {
+                        LOG.debug("Storm server failed to open transport to interact with a client during "
+                                        + "session initiation: "
+                                        + e,
+                                e);
+                        return new NoOpTTrasport(null);
+                    }
+                });
+            } catch (Exception e) {
+                LOG.error("Storm server experienced an exception while creating a transport "
                                 + "using a JAAS principal context:"
                                 + e,
                         e);

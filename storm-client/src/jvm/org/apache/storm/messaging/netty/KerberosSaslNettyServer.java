@@ -14,8 +14,6 @@ package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -32,6 +30,7 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.KerberosPrincipalToLocal;
+import org.apache.storm.security.auth.SubjectCompat;
 import org.apache.storm.shade.org.apache.zookeeper.server.auth.KerberosName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,26 +82,22 @@ class KerberosSaslNettyServer {
             final String hostName = kerberosName.getHostName();
             final String serviceName = kerberosName.getServiceName();
             LOG.debug("Server with host: {}", hostName);
-            saslServer =
-                Subject.doAs(subject, new PrivilegedExceptionAction<SaslServer>() {
-                    @Override
-                    public SaslServer run() {
-                        try {
-                            Map<String, String> props = new TreeMap<String, String>();
-                            props.put(Sasl.QOP, "auth");
-                            props.put(Sasl.SERVER_AUTH, "false");
-                            return Sasl.createSaslServer(SaslUtils.KERBEROS,
-                                                         serviceName,
-                                                         hostName, props, fch);
-                        } catch (Exception e) {
-                            LOG.error("Subject failed to create sasl server.", e);
-                            return null;
-                        }
-                    }
-                });
+            saslServer = SubjectCompat.doAs(subject, () -> {
+                try {
+                    Map<String, String> props = new TreeMap<String, String>();
+                    props.put(Sasl.QOP, "auth");
+                    props.put(Sasl.SERVER_AUTH, "false");
+                    return Sasl.createSaslServer(SaslUtils.KERBEROS,
+                                                 serviceName,
+                                                 hostName, props, fch);
+                } catch (Exception e) {
+                    LOG.error("Subject failed to create sasl server.", e);
+                    return null;
+                }
+            });
             LOG.info("Got Server: {}", saslServer);
 
-        } catch (PrivilegedActionException e) {
+        } catch (Exception e) {
             LOG.error("KerberosSaslNettyServer: Could not create SaslServer: ", e);
             throw new RuntimeException(e);
         }
@@ -124,23 +119,20 @@ class KerberosSaslNettyServer {
      */
     public byte[] response(final byte[] token) {
         try {
-            byte[] retval = Subject.doAs(subject, new PrivilegedExceptionAction<byte[]>() {
-                @Override
-                public byte[] run() {
-                    try {
-                        LOG.debug("response: Responding to input token of length: {}",
-                                  token.length);
-                        byte[] retval = saslServer.evaluateResponse(token);
-                        return retval;
-                    } catch (SaslException e) {
-                        LOG.error("response: Failed to evaluate client token of length: {} : {}",
-                                  token.length, e);
-                        throw new RuntimeException(e);
-                    }
+            return SubjectCompat.doAs(subject, () -> {
+                try {
+                    LOG.debug("response: Responding to input token of length: {}",
+                              token.length);
+                    return saslServer.evaluateResponse(token);
+                } catch (SaslException e) {
+                    LOG.error("response: Failed to evaluate client token of length: {} : {}",
+                              token.length, e);
+                    throw new RuntimeException(e);
                 }
             });
-            return retval;
-        } catch (PrivilegedActionException e) {
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             LOG.error("Failed to generate response for token: ", e);
             throw new RuntimeException(e);
         }
