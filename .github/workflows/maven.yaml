@@ -66,7 +66,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        java: [ 17, 21 ]
+        java: [ 17, 21, 25 ]
         module: [ Client, Server, Core, External, Integration-Test ]
         experimental: [false]
       fail-fast: false

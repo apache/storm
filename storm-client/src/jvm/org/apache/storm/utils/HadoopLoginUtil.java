@@ -20,11 +20,11 @@ package org.apache.storm.utils;
 
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import javax.security.auth.Subject;
 import org.apache.storm.Config;
+import org.apache.storm.security.auth.SubjectCompat;
 import org.apache.storm.shade.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +136,7 @@ public class HadoopLoginUtil {
             Method doAsMethod = ugiClass.getMethod("doAs", PrivilegedAction.class);
             Object ugi = currentUserMethod.invoke(null);
             return (Subject) doAsMethod.invoke(ugi,
-                (PrivilegedAction<Subject>) () -> Subject.getSubject(AccessController.getContext()));
+                (PrivilegedAction<Subject>) SubjectCompat::currentSubject);
         } catch (Exception e) {
             throw new RuntimeException("Error getting hadoop user!", e);
         }

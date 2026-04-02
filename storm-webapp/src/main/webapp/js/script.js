@@ -125,6 +125,17 @@ function dtAutoPage(selector, conf) {
   return $(selector).DataTable(conf);
 }
 
+function renderIntegerWithCommas(data, type) {
+  if (type !== 'display' && type !== 'filter') {
+    return data;
+  }
+  var n = Number(data);
+  if (isNaN(n)) {
+    return data;
+  }
+  return n.toLocaleString('en-US', {maximumFractionDigits: 0});
+}
+
 function toggleSys() {
     var sys = $.cookies.get('sys') || false;
     sys = !sys;
@@ -682,6 +693,7 @@ function setStormUITitle(uiTitle, clusterConfig) {
 
 // --- Expose functions to window for use by inline <script> blocks in HTML pages ---
 if (typeof window !== 'undefined') {
+  window.renderIntegerWithCommas = renderIntegerWithCommas;
   window.dtAutoPage = dtAutoPage;
   window.toggleSys = toggleSys;
   window.ensureInt = ensureInt;
