@@ -22,6 +22,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
@@ -512,34 +513,48 @@ public class ClientAuthUtils {
 
 
 
-    public static byte[] serializeKerberosTicket(KerberosTicket tgt) throws Exception {
-        ByteArrayOutputStream bao = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bao);
-        out.writeObject(tgt);
-        out.flush();
-        out.close();
-        return bao.toByteArray();
+    public static byte[] serializeKerberosTicket(final KerberosTicket tgt) throws Exception {
+        if (tgt == null) {
+            throw new IllegalArgumentException("KerberosTicket must not be null");
+        }
+        try (ByteArrayOutputStream bao = new ByteArrayOutputStream();
+             ObjectOutputStream out = new ObjectOutputStream(bao)) {
+            out.writeObject(tgt);
+            out.flush();
+            return bao.toByteArray();
+        }
     }
 
-    public static KerberosTicket deserializeKerberosTicket(byte[] tgtBytes) {
-        KerberosTicket ret;
-        try {
-
-            ByteArrayInputStream bin = new ByteArrayInputStream(tgtBytes);
-            ObjectInputStream in = new ObjectInputStream(bin);
-            ret = (KerberosTicket) in.readObject();
-            in.close();
-        } catch (Exception e) {
+    public static KerberosTicket deserializeKerberosTicket(final byte[] tgtBytes) {
+        if (tgtBytes == null) {
+            throw new IllegalArgumentException("Kerberos ticket bytes must not be null");
+        }
+        final ObjectInputFilter filter =
+                ObjectInputFilter.Config.createFilter(
+                        "javax.security.auth.kerberos.*;"
+                                + "java.net.InetAddress;"
+                                + "java.net.Inet4Address;"
+                                + "java.net.Inet6Address;"
+                                + "[Ljava.net.InetAddress;"
+                                + "java.util.Date;"
+                                + "[B;"       // byte[]
+                                + "[Z;"       // boolean[]
+                                + "!*"        // reject everything else
+                );
+        try (ByteArrayInputStream bin = new ByteArrayInputStream(tgtBytes);
+             ObjectInputStream in = new ObjectInputStream(bin)) {
+            in.setObjectInputFilter(filter);
+            return (KerberosTicket) in.readObject();
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-        return ret;
     }
 
-    public static KerberosTicket cloneKerberosTicket(KerberosTicket kerberosTicket) {
+    public static KerberosTicket cloneKerberosTicket(final KerberosTicket kerberosTicket) {
         if (kerberosTicket != null) {
             try {
                 return (deserializeKerberosTicket(serializeKerberosTicket(kerberosTicket)));
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 throw new RuntimeException("Failed to clone KerberosTicket TGT!!", e);
             }
         }
