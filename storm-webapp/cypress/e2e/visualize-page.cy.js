@@ -53,13 +53,11 @@ describe('Storm UI - Topology Visualization Page', () => {
   });
 
   it('creates a vis.js network from the topology data', () => {
-    cy.window().then((win) => {
-      // visNS is set by visualization.js
-      expect(win.visNS).to.exist;
-      expect(win.visNS.nodes).to.exist;
-      // Nodes should have been populated from the API response
-      expect(win.visNS.nodes.length).to.be.greaterThan(0);
-    });
+    // visNS is set by visualization.js; use retry-able assertion
+    // to wait for the network to populate
+    cy.window({ timeout: 5000 })
+      .its('visNS.nodes.length')
+      .should('be.greaterThan', 0);
   });
 });
 
@@ -84,10 +82,9 @@ describe('Storm UI - Topology Visualization (Dark Mode)', () => {
   });
 
   it('renders nodes and streams in dark mode without errors', () => {
-    cy.window().then((win) => {
-      expect(win.visNS).to.exist;
-      expect(win.visNS.nodes.length).to.be.greaterThan(0);
-    });
+    cy.window({ timeout: 5000 })
+      .its('visNS.nodes.length')
+      .should('be.greaterThan', 0);
     cy.get('#available-streams li', { timeout: 5000 })
       .should('have.length.greaterThan', 0);
   });
