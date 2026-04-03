@@ -569,15 +569,19 @@ This product bundles PMML Sample Files, which are available under a
 
 -----------------------------------------------------------------------
 
-For vis.js 4.21.0 (bundled via npm package "vis" into storm-webapp webpack output)
+For vis-network 10.0.2 and vis-data 8.0.3 (bundled via npm into storm-webapp webpack output)
 
-vis.js
-https://github.com/almende/vis
-A dynamic, browser-based visualization library.
+vis-network
+https://github.com/visjs/vis-network
+A dynamic, browser-based network visualization library.
+
+vis-data
+https://github.com/visjs/vis-data
 
 The MIT License (MIT)
 
 Copyright (C) 2011-2016 Almende B.V, http://almende.com
+Copyright (C) 2017-2025 vis.js contributors, https://github.com/visjs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
