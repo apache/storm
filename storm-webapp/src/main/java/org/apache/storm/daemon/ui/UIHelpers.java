@@ -25,8 +25,6 @@ import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Servlet;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -494,13 +492,16 @@ public class UIHelpers {
      * @return Map to be converted into json.
      */
     public static Map exceptionToJson(Exception ex, int statusCode) {
-        StringWriter sw = new StringWriter();
-        ex.printStackTrace(new PrintWriter(sw));
+        LOG.error("HTTP {} error", statusCode, ex);
+        String message = ex.getMessage();
+        if (message == null || message.isEmpty()) {
+            message = ex.getClass().getName();
+        }
         return ImmutableMap.of(
                 "error", statusCode
                         + " "
                         + HttpStatus.getMessage(statusCode),
-                "errorMessage", sw.toString());
+                "errorMessage", message);
     }
 
     public static Response makeStandardResponse(Object data, String callback) {
