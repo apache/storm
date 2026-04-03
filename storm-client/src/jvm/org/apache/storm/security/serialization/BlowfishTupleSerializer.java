@@ -30,7 +30,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Apply Blowfish encryption for tuple communication to bolts.
+ *
+ * @deprecated since 2.8.6. Blowfish uses a 64-bit block size which is vulnerable to birthday attacks (Sweet32).
+ *     Use TLS-based transport encryption instead (see storm.messaging.netty.tls.enable).
  */
+@Deprecated(since = "2.8.6", forRemoval = true)
 public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     /**
      * The secret key (if any) for data encryption by blowfish payload serialization factory (BlowfishSerializationFactory). You should use
@@ -48,7 +52,9 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
         String encryptionkey;
         try {
             encryptionkey = (String) topoConf.get(SECRET_KEY);
-            LOG.debug("Blowfish serializer being constructed ...");
+            LOG.warn("BlowfishTupleSerializer is deprecated and will be removed in a future release. "
+                    + "Blowfish uses a 64-bit block size which is vulnerable to birthday attacks (Sweet32). "
+                    + "Use TLS-based transport encryption instead (storm.messaging.netty.tls.enable).");
 
             byte[] bytes;
             if (encryptionkey != null) {

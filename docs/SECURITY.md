@@ -306,6 +306,35 @@ storm.messaging.netty.tls.client.truststore.password: password
 | `storm.messaging.netty.tls.client.truststore.password`| Password for the Netty client truststore                                                  |
 
 
+## UI Security Hardening
+
+### Reverse Proxy Recommendation
+
+For production deployments, the Storm UI, Logviewer, and DRPC HTTP endpoints should be placed behind a reverse proxy such as Apache httpd, nginx, or a similar gateway. While Storm provides built-in SSL/TLS configuration, a reverse proxy offers significant additional security benefits:
+
+- Proper TLS termination with up-to-date cipher suites and certificate management
+- CSRF token validation or same-origin enforcement on state-mutating requests
+- Security response headers (see below)
+- Rate limiting and request filtering
+- Centralized access logging and monitoring
+
+This is especially important because the Storm UI exposes state-mutating operations (topology kill, activate, deactivate, rebalance) via its REST API.
+
+### CSRF Protection
+
+The Storm UI REST API does not currently include built-in Cross-Site Request Forgery (CSRF) protection. State-mutating endpoints can potentially be triggered by a malicious website if a user has an active authenticated session in the same browser. This is particularly relevant when using browser-based authentication mechanisms such as Kerberos (SPNEGO), as the browser automatically attaches credentials to cross-origin requests.
+
+To mitigate this risk, configure your reverse proxy to enforce CSRF token validation or same-origin checks on POST requests.
+
+### Security Response Headers
+
+The Storm UI does not set security-related HTTP response headers by default. Operators deploying a secured cluster should configure the following headers via their reverse proxy or a custom servlet filter configured through `ui.filter`:
+
+- `X-Frame-Options: DENY` or `SAMEORIGIN` to prevent clickjacking attacks
+- `X-Content-Type-Options: nosniff` to prevent MIME type sniffing
+- `Content-Security-Policy` to restrict resource loading
+- `Strict-Transport-Security` when using HTTPS, to enforce secure connections
+
 ## Authentication (Kerberos)
 
 Storm offers pluggable authentication support through thrift and SASL.  This
@@ -509,6 +538,14 @@ The Log servers have their own authorization configurations.  These are set thro
 
 When a topology is submitted, the submitting user can specify users in this list as well.  The users and groups specified-in addition to the users in the cluster-wide setting-will be granted access to the submitted topology's worker logs in the logviewers.
 
+### BlobStore ACL Validation
+
+Storm uses a BlobStore to distribute topology code and configuration across the cluster. Access control lists on blobs are not enforced by default (`storm.blobstore.acl.validation.enabled: false`). In a secured multi-tenant cluster this means any authenticated user can read or modify any topology's blobs, regardless of ACL settings. To enforce BlobStore ACLs, set the following:
+
+```yaml
+storm.blobstore.acl.validation.enabled: true
+```
+
 ### Supervisors headless User and group Setup
 
 To ensure isolation of users in multi-tenancy, there is need to run supervisors and headless user and group unique to execution on the supervisor nodes.  To enable this follow below steps.
@@ -566,6 +603,8 @@ to get a nimbus client as some other user and perform any nimbus action(i.e. kil
 Impersonation authorization is disabled by default which means any user can perform impersonation. To ensure only authorized users can perform impersonation you should start nimbus with `nimbus.impersonation.authorizer` set to `org.apache.storm.security.auth.authorizer.ImpersonationAuthorizer`.
 The `ImpersonationAuthorizer` uses `nimbus.impersonation.acl` as the acl to authorize users. Following is a sample nimbus config for supporting impersonation:
 
+**Important:** If you have enabled authentication (e.g. Kerberos) and authorization (e.g. `SimpleACLAuthorizer`) but have *not* configured `nimbus.impersonation.authorizer`, any authenticated user can impersonate any other user by setting the `doAsUser` HTTP header or query parameter. The `DefaultHttpCredentialsPlugin` always processes `doAsUser` requests, and without an impersonation authorizer these requests are silently allowed. When deploying a secured cluster you should always configure `nimbus.impersonation.authorizer` alongside `nimbus.authorizer`.
+
 ```yaml
 nimbus.impersonation.authorizer: org.apache.storm.security.auth.authorizer.ImpersonationAuthorizer
 nimbus.impersonation.acl:
@@ -617,6 +656,14 @@ By default storm allows any sized topology to be submitted. But ZK and others ha
 |------------|----------------------|
 | nimbus.slots.perTopology | The maximum number of slots/workers a topology can use. |
 | nimbus.executors.perTopology | The maximum number of executors/threads a topology can use. |
+
+### Serialization Security
+
+Storm uses Kryo for serializing tuple data between spouts and bolts. By default, Kryo requires all classes to be explicitly registered (`topology.fall.back.on.java.serialization: false`). When this setting is changed to `true`, any unregistered class will be serialized using Java's native `ObjectInputStream`/`ObjectOutputStream`, which is known to be vulnerable to deserialization attacks if untrusted data reaches the serialization path.
+
+**Do not set `topology.fall.back.on.java.serialization` to `true` in production.** While topology submitters already run arbitrary code via their spouts and bolts, enabling the Java serialization fallback broadens the attack surface and may allow malicious data from external sources (e.g. message queues) to trigger unintended code execution during deserialization.
+
+For tuple encryption, use TLS-based transport encryption (`storm.messaging.netty.tls.enable`) instead of the deprecated `BlowfishTupleSerializer`, which uses a 64-bit block cipher vulnerable to birthday attacks.
 
 ### Log Cleanup
 The Logviewer daemon now is also responsible for cleaning up old log files for dead topologies.
@@ -692,5 +739,14 @@ Also, there are several configurations for topology Zookeeper authentication:
 | storm.zookeeper.topology.auth.payload | A string representing the payload for topology Zookeeper authentication. |
 
 Note: If storm.zookeeper.topology.auth.payload isn't set, Storm will generate a ZooKeeper secret payload for MD5-digest with generateZookeeperDigestSecretPayload() method.
+
+### ZooKeeper SSL Hostname Verification
+
+When enabling ZooKeeper SSL via `storm.zookeeper.ssl.enable`, be aware that hostname verification is disabled by default (`storm.zookeeper.ssl.hostnameVerification: false`). Without hostname verification, a man-in-the-middle attacker with any valid certificate signed by a trusted CA could intercept communication between Storm and ZooKeeper. For production deployments you should enable this:
+
+```yaml
+storm.zookeeper.ssl.enable: true
+storm.zookeeper.ssl.hostnameVerification: true
+```
 
 

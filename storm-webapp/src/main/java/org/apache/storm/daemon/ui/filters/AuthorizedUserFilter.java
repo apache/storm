@@ -154,12 +154,12 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                     );
                     return;
                 }
-
-                LOG.warn(" principal {} is trying to impersonate {} but {} has no authorizer configured. "
+            } else {
+                LOG.warn("Principal {} is trying to impersonate {} but {} is not configured. "
                                 + "This is a potential security hole. Please see SECURITY.MD to learn how to "
                                 + "configure an impersonation authorizer.",
                         reqContext.realPrincipal().toString(), reqContext.principal().toString(),
-                        conf.get(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER));
+                        DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER);
             }
         }
 
