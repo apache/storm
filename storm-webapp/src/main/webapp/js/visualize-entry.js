@@ -21,7 +21,7 @@
 
 // --- CSS ---
 require('bootstrap/dist/css/bootstrap.min.css');
-require('vis/dist/vis.min.css');
+require('vis-network/styles/vis-network.min.css');
 require('../css/style.css');
 
 // --- jQuery ---
@@ -52,8 +52,10 @@ $.url = function (param) {
   return u;
 };
 
-// --- vis.js ---
-var vis = require('vis');
+// --- vis-network + vis-data ---
+var vis = {};
+vis.Network = require('vis-network/peer').Network;
+vis.DataSet = require('vis-data/peer').DataSet;
 window.vis = vis;
 
 // --- Custom Storm visualization code ---

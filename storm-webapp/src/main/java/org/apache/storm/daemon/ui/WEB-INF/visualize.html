@@ -73,7 +73,7 @@
                         <details>
                             <summary>
                                 {{#:show_link}}
-                                    <a href="#" onclick="network.selectNodes(['{{:component}}']); handleNodeClickEvent('{{:component}}'); return false;">{{:component}}</a>
+                                    <a href="#" data-component="{{:component}}" class="component-link">{{:component}}</a>
                                 {{/:show_link}}
                                 {{^:show_link}}
                                     {{:component}}

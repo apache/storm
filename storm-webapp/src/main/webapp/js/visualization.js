@@ -16,6 +16,23 @@
  * limitations under the License.
  */
 
+function tooltipElement(lines) {
+    var container = document.createElement("div");
+    lines.forEach(function(line, i) {
+        if (line.bold) {
+            var b = document.createElement("b");
+            b.textContent = line.text;
+            container.appendChild(b);
+        } else {
+            container.appendChild(document.createTextNode(line.text));
+        }
+        if (i < lines.length - 1) {
+            container.appendChild(document.createElement("br"));
+        }
+    });
+    return container;
+}
+
 var visNS = {
     // Update / refresh setting
     shouldUpdate: true,
@@ -257,10 +274,12 @@ function parseNode(nodeJson, nodeId) {
         selectedCol = "#ffc180";
     }
 
-    // Generate title
-    var title = "<b>" + nodeId + "</b><br/>";
-    title += "Capacity: " + nodeJson[":capacity"] + "<br/>";
-    title += "Latency: " + nodeJson[":latency"]
+    // Generate title as DOM element (vis-network 10 does not render HTML strings)
+    var title = tooltipElement([
+        { text: nodeId, bold: true },
+        { text: "Capacity: " + nodeJson[":capacity"] },
+        { text: "Latency: " + nodeJson[":latency"] }
+    ])
 
     // Construct the node
     var node = {
@@ -317,7 +336,11 @@ function parseEdge(edgeJson, sourceId) {
             "from": edgeJson[":component"],
             "to": sourceId,
             "label": edgeJson[":stream"],
-            "title": "From: " + edgeJson[":component"] + "<br>To: " + sourceId + "<br>Grouping: " + edgeJson[":grouping"]
+            "title": tooltipElement([
+                { text: "From: " + edgeJson[":component"] },
+                { text: "To: " + sourceId },
+                { text: "Grouping: " + edgeJson[":grouping"] }
+            ])
         });
     }
 }
@@ -410,12 +433,22 @@ function asc_sort(a, b){
     return ($(b).text()) < ($(a).text()) ? 1 : -1;
 }
 
-// Expose for Cypress testing and inline script access
-window.visNS = visNS;
-window.checkStream = checkStream;
+// Expose for Cypress testing only
+if (window.Cypress) {
+    window.visNS = visNS;
+    window.checkStream = checkStream;
+}
 
 $(document).ready(function() {
     visNS.networkContainer = document.getElementById("mynetwork");
     update();
+
+    // Delegated handler replaces inline onclick on component links
+    $(document).on('click', '.component-link', function(e) {
+        e.preventDefault();
+        var comp = $(this).attr('data-component');
+        visNS.network.selectNodes([comp]);
+        handleNodeClickEvent(comp);
+    });
 });
 
