@@ -430,6 +430,37 @@
             </build>
         </profile>
         <profile>
+            <id>no-tests</id>
+            <properties>
+                <skipITs>true</skipITs>
+                <clojure.test.skip>true</clojure.test.skip>
+            </properties>
+
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <!-- Unit tests -->
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <skipTests>true</skipTests>
+                            </configuration>
+                        </plugin>
+
+                        <!-- Integration tests -->
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-failsafe-plugin</artifactId>
+                            <configuration>
+                                <skipITs>true</skipITs>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
             <id>externals</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
@@ -1371,6 +1402,9 @@
                     <artifactId>clojure-maven-plugin</artifactId>
                     <version>1.9.3</version>
                     <extensions>true</extensions>
+                    <configuration>
+                        <skip>${clojure.test.skip}</skip>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
