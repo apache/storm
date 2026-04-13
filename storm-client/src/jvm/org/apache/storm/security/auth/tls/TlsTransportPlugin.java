@@ -37,18 +37,17 @@ import org.apache.storm.thrift.protocol.TBinaryProtocol;
 import org.apache.storm.thrift.protocol.TProtocol;
 import org.apache.storm.thrift.server.TServer;
 import org.apache.storm.thrift.server.TThreadPoolServer;
-import org.apache.storm.thrift.transport.TSSLTransportFactory;
 import org.apache.storm.thrift.transport.TServerSocket;
 import org.apache.storm.thrift.transport.TSocket;
 import org.apache.storm.thrift.transport.TTransport;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.ExtendedThreadPoolExecutor;
-import org.apache.storm.utils.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TlsTransportPlugin implements ITransportPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(TlsTransportPlugin.class);
+    private static final String ANONYMOUS_PRINCIPAL_NAME = "CN=ANONYMOUS";
     protected ThriftConnectionType type;
     protected Map<String, Object> conf;
     private int port;
@@ -71,22 +70,13 @@ public class TlsTransportPlugin implements ITransportPlugin {
         int configuredPort = type.getPort(conf);
         Integer socketTimeout = type.getSocketTimeOut(conf);
 
-        TSSLTransportFactory.TSSLTransportParameters params = new TSSLTransportFactory.TSSLTransportParameters();
-        if (type.getServerKeyStorePath(conf) != null && type.getServerKeyStorePassword(conf) != null) {
-            params.setKeyStore(type.getServerKeyStorePath(conf), type.getServerKeyStorePassword(conf), null,
-                    SecurityUtils.inferKeyStoreTypeFromPath(type.getServerKeyStorePath(conf)));
-        } else {
+        if (type.getServerKeyStorePath(conf) == null || type.getServerKeyStorePassword(conf) == null) {
             throw new IllegalArgumentException("The server keystore is not configured properly");
         }
 
-        if (type.isClientAuthRequired(conf)) {
-            if (type.getServerTrustStorePath(conf) != null && type.getServerTrustStorePassword(conf) != null) {
-                params.setTrustStore(type.getServerTrustStorePath(conf), type.getServerTrustStorePassword(conf), null,
-                        SecurityUtils.inferKeyStoreTypeFromPath(type.getServerTrustStorePath(conf)));
-                params.requireClientAuth(true);
-            } else {
-                throw new IllegalArgumentException("The server truststore is not configured properly");
-            }
+        if (type.isClientAuthRequired(conf)
+                && (type.getServerTrustStorePath(conf) == null || type.getServerTrustStorePassword(conf) == null)) {
+            throw new IllegalArgumentException("The server truststore is not configured properly");
         }
 
         int clientTimeout = (socketTimeout == null ? 0 : socketTimeout);
@@ -152,7 +142,7 @@ public class TlsTransportPlugin implements ITransportPlugin {
             TSocket tsocket = (TSocket) trans;
             SSLSocket socket = (SSLSocket) tsocket.getSocket();
 
-            String principalName = "CN=ANONYMOUS";
+            String principalName = ANONYMOUS_PRINCIPAL_NAME;
             try {
                 for (X509Certificate cert: socket.getSession().getPeerCertificateChain()) {
                     Principal principal = cert.getSubjectDN();
@@ -160,7 +150,7 @@ public class TlsTransportPlugin implements ITransportPlugin {
                     break;
                 }
             } catch (SSLPeerUnverifiedException e) {
-                LOG.debug("Client cert is not verified. Set principalName={}.", principalName, e);
+                LOG.warn("Client cert is not verified. Set principalName={}.", principalName, e);
             }
             LOG.debug("principalName : {} ", principalName);
             ReqContext reqContext = ReqContext.context();
