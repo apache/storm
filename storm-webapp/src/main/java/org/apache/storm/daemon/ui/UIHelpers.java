@@ -316,9 +316,9 @@ public class UIHelpers {
     public static FilterHolder corsFilterHandle() {
         FilterHolder filterHolder = new FilterHolder(new CrossOriginFilter());
         filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
-        filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "GET, POST, PUT");
+        filterHolder.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET, POST, PUT");
         filterHolder.setInitParameter(
-                CrossOriginFilter.ALLOWED_ORIGINS_PARAM,
+                CrossOriginFilter.ALLOWED_HEADERS_PARAM,
                 "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin,"
                         + " Content-Type, Content-Length, Accept, Origin");
         filterHolder.setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*");
