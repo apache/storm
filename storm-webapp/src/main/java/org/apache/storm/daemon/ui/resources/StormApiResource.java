@@ -596,7 +596,7 @@ public class StormApiResource {
     /**
      * /api/v1/topology/:id/profiling/start/:host-port/:timeout -> profiling start.
      */
-    @GET
+    @POST
     @Path("/topology/{id}/profiling/start/{host-port}/{timeout}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
@@ -615,7 +615,7 @@ public class StormApiResource {
     /**
      * /api/v1/topology/:id/profiling/stop/:host-port -> profiling stop.
      */
-    @GET
+    @POST
     @Path("/topology/{id}/profiling/stop/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
@@ -633,7 +633,7 @@ public class StormApiResource {
     /**
      * /api/v1/topology/:id/profiling/dumpprofile/:host-port -> dump profile.
      */
-    @GET
+    @POST
     @Path("/topology/{id}/profiling/dumpprofile/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
@@ -651,7 +651,7 @@ public class StormApiResource {
     /**
      * /api/v1/topology/:id/profiling/dumpjstack/:host-port -> dump jstack.
      */
-    @GET
+    @POST
     @Path("/topology/{id}/profiling/dumpjstack/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
@@ -671,7 +671,7 @@ public class StormApiResource {
     /**
      * /api/v1/topology/:id/profiling/restartworker/:host-port -> restart worker.
      */
-    @GET
+    @POST
     @Path("/topology/{id}/profiling/restartworker/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")
@@ -691,7 +691,7 @@ public class StormApiResource {
     /**
      * /api/v1/topology/:id/profiling/dumpheap/:host-port -> dump heap.
      */
-    @GET
+    @POST
     @Path("/topology/{id}/profiling/dumpheap/{host-port}")
     @AuthNimbusOp(value = "setWorkerProfiler", needsTopoId = true)
     @Produces("application/json")

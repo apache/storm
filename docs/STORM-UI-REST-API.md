@@ -1298,9 +1298,9 @@ Sample response:
 }
 ```
 
-## Profiling and Debugging GET Operations
+## Profiling and Debugging POST Operations
 
-###  /api/v1/topology/\<id\>/profiling/start/\<host-port\>/\<timeout\> (GET)
+###  /api/v1/topology/\<id\>/profiling/start/\<host-port\>/\<timeout\> (POST)
 
 Request to start profiler on worker with timeout. Returns status and link to profiler artifacts for worker.
 Substitute appropriate values for \<id\>, \<host-port\> and \<timeout\>.
@@ -1339,7 +1339,7 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/\<id\>/profiling/dumpprofile/\<host-port\> (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpprofile/\<host-port\> (POST)
 
 Request to dump profiler recording on worker. Returns status and worker id for the request.
 Substitute for \<id\> and \<host-port\>. 
@@ -1371,7 +1371,7 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/\<id\>/profiling/stop/\<host-port\> (GET)
+###  /api/v1/topology/\<id\>/profiling/stop/\<host-port\> (POST)
 
 Request to stop profiler on worker. Returns status and worker id for the request.
 Substitute for \<id\> and \<host-port\>. 
@@ -1403,7 +1403,7 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/\<id\>/profiling/dumpjstack/\<host-port\> (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpjstack/\<host-port\> (POST)
 
 Request to dump jstack on worker. Returns status and worker id for the request.
 Substitute for \<id\> and \<host-port\>. 
@@ -1435,7 +1435,7 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/\<id\>/profiling/dumpheap/\<host-port\> (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpheap/\<host-port\> (POST)
 
 Request to dump heap (jmap) on worker. Returns status and worker id for the request.
 Substitute for \<id\> and \<host-port\>. 
@@ -1467,7 +1467,7 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/\<id\>/profiling/restartworker/\<host-port\> (GET)
+###  /api/v1/topology/\<id\>/profiling/restartworker/\<host-port\> (POST)
 
 Request to request the worker. Returns status and worker id for the request.
 Substitute for \<id\> and \<host-port\>. 

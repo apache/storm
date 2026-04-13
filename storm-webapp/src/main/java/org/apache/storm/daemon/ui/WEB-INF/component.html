@@ -386,7 +386,7 @@ function start_profiling() {
     var passed = {}
     Object.keys(workerActionSelected).forEach(function (id) {
         var url = "/api/v1/topology/"+topologyId+"/profiling/start/" + id + "/" + timeout;
-        $.get(url, function(response,status,jqXHR) {
+        $.post(url, function(response,status,jqXHR) {
             jsError(function() {
                 getStatic("/templates/component-page-template.html", function(template) {
                     var host_port_split = id.split(":");
@@ -428,7 +428,7 @@ function stop_profiling(id) {
     $("#stop_" + id).prop('disabled', true);
     setTimeout(function(){ $("#stop_" + id).prop('disabled', false); }, 5000);
     
-    $.get(url, function(response,status,jqXHR) {
+    $.post(url, function(response,status,jqXHR) {
         alert("Submitted request to stop profiling...");
     })
     .fail(function(response) {
@@ -445,7 +445,7 @@ function dump_profile(id) {
     $("#dump_profile_" + id).prop('disabled', true);
     setTimeout(function(){ $("#dump_profile_" + id).prop('disabled', false); }, 5000);
     
-    $.get(url, function(response,status,jqXHR) {
+    $.post(url, function(response,status,jqXHR) {
         alert("Submitted request to dump profile snapshot...");
     })
     .fail(function(response) {
@@ -465,7 +465,7 @@ function dump_jstacks() {
         $("#dump_jstack_" + id).prop('disabled', true);
         setTimeout(function(){ $("#dump_jstack_" + id).prop('disabled', false); }, 5000);
 
-        $.get(url).fail(function(response) {
+        $.post(url).fail(function(response) {
             failed[id] = response;
         });
         if (!(id in failed)) {
@@ -490,7 +490,7 @@ function dump_jstack(id) {
     $("#dump_jstack_" + id).prop('disabled', true);
     setTimeout(function(){ $("#dump_jstack_" + id).prop('disabled', false); }, 5000);
     
-    $.get(url, function(response,status,jqXHR) {
+    $.post(url, function(response,status,jqXHR) {
         alert("Submitted request for jstack dump...");
     })
     .fail(function(response) {
@@ -509,7 +509,7 @@ function restart_worker_jvms() {
         $("#restart_worker_jvm_" + id).prop('disabled', true);
         setTimeout(function(){ $("#restart_worker_jvm_" + id).prop('disabled', false); }, 5000);
 
-        $.get(url).fail(function(response) {
+        $.post(url).fail(function(response) {
             failed[id] = response;
         });
         if (!(id in failed)) {
@@ -537,7 +537,7 @@ function dump_heaps() {
         $("#dump_heap_" + id).prop('disabled', true);
         setTimeout(function(){ $("#dump_heap_" + id).prop('disabled', false); }, 5000);
 
-        $.get(url).fail(function(response) {
+        $.post(url).fail(function(response) {
             failed[id] = response;
         });
         if (!(id in failed)) {
@@ -562,7 +562,7 @@ function dump_heap(id) {
     $("#dump_heap_" + id).prop('disabled', true);
     setTimeout(function(){ $("#dump_heap_" + id).prop('disabled', false); }, 5000);
     
-    $.get(url, function(response,status,jqXHR) {
+    $.post(url, function(response,status,jqXHR) {
         alert("Submitted request for jmap dump...");
     })
     .fail(function(response) {
