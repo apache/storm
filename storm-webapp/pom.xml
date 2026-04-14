@@ -30,6 +30,15 @@
     <name>Storm Webapp</name>
     <description>Webapp Servers for Apache Storm</description>
 
+    <properties>
+        <!-- Substituted into WEB-INF/*.html as @packageTimestamp@ by
+             maven-resources-plugin for bundle cache-busting. Also passed to
+             webpack (see frontend-maven-plugin configuration below) so the
+             PACKAGE_TIMESTAMP baked into the JS bundle matches the token
+             served in the HTML pages. -->
+        <packageTimestamp>${maven.build.timestamp}</packageTimestamp>
+    </properties>
+
     <dependencies>
         <!-- storm-webapp is based on storm-core -->
         <dependency>
@@ -145,6 +154,18 @@
                 <includes>
                     <include>WEB-INF/**/*.*</include>
                 </includes>
+                <excludes>
+                    <!-- Top-level HTML pages contain @packageTimestamp@ for bundle
+                         cache-busting and are filtered below. -->
+                    <exclude>WEB-INF/*.html</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/java/org/apache/storm/daemon/ui</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>WEB-INF/*.html</include>
+                </includes>
             </resource>
             <resource>
                 <directory>${basedir}/target/generated-resources</directory>
@@ -196,6 +217,19 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <!-- Use @...@ delimiters only so JS/HTML ${...} (template
+                     literals, shell-style expressions, etc.) in filtered
+                     WEB-INF/*.html files are left untouched. -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <useDefaultDelimiters>false</useDefaultDelimiters>
+                    <delimiters>
+                        <delimiter>@</delimiter>
+                    </delimiters>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

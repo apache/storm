@@ -110,10 +110,12 @@ app.post('/api/v1/topology/:id/:action', (_req, res) => {
 });
 
 // --- Serve HTML pages ---
-// The HTML files use ${packageTimestamp} which we replace on the fly
+// The HTML files use @packageTimestamp@ which we replace on the fly
+// (Maven's resource filter substitutes it at build time with the same
+// delimiter — see storm-webapp/pom.xml).
 function serveHtml(filePath, res) {
   let html = fs.readFileSync(filePath, 'utf8');
-  html = html.replace(/\$\{packageTimestamp\}/g, 'test');
+  html = html.replace(/@packageTimestamp@/g, 'test');
   res.type('html').send(html);
 }
 

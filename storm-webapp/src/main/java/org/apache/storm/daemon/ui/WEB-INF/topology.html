@@ -21,8 +21,8 @@
 <script>!function(){var m=document.cookie.match(/(?:^|;\s*)stormTheme=([^;]*)/);var t=m?decodeURIComponent(m[1]):null;if(!t)t=window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.setAttribute("data-bs-theme",t)}()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Storm UI</title>
-<link href="/dist/main.bundle.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
-<script src="/dist/main.bundle.js?_ts=${packageTimestamp}" type="text/javascript"></script>
+<link href="/dist/main.bundle.css?_ts=@packageTimestamp@" rel="stylesheet" type="text/css">
+<script src="/dist/main.bundle.js?_ts=@packageTimestamp@" type="text/javascript"></script>
 </head>
 <body>
 <div class="container-fluid">
@@ -299,7 +299,7 @@ $(document).ready(function() {
         var formattedConfig = formatConfigData(response["configuration"]);
         var buttonJsonData = topologyActionJson(response["id"],response["encodedId"],response["name"],response["status"]
                                                 ,response["msgTimeout"],response["configuration"]["topology.eventlogger.executors"],response["debug"],response["samplingPct"]);
-        $.ajax ({url: "/templates/topology-page-template.html", success: function(template) {
+        getStatic("/templates/topology-page-template.html", function(template) {
             toggleChangeLogLevel = function (data) {
               renderLogLevelForm (template, data);
             }
@@ -488,7 +488,7 @@ $(document).ready(function() {
                 }
             });
           });
-      }});
+      });
     });
  });
 
