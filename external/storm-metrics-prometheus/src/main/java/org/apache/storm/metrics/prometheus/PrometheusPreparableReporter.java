@@ -56,9 +56,9 @@ public class PrometheusPreparableReporter implements PreparableReporter {
         try {
             final SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, new TrustManager[]{INSECURE_TRUST_MANAGER}, null);
-            SSLContext.setDefault(sslContext);
 
             final HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+            connection.setSSLSocketFactory(sslContext.getSocketFactory());
             connection.setHostnameVerifier((hostname, session) -> true);
             return connection;
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -104,6 +104,9 @@ public class PrometheusPreparableReporter implements PreparableReporter {
             builder.scheme(scheme);
 
             if (scheme == Scheme.HTTPS && skipTlsValidation) {
+                LOG.warn("TLS validation is DISABLED for the Prometheus PushGateway connection "
+                        + "(storm.daemon.metrics.reporter.plugin.prometheus.skip_tls_validation=true). "
+                        + "This is insecure and must not be used in production.");
                 builder.connectionFactory(INSECURE_CONNECTION_FACTORY);
             }
 
