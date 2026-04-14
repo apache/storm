@@ -592,4 +592,77 @@ class UIHelpersTest {
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Unable to find entry for spoutId '" + spoutId + "'"));
     }
+
+    @Test
+    public void testGetJsonResponseBodyNoCallbackReturnsJson() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("a", 1);
+        String body = UIHelpers.getJsonResponseBody(data, null, true);
+        assertEquals("{\"a\":1}", body);
+    }
+
+    @Test
+    public void testGetJsonResponseBodyValidCallbackIsWrapped() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("a", 1);
+        String body = UIHelpers.getJsonResponseBody(data, "myCb", true);
+        assertEquals("myCb({\"a\":1});", body);
+    }
+
+    @Test
+    public void testGetJsonResponseBodyValidDottedCallbackIsWrapped() {
+        String body = UIHelpers.getJsonResponseBody("{\"x\":1}", "foo.bar.$baz_0", false);
+        assertEquals("foo.bar.$baz_0({\"x\":1});", body);
+    }
+
+    @Test
+    public void testGetJsonResponseBodyInvalidCallbackFallsBackToJson() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("a", 1);
+        String body = UIHelpers.getJsonResponseBody(data, "alert(document.cookie)//", true);
+        assertEquals("{\"a\":1}", body);
+    }
+
+    @Test
+    public void testGetJsonResponseBodyEmptyCallbackFallsBackToJson() {
+        String body = UIHelpers.getJsonResponseBody("{\"x\":1}", "", false);
+        assertEquals("{\"x\":1}", body);
+    }
+
+    @Test
+    public void testGetJsonResponseBodyTooLongCallbackFallsBackToJson() {
+        StringBuilder sb = new StringBuilder("cb");
+        for (int i = 0; i < 200; i++) {
+            sb.append('x');
+        }
+        String body = UIHelpers.getJsonResponseBody("{\"x\":1}", sb.toString(), false);
+        assertEquals("{\"x\":1}", body);
+    }
+
+    @Test
+    public void testGetJsonResponseBodyRejectsCallbacksStartingWithDigit() {
+        String body = UIHelpers.getJsonResponseBody("{\"x\":1}", "1cb", false);
+        assertEquals("{\"x\":1}", body);
+    }
+
+    @Test
+    public void testGetJsonResponseHeadersNoCallbackUsesJsonContentType() {
+        Map headers = UIHelpers.getJsonResponseHeaders(null, null);
+        assertEquals("application/json;charset=utf-8", headers.get("Content-Type"));
+        assertEquals("nosniff", headers.get("X-Content-Type-Options"));
+    }
+
+    @Test
+    public void testGetJsonResponseHeadersValidCallbackUsesJavaScriptContentType() {
+        Map headers = UIHelpers.getJsonResponseHeaders("myCb", null);
+        assertEquals("application/javascript;charset=utf-8", headers.get("Content-Type"));
+        assertEquals("nosniff", headers.get("X-Content-Type-Options"));
+    }
+
+    @Test
+    public void testGetJsonResponseHeadersInvalidCallbackFallsBackToJsonContentType() {
+        Map headers = UIHelpers.getJsonResponseHeaders("alert(1)//", null);
+        assertEquals("application/json;charset=utf-8", headers.get("Content-Type"));
+        assertEquals("nosniff", headers.get("X-Content-Type-Options"));
+    }
 }

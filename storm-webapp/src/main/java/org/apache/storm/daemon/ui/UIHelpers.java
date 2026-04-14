@@ -444,9 +444,23 @@ public class UIHelpers {
         stormRunJetty(port, null, null, headerBufferSize, configurator);
     }
 
+    private static final Pattern JSONP_CALLBACK_PATTERN =
+            Pattern.compile("^[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)*$");
+
+    private static String sanitizeJsonpCallback(String callback) {
+        if (callback == null) {
+            return null;
+        }
+        if (callback.length() > 128 || !JSONP_CALLBACK_PATTERN.matcher(callback).matches()) {
+            LOG.warn("Ignoring invalid JSONP callback parameter");
+            return null;
+        }
+        return callback;
+    }
+
     /**
      * wrapJsonInCallback.
-     * @param callback callbackParameterName
+     * @param callback callbackParameterName (must already be validated)
      * @param response response
      * @return wrapJsonInCallback
      */
@@ -461,6 +475,7 @@ public class UIHelpers {
      * @return getJsonResponseHeaders
      */
     public static Map getJsonResponseHeaders(String callback, Map headers) {
+        final String safeCallback = sanitizeJsonpCallback(callback);
         Map<String, String> headersResult = new HashMap<>();
         headersResult.put("Cache-Control", "no-cache, no-store");
         headersResult.put("Access-Control-Allow-Origin", "*");
@@ -469,7 +484,8 @@ public class UIHelpers {
                                   + "Access-Controler-Allow-Origin, "
                                   + "X-Requested-By, X-Csrf-Token, "
                                   + "Authorization, X-Requested-With");
-        if (callback != null) {
+        headersResult.put("X-Content-Type-Options", "nosniff");
+        if (safeCallback != null) {
             headersResult.put("Content-Type", "application/javascript;charset=utf-8");
         } else {
             headersResult.put("Content-Type", "application/json;charset=utf-8");
@@ -481,8 +497,9 @@ public class UIHelpers {
     }
 
     public static String getJsonResponseBody(Object data, String callback, boolean needSerialize) {
+        String safeCallback = sanitizeJsonpCallback(callback);
         String serializedData = needSerialize ? JSONValue.toJSONString(data) : (String) data;
-        return callback != null ? wrapJsonInCallback(callback, serializedData) : serializedData;
+        return safeCallback != null ? wrapJsonInCallback(safeCallback, serializedData) : serializedData;
     }
 
     /**
