@@ -22,11 +22,17 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
@@ -163,6 +169,31 @@ public class PrometheusPreparableReporterTest {
     private String readContent(String url, Map<String, Object> conf) throws IOException {
         final URL obj = new URL(url);
         final HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        if (con instanceof HttpsURLConnection) {
+            // The test PushGateway uses a self-signed certificate. Scope the trust-all
+            // SSLContext to this connection only, so we do not mutate JVM-wide TLS state.
+            try {
+                final SSLContext sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                    }
+                }}, null);
+                ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
+                ((HttpsURLConnection) con).setHostnameVerifier((h, s) -> true);
+            } catch (GeneralSecurityException e) {
+                throw new IOException(e);
+            }
+        }
         con.setRequestMethod("GET");
 
         if (conf.containsKey("storm.daemon.metrics.reporter.plugin.prometheus.basic_auth_user")) {
