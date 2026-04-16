@@ -629,7 +629,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Commons Codec (commons-codec:commons-codec:1.21.0 - https://commons.apache.org/proper/commons-codec/)
         * Apache Commons Collections (org.apache.commons:commons-collections4:4.5.0 - https://commons.apache.org/proper/commons-collections/)
         * Apache Commons Compress (org.apache.commons:commons-compress:1.28.0 - https://commons.apache.org/proper/commons-compress/)
-        * Apache Commons Configuration (org.apache.commons:commons-configuration2:2.13.0 - https://commons.apache.org/proper/commons-configuration/)
+        * Apache Commons Configuration (org.apache.commons:commons-configuration2:2.14.0 - https://commons.apache.org/proper/commons-configuration/)
         * Apache Commons Crypto (org.apache.commons:commons-crypto:1.1.0 - https://commons.apache.org/proper/commons-crypto/)
         * Apache Commons Exec (org.apache.commons:commons-exec:1.6.0 - https://commons.apache.org/proper/commons-exec/)
         * Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.6.0 - https://commons.apache.org/proper/commons-fileupload/)
@@ -644,20 +644,20 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache Hadoop Common (org.apache.hadoop:hadoop-common:3.5.0 - no url defined)
         * Apache Hadoop shaded Guava (org.apache.hadoop.thirdparty:hadoop-shaded-guava:1.5.0 - https://www.apache.org/hadoop-thirdparty/hadoop-shaded-guava/)
         * Apache Hadoop shaded Protobuf (org.apache.hadoop.thirdparty:hadoop-shaded-protobuf_3_25:1.5.0 - https://www.apache.org/hadoop-thirdparty/hadoop-shaded-protobuf_3_25/)
-        * Apache HBase - Client (org.apache.hbase:hbase-client:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-client)
-        * Apache HBase - Common (org.apache.hbase:hbase-common:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-common)
-        * Apache HBase - Hadoop Compatibility (org.apache.hbase:hbase-hadoop-compat:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-hadoop-compat)
-        * Apache HBase - Hadoop Two Compatibility (org.apache.hbase:hbase-hadoop2-compat:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-hadoop2-compat)
-        * Apache HBase - Logging (org.apache.hbase:hbase-logging:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-logging)
-        * Apache HBase - Metrics API (org.apache.hbase:hbase-metrics-api:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-metrics-api)
-        * Apache HBase - Metrics Implementation (org.apache.hbase:hbase-metrics:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-metrics)
-        * Apache HBase Patched and Relocated (Shaded) Protobuf (org.apache.hbase.thirdparty:hbase-shaded-protobuf:4.1.12 - https://hbase.apache.org/hbase-shaded-protobuf)
-        * Apache HBase - Protocol (org.apache.hbase:hbase-protocol:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-protocol)
-        * Apache HBase Relocated (Shaded) GSON Libs (org.apache.hbase.thirdparty:hbase-shaded-gson:4.1.12 - https://hbase.apache.org/hbase-shaded-gson)
-        * Apache HBase Relocated (Shaded) Netty Libs (org.apache.hbase.thirdparty:hbase-shaded-netty:4.1.12 - https://hbase.apache.org/hbase-shaded-netty)
-        * Apache HBase Relocated (Shaded) Third-party Miscellaneous Libs (org.apache.hbase.thirdparty:hbase-shaded-miscellaneous:4.1.12 - https://hbase.apache.org/hbase-shaded-miscellaneous)
-        * Apache HBase - Shaded Protocol (org.apache.hbase:hbase-protocol-shaded:2.6.4-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-protocol-shaded)
-        * Apache HBase Unsafe Wrapper (org.apache.hbase.thirdparty:hbase-unsafe:4.1.12 - https://hbase.apache.org/hbase-unsafe)
+        * Apache HBase - Client (org.apache.hbase:hbase-client:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-client)
+        * Apache HBase - Common (org.apache.hbase:hbase-common:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-common)
+        * Apache HBase - Hadoop Compatibility (org.apache.hbase:hbase-hadoop-compat:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-hadoop-compat)
+        * Apache HBase - Hadoop Two Compatibility (org.apache.hbase:hbase-hadoop2-compat:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-hadoop2-compat)
+        * Apache HBase - Logging (org.apache.hbase:hbase-logging:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-logging)
+        * Apache HBase - Metrics API (org.apache.hbase:hbase-metrics-api:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-metrics-api)
+        * Apache HBase - Metrics Implementation (org.apache.hbase:hbase-metrics:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-metrics)
+        * Apache HBase Patched and Relocated (Shaded) Protobuf (org.apache.hbase.thirdparty:hbase-shaded-protobuf:4.1.13 - https://hbase.apache.org/hbase-shaded-protobuf)
+        * Apache HBase - Protocol (org.apache.hbase:hbase-protocol:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-protocol)
+        * Apache HBase Relocated (Shaded) GSON Libs (org.apache.hbase.thirdparty:hbase-shaded-gson:4.1.13 - https://hbase.apache.org/hbase-shaded-gson)
+        * Apache HBase Relocated (Shaded) Netty Libs (org.apache.hbase.thirdparty:hbase-shaded-netty:4.1.13 - https://hbase.apache.org/hbase-shaded-netty)
+        * Apache HBase Relocated (Shaded) Third-party Miscellaneous Libs (org.apache.hbase.thirdparty:hbase-shaded-miscellaneous:4.1.13 - https://hbase.apache.org/hbase-shaded-miscellaneous)
+        * Apache HBase - Shaded Protocol (org.apache.hbase:hbase-protocol-shaded:2.6.5-hadoop3 - https://hbase.apache.org/hbase-build-configuration/hbase-protocol-shaded)
+        * Apache HBase Unsafe Wrapper (org.apache.hbase.thirdparty:hbase-unsafe:4.1.13 - https://hbase.apache.org/hbase-unsafe)
         * Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.14 - http://hc.apache.org/httpcomponents-client-ga)
         * Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
         * Apache Kafka (org.apache.kafka:kafka-clients:4.2.0 - https://kafka.apache.org)
@@ -693,7 +693,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.38 - https://metrics.dropwizard.io/metrics-graphite)
         * Gson (com.google.code.gson:gson:2.13.2 - https://github.com/google/gson)
-        * Guava: Google Core Libraries for Java (com.google.guava:guava:33.5.0-jre - https://github.com/google/guava)
+        * Guava: Google Core Libraries for Java (com.google.guava:guava:33.6.0-jre - https://github.com/google/guava)
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.3 - https://github.com/google/guava/failureaccess)
         * Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)
         * Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:8.0.3.Final - https://hibernate.org/validator)
@@ -845,7 +845,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Apache License, Version 2.0, GNU General Public License, version 2
 
-        * RocksDB JNI (org.rocksdb:rocksdbjni:10.10.1 - https://rocksdb.org)
+        * RocksDB JNI (org.rocksdb:rocksdbjni:10.10.1.1 - https://rocksdb.org)
 
     Apache License, Version 2.0, LGPL 2.1, MPL 1.1
 
@@ -857,9 +857,9 @@ The license texts of these dependencies can be found in the licenses directory.
 
     Bouncy Castle Licence
 
-        * Bouncy Castle ASN.1 Extension and Utility APIs (org.bouncycastle:bcutil-jdk18on:1.83 - https://www.bouncycastle.org/download/bouncy-castle-java/)
-        * Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk18on:1.83 - https://www.bouncycastle.org/download/bouncy-castle-java/)
-        * Bouncy Castle Provider (org.bouncycastle:bcprov-jdk18on:1.83 - https://www.bouncycastle.org/download/bouncy-castle-java/)
+        * Bouncy Castle ASN.1 Extension and Utility APIs (org.bouncycastle:bcutil-jdk18on:1.84 - https://www.bouncycastle.org/download/bouncy-castle-java/)
+        * Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs (org.bouncycastle:bcpkix-jdk18on:1.84 - https://www.bouncycastle.org/download/bouncy-castle-java/)
+        * Bouncy Castle Provider (org.bouncycastle:bcprov-jdk18on:1.84 - https://www.bouncycastle.org/download/bouncy-castle-java/)
 
     BSD 2-Clause License
 
