@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import org.apache.storm.shade.com.google.common.collect.Multimap;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.shade.org.jgrapht.graph.DefaultDirectedGraph;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.streams.operations.StateUpdater;
@@ -43,7 +43,7 @@ public class StatefulProcessorBoltTest {
     OutputCollector mockOutputCollector;
     StatefulProcessorBolt<String, Long> bolt;
     Tuple mockTuple1;
-    DirectedGraph<Node, Edge> graph;
+    Graph<Node, Edge> graph;
     Multimap<String, ProcessorNode> mockStreamToProcessors;
     KeyValueState<String, Long> mockKeyValueState;
 
@@ -86,7 +86,7 @@ public class StatefulProcessorBoltTest {
         ProcessorNode node = new ProcessorNode(processor, "outputstream", new Fields("value"));
         node.setEmitsPair(true);
         Mockito.when(mockStreamToProcessors.get(Mockito.anyString())).thenReturn(Collections.singletonList(node));
-        graph = new DefaultDirectedGraph(new StreamsEdgeFactory());
+        graph = new DefaultDirectedGraph<>(null, null, false);
         graph.addVertex(node);
         bolt = new StatefulProcessorBolt<>("bolt1", graph, Collections.singletonList(node));
         bolt.setStreamToInitialProcessors(mockStreamToProcessors);

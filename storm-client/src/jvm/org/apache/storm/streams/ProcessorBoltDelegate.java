@@ -26,8 +26,8 @@ import org.apache.storm.shade.com.google.common.collect.ArrayListMultimap;
 import org.apache.storm.shade.com.google.common.collect.HashBasedTable;
 import org.apache.storm.shade.com.google.common.collect.Multimap;
 import org.apache.storm.shade.com.google.common.collect.Table;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
-import org.apache.storm.shade.org.jgrapht.graph.DirectedSubgraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
+import org.apache.storm.shade.org.jgrapht.graph.AsSubgraph;
 import org.apache.storm.shade.org.jgrapht.traverse.TopologicalOrderIterator;
 import org.apache.storm.streams.processors.ChainedProcessorContext;
 import org.apache.storm.streams.processors.EmittingProcessorContext;
@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 class ProcessorBoltDelegate implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessorBoltDelegate.class);
     private final String id;
-    private final DirectedGraph<Node, Edge> graph;
+    private final Graph<Node, Edge> graph;
     private final List<ProcessorNode> nodes;
     private final List<ProcessorNode> outgoingProcessors = new ArrayList<>();
     private final Set<EmittingProcessorContext> emittingProcessorContexts = new HashSet<>();
@@ -57,7 +57,7 @@ class ProcessorBoltDelegate implements Serializable {
     private Multimap<String, ProcessorNode> streamToInitialProcessors;
     private String timestampField;
 
-    ProcessorBoltDelegate(String id, DirectedGraph<Node, Edge> graph, List<ProcessorNode> nodes) {
+    ProcessorBoltDelegate(String id, Graph<Node, Edge> graph, List<ProcessorNode> nodes) {
         this.id = id;
         this.graph = graph;
         this.nodes = new ArrayList<>(nodes);
@@ -79,7 +79,7 @@ class ProcessorBoltDelegate implements Serializable {
         this.topoConf = topoConf;
         topologyContext = context;
         outputCollector = collector;
-        DirectedSubgraph<Node, Edge> subgraph = new DirectedSubgraph<>(graph, new HashSet<>(nodes), null);
+        AsSubgraph<Node, Edge> subgraph = new AsSubgraph<>(graph, new HashSet<>(nodes), null);
         TopologicalOrderIterator<Node, Edge> it = new TopologicalOrderIterator<>(subgraph);
         while (it.hasNext()) {
             Node node = it.next();

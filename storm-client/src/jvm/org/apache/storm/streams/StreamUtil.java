@@ -16,12 +16,12 @@ import static org.apache.storm.streams.WindowNode.PUNCTUATION;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.tuple.Fields;
 
 public class StreamUtil {
     @SuppressWarnings("unchecked")
-    public static <T> List<T> getParents(DirectedGraph<Node, Edge> graph, Node node) {
+    public static <T> List<T> getParents(Graph<Node, Edge> graph, Node node) {
         List<Edge> incoming = new ArrayList<>(graph.incomingEdgesOf(node));
         List<T> ret = new ArrayList<>();
         for (Edge e : incoming) {
@@ -31,7 +31,7 @@ public class StreamUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> List<T> getChildren(DirectedGraph<Node, Edge> graph, Node node) {
+    public static <T> List<T> getChildren(Graph<Node, Edge> graph, Node node) {
         List<Edge> outgoing = new ArrayList<>(graph.outgoingEdgesOf(node));
         List<T> ret = new ArrayList<>();
         for (Edge e : outgoing) {

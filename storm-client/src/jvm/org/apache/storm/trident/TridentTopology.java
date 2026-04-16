@@ -38,9 +38,8 @@ import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.CustomStreamGrouping;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
-import org.apache.storm.shade.org.jgrapht.UndirectedGraph;
-import org.apache.storm.shade.org.jgrapht.alg.ConnectivityInspector;
+import org.apache.storm.shade.org.jgrapht.Graph;
+import org.apache.storm.shade.org.jgrapht.alg.connectivity.ConnectivityInspector;
 import org.apache.storm.shade.org.jgrapht.graph.DefaultDirectedGraph;
 import org.apache.storm.shade.org.jgrapht.graph.Pseudograph;
 import org.apache.storm.topology.BoltDeclarer;
@@ -103,7 +102,7 @@ public class TridentTopology {
     Map<String, Number> masterCoordResources = new HashMap<>();
 
     public TridentTopology() {
-        this(new DefaultDirectedGraph<Node, IndexedEdge>(new ErrorEdgeFactory()),
+        this(new DefaultDirectedGraph<Node, IndexedEdge>(null, new ErrorEdgeFactory(), false),
              new LinkedHashMap<String, List<Node>>(),
              new UniqueIdGen());
     }
@@ -333,9 +332,9 @@ public class TridentTopology {
         return ret;
     }
 
-    private static Map<Group, Integer> getGroupParallelisms(DirectedGraph<Node, IndexedEdge> graph, GraphGrouper grouper,
+    private static Map<Group, Integer> getGroupParallelisms(Graph<Node, IndexedEdge> graph, GraphGrouper grouper,
                                                             Collection<Group> groups) {
-        UndirectedGraph<Group, Object> equivs = new Pseudograph<>(Object.class);
+        Graph<Group, Object> equivs = new Pseudograph<>(Object.class);
         for (Group g : groups) {
             equivs.addVertex(g);
         }
@@ -440,7 +439,7 @@ public class TridentTopology {
         return false;
     }
 
-    private static void addEdge(DirectedGraph g, Object source, Object target, int index) {
+    private static void addEdge(Graph g, Object source, Object target, int index) {
         g.addEdge(source, target, new IndexedEdge(source, target, index));
     }
 

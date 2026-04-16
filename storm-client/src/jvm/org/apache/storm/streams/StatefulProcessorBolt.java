@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.shade.com.google.common.collect.Multimap;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.streams.processors.StatefulProcessor;
 import org.apache.storm.streams.processors.UpdateStateByKeyProcessor;
@@ -35,7 +35,7 @@ class StatefulProcessorBolt<K, V> extends BaseStatefulBolt<KeyValueState<K, V>> 
     // can be UpdateStateByKey or StateQuery processors
     private final Set<StatefulProcessor<K, V>> statefulProcessors;
 
-    StatefulProcessorBolt(String boltId, DirectedGraph<Node, Edge> graph, List<ProcessorNode> nodes) {
+    StatefulProcessorBolt(String boltId, Graph<Node, Edge> graph, List<ProcessorNode> nodes) {
         delegate = new ProcessorBoltDelegate(boltId, graph, nodes);
         statefulProcessors = getStatefulProcessors(nodes);
     }

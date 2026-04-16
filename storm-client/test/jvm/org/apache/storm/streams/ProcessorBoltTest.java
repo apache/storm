@@ -20,7 +20,7 @@ import java.util.Set;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.shade.com.google.common.collect.Multimap;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.shade.org.jgrapht.graph.DefaultDirectedGraph;
 import org.apache.storm.streams.operations.aggregators.LongSum;
 import org.apache.storm.streams.processors.AggregateProcessor;
@@ -51,7 +51,7 @@ public class ProcessorBoltTest {
     Tuple mockTuple3;
     Tuple punctuation;
     Multimap<String, ProcessorNode> mockStreamToProcessors;
-    DirectedGraph<Node, Edge> graph;
+    Graph<Node, Edge> graph;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -64,7 +64,7 @@ public class ProcessorBoltTest {
         punctuation = Mockito.mock(Tuple.class);
         setUpPunctuation(punctuation);
         mockStreamToProcessors = Mockito.mock(Multimap.class);
-        graph = new DefaultDirectedGraph(new StreamsEdgeFactory());
+        graph = new DefaultDirectedGraph<>(null, null, false);
 
     }
 

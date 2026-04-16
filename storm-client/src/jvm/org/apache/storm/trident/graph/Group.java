@@ -20,22 +20,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.storm.generated.SharedMemory;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.trident.planner.Node;
 import org.apache.storm.trident.util.IndexedEdge;
 import org.apache.storm.trident.util.TridentUtils;
 
 public class Group {
     public final Set<Node> nodes = new HashSet<>();
-    private final DirectedGraph<Node, IndexedEdge> graph;
+    private final Graph<Node, IndexedEdge> graph;
     private final String id = UUID.randomUUID().toString();
 
-    public Group(DirectedGraph graph, List<Node> nodes) {
+    public Group(Graph graph, List<Node> nodes) {
         this.graph = graph;
         this.nodes.addAll(nodes);
     }
 
-    public Group(DirectedGraph graph, Node n) {
+    public Group(Graph graph, Node n) {
         this(graph, Arrays.asList(n));
     }
 
