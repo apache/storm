@@ -16,7 +16,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.security.Principal;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -26,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
 import javax.security.auth.Subject;
-import javax.security.cert.X509Certificate;
 import org.apache.storm.security.auth.ITransportPlugin;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.SingleUserPrincipal;
@@ -97,7 +97,7 @@ public class TlsTransportPlugin implements ITransportPlugin {
         Integer queueSize = type.getQueueSize(conf);
 
         TThreadPoolServer.Args serverArgs = new TThreadPoolServer.Args(serverTransport)
-                .processor(new TTlsWrapProcessor(processor))
+                .processor(new TTlsWrapProcessor(processor, type.isClientAuthRequired(conf)))
                 .minWorkerThreads(numWorkerThreads)
                 .maxWorkerThreads(numWorkerThreads)
                 .protocolFactory(new TBinaryProtocol.Factory(false, true));
@@ -130,9 +130,11 @@ public class TlsTransportPlugin implements ITransportPlugin {
 
     private static class TTlsWrapProcessor implements TProcessor {
         final TProcessor wrapped;
+        final boolean clientAuthRequired;
 
-        TTlsWrapProcessor(TProcessor wrapped) {
+        TTlsWrapProcessor(TProcessor wrapped, boolean clientAuthRequired) {
             this.wrapped = wrapped;
+            this.clientAuthRequired = clientAuthRequired;
         }
 
         @Override
@@ -144,13 +146,22 @@ public class TlsTransportPlugin implements ITransportPlugin {
 
             String principalName = ANONYMOUS_PRINCIPAL_NAME;
             try {
-                for (X509Certificate cert: socket.getSession().getPeerCertificateChain()) {
-                    Principal principal = cert.getSubjectDN();
-                    principalName = principal.getName();
-                    break;
+                Certificate[] peers = socket.getSession().getPeerCertificates();
+                if (peers.length > 0 && peers[0] instanceof X509Certificate) {
+                    principalName = ((X509Certificate) peers[0]).getSubjectX500Principal().getName();
+                } else if (clientAuthRequired) {
+                    throw new TException("TLS peer presented no X.509 certificate");
                 }
             } catch (SSLPeerUnverifiedException e) {
-                LOG.warn("Client cert is not verified. Set principalName={}.", principalName, e);
+                // Encryption-only mode (clientAuthRequired=false): fall through with CN=ANONYMOUS.
+                // When client auth IS required this branch is belt-and-suspenders against a
+                // misconfigured server socket — fail closed rather than assign a default identity.
+                if (clientAuthRequired) {
+                    LOG.warn("Rejecting TLS connection from {}: peer certificate not verified",
+                            socket.getInetAddress());
+                    throw new TException("TLS peer not verified", e);
+                }
+                LOG.debug("Client cert not presented; clientAuthRequired=false, using {}", principalName);
             }
             LOG.debug("principalName : {} ", principalName);
             ReqContext reqContext = ReqContext.context();

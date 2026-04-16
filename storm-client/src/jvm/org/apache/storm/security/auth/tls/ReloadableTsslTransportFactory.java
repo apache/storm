@@ -64,7 +64,6 @@ public class ReloadableTsslTransportFactory extends TSSLTransportFactory {
 
             serverSocket.setSoTimeout(timeout);
             serverSocket.setNeedClientAuth(clientAuth);
-            serverSocket.setWantClientAuth(clientAuth);
             return new TServerSocket(new TServerSocket.ServerSocketTransportArgs().serverSocket(serverSocket).clientTimeout(timeout));
         } catch (Exception e) {
             throw new TTransportException("Could not bind to port " + port, e);
