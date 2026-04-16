@@ -13,11 +13,11 @@
 package org.apache.storm.trident.util;
 
 import java.io.Serializable;
-import org.apache.storm.shade.org.jgrapht.EdgeFactory;
+import java.util.function.Supplier;
 
-public class ErrorEdgeFactory implements EdgeFactory, Serializable {
+public class ErrorEdgeFactory implements Supplier<IndexedEdge>, Serializable {
     @Override
-    public Object createEdge(Object v, Object v1) {
+    public IndexedEdge get() {
         throw new RuntimeException("Edges should be made explicitly");
     }
 }

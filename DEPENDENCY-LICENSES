@@ -405,7 +405,7 @@ List of third-party dependencies grouped by their license type.
 
     Eclipse Public License (EPL) 1.0, GNU Lesser General Public License Version 2.1, February 1999
 
-        * JGraphT - Core (org.jgrapht:jgrapht-core:0.9.0 - http://www.jgrapht.org/jgrapht-core)
+        * JGraphT - Core (org.jgrapht:jgrapht-core:1.5.3 - http://www.jgrapht.org/jgrapht-core)
 
     Eclipse Public License 2.0, GNU General Public License, version 2 with the GNU Classpath Exception
 

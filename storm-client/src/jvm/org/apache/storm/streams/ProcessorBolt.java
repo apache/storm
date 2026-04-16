@@ -15,7 +15,7 @@ package org.apache.storm.streams;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.shade.com.google.common.collect.Multimap;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -28,7 +28,7 @@ import org.apache.storm.tuple.Tuple;
 class ProcessorBolt extends BaseRichBolt implements StreamBolt {
     private final ProcessorBoltDelegate delegate;
 
-    ProcessorBolt(String id, DirectedGraph<Node, Edge> graph, List<ProcessorNode> nodes) {
+    ProcessorBolt(String id, Graph<Node, Edge> graph, List<ProcessorNode> nodes) {
         delegate = new ProcessorBoltDelegate(id, graph, nodes);
     }
 

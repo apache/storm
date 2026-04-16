@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.storm.annotation.InterfaceStability;
@@ -68,7 +67,7 @@ public class StreamBuilder {
      * Creates a new {@link StreamBuilder}.
      */
     public StreamBuilder() {
-        graph = new DefaultDirectedGraph<>(new StreamsEdgeFactory());
+        graph = new DefaultDirectedGraph<>(null, null, false);
     }
 
     /**
@@ -158,7 +157,7 @@ public class StreamBuilder {
         nodeGroupingInfo.clear();
         windowInfo.clear();
         curGroup.clear();
-        TopologicalOrderIterator<Node, Edge> iterator = new TopologicalOrderIterator<>(graph, queue());
+        TopologicalOrderIterator<Node, Edge> iterator = new TopologicalOrderIterator<>(graph, priorityComparator());
         TopologyBuilder topologyBuilder = new TopologyBuilder();
         while (iterator.hasNext()) {
             Node node = iterator.next();
@@ -196,7 +195,7 @@ public class StreamBuilder {
 
     Node addNode(Node parent, Node child, String parentStreamId, int parallelism) {
         graph.addVertex(child);
-        graph.addEdge(parent, child);
+        graph.addEdge(parent, child, new Edge(parent, child));
         child.setParallelism(parallelism);
         if (parent instanceof WindowNode || parent instanceof PartitionNode) {
             child.addParentStream(parentNode(parent), parentStreamId);
@@ -236,9 +235,8 @@ public class StreamBuilder {
         return newChild;
     }
 
-    private PriorityQueue<Node> queue() {
-        // min-heap
-        return new PriorityQueue<>(new Comparator<Node>() {
+    private Comparator<Node> priorityComparator() {
+        return new Comparator<Node>() {
             /*
              * Nodes in the descending order of priority.
              * ProcessorNode has higher priority than partition and window nodes
@@ -279,7 +277,7 @@ public class StreamBuilder {
                 }
                 return Integer.MAX_VALUE;
             }
-        });
+        };
     }
 
     private void handleProcessorNode(ProcessorNode processorNode, TopologyBuilder topologyBuilder) {

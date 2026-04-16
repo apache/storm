@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.shade.com.google.common.collect.Multimap;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.streams.windowing.SlidingWindows;
 import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.streams.windowing.Window;
@@ -39,7 +39,7 @@ class WindowedProcessorBolt extends BaseWindowedBolt implements StreamBolt {
     private final ProcessorBoltDelegate delegate;
     private final Window<?, ?> window;
 
-    WindowedProcessorBolt(String id, DirectedGraph<Node, Edge> graph,
+    WindowedProcessorBolt(String id, Graph<Node, Edge> graph,
                           List<ProcessorNode> nodes,
                           Window<?, ?> window) {
         delegate = new ProcessorBoltDelegate(id, graph, nodes);

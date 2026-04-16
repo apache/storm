@@ -18,16 +18,16 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.trident.planner.Node;
 import org.apache.storm.trident.util.IndexedEdge;
 
 public class GraphGrouper {
-    final DirectedGraph<Node, IndexedEdge> graph;
+    final Graph<Node, IndexedEdge> graph;
     final Set<Group> currGroups;
     final Map<Node, Group> groupIndex = new HashMap<>();
 
-    public GraphGrouper(DirectedGraph<Node, IndexedEdge> graph, Collection<Group> initialGroups) {
+    public GraphGrouper(Graph<Node, IndexedEdge> graph, Collection<Group> initialGroups) {
         this.graph = graph;
         this.currGroups = new LinkedHashSet<>(initialGroups);
         reindex();

@@ -20,9 +20,9 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.storm.coordination.BatchOutputCollector;
 import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
+import org.apache.storm.shade.org.jgrapht.graph.AsSubgraph;
 import org.apache.storm.shade.org.jgrapht.graph.DefaultDirectedGraph;
-import org.apache.storm.shade.org.jgrapht.graph.DirectedSubgraph;
 import org.apache.storm.shade.org.jgrapht.traverse.TopologicalOrderIterator;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -45,7 +45,7 @@ import org.apache.storm.tuple.Tuple;
 public class SubtopologyBolt implements ITridentBatchBolt {
     private static final long serialVersionUID = 1475508603138688412L;
     @SuppressWarnings("rawtypes")
-    final DirectedGraph<Node, IndexedEdge> graph;
+    final Graph<Node, IndexedEdge> graph;
     final Set<Node> nodes;
     final Map<String, InitialReceiver> roots = new HashMap<>();
     final Map<Node, Factory> outputFactories = new HashMap<>();
@@ -56,7 +56,7 @@ public class SubtopologyBolt implements ITridentBatchBolt {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public SubtopologyBolt(DefaultDirectedGraph<Node, IndexedEdge> graph, Set<Node> nodes, Map<Node, String> batchGroups) {
         this.nodes = nodes;
-        this.graph = (DirectedGraph<Node, IndexedEdge>) graph.clone();
+        this.graph = (Graph<Node, IndexedEdge>) graph.clone();
         this.batchGroups = copyAndOnlyKeep(batchGroups, nodes);
 
         //Remove the unneeded entries from the graph
@@ -95,8 +95,8 @@ public class SubtopologyBolt implements ITridentBatchBolt {
                 context.setTaskData(n.stateInfo.id, s);
             }
         }
-        DirectedSubgraph<Node, ?> subgraph = new DirectedSubgraph<>(graph, nodes, null);
-        TopologicalOrderIterator<Node, ?> it = new TopologicalOrderIterator<>(subgraph);
+        AsSubgraph<Node, IndexedEdge> subgraph = new AsSubgraph<>(graph, nodes, null);
+        TopologicalOrderIterator<Node, IndexedEdge> it = new TopologicalOrderIterator<>(subgraph);
         int stateIndex = 0;
         while (it.hasNext()) {
             Node n = it.next();

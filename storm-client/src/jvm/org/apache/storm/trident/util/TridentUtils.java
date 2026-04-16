@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.StreamInfo;
-import org.apache.storm.shade.org.jgrapht.DirectedGraph;
+import org.apache.storm.shade.org.jgrapht.Graph;
 import org.apache.storm.thrift.TBase;
 import org.apache.storm.topology.IComponent;
 import org.apache.storm.topology.OutputFieldsGetter;
@@ -75,7 +75,7 @@ public class TridentUtils {
     /**
      * Assumes edge contains an index.
      */
-    public static <T> List<T> getParents(DirectedGraph g, T n) {
+    public static <T> List<T> getParents(Graph g, T n) {
         List<IndexedEdge> incoming = new ArrayList(g.incomingEdgesOf(n));
         Collections.sort(incoming);
         List<T> ret = new ArrayList();
@@ -85,7 +85,7 @@ public class TridentUtils {
         return ret;
     }
 
-    public static <T> List<T> getChildren(DirectedGraph g, T n) {
+    public static <T> List<T> getChildren(Graph g, T n) {
         List<IndexedEdge> outgoing = new ArrayList(g.outgoingEdgesOf(n));
         List<T> ret = new ArrayList();
         for (IndexedEdge e : outgoing) {
@@ -95,7 +95,7 @@ public class TridentUtils {
     }
 
 
-    public static <T> T getParent(DirectedGraph g, T n) {
+    public static <T> T getParent(Graph g, T n) {
         List<T> parents = getParents(g, n);
         if (parents.size() != 1) {
             throw new RuntimeException("Expected a single parent");
