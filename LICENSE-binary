@@ -781,6 +781,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.1 - https://github.com/FasterXML/woodstox)
         * Apache Thrift (org.apache.thrift:libthrift:0.22.0 - https://thrift.apache.org/)
         * Java Concurrency Tools Core Library (org.jctools:jctools-core:4.0.6 - https://github.com/JCTools)
+        * JHeaps (org.jheaps:jheaps:0.14 - http://www.jheaps.org)
         * Netty/All-in-One (io.netty:netty-all:4.2.12.Final - https://netty.io/netty-all/)
         * Netty/Codec/Classes/Quic (io.netty:netty-codec-classes-quic:4.2.12.Final - https://netty.io/netty-codec-classes-quic/)
         * Netty/Codec/DNS (io.netty:netty-codec-dns:4.2.12.Final - https://netty.io/netty-codec-dns/)
@@ -897,7 +898,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * JAXB Runtime (org.glassfish.jaxb:jaxb-runtime:2.3.9 - https://eclipse-ee4j.github.io/jaxb-ri/)
         * TXW2 Runtime (org.glassfish.jaxb:txw2:2.3.9 - https://eclipse-ee4j.github.io/jaxb-ri/)
 
-    Eclipse Public License (EPL) 1.0, GNU Lesser General Public License Version 2.1, February 1999
+    Eclipse Public License (EPL) 2.0, GNU Lesser General Public License Version 2.1, February 1999
 
         * JGraphT - Core (org.jgrapht:jgrapht-core:1.5.3 - http://www.jgrapht.org/jgrapht-core)
 
@@ -948,6 +949,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
         * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.17 - http://www.slf4j.org)
         * SLF4J API Module (org.slf4j:slf4j-api:2.0.17 - http://www.slf4j.org)
+        * apfloat (org.apfloat:apfloat:1.14.0 - http://www.apfloat.org)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
 
     Revised BSD

@@ -134,6 +134,7 @@ List of third-party dependencies grouped by their license type.
         * JBoss Logging 3 (org.jboss.logging:jboss-logging:3.6.1.Final - http://www.jboss.org)
         * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.17 - http://www.slf4j.org)
         * jdependency (org.vafer:jdependency:2.15 - https://github.com/tcurdt/jdependency)
+        * JHeaps (org.jheaps:jheaps:0.14 - http://www.jheaps.org)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.6.0 - https://urielch.github.io/)
         * JSpecify annotations (org.jspecify:jspecify:1.0.0 - http://jspecify.org/)
         * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.38 - https://metrics.dropwizard.io/metrics-jvm)
@@ -403,7 +404,7 @@ List of third-party dependencies grouped by their license type.
         * OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
         * ServiceLocator Default Implementation (org.glassfish.hk2:hk2-locator:3.0.6 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-locator)
 
-    Eclipse Public License (EPL) 1.0, GNU Lesser General Public License Version 2.1, February 1999
+    Eclipse Public License (EPL) 2.0, GNU Lesser General Public License Version 2.1, February 1999
 
         * JGraphT - Core (org.jgrapht:jgrapht-core:1.5.3 - http://www.jgrapht.org/jgrapht-core)
 
@@ -418,6 +419,7 @@ List of third-party dependencies grouped by their license type.
 
     MIT License
 
+        * apfloat (org.apfloat:apfloat:1.14.0 - http://www.apfloat.org)
         * argparse4j (net.sourceforge.argparse4j:argparse4j:0.9.0 - https://argparse4j.github.io)
         * JCodings (org.jruby.jcodings:jcodings:1.0.58 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Jedis (redis.clients:jedis:7.4.1 - https://github.com/redis/jedis)
