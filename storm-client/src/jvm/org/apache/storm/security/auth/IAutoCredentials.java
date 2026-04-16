@@ -39,7 +39,7 @@ public interface IAutoCredentials {
 
 
     /**
-     * Called to update the subject on the worker side when new credentials are recieved. This means that populateSubject has already been
+     * Called to update the subject on the worker side when new credentials are received. This means that populateSubject has already been
      * called on this subject.
      *
      * @param subject     the subject to optionally put credentials in.
