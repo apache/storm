@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Simple bolt that does nothing other than LOG.info() every tuple recieveed.
+ * Simple bolt that does nothing other than LOG.info() every tuple received.
  *
  */
 public class LogInfoBolt extends BaseBasicBolt {
