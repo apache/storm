@@ -159,7 +159,7 @@ public abstract class LocallyCachedBlob {
     protected abstract void commitNewVersion(long version) throws IOException;
 
     /**
-     * Clean up any temporary files.  This will be called after updating a blob, either successfully or if an error has occured.
+     * Clean up any temporary files.  This will be called after updating a blob, either successfully or if an error has occurred.
      * The goal is to find any files that may be left over and remove them so space is not leaked.
      * PRECONDITION: this can only be called with a lock on this instance held.
      */
