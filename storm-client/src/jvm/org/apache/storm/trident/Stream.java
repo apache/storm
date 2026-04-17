@@ -83,7 +83,7 @@ import org.apache.storm.utils.Utils;
 
 /**
  * A Stream represents the core data model in Trident, and can be thought of as a "stream" of tuples that are processed as a series of small
- * batches. A stream is partitioned accross the nodes in the cluster, and operations are applied to a stream in parallel accross each
+ * batches. A stream is partitioned across the nodes in the cluster, and operations are applied to a stream in parallel across each
  * partition.
  *
  * <p>There are five types of operations that can be performed on streams in Trident
