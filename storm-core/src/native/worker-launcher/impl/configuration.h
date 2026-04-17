@@ -31,7 +31,7 @@ void read_config(const char* config_file);
 char *get_value(const char* key);
 
 //function to return array of values pointing to the key. Values are
-//comma seperated strings.
+//comma separated strings.
 char ** get_values(const char* key);
 
 /**
