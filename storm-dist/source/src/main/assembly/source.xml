@@ -36,6 +36,8 @@
                 <exclude>**/*.ipr/**</exclude>
                 <exclude>**/*.iws/**</exclude>
                 <exclude>**/.lien.*/**</exclude>
+                <exclude>**/node_modules/**</exclude>
+                <exclude>**/node/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
