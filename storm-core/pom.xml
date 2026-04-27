@@ -34,7 +34,6 @@
         <worker-launcher.build.dir>${project.build.directory}/native/worker-launcher</worker-launcher.build.dir>
         <worker-launcher.additional_cflags />
         <argLine />
-        <conjure.version>2.2.0</conjure.version>
     </properties>
 
     <dependencies>
@@ -42,18 +41,6 @@
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-clojure</artifactId>
-            <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.esotericsoftware</groupId>
-                    <artifactId>kryo</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-server</artifactId>
@@ -65,24 +52,6 @@
             <artifactId>storm-server</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-
-        <!--clojure-->
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>clojure</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>tools.logging</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.clojars.runa</groupId>
-            <artifactId>conjure</artifactId>
-            <version>${conjure.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -221,17 +190,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!--
-            This dependency is required for the integration_test.clj
-            It seems that some implementation detail is assumed to parse drcp arguments
-            Removing it will require some investigation and effort here.
-        -->
-        <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-            <version>1.1.1</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
@@ -273,42 +231,6 @@
             </testResource>
         </testResources>
         <plugins>
-            <plugin>
-                <groupId>com.theoryinpractise</groupId>
-                <artifactId>clojure-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <testSourceDirectories>
-                        <testSourceDirectory>test/clj</testSourceDirectory>
-                    </testSourceDirectories>
-                    <warnOnReflection>false</warnOnReflection>
-                    <copyDeclaredNamespaceOnly>true</copyDeclaredNamespaceOnly>
-                    <copiedNamespaces>
-                        <copiedNamespace>none</copiedNamespace>
-                    </copiedNamespaces>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>test-clojure</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <junitOutput>true</junitOutput>
-                            <testScript>../storm-clojure/test/resources/test_runner.clj</testScript>
-                            <!-- argLine is set by JaCoCo for code coverage -->
-                            <vmargs>-Xmx1536m ${argLine} ${test.extra.args}</vmargs>
-                            <!-- Run clojure unit tests or all tests (including integration tests) depending on the profile enabled -->
-                            <testNamespaces>
-                                <testNamespace>${clojure.test.set}</testNamespace>
-                            </testNamespaces>
-                            <testDeclaredNamespaceOnly>${clojure.test.declared.namespace.only}</testDeclaredNamespaceOnly>
-                            <clojureOptions>-Dstorm.home=${project.basedir}/target/testhome</clojureOptions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>

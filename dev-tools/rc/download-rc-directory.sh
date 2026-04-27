@@ -21,6 +21,6 @@ fi
 
 echo "> downloading all files in RC directory..."
 
-wget -r -nH -nd -np -R "index.html*" $1
+wget -r -e robots=off -nH -nd -np -R "index.html*" $1
 
 echo "Done..."

@@ -58,7 +58,7 @@ One subtle aspect of the interfaces is the difference between `IBolt` and `ISpou
 
 Specifying all the functionality via Java interfaces ensures that every feature of Storm is available via Java. Moreso, the focus on Java interfaces ensures that the user experience from Java-land is pleasant as well.
 
-Storm was originally implemented in Clojure, but most of the code has since been ported to Java.
+Storm was originally implemented in Clojure, but the code has since been fully ported to Java.
 
 Here's a summary of the purpose of the main Java packages:
 
@@ -118,12 +118,3 @@ Here's a summary of the purpose of the main Java packages:
 
 [org.apache.storm.Testing]({{page.git-blob-base}}/storm-server/src/main/java/org/apache/storm/Testing.java): Various utilities for working with local clusters during tests, e.g. `completeTopology` for running a fixed set of tuples through a topology for capturing the output, tracker topologies for having fine grained control over detecting when a cluster is "idle", and other utilities.
 
-#### Clojure namespaces
-
-[org.apache.storm.clojure]({{page.git-blob-base}}/storm-clojure/src/clj/org/apache/storm/clojure.clj): Implementation of the Clojure DSL for Storm.
-
-[org.apache.storm.config]({{page.git-blob-base}}/storm-clojure/src/clj/org/apache/storm/config.clj): Created clojure symbols for config names in [Config.java](javadocs/org/apache/storm/Config.html)
- 
-[org.apache.storm.log]({{page.git-blob-base}}/storm-clojure/src/clj/org/apache/storm/log.clj): Defines the functions used to log messages to log4j.
-
-[org.apache.storm.ui.*]({{page.git-blob-base}}/storm-core/src/clj/org/apache/storm/ui): Implementation of Storm UI. Completely independent from rest of code base and uses the Nimbus Thrift API to get data.

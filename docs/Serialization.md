@@ -49,7 +49,7 @@ There's an advanced config called `Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIO
 
 If you want to provide language bindings to storm, have a library that you want to interact cleanly with storm or have some other reason to provide serialization bindings and don't want to force the user to update their configs you can use the org.apache.storm.serialization.SerializationRegister service loader.
 
-You may use this like any other service loader and storm will register the bindings without forceing users to update their configs. The storm-clojure package uses this to provide transparent support for clojure types.
+You may use this like any other service loader and storm will register the bindings without forceing users to update their configs.
 
 ### Java serialization
 

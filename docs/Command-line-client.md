@@ -101,11 +101,11 @@ The rebalance command can also be used to change the parallelism of a running to
 
 ### repl
 
-*DEPRECATED: This subcommand may be removed in a future release.*
+*DEPRECATED: This subcommand has been removed.*
 
 Syntax: `storm repl`
 
-Opens up a Clojure REPL with the storm jars and configuration on the classpath. Useful for debugging.
+Previously opened a Clojure REPL with the storm jars and configuration on the classpath. No longer functional as the Clojure dependency has been removed.
 
 ### classpath
 
