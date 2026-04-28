@@ -171,7 +171,6 @@
         <module>storm-multilang/javascript</module>
         <module>storm-multilang/python</module>
         <module>storm-multilang/ruby</module>
-        <module>storm-buildtools/storm-maven-plugins</module>
         <module>storm-client</module>
         <module>storm-server</module>
         <module>storm-core</module>
@@ -1371,6 +1370,11 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>3.6.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.github.git-commit-id</groupId>
+                    <artifactId>git-commit-id-maven-plugin</artifactId>
+                    <version>9.0.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
