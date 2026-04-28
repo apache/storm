@@ -617,10 +617,6 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * RabbitMQ Java Client (com.rabbitmq:amqp-client:5.28.0 - https://www.rabbitmq.com)
 
-    Apache License
-
-        * carbonite (org.clojars.bipinprasad:carbonite:1.6.0 - https://github.com/bipinprasad/carbonite)
-
     Apache License, Version 2.0
 
         * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.38 - https://metrics.dropwizard.io/metrics-annotation)
@@ -669,7 +665,6 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache ZooKeeper - Server (org.apache.zookeeper:zookeeper:3.9.5 - http://zookeeper.apache.org/zookeeper)
         * ASM based accessors helper used by json-smart (net.minidev:accessors-smart:2.6.0 - https://urielch.github.io/)
         * Caffeine cache (com.github.ben-manes.caffeine:caffeine:3.2.3 - https://github.com/ben-manes/caffeine)
-        * chill-java (com.twitter:chill-java:0.9.5 - https://github.com/twitter/chill)
         * ClassMate (com.fasterxml:classmate:1.7.3 - https://github.com/FasterXML/java-classmate)
         * com.helger:profiler (com.helger:profiler:1.1.1 - https://github.com/phax/profiler)
         * Curator Client (org.apache.curator:curator-client:5.9.0 - https://curator.apache.org/curator-client)
@@ -906,13 +901,6 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * Eclipse Expressly (org.glassfish.expressly:expressly:5.0.0 - https://projects.eclipse.org/projects/ee4j.expressly)
         * Jakarta Expression Language API (jakarta.el:jakarta.el-api:5.0.1 - https://projects.eclipse.org/projects/ee4j.el)
-
-    Eclipse Public License, Version 1.0
-
-        * clojure (org.clojure:clojure:1.12.4 - http://clojure.org/)
-        * core.specs.alpha (org.clojure:core.specs.alpha:0.4.74 - https://github.com/clojure/build.poms/core.specs.alpha)
-        * spec.alpha (org.clojure:spec.alpha:0.5.238 - https://github.com/clojure/build.poms/spec.alpha)
-        * tools.logging (org.clojure:tools.logging:1.3.1 - https://github.com/clojure/build.poms/tools.logging)
 
     Eclipse Public License, Version 1.0, GNU Lesser General Public License
 
