@@ -95,14 +95,6 @@ and
 [trivial issues](https://issues.apache.org/jira/secure/IssueNavigator.jspa?reset=true&jqlQuery=project+%3D+STORM+AND+resolution+%3D+Unresolved+AND+priority+%3D+Trivial+ORDER+BY+key+DESC&mode=hide))
 because they require learning about only an isolated portion of the codebase and are a relatively small amount of work.
 
-Please use idiomatic Clojure style, as explained in [this Clojure style guide][clj-SG]. Another useful reference is
-the [Clojure Library Coding Standards][clj-LCS]. Perhaps the most important is consistently writing a clear docstring
-for functions, explaining the return value and arguments. As of this writing, the Storm codebase would benefit from
-various style improvements.
-
-[clj-SG]: https://github.com/bbatsov/clojure-style-guide
-[clj-LCS]: http://dev.clojure.org/display/community/Library+Coding+Standards
-
 Contributions to the Storm codebase should be sent as GitHub pull requests.  See section _Create a pull request_ below
 for details.  If there is any problem with the pull request we can iterate on it using the commenting features of
 GitHub.
@@ -131,11 +123,6 @@ To mark a Java test as a Java integration test, add the annotation `@Integration
     ...
     }
 ```
- 
-To mark a Clojure test as Clojure integration test, the test source must be located in a package with name prefixed by `integration.`
-
-For example, the test `test/clj/org.apache.storm.drpc_test.clj` is considered a clojure unit test, whereas
- `test/clj/integration.org.apache.storm.drpc_test.clj` is considered a clojure integration test.
 
 Please refer to section <a href="#building">Build the code and run the tests</a> for how to run integration tests, and the info on the build phase each test runs. 
 
@@ -285,34 +272,28 @@ sh genthrift.sh
 
 ## Testing
 
-Tests are separated in two groups, Unit tests, and Integration tests. Java unit tests, Clojure unit tests, and Clojure integration tests (for reasons inherent to the clojure-maven-plugin) run in the maven `test` phase. Java integration tests run in the maven `integration-test` or `verify` phases. 
- 
-To run Clojure and Java unit tests but no integration tests execute the command
- 
+Tests are separated in two groups, Unit tests, and Integration tests. Unit tests run in the maven `test` phase. Integration tests run in the maven `integration-test` or `verify` phases.
+
+To run unit tests but no integration tests execute the command
+
     mvn test
 
 Integration tests require that you activate the profile `integration-test` and that you specify the `maven-failsafe-plugin` in the module pom file.
- 
-To run all Java and Clojure integration tests but no unit tests execute one of the commands
- 
+
+To run all integration tests but no unit tests execute one of the commands
+
     mvn -P integration-tests-only,examples,externals verify
     mvn -P integration-tests-only,examples,externals integration-test
 
-To run all unit tests plus Clojure integration tests but no Java integration tests execute the command
- 
-    mvn -P all-tests,examples,externals test
-
 To run all unit tests and all integration tests execute one of the commands
- 
+
     mvn -P all-tests,examples,externals verify
     mvn -P all-tests,examples,externals integration-test
- 
- 
-You can also run tests selectively with `-Dtest=<test_name>`.  This works for both clojure and junit tests.
 
-Unfortunately you might experience failures in clojure tests which are wrapped in the `maven-clojure-plugin` and thus doesn't provide too much useful output at first sight - you might end up with a maven test failure with an error message as unhelpful as `Clojure failed.`. In this case it's recommended to look into `target/test-reports` of the failed project to see what actual tests have failed or scroll through the maven output looking for obvious issues like missing binaries.
 
-By default, integration tests are not run in the test phase. To run Java and Clojure integration tests you must enable the profile `integration-tests-only`, or `all-tests`.
+You can also run tests selectively with `-Dtest=<test_name>`.
+
+By default, integration tests are not run in the test phase. To run integration tests you must enable the profile `integration-tests-only`, or `all-tests`.
  
 ## Listing dependency licenses
 
@@ -374,11 +355,10 @@ Tests should never rely on timing in order to pass.  Storm can properly test fun
 simulating time, which means we do not have to worry about e.g. random delays failing our tests non-deterministically.
 
 If you are testing topologies that do not do full tuple acking, then you should be testing using the "tracked
-topologies" utilities in `org.apache.storm.testing.clj`.  For example,
-[test-acking](storm-core/test/clj/org/apache/storm/integration_test.clj) (around line 213) tests the acking system in
-Storm using tracked topologies.  Here, the key is the `tracked-wait` function: it will only return when both that many
-tuples have been emitted by the spouts _and_ the topology is idle (i.e. no tuples have been emitted nor will be emitted
-without further input).  Note that you should not use tracked topologies for topologies that have tick tuples.
+topologies" utilities in `org.apache.storm.testing.TrackedTopology` (see also `org.apache.storm.Testing`). The key is the
+`trackedWait` method: it will only return when both that many tuples have been emitted by the spouts _and_ the topology
+is idle (i.e. no tuples have been emitted nor will be emitted without further input). Note that you should not use
+tracked topologies for topologies that have tick tuples.
 
 <a name="best-practices-versions"></a>
 

@@ -11,7 +11,7 @@ Adding static typing to tuple fields would add large amount of complexity to Sto
 
 Further than that, it's not possible to statically type Storm's tuples in any reasonable way. Suppose a Bolt subscribes to multiple streams. The tuples from all those streams may have different types across the fields. When a Bolt receives a `Tuple` in `execute`, that tuple could have come from any stream and so could have any combination of types. There might be some reflection magic you can do to declare a different method for every tuple stream a bolt subscribes to, but Storm opts for the simpler, straightforward approach of dynamic typing.
 
-Finally, another reason for using dynamic typing is so Storm can be used in a straightforward manner from dynamically typed languages like Clojure and JRuby.
+Finally, another reason for using dynamic typing is so Storm can be used in a straightforward manner from dynamically typed languages like JRuby.
 
 ### Custom serialization
 
