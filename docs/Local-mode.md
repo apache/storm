@@ -52,12 +52,6 @@ After launching the topology, you can do DRPC invocations using the `execute` me
 
 Because all of the objects used are instances of AutoCloseable when the try blocks scope ends the topology is killed, the cluster is shut down and the drpc server also shuts down.
 
-### Clojure API
-
-Storm also offers a clojure API for testing.
-
-[This blog post](http://www.pixelmachine.org/2011/12/21/Testing-Storm-Topologies-Part-2.html) talk about this, but is a little out of date.  To get this functionality you need to include the `storm-clojure-test` dependency.  This will pull in a lot of storm itself that should not be packaged with your topology, sp please make sure it is a test dependency only,.
-
 ### Debugging your topology with an IDE
 
 One of the great use cases for local mode is to be able to walk through the code execution of your bolts and spouts using an IDE.  You can do this on the command line by adding the `--java-debug` option followed by the parameter you would pass to jdwp. This makes it simple to launch the local cluster with `-agentlib:jdwp=` turned on.
