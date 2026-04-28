@@ -26,8 +26,10 @@
   </parent>
 
   <artifactId>storm-maven-plugins</artifactId>
+
+
+  <name>Storm Maven Plugins</name>
   <packaging>maven-plugin</packaging>
-  <name>storm-maven-plugins</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

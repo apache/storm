@@ -26,8 +26,10 @@
     </parent>
 
     <artifactId>storm-webapp</artifactId>
-    <packaging>jar</packaging>
+
+
     <name>Storm Webapp</name>
+    <packaging>jar</packaging>
     <description>Webapp Servers for Apache Storm</description>
 
     <properties>

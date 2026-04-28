@@ -20,7 +20,7 @@
 
     <artifactId>flux</artifactId>
     <packaging>pom</packaging>
-    <name>flux</name>
+    <name>Storm Flux</name>
 
 
     <parent>

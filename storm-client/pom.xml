@@ -27,8 +27,10 @@
     </parent>
 
     <artifactId>storm-client</artifactId>
-    <packaging>jar</packaging>
+
+
     <name>Storm Client</name>
+    <packaging>jar</packaging>
     <description>The client side (including worker) of Storm implementations.</description>
 
     <dependencies>

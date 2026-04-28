@@ -28,6 +28,8 @@
 
     <artifactId>storm-server</artifactId>
 
+
+    <name>Storm Server</name>
     <properties>
         <storm-server.test.introspection.argLine>--add-opens java.base/java.lang=ALL-UNNAMED</storm-server.test.introspection.argLine>
     </properties>

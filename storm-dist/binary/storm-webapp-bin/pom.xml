@@ -26,6 +26,9 @@
     </parent>
 
     <artifactId>storm-webapp-bin</artifactId>
+
+
+    <name>Storm Webapp Binary</name>
     <packaging>pom</packaging>
 
     <dependencies>

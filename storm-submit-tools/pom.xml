@@ -24,6 +24,8 @@
 
     <artifactId>storm-submit-tools</artifactId>
 
+
+    <name>Storm Submit Tools</name>
     <dependencies>
         <dependency>
             <groupId>org.apache.commons</groupId>

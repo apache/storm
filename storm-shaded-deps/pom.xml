@@ -28,8 +28,10 @@
     </parent>
 
     <artifactId>storm-shaded-deps</artifactId>
+
+
+    <name>Storm Shaded Deps</name>
     <packaging>jar</packaging>
-    <name>Shaded Deps for Storm Client</name>
     <description>Shaded version of dependencies used only for internal storm code.</description>
 
     <dependencies>

@@ -26,9 +26,11 @@
     </parent>
 
     <artifactId>flux-wrappers</artifactId>
+
+
+    <name>Storm Flux Wrappers</name>
     <packaging>jar</packaging>
 
-    <name>flux-wrappers</name>
 
     <dependencies>
         <dependency>

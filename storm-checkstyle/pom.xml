@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>storm-checkstyle</artifactId>
-    <name>Apache Storm - Checkstyle</name>
+    <name>Storm Checkstyle</name>
     <description>Module to hold Checkstyle properties for Storm.</description>
 
     <build>

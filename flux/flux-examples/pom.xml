@@ -27,8 +27,7 @@
 
     <artifactId>flux-examples</artifactId>
     <packaging>jar</packaging>
-
-    <name>flux-examples</name>
+    <name>Storm Flux Examples</name>
 
     <dependencies>
         <dependency>

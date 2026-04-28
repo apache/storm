@@ -25,6 +25,8 @@
     <artifactId>storm-submit-tools-bin</artifactId>
     <packaging>pom</packaging>
     
+
+    <name>Storm Submit Tools Binary</name>
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>

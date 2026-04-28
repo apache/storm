@@ -19,16 +19,18 @@ limitations under the License.
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>storm</artifactId>
+        <artifactId>storm-external</artifactId>
         <groupId>org.apache.storm</groupId>
         <version>3.0.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>blobstore-migrator</artifactId>
+
+
+    <name>Storm Blobstore Migration</name>
     <packaging>jar</packaging>
 
-    <name>blobstore-migrator</name>
     <url>https://maven.apache.org</url>
     
     <dependencies>

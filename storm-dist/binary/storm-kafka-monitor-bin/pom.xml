@@ -25,6 +25,8 @@
     <artifactId>storm-kafka-monitor-bin</artifactId>
     <packaging>pom</packaging>
     
+
+    <name>Storm Kafka Monitor Binary</name>
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>

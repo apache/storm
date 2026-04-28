@@ -19,14 +19,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>storm</artifactId>
+        <artifactId>storm-examples</artifactId>
         <groupId>org.apache.storm</groupId>
         <version>3.0.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>storm-jdbc-examples</artifactId>
 
+
+
+    <name>Storm JDBC Examples</name>
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
