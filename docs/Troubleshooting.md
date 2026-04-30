@@ -83,10 +83,6 @@ Symptoms:
 java.lang.RuntimeException: java.util.ConcurrentModificationException
 	at org.apache.storm.utils.DisruptorQueue.consumeBatchToCursor(DisruptorQueue.java:84)
 	at org.apache.storm.utils.DisruptorQueue.consumeBatchWhenAvailable(DisruptorQueue.java:55)
-	at org.apache.storm.disruptor$consume_batch_when_available.invoke(disruptor.clj:56)
-	at org.apache.storm.disruptor$consume_loop_STAR_$fn__1597.invoke(disruptor.clj:67)
-	at org.apache.storm.util$async_loop$fn__465.invoke(util.clj:377)
-	at clojure.lang.AFn.run(AFn.java:24)
 	at java.lang.Thread.run(Thread.java:679)
 Caused by: java.util.ConcurrentModificationException
 	at java.util.LinkedHashMap$LinkedHashIterator.nextEntry(LinkedHashMap.java:390)
