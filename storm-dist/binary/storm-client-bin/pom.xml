@@ -27,6 +27,9 @@
     </parent>
 
     <artifactId>storm-client-bin</artifactId>
+
+
+    <name>Storm Client Binary</name>
     <packaging>pom</packaging>
 
     <dependencies>

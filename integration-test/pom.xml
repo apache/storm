@@ -28,7 +28,6 @@
     <name>Storm Integration Test</name>
     <artifactId>storm-integration-test</artifactId>
     <packaging>jar</packaging>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- see comment below... This fixes an annoyance with intellij -->

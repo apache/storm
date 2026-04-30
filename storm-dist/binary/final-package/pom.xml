@@ -26,8 +26,10 @@
     </parent>
 
     <artifactId>final-package</artifactId>
+
+
+    <name>Storm Binary Distribution Final Package</name>
     <packaging>pom</packaging>
-    <name>Storm Binary Distribution (Final Package)</name>
     <description>Storm binary distribution</description>
 
     <dependencies>

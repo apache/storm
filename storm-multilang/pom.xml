@@ -15,32 +15,23 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>storm-multilang</artifactId>
+        <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
         <version>3.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>multilang-javascript</artifactId>
+    <artifactId>storm-multilang</artifactId>
+    <packaging>pom</packaging>
+    <name>Storm Multilang</name>
+    <description>Aggregator for Storm multi-language adapter resources.</description>
 
-
-    <name>Storm Multilang JavaScript</name>
-    <packaging>jar</packaging>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
+    <modules>
+        <module>javascript</module>
+        <module>python</module>
+        <module>ruby</module>
+    </modules>
 </project>

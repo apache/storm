@@ -99,8 +99,6 @@
         <jgrapht.version>1.5.3</jgrapht.version>
         <guava.version>33.6.0-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
-        <netty-tcnative.version>2.0.74.Final</netty-tcnative.version>
-        <netty.version>4.2.12.Final</netty.version>
         <netty-tcnative.version>2.0.75.Final</netty-tcnative.version>
         <netty.version>4.2.12.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
@@ -125,8 +123,6 @@
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <jedis.version>7.3.0</jedis.version>
-        <activemq.version>6.2.4</activemq.version>
         <jedis.version>7.4.1</jedis.version>
         <activemq.version>6.2.4</activemq.version>
         <commons-logging.version>1.3.6</commons-logging.version>
@@ -168,9 +164,7 @@
     <modules>
         <module>storm-shaded-deps</module>
         <module>storm-checkstyle</module>
-        <module>storm-multilang/javascript</module>
-        <module>storm-multilang/python</module>
-        <module>storm-multilang/ruby</module>
+        <module>storm-multilang</module>
         <module>storm-client</module>
         <module>storm-server</module>
         <module>storm-core</module>
@@ -325,8 +319,7 @@
         <profile>
             <id>dist</id>
             <modules>
-                <module>storm-dist/binary</module>
-                <module>storm-dist/source</module>
+                <module>storm-dist</module>
             </modules>
             <build>
                 <plugins>
@@ -450,19 +443,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
-                <module>external/storm-autocreds</module>
-                <module>external/storm-hdfs</module>
-                <module>external/storm-hdfs-blobstore</module>
-                <module>external/storm-hdfs-oci</module>
-                <module>external/storm-jdbc</module>
-                <module>external/storm-redis</module>
-                <module>external/storm-metrics</module>
-                <module>external/storm-metrics-prometheus</module>
-                <module>external/storm-kafka-client</module>
-                <module>external/storm-kafka-migration</module>
-                <module>external/storm-kafka-monitor</module>
-                <module>external/storm-jms</module>
-                <module>external/storm-blobstore-migration</module>
+                <module>external</module>
                 <module>integration-test</module>
 
                 <!-- The following modules have dependencies on external modules. -->
@@ -475,14 +456,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
-                <module>examples/storm-starter</module>
-                <module>examples/storm-loadgen</module>
-                <module>examples/storm-redis-examples</module>
-                <module>examples/storm-kafka-client-examples</module>
-                <module>examples/storm-jdbc-examples</module>
-                <module>examples/storm-hdfs-examples</module>
-                <module>examples/storm-jms-examples</module>
-                <module>examples/storm-perf</module>
+                <module>examples</module>
             </modules>
         </profile>
     </profiles>

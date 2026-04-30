@@ -19,15 +19,19 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>storm</artifactId>
+        <artifactId>storm-examples</artifactId>
         <groupId>org.apache.storm</groupId>
         <version>3.0.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
 
     <artifactId>storm-jms-examples</artifactId>
 
+
+
+
+    <name>Storm JMS Examples</name>
     <properties>
         <spring.version>7.0.6</spring.version>
     </properties>

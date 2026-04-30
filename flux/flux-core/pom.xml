@@ -27,8 +27,7 @@
 
     <artifactId>flux-core</artifactId>
     <packaging>jar</packaging>
-
-    <name>flux-core</name>
+    <name>Storm Flux Core</name>
 
     <dependencies>
         <dependency>
