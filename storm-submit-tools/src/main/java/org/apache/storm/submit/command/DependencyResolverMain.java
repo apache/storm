@@ -19,12 +19,11 @@
 package org.apache.storm.submit.command;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -33,6 +32,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import net.minidev.json.JSONValue;
 
@@ -70,7 +70,7 @@ public class DependencyResolverMain {
      * @throws ParseException If there's parsing error on option parse.
      * @throws MalformedURLException If proxy URL is malformed.
      */
-    public static void main(String[] args) throws ParseException, MalformedURLException {
+    public static void main(String[] args) throws ParseException, MalformedURLException, URISyntaxException {
         Options options = buildOptions();
         CommandLineParser parser = new DefaultParser();
         CommandLine commandLine = parser.parse(options, args);
@@ -117,26 +117,19 @@ public class DependencyResolverMain {
 
             List<ArtifactResult> artifactResults = resolver.resolve(dependencies);
 
-            Iterable<ArtifactResult> missingArtifacts = filterMissingArtifacts(artifactResults);
-            if (missingArtifacts.iterator().hasNext()) {
+            List<ArtifactResult> missingArtifacts = artifactResults.stream()
+                    .filter(ArtifactResult::isMissing)
+                    .collect(Collectors.toList());
+            if (!missingArtifacts.isEmpty()) {
                 printMissingArtifactsToSysErr(missingArtifacts);
                 throw new RuntimeException("Some artifacts are not resolved");
             }
 
             System.out.println(JSONValue.toJSONString(transformArtifactResultToArtifactToPaths(artifactResults)));
             System.out.flush();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static Iterable<ArtifactResult> filterMissingArtifacts(List<ArtifactResult> artifactResults) {
-        return Iterables.filter(artifactResults, new Predicate<ArtifactResult>() {
-            @Override
-            public boolean apply(ArtifactResult artifactResult) {
-                return artifactResult.isMissing();
-            }
-        });
     }
 
     private static void printMissingArtifactsToSysErr(Iterable<ArtifactResult> missingArtifacts) {
@@ -173,14 +166,15 @@ public class DependencyResolverMain {
         return remoteRepositories;
     }
 
-    private static Proxy parseProxyArg(String proxyUrl, String proxyUsername, String proxyPassword) throws MalformedURLException {
-        URL url = new URL(proxyUrl);
+    private static Proxy parseProxyArg(String proxyUrl, String proxyUsername, String proxyPassword)
+            throws MalformedURLException, URISyntaxException {
+        URI uri = new URI(proxyUrl);
         if (StringUtils.isNotEmpty(proxyUsername) && StringUtils.isNotEmpty(proxyPassword)) {
             AuthenticationBuilder authBuilder = new AuthenticationBuilder();
             authBuilder.addUsername(proxyUsername).addPassword(proxyPassword);
-            return new Proxy(url.getProtocol(), url.getHost(), url.getPort(), authBuilder.build());
+            return new Proxy(uri.getScheme(), uri.getHost(), uri.getPort(), authBuilder.build());
         } else {
-            return new Proxy(url.getProtocol(), url.getHost(), url.getPort());
+            return new Proxy(uri.getScheme(), uri.getHost(), uri.getPort());
         }
     }
 
