@@ -92,7 +92,7 @@
         <commons-cli.version>1.11.0</commons-cli.version>
         <curator.version>5.9.0</curator.version>
         <jetty.version>12.1.8</jetty.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
+        <snakeyaml.version>2.6</snakeyaml.version>
         <httpclient.version>4.5.14</httpclient.version>
         <httpclient.core.version>4.4.16</httpclient.core.version>
         <jctools.version>4.0.6</jctools.version>
