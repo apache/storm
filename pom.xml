@@ -116,7 +116,7 @@
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.5</objensis.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
-        <joda-time.version>2.14.1</joda-time.version>
+        <joda-time.version>2.14.2</joda-time.version>
         <thrift.version>0.22.0</thrift.version>
         <junit.jupiter.version>6.0.3</junit.jupiter.version>
         <surefire.version>3.5.5</surefire.version>
