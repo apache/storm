@@ -28,10 +28,10 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 
-/**
- * Get maven repository instance.
- */
-public class RepositorySystemFactory {
+public final class RepositorySystemFactory {
+    private RepositorySystemFactory() {
+    }
+
     public static RepositorySystem newRepositorySystem() {
         DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
         locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
@@ -47,5 +47,4 @@ public class RepositorySystemFactory {
 
         return locator.getService(RepositorySystem.class);
     }
-
 }

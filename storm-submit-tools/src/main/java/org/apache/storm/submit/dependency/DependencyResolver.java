@@ -108,15 +108,12 @@ public class DependencyResolver {
     public List<ArtifactResult> resolve(List<Dependency> dependencies) throws
             DependencyResolutionException, ArtifactResolutionException {
 
-        if (dependencies.size() == 0) {
-            return Collections.EMPTY_LIST;
+        if (dependencies.isEmpty()) {
+            return Collections.emptyList();
         }
 
         CollectRequest collectRequest = new CollectRequest();
-        collectRequest.setRoot(dependencies.get(0));
-        for (int idx = 1; idx < dependencies.size(); idx++) {
-            collectRequest.addDependency(dependencies.get(idx));
-        }
+        collectRequest.setDependencies(dependencies);
 
         for (RemoteRepository repository : remoteRepositories) {
             collectRequest.addRepository(repository);
