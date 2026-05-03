@@ -35,6 +35,8 @@ import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidationAnnotations;
 
+import static org.apache.storm.metrics2.EWMAGauge.RFC1889_ALPHA;
+
 public class ConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
     public static final String STORM_HOME = "storm.home";
@@ -173,6 +175,28 @@ public class ConfigUtils {
             return (int) (1 / rate);
         }
         throw new IllegalArgumentException("Illegal topology.stats.sample.rate in conf: " + rate);
+    }
+
+    public static double ewmaSmoothingFactor(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR);
+        if (value == null) {
+            return RFC1889_ALPHA;
+        }
+        double alpha = ObjectReader.getDouble(value);
+        if (alpha > 0.0 && alpha < 1.0) {
+            return alpha;
+        }
+        throw new IllegalArgumentException(
+                "Illegal " + Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR
+                        + " in conf: " + alpha + " must be in (0, 1)");
+    }
+
+    public static boolean ewmaEnable(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_STATS_EWMA_ENABLE);
+        if (value == null) {
+            return false;
+        }
+        return ObjectReader.getBoolean(value, false);
     }
 
     public static BooleanSupplier mkStatsSampler(Map<String, Object> conf) {

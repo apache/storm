@@ -849,6 +849,23 @@ public class ConfigValidation {
         }
     }
 
+    public static class EWMASmoothingFactorValidator extends Validator {
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null){
+                return;
+            }
+            if (o instanceof Number) {
+                double alpha = ((Number) o).doubleValue();
+                if (alpha > 0.0 && alpha < 1.0) {
+                    return;
+                }
+            }
+            throw new IllegalArgumentException(
+                    "Field " + name + " must be a number in the open interval (0, 1), got: " + o);
+        }
+    }
+
     public static class CustomIsExactlyOneOfValidators extends Validator {
         private Class<?>[] subValidators;
         private List<String> validatorClassNames;

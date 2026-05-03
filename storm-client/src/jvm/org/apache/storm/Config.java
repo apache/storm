@@ -19,12 +19,14 @@
 package org.apache.storm;
 
 import com.esotericsoftware.kryo.Serializer;
+
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
@@ -255,14 +257,14 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB =
-        "topology.metrics.consumer.resources.onheap.memory.mb";
+            "topology.metrics.consumer.resources.onheap.memory.mb";
     /**
      * The maximum amount of memory an instance of a metrics consumer will take off heap. This enables the scheduler to allocate slots on
      * machines with enough available memory.  A default value will be set for this config if user does not override
      */
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB =
-        "topology.metrics.consumer.resources.offheap.memory.mb";
+            "topology.metrics.consumer.resources.offheap.memory.mb";
     /**
      * The config indicates the percentage of cpu for a core an instance(executor) of a metrics consumer will use. Assuming the a core value
      * to be 100, a value of 10 indicates 10% of the core. The P in PCORE represents the term "physical".  A default value will be set for
@@ -348,15 +350,16 @@ public class Config extends HashMap<String, Object> {
      * </p>
      *
      * <p>comp-1 cannot exist on same worker as comp-2 or comp-3, and at most "2" comp-1 on same node</p>
+     *
      * <p>comp-2 and comp-4 cannot be on same worker (missing comp-1 is implied from comp-1 constraint)</p>
      *
-     *  <p>
-     *      { "comp-1": { "maxNodeCoLocationCnt": 2, "incompatibleComponents": ["comp-2", "comp-3" ] },
-     *        "comp-2": { "incompatibleComponents": [ "comp-4" ] }
-     *      }
-     *  </p>
+     * <p>
+     * { "comp-1": { "maxNodeCoLocationCnt": 2, "incompatibleComponents": ["comp-2", "comp-3" ] },
+     * "comp-2": { "incompatibleComponents": [ "comp-4" ] }
+     * }
+     * </p>
      */
-    @IsExactlyOneOf(valueValidatorClasses = { ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class })
+    @IsExactlyOneOf(valueValidatorClasses = {ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class})
     public static final String TOPOLOGY_RAS_CONSTRAINTS = "topology.ras.constraints";
 
     /**
@@ -424,17 +427,17 @@ public class Config extends HashMap<String, Object> {
      *
      * <p>
      * 1. If not setting this variable or setting it as null,
-     *   a. If RAS is not used:
-     *        Nimbus will set it to {@link Config#TOPOLOGY_WORKERS}.
-     *   b. If RAS is used:
-     *        Nimbus will set it to (the estimate number of workers *  {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER}).
-     *        {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} is default to be 1 if not set.
+     * a. If RAS is not used:
+     * Nimbus will set it to {@link Config#TOPOLOGY_WORKERS}.
+     * b. If RAS is used:
+     * Nimbus will set it to (the estimate number of workers *  {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER}).
+     * {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} is default to be 1 if not set.
      * 2. If this variable is set to 0,
-     *    then Storm will immediately ack tuples as soon as they come off the spout,
-     *    effectively disabling reliability.
+     * then Storm will immediately ack tuples as soon as they come off the spout,
+     * effectively disabling reliability.
      * 3. If this variable is set to a positive integer,
-     *    Storm will not honor {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} setting.
-     *    Instead, nimbus will set it as (this variable / estimate num of workers).
+     * Storm will not honor {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} setting.
+     * Instead, nimbus will set it as (this variable / estimate num of workers).
      * </p>
      */
     @IsInteger
@@ -448,7 +451,7 @@ public class Config extends HashMap<String, Object> {
      * This setting is RAS specific.
      * If {@link Config#TOPOLOGY_ACKER_EXECUTORS} is not configured,
      * this setting will be used to calculate {@link Config#TOPOLOGY_ACKER_EXECUTORS}.
-     *
+     * <p>
      * If {@link Config#TOPOLOGY_ACKER_EXECUTORS} is configured,
      * nimbus will ignore this and set it as ({@link Config#TOPOLOGY_ACKER_EXECUTORS} / estimate num of workers).
      * </p>
@@ -465,7 +468,7 @@ public class Config extends HashMap<String, Object> {
      * <p>Note that EventLoggerBolt takes care of all the implementations of IEventLogger, hence registering many
      * implementations (especially they're implemented as 'blocking' manner) would slow down overall topology.
      */
-    @IsListEntryCustom(entryValidatorClasses = { EventLoggerRegistryValidator.class })
+    @IsListEntryCustom(entryValidatorClasses = {EventLoggerRegistryValidator.class})
     public static final String TOPOLOGY_EVENT_LOGGER_REGISTER = "topology.event.logger.register";
     /**
      * How many executors to spawn for event logger.
@@ -543,7 +546,7 @@ public class Config extends HashMap<String, Object> {
      * it's parallelism is configurable.
      */
 
-    @IsListEntryCustom(entryValidatorClasses = { MetricRegistryValidator.class })
+    @IsListEntryCustom(entryValidatorClasses = {MetricRegistryValidator.class})
     public static final String TOPOLOGY_METRICS_CONSUMER_REGISTER = "topology.metrics.consumer.register";
     /**
      * Enable tracking of network message byte counts per source-destination task. This is off by default as it creates tasks^2 metric
@@ -596,6 +599,20 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber
     public static final String TOPOLOGY_STATS_SAMPLE_RATE = "topology.stats.sample.rate";
+    /**
+     * Enabling jitter streaming calculation (RFC 1889a).
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc1889#appendix-A.8">RFC 1889 Appendix A.8</a>
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_STATS_EWMA_ENABLE = "topology.stats.ewma.enable";
+    /**
+     * The smoothing factor (alpha) used for exponential jitter calculation (RFC 1889a).
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc1889#appendix-A.8">RFC 1889 Appendix A.8</a>
+     */
+    @CustomValidator(validatorClass = ConfigValidation.EWMASmoothingFactorValidator.class)
+    public static final String TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR = "topology.stats.ewma.smoothing_factor";
     /**
      * The time period that builtin metrics data in bucketed into.
      */
@@ -833,14 +850,14 @@ public class Config extends HashMap<String, Object> {
      * Topology central logging sensitivity to determine who has access to logs in central logging system. The possible values are: S0 -
      * Public (open to all users on grid) S1 - Restricted S2 - Confidential S3 - Secret (default.)
      */
-    @IsString(acceptedValues = { "S0", "S1", "S2", "S3" })
+    @IsString(acceptedValues = {"S0", "S1", "S2", "S3"})
     public static final String TOPOLOGY_LOGGING_SENSITIVITY = "topology.logging.sensitivity";
     /**
      * Log file the user can use to configure Log4j2.
      * Can be a resource in the jar (specified with classpath:/path/to/resource) or a file.
      * This configuration is applied in addition to the regular worker log4j2 configuration.
      * The configs are merged according to the rules here:
-     *   https://logging.apache.org/log4j/2.x/manual/configuration.html#CompositeConfiguration
+     * https://logging.apache.org/log4j/2.x/manual/configuration.html#CompositeConfiguration
      */
     @IsString
     public static final String TOPOLOGY_LOGGING_CONFIG_FILE = "topology.logging.config";
@@ -884,7 +901,8 @@ public class Config extends HashMap<String, Object> {
      * Alternatively set {@code storm.scheduler} to {@code org.apache.storm.scheduler.resource.ResourceAwareScheduler}
      * using {@link Config#TOPOLOGY_SCHEDULER_STRATEGY} set to
      * {@code org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy}
-     * */
+     *
+     */
     @IsInteger
     @IsPositiveNumber
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";
@@ -977,7 +995,7 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS =
-        "topology.backpressure.wait.progressive.level3.sleep.millis";
+            "topology.backpressure.wait.progressive.level3.sleep.millis";
     /**
      * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
      */
@@ -1434,22 +1452,34 @@ public class Config extends HashMap<String, Object> {
     @IsString
     public static final String STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME = "storm.zookeeper.topology.auth.scheme";
 
-    /** Enable SSL/TLS for ZooKeeper client connection. */
+    /**
+     * Enable SSL/TLS for ZooKeeper client connection.
+     */
     @IsBoolean
     public static final String ZK_SSL_ENABLE = "storm.zookeeper.ssl.enable";
-    /** Keystore location for ZooKeeper client connection over SSL. */
+    /**
+     * Keystore location for ZooKeeper client connection over SSL.
+     */
     @IsString
     public static final String STORM_ZOOKEEPER_SSL_KEYSTORE_PATH = "storm.zookeeper.ssl.keystore.path";
-    /** Keystore password for ZooKeeper client connection over SSL. */
+    /**
+     * Keystore password for ZooKeeper client connection over SSL.
+     */
     @IsString
     public static final String STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD = "storm.zookeeper.ssl.keystore.password";
-    /** Truststore location for ZooKeeper client connection over SSL. */
+    /**
+     * Truststore location for ZooKeeper client connection over SSL.
+     */
     @IsString
     public static final String STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH = "storm.zookeeper.ssl.truststore.path";
-    /** Truststore password for ZooKeeper client connection over SSL.  */
+    /**
+     * Truststore password for ZooKeeper client connection over SSL.
+     */
     @IsString
     public static final String STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD = "storm.zookeeper.ssl.truststore.password";
-    /** Enable or disable hostname verification.*/
+    /**
+     * Enable or disable hostname verification.
+     */
     @IsBoolean
     public static final String STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION = "storm.zookeeper.ssl.hostnameVerification";
     /**
@@ -1462,13 +1492,13 @@ public class Config extends HashMap<String, Object> {
     /**
      * Configure the topology metrics reporters to be used on workers.
      */
-    @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
+    @IsListEntryCustom(entryValidatorClasses = {MetricReportersValidator.class})
     public static final String TOPOLOGY_METRICS_REPORTERS = "topology.metrics.reporters";
 
     /**
      * A list of system metrics reporters that will get added to each topology.
      */
-    @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
+    @IsListEntryCustom(entryValidatorClasses = {MetricReportersValidator.class})
     public static final String STORM_TOPOLOGY_METRICS_SYSTEM_REPORTERS = "storm.topology.metrics.system.reporters";
 
     /**
@@ -1476,7 +1506,7 @@ public class Config extends HashMap<String, Object> {
      * Use {@link Config#TOPOLOGY_METRICS_REPORTERS} instead.
      */
     @Deprecated(forRemoval = true, since = "2.0.0")
-    @IsListEntryCustom(entryValidatorClasses = { MetricReportersValidator.class })
+    @IsListEntryCustom(entryValidatorClasses = {MetricReportersValidator.class})
     public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
 
     /**
@@ -1511,6 +1541,7 @@ public class Config extends HashMap<String, Object> {
     public static final String BLOBSTORE_HDFS_PRINCIPAL = "blobstore.hdfs.principal";
     /**
      * keytab for nimbus/supervisor to use to access secure hdfs for the blobstore.
+     *
      * @Deprecated Use {@link Config#STORM_HDFS_LOGIN_KEYTAB} instead.
      */
     @Deprecated
@@ -1830,7 +1861,7 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_MESSAGING_NETTY_TLS_SSL_PROTOCOLS = "storm.messaging.netty.tls.ssl.protocols";
 
     /**
-    /**
+     * /**
      * Netty based messaging: The number of milliseconds that a Netty client will retry flushing messages that are already
      * buffered to be sent.
      */
@@ -1924,8 +1955,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * Impersonation user ACL config entries.
      */
-    @IsMapEntryCustom(keyValidatorClasses = { ConfigValidation.StringValidator.class },
-        valueValidatorClasses = { ConfigValidation.ImpersonationAclUserEntryValidator.class })
+    @IsMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class},
+            valueValidatorClasses = {ConfigValidation.ImpersonationAclUserEntryValidator.class})
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
     /**
      * A whitelist of the RAS scheduler strategies allowed by nimbus. Should be a list of fully-qualified class names or null to allow all.
@@ -2385,7 +2416,7 @@ public class Config extends HashMap<String, Object> {
         if (component1 != null && component2 != null) {
             List<String> constraintPair = Arrays.asList(component1, component2);
             List<List<String>> constraints = (List<List<String>>) computeIfAbsent(Config.TOPOLOGY_RAS_CONSTRAINTS,
-                (k) -> new ArrayList<>(1));
+                    (k) -> new ArrayList<>(1));
             constraints.add(constraintPair);
         }
     }
@@ -2430,6 +2461,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * Get the hostname substituted hdfs principal.
+     *
      * @param conf the storm Configuration
      * @return the principal
      * @throws UnknownHostException on UnknowHostException
@@ -2445,12 +2477,12 @@ public class Config extends HashMap<String, Object> {
             ret = hdfsPrincipal;
         } else if (hdfsPrincipal == null) {
             LOG.warn("{} is used as the hdfs principal. Please use {} instead",
-                Config.BLOBSTORE_HDFS_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL);
+                    Config.BLOBSTORE_HDFS_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL);
             ret = blobstorePrincipal;
         } else {
             //both not null;
             LOG.warn("Both {} and {} are set. Use {} only.",
-                Config.BLOBSTORE_HDFS_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL);
+                    Config.BLOBSTORE_HDFS_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL);
             ret = hdfsPrincipal;
         }
         return substituteHostnameInPrincipal(ret);
@@ -2458,6 +2490,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * Get the hdfs keytab.
+     *
      * @param conf the storm Configuration
      * @return the keytab
      */
@@ -2472,12 +2505,12 @@ public class Config extends HashMap<String, Object> {
             ret = hdfsKeyTab;
         } else if (hdfsKeyTab == null) {
             LOG.warn("{} is used as the hdfs keytab. Please use {} instead",
-                Config.BLOBSTORE_HDFS_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB);
+                    Config.BLOBSTORE_HDFS_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB);
             ret = blobstoreKeyTab;
         } else {
             //both not null;
             LOG.warn("Both {} and {} are set. Use {} only.",
-                Config.BLOBSTORE_HDFS_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB);
+                    Config.BLOBSTORE_HDFS_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB);
             ret = hdfsKeyTab;
         }
         return ret;

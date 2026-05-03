@@ -25,7 +25,7 @@ java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib:/usr/lib64"
 storm.local.dir: "storm-local"
 storm.log4j2.conf.dir: "log4j2"
 storm.zookeeper.servers:
-    - "localhost"
+  - "localhost"
 storm.zookeeper.port: 2181
 storm.zookeeper.root: "/storm"
 storm.zookeeper.session.timeout: 20000
@@ -52,7 +52,7 @@ storm.nimbus.retry.intervalceiling.millis: 60000
 storm.nimbus.zookeeper.acls.check: true
 storm.nimbus.zookeeper.acls.fixup: true
 
-storm.auth.simple-white-list.users: []
+storm.auth.simple-white-list.users: [ ]
 storm.cluster.state.store: "org.apache.storm.cluster.ZKStateStorageFactory"
 storm.meta.serialization.delegate: "org.apache.storm.serialization.GzipThriftSerializationDelegate"
 storm.codedistributor.class: "org.apache.storm.codedistributor.LocalFileSystemCodeDistributor"
@@ -62,7 +62,7 @@ storm.health.check.timeout.ms: 5000
 storm.disable.symlinks: false
 
 ### nimbus.* configs are for the master
-nimbus.seeds : ["localhost"]
+nimbus.seeds: [ "localhost" ]
 nimbus.thrift.port: 6627
 nimbus.thrift.threads: 64
 nimbus.thrift.max_buffer_size: 1048576
@@ -163,10 +163,10 @@ storm.blobstore.acl.validation.enabled: false
 ### supervisor.* configs are for node supervisors
 # Define the amount of workers that can be run on this machine. Each worker is assigned a port to use for communication
 supervisor.slots.ports:
-    - 6700
-    - 6701
-    - 6702
-    - 6703
+  - 6700
+  - 6701
+  - 6702
+  - 6703
 supervisor.childopts: "-Xmx256m"
 supervisor.run.worker.as.user: false
 #how long supervisor will wait to ensure that a worker process is started
@@ -184,8 +184,8 @@ supervisor.worker.heartbeats.max.timeout.secs: 600
 #For topology configurable heartbeat timeout, maximum allowed heartbeat timeout.
 worker.max.timeout.secs: 600
 supervisor.enable: true
-supervisor.supervisors: []
-supervisor.supervisors.commands: []
+supervisor.supervisors: [ ]
+supervisor.supervisors.commands: [ ]
 supervisor.memory.capacity.mb: 4096.0
 #By convention 1 cpu core should be about 100, but this can be adjusted if needed
 # using 100 makes it simple to set the desired value to the capacity measurement
@@ -278,6 +278,7 @@ topology.max.task.parallelism: null
 topology.max.spout.pending: null    # ideally should be larger than topology.producer.batch.size. (esp. if topology.batch.flush.interval.millis=0)
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
+topology.stats.ewma.enable: false
 topology.builtin.metrics.bucket.size.secs: 60
 topology.fall.back.on.java.serialization: false
 topology.worker.childopts: null
@@ -287,16 +288,16 @@ topology.worker.shared.thread.pool.size: 4
 
 # Spout Wait Strategy - employed when there is no data to produce
 topology.spout.wait.strategy: "org.apache.storm.policy.WaitStrategyProgressive"
-topology.spout.wait.park.microsec : 100          # park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
+topology.spout.wait.park.microsec: 100          # park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
 
 topology.spout.wait.progressive.level1.count: 0          # number of iterations to spend in level 1 [no sleep] of WaitStrategyProgressive, before progressing to level 2
 topology.spout.wait.progressive.level2.count: 0          # number of iterations to spend in level 2 [parkNanos(1)] of WaitStrategyProgressive, before progressing to level 3
 topology.spout.wait.progressive.level3.sleep.millis: 1   # sleep duration for idling iterations in level 3 of WaitStrategyProgressive
 
 # Bolt Wait Strategy - employed when there is no data in its receive buffer to process
-topology.bolt.wait.strategy : "org.apache.storm.policy.WaitStrategyProgressive"
+topology.bolt.wait.strategy: "org.apache.storm.policy.WaitStrategyProgressive"
 
-topology.bolt.wait.park.microsec : 100          # park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
+topology.bolt.wait.park.microsec: 100          # park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
 
 topology.bolt.wait.progressive.level1.count: 1          # number of iterations to spend in level 1 [no sleep] of WaitStrategyProgressive, before progressing to level 2
 topology.bolt.wait.progressive.level2.count: 1000       # number of iterations to spend in level 2 [parkNanos(1)] of WaitStrategyProgressive, before progressing to level 3
@@ -363,7 +364,7 @@ blacklist.scheduler.assume.supervisor.bad.based.on.bad.slot: true
 
 dev.zookeeper.path: "/tmp/dev-storm-zookeeper"
 
-pacemaker.servers: []
+pacemaker.servers: [ ]
 pacemaker.port: 6699
 pacemaker.base.threads: 10
 pacemaker.max.threads: 50
@@ -371,12 +372,12 @@ pacemaker.client.max.threads: 2
 pacemaker.thread.timeout: 10
 pacemaker.childopts: "-Xmx1024m"
 pacemaker.auth.method: "NONE"
-pacemaker.kerberos.users: []
+pacemaker.kerberos.users: [ ]
 pacemaker.thrift.message.size.max: 10485760
 
 #default storm daemon metrics reporter plugins
 storm.daemon.metrics.reporter.plugins:
-     - "org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter"
+  - "org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter"
 storm.daemon.metrics.reporter.interval.secs: 10
 
 storm.metricstore.class: "org.apache.storm.metricstore.rocksdb.RocksDbStore"
@@ -399,8 +400,8 @@ storm.cgroup.inherit.cpuset.configs: false
 # Configs for CGroup support
 storm.cgroup.hierarchy.dir: "/cgroup/storm_resources"
 storm.cgroup.resources:
-    - "cpu"
-    - "memory"
+  - "cpu"
+  - "memory"
 storm.cgroup.hierarchy.name: "storm"
 storm.supervisor.cgroup.rootdir: "storm"
 storm.cgroup.cgexec.cmd: "/bin/cgexec"
@@ -419,12 +420,12 @@ storm.worker.min.cpu.pcore.percent: 0.0
 
 storm.topology.classpath.beginning.enabled: false
 worker.metrics:
-    "CGroupMemory": "org.apache.storm.metrics2.cgroup.CGroupMemoryUsage"
-    "CGroupMemoryLimit": "org.apache.storm.metrics2.cgroup.CGroupMemoryLimit"
-    "CGroupCpu": "org.apache.storm.metrics2.cgroup.CGroupCpu"
-    "CGroupCpuGuarantee": "org.apache.storm.metrics2.cgroup.CGroupCpuGuarantee"
-    "CGroupCpuGuaranteeByCfsQuota": "org.apache.storm.metrics2.cgroup.CGroupCpuGuaranteeByCfsQuota"
-    "CGroupCpuStat": "org.apache.storm.metrics2.cgroup.CGroupCpuStat"
+  "CGroupMemory": "org.apache.storm.metrics2.cgroup.CGroupMemoryUsage"
+  "CGroupMemoryLimit": "org.apache.storm.metrics2.cgroup.CGroupMemoryLimit"
+  "CGroupCpu": "org.apache.storm.metrics2.cgroup.CGroupCpu"
+  "CGroupCpuGuarantee": "org.apache.storm.metrics2.cgroup.CGroupCpuGuarantee"
+  "CGroupCpuGuaranteeByCfsQuota": "org.apache.storm.metrics2.cgroup.CGroupCpuGuaranteeByCfsQuota"
+  "CGroupCpuStat": "org.apache.storm.metrics2.cgroup.CGroupCpuStat"
 
 # The number of buckets for running statistics
 num.stat.buckets: 20
