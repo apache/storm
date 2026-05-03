@@ -2,9 +2,9 @@
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
@@ -38,6 +38,9 @@ public class TaskMetrics {
 
     private final ConcurrentMap<String, RateCounter> rateCounters = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Gauge> gauges = new ConcurrentHashMap<>();
+    // Gauge supplier singleton factories
+    private final Supplier<EWMAGauge> ewmaGaugeFactory;
+    private final Supplier<RollingAverageGauge> rollingAverageGaugeFactory;
 
     private final String topologyId;
     private final String componentId;
@@ -45,7 +48,6 @@ public class TaskMetrics {
     private final Integer workerPort;
     private final StormMetricRegistry metricRegistry;
     private final int samplingRate;
-    private final double ewmaSmoothingFactor;
     private final boolean ewmaEnable;
 
 
@@ -57,8 +59,10 @@ public class TaskMetrics {
         this.taskId = taskid;
         this.workerPort = context.getThisWorkerPort();
         this.samplingRate = ConfigUtils.samplingRate(topoConf);
-        this.ewmaSmoothingFactor = ConfigUtils.ewmaSmoothingFactor(topoConf);
+        double ewmaSmoothingFactor = ConfigUtils.ewmaSmoothingFactor(topoConf);
         this.ewmaEnable = ConfigUtils.ewmaEnable(topoConf);
+        this.rollingAverageGaugeFactory = RollingAverageGauge::new;
+        this.ewmaGaugeFactory = () -> new EWMAGauge(ewmaSmoothingFactor);
     }
 
     public void setCapacity(double capacity) {
@@ -77,7 +81,7 @@ public class TaskMetrics {
         RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, streamId);
         gauge.addValue(latencyMs);
 
-        if(this.ewmaEnable) {
+        if (this.ewmaEnable) {
             metricName = METRIC_NAME_COMPLETE_RFC_1889a_JITTER + "-" + streamId;
             EWMAGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, streamId);
             ewmaGauge.addValue(latencyMs);
@@ -94,7 +98,7 @@ public class TaskMetrics {
         RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, sourceStreamId);
         gauge.addValue(latencyMs);
 
-        if(this.ewmaEnable) {
+        if (this.ewmaEnable) {
             metricName = METRIC_NAME_PROCESS_RFC_1889a_JITTER + "-" + key;
             EWMAGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, sourceStreamId);
             ewmaGauge.addValue(latencyMs);
@@ -139,7 +143,7 @@ public class TaskMetrics {
         RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, sourceStreamId);
         gauge.addValue(latencyMs);
 
-        if(this.ewmaEnable) {
+        if (this.ewmaEnable) {
             metricName = METRIC_NAME_EXECUTE_RFC_1889a_JITTER + "-" + key;
             EWMAGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, sourceStreamId);
             ewmaGauge.addValue(latencyMs);
@@ -162,11 +166,11 @@ public class TaskMetrics {
     }
 
     private RollingAverageGauge getRollingAverageGauge(String metricName, String streamId) {
-        return getOrCreateGauge(metricName, streamId, RollingAverageGauge.class, RollingAverageGauge::new);
+        return getOrCreateGauge(metricName, streamId, RollingAverageGauge.class, this.rollingAverageGaugeFactory);
     }
 
     private EWMAGauge getExponentialWeightedMobileAverageGauge(String metricName, String streamId) {
-        return getOrCreateGauge(metricName, streamId, EWMAGauge.class, () -> new EWMAGauge(ewmaSmoothingFactor));
+        return getOrCreateGauge(metricName, streamId, EWMAGauge.class, this.ewmaGaugeFactory);
     }
 
     private <G extends Gauge<?>> G getOrCreateGauge(
@@ -198,12 +202,14 @@ public class TaskMetrics {
         return gaugeClass.cast(existing);
     }
 
-     /** Safe cast: G is bounded by Gauge<?> in the signature of getOrCreateGauge,
-     so every instance of G is by definition a Gauge.
-     The cast to raw Gauge is required because metricRegistry.gauge() does not
-     accept Gauge<?> the wildcard is not compatible with the type parameter T
-     expected by the external API. Type-safety is guaranteed by the bound
-     <G extends Gauge<?>> declared at the call site. **/
+    /**
+     * Safe cast: G is bounded by Gauge<?> in the signature of getOrCreateGauge,
+     * so every instance of G is by definition a Gauge.
+     * The cast to raw Gauge is required because metricRegistry.gauge() does not
+     * accept Gauge<?> the wildcard is not compatible with the type parameter T
+     * expected by the external API. Type-safety is guaranteed by the bound
+     * <G extends Gauge<?>> declared at the call site.
+     **/
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void registerGauge(String metricName, String streamId, Gauge<?> gauge) {
         metricRegistry.gauge(metricName, (Gauge) gauge, this.topologyId,
