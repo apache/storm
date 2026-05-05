@@ -12,12 +12,12 @@
 
 package org.apache.storm.metrics2;
 
+import com.codahale.metrics.Gauge;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 
-import com.codahale.metrics.Gauge;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
@@ -39,7 +39,7 @@ public class TaskMetrics {
     private final ConcurrentMap<String, RateCounter> rateCounters = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Gauge> gauges = new ConcurrentHashMap<>();
     // Gauge supplier singleton factories
-    private final Supplier<EWMAGauge> ewmaGaugeFactory;
+    private final Supplier<EwmaGauge> ewmaGaugeFactory;
     private final Supplier<RollingAverageGauge> rollingAverageGaugeFactory;
 
     private final String topologyId;
@@ -62,7 +62,7 @@ public class TaskMetrics {
         double ewmaSmoothingFactor = ConfigUtils.ewmaSmoothingFactor(topoConf);
         this.ewmaEnable = ConfigUtils.ewmaEnable(topoConf);
         this.rollingAverageGaugeFactory = RollingAverageGauge::new;
-        this.ewmaGaugeFactory = () -> new EWMAGauge(ewmaSmoothingFactor);
+        this.ewmaGaugeFactory = () -> new EwmaGauge(ewmaSmoothingFactor);
     }
 
     public void setCapacity(double capacity) {
@@ -83,7 +83,7 @@ public class TaskMetrics {
 
         if (this.ewmaEnable) {
             metricName = METRIC_NAME_COMPLETE_RFC_1889a_JITTER + "-" + streamId;
-            EWMAGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, streamId);
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, streamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -100,7 +100,7 @@ public class TaskMetrics {
 
         if (this.ewmaEnable) {
             metricName = METRIC_NAME_PROCESS_RFC_1889a_JITTER + "-" + key;
-            EWMAGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, sourceStreamId);
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, sourceStreamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -145,7 +145,7 @@ public class TaskMetrics {
 
         if (this.ewmaEnable) {
             metricName = METRIC_NAME_EXECUTE_RFC_1889a_JITTER + "-" + key;
-            EWMAGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, sourceStreamId);
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, sourceStreamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -169,8 +169,8 @@ public class TaskMetrics {
         return getOrCreateGauge(metricName, streamId, RollingAverageGauge.class, this.rollingAverageGaugeFactory);
     }
 
-    private EWMAGauge getExponentialWeightedMobileAverageGauge(String metricName, String streamId) {
-        return getOrCreateGauge(metricName, streamId, EWMAGauge.class, this.ewmaGaugeFactory);
+    private EwmaGauge getExponentialWeightedMobileAverageGauge(String metricName, String streamId) {
+        return getOrCreateGauge(metricName, streamId, EwmaGauge.class, this.ewmaGaugeFactory);
     }
 
     private <G extends Gauge<?>> G getOrCreateGauge(

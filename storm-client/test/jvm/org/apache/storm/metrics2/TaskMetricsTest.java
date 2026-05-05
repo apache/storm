@@ -15,7 +15,6 @@ package org.apache.storm.metrics2;
 import com.codahale.metrics.Gauge;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,8 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -54,7 +51,7 @@ class TaskMetricsTest {
     @Mock private StormMetricRegistry   metricRegistry;
     @Mock private RateCounter           rateCounter;
     @Mock private RollingAverageGauge   rollingAverageGauge;
-    @Mock private EWMAGauge             ewmaGauge;
+    @Mock private EwmaGauge ewmaGauge;
 
     private Map<String, Object> topoConf;
 

@@ -9,23 +9,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
+
 package org.apache.storm.metrics2;
+
+import static org.apache.storm.utils.ConfigUtils.RFC1889_ALPHA;
 
 import com.codahale.metrics.Gauge;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.apache.storm.utils.ConfigUtils.RFC1889_ALPHA;
-
 /**
  * Lock-free jitter estimator following RFC 1889 Section 6.3.1.
- * <p>
  * The jitter accumulator is stored as raw IEEE 754 bits in an AtomicLong
  * so that CAS can be used without locks.
- * <p>
  * Thread safety: addValue is lock-free; getValue is wait-free.
  */
-public class EWMAGauge implements Gauge<Double> {
+public class EwmaGauge implements Gauge<Double> {
 
     private static final long UNSEEDED = Long.MIN_VALUE;
     private static final long ZERO_BITS = Double.doubleToLongBits(0.0);
@@ -34,7 +33,7 @@ public class EWMAGauge implements Gauge<Double> {
     private final AtomicLong jitterBits = new AtomicLong(ZERO_BITS);
     private final double alpha;
 
-    EWMAGauge(double alpha) {
+    EwmaGauge(double alpha) {
         if (alpha <= 0.0 || alpha >= 1.0 || Double.isNaN(alpha)) {
             throw new IllegalArgumentException(
                     "alpha must be in (0, 1), got: " + alpha);
@@ -42,7 +41,7 @@ public class EWMAGauge implements Gauge<Double> {
         this.alpha = alpha;
     }
 
-    EWMAGauge() {
+    EwmaGauge() {
         this(RFC1889_ALPHA);  // 1.0 / 16.0
     }
 
@@ -74,7 +73,8 @@ public class EWMAGauge implements Gauge<Double> {
             return;
         }
         
-        long currentBits, updatedBits;
+        long currentBits;
+        long updatedBits;
         do {
             currentBits = jitterBits.get();
             double currentJitter = Double.longBitsToDouble(currentBits);

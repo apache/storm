@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class EWMAGaugeTest {
+class EwmaGaugeTest {
 
     private static final double DELTA = 1e-9;
 
@@ -39,7 +39,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Default constructor uses RFC 1889 alpha (1/16)")
         void defaultAlpha() {
-            EWMAGauge gauge = new EWMAGauge();
+            EwmaGauge gauge = new EwmaGauge();
             gauge.addValue(0L);
             gauge.addValue(16L); // D = 16 ; J = 0 + (16 - 0) * (1/16) = 1.0
             assertEquals(1.0, gauge.getValue(), DELTA);
@@ -54,7 +54,7 @@ class EWMAGaugeTest {
             };
             for (double alpha : invalidAlphas) {
                 assertThrows(IllegalArgumentException.class,
-                        () -> new EWMAGauge(alpha),
+                        () -> new EwmaGauge(alpha),
                         "Expected IllegalArgumentException for alpha=" + alpha);
             }
         }
@@ -64,7 +64,7 @@ class EWMAGaugeTest {
         void validAlphaAccepted() {
             double[] validAlphas = {0.001, 0.0625, 0.5, 0.999};
             for (double alpha : validAlphas) {
-                assertNotNull(new EWMAGauge(alpha),
+                assertNotNull(new EwmaGauge(alpha),
                         "Expected no exception for alpha=" + alpha);
             }
         }
@@ -75,11 +75,11 @@ class EWMAGaugeTest {
     @DisplayName("Cold-start semantics")
     class ColdStartTest {
 
-        private EWMAGauge gauge;
+        private EwmaGauge gauge;
 
         @BeforeEach
         void setUp() {
-            gauge = new EWMAGauge();
+            gauge = new EwmaGauge();
         }
 
         @Test
@@ -104,7 +104,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Single update: J = 0 + (D - 0) * alpha")
         void singleDeviation() {
-            EWMAGauge gauge = new EWMAGauge(0.5);
+            EwmaGauge gauge = new EwmaGauge(0.5);
             gauge.addValue(0L);
             gauge.addValue(10L);
             assertEquals(5.0, gauge.getValue(), DELTA);
@@ -113,7 +113,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Manual step-by-step verification against reference values")
         void manualSteps() {
-            EWMAGauge gauge = new EWMAGauge(0.5);
+            EwmaGauge gauge = new EwmaGauge(0.5);
 
             gauge.addValue(0L); // seed
 
@@ -133,7 +133,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Zero deviation decays jitter toward zero")
         void zeroDeviationDecays() {
-            EWMAGauge gauge = new EWMAGauge(0.5);
+            EwmaGauge gauge = new EwmaGauge(0.5);
             gauge.addValue(0L); // 0
             gauge.addValue(10L); // 0 + 5*alpha = 2.5
             double afterFirst = gauge.getValue();
@@ -152,7 +152,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Negative transit values are silently ignored before seed")
         void negativeIgnoredBeforeSeed() {
-            EWMAGauge gauge = new EWMAGauge();
+            EwmaGauge gauge = new EwmaGauge();
             gauge.addValue(-1L);
             gauge.addValue(-100L);
             assertEquals(0.0, gauge.getValue(), DELTA);
@@ -161,7 +161,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Negative value after seed does not corrupt lastTransit")
         void negativeAfterSeedIgnored() {
-            EWMAGauge gauge = new EWMAGauge(0.5);
+            EwmaGauge gauge = new EwmaGauge(0.5);
             gauge.addValue(10L);
             gauge.addValue(-5L);
             gauge.addValue(20L);
@@ -177,7 +177,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Repeated getValue() without new samples returns same estimate")
         void repeatedGetValueStable() {
-            EWMAGauge gauge = new EWMAGauge(0.5);
+            EwmaGauge gauge = new EwmaGauge(0.5);
             gauge.addValue(0L);
             gauge.addValue(10L);
             double first = gauge.getValue();
@@ -189,7 +189,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("EWMA accumulates correctly across multiple reporting windows")
         void acrossReportingWindows() {
-            EWMAGauge gauge = new EWMAGauge(0.5);
+            EwmaGauge gauge = new EwmaGauge(0.5);
             gauge.addValue(0L);
 
             gauge.addValue(10L);
@@ -210,7 +210,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Concurrent addValue() calls do not corrupt state")
         void concurrentAddValue() throws InterruptedException {
-            EWMAGauge gauge = new EWMAGauge();
+            EwmaGauge gauge = new EwmaGauge();
             int threads = 8;
             int samplesPerThread = 10_000;
             CountDownLatch ready = new CountDownLatch(threads);
@@ -246,7 +246,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Concurrent getValue() and addValue() do not deadlock")
         void concurrentGetAndAdd() throws Exception {
-            EWMAGauge gauge = new EWMAGauge();
+            EwmaGauge gauge = new EwmaGauge();
             ExecutorService pool = Executors.newFixedThreadPool(2);
             CountDownLatch done = new CountDownLatch(2);
 
@@ -277,7 +277,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Only one thread seeds lastTransit all same value gives zero jitter")
         void seedRace() throws InterruptedException {
-            EWMAGauge gauge = new EWMAGauge();
+            EwmaGauge gauge = new EwmaGauge();
             int threads = 16;
             CountDownLatch ready = new CountDownLatch(threads);
             CountDownLatch start = new CountDownLatch(1);
@@ -312,7 +312,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Long.MAX_VALUE transit does not overflow deviation")
         void maxLongTransit() {
-            EWMAGauge gauge = new EWMAGauge(0.5);
+            EwmaGauge gauge = new EwmaGauge(0.5);
             gauge.addValue(0L);
             gauge.addValue(Long.MAX_VALUE);
             double value = gauge.getValue();
@@ -323,7 +323,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Zero transit time is valid and produces zero deviation")
         void zeroTransit() {
-            EWMAGauge gauge = new EWMAGauge(0.5);
+            EwmaGauge gauge = new EwmaGauge(0.5);
             gauge.addValue(0L);
             gauge.addValue(0L);
             assertEquals(0.0, gauge.getValue(), DELTA);
@@ -332,7 +332,7 @@ class EWMAGaugeTest {
         @Test
         @DisplayName("Large number of samples does not overflow LongAdder")
         void manySamples() {
-            EWMAGauge gauge = new EWMAGauge();
+            EwmaGauge gauge = new EwmaGauge();
             gauge.addValue(0L);
             for (int i = 1; i <= 100_000; i++) {
                 gauge.addValue(i % 2 == 0 ? 0L : 10L);

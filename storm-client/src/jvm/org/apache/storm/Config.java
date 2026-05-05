@@ -608,7 +608,7 @@ public class Config extends HashMap<String, Object> {
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc1889#appendix-A.8">RFC 1889 Appendix A.8</a>
      */
-    @CustomValidator(validatorClass = ConfigValidation.EWMASmoothingFactorValidator.class)
+    @CustomValidator(validatorClass = ConfigValidation.EwmaSmoothingFactorValidator.class)
     public static final String TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR = "topology.stats.ewma.smoothing_factor";
     /**
      * The time period that builtin metrics data in bucketed into.

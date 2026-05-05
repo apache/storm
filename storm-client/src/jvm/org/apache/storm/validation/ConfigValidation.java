@@ -849,10 +849,10 @@ public class ConfigValidation {
         }
     }
 
-    public static class EWMASmoothingFactorValidator extends Validator {
+    public static class EwmaSmoothingFactorValidator extends Validator {
         @Override
         public void validateField(String name, Object o) {
-            if (o == null){
+            if (o == null) {
                 return;
             }
             if (o instanceof Number) {
