@@ -2,9 +2,9 @@
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
@@ -35,17 +35,17 @@ import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidationAnnotations;
 
-import static org.apache.storm.metrics2.EWMAGauge.RFC1889_ALPHA;
 
 public class ConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
     public static final String STORM_HOME = "storm.home";
     public static final String RESOURCES_SUBDIR = "resources";
+    public static final double RFC1889_ALPHA = 1.0 / 16.0;
 
     private static final Set<String> passwordConfigKeys = new HashSet<>();
 
     static {
-        for (Class<?> clazz: ConfigValidation.getConfigClasses()) {
+        for (Class<?> clazz : ConfigValidation.getConfigClasses()) {
             for (Field field : clazz.getFields()) {
                 for (Annotation annotation : field.getAnnotations()) {
                     boolean isPassword = annotation.annotationType().getName().equals(
@@ -338,7 +338,7 @@ public class ConfigUtils {
     }
 
     public static Map<String, Object> overrideLoginConfigWithSystemProperty(
-        Map<String, Object> conf) { // note that we delete the return value
+            Map<String, Object> conf) { // note that we delete the return value
         String loginConfFile = System.getProperty("java.security.auth.login.config");
         if (loginConfFile != null) {
             conf.put("java.security.auth.login.config", loginConfFile);
@@ -437,7 +437,6 @@ public class ConfigUtils {
      * @param name - the config key
      * @param conf - the config map
      * @return - the config value converted to a List &lt;String&gt; if found, otherwise null.
-     *
      * @throws IllegalArgumentException if conf is null
      * @throws NullPointerException     if name is null and the conf map doesn't support null keys
      */
@@ -451,9 +450,9 @@ public class ConfigUtils {
             listValue = null;
         } else if (value instanceof Collection) {
             listValue = ((Collection<?>) value)
-                .stream()
-                .map(ObjectReader::getString)
-                .collect(Collectors.toList());
+                    .stream()
+                    .map(ObjectReader::getString)
+                    .collect(Collectors.toList());
         } else {
             listValue = Arrays.asList(ObjectReader.getString(value).split("\\s+"));
         }

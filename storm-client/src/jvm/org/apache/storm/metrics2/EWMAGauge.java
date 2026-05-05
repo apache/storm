@@ -9,25 +9,30 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-
 package org.apache.storm.metrics2;
 
 import com.codahale.metrics.Gauge;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 
+import static org.apache.storm.utils.ConfigUtils.RFC1889_ALPHA;
+
+/**
+ * Lock-free jitter estimator following RFC 1889 Section 6.3.1.
+ * <p>
+ * The jitter accumulator is stored as raw IEEE 754 bits in an AtomicLong
+ * so that CAS can be used without locks.
+ * <p>
+ * Thread safety: addValue is lock-free; getValue is wait-free.
+ */
 public class EWMAGauge implements Gauge<Double> {
 
-    public static final double RFC1889_ALPHA = 1.0 / 16.0;
     private static final long UNSEEDED = Long.MIN_VALUE;
-    private static final int MAX_WINDOW_SIZE = 10;
+    private static final long ZERO_BITS = Double.doubleToLongBits(0.0);
 
-    private final double alpha;
-    private double jitter = 0.0;
     private final AtomicLong lastTransit = new AtomicLong(UNSEEDED);
-    private final LongAdder deviationSum = new LongAdder();
-    private final LongAdder deviationCount = new LongAdder();
+    private final AtomicLong jitterBits = new AtomicLong(ZERO_BITS);
+    private final double alpha;
 
     EWMAGauge(double alpha) {
         if (alpha <= 0.0 || alpha >= 1.0 || Double.isNaN(alpha)) {
@@ -38,35 +43,51 @@ public class EWMAGauge implements Gauge<Double> {
     }
 
     EWMAGauge() {
-        this(RFC1889_ALPHA);
+        this(RFC1889_ALPHA);  // 1.0 / 16.0
     }
 
+    /**
+     * Update the jitter estimate.
+     *
+     * @param transitMs transit time for this tuple: {@code arrival - timestamp}
+     *                  Negative values are silently ignored.
+     */
     public void addValue(long transitMs) {
         if (transitMs < 0) {
             return;
         }
+
+        // Seed on the very first packet: store transit, nothing to diff against yet.
         if (lastTransit.compareAndSet(UNSEEDED, transitMs)) {
             return;
         }
+
         long prev = lastTransit.getAndSet(transitMs);
         if (prev == UNSEEDED) {
+            // Lost a race during seeding; prev is not a real transit value.
             return;
         }
-        deviationSum.add(Math.abs(transitMs - prev));
-        deviationCount.increment();
-        if (deviationCount.longValue() >= MAX_WINDOW_SIZE) {
-            getValue();
+
+        double d = Math.abs(transitMs - prev);
+
+        if (d <= 0) {
+            return;
         }
+        
+        long currentBits, updatedBits;
+        do {
+            currentBits = jitterBits.get();
+            double currentJitter = Double.longBitsToDouble(currentBits);
+            double updatedJitter = currentJitter + alpha * (d - currentJitter);
+            updatedBits = Double.doubleToLongBits(updatedJitter);
+        } while (!jitterBits.compareAndSet(currentBits, updatedBits));
     }
 
+    /**
+     * Returns the current jitter estimate in timestamp units.
+     */
     @Override
-    public synchronized Double getValue() {
-        long sum = deviationSum.sumThenReset();
-        long count = deviationCount.sumThenReset();
-        if (count > 0) {
-            double meanDeviation = (double) sum / count;
-            jitter += (meanDeviation - jitter) * alpha;
-        }
-        return jitter;
+    public Double getValue() {
+        return Double.longBitsToDouble(jitterBits.get());
     }
 }

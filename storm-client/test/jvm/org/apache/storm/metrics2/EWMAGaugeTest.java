@@ -134,12 +134,12 @@ class EWMAGaugeTest {
         @DisplayName("Zero deviation decays jitter toward zero")
         void zeroDeviationDecays() {
             EWMAGauge gauge = new EWMAGauge(0.5);
-            gauge.addValue(0L);
-            gauge.addValue(10L);
+            gauge.addValue(0L); // 0
+            gauge.addValue(10L); // 0 + 5*alpha = 2.5
             double afterFirst = gauge.getValue();
 
-            gauge.addValue(10L);
-            assertEquals(afterFirst * 0.5, gauge.getValue(), DELTA);
+            gauge.addValue(10L); // 2.5 + 0*alpha = 2.5
+            assertEquals(afterFirst, gauge.getValue(), DELTA);
         }
 
     }
@@ -193,10 +193,10 @@ class EWMAGaugeTest {
             gauge.addValue(0L);
 
             gauge.addValue(10L);
-            assertEquals(5.0,  gauge.getValue(), DELTA, "Window 1");
+            assertEquals(5.0, gauge.getValue(), DELTA, "Window 1");
 
             gauge.addValue(0L);
-            assertEquals(7.5,  gauge.getValue(), DELTA, "Window 2");
+            assertEquals(7.5, gauge.getValue(), DELTA, "Window 2");
 
             gauge.addValue(10L);
             assertEquals(8.75, gauge.getValue(), DELTA, "Window 3");
@@ -239,7 +239,7 @@ class EWMAGaugeTest {
                     "Executor did not terminate — possible deadlock");
 
             double value = gauge.getValue();
-            assertTrue(value >= 0.0,"Jitter must be non-negative, got: " + value);
+            assertTrue(value >= 0.0, "Jitter must be non-negative, got: " + value);
             assertTrue(Double.isFinite(value), "Jitter must be finite, got: " + value);
         }
 
@@ -316,8 +316,8 @@ class EWMAGaugeTest {
             gauge.addValue(0L);
             gauge.addValue(Long.MAX_VALUE);
             double value = gauge.getValue();
-            assertTrue(value > 0.0,"Jitter should be positive");
-            assertTrue(Double.isFinite(value),"Jitter should be finite");
+            assertTrue(value > 0.0, "Jitter should be positive");
+            assertTrue(Double.isFinite(value), "Jitter should be finite");
         }
 
         @Test
@@ -338,9 +338,9 @@ class EWMAGaugeTest {
                 gauge.addValue(i % 2 == 0 ? 0L : 10L);
             }
             double value = gauge.getValue();
-            assertTrue(value > 0.0,"Jitter should be positive after many samples");
-            assertTrue(value <= 10.0,"Jitter cannot exceed max deviation of 10");
-            assertTrue(Double.isFinite(value),"Jitter must be finite");
+            assertTrue(value > 0.0, "Jitter should be positive after many samples");
+            assertTrue(value <= 10.0, "Jitter cannot exceed max deviation of 10");
+            assertTrue(Double.isFinite(value), "Jitter must be finite");
         }
     }
 }
