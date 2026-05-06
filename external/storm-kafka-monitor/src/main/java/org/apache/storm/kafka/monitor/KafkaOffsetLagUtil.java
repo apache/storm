@@ -19,9 +19,8 @@
 package org.apache.storm.kafka.monitor;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -69,10 +68,10 @@ public class KafkaOffsetLagUtil {
                 printUsageAndExit(options, OPTION_GROUP_ID_LONG + " and " + OPTION_BOOTSTRAP_BROKERS_LONG + " are required");
             }
             NewKafkaSpoutOffsetQuery newKafkaSpoutOffsetQuery =
-                new NewKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG),
-                    commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG),
-                    commandLine.getOptionValue(OPTION_GROUP_ID_LONG), securityProtocol, saslMechanism,
-                    commandLine.getOptionValue(OPTION_CONSUMER_CONFIG_LONG));
+                    new NewKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG),
+                            commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG),
+                            commandLine.getOptionValue(OPTION_GROUP_ID_LONG), securityProtocol, saslMechanism,
+                            commandLine.getOptionValue(OPTION_CONSUMER_CONFIG_LONG));
             List<KafkaOffsetLagResult> results = getOffsetLags(newKafkaSpoutOffsetQuery);
 
             Map<String, Map<Integer, KafkaPartitionOffsetLag>> keyedResult = keyByTopicAndPartition(results);
@@ -84,7 +83,7 @@ public class KafkaOffsetLagUtil {
     }
 
     private static Map<String, Map<Integer, KafkaPartitionOffsetLag>> keyByTopicAndPartition(
-        List<KafkaOffsetLagResult> results) {
+            List<KafkaOffsetLagResult> results) {
         Map<String, Map<Integer, KafkaPartitionOffsetLag>> resultKeyedByTopic = new HashMap<>();
 
         for (KafkaOffsetLagResult result : results) {
@@ -96,7 +95,7 @@ public class KafkaOffsetLagUtil {
             }
 
             topicResultKeyedByPartition.put(result.getPartition(),
-                                            new KafkaPartitionOffsetLag(result.getConsumerCommittedOffset(), result.getLogHeadOffset()));
+                    new KafkaPartitionOffsetLag(result.getConsumerCommittedOffset(), result.getLogHeadOffset()));
         }
 
         return resultKeyedByTopic;
@@ -114,7 +113,7 @@ public class KafkaOffsetLagUtil {
         options.addOption(OPTION_TOPIC_SHORT, OPTION_TOPIC_LONG,
                 true,
                 "REQUIRED Topics (comma separated list) for fetching log head and spout committed "
-                      + "offset");
+                        + "offset");
         options.addOption(OPTION_BOOTSTRAP_BROKERS_SHORT, OPTION_BOOTSTRAP_BROKERS_LONG,
                 true,
                 "Comma separated list of bootstrap broker hosts for new "
@@ -137,6 +136,7 @@ public class KafkaOffsetLagUtil {
 
     /**
      * Get offset lags.
+     *
      * @param newKafkaSpoutOffsetQuery represents the information needed to query kafka for log head and spout offsets
      * @return log head offset, spout offset and lag for each partition
      */
@@ -172,12 +172,13 @@ public class KafkaOffsetLagUtil {
                 }
             }
             consumer.assign(topicPartitionList);
+            Map<TopicPartition, OffsetAndMetadata> committedOffsets = consumer.committed(new HashSet<>(topicPartitionList));
+            consumer.seekToEnd(topicPartitionList);
             for (TopicPartition topicPartition : topicPartitionList) {
-                Map<TopicPartition, OffsetAndMetadata> offsetAndMetadata = consumer.committed(Collections.singleton(topicPartition));
-                long committedOffset = resolveCommittedOffset(offsetAndMetadata, topicPartition);
-                consumer.seekToEnd(toArrayList(topicPartition));
+                OffsetAndMetadata partitionOffset = committedOffsets.get(topicPartition);
+                long committedOffset = partitionOffset != null ? partitionOffset.offset() : -1;
                 result.add(new KafkaOffsetLagResult(topicPartition.topic(), topicPartition.partition(), committedOffset,
-                                                    consumer.position(topicPartition)));
+                        consumer.position(topicPartition)));
             }
         } finally {
             if (consumer != null) {
@@ -185,24 +186,6 @@ public class KafkaOffsetLagUtil {
             }
         }
         return result;
-    }
-
-    /**
-     * Read the committed offset for a partition out of the map returned by
-     * {@link org.apache.kafka.clients.consumer.KafkaConsumer#committed(java.util.Set)}.
-     * Returns {@code -1} when no offset is committed (the map's value for the partition is null).
-     */
-    private static long resolveCommittedOffset(Map<TopicPartition, OffsetAndMetadata> committedOffsets, TopicPartition topicPartition) {
-        OffsetAndMetadata partitionOffset = committedOffsets.get(topicPartition);
-        return partitionOffset != null ? partitionOffset.offset() : -1;
-    }
-
-    private static Collection<TopicPartition> toArrayList(final TopicPartition tp) {
-        return new ArrayList<TopicPartition>(1) {
-            {
-                add(tp);
-            }
-        };
     }
 
 }
