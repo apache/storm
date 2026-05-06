@@ -170,11 +170,9 @@ public class TopologySpoutLag {
                 try {
                     String resultFromMonitor = new ShellCommandRunnerImpl().execCommand(commands.toArray(new String[0]));
 
-                    try {
-                        result = (Map<String, Object>) JSONValue.parseWithException(resultFromMonitor);
-                    } catch (ParseException e) {
-                        LOGGER.debug("JSON parsing failed, assuming message as error message: {}", resultFromMonitor);
-                        // json parsing fail -> error received
+                    result = parseMonitorOutput(resultFromMonitor);
+                    if (result == null) {
+                        // parsing failed or did not yield a Map -> treat output as error message
                         errorMsg = resultFromMonitor;
                     }
                 } finally {
@@ -200,5 +198,27 @@ public class TopologySpoutLag {
 
     private static Map<String, Object> getLagResultForNewKafkaSpout(String spoutId, SpoutSpec spoutSpec) throws IOException {
         return getLagResultForKafka(spoutId, spoutSpec);
+    }
+
+    /**
+     * Parse the stdout from {@code storm-kafka-monitor}. Returns the parsed JSON map on success,
+     * or {@code null} when the output is not parseable as a JSON object — which happens when the
+     * monitor printed a plaintext error string (json-smart parses unquoted text leniently as a
+     * String rather than throwing). The caller treats {@code null} as "monitor failed; surface
+     * the raw stdout as the error message".
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> parseMonitorOutput(String resultFromMonitor) {
+        try {
+            Object parsed = JSONValue.parseWithException(resultFromMonitor);
+            if (parsed instanceof Map) {
+                return (Map<String, Object>) parsed;
+            }
+            LOGGER.debug("JSON parsing did not yield a Map, assuming message as error message: {}", resultFromMonitor);
+            return null;
+        } catch (ParseException e) {
+            LOGGER.debug("JSON parsing failed, assuming message as error message: {}", resultFromMonitor);
+            return null;
+        }
     }
 }

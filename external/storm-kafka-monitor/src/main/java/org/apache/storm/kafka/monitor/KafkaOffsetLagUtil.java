@@ -174,7 +174,7 @@ public class KafkaOffsetLagUtil {
             consumer.assign(topicPartitionList);
             for (TopicPartition topicPartition : topicPartitionList) {
                 Map<TopicPartition, OffsetAndMetadata> offsetAndMetadata = consumer.committed(Collections.singleton(topicPartition));
-                long committedOffset = offsetAndMetadata != null ? offsetAndMetadata.get(topicPartition).offset() : -1;
+                long committedOffset = resolveCommittedOffset(offsetAndMetadata, topicPartition);
                 consumer.seekToEnd(toArrayList(topicPartition));
                 result.add(new KafkaOffsetLagResult(topicPartition.topic(), topicPartition.partition(), committedOffset,
                                                     consumer.position(topicPartition)));
@@ -185,6 +185,16 @@ public class KafkaOffsetLagUtil {
             }
         }
         return result;
+    }
+
+    /**
+     * Read the committed offset for a partition out of the map returned by
+     * {@link org.apache.kafka.clients.consumer.KafkaConsumer#committed(java.util.Set)}.
+     * Returns {@code -1} when no offset is committed (the map's value for the partition is null).
+     */
+    private static long resolveCommittedOffset(Map<TopicPartition, OffsetAndMetadata> committedOffsets, TopicPartition topicPartition) {
+        OffsetAndMetadata partitionOffset = committedOffsets.get(topicPartition);
+        return partitionOffset != null ? partitionOffset.offset() : -1;
     }
 
     private static Collection<TopicPartition> toArrayList(final TopicPartition tp) {
