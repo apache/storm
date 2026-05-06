@@ -80,7 +80,9 @@ We're also notifying it via annotating classes with marker interface `@Interface
 * [Event Logging](Eventlogging.html)
 
 ### Integration With External Systems, and Other Libraries
-* [Apache Kafka Integration](storm-kafka-client.html)
+* [Kafka Consumer (storm-kafka-client)](storm-kafka-client.html)
+* [Kafka Migration Tool (storm-kafka-migration)](https://github.com/apache/storm/tree/master/external/storm-kafka-migration)
+* [Kafka Monitoring (storm-kafka-monitor)](https://github.com/apache/storm/tree/master/external/storm-kafka-monitor)
 * [Apache HBase Integration](storm-hbase.html)
 * [Apache HDFS Integration](storm-hdfs.html)
 * [JDBC Integration](storm-jdbc.html)
