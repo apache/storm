@@ -137,9 +137,10 @@ class EwmaGaugeTest {
             gauge.addValue(0L); // 0
             gauge.addValue(10L); // 0 + 5*alpha = 2.5
             double afterFirst = gauge.getValue();
-
-            gauge.addValue(10L); // 2.5 + 0*alpha = 2.5
             assertEquals(afterFirst, gauge.getValue(), DELTA);
+
+            gauge.addValue(10L); // 2.5 - 2.5*alpha = 2.5 - 1.25 = 1.25
+            assertEquals(afterFirst * 0.5, gauge.getValue(), DELTA);
         }
 
     }

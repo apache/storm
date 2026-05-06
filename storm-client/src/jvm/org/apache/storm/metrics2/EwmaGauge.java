@@ -69,10 +69,6 @@ public class EwmaGauge implements Gauge<Double> {
 
         double d = Math.abs(transitMs - prev);
 
-        if (d <= 0) {
-            return;
-        }
-        
         long currentBits;
         long updatedBits;
         do {
