@@ -985,9 +985,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             String id = entry.getKey();
             SupervisorInfo info = entry.getValue();
             ret.put(id, new SupervisorDetails(id, info.get_server_port(), info.get_hostname(),
-                                              info.get_scheduler_meta(), null, info.get_resources_map()));
+                                              info.get_scheduler_meta(), null, info.get_resources_map(),
+                                              supervisorUptimeSecs(info)));
         }
         return ret;
+    }
+
+    private static long supervisorUptimeSecs(SupervisorInfo info) {
+        return info.is_set_uptime_secs() ? info.get_uptime_secs() : 0L;
     }
 
     /**
@@ -2273,7 +2278,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         List<SupervisorDetails> superDetails = new ArrayList<>();
         for (Entry<String, SupervisorInfo> entry : superInfos.entrySet()) {
             SupervisorInfo info = entry.getValue();
-            superDetails.add(new SupervisorDetails(entry.getKey(), info.get_meta(), info.get_resources_map()));
+            superDetails.add(new SupervisorDetails(entry.getKey(), info.get_meta(), info.get_resources_map(),
+                                                   supervisorUptimeSecs(info)));
         }
         // Note that allSlotsAvailableForScheduling
         // only uses the supervisor-details. The rest of the arguments
@@ -2306,7 +2312,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 allPorts.removeAll(deadPorts);
             }
             ret.put(superId, new SupervisorDetails(superId, hostname, info.get_scheduler_meta(),
-                                                   allPorts, info.get_resources_map()));
+                                                   allPorts, info.get_resources_map(), supervisorUptimeSecs(info)));
         }
         return ret;
     }
@@ -5526,4 +5532,3 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 }
-

@@ -363,6 +363,64 @@ public class Cluster implements ISchedulingState {
         return desiredNumWorkers > assignedNumWorkers || getUnassignedExecutors(topology).size() > 0;
     }
 
+    /**
+     * Returns true when there is at least one stable, non-blacklisted supervisor whose slots are all currently free and the
+     * topology is not already on that supervisor. Controlled by
+     * {@link DaemonConfig#NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED}; returns false when disabled. The check is
+     * binary by design -- a supervisor either has zero used slots or it does not -- so this never fires for "almost balanced"
+     * clusters. Topologies that cannot benefit from a move (e.g. only a single worker assigned) are filtered later by the
+     * drain-budget computation in {@link EvenScheduler}, which evaluates to zero whenever
+     * {@code floor(numWorkers / nonBlacklistedSupervisorCount)} is zero.
+     */
+    public boolean hasIdleSupervisorReusableBy(TopologyDetails topology) {
+        if (!ObjectReader.getBoolean(
+                conf.get(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED), false)) {
+            return false;
+        }
+        Set<String> nodesUsedByTopology = new HashSet<>();
+        for (WorkerSlot slot : getUsedSlotsByTopologyId(topology.getId())) {
+            nodesUsedByTopology.add(slot.getNodeId());
+        }
+        for (SupervisorDetails s : supervisors.values()) {
+            String sid = s.getId();
+            if (!isIdleSupervisorAvailableForEvenRebalance(s)) {
+                continue;
+            }
+            if (nodesUsedByTopology.contains(sid)) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isIdleSupervisorAvailableForEvenRebalance(SupervisorDetails supervisor) {
+        if (supervisor == null) {
+            return false;
+        }
+        if (isBlackListed(supervisor.getId())) {
+            return false;
+        }
+        if (supervisor.getAllPorts().isEmpty()) {
+            return false;
+        }
+        if (!getUsedPorts(supervisor).isEmpty()) {
+            return false;
+        }
+        return hasMinimumIdleSupervisorStability(supervisor);
+    }
+
+    private boolean hasMinimumIdleSupervisorStability(SupervisorDetails supervisor) {
+        int minStableRounds = ObjectReader.getInt(
+                conf.get(DaemonConfig.NIMBUS_EVEN_REBALANCE_IDLE_SUPERVISOR_MIN_STABLE_ROUNDS), 3);
+        if (minStableRounds <= 0) {
+            return true;
+        }
+        int monitorFrequencySecs = ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_MONITOR_FREQUENCY_SECS), 3);
+        long requiredUptimeSecs = (long) minStableRounds * Math.max(1, monitorFrequencySecs);
+        return supervisor.getUptimeSecs() >= requiredUptimeSecs;
+    }
+
     @Override
     public boolean needsSchedulingRas(TopologyDetails topology) {
         return getUnassignedExecutors(topology).size() > 0;

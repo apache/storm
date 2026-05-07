@@ -18,18 +18,23 @@
 
 package org.apache.storm.scheduler;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Sets;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -101,6 +106,151 @@ public class EvenScheduler implements IScheduler {
         return Utils.reverseMap(executorToSlot);
     }
 
+    /**
+     * Round-robin relocation of currently-assigned workers onto fully-idle supervisors. Each round-robin iteration moves
+     * at most one worker per topology, so multiple topologies share the idle slots and a single returning supervisor ends
+     * up hosting workers from several topologies — preserving the per-supervisor workload diversity that a fresh
+     * cluster has after submission.
+     *
+     * <p>Per-topology cap in one scheduling round is
+     * {@code idleSupervisorCount * floor(numWorkers / nonBlacklistedSupervisorCount)}, further tightened by
+     * {@link DaemonConfig#NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY} when set to a positive value. Topologies whose
+     * computed cap is zero (typically {@code numWorkers < numSupervisors}) are skipped entirely. The trigger remains
+     * binary — only fires when at least one supervisor has zero used slots — so a near-balanced cluster sees no
+     * movement.
+     *
+     * <p>Workers are always pulled from the supervisor where this topology has the most workers, and only when that
+     * supervisor would still hold at least one worker afterward. Each pulled worker's executors are placed directly
+     * onto an idle slot, so the subsequent sortSlots / interleave pass cannot drop them back into the just-vacated
+     * slots. Ties between equally loaded source supervisors are resolved by supervisor id, lexicographically.
+     *
+     * <p>Gated by {@link DaemonConfig#NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED}: when disabled (the default) the
+     * method returns before scanning any supervisor, so a cluster that has not opted in pays no per-scheduling-round cost.
+     */
+    @VisibleForTesting
+    static void redistributeOntoIdleSupervisors(Topologies topologies, Cluster cluster) {
+        if (!ObjectReader.getBoolean(
+                cluster.getConf().get(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED), false)) {
+            return;
+        }
+        int nonBlacklistedSupervisorCount = 0;
+        int idleSupervisorCount = 0;
+        Deque<WorkerSlot> idleTargets = new ArrayDeque<>();
+        List<SupervisorDetails> supervisors = new ArrayList<>(cluster.getSupervisors().values());
+        supervisors.sort(Comparator.comparing(SupervisorDetails::getId));
+        for (SupervisorDetails s : supervisors) {
+            if (cluster.isBlackListed(s.getId())) {
+                continue;
+            }
+            if (s.getAllPorts().isEmpty()) {
+                continue;
+            }
+            nonBlacklistedSupervisorCount++;
+            if (cluster.isIdleSupervisorAvailableForEvenRebalance(s)) {
+                idleSupervisorCount++;
+                List<Integer> ports = new ArrayList<>(s.getAllPorts());
+                Collections.sort(ports);
+                for (Integer port : ports) {
+                    idleTargets.add(new WorkerSlot(s.getId(), port));
+                }
+            }
+        }
+        if (idleTargets.isEmpty() || nonBlacklistedSupervisorCount == 0 || idleSupervisorCount == 0) {
+            return;
+        }
+
+        int maxFree = ObjectReader.getInt(
+                cluster.getConf().get(DaemonConfig.NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY), 0);
+
+        List<TopologyDetails> orderedTopos = new ArrayList<>();
+        Map<String, Integer> remainingBudget = new HashMap<>();
+        for (TopologyDetails topo : topologies.getTopologies()) {
+            if (!cluster.hasIdleSupervisorReusableBy(topo)) {
+                continue;
+            }
+            int target = (topo.getNumWorkers() / nonBlacklistedSupervisorCount) * idleSupervisorCount;
+            if (target <= 0) {
+                continue;
+            }
+            if (maxFree > 0) {
+                target = Math.min(target, maxFree);
+            }
+            orderedTopos.add(topo);
+            remainingBudget.put(topo.getId(), target);
+        }
+        if (orderedTopos.isEmpty()) {
+            return;
+        }
+        orderedTopos.sort(Comparator.comparing(TopologyDetails::getId));
+
+        int totalRelocated = 0;
+        while (!idleTargets.isEmpty()) {
+            boolean movedThisIteration = false;
+            for (TopologyDetails topo : orderedTopos) {
+                if (idleTargets.isEmpty()) {
+                    break;
+                }
+                int remaining = remainingBudget.getOrDefault(topo.getId(), 0);
+                if (remaining <= 0) {
+                    continue;
+                }
+                if (relocateOneWorkerOntoIdleSlot(topo, cluster, idleTargets)) {
+                    remainingBudget.put(topo.getId(), remaining - 1);
+                    totalRelocated++;
+                    movedThisIteration = true;
+                } else {
+                    remainingBudget.put(topo.getId(), 0);
+                }
+            }
+            if (!movedThisIteration) {
+                break;
+            }
+        }
+        if (totalRelocated > 0) {
+            LOG.info("EvenScheduler: relocated {} worker(s) onto idle supervisor(s) round-robin across {} topologies.",
+                    totalRelocated, orderedTopos.size());
+        }
+    }
+
+    /**
+     * Pulls a single worker from the supervisor where {@code topology} currently has the most workers and reassigns its
+     * executors onto the next idle slot from {@code idleTargets}. Returns false (without consuming an idle target) if
+     * the topology has no eligible source supervisor — namely all of its supervisors host at most one of its workers,
+     * which would otherwise drain that supervisor to zero and turn it into the next round's idle.
+     */
+    private static boolean relocateOneWorkerOntoIdleSlot(TopologyDetails topology, Cluster cluster,
+                                                         Deque<WorkerSlot> idleTargets) {
+        Map<WorkerSlot, List<ExecutorDetails>> slotToExecutors =
+                getAliveAssignedWorkerSlotExecutors(cluster, topology.getId());
+        Map<String, List<WorkerSlot>> nodeToSlots = new HashMap<>();
+        for (WorkerSlot slot : slotToExecutors.keySet()) {
+            nodeToSlots.computeIfAbsent(slot.getNodeId(), k -> new ArrayList<>()).add(slot);
+        }
+        List<Map.Entry<String, List<WorkerSlot>>> candidates = new ArrayList<>(nodeToSlots.entrySet());
+        candidates.removeIf(e -> e.getValue().size() < 2);
+        candidates.sort(Comparator
+                .<Map.Entry<String, List<WorkerSlot>>>comparingInt(e -> e.getValue().size())
+                .reversed()
+                .thenComparing(Map.Entry::getKey));
+        if (candidates.isEmpty()) {
+            return false;
+        }
+        List<WorkerSlot> slots = candidates.get(0).getValue();
+        slots.sort(Comparator.comparingInt(WorkerSlot::getPort));
+        WorkerSlot victim = slots.get(slots.size() - 1);
+        Collection<ExecutorDetails> execs = slotToExecutors.get(victim);
+        if (execs == null || execs.isEmpty()) {
+            return false;
+        }
+        if (idleTargets.isEmpty()) {
+            return false;
+        }
+        WorkerSlot target = idleTargets.poll();
+        cluster.freeSlot(victim);
+        cluster.assign(target, topology.getId(), execs);
+        return true;
+    }
+
     private static Map<ExecutorDetails, WorkerSlot> scheduleTopology(TopologyDetails topology, Cluster cluster) {
         List<WorkerSlot> availableSlots = cluster.getAvailableSlots();
         Set<ExecutorDetails> allExecutors = topology.getExecutors();
@@ -148,7 +298,11 @@ public class EvenScheduler implements IScheduler {
     }
 
     public static void scheduleTopologiesEvenly(Topologies topologies, Cluster cluster) {
+        redistributeOntoIdleSupervisors(topologies, cluster);
         for (TopologyDetails topology : cluster.needsSchedulingTopologies()) {
+            if (topologies.getById(topology.getId()) == null) {
+                continue;
+            }
             String topologyId = topology.getId();
             Map<ExecutorDetails, WorkerSlot> newAssignment = scheduleTopology(topology, cluster);
             Map<WorkerSlot, List<ExecutorDetails>> nodePortToExecutors = Utils.reverseMap(newAssignment);

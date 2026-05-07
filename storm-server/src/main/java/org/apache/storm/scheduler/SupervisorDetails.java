@@ -46,6 +46,7 @@ public class SupervisorDetails {
      * all the ports of the supervisor.
      */
     private Set<Integer> allPorts;
+    private final long uptimeSecs;
 
     /**
      * Create the details of a new supervisor.
@@ -59,12 +60,18 @@ public class SupervisorDetails {
      */
     public SupervisorDetails(String id, Integer serverPort, String host, Object meta, Object schedulerMeta,
                              Collection<? extends Number> allPorts, Map<String, Double> totalResources) {
+        this(id, serverPort, host, meta, schedulerMeta, allPorts, totalResources, Long.MAX_VALUE);
+    }
+
+    public SupervisorDetails(String id, Integer serverPort, String host, Object meta, Object schedulerMeta,
+                             Collection<? extends Number> allPorts, Map<String, Double> totalResources, long uptimeSecs) {
 
         this.id = id;
         this.serverPort = serverPort;
         this.host = host;
         this.meta = meta;
         this.schedulerMeta = schedulerMeta;
+        this.uptimeSecs = uptimeSecs;
         if (allPorts != null) {
             setAllPorts(allPorts);
         } else {
@@ -82,6 +89,10 @@ public class SupervisorDetails {
         this(id, null, null, meta, null, null, totalResources);
     }
 
+    public SupervisorDetails(String id, Object meta, Map<String, Double> totalResources, long uptimeSecs) {
+        this(id, null, null, meta, null, null, totalResources, uptimeSecs);
+    }
+
     public SupervisorDetails(String id, Object meta, Collection<? extends Number> allPorts) {
         this(id, null, null, meta, null, allPorts, null);
     }
@@ -95,9 +106,19 @@ public class SupervisorDetails {
         this(id, null, host, null, schedulerMeta, allPorts, totalResources);
     }
 
+    public SupervisorDetails(String id, String host, Object schedulerMeta,
+                             Collection<? extends Number> allPorts, Map<String, Double> totalResources, long uptimeSecs) {
+        this(id, null, host, null, schedulerMeta, allPorts, totalResources, uptimeSecs);
+    }
+
     public SupervisorDetails(String id, int serverPort, String host, Object schedulerMeta,
                              Collection<? extends Number> allPorts, Map<String, Double> totalResources) {
         this(id, serverPort, host, null, schedulerMeta, allPorts, totalResources);
+    }
+
+    public SupervisorDetails(String id, int serverPort, String host, Object schedulerMeta,
+                             Collection<? extends Number> allPorts, Map<String, Double> totalResources, long uptimeSecs) {
+        this(id, serverPort, host, null, schedulerMeta, allPorts, totalResources, uptimeSecs);
     }
 
     @Override
@@ -124,6 +145,10 @@ public class SupervisorDetails {
 
     public Set<Integer> getAllPorts() {
         return allPorts;
+    }
+
+    public long getUptimeSecs() {
+        return uptimeSecs;
     }
 
     private void setAllPorts(Collection<? extends Number> allPorts) {
