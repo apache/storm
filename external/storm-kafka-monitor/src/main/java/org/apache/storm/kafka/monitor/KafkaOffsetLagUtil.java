@@ -68,10 +68,10 @@ public class KafkaOffsetLagUtil {
                 printUsageAndExit(options, OPTION_GROUP_ID_LONG + " and " + OPTION_BOOTSTRAP_BROKERS_LONG + " are required");
             }
             NewKafkaSpoutOffsetQuery newKafkaSpoutOffsetQuery =
-                    new NewKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG),
-                            commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG),
-                            commandLine.getOptionValue(OPTION_GROUP_ID_LONG), securityProtocol, saslMechanism,
-                            commandLine.getOptionValue(OPTION_CONSUMER_CONFIG_LONG));
+                new NewKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG),
+                    commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG),
+                    commandLine.getOptionValue(OPTION_GROUP_ID_LONG), securityProtocol, saslMechanism,
+                    commandLine.getOptionValue(OPTION_CONSUMER_CONFIG_LONG));
             List<KafkaOffsetLagResult> results = getOffsetLags(newKafkaSpoutOffsetQuery);
 
             Map<String, Map<Integer, KafkaPartitionOffsetLag>> keyedResult = keyByTopicAndPartition(results);
@@ -83,7 +83,7 @@ public class KafkaOffsetLagUtil {
     }
 
     private static Map<String, Map<Integer, KafkaPartitionOffsetLag>> keyByTopicAndPartition(
-            List<KafkaOffsetLagResult> results) {
+        List<KafkaOffsetLagResult> results) {
         Map<String, Map<Integer, KafkaPartitionOffsetLag>> resultKeyedByTopic = new HashMap<>();
 
         for (KafkaOffsetLagResult result : results) {
@@ -95,7 +95,7 @@ public class KafkaOffsetLagUtil {
             }
 
             topicResultKeyedByPartition.put(result.getPartition(),
-                    new KafkaPartitionOffsetLag(result.getConsumerCommittedOffset(), result.getLogHeadOffset()));
+                                            new KafkaPartitionOffsetLag(result.getConsumerCommittedOffset(), result.getLogHeadOffset()));
         }
 
         return resultKeyedByTopic;
@@ -113,7 +113,7 @@ public class KafkaOffsetLagUtil {
         options.addOption(OPTION_TOPIC_SHORT, OPTION_TOPIC_LONG,
                 true,
                 "REQUIRED Topics (comma separated list) for fetching log head and spout committed "
-                        + "offset");
+                      + "offset");
         options.addOption(OPTION_BOOTSTRAP_BROKERS_SHORT, OPTION_BOOTSTRAP_BROKERS_LONG,
                 true,
                 "Comma separated list of bootstrap broker hosts for new "
@@ -136,7 +136,6 @@ public class KafkaOffsetLagUtil {
 
     /**
      * Get offset lags.
-     *
      * @param newKafkaSpoutOffsetQuery represents the information needed to query kafka for log head and spout offsets
      * @return log head offset, spout offset and lag for each partition
      */

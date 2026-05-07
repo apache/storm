@@ -177,9 +177,11 @@ public class TopologySpoutLag {
                         } else {
                             // json-smart parses unquoted plain text leniently as a String, so we can land here
                             // when the monitor printed an error message instead of JSON; surface it as the error.
+                            LOGGER.debug("Monitor returned non-JSON output, treating as error: {}", resultFromMonitor);
                             errorMsg = resultFromMonitor;
                         }
                     } catch (ParseException e) {
+                        LOGGER.debug("JSON parsing failed, assuming message as error message: {}", resultFromMonitor);
                         errorMsg = resultFromMonitor;
                     }
                 } finally {

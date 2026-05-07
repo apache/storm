@@ -42,7 +42,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers
+/**
+ * Integration test — requires a Docker daemon. Skipped automatically when Docker is unavailable.
+ */
+@Testcontainers(disabledWithoutDocker = true)
 class KafkaOffsetLagUtilTest {
 
     private static final String TOPIC = "lag-test-topic";
