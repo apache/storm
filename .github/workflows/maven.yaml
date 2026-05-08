@@ -17,9 +17,9 @@ name: Java CI with Maven
 
 on:
   pull_request:
-    branches: [ "master" ]
+    branches: [ "2.x" ]
   push:
-    branches: [ "master" ]
+    branches: [ "2.x" ]
 
 jobs:
   # Compile once on the minimum supported JDK and share artifacts with test jobs
