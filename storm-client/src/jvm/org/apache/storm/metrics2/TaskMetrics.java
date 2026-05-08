@@ -29,15 +29,15 @@ public class TaskMetrics {
     private static final String METRIC_NAME_TRANSFERRED = "__transfer-count";
     private static final String METRIC_NAME_EXECUTED = "__execute-count";
     private static final String METRIC_NAME_PROCESS_LATENCY = "__process-latency";
-    private static final String METRIC_NAME_PROCESS_RFC_1889a_JITTER = "__process-rfc1889a-jitter";
+    private static final String METRIC_NAME_PROCESS_JITTER = "__process-jitter";
     private static final String METRIC_NAME_COMPLETE_LATENCY = "__complete-latency";
-    private static final String METRIC_NAME_COMPLETE_RFC_1889a_JITTER = "__complete-rfc1889a-jitter";
+    private static final String METRIC_NAME_COMPLETE_JITTER = "__complete-jitter";
     private static final String METRIC_NAME_EXECUTE_LATENCY = "__execute-latency";
-    private static final String METRIC_NAME_EXECUTE_RFC_1889a_JITTER = "__execute-rfc1889a-jitter";
+    private static final String METRIC_NAME_EXECUTE_JITTER = "__execute-jitter";
     private static final String METRIC_NAME_CAPACITY = "__capacity";
 
     private final ConcurrentMap<String, RateCounter> rateCounters = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Gauge> gauges = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Gauge<?>> gauges = new ConcurrentHashMap<>();
     // Gauge supplier singleton factories
     private final Supplier<EwmaGauge> ewmaGaugeFactory;
     private final Supplier<RollingAverageGauge> rollingAverageGaugeFactory;
@@ -82,8 +82,8 @@ public class TaskMetrics {
         gauge.addValue(latencyMs);
 
         if (this.ewmaEnable) {
-            metricName = METRIC_NAME_COMPLETE_RFC_1889a_JITTER + "-" + streamId;
-            EwmaGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, streamId);
+            metricName = METRIC_NAME_COMPLETE_JITTER + "-" + streamId;
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName, streamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -99,8 +99,8 @@ public class TaskMetrics {
         gauge.addValue(latencyMs);
 
         if (this.ewmaEnable) {
-            metricName = METRIC_NAME_PROCESS_RFC_1889a_JITTER + "-" + key;
-            EwmaGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, sourceStreamId);
+            metricName = METRIC_NAME_PROCESS_JITTER + "-" + key;
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName, sourceStreamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -144,8 +144,8 @@ public class TaskMetrics {
         gauge.addValue(latencyMs);
 
         if (this.ewmaEnable) {
-            metricName = METRIC_NAME_EXECUTE_RFC_1889a_JITTER + "-" + key;
-            EwmaGauge ewmaGauge = this.getExponentialWeightedMobileAverageGauge(metricName, sourceStreamId);
+            metricName = METRIC_NAME_EXECUTE_JITTER + "-" + key;
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName, sourceStreamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -169,7 +169,7 @@ public class TaskMetrics {
         return getOrCreateGauge(metricName, streamId, RollingAverageGauge.class, this.rollingAverageGaugeFactory);
     }
 
-    private EwmaGauge getExponentialWeightedMobileAverageGauge(String metricName, String streamId) {
+    private EwmaGauge getExponentialWeightedMovingAverageGauge(String metricName, String streamId) {
         return getOrCreateGauge(metricName, streamId, EwmaGauge.class, this.ewmaGaugeFactory);
     }
 

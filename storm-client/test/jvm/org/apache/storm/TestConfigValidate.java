@@ -224,9 +224,11 @@ public class TestConfigValidate {
         ConfigValidation.validateFields(conf);
         conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, 0.1);
         ConfigValidation.validateFields(conf);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, "0.1");
+        ConfigValidation.validateFields(conf);
         conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, 0.9);
         ConfigValidation.validateFields(conf);
-        for (double notAllowedValue : new double[]{0.0, -0.1, 1.9}) {
+        for (Object notAllowedValue : new Object[]{0.0, -0.1, 1.9, "1.9"}) {
             conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, notAllowedValue);
             assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
         }

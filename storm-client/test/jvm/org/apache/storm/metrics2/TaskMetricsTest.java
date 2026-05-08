@@ -1,10 +1,10 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
- * <p/>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
@@ -50,8 +50,6 @@ class TaskMetricsTest {
     @Mock private WorkerTopologyContext context;
     @Mock private StormMetricRegistry   metricRegistry;
     @Mock private RateCounter           rateCounter;
-    @Mock private RollingAverageGauge   rollingAverageGauge;
-    @Mock private EwmaGauge ewmaGauge;
 
     private Map<String, Object> topoConf;
 
@@ -109,7 +107,7 @@ class TaskMetricsTest {
         tm.spoutAckedTuple(STREAM_ID, 150L);
 
         verify(metricRegistry, atLeastOnce()).gauge(
-                contains("__complete-rfc1889a-jitter"), any(Gauge.class),
+                contains("__complete-jitter"), any(Gauge.class),
                 anyString(), anyString(), anyString(), anyInt(), anyInt());
     }
 
@@ -159,7 +157,7 @@ class TaskMetricsTest {
         tm.boltAckedTuple(SOURCE_COMP, STREAM_ID, 75L);
 
         verify(metricRegistry, atLeastOnce()).gauge(
-                contains("__process-rfc1889a-jitter"), any(Gauge.class),
+                contains("__process-jitter"), any(Gauge.class),
                 anyString(), anyString(), anyString(), anyInt(), anyInt());
     }
 
@@ -290,7 +288,7 @@ class TaskMetricsTest {
         tm.boltExecuteTuple(SOURCE_COMP, STREAM_ID, 30L);
 
         verify(metricRegistry, atLeastOnce()).gauge(
-                contains("__execute-rfc1889a-jitter"), any(Gauge.class),
+                contains("__execute-jitter"), any(Gauge.class),
                 anyString(), anyString(), anyString(), anyInt(), anyInt());
     }
 
