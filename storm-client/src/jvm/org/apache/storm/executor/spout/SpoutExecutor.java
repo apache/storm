@@ -321,6 +321,13 @@ public class SpoutExecutor extends Executor {
             if (pendingForId != null) {
                 pending.put(id, pendingForId);
             }
+        } else if (this.upstreamFeedbackStreamId.equals(streamId)) {
+            if (!this.upstreamFeedbackEnabled) {
+                LOG.debug("Upstream feedback skipped.");
+            } else {
+                // update internal metrics
+                this.updateChildEwmaStats(tuple);
+            }
         } else {
             Long id = (Long) tuple.getValue(0);
             Long timeDeltaMs = (Long) tuple.getValue(1);

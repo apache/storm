@@ -115,6 +115,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             MessageId msgId;
             if (ackingEnabled && anchors != null) {
                 final Map<Long, Long> anchorsToIds = new HashMap<>();
+                final boolean sendUpstreamFeedback = isUpstreamFeedback && upstreamFeedbackRate.get();
                 for (Tuple a : anchors) {  // perf critical path. would be nice to avoid iterator allocation here and below
                     Set<Long> rootIds = a.getMessageId().getAnchorsToIds().keySet();
                     if (rootIds.size() > 0) {
@@ -124,7 +125,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
                             putXor(anchorsToIds, rootId, edgeId);
                         }
                     }
-                    if (isUpstreamFeedback && upstreamFeedbackRate.get()) {
+                    if (sendUpstreamFeedback) {
                         int parentTask = a.getSourceTask();
                         task.sendUnanchoredFeedback(upstreamFeedbackStreamId, executor.buildUpstreamFeedbackTuple(taskId, EWMA_METRICS_SET),
                             parentTask, xsfer, executor.getPendingEmits());

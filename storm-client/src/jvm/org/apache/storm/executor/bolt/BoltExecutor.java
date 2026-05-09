@@ -198,6 +198,13 @@ public class BoltExecutor extends Executor {
             outputCollector.flush();
         } else if (Constants.METRICS_TICK_STREAM_ID.equals(streamId)) {
             metricsTick(idToTask.get(taskId - idToTaskBase), tuple);
+        } else if (this.upstreamFeedbackStreamId.equals(streamId)) {
+            if (!this.upstreamFeedbackEnabled) {
+                LOG.debug("Upstream feedback skipped.");
+            } else {
+                // update internal metrics
+                this.updateChildEwmaStats(tuple);
+            }
         } else {
             IBolt boltObject = (IBolt) idToTask.get(taskId - idToTaskBase).getTaskObject();
             boolean isSampled = sampler.getAsBoolean();
