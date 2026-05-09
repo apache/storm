@@ -608,8 +608,46 @@ public class Config extends HashMap<String, Object> {
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc1889#appendix-A.8">RFC 1889 §A.8</a>
      */
-    @CustomValidator(validatorClass = ConfigValidation.EwmaSmoothingFactorValidator.class)
+    @CustomValidator(validatorClass = ConfigValidation.ZerOneOpenIntervalValidator.class)
     public static final String TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR = "topology.stats.ewma.smoothing.factor";
+    /**
+     * Flag to enable or disable the feedback channel for upstream communication.
+     * When true, components can send unanchored tuples back to their source tasks.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE = "topology.upstream.feedback.enable";
+    /**
+     * The specific stream ID used for upstream feedback communication.
+     * Defaults to "__feedback" if not explicitly configured.
+     */
+    @IsString
+    public static final String TOPOLOGY_UPSTREAM_FEEDBACK_STREAM_ID = "topology.upstream.feedback.stream";
+    /**
+     * Configuration for the sampling rate of upstream feedback messages within the topology.
+     *
+     * <p>This ratio defines the probability with which a task will emit a feedback tuple
+     * (containing metrics such as EWMA jitter stats) back to its parent tasks.
+     * This mechanism allows parent tasks to receive performance signals from downstream
+     * components to facilitate adaptive flow control or load balancing.</p>
+     *
+     * <p><b>Validation:</b> Must be a double value within the <b>open interval (0.0, 1.0)</b>.
+     * Values of 0.0 (disabled) or 1.0 (every tuple) are rejected by the
+     * {@link ConfigValidation.ZerOneOpenIntervalValidator} to prevent improper
+     * configuration of the feedback loop.</p>
+     *
+     * <p><b>Impact:</b>
+     * <ul>
+     *   <li>Higher values provide more precise, real-time performance data but increase
+     *       network overhead and CPU usage on the control plane.</li>
+     *   <li>Lower values minimize the "observer effect" on the topology's throughput
+     *       while still providing statistical snapshots of health.</li>
+     * </ul>
+     * </p>
+     *
+     * Defaults to 0.1 if not explicitly configured.
+     */
+    @CustomValidator(validatorClass = ConfigValidation.ZerOneOpenIntervalValidator.class)
+    public static final String TOPOLOGY_UPSTREAM_FEEDBACK_RATIO = "topology.upstream.feedback.ratio";
     /**
      * The time period that builtin metrics data in bucketed into.
      */

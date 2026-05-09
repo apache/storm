@@ -13,7 +13,9 @@
 package org.apache.storm.metrics2;
 
 import com.codahale.metrics.Gauge;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
@@ -35,6 +37,12 @@ public class TaskMetrics {
     private static final String METRIC_NAME_EXECUTE_LATENCY = "__execute-latency";
     private static final String METRIC_NAME_EXECUTE_JITTER = "__execute-jitter";
     private static final String METRIC_NAME_CAPACITY = "__capacity";
+
+    public static final Set<String> EWMA_METRICS_SET = Set.of(
+        METRIC_NAME_PROCESS_JITTER,
+        METRIC_NAME_COMPLETE_JITTER,
+        METRIC_NAME_EXECUTE_JITTER
+    );
 
     private final ConcurrentMap<String, RateCounter> rateCounters = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Gauge<?>> gauges = new ConcurrentHashMap<>();

@@ -12,13 +12,18 @@
 
 package org.apache.storm.executor.bolt;
 
+import static org.apache.storm.metrics2.TaskMetrics.EWMA_METRICS_SET;
+
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.apache.storm.daemon.Acker;
+import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.executor.ExecutorTransfer;
 import org.apache.storm.hooks.info.BoltAckInfo;
@@ -29,6 +34,7 @@ import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -43,6 +49,9 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     private final int taskId;
     private final Random random;
     private final boolean isEventLoggers;
+    private final boolean isUpstreamFeedback;
+    private final String upstreamFeedbackStreamId;
+    private Supplier<Boolean> upstreamFeedbackRate;
     private final ExecutorTransfer xsfer;
     private final boolean isDebug;
     private boolean ackingEnabled;
@@ -57,6 +66,19 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         this.ackingEnabled = ackingEnabled;
         this.isDebug = isDebug;
         this.xsfer = executor.getExecutorTransfer();
+
+        // configure the upstream feedback if enabled.
+        Map<String, Object> conf = executor.getTopoConf();
+        if (StormCommon.hasUpstreamFeedback(conf)) {
+            this.isUpstreamFeedback = true;
+            this.upstreamFeedbackStreamId = ConfigUtils.upstreamFeedbackStreamId(conf);
+            double ratio = ConfigUtils.upstreamFeedbackRatio(conf);
+            this.upstreamFeedbackRate = () -> random.nextDouble() < ratio;
+        } else {
+            // explicitly declare
+            this.isUpstreamFeedback = false;
+            this.upstreamFeedbackStreamId = "__NOT_SET__";
+        }
     }
 
     @Override
@@ -101,6 +123,11 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
                         for (Long rootId : rootIds) {
                             putXor(anchorsToIds, rootId, edgeId);
                         }
+                    }
+                    if (isUpstreamFeedback && upstreamFeedbackRate.get()) {
+                        int parentTask = a.getSourceTask();
+                        task.sendUnanchoredFeedback(upstreamFeedbackStreamId, executor.buildUpstreamFeedbackTuple(taskId, EWMA_METRICS_SET),
+                            parentTask, xsfer, executor.getPendingEmits());
                     }
                 }
                 msgId = MessageId.makeId(anchorsToIds);

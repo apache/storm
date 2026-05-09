@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -362,6 +363,53 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
+    }
+
+    /**
+     * Constructs a Storm {@link Values} object containing a snapshot of specific metrics
+     * to be sent as upstream feedback.
+     *
+     * <p>This method generates a {@link IMetricsConsumer.TaskInfo} header with a timestamp
+     * and a default interval of -1 (indicating an on-demand or non-standard tick),
+     * followed by a list of filtered DataPoints.</p>
+     *
+     * @param taskId  The ID of the task for which metrics are being collected.
+     * @param metrics A set of metric names (e.g., EWMA stats) to include in the feedback.
+     * @return A {@link Values} object containing [TaskInfo, List<DataPoint>],
+     *         compatible with the metrics stream schema.
+     */
+    public Values buildUpstreamFeedbackTuple(int taskId, Set<String> metrics) {
+        IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
+            hostname, workerTopologyContext.getThisWorkerPort(),
+            componentId, taskId, Time.currentTimeSecs(), -1);
+        return new Values(taskInfo, buildEwmaDataPoints(taskId, metrics));
+    }
+
+    private List<IMetricsConsumer.DataPoint> buildEwmaDataPoints(int taskId, Set<String> metrics) {
+        if (metrics == null || metrics.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>(metrics.size());
+        Map<String, Gauge> allGauges = workerData.getMetricRegistry().getTaskGauges(taskId);
+
+        if (allGauges == null || allGauges.isEmpty()) {
+            return dataPoints;
+        }
+
+        for (String metricName : metrics) {
+            Gauge gauge = allGauges.get(metricName);
+
+            if (gauge != null) {
+                Object v = (gauge instanceof PerReporterGauge)
+                    ? ((PerReporterGauge) gauge).getValueForReporter(this)
+                    : gauge.getValue();
+                if (v instanceof Number) {
+                    dataPoints.add(new IMetricsConsumer.DataPoint(metricName, v));
+                }
+            }
+        }
+        return dataPoints;
     }
 
     // updates v1 metric dataPoints with v2 metric API data
