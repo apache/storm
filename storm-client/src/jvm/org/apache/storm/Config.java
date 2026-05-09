@@ -608,7 +608,7 @@ public class Config extends HashMap<String, Object> {
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc1889#appendix-A.8">RFC 1889 §A.8</a>
      */
-    @CustomValidator(validatorClass = ConfigValidation.ZerOneOpenIntervalValidator.class)
+    @CustomValidator(validatorClass = ConfigValidation.ZeroOneOpenIntervalValidator.class)
     public static final String TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR = "topology.stats.ewma.smoothing.factor";
     /**
      * Flag to enable or disable the feedback channel for upstream communication.
@@ -632,7 +632,7 @@ public class Config extends HashMap<String, Object> {
      *
      * <p><b>Validation:</b> Must be a double value within the <b>open interval (0.0, 1.0)</b>.
      * Values of 0.0 (disabled) or 1.0 (every tuple) are rejected by the
-     * {@link ConfigValidation.ZerOneOpenIntervalValidator} to prevent improper
+     * {@link ConfigValidation.ZeroOneOpenIntervalValidator} to prevent improper
      * configuration of the feedback loop.</p>
      *
      * <p><b>Impact:</b>
@@ -646,7 +646,7 @@ public class Config extends HashMap<String, Object> {
      *
      * Defaults to 0.1 if not explicitly configured.
      */
-    @CustomValidator(validatorClass = ConfigValidation.ZerOneOpenIntervalValidator.class)
+    @CustomValidator(validatorClass = ConfigValidation.ZeroOneOpenIntervalValidator.class)
     public static final String TOPOLOGY_UPSTREAM_FEEDBACK_RATIO = "topology.upstream.feedback.ratio";
     /**
      * The time period that builtin metrics data in bucketed into.

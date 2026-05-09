@@ -850,7 +850,7 @@ public class ConfigValidation {
         }
     }
 
-    public static class ZerOneOpenIntervalValidator extends Validator {
+    public static class ZeroOneOpenIntervalValidator extends Validator {
         @Override
         public void validateField(String name, Object o) {
             if (o == null) {
