@@ -171,10 +171,17 @@ public class TopologySpoutLag {
                     String resultFromMonitor = new ShellCommandRunnerImpl().execCommand(commands.toArray(new String[0]));
 
                     try {
-                        result = (Map<String, Object>) JSONValue.parseWithException(resultFromMonitor);
+                        Object parsed = JSONValue.parseWithException(resultFromMonitor);
+                        if (parsed instanceof Map) {
+                            result = (Map<String, Object>) parsed;
+                        } else {
+                            // json-smart parses unquoted plain text leniently as a String, so we can land here
+                            // when the monitor printed an error message instead of JSON; surface it as the error.
+                            LOGGER.debug("Monitor returned non-JSON output, treating as error: {}", resultFromMonitor);
+                            errorMsg = resultFromMonitor;
+                        }
                     } catch (ParseException e) {
                         LOGGER.debug("JSON parsing failed, assuming message as error message: {}", resultFromMonitor);
-                        // json parsing fail -> error received
                         errorMsg = resultFromMonitor;
                     }
                 } finally {

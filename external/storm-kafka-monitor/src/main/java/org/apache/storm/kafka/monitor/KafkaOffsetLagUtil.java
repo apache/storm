@@ -19,9 +19,8 @@
 package org.apache.storm.kafka.monitor;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -172,12 +171,13 @@ public class KafkaOffsetLagUtil {
                 }
             }
             consumer.assign(topicPartitionList);
+            Map<TopicPartition, OffsetAndMetadata> committedOffsets = consumer.committed(new HashSet<>(topicPartitionList));
+            consumer.seekToEnd(topicPartitionList);
             for (TopicPartition topicPartition : topicPartitionList) {
-                Map<TopicPartition, OffsetAndMetadata> offsetAndMetadata = consumer.committed(Collections.singleton(topicPartition));
-                long committedOffset = offsetAndMetadata != null ? offsetAndMetadata.get(topicPartition).offset() : -1;
-                consumer.seekToEnd(toArrayList(topicPartition));
+                OffsetAndMetadata partitionOffset = committedOffsets.get(topicPartition);
+                long committedOffset = partitionOffset != null ? partitionOffset.offset() : -1;
                 result.add(new KafkaOffsetLagResult(topicPartition.topic(), topicPartition.partition(), committedOffset,
-                                                    consumer.position(topicPartition)));
+                        consumer.position(topicPartition)));
             }
         } finally {
             if (consumer != null) {
@@ -185,14 +185,6 @@ public class KafkaOffsetLagUtil {
             }
         }
         return result;
-    }
-
-    private static Collection<TopicPartition> toArrayList(final TopicPartition tp) {
-        return new ArrayList<TopicPartition>(1) {
-            {
-                add(tp);
-            }
-        };
     }
 
 }
