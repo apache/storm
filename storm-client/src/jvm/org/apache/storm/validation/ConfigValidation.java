@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.storm.Config;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidationAnnotations.ValidatorParams;
 import org.slf4j.Logger;
@@ -846,6 +847,23 @@ public class ConfigValidation {
                 return;
             }
             throw new IllegalArgumentException("Field " + name + " must be one of \"NONE\", \"DIGEST\", or \"KERBEROS\"");
+        }
+    }
+
+    public static class EwmaSmoothingFactorValidator extends Validator {
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            // ObjectReader.getDouble(o) handles the type conversion and will throw an
+            // IllegalArgumentException if the value cannot be parsed as a number.
+            double alpha = ObjectReader.getDouble(o);
+            if (alpha > 0.0 && alpha < 1.0) {
+                return;
+            }
+            throw new IllegalArgumentException(
+                    "Field " + name + " must be a number in the open interval (0, 1), got: " + o);
         }
     }
 
