@@ -136,7 +136,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private final Integer v2MetricsTickInterval;
     protected final String upstreamFeedbackStreamId;
     protected final boolean upstreamFeedbackEnabled;
-    protected final Map<Integer, Map<String, IMetricsConsumer.DataPoint>> childEwmaStats;
+    protected final Map<Integer, Map<Integer, Map<String, IMetricsConsumer.DataPoint>>> childEwmaStats;
+    protected final Map<Integer, Map<String, Double>> avgCache = new ConcurrentHashMap<>();
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -396,78 +397,140 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     /**
      * Updates child task statistics by unwrapping the Storm Values object.
      *
-     * <p>This function extracts the {@code TaskInfo} and the collection of
-     * {@code DataPoint} objects from the provided Values object. It ensures
-     * thread-safe updates to the {@code childStats} map using atomic operations.</p>
+     * <p>Extracts the {@link IMetricsConsumer.TaskInfo} and the collection of
+     * {@link IMetricsConsumer.DataPoint} objects from the provided tuple. Updates
+     * to the {@code childEwmaStats} map are thread-safe via {@link ConcurrentHashMap}
+     * atomic operations.</p>
      *
      * <p><b>Data Mapping:</b>
      * <ul>
-     *   <li>The first element (index 0) of the Values object is expected to be a {@link IMetricsConsumer.TaskInfo}.</li>
-     *   <li>The second element (index 1) is expected to be a {@code Collection} of {@link IMetricsConsumer.DataPoint}.</li>
+     *   <li>Index 0: {@link IMetricsConsumer.TaskInfo}</li>
+     *   <li>Index 1: {@code Collection} of {@link IMetricsConsumer.DataPoint}</li>
      * </ul>
      * </p>
      *
-     * @param tuple The {@link TupleImpl} object emitted by the upstream feedback builder[cite: 1].
-     * @throws ClassCastException if the Values object does not contain the expected types.
-     * @throws NullPointerException if the feedbackTuple or its elements are null.
+     * @param task  The {@link Task} associated with this update.
+     * @param tuple The {@link TupleImpl} emitted by the upstream feedback builder.
      */
-    public void updateChildEwmaStats(TupleImpl tuple) {
-        if (!this.upstreamFeedbackEnabled) {
+    public void updateChildEwmaStats(Task task, TupleImpl tuple) {
+        if (!this.upstreamFeedbackEnabled || tuple == null) {
             return;
         }
 
-        if (tuple == null) {
+        List<Object> values = tuple.getValues();
+        if (values == null || values.size() < 2) {
+            LOG.warn("Feedback tuple for task {} has insufficient elements (size={})",
+                task.getTaskId(), values == null ? 0 : values.size());
             return;
         }
 
-        Values feedbackTuple = new Values(tuple.getValues().toArray());
-        if (feedbackTuple.size() < 2) {
+        // Safe type check replaces unchecked cast and suppression
+        if (!(values.get(0) instanceof IMetricsConsumer.TaskInfo taskInfo)) {
+            LOG.warn("Unexpected type at index 0 in feedbackTuple for task {}: {}",
+                task.getTaskId(), values.get(0) == null ? "null" : values.get(0).getClass().getName());
             return;
         }
-        
-        // Extract TaskInfo to retrieve the source Task ID
-        IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) feedbackTuple.get(0);
-        int taskId = taskInfo.srcTaskId;
 
-        // Extract the collection of DataPoints (e.g., Jitter EWMA)
-        @SuppressWarnings("unchecked")
-        Collection<IMetricsConsumer.DataPoint> dataPoints = (Collection<IMetricsConsumer.DataPoint>) feedbackTuple.get(1);
+        if (!(values.get(1) instanceof Collection<?> rawDataPoints)) {
+            LOG.warn("Unexpected type at index 1 in feedbackTuple for task {}: {}",
+                task.getTaskId(), values.get(1) == null ? "null" : values.get(1).getClass().getName());
+            return;
+        }
 
-        if (dataPoints != null) {
-            // Atomically retrieve or create the map for this specific Task id
-            Map<String, IMetricsConsumer.DataPoint> taskMap = childEwmaStats.computeIfAbsent(
-                taskId,
-                k -> new ConcurrentHashMap<String, IMetricsConsumer.DataPoint>()
-            );
+        int taskId = task.getTaskId();
+        int childTaskId = taskInfo.srcTaskId;
 
-            // Update the task map with the latest metrics snapshot
+        // Filter to only valid DataPoint instances, safely skipping any unexpected elements
+        List<IMetricsConsumer.DataPoint> dataPoints = rawDataPoints.stream()
+            .filter(IMetricsConsumer.DataPoint.class::isInstance)
+            .map(IMetricsConsumer.DataPoint.class::cast)
+            .toList();
+
+        if (!dataPoints.isEmpty()) {
+            Map<String, IMetricsConsumer.DataPoint> metricsMap =
+                getOrCreateMetricsMap(taskId, childTaskId);
+
             for (IMetricsConsumer.DataPoint dp : dataPoints) {
-                taskMap.put(dp.name, dp);
+                metricsMap.put(dp.name, dp);
             }
+
+            // Invalidate cached averages for this taskId since underlying data changed
+            avgCache.remove(taskId);
         }
     }
 
     /**
-     * Reduces the statistics collected in childStats by calculating the average
-     * for each metric dimension across all tasks using Java Stream API.
+     * Retrieves the collected metric statistics for all child tasks of a given parent task.
      *
-     * <p>The stream flattens the nested maps, filters for numeric values,
-     * and groups them by metric name to compute the mean.</p>
-     *
-     * @return A Map containing the average value for each metric name.
+     * @param taskId The ID of the parent task.
+     * @return A map of childTaskId to metric name to {@link IMetricsConsumer.DataPoint}.
+     *         Returns an empty map if feedback is disabled or no data exists.
      */
-    public Map<String, Double> getChildEwmaStats() {
+    public Map<Integer, Map<String, IMetricsConsumer.DataPoint>> getChildEwmaStats(int taskId) {
         if (!this.upstreamFeedbackEnabled) {
-            return null;
+            return Collections.emptyMap();
+        }
+        return this.childEwmaStats.getOrDefault(taskId, Collections.emptyMap());
+    }
+
+    /**
+     * Calculates the average value for each metric across all child tasks
+     * associated with the given parent task.
+     *
+     * <p>Results are cached per {@code taskId} and recomputed only when the
+     * underlying data has changed (i.e. after a call to {@link #updateChildEwmaStats}).</p>
+     *
+     * @param taskId The ID of the parent task.
+     * @return A map of metric name to computed average value.
+     *         Returns an empty map if no stats are found or feedback is disabled.
+     */
+    public Map<String, Double> getChildEwmaAvgStats(int taskId) {
+        Map<Integer, Map<String, IMetricsConsumer.DataPoint>> taskStats = this.getChildEwmaStats(taskId);
+        if (taskStats.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return avgCache.computeIfAbsent(taskId, this::computeAvgStats);
+    }
+
+    private Map<String, Double> computeAvgStats(int taskId) {
+        Map<Integer, Map<String, IMetricsConsumer.DataPoint>> taskStats = this.getChildEwmaStats(taskId);
+
+        Map<String, StatsAccumulator> accumulators = new HashMap<>();
+
+        for (Map<String, IMetricsConsumer.DataPoint> childMetrics : taskStats.values()) {
+            for (Map.Entry<String, IMetricsConsumer.DataPoint> entry : childMetrics.entrySet()) {
+                if (entry.getValue().value instanceof Number n) {
+                    accumulators.merge(
+                        entry.getKey(),
+                        new StatsAccumulator(n.doubleValue(), 1),
+                        StatsAccumulator::combine
+                    );
+                }
+            }
         }
 
-        return childEwmaStats.values().stream()
-            .flatMap(taskMap -> taskMap.values().stream())
-            .filter(dp -> dp.value instanceof Number)
-            .collect(Collectors.groupingBy(
-                dp -> dp.name,
-                Collectors.averagingDouble(dp -> ((Number) dp.value).doubleValue())
+        return accumulators.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> e.getValue().average()
             ));
+    }
+
+    private Map<String, IMetricsConsumer.DataPoint> getOrCreateMetricsMap(int taskId, int childTaskId) {
+        return childEwmaStats
+            .computeIfAbsent(taskId, k -> new ConcurrentHashMap<>())
+            .computeIfAbsent(childTaskId, k -> new ConcurrentHashMap<>());
+    }
+
+    // Functional pattern
+    private record StatsAccumulator(double sum, int count) {
+        StatsAccumulator combine(StatsAccumulator other) {
+            return new StatsAccumulator(this.sum + other.sum, this.count + other.count);
+        }
+
+        double average() {
+            return count > 0 ? sum / count : 0.0;
+        }
     }
 
     private List<IMetricsConsumer.DataPoint> buildEwmaDataPoints(int taskId, Set<String> metrics) {

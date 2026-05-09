@@ -203,7 +203,7 @@ public class BoltExecutor extends Executor {
                 LOG.debug("Upstream feedback skipped.");
             } else {
                 // update internal metrics
-                this.updateChildEwmaStats(tuple);
+                this.updateChildEwmaStats(idToTask.get(taskId - idToTaskBase), tuple);
             }
         } else {
             IBolt boltObject = (IBolt) idToTask.get(taskId - idToTaskBase).getTaskObject();

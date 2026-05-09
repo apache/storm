@@ -326,7 +326,7 @@ public class SpoutExecutor extends Executor {
                 LOG.debug("Upstream feedback skipped.");
             } else {
                 // update internal metrics
-                this.updateChildEwmaStats(tuple);
+                this.updateChildEwmaStats(idToTask.get(taskId - idToTaskBase), tuple);
             }
         } else {
             Long id = (Long) tuple.getValue(0);
