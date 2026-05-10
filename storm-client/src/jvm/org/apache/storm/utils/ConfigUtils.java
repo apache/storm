@@ -208,6 +208,14 @@ public class ConfigUtils {
         return ObjectReader.getBoolean(value, false);
     }
 
+    public static boolean backpressurePredictionEnable(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_BACKPRESSURE_PREDICTION_ENABLE);
+        if (value == null) {
+            return false;
+        }
+        return ObjectReader.getBoolean(value, false);
+    }
+
     public static String upstreamFeedbackStreamId(Map<String, Object> conf) {
         Object value = conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_STREAM_ID);
         if (value == null) {

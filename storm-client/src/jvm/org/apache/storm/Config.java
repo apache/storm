@@ -807,6 +807,12 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     public static final String TOPOLOGY_BACKPRESSURE_CHECK_MILLIS = "topology.backpressure.check.millis";
     /**
+     * Predict the backpressure consuming the jitter stats of downstream tasks. Produce deterministic flows.
+     * To produce the stats it is required to enable as well `topology.upstream.feedback.enable`.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_BACKPRESSURE_PREDICTION_ENABLE = "topology.backpressure.prediction.enable";
+    /**
      * How often to send flush tuple to the executors for flushing out batched events.
      */
     @IsInteger

@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class JCQueue implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(JCQueue.class);
+    private static final int REORDER_BUFFER_SIZE = 4;
+
     private final ExitCondition continueRunning = () -> true;
     private final List<JCQueueMetrics> jcqMetrics = new ArrayList<>();
     private final MpscArrayQueue<Object> recvQueue;
@@ -46,10 +48,11 @@ public class JCQueue implements Closeable {
     private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
     private final IWaitStrategy backPressureWaitStrategy;
     private final String queueName;
+    private final AddressedTuple[] reorderingBuffer = new AddressedTuple[REORDER_BUFFER_SIZE];
 
     // The TaskJitterComparator is not a mandatory field. It is required for the power of two adaptive task selection.
     private TaskJitterComparator taskJitterComparator;
-    private final AddressedTuple[] reorderingBuffer = new AddressedTuple[8];
+    private boolean enbalePredictiveBackpressure = taskJitterComparator != null;
 
     public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
                    IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
@@ -73,8 +76,14 @@ public class JCQueue implements Closeable {
         return queueName;
     }
 
-    public void registerTaskJitterComparator(Executor executor) {
+    public void enablePredictiveBackpressure(Executor executor) {
         this.taskJitterComparator = new TaskJitterComparator(executor);
+        this.enbalePredictiveBackpressure = true;
+    }
+
+    public void disablePredictiveBackpressure(){
+        this.enbalePredictiveBackpressure = false;
+        this.taskJitterComparator = null; // gc
     }
 
     @Override

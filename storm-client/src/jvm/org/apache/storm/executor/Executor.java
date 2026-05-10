@@ -136,6 +136,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private final Integer v2MetricsTickInterval;
     protected final String upstreamFeedbackStreamId;
     protected final boolean upstreamFeedbackEnabled;
+    protected final boolean predictiveBackpressureEnabled;
     protected final Map<Integer, Map<Integer, Map<String, IMetricsConsumer.DataPoint>>> childEwmaStats;
     protected final Map<Integer, Map<String, Double>> avgCache = new ConcurrentHashMap<>();
 
@@ -199,10 +200,13 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
         v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
 
-        // configure the upstream feedback heuristic
+        // configure the upstream feedback heuristic + predictive backpressure scheduling if enabled.
         if (this.upstreamFeedbackEnabled) {
             this.childEwmaStats = new ConcurrentHashMap<>();
-            this.receiveQueue.registerTaskJitterComparator(this);
+            this.predictiveBackpressureEnabled = ConfigUtils.backpressurePredictionEnable(topoConf);
+            if (this.predictiveBackpressureEnabled) {
+                this.receiveQueue.enablePredictiveBackpressure(this);
+            }
         } else {
             this.childEwmaStats = null;
         }
