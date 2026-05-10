@@ -209,6 +209,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             }
         } else {
             this.childEwmaStats = null;
+            this.predictiveBackpressureEnabled = false;
         }
     }
 
