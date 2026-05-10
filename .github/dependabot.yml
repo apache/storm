@@ -17,6 +17,7 @@
 version: 2
 updates:
 
+  # --- default branch (master) ---
   - package-ecosystem: maven
     directory: "/examples"
     schedule:
@@ -40,5 +41,36 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    schedule:
+      interval: "daily"
+
+  # --- 2.x maintenance branch ---
+  - package-ecosystem: maven
+    directory: "/examples"
+    target-branch: "2.x"
+    schedule:
+      interval: monthly
+      time: '04:00'
+    open-pull-requests-limit: 20
+
+  - package-ecosystem: maven
+    directory: "/"
+    target-branch: "2.x"
+    schedule:
+      interval: monthly
+      time: '04:00'
+    open-pull-requests-limit: 20
+
+  - package-ecosystem: npm
+    directory: "/storm-webapp"
+    target-branch: "2.x"
+    schedule:
+      interval: monthly
+      time: '04:00'
+    open-pull-requests-limit: 20
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "2.x"
     schedule:
       interval: "daily"
