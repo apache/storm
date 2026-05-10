@@ -45,7 +45,7 @@ These commands are:
 
 Syntax: `storm jar topology-jar-path class ...`
 
-Runs the main method of `class` with the specified arguments. The storm jars and configs in `~/.storm` are put on the classpath. The process is configured so that [StormSubmitter](javadocs/org/apache/storm/StormSubmitter.html) will upload the jar at `topology-jar-path` when the topology is submitted.
+Runs the main method of `class` with the specified arguments. The storm jars and configs in `~/.storm` are put on the classpath. The process is configured so that [StormSubmitter](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/org/apache/storm/StormSubmitter.html) will upload the jar at `topology-jar-path` when the topology is submitted.
 
 When you want to ship other jars which is not included to application jar, you can pass them to `--jars` option with comma-separated string.
 For example, --jars "your-local-jar.jar,your-local-jar2.jar" will load your-local-jar.jar and your-local-jar2.jar.

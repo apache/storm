@@ -27,7 +27,7 @@ RUN apt-get update && \
     libssl-dev libtool pkg-config \
     ruby ruby-dev \
     python3.10 pip \
-    openjdk-17-jdk \
+    openjdk-21-jdk \
     build-essential && \
     rm -rf /var/lib/apt/lists/*
 
