@@ -409,7 +409,7 @@ Example of using `HBaseWindowStoreFactory` for windowing can be seen below.
     
 ```
 
-Detailed description of all the above APIs in this section can be found [here](javadocs/org/apache/storm/trident/Stream.html)  
+Detailed description of all the above APIs in this section can be found [here](https://javadoc.io/doc/org.apache.storm/storm-client/2.8.8/org/apache/storm/trident/Stream.html)  
 
 #### Example applications
 Example applications of these APIs are located at [TridentHBaseWindowingStoreTopology]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/trident/TridentHBaseWindowingStoreTopology.java) 

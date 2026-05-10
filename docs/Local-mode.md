@@ -27,7 +27,7 @@ try (LocalCluster cluster = new LocalCluster()) {
 }
 ```
 
-You can then submit topologies using the `submitTopology` method on the `LocalCluster` object. Just like the corresponding method on [StormSubmitter](javadocs/org/apache/storm/StormSubmitter.html), `submitTopology` takes a name, a topology configuration, and the topology object. You can then kill a topology using the `killTopology` method which takes the topology name as an argument.
+You can then submit topologies using the `submitTopology` method on the `LocalCluster` object. Just like the corresponding method on [StormSubmitter](https://javadoc.io/doc/org.apache.storm/storm-client/2.8.8/org/apache/storm/StormSubmitter.html), `submitTopology` takes a name, a topology configuration, and the topology object. You can then kill a topology using the `killTopology` method which takes the topology name as an argument.
 
 The `LocalCluster` is an `AutoCloseable` and will shut down when close is called. 
 
@@ -74,7 +74,7 @@ Or you could also modify the IDE to run "org.apache.storm.LocalCluster" instead 
 
 ### Common configurations for local mode
 
-You can see a full list of configurations [here](javadocs/org/apache/storm/Config.html).
+You can see a full list of configurations [here](https://javadoc.io/doc/org.apache.storm/storm-client/2.8.8/org/apache/storm/Config.html).
 
 1. **Config.TOPOLOGY_MAX_TASK_PARALLELISM**: This config puts a ceiling on the number of threads spawned for a single component. Oftentimes production topologies have a lot of parallelism (hundreds of threads) which places unreasonable load when trying to test the topology in local mode. This config lets you easy control that parallelism.
 2. **Config.TOPOLOGY_DEBUG**: When this is set to true, Storm will log a message every time a tuple is emitted from any spout or bolt. This is extremely useful for debugging.A
