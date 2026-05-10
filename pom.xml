@@ -68,7 +68,7 @@
     </issueManagement>
 
     <properties>
-        <javaVersion>17</javaVersion>
+        <javaVersion>21</javaVersion>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
 

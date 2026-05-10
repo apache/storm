@@ -106,8 +106,8 @@ If you wanted to create a maven string to tell people what dependency to use you
 </dependency>
 ```
 
-If you want to refer to a javadoc for the current release use a relative path.  It will be in the javadocs subdirectory.
+If you want to refer to a javadoc for the current release, link directly to javadoc.io (which serves Javadoc on demand from Maven Central artifacts):
 
 ```
-[TopologyBuilder](javadocs/org/apache/storm/topology/TopologyBuilder.html)
+[TopologyBuilder](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/org/apache/storm/topology/TopologyBuilder.html)
 ```
