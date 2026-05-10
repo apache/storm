@@ -34,7 +34,7 @@
   "devDependencies": {
     "css-loader": "^7.1.1",
     "css-minimizer-webpack-plugin": "^8.0.0",
-    "cypress": "^15.13.0",
+    "cypress": "^15.14.2",
     "express": "^5.2.1",
     "mini-css-extract-plugin": "^2.10.2",
     "start-server-and-test": "^3.0.0",
