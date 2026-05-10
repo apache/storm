@@ -39,7 +39,7 @@
     "mini-css-extract-plugin": "^2.10.2",
     "start-server-and-test": "^3.0.0",
     "terser-webpack-plugin": "^5.3.10",
-    "webpack": "^5.91.0",
+    "webpack": "^5.106.2",
     "webpack-cli": "^7.0.2"
   }
 }
