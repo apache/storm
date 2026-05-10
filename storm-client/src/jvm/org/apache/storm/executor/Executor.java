@@ -198,7 +198,14 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
         enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
         v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
-        this.childEwmaStats = new ConcurrentHashMap<>();
+
+        // configure the upstream feedback heuristic
+        if (this.upstreamFeedbackEnabled) {
+            this.childEwmaStats = new ConcurrentHashMap<>();
+            this.receiveQueue.registerTaskJitterComparator(this);
+        } else {
+            this.childEwmaStats = null;
+        }
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {

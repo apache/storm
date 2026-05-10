@@ -31,11 +31,11 @@ public class TaskMetrics {
     private static final String METRIC_NAME_TRANSFERRED = "__transfer-count";
     private static final String METRIC_NAME_EXECUTED = "__execute-count";
     private static final String METRIC_NAME_PROCESS_LATENCY = "__process-latency";
-    private static final String METRIC_NAME_PROCESS_JITTER = "__process-jitter";
+    public static final String METRIC_NAME_PROCESS_JITTER = "__process-jitter";
     private static final String METRIC_NAME_COMPLETE_LATENCY = "__complete-latency";
-    private static final String METRIC_NAME_COMPLETE_JITTER = "__complete-jitter";
+    public static final String METRIC_NAME_COMPLETE_JITTER = "__complete-jitter";
     private static final String METRIC_NAME_EXECUTE_LATENCY = "__execute-latency";
-    private static final String METRIC_NAME_EXECUTE_JITTER = "__execute-jitter";
+    public static final String METRIC_NAME_EXECUTE_JITTER = "__execute-jitter";
     private static final String METRIC_NAME_CAPACITY = "__capacity";
 
     public static final Set<String> EWMA_METRICS_SET = Set.of(

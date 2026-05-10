@@ -20,12 +20,15 @@ package org.apache.storm.utils;
 
 import java.io.Closeable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.apache.storm.executor.Executor;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.shade.org.jctools.queues.MessagePassingQueue;
 import org.apache.storm.shade.org.jctools.queues.MpscArrayQueue;
 import org.apache.storm.shade.org.jctools.queues.MpscUnboundedArrayQueue;
+import org.apache.storm.tuple.AddressedTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +46,10 @@ public class JCQueue implements Closeable {
     private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
     private final IWaitStrategy backPressureWaitStrategy;
     private final String queueName;
+
+    // The TaskJitterComparator is not a mandatory field. It is required for the power of two adaptive task selection.
+    private TaskJitterComparator taskJitterComparator;
+    private final AddressedTuple[] reorderingBuffer = new AddressedTuple[8];
 
     public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
                    IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
@@ -64,6 +71,10 @@ public class JCQueue implements Closeable {
 
     public String getQueueName() {
         return queueName;
+    }
+
+    public void registerTaskJitterComparator(Executor executor) {
+        this.taskJitterComparator = new TaskJitterComparator(executor);
     }
 
     @Override
@@ -106,12 +117,18 @@ public class JCQueue implements Closeable {
     private int consumeImpl(Consumer consumer, ExitCondition exitCond) throws InterruptedException {
         int drainCount = 0;
         while (exitCond.keepRunning()) {
-            Object tuple = recvQueue.poll();
-            if (tuple == null) {
-                break;
+            if (consumer instanceof Executor && this.taskJitterComparator != null) {
+                int drained = drainExecutorPriorityBatch(consumer);
+                if (drained == 0) break;
+                drainCount += drained;
+            } else {
+                Object tuple = recvQueue.poll();
+                if (tuple == null) {
+                    break;
+                }
+                consumer.accept(tuple);
+                ++drainCount;
             }
-            consumer.accept(tuple);
-            ++drainCount;
         }
 
         int overflowDrainCount = 0;
@@ -126,6 +143,31 @@ public class JCQueue implements Closeable {
             consumer.flush();
         }
         return total;
+    }
+
+    private int drainExecutorPriorityBatch(Consumer consumer) {
+        int count = 0;
+
+        // for higher value of reorderingBuffer.length better a heap (with a batch of 8 objects the array is the best implementation)
+        for (int i = 0; i < reorderingBuffer.length; i++) {
+            Object tuple = recvQueue.poll();
+            if (tuple == null) break;
+            reorderingBuffer[count++] = (AddressedTuple) tuple;
+        }
+
+        if (count == 0) return 0;
+
+        if (count > 1) {
+            // Dual-Pivot Quicksort or Insertion Sort
+            Arrays.sort(reorderingBuffer, 0, count, this.taskJitterComparator);
+        }
+
+        for (int i = 0; i < count; i++) {
+            consumer.accept(reorderingBuffer[i]);
+            reorderingBuffer[i] = null; // gc
+        }
+
+        return count;
     }
 
     // Non Blocking. returns true/false indicating success/failure. Fails if full.
