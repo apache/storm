@@ -17,7 +17,7 @@ name: Update License Files
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "2.x" ]
   workflow_dispatch:
 
 permissions:
@@ -67,11 +67,12 @@ jobs:
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: true
-          branch: update-license-files
+          branch: update-license-files-2.x
+          base: 2.x
           delete-branch: true
-          title: "[Automated] Update license files after dependency changes"
+          title: "[Automated] Update license files after dependency changes (2.x)"
           body: |
-            This PR was automatically generated after a push to master caused
+            This PR was automatically generated after a push to 2.x caused
             license files to become out of date.
 
             Updated files:

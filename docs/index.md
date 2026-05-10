@@ -5,7 +5,7 @@ documentation: true
 ---
 ### Basics of Storm
 
-* [Javadoc](javadocs/index.html)
+* [Javadoc](https://javadoc.io/doc/org.apache.storm/storm-client/2.8.8/index.html)
 * [Tutorial](Tutorial.html)
 * [Concepts](Concepts.html)
 * [Scheduler](Storm-Scheduler.html)
