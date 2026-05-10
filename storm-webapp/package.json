@@ -16,7 +16,7 @@
     "cytoscape": "3.33.3",
     "cytoscape-dagre": "2.5.0",
     "dagre": "0.8.5",
-    "datatables.net": "2.3.7",
+    "datatables.net": "2.3.8",
     "datatables.net-bs5": "2.3.8",
     "datatables.net-dt": "2.3.8",
     "domurl": "2.3.4",
