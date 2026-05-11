@@ -54,7 +54,8 @@ storm.nimbus.zookeeper.acls.fixup: true
 
 storm.auth.simple-white-list.users: []
 storm.cluster.state.store: "org.apache.storm.cluster.ZKStateStorageFactory"
-storm.meta.serialization.delegate: "org.apache.storm.serialization.GzipThriftSerializationDelegate"
+storm.meta.serialization.delegate: "org.apache.storm.serialization.ZstdThriftSerializationDelegate"
+storm.meta.serialization.zstd.level: 3
 storm.codedistributor.class: "org.apache.storm.codedistributor.LocalFileSystemCodeDistributor"
 storm.workers.artifacts.dir: "workers-artifacts"
 storm.health.check.dir: "healthchecks"

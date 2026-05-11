@@ -82,6 +82,7 @@
 
         <!-- dependency versions -->
         <commons-compress.version>1.28.0</commons-compress.version>
+        <zstd-jni.version>1.5.7-8</zstd-jni.version>
         <commons-io.version>2.22.0</commons-io.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-exec.version>1.6.0</commons-exec.version>
@@ -513,6 +514,12 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>${zstd-jni.version}</version>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>

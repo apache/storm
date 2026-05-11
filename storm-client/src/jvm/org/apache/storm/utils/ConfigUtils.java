@@ -39,6 +39,7 @@ public class ConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
     public static final String STORM_HOME = "storm.home";
     public static final String RESOURCES_SUBDIR = "resources";
+    public static final int DEFAULT_ZSTD_COMPRESSION_LEVEL = 3;
 
     private static final Set<String> passwordConfigKeys = new HashSet<>();
 
@@ -173,6 +174,11 @@ public class ConfigUtils {
             return (int) (1 / rate);
         }
         throw new IllegalArgumentException("Illegal topology.stats.sample.rate in conf: " + rate);
+    }
+
+    public static int zstdCompressionLevel(Map<String, Object> conf) {
+        return ObjectReader.getInt(conf.getOrDefault(Config.STORM_META_SERIALIZATION_DELEGATE_ZSTD_LEVEL,
+            DEFAULT_ZSTD_COMPRESSION_LEVEL));
     }
 
     public static BooleanSupplier mkStatsSampler(Map<String, Object> conf) {

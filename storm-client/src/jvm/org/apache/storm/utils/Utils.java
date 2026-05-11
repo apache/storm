@@ -72,6 +72,9 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.security.auth.Subject;
+import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
+import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -957,6 +960,75 @@ public class Utils {
             return bos.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Static utility class for Zstandard (Zstd) compression and decompression.
+     */
+    public static final class ZstdUtils {
+
+        private static final int BUFFER_SIZE = 64 * 1024;
+
+        /**
+         * Private constructor to prevent instantiation.
+         * @throws UnsupportedOperationException if an attempt is made to instantiate this class.
+         */
+        private ZstdUtils() {
+            throw new UnsupportedOperationException("Utility class should not be instantiated.");
+        }
+
+        /**
+         * Compresses the provided byte array using Zstandard.
+         *
+         * <p>The output includes the standard Zstandard frame header, making it
+         * self-describing for the decompression phase.</p>
+         *
+         * @param data the raw byte array to compress.
+         * @return a compressed byte array, or the original array if null/empty.
+         * @throws RuntimeException wrapping an {@link IOException} if the compression fails.
+         */
+        public static byte[] compress(byte[] data) {
+            if (data == null || data.length == 0) {
+                return data;
+            }
+
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length)) {
+                try (ZstdCompressorOutputStream zstdOut = ZstdCompressorOutputStream.builder()
+                        .setOutputStream(bos)
+                        .setBufferSize(BUFFER_SIZE) // impacts on compression ratio
+                        .setLevel(ConfigUtils.zstdCompressionLevel(localConf))
+                        .get()) {
+                    zstdOut.write(data);
+                    zstdOut.finish();
+                }
+                return bos.toByteArray();
+            } catch (Exception e) {
+                throw new RuntimeException("Zstd compression failed", e);
+            }
+        }
+
+        /**
+         * Decompresses a Zstandard-compressed byte array.
+         *
+         * @param data the compressed byte array (Zstd frame).
+         * @return the original decompressed byte array, or the input if null/empty.
+         * @throws RuntimeException wrapping an {@link IOException} if the decompression fails
+         *                          or if the data is not a valid Zstd frame.
+         */
+        public static byte[] decompress(byte[] data) {
+            if (data == null || data.length == 0) {
+                return data;
+            }
+
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
+                 ZstdCompressorInputStream zstdIn = new ZstdCompressorInputStream(bis);
+                 ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                IOUtils.copy(zstdIn, bos);
+                return bos.toByteArray();
+            } catch (Exception e) {
+                throw new RuntimeException("Zstd decompression failed. Make sure the data is a valid Zstd frame.", e);
+            }
         }
     }
 
