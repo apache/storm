@@ -177,7 +177,7 @@ public class ConfigUtils {
     }
 
     public static int zstdCompressionLevel(Map<String, Object> conf) {
-        return ObjectReader.getInt(conf.getOrDefault(Config.STORM_META_SERIALIZATION_DELEGATE_ZSTD_LEVEL,
+        return ObjectReader.getInt(conf.getOrDefault(Config.STORM_COMPRESSION_ZSTD_LEVEL,
             DEFAULT_ZSTD_COMPRESSION_LEVEL));
     }
 

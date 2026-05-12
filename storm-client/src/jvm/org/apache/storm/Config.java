@@ -1462,7 +1462,7 @@ public class Config extends HashMap<String, Object> {
      * Zstandard compression level. Defaults to 3.
      */
     @CustomValidator(validatorClass = ConfigValidation.ZstdLevelValidator.class)
-    public static final String STORM_META_SERIALIZATION_DELEGATE_ZSTD_LEVEL = "storm.meta.serialization.zstd.level";
+    public static final String STORM_COMPRESSION_ZSTD_LEVEL = "storm.compression.zstd.level";
     /**
      * Configure the topology metrics reporters to be used on workers.
      */
