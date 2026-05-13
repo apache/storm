@@ -142,7 +142,6 @@
         <dependency>
             <groupId>com.github.luben</groupId>
             <artifactId>zstd-jni</artifactId>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 
