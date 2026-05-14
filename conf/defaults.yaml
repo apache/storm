@@ -56,8 +56,8 @@ storm.auth.simple-white-list.users: []
 storm.cluster.state.store: "org.apache.storm.cluster.ZKStateStorageFactory"
 storm.meta.serialization.delegate: "org.apache.storm.serialization.ZstdBridgeThriftSerializationDelegate"
 storm.compression.zstd.level: 3
-storm.compression.zstd.max.decompressed.bytes: 10485760
-storm.compression.gzip.max.decompressed.bytes: 10485760
+storm.compression.zstd.max.decompressed.bytes: 104857600
+storm.compression.gzip.max.decompressed.bytes: 104857600
 storm.codedistributor.class: "org.apache.storm.codedistributor.LocalFileSystemCodeDistributor"
 storm.workers.artifacts.dir: "workers-artifacts"
 storm.health.check.dir: "healthchecks"

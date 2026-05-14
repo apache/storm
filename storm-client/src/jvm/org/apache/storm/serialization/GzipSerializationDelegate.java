@@ -29,7 +29,7 @@ import org.apache.storm.utils.ObjectReader;
  */
 public class GzipSerializationDelegate implements SerializationDelegate {
 
-    private static final int DEFAULT_MAX_DECOMPRESSED_BYTES = 10 * 1024 * 1024;
+    private static final int DEFAULT_MAX_DECOMPRESSED_BYTES = 100 * 1024 * 1024;
     private int maxDecompressedBytes;
 
     @Override
