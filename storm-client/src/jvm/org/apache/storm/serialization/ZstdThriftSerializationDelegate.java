@@ -19,38 +19,32 @@
 package org.apache.storm.serialization;
 
 import java.util.Map;
+import org.apache.storm.Config;
 import org.apache.storm.thrift.TBase;
 import org.apache.storm.thrift.TDeserializer;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.thrift.TSerializer;
 import org.apache.storm.thrift.transport.TTransportException;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 
 /**
- * Note, this assumes it's deserializing a gzip byte stream, and will err if it encounters any other serialization.
+ * Note, this assumes it's deserializing a zstd byte stream, and will err if it encounters any other serialization.
  */
 public class ZstdThriftSerializationDelegate implements SerializationDelegate {
 
-    // ThreadLocal with explicit exception handling for checked TTransportException
-    private static final ThreadLocal<TSerializer> SERIALIZER = ThreadLocal.withInitial(() -> {
-        try {
-            return new TSerializer();
-        } catch (TTransportException e) {
-            throw new RuntimeException("Failed to initialize Thrift Serializer", e);
-        }
-    });
+    private static final int DEFAULT_MAX_DECOMPRESSED_BYTES = 10 * 1024 * 1024;
+    private static final int DEFAULT_ZSTD_COMPRESSION_LEVEL = 3;
 
-    private static final ThreadLocal<TDeserializer> DESERIALIZER = ThreadLocal.withInitial(() -> {
-        try {
-            return new TDeserializer();
-        } catch (TTransportException e) {
-            throw new RuntimeException("Failed to initialize Thrift Deserializer", e);
-        }
-    });
+    private int zstdCompressionLevel;
+    private int maxDecompressedBytes;
 
     @Override
     public void prepare(Map<String, Object> topoConf) {
-        // No-op: Initialization happens lazily per thread
+        this.zstdCompressionLevel = ObjectReader.getInt(topoConf.getOrDefault(Config.STORM_COMPRESSION_ZSTD_LEVEL,
+                DEFAULT_ZSTD_COMPRESSION_LEVEL));
+        this.maxDecompressedBytes = ObjectReader.getInt(topoConf.getOrDefault(Config.STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES,
+                DEFAULT_MAX_DECOMPRESSED_BYTES));
     }
 
     @Override
@@ -59,8 +53,11 @@ public class ZstdThriftSerializationDelegate implements SerializationDelegate {
             throw new IllegalArgumentException("Object must be an instance of TBase");
         }
         try {
-            byte[] thriftData = SERIALIZER.get().serialize((TBase<?, ?>) object);
-            return Utils.ZstdUtils.compress(thriftData);
+            TSerializer serializer = new TSerializer();
+            byte[] thriftData = serializer.serialize((TBase<?, ?>) object);
+            return Utils.ZstdUtils.compress(thriftData, this.zstdCompressionLevel);
+        } catch (TTransportException e) {
+            throw new RuntimeException("Failed to initialize Thrift Serializer", e);
         } catch (TException e) {
             throw new RuntimeException("Failed to serialize Thrift object", e);
         }
@@ -68,12 +65,21 @@ public class ZstdThriftSerializationDelegate implements SerializationDelegate {
 
     @Override
     public <T> T deserialize(byte[] bytes, Class<T> clazz) {
+        if (!Utils.ZstdUtils.isZstd(bytes)) {
+            throw new RuntimeException(
+                    String.format("Cannot deserialize [%s]. Expected zstd compressed bytes, but received unknown format.",
+                            clazz.getSimpleName())
+            );
+        }
         try {
-            byte[] decompressed = Utils.ZstdUtils.decompress(bytes);
-            TBase<?, ?> instance = (TBase<?, ?>) clazz.getDeclaredConstructor().newInstance();
-            DESERIALIZER.get().deserialize(instance, decompressed);
+            TDeserializer deserializer = new TDeserializer();
+            byte[] decompressed = Utils.ZstdUtils.decompress(bytes, this.maxDecompressedBytes);
+            TBase<?, ?> instance = clazz.asSubclass(TBase.class).getDeclaredConstructor().newInstance();
+            deserializer.deserialize(instance, decompressed);
             return (T) instance;
-        } catch (Exception e) {
+        } catch (TTransportException e) {
+            throw new RuntimeException("Failed to initialize Thrift Deserializer", e);
+        } catch (ReflectiveOperationException | TException e) {
             throw new RuntimeException("Failed to deserialize bytes to " + clazz.getName(), e);
         }
     }

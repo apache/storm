@@ -34,6 +34,8 @@ import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.net.InetAddress;
@@ -43,6 +45,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -99,6 +102,7 @@ import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.shade.net.minidev.json.parser.ParseException;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
+import org.apache.storm.shade.org.apache.commons.io.input.BoundedInputStream;
 import org.apache.storm.shade.org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
@@ -933,33 +937,89 @@ public class Utils {
         return ret;
     }
 
-    public static byte[] gzip(byte[] data) {
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            GZIPOutputStream out = new GZIPOutputStream(bos);
-            out.write(data);
-            out.close();
-            return bos.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    /**
+     * Static utility class for GZIP compression and decompression.
+     */
+    public static final class GzipUtils {
 
-    public static byte[] gunzip(byte[] data) {
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ByteArrayInputStream bis = new ByteArrayInputStream(data);
-            GZIPInputStream in = new GZIPInputStream(bis);
-            byte[] buffer = new byte[1024];
-            int len = 0;
-            while ((len = in.read(buffer)) >= 0) {
-                bos.write(buffer, 0, len);
+        // GZIP magic number (first two bytes): 0x1F8B.
+        private static final byte GZIP_MAGIC_0 = (byte) 0x1F;
+        private static final byte GZIP_MAGIC_1 = (byte) 0x8B;
+
+        private static final int BUFFER_SIZE = 64 * 1024;
+
+        /**
+         * Private constructor to prevent instantiation.
+         * @throws UnsupportedOperationException if an attempt is made to instantiate this class.
+         */
+        private GzipUtils() {
+            throw new UnsupportedOperationException("Utility class should not be instantiated.");
+        }
+
+        /**
+         * Compresses the provided byte array using GZIP.
+         *
+         * @param data the raw byte array to compress.
+         * @return a compressed byte array, or the original array if null/empty.
+         * @throws RuntimeException wrapping an {@link IOException} if the compression fails.
+         */
+        public static byte[] compress(byte[] data) {
+            if (data == null || data.length == 0) {
+                return data;
             }
-            in.close();
-            bos.close();
-            return bos.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length);
+                 GZIPOutputStream gzipOut = new GZIPOutputStream(bos, BUFFER_SIZE)) {
+                gzipOut.write(data);
+                gzipOut.finish();
+                return bos.toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException("GZIP compression failed", e);
+            }
+        }
+
+        /**
+         * Decompresses a GZIP-compressed byte array.
+         *
+         * @param data the compressed byte array (GZIP frame).
+         * @param maxDecompressedBytes maximum number of bytes allowed after decompression,
+         *                             as a safeguard against zip-bomb attacks.
+         * @return the original decompressed byte array, or the input if null/empty.
+         * @throws RuntimeException wrapping an {@link IOException} if the decompression fails,
+         *                          if the data is not a valid GZIP stream, or if the decompressed
+         *                          size exceeds {@code maxDecompressedBytes}.
+         */
+        public static byte[] decompress(byte[] data, int maxDecompressedBytes) {
+            if (data == null || data.length == 0) {
+                return data;
+            }
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
+                 GZIPInputStream gzipIn = new GZIPInputStream(bis, BUFFER_SIZE);
+                 BoundedInputStream limitedIn = BoundedInputStream.builder()
+                         .setInputStream(gzipIn)
+                         .setMaxCount(maxDecompressedBytes)
+                         .get();
+                 ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                IOUtils.copy(limitedIn, bos);
+                if (gzipIn.read() != -1) {
+                    throw new IOException("Decompression threshold exceeded! Possible security risk or invalid data size.");
+                }
+                return bos.toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException("GZIP decompression failed", e);
+            }
+        }
+
+        /**
+         * Checks the first 2 bytes of the array against the GZIP magic number (0x1F8B).
+         *
+         * @param bytes the data payload.
+         * @return {@code true} if the payload starts with a valid GZIP header, {@code false} otherwise.
+         */
+        public static boolean isGzip(byte[] bytes) {
+            if (bytes == null || bytes.length < 2) {
+                return false;
+            }
+            return bytes[0] == GZIP_MAGIC_0 && bytes[1] == GZIP_MAGIC_1;
         }
     }
 
@@ -968,6 +1028,11 @@ public class Utils {
      */
     public static final class ZstdUtils {
 
+        /**
+         * Zstandard magic number 0xFD2FB528.
+         */
+        private static final int ZSTD_MAGIC_INT = 0xFD2FB528;
+        private static final VarHandle INT_HANDLE = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
         private static final int BUFFER_SIZE = 64 * 1024;
 
         /**
@@ -985,10 +1050,11 @@ public class Utils {
          * self-describing for the decompression phase.</p>
          *
          * @param data the raw byte array to compress.
+         * @param compressionLevel the zstd compression level.
          * @return a compressed byte array, or the original array if null/empty.
          * @throws RuntimeException wrapping an {@link IOException} if the compression fails.
          */
-        public static byte[] compress(byte[] data) {
+        public static byte[] compress(byte[] data, int compressionLevel) {
             if (data == null || data.length == 0) {
                 return data;
             }
@@ -997,13 +1063,13 @@ public class Utils {
                 try (ZstdCompressorOutputStream zstdOut = ZstdCompressorOutputStream.builder()
                         .setOutputStream(bos)
                         .setBufferSize(BUFFER_SIZE) // impacts on compression ratio
-                        .setLevel(ConfigUtils.zstdCompressionLevel(localConf))
+                        .setLevel(compressionLevel)
                         .get()) {
                     zstdOut.write(data);
                     zstdOut.finish();
                 }
                 return bos.toByteArray();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new RuntimeException("Zstd compression failed", e);
             }
         }
@@ -1016,19 +1082,36 @@ public class Utils {
          * @throws RuntimeException wrapping an {@link IOException} if the decompression fails
          *                          or if the data is not a valid Zstd frame.
          */
-        public static byte[] decompress(byte[] data) {
+        public static byte[] decompress(byte[] data, int maxDecompressedBytes) {
             if (data == null || data.length == 0) {
                 return data;
             }
 
             try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
                  ZstdCompressorInputStream zstdIn = new ZstdCompressorInputStream(bis);
+                 BoundedInputStream limitedIn = BoundedInputStream.builder().setInputStream(zstdIn).setMaxCount(maxDecompressedBytes).get();
                  ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                IOUtils.copy(zstdIn, bos);
+                IOUtils.copy(limitedIn, bos);
+                if (zstdIn.read() != -1) {
+                    throw new IOException("Decompression threshold exceeded! Possible security risk or invalid data size.");
+                }
                 return bos.toByteArray();
-            } catch (Exception e) {
-                throw new RuntimeException("Zstd decompression failed. Make sure the data is a valid Zstd frame.", e);
+            } catch (IOException e) {
+                throw new RuntimeException("Zstd decompression failed", e);
             }
+        }
+
+        /**
+         * Checks the first 4 bytes of the array against the Zstd Magic Number.
+         *
+         * @param bytes The data payload
+         * @return true if the payload contains a valid zstd header, false otherwise.
+         */
+        public static boolean isZstd(byte[] bytes) {
+            if (bytes == null || bytes.length < 4) {
+                return false;
+            }
+            return (int) INT_HANDLE.get(bytes, 0) == ZSTD_MAGIC_INT;
         }
     }
 

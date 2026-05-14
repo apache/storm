@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
  * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
@@ -12,130 +12,234 @@
 
 package org.apache.storm.serialization;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
-import org.apache.storm.generated.GlobalStreamId;
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.storm.Config;
+import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 
-public class ZstdBridgeThriftSerializationDelegateTest {
-    private SerializationDelegate testDelegate;
+@ExtendWith(MockitoExtension.class)
+class ZstdBridgeThriftSerializationDelegateTest {
+
+    @Mock
+    private GzipBridgeThriftSerializationDelegate defaultDelegate;
+
+    @Mock
+    private ZstdThriftSerializationDelegate zstdDelegate;
+
+    private ZstdBridgeThriftSerializationDelegate delegate;
+
+    private static final Map<String, Object> TOPO_CONF = Collections.emptyMap();
+
+    private static final byte[] ZSTD_BYTES  = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00};
+    private static final byte[] PLAIN_BYTES  = {0x00, 0x01, 0x02, 0x03, 0x04};
+    private static final byte[] RESULT_BYTES = {(byte) 0xAA, (byte) 0xBB};
+
 
     @BeforeEach
-    public void setUp() throws Exception {
-        // The bridge we are testing
-        testDelegate = new ZstdBridgeThriftSerializationDelegate();
-        testDelegate.prepare(null);
-    }
+    void setUp() throws Exception {
+        delegate = new ZstdBridgeThriftSerializationDelegate();
 
-    /**
-     * Verifies that the bridge can deserialize data specifically
-     * produced by the ZstdThriftSerializationDelegate.
-     */
-    @Test
-    public void testDeserialize_readingFromZstd() {
-        GlobalStreamId id = new GlobalStreamId("component-1", "stream-A");
+        Field defaultField = ZstdBridgeThriftSerializationDelegate.class.getDeclaredField("defaultDelegate");
+        defaultField.setAccessible(true);
+        defaultField.set(delegate, defaultDelegate);
 
-        // Serialize using the pure Zstd delegate
-        byte[] serialized = new ZstdThriftSerializationDelegate().serialize(id);
-
-        GlobalStreamId deserialized = testDelegate.deserialize(serialized, GlobalStreamId.class);
-
-        assertEquals(id.get_componentId(), deserialized.get_componentId());
-        assertEquals(id.get_streamId(), deserialized.get_streamId());
-    }
-
-    /**
-     * Verifies that the bridge writes Zstd and can successfully
-     * read its own output.
-     */
-    @Test
-    public void testDeserialize_readingFromZstdBridge() {
-        GlobalStreamId id = new GlobalStreamId("bridge-component", "bridge-stream");
-
-        // The bridge's serialize method should be using Zstd
-        byte[] serialized = testDelegate.serialize(id);
-
-        GlobalStreamId deserialized = testDelegate.deserialize(serialized, GlobalStreamId.class);
-
-        assertEquals(id.get_componentId(), deserialized.get_componentId());
-        assertEquals(id.get_streamId(), deserialized.get_streamId());
-    }
-
-    /**
-     * Critical for backward compatibility. Tests that if a byte array
-     * does NOT have the Zstd magic header, it falls back to raw Thrift.
-     */
-    @Test
-    public void testDeserialize_readingFromDefault() {
-        GlobalStreamId id = new GlobalStreamId("legacy-A", "legacy-B");
-
-        // Serialize using the standard uncompressed Thrift delegate
-        byte[] serialized = new ThriftSerializationDelegate().serialize(id);
-
-        GlobalStreamId deserialized = testDelegate.deserialize(serialized, GlobalStreamId.class);
-
-        assertEquals(id.get_componentId(), deserialized.get_componentId());
-        assertEquals(id.get_streamId(), deserialized.get_streamId());
+        Field zstdField = ZstdBridgeThriftSerializationDelegate.class.getDeclaredField("zstdDelegate");
+        zstdField.setAccessible(true);
+        zstdField.set(delegate, zstdDelegate);
     }
 
     @Test
-    public void testDeserialize_ComplexNestedObject() {
+    void prepare_delegatesToBothDelegates() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put("key", "value");
 
-        StringBuilder largeData = new StringBuilder();
-        for (int i = 0; i < 10000; i++) {
-            largeData.append("StormData-").append(i).append("-");
+        // user defined conf
+        conf.put(Config.STORM_COMPRESSION_ZSTD_LEVEL, 3);
+        conf.put(Config.STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES, 2 * 1024 * 1024);
+        conf.put(Config.STORM_COMPRESSION_GZIP_MAX_DECOMPRESSED_BYTES, 2 * 1024 * 1024);
+
+        delegate.prepare(conf);
+
+        verify(defaultDelegate).prepare(conf);
+        verify(zstdDelegate).prepare(conf);
+        verifyNoMoreInteractions(defaultDelegate, zstdDelegate);
+    }
+
+    @Test
+    void prepare_emptyConf_doesNotThrow() {
+        assertDoesNotThrow(() -> delegate.prepare(TOPO_CONF));
+        verify(defaultDelegate).prepare(TOPO_CONF);
+        verify(zstdDelegate).prepare(TOPO_CONF);
+    }
+
+    @Test
+    void prepare_nullConf_propagatesToBothDelegates() {
+        delegate.prepare(null);
+        verify(defaultDelegate).prepare(null);
+        verify(zstdDelegate).prepare(null);
+    }
+
+    @Test
+    void serialize_alwaysUsesZstdDelegate() {
+        Object payload = new Object();
+        when(zstdDelegate.serialize(payload)).thenReturn(RESULT_BYTES);
+
+        byte[] result = delegate.serialize(payload);
+
+        assertArrayEquals(RESULT_BYTES, result);
+        verify(zstdDelegate).serialize(payload);
+        verifyNoInteractions(defaultDelegate);
+    }
+
+    @Test
+    void serialize_nullObject_delegatedToZstd() {
+        when(zstdDelegate.serialize(null)).thenReturn(RESULT_BYTES);
+
+        byte[] result = delegate.serialize(null);
+
+        assertArrayEquals(RESULT_BYTES, result);
+        verify(zstdDelegate).serialize(null);
+        verifyNoInteractions(defaultDelegate);
+    }
+
+    @Test
+    void serialize_neverUsesDefaultDelegate() {
+        when(zstdDelegate.serialize(any())).thenReturn(RESULT_BYTES);
+
+        delegate.serialize("anything");
+
+        verifyNoInteractions(defaultDelegate);
+    }
+
+    @Test
+    void deserialize_zstdMagic_usesZstdDelegate() {
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            mocked.when(() -> Utils.ZstdUtils.isZstd(ZSTD_BYTES)).thenReturn(true);
+            when(zstdDelegate.deserialize(ZSTD_BYTES, String.class)).thenReturn("zstd-result");
+
+            String result = delegate.deserialize(ZSTD_BYTES, String.class);
+
+            assertEquals("zstd-result", result);
+            verify(zstdDelegate).deserialize(ZSTD_BYTES, String.class);
+            verifyNoInteractions(defaultDelegate);
         }
-
-        GlobalStreamId complexId = new GlobalStreamId(
-            largeData.toString(),
-            "stream-" + System.currentTimeMillis()
-        );
-
-        byte[] serialized = testDelegate.serialize(complexId);
-
-        // Zstd magic: 0x28, 0xB5, 0x2F, 0xFD
-        assertEquals((byte) 0x28, serialized[0], "Should have Zstd magic byte 0");
-        assertEquals((byte) 0xB5, serialized[1], "Should have Zstd magic byte 1");
-
-        GlobalStreamId deserialized = testDelegate.deserialize(serialized, GlobalStreamId.class);
-
-        assertEquals(complexId.get_componentId(), deserialized.get_componentId());
-        assertEquals(complexId.get_streamId(), deserialized.get_streamId());
-        assertEquals(complexId, deserialized, "Objects should be deep-equal");
     }
 
     @Test
-    public void testDeserialize_EmptyAndNullFields() {
-        // Testing edge cases for Thrift: empty strings and nulls
-        GlobalStreamId edgeCaseId = new GlobalStreamId("", "");
+    void deserialize_zstdMagic_doesNotTouchDefaultDelegate() {
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            mocked.when(() -> Utils.ZstdUtils.isZstd(ZSTD_BYTES)).thenReturn(true);
+            when(zstdDelegate.deserialize(any(), any())).thenReturn(new Object());
 
-        byte[] serialized = testDelegate.serialize(edgeCaseId);
-        GlobalStreamId deserialized = testDelegate.deserialize(serialized, GlobalStreamId.class);
+            delegate.deserialize(ZSTD_BYTES, Object.class);
 
-        assertEquals("", deserialized.get_componentId());
-        assertEquals("", deserialized.get_streamId());
-    }
-
-    @Test
-    public void testStress_MultipleThreads() throws InterruptedException {
-        // Since we used ThreadLocal, we must ensure multi-threaded access works
-        int threadCount = 10;
-        Thread[] threads = new Thread[threadCount];
-
-        for (int i = 0; i < threadCount; i++) {
-            threads[i] = new Thread(() -> {
-                for (int j = 0; j < 50; j++) {
-                    GlobalStreamId id = new GlobalStreamId("comp-" + j, "stream");
-                    byte[] bytes = testDelegate.serialize(id);
-                    GlobalStreamId out = testDelegate.deserialize(bytes, GlobalStreamId.class);
-                    assertEquals(id.get_componentId(), out.get_componentId());
-                }
-            });
+            verifyNoInteractions(defaultDelegate);
         }
+    }
 
-        for (Thread t : threads) t.start();
-        for (Thread t : threads) t.join();
+    // fallback
+    @Test
+    void deserialize_noZstdMagic_usesDefaultDelegate() {
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            mocked.when(() -> Utils.ZstdUtils.isZstd(PLAIN_BYTES)).thenReturn(false);
+            when(defaultDelegate.deserialize(PLAIN_BYTES, String.class)).thenReturn("plain-result");
+
+            String result = delegate.deserialize(PLAIN_BYTES, String.class);
+
+            assertEquals("plain-result", result);
+            verify(defaultDelegate).deserialize(PLAIN_BYTES, String.class);
+            verifyNoInteractions(zstdDelegate);
+        }
+    }
+
+    @Test
+    void deserialize_noZstdMagic_doesNotTouchZstdDelegate() {
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            mocked.when(() -> Utils.ZstdUtils.isZstd(PLAIN_BYTES)).thenReturn(false);
+            when(defaultDelegate.deserialize(any(), any())).thenReturn(new Object());
+
+            delegate.deserialize(PLAIN_BYTES, Object.class);
+
+            verifyNoInteractions(zstdDelegate);
+        }
+    }
+
+    @Test
+    void deserialize_nullBytes_routedToDefaultDelegate() {
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            mocked.when(() -> Utils.ZstdUtils.isZstd(null)).thenReturn(false);
+            when(defaultDelegate.deserialize(null, String.class)).thenReturn("fallback");
+
+            String result = delegate.deserialize(null, String.class);
+
+            assertEquals("fallback", result);
+            verify(defaultDelegate).deserialize(null, String.class);
+            verifyNoInteractions(zstdDelegate);
+        }
+    }
+
+    // exceptions propagation
+    @Test
+    void deserialize_zstdDelegateThrows_exceptionPropagates() {
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            mocked.when(() -> Utils.ZstdUtils.isZstd(ZSTD_BYTES)).thenReturn(true);
+            when(zstdDelegate.deserialize(any(), any()))
+                    .thenThrow(new RuntimeException("decompression error"));
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> delegate.deserialize(ZSTD_BYTES, String.class));
+            assertEquals("decompression error", ex.getMessage());
+        }
+    }
+
+    @Test
+    void deserialize_defaultDelegateThrows_exceptionPropagates() {
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            mocked.when(() -> Utils.ZstdUtils.isZstd(PLAIN_BYTES)).thenReturn(false);
+            when(defaultDelegate.deserialize(any(), any()))
+                    .thenThrow(new RuntimeException("thrift error"));
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> delegate.deserialize(PLAIN_BYTES, String.class));
+            assertEquals("thrift error", ex.getMessage());
+        }
+    }
+
+    // delegation chain
+    @Test
+    void deserialize_isZstdDeterminesRouting_trueThenFalse() {
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            byte[] bytes = PLAIN_BYTES;
+
+            // First call: treated as Zstd
+            mocked.when(() -> Utils.ZstdUtils.isZstd(bytes)).thenReturn(true);
+            when(zstdDelegate.deserialize(bytes, String.class)).thenReturn("via-zstd");
+            assertEquals("via-zstd", delegate.deserialize(bytes, String.class));
+
+            // Second call: treated as non-Zstd
+            mocked.when(() -> Utils.ZstdUtils.isZstd(bytes)).thenReturn(false);
+            when(defaultDelegate.deserialize(bytes, String.class)).thenReturn("via-default");
+            assertEquals("via-default", delegate.deserialize(bytes, String.class));
+        }
     }
 }
