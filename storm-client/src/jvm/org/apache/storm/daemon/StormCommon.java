@@ -360,6 +360,19 @@ public class StormCommon {
         topology.put_to_bolts(EVENTLOGGER_COMPONENT_ID, eventLoggerBolt);
     }
 
+    public static void addUpstreamFeedback(Map<String, Object> conf, StormTopology topology) {
+        Integer numExecutors = ObjectReader.getInt(conf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS),
+            ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
+        if (numExecutors == null || numExecutors == 0) {
+            return;
+        }
+        String feedbackStreamId = ConfigUtils.upstreamFeedbackStreamId(conf);
+        for (Object component : allComponents(topology).values()) {
+            ComponentCommon common = getComponentCommon(component);
+            common.put_to_streams(feedbackStreamId, Thrift.outputFields(eventLoggerBoltFields()));
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public static Map<String, Bolt> metricsConsumerBoltSpecs(Map<String, Object> conf, StormTopology topology) {
         Map<String, Bolt> metricsConsumerBolts = new HashMap<>();
@@ -464,6 +477,10 @@ public class StormCommon {
         return eventLoggerNum == null || ObjectReader.getInt(eventLoggerNum) > 0;
     }
 
+    public static boolean hasUpstreamFeedback(Map<String, Object> topoConf) {
+        return ConfigUtils.upstreamFeedbackEnable(topoConf);
+    }
+
     public static int numStartExecutors(Object component) throws InvalidTopologyException {
         ComponentCommon common = getComponentCommon(component);
         return Thrift.getParallelismHint(common);
@@ -537,6 +554,9 @@ public class StormCommon {
         addAcker(topoConf, ret);
         if (hasEventLoggers(topoConf)) {
             addEventLogger(topoConf, ret);
+        }
+        if (hasUpstreamFeedback(topoConf)) {
+            addUpstreamFeedback(topoConf, ret);
         }
         addMetricComponents(topoConf, ret);
         addSystemComponents(topoConf, ret);

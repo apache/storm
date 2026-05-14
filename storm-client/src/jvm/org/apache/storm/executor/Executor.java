@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -131,6 +134,11 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private final RateCounter reportedErrorCount;
     private final boolean enableV2MetricsDataPoints;
     private final Integer v2MetricsTickInterval;
+    protected final String upstreamFeedbackStreamId;
+    protected final boolean upstreamFeedbackEnabled;
+    protected final boolean predictiveBackpressureEnabled;
+    protected final Map<Integer, Map<Integer, Map<String, IMetricsConsumer.DataPoint>>> childEwmaStats;
+    protected final Map<Integer, Map<String, Double>> avgCache = new ConcurrentHashMap<>();
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -177,6 +185,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.credentials = credentials;
         this.hasEventLoggers = StormCommon.hasEventLoggers(topoConf);
         this.ackingEnabled = StormCommon.hasAckers(topoConf);
+        this.upstreamFeedbackEnabled = ConfigUtils.upstreamFeedbackEnable(topoConf);
+        this.upstreamFeedbackStreamId = ConfigUtils.upstreamFeedbackStreamId(topoConf);
 
         try {
             this.hostname = Utils.hostname();
@@ -189,6 +199,18 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
         enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
         v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
+
+        // configure the upstream feedback heuristic + predictive backpressure scheduling if enabled.
+        if (this.upstreamFeedbackEnabled) {
+            this.childEwmaStats = new ConcurrentHashMap<>();
+            this.predictiveBackpressureEnabled = ConfigUtils.backpressurePredictionEnable(topoConf);
+            if (this.predictiveBackpressureEnabled) {
+                this.receiveQueue.enablePredictiveBackpressure(this);
+            }
+        } else {
+            this.childEwmaStats = null;
+            this.predictiveBackpressureEnabled = false;
+        }
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -362,6 +384,192 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
+    }
+
+    /**
+     * Constructs a Storm {@link Values} object containing a snapshot of specific metrics
+     * to be sent as upstream feedback.
+     *
+     * <p>This method generates a {@link IMetricsConsumer.TaskInfo} header with a timestamp
+     * and a default interval of -1 (indicating an on-demand or non-standard tick),
+     * followed by a list of filtered DataPoints.</p>
+     *
+     * @param taskId  The ID of the task for which metrics are being collected.
+     * @param metrics A set of metric names (e.g., EWMA stats) to include in the feedback.
+     * @return A {@link Values} object containing [TaskInfo, List<DataPoint>],
+     *         compatible with the metrics stream schema.
+     */
+    public Values buildUpstreamFeedbackTuple(int taskId, Set<String> metrics) {
+        IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
+            hostname, workerTopologyContext.getThisWorkerPort(),
+            componentId, taskId, Time.currentTimeSecs(), -1);
+        return new Values(taskInfo, buildEwmaDataPoints(taskId, metrics));
+    }
+
+    /**
+     * Updates child task statistics by unwrapping the Storm Values object.
+     *
+     * <p>Extracts the {@link IMetricsConsumer.TaskInfo} and the collection of
+     * {@link IMetricsConsumer.DataPoint} objects from the provided tuple. Updates
+     * to the {@code childEwmaStats} map are thread-safe via {@link ConcurrentHashMap}
+     * atomic operations.</p>
+     *
+     * <p><b>Data Mapping:</b>
+     * <ul>
+     *   <li>Index 0: {@link IMetricsConsumer.TaskInfo}</li>
+     *   <li>Index 1: {@code Collection} of {@link IMetricsConsumer.DataPoint}</li>
+     * </ul>
+     * </p>
+     *
+     * @param task  The {@link Task} associated with this update.
+     * @param tuple The {@link TupleImpl} emitted by the upstream feedback builder.
+     */
+    public void updateChildEwmaStats(Task task, TupleImpl tuple) {
+        if (!this.upstreamFeedbackEnabled || tuple == null) {
+            return;
+        }
+
+        List<Object> values = tuple.getValues();
+        if (values == null || values.size() < 2) {
+            LOG.warn("Feedback tuple for task {} has insufficient elements (size={})",
+                task.getTaskId(), values == null ? 0 : values.size());
+            return;
+        }
+
+        // Safe type check replaces unchecked cast and suppression
+        if (!(values.get(0) instanceof IMetricsConsumer.TaskInfo taskInfo)) {
+            LOG.warn("Unexpected type at index 0 in feedbackTuple for task {}: {}",
+                task.getTaskId(), values.get(0) == null ? "null" : values.get(0).getClass().getName());
+            return;
+        }
+
+        if (!(values.get(1) instanceof Collection<?> rawDataPoints)) {
+            LOG.warn("Unexpected type at index 1 in feedbackTuple for task {}: {}",
+                task.getTaskId(), values.get(1) == null ? "null" : values.get(1).getClass().getName());
+            return;
+        }
+
+        int taskId = task.getTaskId();
+        int childTaskId = taskInfo.srcTaskId;
+
+        // Filter to only valid DataPoint instances, safely skipping any unexpected elements
+        List<IMetricsConsumer.DataPoint> dataPoints = rawDataPoints.stream()
+            .filter(IMetricsConsumer.DataPoint.class::isInstance)
+            .map(IMetricsConsumer.DataPoint.class::cast)
+            .toList();
+
+        if (!dataPoints.isEmpty()) {
+            Map<String, IMetricsConsumer.DataPoint> metricsMap =
+                getOrCreateMetricsMap(taskId, childTaskId);
+
+            for (IMetricsConsumer.DataPoint dp : dataPoints) {
+                metricsMap.put(dp.name, dp);
+            }
+
+            // Invalidate cached averages for this taskId since underlying data changed
+            avgCache.remove(taskId);
+        }
+    }
+
+    /**
+     * Retrieves the collected metric statistics for all child tasks of a given parent task.
+     *
+     * @param taskId The ID of the parent task.
+     * @return A map of childTaskId to metric name to {@link IMetricsConsumer.DataPoint}.
+     *         Returns an empty map if feedback is disabled or no data exists.
+     */
+    public Map<Integer, Map<String, IMetricsConsumer.DataPoint>> getChildEwmaStats(int taskId) {
+        if (!this.upstreamFeedbackEnabled) {
+            return Collections.emptyMap();
+        }
+        return this.childEwmaStats.getOrDefault(taskId, Collections.emptyMap());
+    }
+
+    /**
+     * Calculates the average value for each metric across all child tasks
+     * associated with the given parent task.
+     *
+     * <p>Results are cached per {@code taskId} and recomputed only when the
+     * underlying data has changed (i.e. after a call to {@link #updateChildEwmaStats}).</p>
+     *
+     * @param taskId The ID of the parent task.
+     * @return A map of metric name to computed average value.
+     *         Returns an empty map if no stats are found or feedback is disabled.
+     */
+    public Map<String, Double> getChildEwmaAvgStats(int taskId) {
+        Map<Integer, Map<String, IMetricsConsumer.DataPoint>> taskStats = this.getChildEwmaStats(taskId);
+        if (taskStats.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return avgCache.computeIfAbsent(taskId, this::computeAvgStats);
+    }
+
+    private Map<String, Double> computeAvgStats(int taskId) {
+        Map<Integer, Map<String, IMetricsConsumer.DataPoint>> taskStats = this.getChildEwmaStats(taskId);
+
+        Map<String, StatsAccumulator> accumulators = new HashMap<>();
+
+        for (Map<String, IMetricsConsumer.DataPoint> childMetrics : taskStats.values()) {
+            for (Map.Entry<String, IMetricsConsumer.DataPoint> entry : childMetrics.entrySet()) {
+                if (entry.getValue().value instanceof Number n) {
+                    accumulators.merge(
+                        entry.getKey(),
+                        new StatsAccumulator(n.doubleValue(), 1),
+                        StatsAccumulator::combine
+                    );
+                }
+            }
+        }
+
+        return accumulators.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> e.getValue().average()
+            ));
+    }
+
+    private Map<String, IMetricsConsumer.DataPoint> getOrCreateMetricsMap(int taskId, int childTaskId) {
+        return childEwmaStats
+            .computeIfAbsent(taskId, k -> new ConcurrentHashMap<>())
+            .computeIfAbsent(childTaskId, k -> new ConcurrentHashMap<>());
+    }
+
+    // Functional pattern
+    private record StatsAccumulator(double sum, int count) {
+        StatsAccumulator combine(StatsAccumulator other) {
+            return new StatsAccumulator(this.sum + other.sum, this.count + other.count);
+        }
+
+        double average() {
+            return count > 0 ? sum / count : 0.0;
+        }
+    }
+
+    private List<IMetricsConsumer.DataPoint> buildEwmaDataPoints(int taskId, Set<String> metrics) {
+        if (metrics == null || metrics.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>(metrics.size());
+        Map<String, Gauge> allGauges = workerData.getMetricRegistry().getTaskGauges(taskId);
+
+        if (allGauges == null || allGauges.isEmpty()) {
+            return dataPoints;
+        }
+
+        for (String metricName : metrics) {
+            Gauge gauge = allGauges.get(metricName);
+
+            if (gauge != null) {
+                Object v = (gauge instanceof PerReporterGauge)
+                    ? ((PerReporterGauge) gauge).getValueForReporter(this)
+                    : gauge.getValue();
+                if (v instanceof Number) {
+                    dataPoints.add(new IMetricsConsumer.DataPoint(metricName, v));
+                }
+            }
+        }
+        return dataPoints;
     }
 
     // updates v1 metric dataPoints with v2 metric API data

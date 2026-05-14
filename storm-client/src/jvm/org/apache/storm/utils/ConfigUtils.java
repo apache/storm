@@ -39,6 +39,9 @@ public class ConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
     public static final String STORM_HOME = "storm.home";
     public static final String RESOURCES_SUBDIR = "resources";
+    public static final double RFC1889_ALPHA = 1.0 / 16.0;
+    public static final String UPSTREAM_FEEDBACK_STREAM_ID = "__feedback";
+    public static final double UPSTREAM_FEEDBACK_RATIO = 0.1;
 
     private static final Set<String> passwordConfigKeys = new HashSet<>();
 
@@ -173,6 +176,66 @@ public class ConfigUtils {
             return (int) (1 / rate);
         }
         throw new IllegalArgumentException("Illegal topology.stats.sample.rate in conf: " + rate);
+    }
+
+    public static double ewmaSmoothingFactor(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR);
+        if (value == null) {
+            return RFC1889_ALPHA;
+        }
+        double alpha = ObjectReader.getDouble(value);
+        if (alpha > 0.0 && alpha < 1.0) {
+            return alpha;
+        }
+        throw new IllegalArgumentException(
+                "Illegal " + Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR
+                        + " in conf: " + alpha + " must be in (0, 1)");
+    }
+
+    public static boolean ewmaEnable(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_STATS_EWMA_ENABLE);
+        if (value == null) {
+            return false;
+        }
+        return ObjectReader.getBoolean(value, false);
+    }
+
+    public static boolean upstreamFeedbackEnable(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE);
+        if (value == null) {
+            return false;
+        }
+        return ObjectReader.getBoolean(value, false);
+    }
+
+    public static boolean backpressurePredictionEnable(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_BACKPRESSURE_PREDICTION_ENABLE);
+        if (value == null) {
+            return false;
+        }
+        return ObjectReader.getBoolean(value, false);
+    }
+
+    public static String upstreamFeedbackStreamId(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_STREAM_ID);
+        if (value == null) {
+            return UPSTREAM_FEEDBACK_STREAM_ID;
+        }
+        return ObjectReader.getString(value);
+    }
+
+    public static double upstreamFeedbackRatio(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_RATIO);
+        if (value == null) {
+            return UPSTREAM_FEEDBACK_RATIO;
+        }
+        double ratio = ObjectReader.getDouble(value);
+        if (ratio > 0.0 && ratio < 1.0) {
+            return ratio;
+        }
+        throw new IllegalArgumentException(
+            "Illegal " + Config.TOPOLOGY_UPSTREAM_FEEDBACK_RATIO
+                + " in conf: " + ratio + " must be in (0, 1)");
     }
 
     public static BooleanSupplier mkStatsSampler(Map<String, Object> conf) {

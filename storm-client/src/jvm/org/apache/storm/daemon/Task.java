@@ -217,6 +217,27 @@ public class Task {
     }
 
     /**
+     * Sends an unanchored feedback tuple directly to a specific task ID (typically upstream).
+     * <p>
+     * This method bypasses standard stream grouping logic and routes the tuple
+     * exclusively to the provided {@code targetTaskId}. It is a <b>non-blocking</b> call:
+     * if the destination buffer is full, the tuple is added to the {@code pendingEmits}
+     * queue for later retry, preventing executor stalls.
+     * </p>
+     *
+     * @param stream       The ID of the stream to emit on (must be declared in the topology).
+     * @param values       The data payload to be sent.
+     * @param targetTaskId The unique ID of the destination task (e.g., the sourceTaskId of an incoming tuple).
+     * @param transfer     The {@link ExecutorTransfer} instance handling the physical data transfer.
+     * @param pendingEmits A queue used to store tuples that cannot be transferred immediately due to backpressure.
+     */
+    public void sendUnanchoredFeedback(String stream, List<Object> values, int targetTaskId, ExecutorTransfer transfer, Queue<AddressedTuple> pendingEmits) {
+        Tuple tuple = getTuple(stream, values);
+        AddressedTuple addressedTuple = new AddressedTuple(targetTaskId, tuple);
+        transfer.tryTransfer(addressedTuple, pendingEmits);
+    }
+
+    /**
      * Send sampled data to the eventlogger if the global or component level debug flag is set (via nimbus api).
      */
     public void sendToEventLogger(Executor executor, List values,
