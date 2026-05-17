@@ -20,6 +20,7 @@ package org.apache.storm.utils;
 
 import java.io.IOException;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -516,5 +517,205 @@ public class UtilsTest {
         } catch(Throwable unexpected) {
             fail(expectationMessage, unexpected);
         }
+    }
+
+    @Test
+    void compress_nullInput_returnsNull() {
+        assertNull(Utils.ZstdUtils.compress(null, 3));
+    }
+
+    @Test
+    void compress_emptyInput_returnsEmptyArray() {
+        byte[] result = Utils.ZstdUtils.compress(new byte[0], 3);
+        assertNotNull(result);
+        assertEquals(0, result.length);
+    }
+
+    @Test
+    void compress_singleByte_producesZstdFrame() {
+        byte[] input = {0x42};
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+        assertTrue(Utils.ZstdUtils.isZstd(compressed),
+                "Compressed output should start with the Zstd magic number");
+    }
+
+    @Test
+    void compress_smallPayload_roundtrips() {
+        byte[] input = "Hello, ZSTD!".getBytes(StandardCharsets.UTF_8);
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+        byte[] decompressed = Utils.ZstdUtils.decompress(compressed, 1024 * 1024);
+        assertArrayEquals(input, decompressed);
+    }
+
+    @Test
+    void compress_largeRepetitivePayload_isSmallerThanOriginal() {
+        // Highly compressible: 64 KB of zeros
+        byte[] input = new byte[64 * 1024];
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+        assertTrue(compressed.length < input.length,
+                "Compressed size should be smaller than original for repetitive data");
+    }
+
+    void compress_variousLevels_roundtrip() {
+        byte[] input = zstdSampleData(4096);
+        for (int level : Set.of(1, 3, 9, 19)) {
+            byte[] compressed = Utils.ZstdUtils.compress(input, level);
+            byte[] decompressed = Utils.ZstdUtils.decompress(compressed, input.length * 2);
+            assertArrayEquals(input, decompressed,
+                    "Round-trip must be lossless at compression level " + level);
+        }
+    }
+
+    @Test
+    void compress_highEntropData_doesNotThrow() {
+        // Random-ish bytes — Zstd may not shrink them, but must not fail
+        byte[] input = zstdSampleData(8192);
+        assertDoesNotThrow(() -> Utils.ZstdUtils.compress(input, 3));
+    }
+
+    @Test
+    void decompress_nullInput_returnsNull() {
+        assertNull(Utils.ZstdUtils.decompress(null, 1024 * 1024));
+    }
+
+    @Test
+    void decompress_emptyInput_returnsEmptyArray() {
+        byte[] result = Utils.ZstdUtils.decompress(new byte[0], 1024 * 1024);
+        assertNotNull(result);
+        assertEquals(0, result.length);
+    }
+
+    @Test
+    void decompress_validFrame_recoversOriginal() {
+        byte[] original = "Unit test payload".getBytes(StandardCharsets.UTF_8);
+        byte[] compressed = Utils.ZstdUtils.compress(original, 3);
+        byte[] recovered = Utils.ZstdUtils.decompress(compressed, 1024 * 1024);
+        assertArrayEquals(original, recovered);
+    }
+
+    @Test
+    void decompress_corruptedData_throwsRuntimeException() {
+        byte[] garbage = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> Utils.ZstdUtils.decompress(garbage, 1024 * 1024));
+        assertTrue(ex.getMessage().contains("Zstd decompression failed"),
+                "Exception message should describe the failure");
+    }
+
+    @Test
+    void decompress_exceedsMaxBytes_throwsRuntimeException() {
+        // Compress a 4 KB payload but only allow 10 bytes out
+        byte[] input = zstdSampleData(4096);
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> Utils.ZstdUtils.decompress(compressed, 10));
+        assertTrue(ex.getMessage().contains("Zstd decompression failed"),
+                "Should throw when decompressed size exceeds the limit");
+        assertTrue(ex.getCause().getMessage().contains("Decompression threshold exceeded"),
+                "Root cause should describe the threshold breach");
+    }
+
+    @Test
+    void decompress_exactlyAtLimit_succeeds() {
+        byte[] input = "abc".getBytes(StandardCharsets.UTF_8); // 3 bytes
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+        // Allow exactly 3 bytes — should succeed
+        byte[] result = Utils.ZstdUtils.decompress(compressed, 3);
+        assertArrayEquals(input, result);
+    }
+
+    @Test
+    void decompress_truncatedFrame_throwsRuntimeException() {
+        byte[] input = zstdSampleData(256);
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+        // Slice off the last third to simulate truncation
+        byte[] truncated = new byte[compressed.length * 2 / 3];
+        System.arraycopy(compressed, 0, truncated, 0, truncated.length);
+
+        assertThrows(RuntimeException.class,
+                () -> Utils.ZstdUtils.decompress(truncated, 1024 * 1024));
+    }
+
+    @Test
+    void isZstd_nullInput_returnsFalse() {
+        assertFalse(Utils.ZstdUtils.isZstd(null));
+    }
+
+    @Test
+    void isZstd_emptyArray_returnsFalse() {
+        assertFalse(Utils.ZstdUtils.isZstd(new byte[0]));
+    }
+
+    @Test
+    void isZstd_arrayTooShort_returnsFalse() {
+        // Only 3 bytes — not enough for the 4-byte magic
+        assertFalse(Utils.ZstdUtils.isZstd(new byte[]{(byte) 0x28, (byte) 0xB5, (byte) 0x2F}));
+    }
+
+    @Test
+    void isZstd_validMagicBytes_returnsTrue() {
+        // Pad with enough trailing bytes so INT_HANDLE.get(bytes, 0) does not throw
+        byte[] magic = new byte[]{(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00};
+        assertTrue(Utils.ZstdUtils.isZstd(magic));
+    }
+
+    @Test
+    void isZstd_validCompressedOutput_returnsTrue() {
+        byte[] compressed = Utils.ZstdUtils.compress("test".getBytes(StandardCharsets.UTF_8), 3);
+        assertTrue(Utils.ZstdUtils.isZstd(compressed),
+                "Output of compress() must be recognised as Zstd");
+    }
+
+    @Test
+    void isZstd_plainText_returnsFalse() {
+        byte[] plain = "Hello, world!".getBytes(StandardCharsets.UTF_8);
+        assertFalse(Utils.ZstdUtils.isZstd(plain));
+    }
+
+    @Test
+    void isZstd_wrongMagicOrder_returnsFalse() {
+        // Big-endian order of the same bytes — should NOT match
+        byte[] wrongEndian = {(byte) 0xFD, (byte) 0x2F, (byte) 0xB5, (byte) 0x28, 0x00};
+        assertFalse(Utils.ZstdUtils.isZstd(wrongEndian));
+    }
+
+    @Test
+    void isZstd_almostCorrectMagic_returnsFalse() {
+        // One byte off
+        byte[] close = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFE, 0x00};
+        assertFalse(Utils.ZstdUtils.isZstd(close));
+    }
+
+    @Test
+    void roundTrip_emptyStringBytes_succeeds() {
+        byte[] input = "".getBytes(StandardCharsets.UTF_8);
+        // compress() returns the original array for empty input
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+        assertArrayEquals(input, compressed); // empty → empty, no compression
+    }
+
+    @Test
+    void roundTrip_binaryData_succeeds() {
+        byte[] input = zstdSampleData(1024);
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+        byte[] decompressed = Utils.ZstdUtils.decompress(compressed, input.length * 2);
+        assertArrayEquals(input, decompressed);
+    }
+
+    @Test
+    void roundTrip_unicodePayload_succeeds() {
+        byte[] input = "apache storm - storm - apache".getBytes(StandardCharsets.UTF_8);
+        byte[] compressed = Utils.ZstdUtils.compress(input, 3);
+        byte[] decompressed = Utils.ZstdUtils.decompress(compressed, input.length * 4);
+        assertArrayEquals(input, decompressed);
+    }
+
+    private static byte[] zstdSampleData(int size) {
+        byte[] data = new byte[size];
+        for (int i = 0; i < size; i++) {
+            data[i] = (byte) (i % 256);
+        }
+        return data;
     }
 }

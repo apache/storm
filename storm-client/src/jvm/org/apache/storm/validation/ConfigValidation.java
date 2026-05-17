@@ -803,6 +803,26 @@ public class ConfigValidation {
         }
     }
 
+    public static class ZstdLevelValidator extends Validator {
+        private static final int MIN_LEVEL = 1;
+        private static final int MAX_LEVEL = 19;
+
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, Integer.class, o);
+            int level = (Integer) o;
+            if (level < MIN_LEVEL || level > MAX_LEVEL) {
+                throw new IllegalArgumentException(
+                    String.format("Field '%s' is invalid: %d. Zstd compression level must be between %d and %d.",
+                        name, level, MIN_LEVEL, MAX_LEVEL)
+                );
+            }
+        }
+    }
+
     public static class EventLoggerRegistryValidator extends Validator {
 
         @Override

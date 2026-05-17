@@ -1458,7 +1458,24 @@ public class Config extends HashMap<String, Object> {
      */
     @IsString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
-
+    /**
+     * GZIP max decompression bytes. Defaults to 104857600 (100MB).
+     */
+    @IsPositiveNumber(includeZero = false)
+    public static final String STORM_COMPRESSION_GZIP_MAX_DECOMPRESSED_BYTES = "storm.compression.gzip.max.decompressed.bytes";
+    /**
+     * Zstandard compression level.
+     * Supported range: 1 to 19. Default: 3.
+     * <b>Prohibited:</b> Levels 20-22 (Ultra mode) are not allowed as they
+     * require dramatically more working memory per call.
+     */
+    @CustomValidator(validatorClass = ConfigValidation.ZstdLevelValidator.class)
+    public static final String STORM_COMPRESSION_ZSTD_LEVEL = "storm.compression.zstd.level";
+    /**
+     * Zstandard max decompression bytes. Defaults to 104857600 (100MB).
+     */
+    @IsPositiveNumber(includeZero = false)
+    public static final String STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES = "storm.compression.zstd.max.decompressed.bytes";
     /**
      * Configure the topology metrics reporters to be used on workers.
      */
