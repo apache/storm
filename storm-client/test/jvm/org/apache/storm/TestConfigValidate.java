@@ -207,6 +207,34 @@ public class TestConfigValidate {
     }
 
     @Test
+    public void testTopologyStatsEwmaEnableIsBoolean() {
+        Map<String, Object> conf = new HashMap<>();
+        // optional configuration
+        ConfigValidation.validateFields(conf);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_ENABLE, true);
+        ConfigValidation.validateFields(conf);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_ENABLE, false);
+        ConfigValidation.validateFields(conf);
+    }
+
+    @Test
+    public void testTopologyStatsEwmaSmoothingFactorCustomValidator() {
+        Map<String, Object> conf = new HashMap<>();
+        // optional configuration
+        ConfigValidation.validateFields(conf);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, 0.1);
+        ConfigValidation.validateFields(conf);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, "0.1");
+        ConfigValidation.validateFields(conf);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, 0.9);
+        ConfigValidation.validateFields(conf);
+        for (Object notAllowedValue : new Object[]{0.0, -0.1, 1.9, "1.9"}) {
+            conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, notAllowedValue);
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+        }
+    }
+
+    @Test
     public void testWorkerChildoptsIsStringOrStringList() {
         Map<String, Object> conf = new HashMap<>();
         Collection<Object> passCases = new LinkedList<>();

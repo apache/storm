@@ -180,15 +180,22 @@ Similar to the tuple counting metrics storm also collects average latency metric
 
 ##### `__complete-latency`
 
-The complete latency is just for spouts.  It is the average amount of time it took for `ack` or `fail` to be called for a tuple after it was emitted.  If acking is disabled this metric is likely to be blank or 0 for all values, and should be ignored.
+The complete latency is just for spouts. It is the average amount of time it took for `ack` or `fail` to be called for a
+tuple after it was emitted. If acking is disabled this metric is likely to be blank or 0 for all values, and should be
+ignored.
 
 ##### `__execute-latency`
 
-This is just for bolts.  It is the average amount of time that the bolt spent in the call to the `execute` method.  The higher this gets, the lower the throughput of tuples per bolt instance.
+This is just for bolts. It is the average amount of time that the bolt spent in the call to the `execute` method. The
+higher this gets, the lower the throughput of tuples per bolt instance.
 
 ##### `__process-latency`
 
-This is also just for bolts.  It is the average amount of time between when `execute` was called to start processing a tuple, to when it was acked or failed by the bolt.  If your bolt is a very simple bolt and the processing is synchronous then `__process-latency` and `__execute-latency` should be very close to one another, with process latency being slightly smaller.  If you are doing a join or have asynchronous processing then it may take a while for a tuple to be acked so the process latency would be higher than the execute latency.
+This is also just for bolts. It is the average amount of time between when `execute` was called to start processing a
+tuple, to when it was acked or failed by the bolt. If your bolt is a very simple bolt and the processing is synchronous
+then `__process-latency` and `__execute-latency` should be very close to one another, with process latency being
+slightly smaller. If you are doing a join or have asynchronous processing then it may take a while for a tuple to be
+acked so the process latency would be higher than the execute latency.
 
 ##### `__skipped-max-spout-ms`
 
@@ -206,6 +213,35 @@ This metric indicates the overflow count last time BP status was sent, with a mi
 ##### `skipped-inactive-ms`
 
 This metric records how much time a spout was idle because the topology was deactivated.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled.
+
+#### Tuple Jitter Metrics
+To activate jitter-based metrics, `topology.stats.ewma.enable` must be set to `true`, which switches the system to a jitter estimation based on an Exponential Moving Average (EWMA).
+In this model, jitter is dynamically updated by weighting new latency samples against historical data using a smoothing factor (`topology.stats.ewma.smoothing.factor`).
+This parameter, which defaults to 0.0625 (equivalent to $1/16$ or a 4-bit right shift), determines the metric's reactivity: higher values make the jitter more sensitive to recent spikes, while lower values prioritize long-term stability.
+Operators should be aware that enabling this feature triples the gauge count for every component-stream pair per task; this significant increase in metric cardinality can impact TSDB storage and costs, so backend capacity should be verified before deployment.
+
+##### `__complete-jitter`
+
+This metric is specific to spouts. It measures the variation (jitter) in the total completion time (end-to-end latency)
+of tuples, calculated using the exponentially weighted moving average (EWMA) algorithm as defined in RFC 1889 §A.8 / RFC 3550 §A.8.
+While `__complete-latency` indicates the average amount of time it took for a tuple to be fully processed by the
+topology (from emission to the final ack), the jitter metric quantifies the consistency of that process. If acking is
+disabled, this metric is likely to be blank or 0 and should be ignored.
+
+##### `__execute-jitter`
+
+This metric is specific to bolts. It measures the variation (jitter) in the time spent within the execute method,
+calculated using the exponentially weighted moving average (EWMA) algorithm as defined in RFC 1889 §A.8 / RFC 3550 §A.8.
+While `__execute-latency` provides the average time spent in the execute call, the jitter metric quantifies the
+predictability of that execution time. It is a critical indicator of computational "smoothness".
+
+##### `__process-jitter`
+
+This metric is specific to bolts. It measures the variation (jitter) in the process latency, calculated using the
+exponentially weighted moving average (EWMA) algorithm as defined in RFC 1889 §A.8 / RFC 3550 §A.8.
+While `__process-latency` provides the average time a tuple spends being processed, the jitter metric quantifies the
+stability of that processing time. It helps identify "noisy" execution environments where processing times fluctuate
+significantly, even if the average remains within acceptable limits.
 
 #### Error Reporting Metrics
 
