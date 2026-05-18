@@ -132,7 +132,7 @@ List of third-party dependencies grouped by their license type.
         * Java Concurrency Tools Core Library (org.jctools:jctools-core:4.0.6 - https://github.com/JCTools)
         * javax.inject (javax.inject:javax.inject:1 - http://code.google.com/p/atinject/)
         * JBoss Logging 3 (org.jboss.logging:jboss-logging:3.6.1.Final - http://www.jboss.org)
-        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.17 - http://www.slf4j.org)
+        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.18 - http://www.slf4j.org)
         * jdependency (org.vafer:jdependency:2.15 - https://github.com/tcurdt/jdependency)
         * JHeaps (org.jheaps:jheaps:0.14 - http://www.jheaps.org)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.6.0 - https://urielch.github.io/)
@@ -145,7 +145,7 @@ List of third-party dependencies grouped by their license type.
         * Kerby-kerb Util (org.apache.kerby:kerb-util:2.0.3 - https://directory.apache.org/kerby/kerby-kerb/kerb-util)
         * Kerby PKIX Project (org.apache.kerby:kerby-pkix:2.0.3 - https://directory.apache.org/kerby/kerby-pkix)
         * Kerby Util (org.apache.kerby:kerby-util:2.0.3 - https://directory.apache.org/kerby/kerby-common/kerby-util)
-        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:2.0.17 - http://www.slf4j.org)
+        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:2.0.18 - http://www.slf4j.org)
         * LZ4 Java Compression (at.yawk.lz4:lz4-java:1.10.1 - https://github.com/yawkat/lz4-java)
         * Maven Artifact (org.apache.maven:maven-artifact:3.8.1 - https://maven.apache.org/ref/3.8.1/maven-artifact/)
         * Maven Artifact (org.apache.maven:maven-artifact:3.9.16 - https://maven.apache.org/ref/3.9.16/maven-artifact/)
@@ -362,9 +362,9 @@ List of third-party dependencies grouped by their license type.
     Eclipse Distribution License, Version 1.0
 
         * istack common utility code runtime (com.sun.istack:istack-commons-runtime:3.0.12 - https://projects.eclipse.org/projects/ee4j/istack-commons/istack-commons-runtime)
+        * Jakarta Activation (com.sun.activation:jakarta.activation:2.0.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation)
+        * Jakarta Activation API jar (jakarta.activation:jakarta.activation-api:2.0.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation-api)
         * Jakarta XML Binding API (jakarta.xml.bind:jakarta.xml.bind-api:4.0.5 - https://github.com/jakartaee/jaxb-api/jakarta.xml.bind-api)
-        * JavaBeans Activation Framework (com.sun.activation:jakarta.activation:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation)
-        * JavaBeans Activation Framework API jar (jakarta.activation:jakarta.activation-api:1.2.1 - https://github.com/eclipse-ee4j/jaf/jakarta.activation-api)
         * JAXB Runtime (org.glassfish.jaxb:jaxb-runtime:2.3.9 - https://eclipse-ee4j.github.io/jaxb-ri/)
         * TXW2 Runtime (org.glassfish.jaxb:txw2:2.3.9 - https://eclipse-ee4j.github.io/jaxb-ri/)
 
@@ -425,9 +425,9 @@ List of third-party dependencies grouped by their license type.
         * JCodings (org.jruby.jcodings:jcodings:1.0.58 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Jedis (redis.clients:jedis:7.5.0 - https://github.com/redis/jedis)
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
-        * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.17 - http://www.slf4j.org)
+        * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.18 - http://www.slf4j.org)
         * redis-authx-core (redis.clients.authentication:redis-authx-core:0.1.1-beta2 - https://github.com/redis/redis-authx-core)
-        * SLF4J API Module (org.slf4j:slf4j-api:2.0.17 - http://www.slf4j.org)
+        * SLF4J API Module (org.slf4j:slf4j-api:2.0.18 - http://www.slf4j.org)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
 
     Public Domain
