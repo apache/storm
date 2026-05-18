@@ -712,7 +712,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Jakarta Dependency Injection (jakarta.inject:jakarta.inject-api:2.0.1 - https://github.com/eclipse-ee4j/injection-api)
         * javax.inject (javax.inject:javax.inject:1 - http://code.google.com/p/atinject/)
         * JBoss Logging 3 (org.jboss.logging:jboss-logging:3.6.1.Final - http://www.jboss.org)
-        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.17 - http://www.slf4j.org)
+        * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.18 - http://www.slf4j.org)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.6.0 - https://urielch.github.io/)
         * JSpecify annotations (org.jspecify:jspecify:1.0.0 - http://jspecify.org/)
         * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.38 - https://metrics.dropwizard.io/metrics-jvm)
@@ -723,7 +723,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Kerby-kerb Util (org.apache.kerby:kerb-util:2.0.3 - https://directory.apache.org/kerby/kerby-kerb/kerb-util)
         * Kerby PKIX Project (org.apache.kerby:kerby-pkix:2.0.3 - https://directory.apache.org/kerby/kerby-pkix)
         * Kerby Util (org.apache.kerby:kerby-util:2.0.3 - https://directory.apache.org/kerby/kerby-common/kerby-util)
-        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:2.0.17 - http://www.slf4j.org)
+        * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:2.0.18 - http://www.slf4j.org)
         * LZ4 Java Compression (at.yawk.lz4:lz4-java:1.10.1 - https://github.com/yawkat/lz4-java)
         * Maven Artifact (org.apache.maven:maven-artifact:3.9.16 - https://maven.apache.org/ref/3.9.16/maven-artifact/)
         * Maven Artifact Resolver API (org.apache.maven.resolver:maven-resolver-api:1.9.27 - https://maven.apache.org/resolver/maven-resolver-api/)
@@ -863,7 +863,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     BSD 3-Clause License
 
-        * asm (org.ow2.asm:asm:9.9.1 - http://asm.ow2.io/)
+        * asm (org.ow2.asm:asm:9.10 - http://asm.ow2.io/)
         * dnsjava (dnsjava:dnsjava:3.6.1 - https://github.com/dnsjava/dnsjava)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
 
@@ -935,8 +935,8 @@ The license texts of these dependencies can be found in the licenses directory.
         * argparse4j (net.sourceforge.argparse4j:argparse4j:0.9.0 - https://argparse4j.github.io)
         * JCodings (org.jruby.jcodings:jcodings:1.0.58 - http://nexus.sonatype.org/oss-repository-hosting.html/jcodings)
         * Joni (org.jruby.joni:joni:2.2.1 - http://nexus.sonatype.org/oss-repository-hosting.html/joni)
-        * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.17 - http://www.slf4j.org)
-        * SLF4J API Module (org.slf4j:slf4j-api:2.0.17 - http://www.slf4j.org)
+        * JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:2.0.18 - http://www.slf4j.org)
+        * SLF4J API Module (org.slf4j:slf4j-api:2.0.18 - http://www.slf4j.org)
         * apfloat (org.apfloat:apfloat:1.14.0 - http://www.apfloat.org)
         * System Out and Err redirected to SLF4J (uk.org.lidalia:sysout-over-slf4j:1.0.2 - http://projects.lidalia.org.uk/sysout-over-slf4j/)
 
