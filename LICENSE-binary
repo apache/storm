@@ -779,7 +779,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.8 - https://github.com/xerial/snappy-java)
         * Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.5.3 - https://github.com/dropwizard/logback-throttling-appender/)
         * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.1 - https://github.com/FasterXML/woodstox)
-        * Apache Thrift (org.apache.thrift:libthrift:0.22.0 - https://thrift.apache.org/)
+        * Apache Thrift (org.apache.thrift:libthrift:0.23.0 - http://thrift.apache.org)
         * Java Concurrency Tools Core Library (org.jctools:jctools-core:4.0.6 - https://github.com/JCTools)
         * JHeaps (org.jheaps:jheaps:0.14 - http://www.jheaps.org)
         * Netty/All-in-One (io.netty:netty-all:4.2.12.Final - https://netty.io/netty-all/)
