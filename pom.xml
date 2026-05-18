@@ -81,7 +81,7 @@
         <license.outputDirectory>${project.basedir}</license.outputDirectory>
 
         <!-- dependency versions -->
-        <clojure.version>1.12.4</clojure.version>
+        <clojure.version>1.12.5</clojure.version>
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-io.version>2.22.0</commons-io.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
