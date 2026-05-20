@@ -22,7 +22,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  # Compile once on the minimum supported JDK and share artifacts with test jobs
+  # Compile once on the minimum supported JDK (21) and share artifacts with test jobs
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -38,11 +38,11 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.10'
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
       - name: Ensure a clean state without storm artifacts
         run: rm -rf ~/.m2/repository/org/apache/storm
       - name: Build project (compile + install, skip tests)
@@ -66,7 +66,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        java: [ 17, 21, 25 ]
+        java: [ 21, 25 ]
         module: [ Client, Server, Core, External, Integration-Test ]
         experimental: [false]
       fail-fast: false

@@ -19,7 +19,7 @@ Let's dive into Storm's API for defining custom serializations. There are two st
 
 #### Creating a serializer
 
-Custom serializers implement the [ISerialization](javadocs/backtype/storm/serialization/ISerialization.html) interface. Implementations specify how to serialize and deserialize types into a binary format.
+Custom serializers implement the [ISerialization](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/backtype/storm/serialization/ISerialization.html) interface. Implementations specify how to serialize and deserialize types into a binary format.
 
 The interface looks like this:
 
@@ -45,6 +45,6 @@ Once you create a serializer, you need to tell Storm it exists. This is done thr
 
 Serializer registrations are done through the Config.TOPOLOGY_SERIALIZATIONS config and is simply a list of serialization class names.
 
-Storm provides helpers for registering serializers in a topology config. The [Config](javadocs/backtype/storm/Config.html) class has a method called `addSerialization` that takes in a serializer class to add to the config.
+Storm provides helpers for registering serializers in a topology config. The [Config](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/backtype/storm/Config.html) class has a method called `addSerialization` that takes in a serializer class to add to the config.
 
 There's an advanced config called Config.TOPOLOGY_SKIP_MISSING_SERIALIZATIONS. If you set this to true, Storm will ignore any serializations that are registered but do not have their code available on the classpath. Otherwise, Storm will throw errors when it can't find a serialization. This is useful if you run many topologies on a cluster that each have different serializations, but you want to declare all the serializations across all topologies in the `storm.yaml` files.

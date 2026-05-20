@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>37</version>
+        <version>38</version>
     </parent>
 
     <groupId>org.apache.storm</groupId>
@@ -68,7 +68,7 @@
     </issueManagement>
 
     <properties>
-        <javaVersion>17</javaVersion>
+        <javaVersion>21</javaVersion>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
 
@@ -91,7 +91,7 @@
         <commons-text.version>1.15.0</commons-text.version>
         <commons-cli.version>1.11.0</commons-cli.version>
         <curator.version>5.9.0</curator.version>
-        <jetty.version>12.1.8</jetty.version>
+        <jetty.version>12.1.9</jetty.version>
         <snakeyaml.version>2.6</snakeyaml.version>
         <httpclient.version>4.5.14</httpclient.version>
         <httpclient.core.version>4.4.16</httpclient.core.version>
@@ -100,10 +100,10 @@
         <guava.version>33.6.0-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.77.Final</netty-tcnative.version>
-        <netty.version>4.2.12.Final</netty.version>
+        <netty.version>4.2.13.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j.version>2.25.4</log4j.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <log4j.version>2.26.0</log4j.version>
+        <slf4j.version>2.0.18</slf4j.version>
         <metrics.version>4.2.38</metrics.version>
         <mockito.version>5.23.0</mockito.version>
         <zookeeper.version>3.9.5</zookeeper.version>
@@ -115,7 +115,7 @@
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.5</objensis.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
-        <thrift.version>0.22.0</thrift.version>
+        <thrift.version>0.23.0</thrift.version>
         <junit.jupiter.version>6.0.3</junit.jupiter.version>
         <surefire.version>3.5.5</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
@@ -134,11 +134,11 @@
         <skipITs>true</skipITs>
 
         <maven-resolver.version>1.9.27</maven-resolver.version>
-        <maven.version>3.9.15</maven.version>
+        <maven.version>3.9.16</maven.version>
         <jersey.version>3.1.11</jersey.version>
         <dropwizard.version>5.0.1</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
-        <caffeine.version>3.2.3</caffeine.version>
+        <caffeine.version>3.2.4</caffeine.version>
         <jakarta-jaxb-version>4.0.5</jakarta-jaxb-version>
         <jakarta-activation-version>1.2.1</jakarta-activation-version>
         <jakarta-jaxws-version>3.1.0</jakarta-jaxws-version>
@@ -150,7 +150,7 @@
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
-        <asm.version>9.9.1</asm.version>
+        <asm.version>9.10</asm.version>
         <error_prone_annotations.version>2.49.0</error_prone_annotations.version>
         <bouncycastle.version>1.84</bouncycastle.version>
     </properties>
@@ -977,7 +977,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.14.0</version>
+                <version>2.15.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

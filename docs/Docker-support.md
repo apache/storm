@@ -122,7 +122,7 @@ and you don't need to set them in the worker-launcher.cfg unless you need to cha
 You can profile your worker processes by clicking on the profiling buttons (jstack, heap, etc) on storm UI.
 If you have sudo permission, you can also run `sudo nsenter --target <container-pid> --pid --mount --setuid <uid> --setgid <gid>` to enter the container. 
 Then you can run `jstack`, `jmap` etc inside the container. `<container-pid>` is the pid of the container process on the host.
-`<container-pid>` can be obtained by running `sudo docker inspect --format '{{.State.Pid}}' <container-id>` command. 
+`<container-pid>` can be obtained by running `sudo docker inspect --format '{% raw %}{{.State.Pid}}{% endraw %}' <container-id>` command. 
 `<uid>` and `<gid>` are the user id and group id of the container owner, respectively.
 
 ## Seccomp security profiles

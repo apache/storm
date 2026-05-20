@@ -107,7 +107,7 @@ To register event logger to your topology, add to your topology's configuration 
 conf.registerEventLogger(org.apache.storm.metric.FileBasedEventLogger.class);
 ```
 
-You can refer [Config#registerEventLogger](javadocs/org/apache/storm/Config.html#registerEventLogger-java.lang.Class-) and overloaded methods from javadoc.
+You can refer [Config#registerEventLogger](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/org/apache/storm/Config.html#registerEventLogger-java.lang.Class-) and overloaded methods from javadoc.
 
 Otherwise edit the storm.yaml config file:
 
@@ -119,7 +119,7 @@ topology.event.logger.register:
       endpoint: "event-logger.mycompany.org"
 ```
 
-When you implement your own event logger, `arguments` is passed to Map<String, Object> when [IEventLogger#prepare](javadocs/org/apache/storm/metric/IEventLogger.html#prepare-java.util.Map-java.lang.Map-org.apache.storm.task.TopologyContext-) is called.
+When you implement your own event logger, `arguments` is passed to Map<String, Object> when [IEventLogger#prepare](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/org/apache/storm/metric/IEventLogger.html#prepare-java.util.Map-java.lang.Map-org.apache.storm.task.TopologyContext-) is called.
 
 Please keep in mind that EventLoggerBolt is just a kind of Bolt, so whole throughput of the topology will go down when registered event loggers cannot keep up handling incoming events, so you may want to take care of the Bolt like normal Bolt.
 One of idea to avoid this is making your implementation of IEventLogger as `non-blocking` fashion.

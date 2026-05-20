@@ -34,7 +34,7 @@ To register metrics consumer to your topology, add to your topology's configurat
 conf.registerMetricsConsumer(org.apache.storm.metric.LoggingMetricsConsumer.class, 1);
 ```
 
-You can refer [Config#registerMetricsConsumer](javadocs/org/apache/storm/Config.html#registerMetricsConsumer-java.lang.Class-) and overloaded methods from javadoc.
+You can refer [Config#registerMetricsConsumer](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/org/apache/storm/Config.html#registerMetricsConsumer-java.lang.Class-) and overloaded methods from javadoc.
 
 Otherwise edit the storm.yaml config file:
 
@@ -56,7 +56,7 @@ Storm provides some built-in metrics consumers for you to try out to see which m
 
 Also, Storm exposes the interface [`IMetricsConsumer`]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/metric/api/IMetricsConsumer.java) for implementing Metrics Consumer so you can create custom metrics consumers and attach to their topologies, or use other great implementation of Metrics Consumers provided by Storm community. Some of examples are [versign/storm-graphite](https://github.com/verisign/storm-graphite), and [storm-metrics-statsd](https://github.com/endgameinc/storm-metrics-statsd).
 
-When you implement your own metrics consumer, `argument` is passed to Object when [IMetricsConsumer#prepare](javadocs/org/apache/storm/metric/api/IMetricsConsumer.html#prepare-java.util.Map-java.lang.Object-org.apache.storm.task.TopologyContext-org.apache.storm.task.IErrorReporter-) is called, so you need to infer the Java type of configured value on yaml, and do explicit type casting.
+When you implement your own metrics consumer, `argument` is passed to Object when [IMetricsConsumer#prepare](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/org/apache/storm/metric/api/IMetricsConsumer.html#prepare-java.util.Map-java.lang.Object-org.apache.storm.task.TopologyContext-org.apache.storm.task.IErrorReporter-) is called, so you need to infer the Java type of configured value on yaml, and do explicit type casting.
 
 Please keep in mind that MetricsConsumerBolt is just a kind of Bolt, so whole throughput of the topology will go down when registered metrics consumers cannot keep up handling incoming metrics, so you may want to take care of those Bolts like normal Bolts. One of idea to avoid this is making your implementation of Metrics Consumer as `non-blocking` fashion.
 
@@ -84,7 +84,7 @@ public void prepare(Map conf, TopologyContext context, OutputCollector collector
 }
 ```
 
-The meaning of first and second parameters are straightforward, metric name and instance of IMetric. Third parameter of [TopologyContext#registerMetric](javadocs/org/apache/storm/task/TopologyContext.html#registerMetric-java.lang.String-T-int-) is the period (seconds) to publish and reset the metric.
+The meaning of first and second parameters are straightforward, metric name and instance of IMetric. Third parameter of [TopologyContext#registerMetric](https://javadoc.io/doc/org.apache.storm/storm-client/3.0.0/org/apache/storm/task/TopologyContext.html#registerMetric-java.lang.String-T-int-) is the period (seconds) to publish and reset the metric.
 
 Last, let's increment the value when Bolt.execute() is executed.
 
