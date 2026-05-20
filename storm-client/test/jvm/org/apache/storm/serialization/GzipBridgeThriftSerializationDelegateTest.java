@@ -12,6 +12,7 @@
 
 package org.apache.storm.serialization;
 
+import java.util.Collections;
 import org.apache.storm.generated.GlobalStreamId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ public class GzipBridgeThriftSerializationDelegateTest {
     @BeforeEach
     public void setUp() throws Exception {
         testDelegate = new GzipBridgeThriftSerializationDelegate();
+        testDelegate.prepare(Collections.emptyMap());
     }
 
     @Test
