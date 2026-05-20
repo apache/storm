@@ -45,6 +45,8 @@ import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -401,6 +403,7 @@ public class AuthTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void simpleAclUserAuthTest() {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
         clusterConf.put(Config.NIMBUS_ADMINS, Collections.singletonList("admin"));
@@ -489,6 +492,7 @@ public class AuthTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void simpleAclNimbusUsersAuthTest() {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
         clusterConf.put(Config.NIMBUS_ADMINS, Collections.singletonList("admin"));
@@ -546,6 +550,7 @@ public class AuthTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void simpleAclSameUserAuthTest() {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
         clusterConf.put(Config.NIMBUS_ADMINS, Collections.singletonList("admin"));
@@ -575,6 +580,7 @@ public class AuthTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void shellBaseGroupsMappingTest() throws Exception {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
         ShellBasedGroupsMapping groups = new ShellBasedGroupsMapping();
@@ -595,6 +601,7 @@ public class AuthTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void impersonationAuthorizerTest() throws Exception {
         final String impersonatingUser = "admin";
         final String userBeingImpersonated = System.getProperty("user.name");
