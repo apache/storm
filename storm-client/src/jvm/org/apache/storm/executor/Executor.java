@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -70,6 +69,7 @@ import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.metrics2.PerReporterGauge;
 import org.apache.storm.metrics2.RateCounter;
+import org.apache.storm.metrics2.TaskMetrics;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.net.minidev.json.JSONValue;
@@ -137,7 +137,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final String upstreamFeedbackStreamId;
     protected final boolean upstreamFeedbackEnabled;
     protected final Map<Integer, Map<Integer, Map<String, IMetricsConsumer.DataPoint>>> childEwmaStats;
-    protected final Map<Integer, Map<String, Double>> avgCache = new ConcurrentHashMap<>();
+    protected final Map<Integer, Map<String, Double>> avgCache;
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
@@ -198,7 +198,13 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
         enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
         v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
-        this.childEwmaStats = new ConcurrentHashMap<>();
+        if (this.upstreamFeedbackEnabled) {
+            this.childEwmaStats = new ConcurrentHashMap<>();
+            this.avgCache = new ConcurrentHashMap<>();
+        } else {
+            this.childEwmaStats = Collections.emptyMap();
+            this.avgCache = Collections.emptyMap();
+        }
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -383,15 +389,14 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      * followed by a list of filtered DataPoints.</p>
      *
      * @param taskId  The ID of the task for which metrics are being collected.
-     * @param metrics A set of metric names (e.g., EWMA stats) to include in the feedback.
      * @return A {@link Values} object containing [TaskInfo, List<DataPoint>],
      *         compatible with the metrics stream schema.
      */
-    public Values buildUpstreamFeedbackTuple(int taskId, Set<String> metrics) {
+    public Values buildUpstreamFeedbackTuple(int taskId) {
         IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
             hostname, workerTopologyContext.getThisWorkerPort(),
             componentId, taskId, Time.currentTimeSecs(), -1);
-        return new Values(taskInfo, buildEwmaDataPoints(taskId, metrics));
+        return new Values(taskInfo, EwmaFeedbackRecord.fromWorkerState(this.workerData, taskId));
     }
 
     /**
@@ -533,31 +538,25 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         }
     }
 
-    private List<IMetricsConsumer.DataPoint> buildEwmaDataPoints(int taskId, Set<String> metrics) {
-        if (metrics == null || metrics.isEmpty()) {
-            return Collections.emptyList();
-        }
+    private record EwmaFeedbackRecord (double processJitter, double completeJitter, double executeJitter) {
+        private static final double VOID = -1;
 
-        List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>(metrics.size());
-        Map<String, Gauge> allGauges = workerData.getMetricRegistry().getTaskGauges(taskId);
-
-        if (allGauges == null || allGauges.isEmpty()) {
-            return dataPoints;
-        }
-
-        for (String metricName : metrics) {
-            Gauge gauge = allGauges.get(metricName);
-
-            if (gauge != null) {
-                Object v = (gauge instanceof PerReporterGauge)
-                    ? ((PerReporterGauge) gauge).getValueForReporter(this)
-                    : gauge.getValue();
+        private static double fromGauge (Gauge<?> gauge) {
+            if (gauge != null && !(gauge instanceof PerReporterGauge)) {
+                Object v = gauge.getValue();
                 if (v instanceof Number) {
-                    dataPoints.add(new IMetricsConsumer.DataPoint(metricName, v));
+                    return ((Number) v).doubleValue();
                 }
             }
+            return VOID;
         }
-        return dataPoints;
+
+        public static EwmaFeedbackRecord fromWorkerState(WorkerState workerData, int taskId) {
+            Map<String, Gauge> allGauges = workerData.getMetricRegistry().getTaskGauges(taskId);
+            return new EwmaFeedbackRecord(fromGauge(allGauges.get(TaskMetrics.METRIC_NAME_PROCESS_JITTER)),
+                    fromGauge(allGauges.get(TaskMetrics.METRIC_NAME_COMPLETE_JITTER)),
+                    fromGauge(allGauges.get(TaskMetrics.METRIC_NAME_EXECUTE_JITTER)));
+        }
     }
 
     // updates v1 metric dataPoints with v2 metric API data

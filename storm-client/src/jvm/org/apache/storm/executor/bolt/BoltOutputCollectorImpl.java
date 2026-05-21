@@ -12,10 +12,7 @@
 
 package org.apache.storm.executor.bolt;
 
-import static org.apache.storm.metrics2.TaskMetrics.EWMA_METRICS_SET;
-
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +112,6 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             MessageId msgId;
             if (ackingEnabled && anchors != null) {
                 final Map<Long, Long> anchorsToIds = new HashMap<>();
-                final boolean sendUpstreamFeedback = isUpstreamFeedback && upstreamFeedbackRate.get();
                 for (Tuple a : anchors) {  // perf critical path. would be nice to avoid iterator allocation here and below
                     Set<Long> rootIds = a.getMessageId().getAnchorsToIds().keySet();
                     if (rootIds.size() > 0) {
@@ -124,11 +120,6 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
                         for (Long rootId : rootIds) {
                             putXor(anchorsToIds, rootId, edgeId);
                         }
-                    }
-                    if (sendUpstreamFeedback) {
-                        int parentTask = a.getSourceTask();
-                        task.sendUnanchoredFeedback(upstreamFeedbackStreamId, executor.buildUpstreamFeedbackTuple(taskId, EWMA_METRICS_SET),
-                            parentTask, xsfer, executor.getPendingEmits());
                     }
                 }
                 msgId = MessageId.makeId(anchorsToIds);
@@ -141,6 +132,14 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         }
         if (isEventLoggers) {
             task.sendToEventLogger(executor, values, executor.getComponentId(), null, random, executor.getPendingEmits());
+        }
+        // send upstream feedback if enabled
+        if (anchors != null && isUpstreamFeedback && upstreamFeedbackRate.get()) {
+            for (Tuple a : anchors) {
+                int parentTask = a.getSourceTask();
+                task.sendUnanchoredFeedback(upstreamFeedbackStreamId, executor.buildUpstreamFeedbackTuple(taskId),
+                        parentTask, xsfer, executor.getPendingEmits());
+            }
         }
         return outTasks;
     }
