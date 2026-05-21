@@ -24,7 +24,7 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// Todo: Track file offsets instead of line number
+// TODO: Track file offsets instead of line number
 public class TextFileReader extends AbstractFileReader {
     public static final String[] defaultFields = { "line" };
     public static final String CHARSET = "hdfsspout.reader.charset";

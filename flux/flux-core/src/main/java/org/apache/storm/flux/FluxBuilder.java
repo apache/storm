@@ -246,7 +246,7 @@ public class FluxBuilder {
                     declarer.shuffleGrouping(stream.getFrom(), streamId);
                     break;
                 case FIELDS:
-                    //TODO check for null grouping args
+                    //TODO: check for null grouping args
                     declarer.fieldsGrouping(stream.getFrom(), streamId, new Fields(grouping.getArgs()));
                     break;
                 case ALL:
@@ -665,7 +665,7 @@ public class FluxBuilder {
 
             // List to array conversion
             if (paramType.isArray() && List.class.isAssignableFrom(objectType)) {
-                // TODO more collection content type checking
+                // TODO: more collection content type checking
                 LOG.debug("Conversion appears possible...");
                 List list = (List) obj;
                 LOG.debug("Array Type: {}, List type: {}", paramType.getComponentType(), list.get(0).getClass());
@@ -723,7 +723,7 @@ public class FluxBuilder {
             } else if (paramType.isEnum() && objectType.equals(String.class)) {
                 LOG.debug("Yes, will convert a String to enum");
             } else if (paramType.isArray() && List.class.isAssignableFrom(objectType)) {
-                // TODO more collection content type checking
+                // TODO: more collection content type checking
                 LOG.debug("Assignment is possible if we convert a List to an array.");
                 LOG.debug("Array Type: {}, List type: {}", paramType.getComponentType(), ((List) obj).get(0).getClass());
             } else {

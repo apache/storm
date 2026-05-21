@@ -512,7 +512,6 @@
             <property name="format" value="^[ \t]*(?!TODO:)(?i:TODO)\b:?"/>
             <message key="todo.match"
                      value="''TODO:'' must be written in all caps and followed by a colon."/>
-            <property name="severity" value="warning"/>
         </module>
         <module name="EmptyCatchBlock">
             <property name="commentFormat" value="\w+"/>
