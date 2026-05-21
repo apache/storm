@@ -1076,7 +1076,7 @@
                             <artifactId>checkstyle</artifactId>
                             <!-- If you change this, you should also update the storm_checkstyle.xml file to be
                             based on the google_checks.xml from the version of checkstyle you are choosing. -->
-                            <version>8.2</version>
+                            <version>13.4.2</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1085,12 +1085,13 @@
                             <phase>validate</phase>
                             <configuration>
                                 <configLocation>storm/storm_checkstyle.xml</configLocation>
+                                <propertyExpansion>org.checkstyle.google.severity=error</propertyExpansion>
                                 <encoding>UTF-8</encoding>
                                 <failOnViolation>true</failOnViolation>
                                 <logViolationsToConsole>true</logViolationsToConsole>
                                 <consoleOutput>true</consoleOutput>
                                 <outputFile>target/checkstyle-violation.xml</outputFile>
-                                <violationSeverity>warning</violationSeverity>
+                                <violationSeverity>error</violationSeverity>
                             </configuration>
                             <goals>
                                 <goal>check</goal>
