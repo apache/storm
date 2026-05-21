@@ -1079,6 +1079,7 @@
                             <phase>validate</phase>
                             <configuration>
                                 <configLocation>storm/storm_checkstyle.xml</configLocation>
+                                <propertyExpansion>org.checkstyle.google.severity=error</propertyExpansion>
                                 <encoding>UTF-8</encoding>
                                 <failOnViolation>true</failOnViolation>
                                 <logViolationsToConsole>true</logViolationsToConsole>
