@@ -297,7 +297,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             count = Math.min(count, measurements.size() - start);
 
             Measurements ret = new Measurements();
-            for (int i = start; i < start + count; i ++) {
+            for (int i = start; i < start + count; i++) {
                 ret.add(measurements.get(i));
             }
             return ret;

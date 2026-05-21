@@ -70,7 +70,7 @@ import org.slf4j.LoggerFactory;
  * destination is currently unavailable.
  */
 public class Client extends ConnectionWithStatus implements ISaslClient {
-    private final long pendingMessagesFlushTimeoutMs ;
+    private final long pendingMessagesFlushTimeoutMs;
     private final long pendingMessagesFlushIntervalMs;
     private final double pendingMessagesFlushFactor = 0.0016;
     /**

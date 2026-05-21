@@ -393,7 +393,6 @@
                       value="COMMA, SEMI, POST_INC, POST_DEC, DOT,
                     LABELED_STAT, METHOD_REF, ELLIPSIS"/>
             <property name="allowLineBreaks" value="true"/>
-            <property name="severity" value="warning"/>
         </module>
         <module name="SuppressionXpathSingleFilter">
             <property name="checks" value="NoWhitespaceBefore"/>

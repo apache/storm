@@ -435,14 +435,14 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         RasNode[]    nodeForExec        = new RasNode[maxExecCnt];
         WorkerSlot[] workerSlotForExec  = new WorkerSlot[maxExecCnt];
 
-        for (int i = 0; i < maxExecCnt ; i++) {
+        for (int i = 0; i < maxExecCnt; i++) {
             progressIdxForExec[i] = -1;
         }
         LOG.debug("scheduleExecutorsOnNodes: will assign {} executors for topo {}, sortNodesForEachExecutor={}",
                 maxExecCnt, topoName, sortNodesForEachExecutor);
 
         OUTERMOST_LOOP:
-        for (int loopCnt = 0 ; true ; loopCnt++) {
+        for (int loopCnt = 0; true; loopCnt++) {
             LOG.debug("scheduleExecutorsOnNodes: loopCnt={}, execIndex={}, topo={}", loopCnt, searcherState.getExecIndex(), topoName);
             if (searcherState.areSearchLimitsExceeded()) {
                 LOG.warn("Limits exceeded, backtrackCnt={}, loopCnt={}, topo={}", searcherState.getNumBacktrack(), loopCnt, topoName);

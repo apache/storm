@@ -2158,7 +2158,7 @@ public class Utils {
         Map<String, Set<String>> edgesOut = getStormTopologyForwardGraph(topology);
         Set<String> allComponentIds = new HashSet<>();
         edgesOut.forEach((k, v) -> {
-            allComponentIds.add(k) ;
+            allComponentIds.add(k);
             allComponentIds.addAll(v);
         });
 

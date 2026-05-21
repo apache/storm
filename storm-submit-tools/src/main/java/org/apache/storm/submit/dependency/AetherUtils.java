@@ -46,7 +46,7 @@ public class AetherUtils {
     public static Dependency parseDependency(String dependency) {
         List<String> dependencyAndExclusions = Arrays.asList(dependency.split("\\^"));
         Collection<Exclusion> exclusions = new ArrayList<>();
-        for (int idx = 1 ; idx < dependencyAndExclusions.size() ; idx++) {
+        for (int idx = 1; idx < dependencyAndExclusions.size(); idx++) {
             exclusions.add(AetherUtils.createExclusion(dependencyAndExclusions.get(idx)));
         }
 
