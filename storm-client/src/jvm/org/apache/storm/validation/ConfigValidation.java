@@ -953,7 +953,7 @@ public class ConfigValidation {
                         "Field " + name + " must be an Iterable containing only Map of Maps");
             }
             Map<String, Object> map1 = (Map<String, Object>) o;
-            for (Map.Entry<String, Object> entry1: map1.entrySet()) {
+            for (Map.Entry<String, Object> entry1 : map1.entrySet()) {
                 String comp1 = entry1.getKey();
                 Object o2 = entry1.getValue();
                 if (!(o2 instanceof Map)) {
@@ -962,7 +962,7 @@ public class ConfigValidation {
                     throw new IllegalArgumentException(err);
                 }
                 Map<String, Object> map2 = (Map<String, Object>) o2;
-                for (Map.Entry<String, Object> entry2: map2.entrySet()) {
+                for (Map.Entry<String, Object> entry2 : map2.entrySet()) {
                     String constraintType = entry2.getKey();
                     Object o3 = entry2.getValue();
                     switch (constraintType) {

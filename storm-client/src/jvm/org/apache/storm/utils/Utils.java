@@ -1448,7 +1448,7 @@ public class Utils {
         final StringBuilder dump = new StringBuilder();
         final java.lang.management.ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
         final java.lang.management.ThreadInfo[] threadInfos = threadMxBean.getThreadInfo(threadMxBean.getAllThreadIds(), 100);
-        for (Entry<Thread, StackTraceElement[]> entry: Thread.getAllStackTraces().entrySet()) {
+        for (Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
             Thread t = entry.getKey();
             ThreadInfo threadInfo = threadMxBean.getThreadInfo(t.getId());
             if (threadInfo == null) {
@@ -2113,7 +2113,7 @@ public class Utils {
             return;
         }
         Set<String> children = new HashSet<>(edgesOut.get(compId1));
-        for (String compId2: children) {
+        for (String compId2 : children) {
             if (seen.contains(compId2)) {
                 // cycle/diamond detected
                 List<String> possibleCycle = new ArrayList<>();

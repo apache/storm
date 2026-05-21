@@ -515,8 +515,8 @@ public class Cluster implements ISchedulingState {
     @Override
     public NormalizedResourceOffer getAvailableResources(SupervisorDetails sd) {
         NormalizedResourceOffer ret = new NormalizedResourceOffer(sd.getTotalResources());
-        for (SchedulerAssignment assignment: assignments.values()) {
-            for (Entry<WorkerSlot, WorkerResources> entry: assignment.getScheduledResources().entrySet()) {
+        for (SchedulerAssignment assignment : assignments.values()) {
+            for (Entry<WorkerSlot, WorkerResources> entry : assignment.getScheduledResources().entrySet()) {
                 if (sd.getId().equals(entry.getKey().getNodeId())) {
                     ret.remove(entry.getValue(), getResourceMetrics());
                 }

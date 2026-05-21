@@ -57,7 +57,7 @@ public class TopologySpoutLag {
     public static Map<String, Map<String, Object>> lag(StormTopology stormTopology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         Map<String, SpoutSpec> spouts = stormTopology.get_spouts();
-        for (Map.Entry<String, SpoutSpec> spout: spouts.entrySet()) {
+        for (Map.Entry<String, SpoutSpec> spout : spouts.entrySet()) {
             try {
                 SpoutSpec spoutSpec = spout.getValue();
                 addLagResultForKafkaSpout(result, spout.getKey(), spoutSpec);
@@ -90,7 +90,7 @@ public class TopologySpoutLag {
     private static File createExtraPropertiesFile(Map<String, Object> jsonConf) {
         File file = null;
         Map<String, String> extraProperties = new HashMap<>();
-        for (Map.Entry<String, Object> conf: jsonConf.entrySet()) {
+        for (Map.Entry<String, Object> conf : jsonConf.entrySet()) {
             if (conf.getKey().startsWith(CONFIG_KEY_PREFIX) && !ALL_CONFIGS.contains(conf.getKey())) {
                 extraProperties.put(conf.getKey().substring(CONFIG_KEY_PREFIX.length()), conf.getValue().toString());
             }

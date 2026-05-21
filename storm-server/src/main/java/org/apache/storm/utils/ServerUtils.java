@@ -930,7 +930,7 @@ public class ServerUtils {
      */
     private static boolean isAnyWindowsProcessAlive(Collection<Long> pids, String user) throws IOException {
         List<String> unexpectedUsers = new ArrayList<>();
-        for (Long pid: pids) {
+        for (Long pid : pids) {
             List<String> cmdArgs = new ArrayList<>();
             cmdArgs.add("tasklist");
             cmdArgs.add("/fo");
@@ -1270,7 +1270,7 @@ public class ServerUtils {
             throw new IOException("Missing process directory " + procDir.getAbsolutePath() + ": method not supported on "
                     + "os.name=" + System.getProperty("os.name"));
         }
-        for (long pid: pids) {
+        for (long pid : pids) {
             File pidDir = new File(procDir, String.valueOf(pid));
             if (!pidDir.exists()) {
                 continue;

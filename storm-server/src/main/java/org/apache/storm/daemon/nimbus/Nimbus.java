@@ -1430,7 +1430,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             leaderElector.addToLeaderLockQueue();
             this.blobStore.startSyncBlobs();
 
-            for (ClusterMetricsConsumerExecutor exec: clusterConsumerExceutors) {
+            for (ClusterMetricsConsumerExecutor exec : clusterConsumerExceutors) {
                 exec.prepare();
             }
 
@@ -3530,7 +3530,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             comps.addAll(stormTopology.get_spouts().keySet());
             comps.addAll(stormTopology.get_bolts().keySet());
             Map<String, Integer> execOverrides = options.is_set_num_executors() ? options.get_num_executors() : Collections.emptyMap();
-            for (Map.Entry<String, Integer> e: execOverrides.entrySet()) {
+            for (Map.Entry<String, Integer> e : execOverrides.entrySet()) {
                 String comp = e.getKey();
                 // validate non-system component ids
                 if (!Utils.isSystemId(comp) && !comps.contains(comp)) {

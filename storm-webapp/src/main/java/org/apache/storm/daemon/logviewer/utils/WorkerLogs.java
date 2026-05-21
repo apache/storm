@@ -245,7 +245,7 @@ public class WorkerLogs {
     public SortedSet<Path> getLogDirs(Set<Path> logDirs, Predicate<String> predicate) {
         // we could also make this static, but not to do it due to mock
         TreeSet<Path> ret = new TreeSet<>();
-        for (Path logDir: logDirs) {
+        for (Path logDir : logDirs) {
             String workerId = "";
             try {
                 Optional<Path> metaFile = getMetadataFileForWorkerLogDir(logDir);

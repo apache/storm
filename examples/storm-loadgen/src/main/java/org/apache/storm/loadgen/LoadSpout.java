@@ -127,7 +127,7 @@ public class LoadSpout  extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        for (OutputStream s: streamStats) {
+        for (OutputStream s : streamStats) {
             declarer.declareStream(s.id, new Fields("key", "value"));
         }
     }

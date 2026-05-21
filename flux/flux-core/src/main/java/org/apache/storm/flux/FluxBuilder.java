@@ -489,7 +489,7 @@ public class FluxBuilder {
      */
     private static void buildWorkerHooks(ExecutionContext context, TopologyBuilder builder) throws ClassNotFoundException,
             NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchFieldException {
-        for (WorkerHookDef whDef: context.getTopologyDef().getWorkerHooks()) {
+        for (WorkerHookDef whDef : context.getTopologyDef().getWorkerHooks()) {
             IWorkerHook workerHook = (IWorkerHook) buildObject(whDef, context);
             builder.addWorkerHook(workerHook);
         }

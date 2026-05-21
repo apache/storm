@@ -197,7 +197,6 @@
                may only be represented as '{}' when not part of a multi-block statement (4.1.3)"/>
             <message key="ws.notPreceded"
                      value="WhitespaceAround: ''{0}'' is not preceded with whitespace."/>
-            <property name="severity" value="warning"/>
         </module>
         <module name="SuppressionXpathSingleFilter">
             <property name="checks" value="WhitespaceAround"/>

@@ -44,7 +44,7 @@ public class ConfigUtils {
     private static final Set<String> passwordConfigKeys = new HashSet<>();
 
     static {
-        for (Class<?> clazz: ConfigValidation.getConfigClasses()) {
+        for (Class<?> clazz : ConfigValidation.getConfigClasses()) {
             for (Field field : clazz.getFields()) {
                 for (Annotation annotation : field.getAnnotations()) {
                     boolean isPassword = annotation.annotationType().getName().equals(

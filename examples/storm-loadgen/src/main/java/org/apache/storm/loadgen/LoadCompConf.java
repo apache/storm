@@ -48,7 +48,7 @@ public class LoadCompConf {
         List<OutputStream> streams = new ArrayList<>();
         List<Map<String, Object>> streamData = (List<Map<String, Object>>) conf.get("streams");
         if (streamData != null) {
-            for (Map<String, Object> streamInfo: streamData) {
+            for (Map<String, Object> streamInfo : streamData) {
                 streams.add(OutputStream.fromConf(streamInfo));
             }
         }
@@ -161,7 +161,7 @@ public class LoadCompConf {
     public double getAllEmittedAggregate() {
         double ret = 0;
         if (streams != null) {
-            for (OutputStream out: streams) {
+            for (OutputStream out : streams) {
                 if (out.rate != null) {
                     ret += out.rate.mean * parallelism;
                 }

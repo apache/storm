@@ -534,7 +534,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             if (query.containsKey("extraColumns")) {
                 List<String> moreExtractors =
                     handleExtractorCleanup(Arrays.asList(query.get("extraColumns").split("\\s*,\\s*")));
-                for (String extractor: moreExtractors) {
+                for (String extractor : moreExtractors) {
                     if (!allExtractors.containsKey(extractor)) {
                         throw new IllegalArgumentException(extractor + " is not a supported column");
                     }
@@ -557,7 +557,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         protected List<String> handleExtractorCleanup(List<String> orig) {
             Map<String, Object> stormConfig = Utils.readStormConfig();
             List<String> ret = new ArrayList<>(orig.size());
-            for (String extractor: orig) {
+            for (String extractor : orig) {
                 if (extractor.startsWith("conf:")) {
                     String confKey = extractor.substring("conf:".length());
                     Object confValue = stormConfig.get(confKey);
@@ -617,7 +617,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         @Override
         public void start() {
             boolean first = true;
-            for (String name: extractors) {
+            for (String name : extractors) {
                 if (!first) {
                     out.print(" ");
                 }
@@ -634,7 +634,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         @Override
         public void reportWindow(Measurements m, List<Measurements> allTime) {
             boolean first = true;
-            for (String name: extractors) {
+            for (String name : extractors) {
                 if (!first) {
                     out.print(" ");
                 }
@@ -661,7 +661,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         @Override
         public void start() {
             boolean first = true;
-            for (String name: extractors) {
+            for (String name : extractors) {
                 if (!first) {
                     out.print(separator);
                 }
@@ -678,7 +678,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         @Override
         public void reportWindow(Measurements m, List<Measurements> allTime) {
             boolean first = true;
-            for (String name: extractors) {
+            for (String name : extractors) {
                 if (!first) {
                     out.print(separator);
                 }
@@ -812,7 +812,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         FileNotFoundException {
         super(conf);
         Map<String, MetricExtractor> allExtractors = new LinkedHashMap<>(NAMED_EXTRACTORS);
-        for (Map.Entry<String, Object> entry: parameterMetrics.entrySet()) {
+        for (Map.Entry<String, Object> entry : parameterMetrics.entrySet()) {
             final Object value = entry.getValue();
             allExtractors.put(entry.getKey(), new MetricExtractor((m, unit) -> value, ""));
         }
@@ -826,7 +826,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         }
         reporters = new ArrayList<>();
         if (commandLine.hasOption("reporter")) {
-            for (String reporterString: commandLine.getOptionValues("reporter")) {
+            for (String reporterString : commandLine.getOptionValues("reporter")) {
                 Matcher m = REPORTER_PATTERN.matcher(reporterString);
                 if (!m.matches()) {
                     throw new IllegalArgumentException(reporterString + " does not look like it is a reporter");
@@ -878,20 +878,20 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
     private long readMemory() {
         long total = 0;
-        for (MemMeasure mem: memoryBytes.values()) {
+        for (MemMeasure mem : memoryBytes.values()) {
             total += mem.get();
         }
         return total;
     }
 
     private void startMetricsOutput() {
-        for (MetricResultsReporter reporter: reporters) {
+        for (MetricResultsReporter reporter : reporters) {
             reporter.start();
         }
     }
 
     private void finishMetricsOutput() throws Exception {
-        for (MetricResultsReporter reporter: reporters) {
+        for (MetricResultsReporter reporter : reporters) {
             reporter.finish(allCombined);
         }
     }
@@ -923,7 +923,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         long failed = 0;
         double totalLatMs = 0;
         long totalLatCount = 0;
-        for (String name: names) {
+        for (String name : names) {
             TopologyInfo info = client.getTopologyInfoByName(name);
             ids.add(info.get_id());
             @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
@@ -984,7 +984,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             ids, workers.size(), executors, hosts.size(), congested.getAndSet(new ConcurrentHashMap<>()), skippedMaxSpout,
             totalLatMs / totalLatCount));
         Measurements inWindow = Measurements.combine(allCombined, null, windowLength);
-        for (MetricResultsReporter reporter: reporters) {
+        for (MetricResultsReporter reporter : reporters) {
             reporter.reportWindow(inWindow, allCombined);
         }
     }
@@ -993,7 +993,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     @SuppressWarnings("unchecked")
     public void handle(IMetricsConsumer.TaskInfo taskInfo, Collection<IMetricsConsumer.DataPoint> dataPoints, String topologyId) {
         String worker = taskInfo.srcWorkerHost + ":" + taskInfo.srcWorkerPort;
-        for (IMetricsConsumer.DataPoint dp: dataPoints) {
+        for (IMetricsConsumer.DataPoint dp : dataPoints) {
             if (dp.name.startsWith("comp-lat-histo") && dp.value instanceof Histogram) {
                 synchronized (histo) {
                     histo.add((Histogram) dp.value);

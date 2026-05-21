@@ -541,7 +541,7 @@ public class UIHelpers {
         String body = getJsonResponseBody(data, callback, needsSerialization);
         Response.ResponseBuilder responseBuilder = Response.status(status).entity(body);
         Map<String, String> headers = getJsonResponseHeaders(callback, null);
-        for (Map.Entry<String, String> headerEntry: headers.entrySet()) {
+        for (Map.Entry<String, String> headerEntry : headers.entrySet()) {
             responseBuilder.header(headerEntry.getKey(), headerEntry.getValue());
         }
         return responseBuilder.build();
