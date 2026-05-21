@@ -18,6 +18,8 @@ import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
@@ -34,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SimpleACLAuthorizerTest {
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void SimpleACLUserAuthTest() {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
         Collection<String> adminUserSet = new HashSet<>(Collections.singletonList("admin"));
@@ -196,6 +199,7 @@ public class SimpleACLAuthorizerTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void SimpleACLNimbusUserAuthTest() {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
         Collection<String> adminUserSet = new HashSet<>(Collections.singletonList("admin"));
@@ -222,6 +226,7 @@ public class SimpleACLAuthorizerTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void SimpleACLTopologyReadOnlyUserAuthTest() {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
 
