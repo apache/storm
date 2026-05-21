@@ -53,7 +53,7 @@ public class JoinExample {
                 * of the cubes stream within the window will be joined together.
                 */
                .join(cubes)
-               /**
+               /*
                 * The results should be of the form (number, (square, cube))
                 */
                .print();

@@ -1141,7 +1141,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 
-    @SuppressWarnings("unchecked")
     /**
      * Create a normalized topology conf.
      *
@@ -1149,6 +1148,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
      * @param topoConf initial topology conf
      * @param topology  the Storm topology
      */
+    @SuppressWarnings("unchecked")
     static Map<String, Object> normalizeConf(Map<String, Object> conf, Map<String, Object> topoConf, StormTopology topology) {
 
         // clear any values from the topoConf that it should not be setting.

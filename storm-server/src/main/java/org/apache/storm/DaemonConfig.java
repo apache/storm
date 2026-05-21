@@ -1047,7 +1047,7 @@ public class DaemonConfig implements Validated {
     @IsImplementationOfClass(implementsClass = ResourceIsolationInterface.class)
     public static final String STORM_RESOURCE_ISOLATION_PLUGIN = "storm.resource.isolation.plugin";
 
-    /**
+    /*
      * CGroup Setting below.
      */
 

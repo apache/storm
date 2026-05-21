@@ -78,13 +78,13 @@ public class ShellSpout implements ISpout {
         return changeDirectory;
     }
 
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     /**
      * Set if the current working directory of the child process should change to the resources dir from extracted from the jar, or if it
      * should stay the same as the worker process to access things from the blob store.
      *
      * @param changeDirectory true change the directory (default) false leave the directory the same as the worker process.
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public void changeChildCWD(boolean changeDirectory) {
         this.changeDirectory = changeDirectory;
     }

@@ -436,9 +436,7 @@
         <module name="NonEmptyAtclauseDescription">
             <property name="severity" value="warning"/>
         </module>
-        <module name="InvalidJavadocPosition">
-            <property name="severity" value="warning"/>
-        </module>
+        <module name="InvalidJavadocPosition"/>
         <module name="JavadocTagContinuationIndentation"/>
         <module name="SummaryJavadoc">
             <property name="forbiddenSummaryFragments"
