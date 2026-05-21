@@ -27,14 +27,14 @@ import java.io.Serializable;
  * </pre>
  *
  * <p>The following class can be used to represent the data in the table as
- * <pre><![CDATA[
+ * <pre>{@code
  * List<List<Column>> rows = new ArrayList<List<Column>>();
  * List<Column> row1 = Lists.newArrayList(new Column("UserId", 1, Types.INTEGER), new Column("UserName", "Foo", Types.VARCHAR))
  * List<Column> row1 = Lists.newArrayList(new Column("UserId", 2, Types.INTEGER), new Column("UserName", "Bar", Types.VARCHAR))
  *
  * rows.add(row1)
  * rows.add(row2)
- * ]]>
+ * }
  * </pre>
  */
 public class Column<T> implements Serializable {

@@ -29,7 +29,7 @@ public interface IWorkerHook extends Serializable {
      *
      * @param topoConf The Storm configuration for this worker
      * @param context  This object can be used to get information about this worker's place within the topology and exposes
-     * {@link WorkerUserContext#setResource(String, Object)} to set the shared application state.
+     *     {@link WorkerUserContext#setResource(String, Object)} to set the shared application state.
      */
     default void start(Map<String, Object> topoConf, WorkerUserContext context) {
          // NOOP
