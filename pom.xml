@@ -1084,7 +1084,7 @@
                                 <logViolationsToConsole>true</logViolationsToConsole>
                                 <consoleOutput>true</consoleOutput>
                                 <outputFile>target/checkstyle-violation.xml</outputFile>
-                                <violationSeverity>warning</violationSeverity>
+                                <violationSeverity>error</violationSeverity>
                             </configuration>
                             <goals>
                                 <goal>check</goal>
