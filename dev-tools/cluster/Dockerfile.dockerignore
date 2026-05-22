@@ -1,0 +1,7 @@
+# BuildKit honours <dockerfile>.dockerignore next to the Dockerfile. Patterns
+# are relative to the build context (storm-dist/binary/final-package/target),
+# so we exclude everything and re-include only the tarball the Dockerfile ADDs.
+# This keeps the build context to ~the tarball instead of the whole target dir
+# (which also holds the .zip and the extracted distribution).
+*
+!apache-storm-*.tar.gz

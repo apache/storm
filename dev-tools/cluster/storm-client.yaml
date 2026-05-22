@@ -1,0 +1,23 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# CLIENT-side config for submitting topologies to the local docker cluster from
+# outside the containers (e.g. running a storm-perf main() from IntelliJ).
+# Point it at this file with -Dstorm.conf.file=<abs path to this file>.
+#
+# docker-compose.yml publishes Nimbus Thrift on localhost:6627, so the submitter
+# only needs to know where Nimbus lives. Port (6627) and transport
+# (SimpleTransportPlugin, no auth) match the cluster defaults.
+nimbus.seeds: ["localhost"]

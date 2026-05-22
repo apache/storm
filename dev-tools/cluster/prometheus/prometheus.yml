@@ -1,0 +1,18 @@
+# Scrapes the Pushgateway that Nimbus pushes Storm cluster-summary metrics to.
+# honor_labels keeps the `job` label from the pushed series (e.g. job="nimbus")
+# instead of overwriting it with the scrape job name.
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  # Cluster-summary metrics pushed by Nimbus.
+  - job_name: pushgateway
+    honor_labels: true
+    static_configs:
+      - targets: ["pushgateway:9091"]
+
+  # Storm metrics-v2 (per-worker/topology) via the graphite_exporter.
+  - job_name: graphite
+    static_configs:
+      - targets: ["graphite-exporter:9108"]

@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: Storm
+    orgId: 1
+    folder: Storm
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false
