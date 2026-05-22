@@ -55,6 +55,8 @@ storm.nimbus.zookeeper.acls.fixup: true
 storm.auth.simple-white-list.users: [ ]
 storm.cluster.state.store: "org.apache.storm.cluster.ZKStateStorageFactory"
 storm.meta.serialization.delegate: "org.apache.storm.serialization.ZstdBridgeThriftSerializationDelegate"
+topology.tuple.compression.threshold: 1460
+topology.tuple.compression.enable: false
 storm.compression.zstd.level: 3
 storm.compression.zstd.max.decompressed.bytes: 104857600
 storm.compression.gzip.max.decompressed.bytes: 104857600
