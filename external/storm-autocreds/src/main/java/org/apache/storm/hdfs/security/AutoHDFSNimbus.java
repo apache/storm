@@ -132,7 +132,7 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
                 throw new RuntimeException("Security is not enabled for HDFS");
             }
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to get delegation tokens." , ex);
+            throw new RuntimeException("Failed to get delegation tokens.", ex);
         }
     }
 

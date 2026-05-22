@@ -96,7 +96,7 @@ public class RoundRobinResourceAwareStrategy extends BaseResourceAwareStrategy {
         searcherState.setSortedExecs(orderedExecutors);
 
         OUTERMOST_LOOP:
-        for (int loopCnt = 0 ; true ; loopCnt++) {
+        for (int loopCnt = 0; true; loopCnt++) {
             LOG.debug("scheduleExecutorsOnNodes: loopCnt={}, execIndex={}, topo={}, nodeSortCnt={}",
                     loopCnt, searcherState.getExecIndex(), topoName, nodeSortCnt);
             if (searcherState.areSearchLimitsExceeded()) {

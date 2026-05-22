@@ -142,7 +142,7 @@ public class LogviewerServer implements AutoCloseable {
     @Override
     public synchronized void close() {
         if (!closed) {
-            //TODO this is causing issues...
+            //TODO: this is causing issues...
             //if (httpServer != null) {
             //    httpServer.destroy();
             //}

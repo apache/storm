@@ -417,7 +417,7 @@ public class SchedulingSearcherState {
         StringBuffer sb = new StringBuffer();
         int cntAllNodes = 0;
         int cntFilledNodes = 0;
-        for (RasNode node: new TreeSet<>(nodeCompAssignmentCnts.keySet())) {
+        for (RasNode node : new TreeSet<>(nodeCompAssignmentCnts.keySet())) {
             cntAllNodes++;
             Map<String, Integer> oneMap = nodeCompAssignmentCnts.get(node);
             if (oneMap.isEmpty()) {

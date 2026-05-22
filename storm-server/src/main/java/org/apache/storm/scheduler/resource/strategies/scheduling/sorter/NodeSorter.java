@@ -89,7 +89,7 @@ public class NodeSorter implements INodeSorter {
         networkTopography = cluster.getNetworkTopography();
         Map<String, String> hostToRack = cluster.getHostToRack();
         RasNodes nodes = new RasNodes(cluster);
-        for (RasNode node: nodes.getNodes()) {
+        for (RasNode node : nodes.getNodes()) {
             String superId = node.getId();
             String hostName = node.getHostname();
             if (!node.isAlive() || hostName == null) {
@@ -397,7 +397,7 @@ public class NodeSorter implements INodeSorter {
             return Collections.emptyList();
         }
         List<String> ret = new ArrayList<>(hosts.size());
-        for (String host: hosts) {
+        for (String host : hosts) {
             List<RasNode> nodes = hostnameToNodes.get(host);
             if (nodes != null) {
                 for (RasNode node : nodes) {

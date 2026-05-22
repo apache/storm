@@ -533,7 +533,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                             position, committedOffset);
                     consumer.seek(tp, committedOffset);
                 }
-                /**
+                /*
                  * In some cases the waitingToEmit list may contain tuples that have just been committed. Drop these.
                  */
                 List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);

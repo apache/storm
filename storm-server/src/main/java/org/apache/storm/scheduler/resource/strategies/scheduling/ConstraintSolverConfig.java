@@ -119,7 +119,7 @@ public final class ConstraintSolverConfig {
                                 }
                                 List<String> list;
                                 list = (constraint instanceof String) ? Arrays.asList((String) constraint) : (List<String>) constraint;
-                                for (String comp2: list) {
+                                for (String comp2 : list) {
                                     if (!comps.contains(comp2)) {
                                         LOG.warn("TopoId {}: {} {} declared for Comp {} is not a valid Comp", topoId, ctype, comp2, comp1);
                                         continue;

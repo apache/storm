@@ -1680,28 +1680,28 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber
     public static final String SUPERVISOR_CPU_CAPACITY = "supervisor.cpu.capacity";
-    @IsInteger
-    @IsPositiveNumber
     /**
      * Port used for supervisor thrift server.
      */
+    @IsInteger
+    @IsPositiveNumber
     public static final String SUPERVISOR_THRIFT_PORT = "supervisor.thrift.port";
-    @IsString
     /**
      * The Supervisor invocations transport plug-in for Thrift client/server communication.
      */
+    @IsString
     public static final String SUPERVISOR_THRIFT_TRANSPORT_PLUGIN = "supervisor.thrift.transport";
-    @IsInteger
-    @IsPositiveNumber
     /**
      * Supervisor thrift server queue size.
      */
-    public static final String SUPERVISOR_QUEUE_SIZE = "supervisor.queue.size";
     @IsInteger
     @IsPositiveNumber
+    public static final String SUPERVISOR_QUEUE_SIZE = "supervisor.queue.size";
     /**
      * The number of threads that should be used by the supervisor thrift server.
      */
+    @IsInteger
+    @IsPositiveNumber
     public static final String SUPERVISOR_THRIFT_THREADS = "supervisor.thrift.threads";
     @IsNumber
     @IsPositiveNumber

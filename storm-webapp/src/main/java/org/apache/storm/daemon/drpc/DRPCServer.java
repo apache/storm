@@ -55,7 +55,7 @@ public class DRPCServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCServer.class);
     private final Meter meterShutdownCalls;
    
-    //TODO in the future this might be better in a common webapp location
+    //TODO: in the future this might be better in a common webapp location
 
     /**
      * Add a request context filter to the Servlet Context Handler.
@@ -106,7 +106,7 @@ public class DRPCServer implements AutoCloseable {
             final Boolean disableHttpBinding = (Boolean) (conf.get(DaemonConfig.DRPC_DISABLE_HTTP_BINDING));
             final boolean enableSslReload = ObjectReader.getBoolean(conf.get(DaemonConfig.DRPC_HTTPS_ENABLE_SSL_RELOAD), false);
 
-            //TODO a better way to do this would be great.
+            //TODO: a better way to do this would be great.
             DRPCApplication.setup(drpc, metricsRegistry);
             ret = UIHelpers.jettyCreateServer(drpcHttpPort, null, httpsPort, disableHttpBinding);
             
@@ -182,7 +182,7 @@ public class DRPCServer implements AutoCloseable {
                 invokeServer.stop();
             }
 
-            //TODO this is causing issues...
+            //TODO: this is causing issues...
             //if (httpServer != null) {
             //    httpServer.destroy();
             //}

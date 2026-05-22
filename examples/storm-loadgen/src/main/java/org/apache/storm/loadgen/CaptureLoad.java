@@ -96,7 +96,7 @@ public class CaptureLoad {
 
         Map<String, Object> savedTopoConf = new HashMap<>();
         Map<String, Object> topoConf = (Map<String, Object>) JSONValue.parse(client.getTopologyConf(topologyId));
-        for (String key: TopologyLoadConf.IMPORTANT_CONF_KEYS) {
+        for (String key : TopologyLoadConf.IMPORTANT_CONF_KEYS) {
             Object o = topoConf.get(key);
             if (o != null) {
                 savedTopoConf.put(key, o);
@@ -153,7 +153,7 @@ public class CaptureLoad {
             }
 
             Map<String, Map<String, Double>> boltResources = getBoltsResources(topo, topoConf);
-            for (Map.Entry<String, Map<String, Double>> entry: boltResources.entrySet()) {
+            for (Map.Entry<String, Map<String, Double>> entry : boltResources.entrySet()) {
                 LoadCompConf.Builder bd = boltBuilders.get(entry.getKey());
                 if (bd != null) {
                     Map<String, Double> resources = entry.getValue();
@@ -194,7 +194,7 @@ public class CaptureLoad {
             }
 
             Map<String, Map<String, Double>> spoutResources = getSpoutsResources(topo, topoConf);
-            for (Map.Entry<String, Map<String, Double>> entry: spoutResources.entrySet()) {
+            for (Map.Entry<String, Map<String, Double>> entry : spoutResources.entrySet()) {
                 LoadCompConf.Builder sd = spoutBuilders.get(entry.getKey());
                 if (sd != null) {
                     Map<String, Double> resources = entry.getValue();
@@ -212,7 +212,7 @@ public class CaptureLoad {
 
         //Stats...
         Map<String, List<ExecutorSummary>> byComponent = new HashMap<>();
-        for (ExecutorSummary executor: info.get_executors()) {
+        for (ExecutorSummary executor : info.get_executors()) {
             String component = executor.get_component_id();
             List<ExecutorSummary> list = byComponent.get(component);
             if (list == null) {
@@ -250,7 +250,7 @@ public class CaptureLoad {
             List<Double> emittedRate = new ArrayList<>();
             List<ExecutorSummary> summaries = byComponent.get(id.get_componentId());
             if (summaries != null) {
-                for (ExecutorSummary summary: summaries) {
+                for (ExecutorSummary summary : summaries) {
                     if (summary.is_set_stats()) {
                         int uptime = summary.get_uptime_secs();
                         LOG.debug("UPTIME {}", uptime);
@@ -349,7 +349,7 @@ public class CaptureLoad {
             Nimbus.Iface client = nc.getClient();
             List<String> topologyNames = cmd.getArgList();
 
-            for (TopologySummary topologySummary: client.getTopologySummaries()) {
+            for (TopologySummary topologySummary : client.getTopologySummaries()) {
                 if (topologyNames.isEmpty() || topologyNames.contains(topologySummary.get_name())) {
                     TopologyLoadConf capturedConf = captureTopology(client, topologySummary);
                     if (cmd.hasOption('a')) {

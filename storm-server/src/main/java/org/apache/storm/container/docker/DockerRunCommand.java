@@ -121,7 +121,7 @@ public class DockerRunCommand extends DockerCommand {
      */
     public DockerRunCommand addAllReadWriteMountLocations(List<String> paths,
                                                           boolean createSource) throws IOException {
-        for (String dir: paths) {
+        for (String dir : paths) {
             this.addReadWriteMountLocation(dir, dir, createSource);
         }
         return this;
@@ -174,7 +174,7 @@ public class DockerRunCommand extends DockerCommand {
      */
     public DockerRunCommand addAllReadOnlyMountLocations(List<String> paths,
                                                          boolean createSource) throws IOException {
-        for (String dir: paths) {
+        for (String dir : paths) {
             this.addReadOnlyMountLocation(dir, dir, createSource);
         }
         return this;

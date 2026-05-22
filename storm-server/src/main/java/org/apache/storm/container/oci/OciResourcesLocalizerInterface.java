@@ -44,7 +44,7 @@ public interface OciResourcesLocalizerInterface {
      */
     default List<String> localize(List<OciResource> resourceList) throws IOException {
         List<String> resourceLocalDsts = new ArrayList<>();
-        for (OciResource resource: resourceList) {
+        for (OciResource resource : resourceList) {
             resourceLocalDsts.add(localize(resource));
         }
         return resourceLocalDsts;

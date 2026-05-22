@@ -109,7 +109,7 @@ public class OutputStreamEngine {
         if (stats.areKeysSkewed) {
             //We set the stddev of the skewed keys to be 1/5 of the length, but then we use the absolute value
             // of that so everything is skewed towards 0
-            keyIndex = Math.min(KEYS.length - 1 , Math.abs((int) (rand.nextGaussian() * KEYS.length / 5)));
+            keyIndex = Math.min(KEYS.length - 1, Math.abs((int) (rand.nextGaussian() * KEYS.length / 5)));
         } else {
             keyIndex = rand.nextInt(KEYS.length);
         }

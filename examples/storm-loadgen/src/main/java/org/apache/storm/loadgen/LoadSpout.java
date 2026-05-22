@@ -44,7 +44,7 @@ public class LoadSpout  extends BaseRichSpout {
         OutputStreamEngineWithHisto(OutputStream stats, TopologyContext context) {
             super(stats);
             histogram = new HistogramMetric(3600000000000L, 3);
-            //TODO perhaps we can adjust the frequency later...
+            //TODO: perhaps we can adjust the frequency later...
             context.registerMetric("comp-lat-histo-" + stats.id, histogram, 10);
         }
     }
@@ -127,7 +127,7 @@ public class LoadSpout  extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        for (OutputStream s: streamStats) {
+        for (OutputStream s : streamStats) {
             declarer.declareStream(s.id, new Fields("key", "value"));
         }
     }

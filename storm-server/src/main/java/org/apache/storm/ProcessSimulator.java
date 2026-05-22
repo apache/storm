@@ -75,7 +75,7 @@ public class ProcessSimulator {
                 } else if (e instanceof RuntimeException) {
                     throw e;
                 } else {
-                    //TODO once everything is in java this should not be possible any more
+                    //TODO: once everything is in java this should not be possible any more
                     throw new RuntimeException(e);
                 }
             }

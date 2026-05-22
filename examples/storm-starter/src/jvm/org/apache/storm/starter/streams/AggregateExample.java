@@ -29,7 +29,7 @@ public class AggregateExample {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
-        /**
+        /*
          * Computes average of the stream of numbers emitted by the spout. Internally the per-partition
          * sum and counts are accumulated and emitted to a downstream task where the partially accumulated
          * results are merged and the final result is emitted.
