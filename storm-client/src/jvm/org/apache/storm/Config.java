@@ -1490,7 +1490,7 @@ public class Config extends HashMap<String, Object> {
      * When set to {@code true}, tuples emitted by this component will be compressed prior to being sent
      * over the network to remote worker processes. This is highly recommended for topologies exchanging
      * large payloads (e.g., entire lines of text or large data blocks) to significantly reduce network I/O.
-     * <strong>Default:</strong> {@code false} (Disabled by default to prevent unexpected CPU overhead).
+     * Default: {@code false} (Disabled by default to prevent unexpected CPU overhead).
      */
     @IsBoolean
     public static final String TOPOLOGY_TUPLE_COMPRESSION_ENABLE = "topology.tuple.compression.enable";
@@ -1500,9 +1500,8 @@ public class Config extends HashMap<String, Object> {
      * When the serialized byte array of a tuple equals or exceeds this threshold, it will be compressed
      * prior to being transmitted over the network to a remote worker process. This optimizes network I/O
      * for large payloads (such as text blocks or massive objects) without wasting cycles on small data.
-     * <strong>Default:</strong> {@code 1460} bytes (The typical maximum segment size [MSS] for a standard
+     * Default: {@code 1460} bytes (The typical maximum segment size [MSS] for a standard
      * Ethernet TCP payload, preventing compression on packets that already fit within a single network frame).
-     * </p>
      */
     @IsPositiveNumber
     public static final String TOPOLOGY_TUPLE_COMPRESSION_THRESHOLD = "topology.tuple.compression.threshold";
