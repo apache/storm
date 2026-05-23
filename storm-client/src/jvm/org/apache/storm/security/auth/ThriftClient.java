@@ -189,7 +189,7 @@ public class ThriftClient implements AutoCloseable {
             //construct a transport plugin
             ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(type, conf);
 
-            //TODO get this from type instead of hardcoding to Nimbus.
+            //TODO: get this from type instead of hardcoding to Nimbus.
             //establish client-server transport via plugin
             //do retries if the connect fails
             TBackoffConnect connectionRetry

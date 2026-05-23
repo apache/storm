@@ -31,10 +31,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * <P>
  * Class designed to perform all metrics inserts into RocksDB.  Metrics are processed from a blocking queue.  Inserts
  * to RocksDB are done using a single thread to simplify design (such as looking up existing metric data for aggregation,
  * and fetching/evicting metadata from the cache).  This class is not thread safe.
- * </P>
+ * </P><P>
  * A writable LRU StringMetadataCache is used to minimize looking up metadata string Ids.  As entries are added to the full cache, older
  * entries are evicted from the cache and need to be written to the database.  This happens as the handleEvictedMetadata()
  * method callback.

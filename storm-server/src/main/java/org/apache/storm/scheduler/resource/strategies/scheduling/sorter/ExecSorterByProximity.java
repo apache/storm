@@ -71,7 +71,7 @@ public class ExecSorterByProximity implements IExecSorter {
 
         List<Component> sortedComponents = topologicalSortComponents(componentMap);
 
-        for (Component currComp: sortedComponents) {
+        for (Component currComp : sortedComponents) {
             int numExecs = compToExecsToSchedule.get(currComp.getId()).size();
             for (int i = 0; i < numExecs; i++) {
                 orderedExecutorSet.addAll(takeExecutors(currComp, componentMap, compToExecsToSchedule));
@@ -160,7 +160,7 @@ public class ExecSorterByProximity implements IExecSorter {
         }
         execsScheduled.add(currQueue.poll());
         Set<String> sortedChildren = getSortedChildren(currComp, componentMap);
-        for (String childId: sortedChildren) {
+        for (String childId : sortedChildren) {
             Component childComponent = componentMap.get(childId);
             Queue<ExecutorDetails> childQueue = compToExecsToSchedule.get(childId);
             int childUnscheduledNumExecs = childQueue.size();
@@ -200,7 +200,7 @@ public class ExecSorterByProximity implements IExecSorter {
     }
 
     private boolean hasShuffleGroupingFromParentToChild(Component parent, Component child) {
-        for (Map.Entry<GlobalStreamId, Grouping> inputEntry: child.getInputs().entrySet()) {
+        for (Map.Entry<GlobalStreamId, Grouping> inputEntry : child.getInputs().entrySet()) {
             GlobalStreamId globalStreamId = inputEntry.getKey();
             Grouping grouping = inputEntry.getValue();
             if (globalStreamId.get_componentId().equals(parent.getId())

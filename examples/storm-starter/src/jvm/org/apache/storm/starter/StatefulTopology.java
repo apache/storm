@@ -58,7 +58,6 @@ import org.slf4j.LoggerFactory;
  *                                      "timeout":2000, "database":0, "password":"xyz"}}'
  *
  * </pre>
- * </p>
  */
 public class StatefulTopology {
     private static final Logger LOG = LoggerFactory.getLogger(StatefulTopology.class);

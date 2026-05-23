@@ -161,7 +161,7 @@ public class SupervisorHeartbeat implements Runnable {
     public void run() {
         Map<String, Object> validatedNumaMap = SupervisorUtils.getNumaMap(conf);
         Map<String, SupervisorInfo> supervisorInfoList = buildSupervisorInfo(conf, supervisor, validatedNumaMap);
-        for (Map.Entry<String, SupervisorInfo> supervisorInfoEntry: supervisorInfoList.entrySet()) {
+        for (Map.Entry<String, SupervisorInfo> supervisorInfoEntry : supervisorInfoList.entrySet()) {
             stormClusterState.supervisorHeartbeat(supervisorInfoEntry.getKey(), supervisorInfoEntry.getValue());
         }
     }

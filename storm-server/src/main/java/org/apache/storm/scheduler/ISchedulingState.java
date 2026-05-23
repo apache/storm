@@ -366,7 +366,7 @@ public interface ISchedulingState {
     default Set<String> getAssignedRacks(String... topologyIds) {
         Set<String> ret = new HashSet<>();
         Map<String, String> networkTopographyInverted = getHostToRack();
-        for (String topologyId: topologyIds) {
+        for (String topologyId : topologyIds) {
             SchedulerAssignment assignment = getAssignmentById(topologyId);
             if (assignment == null) {
                 continue;

@@ -87,14 +87,14 @@ public class NormalDistStats implements Serializable {
         double max = values.isEmpty() ? 0.0 : values.get(0);
         double sum = 0.0;
         long count = values.size();
-        for (Double v: values) {
+        for (Double v : values) {
             sum += v;
             min = Math.min(min, v);
             max = Math.max(max, v);
         }
         double mean = sum / Math.max(count, 1);
         double sdPartial = 0;
-        for (Double v: values) {
+        for (Double v : values) {
             sdPartial += Math.pow(v - mean, 2);
         }
         double stddev = 0.0;

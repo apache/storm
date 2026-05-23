@@ -67,7 +67,7 @@ public class LoadBolt extends BaseRichBolt {
     }
 
     private void emitTuples(Tuple input) {
-        for (OutputStreamEngine se: outputStreams) {
+        for (OutputStreamEngine se : outputStreams) {
             // we may output many tuples for a given input tuple
             while (se.shouldEmit() != null) {
                 collector.emit(se.streamName, input, new Values(se.nextKey(), "SOME-BOLT-VALUE"));
@@ -87,7 +87,7 @@ public class LoadBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        for (OutputStream s: outputStreamStats) {
+        for (OutputStream s : outputStreamStats) {
             declarer.declareStream(s.id, new Fields("key", "value"));
         }
     }

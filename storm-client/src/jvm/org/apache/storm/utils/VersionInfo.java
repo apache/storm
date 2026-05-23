@@ -124,7 +124,7 @@ public final class VersionInfo {
 
     private static IVersionInfo getFromClasspath(List<String> classpath, final String propFileName) {
         IVersionInfo ret = null;
-        for (String part: classpath) {
+        for (String part : classpath) {
             Path p = Paths.get(part);
             if (Files.isDirectory(p)) {
                 Path child = p.resolve(propFileName);
