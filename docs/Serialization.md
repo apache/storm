@@ -61,6 +61,46 @@ Beware that Java serialization is extremely expensive, both in terms of CPU cost
 
 You can turn on/off the behavior to fall back on Java serialization by setting the `Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION` config to true/false. The default value is false for security reasons.
 
+### Tuple compression
+
+For inter-worker (remote) traffic, Storm can optionally compress serialized tuples with [Zstandard](https://facebook.github.io/zstd/) before they are sent over the network. This is intended for one specific scenario: components that emit **large** payloads to a remote worker, where the bytes saved on the wire outweigh the CPU cost of compression. A good example is a spout that emits entire lines of text to a downstream bolt running on a different worker.
+
+Compression is **disabled by default** and follows the serialization lifecycle exactly:
+
+- **Intra-worker (local) traffic** bypasses `KryoTupleSerializer` altogether, so it is never compressed regardless of configuration. You do not pay any CPU cost for tuples that stay inside a worker process.
+- **Inter-worker (remote) traffic** is compressed only when compression is enabled for the source component *and* the serialized tuple is larger than the configured threshold. Small tuples (single words, IDs, etc.) are left uncompressed, since the framing overhead of a compressed payload can exceed the original size.
+
+#### Enabling compression per component
+
+Compression is controlled by the component-specific configuration `topology.tuple.compression.enable`. Because Storm merges component-specific configuration over the topology configuration, you can enable it for just the components that emit large tuples, leaving the rest of the topology untouched:
+
+```java
+TopologyBuilder builder = new TopologyBuilder();
+
+builder.setSpout(SPOUT_ID, new FileReadSpout(inputFile), spoutNum)
+       .addConfiguration(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE, true);
+
+builder.setBolt(SPLIT_ID, new SplitSentenceBolt(), spBoltNum)
+       .localOrShuffleGrouping(SPOUT_ID);
+builder.setBolt(COUNT_ID, new CountBolt(), cntBoltNum)
+       .fieldsGrouping(SPLIT_ID, new Fields(SplitSentenceBolt.FIELDS));
+```
+
+You can also enable it topology-wide (or cluster-wide via `storm.yaml`) by setting `topology.tuple.compression.enable: true`, but enabling it only where large tuples are actually emitted is recommended.
+
+#### Configuration reference
+
+| Config | Default | Description |
+| --- | --- | --- |
+| `topology.tuple.compression.enable` | `false` | Enables Zstd compression of serialized tuples before remote transfer. Best set per component via `addConfiguration`. |
+| `topology.tuple.compression.threshold` | `1460` | Minimum serialized tuple size, in bytes, before compression is attempted. Tuples at or below this size are sent uncompressed. The default matches the typical Ethernet TCP MSS, so payloads that already fit in a single network frame are never compressed. |
+| `storm.compression.zstd.level` | `3` | Zstd compression level. Supported range is 1–19; levels 20–22 (ultra mode) are prohibited because of their memory requirements. |
+| `storm.compression.zstd.max.decompressed.bytes` | `104857600` (100 MB) | Upper bound on the decompressed size of a single tuple. Decompression that would exceed this limit fails, guarding against malicious or corrupt payloads. |
+
+#### How decompression works
+
+Compression is self-describing on the wire, so **no configuration is required on the receiving side**. The deserializer inspects the leading bytes of each incoming payload: if they match the Zstd magic header it decompresses the payload (bounded by `storm.compression.zstd.max.decompressed.bytes`) before deserializing, otherwise it deserializes the bytes directly. This means a single deserializer transparently handles a mix of compressed and uncompressed tuples, and a worker that does not enable compression can still receive compressed tuples from one that does.
+
 ### Component-specific serialization registrations
 
 Storm 0.7.0 lets you set component-specific configurations (read more about this at [Configuration](Configuration.html)). Of course, if one component defines a serialization that serialization will need to be available to other bolts -- otherwise they won't be able to receive messages from that component!

@@ -36,7 +36,8 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
         this.context = context;
         ids = new SerializationFactory.IdDictionary(context.getRawTopology());
         kryoInput = new Input(1);
-        maxZstdDecompressedBytes = ObjectReader.getInt(conf.get(Config.STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES), DEFAULT_MAX_DECOMPRESSED_BYTES);
+        maxZstdDecompressedBytes = ObjectReader.getInt(conf.get(Config.STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES),
+                DEFAULT_MAX_DECOMPRESSED_BYTES);
     }
 
     @Override
