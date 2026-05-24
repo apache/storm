@@ -326,7 +326,6 @@ public class IsolationScheduler implements IScheduler {
                 return o2.getWorkerSlots().size() - o1.getWorkerSlots().size();
             }
         });
-        Collections.shuffle(sortHostAssignSlots);
 
         return new LinkedList<HostAssignableSlots>(sortHostAssignSlots);
     }
