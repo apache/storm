@@ -361,16 +361,18 @@ public class StormCommon {
     }
 
     public static void addUpstreamFeedback(Map<String, Object> conf, StormTopology topology) {
-        Integer numExecutors = ObjectReader.getInt(conf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS),
-            ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
-        if (numExecutors == null || numExecutors == 0) {
-            return;
-        }
+        // Only invoked when hasUpstreamFeedback(conf) is true, so declare the feedback stream on every
+        // component unconditionally. The schema must match the tuple emitted by
+        // Executor.buildUpstreamFeedbackTuple: [TaskInfo, EwmaFeedbackRecord].
         String feedbackStreamId = ConfigUtils.upstreamFeedbackStreamId(conf);
         for (Object component : allComponents(topology).values()) {
             ComponentCommon common = getComponentCommon(component);
-            common.put_to_streams(feedbackStreamId, Thrift.outputFields(eventLoggerBoltFields()));
+            common.put_to_streams(feedbackStreamId, Thrift.outputFields(upstreamFeedbackFields()));
         }
+    }
+
+    public static List<String> upstreamFeedbackFields() {
+        return Arrays.asList("task-info", "feedback");
     }
 
     @SuppressWarnings("unchecked")

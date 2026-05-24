@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.Set;
 import org.apache.storm.Config;
 import org.apache.storm.Thrift;
+import org.apache.storm.executor.ChildEwmaStats;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.grouping.CustomStreamGrouping;
@@ -40,6 +41,11 @@ public class GrouperFactory {
     public static final LoadAwareCustomStreamGrouping DIRECT = new LoadAwareCustomStreamGrouping() {
         @Override
         public void refreshLoad(LoadMapping loadMapping) {
+
+        }
+
+        @Override
+        public void registerEwmaStats(ChildEwmaStats childEwmaStats) {
 
         }
 
@@ -133,6 +139,11 @@ public class GrouperFactory {
 
         @Override
         public void refreshLoad(LoadMapping loadMapping) {
+
+        }
+
+        @Override
+        public void registerEwmaStats(ChildEwmaStats childEwmaStats) {
 
         }
 

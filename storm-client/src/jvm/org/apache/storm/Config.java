@@ -644,7 +644,7 @@ public class Config extends HashMap<String, Object> {
      * </ul>
      * </p>
      *
-     * Defaults to 0.1 if not explicitly configured.
+     * Defaults to 0.01 if not explicitly configured.
      */
     @CustomValidator(validatorClass = ConfigValidation.ZeroOneOpenIntervalValidator.class)
     public static final String TOPOLOGY_UPSTREAM_FEEDBACK_RATIO = "topology.upstream.feedback.ratio";

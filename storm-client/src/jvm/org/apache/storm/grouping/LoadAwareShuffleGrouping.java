@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.Config;
+import org.apache.storm.executor.ChildEwmaStats;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
@@ -109,6 +110,11 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     @Override
     public void refreshLoad(LoadMapping loadMapping) {
         updateRing(loadMapping);
+    }
+
+    @Override
+    public void registerEwmaStats(ChildEwmaStats childEwmaStats) {
+        // jitter agnostic. see JitterAwareStreamGrouping
     }
 
     private void refreshLocalityGroup() {
