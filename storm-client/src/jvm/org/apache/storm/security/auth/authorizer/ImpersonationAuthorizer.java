@@ -73,7 +73,7 @@ public class ImpersonationAuthorizer implements IAuthorizer {
         LOG.info("user = {}, principal = {} is attempting to impersonate user = {} for operation = {} from host = {}",
                  impersonatingUser, impersonatingPrincipal, userBeingImpersonated, operation, remoteAddress);
 
-        /**
+        /*
          * no config is present for impersonating principal or user, do not permit impersonation.
          */
         if (!userImpersonationACL.containsKey(impersonatingPrincipal) && !userImpersonationACL.containsKey(impersonatingUser)) {

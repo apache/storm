@@ -316,7 +316,7 @@ public class JoinBolt extends BaseWindowedBolt {
     // Performs projection on the tuples based on 'projectionFields'
     protected ArrayList<Object> doProjection(ArrayList<Tuple> tuples, FieldSelector[] projectionFields) {
         ArrayList<Object> result = new ArrayList<>(projectionFields.length);
-        // Todo: optimize this computation... perhaps inner loop can be outside to avoid rescanning tuples
+        // TODO: optimize this computation... perhaps inner loop can be outside to avoid rescanning tuples
         for (int i = 0; i < projectionFields.length; i++) {
             boolean missingField = true;
             for (Tuple tuple : tuples) {

@@ -82,6 +82,7 @@
 
         <!-- dependency versions -->
         <commons-compress.version>1.28.0</commons-compress.version>
+        <zstd-jni.version>1.5.7-8</zstd-jni.version>
         <commons-io.version>2.22.0</commons-io.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-exec.version>1.6.0</commons-exec.version>
@@ -513,6 +514,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>${zstd-jni.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -1070,7 +1076,7 @@
                             <artifactId>checkstyle</artifactId>
                             <!-- If you change this, you should also update the storm_checkstyle.xml file to be
                             based on the google_checks.xml from the version of checkstyle you are choosing. -->
-                            <version>8.2</version>
+                            <version>13.4.2</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1079,12 +1085,13 @@
                             <phase>validate</phase>
                             <configuration>
                                 <configLocation>storm/storm_checkstyle.xml</configLocation>
+                                <propertyExpansion>org.checkstyle.google.severity=error</propertyExpansion>
                                 <encoding>UTF-8</encoding>
                                 <failOnViolation>true</failOnViolation>
                                 <logViolationsToConsole>true</logViolationsToConsole>
                                 <consoleOutput>true</consoleOutput>
                                 <outputFile>target/checkstyle-violation.xml</outputFile>
-                                <violationSeverity>warning</violationSeverity>
+                                <violationSeverity>error</violationSeverity>
                             </configuration>
                             <goals>
                                 <goal>check</goal>

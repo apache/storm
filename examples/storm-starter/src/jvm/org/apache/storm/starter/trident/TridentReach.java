@@ -70,7 +70,7 @@ public class TridentReach {
                                                                                                     new ExpandList(),
                                                                                                     new Fields("follower"))
                 .groupBy(new Fields("follower")).aggregate(new One(), new Fields(
-            "one")).aggregate(new Fields("one"), new Sum(), new Fields("reach"));
+                    "one")).aggregate(new Fields("one"), new Sum(), new Fields("reach"));
         return topology.build();
     }
 

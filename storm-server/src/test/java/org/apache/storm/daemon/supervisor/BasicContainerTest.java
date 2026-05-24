@@ -322,7 +322,7 @@ public class BasicContainerTest {
         st.set_spouts(new HashMap<>());
         st.set_bolts(new HashMap<>());
         st.set_state_spouts(new HashMap<>());
-        byte[] serializedState = Utils.gzip(Utils.thriftSerialize(st));
+        byte[] serializedState = Utils.GzipUtils.compress(Utils.thriftSerialize(st));
 
         final Map<String, Object> superConf = new HashMap<>();
         superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
@@ -426,7 +426,7 @@ public class BasicContainerTest {
 
         // minimum 1.x version of supporting STORM-2448 would be 1.0.4
         st.set_storm_version("1.0.4");
-        byte[] serializedState = Utils.gzip(Utils.thriftSerialize(st));
+        byte[] serializedState = Utils.GzipUtils.compress(Utils.thriftSerialize(st));
 
         final Map<String, Object> superConf = new HashMap<>();
         superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
@@ -529,7 +529,7 @@ public class BasicContainerTest {
 
         // minimum 0.x version of supporting STORM-2448 would be 0.10.3
         st.set_storm_version("0.10.3");
-        byte[] serializedState = Utils.gzip(Utils.thriftSerialize(st));
+        byte[] serializedState = Utils.GzipUtils.compress(Utils.thriftSerialize(st));
 
         final Map<String, Object> superConf = new HashMap<>();
         superConf.put(Config.STORM_LOCAL_DIR, stormLocal);

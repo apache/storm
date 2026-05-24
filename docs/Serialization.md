@@ -5,6 +5,8 @@ documentation: true
 ---
 This page is about how the serialization system in Storm works for versions 0.6.0 and onwards. Storm used a different serialization system prior to 0.6.0 which is documented on [Serialization (prior to 0.6.0)](Serialization-\(prior-to-0.6.0\).html). 
 
+> This page covers **tuple** serialization (data flowing between spouts and bolts). For how Storm serializes the meta state it persists in ZooKeeper and related configuration, see [Cluster State Serialization](Cluster-State-Serialization.html).
+
 Tuples can be comprised of objects of any types. Since Storm is a distributed system, it needs to know how to serialize and deserialize objects when they're passed between tasks.
 
 Storm uses [Kryo](https://github.com/EsotericSoftware/kryo) for serialization. Kryo is a flexible and fast serialization library that produces small serializations.

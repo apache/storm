@@ -264,7 +264,7 @@ public class TopologyDef {
      * @param override whether or not to override existing definitions (currently ignored)
      */
     public void addAllStreams(List<StreamDef> streams, boolean override) {
-        //TODO figure out how we want to deal with overrides. Users may want to add streams even when overriding other
+        //TODO: figure out how we want to deal with overrides. Users may want to add streams even when overriding other
         // properties. For now we just add them blindly which could lead to a potentially invalid topology.
         this.streams.addAll(streams);
     }

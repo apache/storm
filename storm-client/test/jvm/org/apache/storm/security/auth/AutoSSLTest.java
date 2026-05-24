@@ -79,10 +79,7 @@ public class AutoSSLTest {
         Files.write(temp.toPath(), lines, StandardCharsets.UTF_8);
         File baseDir = null;
         try {
-            baseDir = new File("/tmp/autossl-test-" + UUID.randomUUID());
-            if (!baseDir.mkdir()) {
-                throw new IOException("failed to create base directory");
-            }
+            baseDir = Files.createTempDirectory("autossl-test").toFile();
             AutoSSL assl = new TestAutoSSL(baseDir.getPath());
 
             LOG.debug("base dir is; " + baseDir);

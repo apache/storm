@@ -103,7 +103,7 @@ public class MetricsSample {
                 continue;
             }
             for (String key : txMap.keySet()) {
-                // todo, ignore the master batch coordinator ?
+                // TODO: ignore the master batch coordinator ?
                 if (!Utils.isSystemId(key)) {
                     Long count = txMap.get(key);
                     totalTransferred += count;

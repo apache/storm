@@ -116,7 +116,7 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
                 throw new RuntimeException("Security is not enabled for Hadoop");
             }
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to get delegation tokens." , ex);
+            throw new RuntimeException("Failed to get delegation tokens.", ex);
         }
     }
 

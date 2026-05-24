@@ -12,13 +12,6 @@
 
 package org.apache.storm.messaging.netty;
 
-/**
- * This class is responsible for refreshing Kerberos credentials for logins for both Zookeeper client and server. See ZooKeeperSaslServer
- * for server-side usage. See ZooKeeperSaslClient for client-side usage. This class is a copied from
- * https://github.com/apache/zookeeper/blob/branch-3.4/src/java/main/org/apache/zookeeper/Login.java with the difference that refresh thread
- * does not die.
- */
-
 import java.io.File;
 import java.net.URI;
 import java.security.URIParameter;
@@ -37,6 +30,12 @@ import org.apache.log4j.Logger;
 import org.apache.storm.shade.org.apache.zookeeper.Shell;
 import org.apache.storm.shade.org.apache.zookeeper.client.ZooKeeperSaslClient;
 
+/**
+ * This class is responsible for refreshing Kerberos credentials for logins for both Zookeeper client and server. See ZooKeeperSaslServer
+ * for server-side usage. See ZooKeeperSaslClient for client-side usage. This class is a copied from
+ * https://github.com/apache/zookeeper/blob/branch-3.4/src/java/main/org/apache/zookeeper/Login.java with the difference that refresh thread
+ * does not die.
+ */
 public class Login {
     // Login will sleep until 80% of time from last refresh to
     // ticket's expiry has been reached, at which time it will wake

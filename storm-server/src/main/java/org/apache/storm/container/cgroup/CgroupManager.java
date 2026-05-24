@@ -232,7 +232,7 @@ public class CgroupManager extends DefaultResourceIsolationManager {
             command.add(2, "--membind=" + numaId);
             return;
         } else {
-            // TODO : Add support for pinning on Windows host
+            // TODO: Add support for pinning on Windows host
             throw new RuntimeException("numactl pinning currently not supported on non-Linux hosts");
         }
     }

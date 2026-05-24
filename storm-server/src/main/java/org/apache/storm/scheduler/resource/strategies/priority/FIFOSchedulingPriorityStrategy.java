@@ -43,7 +43,7 @@ public class FIFOSchedulingPriorityStrategy extends DefaultSchedulingPriorityStr
                 return origScore;
             }
             //Not enough guaranteed use the age of the topology instead.
-            //TODO need a good way to only do this once...
+            //TODO: need a good way to only do this once...
             Collections.sort(tds, new TopologyBySubmissionTimeComparator());
             td = getNextHighest();
             if (td != null) {

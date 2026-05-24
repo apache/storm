@@ -184,7 +184,7 @@ public class ClientAuthUtils {
                 LOG.warn("No principal to local given {}", Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
             } else {
                 ptol = ReflectionUtils.newInstance(ptolClassname);
-                //TODO this can only ever be null if someone is doing something odd with mocking
+                //TODO: this can only ever be null if someone is doing something odd with mocking
                 // We should really fix the mocking and remove this
                 if (ptol != null) {
                     ptol.prepare(topoConf);

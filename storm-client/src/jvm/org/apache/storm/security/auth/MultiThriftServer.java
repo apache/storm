@@ -41,7 +41,7 @@ public class MultiThriftServer<T extends ThriftServer> {
     }
 
     public void serve() {
-        for (ThriftServer thriftServer: thriftServerMap.values()) {
+        for (ThriftServer thriftServer : thriftServerMap.values()) {
             if (Boolean.TRUE.equals(thriftServerIsServingMap.get(thriftServer.getType()))) {
                 throw new IllegalStateException("The MultiThriftServer "
                         + thriftServerThreadMap.get(thriftServer.getType()).getName() + " is already serving");
@@ -53,7 +53,7 @@ public class MultiThriftServer<T extends ThriftServer> {
     }
 
     public void stop() {
-        for (ThriftServer thriftServer: thriftServerMap.values()) {
+        for (ThriftServer thriftServer : thriftServerMap.values()) {
             if (Boolean.TRUE.equals(thriftServerIsServingMap.get(thriftServer.getType()))) {
                 thriftServerThreadMap.get(thriftServer.getType()).interrupt();
                 thriftServerMap.get(thriftServer.getType()).stop();

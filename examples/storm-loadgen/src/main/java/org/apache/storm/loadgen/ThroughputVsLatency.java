@@ -105,9 +105,9 @@ public class ThroughputVsLatency {
 
         @Override
         public void execute(Tuple tuple, BasicOutputCollector collector) {
-            sleep.simulateProcessAndExecTime(executorIndex, Time.nanoTime(), null , () -> {
+            sleep.simulateProcessAndExecTime(executorIndex, Time.nanoTime(), null, () -> {
                 String sentence = tuple.getString(0);
-                for (String word: sentence.split("\\s+")) {
+                for (String word : sentence.split("\\s+")) {
                     collector.emit(new Values(word, 1));
                 }
             });

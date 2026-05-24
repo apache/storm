@@ -53,7 +53,7 @@ public interface ITransportPlugin {
     /**
      * Get port.
      * @return The port this transport is using. This is not known until
-     * {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called
+     *     {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called
      */
     int getPort();
 

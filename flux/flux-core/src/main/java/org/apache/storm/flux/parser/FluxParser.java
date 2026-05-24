@@ -219,7 +219,7 @@ public class FluxParser {
      */
     private static TopologyDef processIncludes(Yaml yaml, TopologyDef topologyDef, Properties properties, boolean envSub)
             throws IOException {
-        //TODO support multiple levels of includes
+        //TODO: support multiple levels of includes
         if (topologyDef.getIncludes() != null) {
             for (IncludeDef include : topologyDef.getIncludes()) {
                 TopologyDef includeTopologyDef = null;
@@ -240,7 +240,7 @@ public class FluxParser {
 
                 // config
                 if (includeTopologyDef.getConfig() != null) {
-                    //TODO move this logic to the model class
+                    //TODO: move this logic to the model class
                     Map<String, Object> config = topologyDef.getConfig();
                     Map<String, Object> includeConfig = includeTopologyDef.getConfig();
                     if (override) {
@@ -269,7 +269,7 @@ public class FluxParser {
                     topologyDef.addAllSpouts(includeTopologyDef.getSpouts(), override);
                 }
                 //stream overrides
-                //TODO streams should be uniquely identifiable
+                //TODO: streams should be uniquely identifiable
                 if (includeTopologyDef.getStreams() != null) {
                     topologyDef.addAllStreams(includeTopologyDef.getStreams(), override);
                 }

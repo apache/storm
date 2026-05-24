@@ -133,11 +133,11 @@ public class LocalFsBlobStore extends BlobStore {
         keysToDelete.removeAll(activeKeys);
         NimbusInfo nimbusInfo = this.nimbusInfo;
         LOG.debug("Deleting keys not on the zookeeper {}", keysToDelete);
-        for (String toDelete: keysToDelete) {
+        for (String toDelete : keysToDelete) {
             store.deleteBlob(toDelete, NIMBUS_SUBJECT);
         }
         LOG.debug("Creating list of key entries for blobstore inside zookeeper {} local {}", activeKeys, activeLocalKeys);
-        for (String key: activeLocalKeys) {
+        for (String key : activeLocalKeys) {
             try {
                 state.setupBlob(key, nimbusInfo, getVersionForKey(key, nimbusInfo, zkClient));
             } catch (KeyNotFoundException e) {

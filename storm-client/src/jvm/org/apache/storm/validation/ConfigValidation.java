@@ -804,6 +804,26 @@ public class ConfigValidation {
         }
     }
 
+    public static class ZstdLevelValidator extends Validator {
+        private static final int MIN_LEVEL = 1;
+        private static final int MAX_LEVEL = 19;
+
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, Integer.class, o);
+            int level = (Integer) o;
+            if (level < MIN_LEVEL || level > MAX_LEVEL) {
+                throw new IllegalArgumentException(
+                    String.format("Field '%s' is invalid: %d. Zstd compression level must be between %d and %d.",
+                        name, level, MIN_LEVEL, MAX_LEVEL)
+                );
+            }
+        }
+    }
+
     public static class EventLoggerRegistryValidator extends Validator {
 
         @Override
@@ -933,7 +953,7 @@ public class ConfigValidation {
                         "Field " + name + " must be an Iterable containing only Map of Maps");
             }
             Map<String, Object> map1 = (Map<String, Object>) o;
-            for (Map.Entry<String, Object> entry1: map1.entrySet()) {
+            for (Map.Entry<String, Object> entry1 : map1.entrySet()) {
                 String comp1 = entry1.getKey();
                 Object o2 = entry1.getValue();
                 if (!(o2 instanceof Map)) {
@@ -942,7 +962,7 @@ public class ConfigValidation {
                     throw new IllegalArgumentException(err);
                 }
                 Map<String, Object> map2 = (Map<String, Object>) o2;
-                for (Map.Entry<String, Object> entry2: map2.entrySet()) {
+                for (Map.Entry<String, Object> entry2 : map2.entrySet()) {
                     String constraintType = entry2.getKey();
                     Object o3 = entry2.getValue();
                     switch (constraintType) {

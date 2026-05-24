@@ -77,7 +77,7 @@ public class EstimateThroughput {
             Nimbus.Iface client = nc.getClient();
             List<String> topologyNames = cmd.getArgList();
 
-            for (TopologySummary topologySummary: client.getTopologySummaries()) {
+            for (TopologySummary topologySummary : client.getTopologySummaries()) {
                 if (topologyNames.isEmpty() || topologyNames.contains(topologySummary.get_name())) {
                     TopologyLoadConf capturedConf = CaptureLoad.captureTopology(client, topologySummary);
                     if (capturedConf.looksLikeTrident()) {
@@ -89,10 +89,10 @@ public class EstimateThroughput {
             }
 
             System.out.println("TOPOLOGY\tTOTAL MESSAGES/sec\tESTIMATED INPUT MESSAGES/sec");
-            for (TopologyLoadConf tl: regular) {
+            for (TopologyLoadConf tl : regular) {
                 System.out.println(tl.name + "\t" + tl.getAllEmittedAggregate() + "\t" + tl.getSpoutEmittedAggregate());
             }
-            for (TopologyLoadConf tl: trident) {
+            for (TopologyLoadConf tl : trident) {
                 System.out.println(tl.name + "\t" + tl.getAllEmittedAggregate() + "\t" + tl.getTridentEstimatedEmittedAggregate());
             }
             exitStatus = 0;

@@ -150,7 +150,7 @@ public class Flux {
         TopologyDef topologyDef = null;
         String filePath = (String) cmd.getArgList().get(0);
 
-        // TODO conditionally load properties from a file our resource
+        // TODO: conditionally load properties from a file our resource
         String filterProps = null;
         if (cmd.hasOption(OPTION_FILTER)) {
             filterProps = cmd.getOptionValue(OPTION_FILTER);

@@ -98,7 +98,7 @@ public class AdminCommands {
         public void run(String[] args, Map<String, Object> conf, String command) throws Exception {
             // We are pretending to be nimbus here.
             IStormClusterState state = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
-            for (String topologyId: args) {
+            for (String topologyId : args) {
                 System.out.println(topologyId + ":");
                 Credentials creds = state.credentials(topologyId, null);
                 if (creds != null) {
@@ -187,7 +187,7 @@ public class AdminCommands {
             println(out, depth, "}");
         } else if (o instanceof Collection) {
             println(out, depth, keyStr(key) + "[");
-            for (Object sub: (Collection) o) {
+            for (Object sub : (Collection) o) {
                 prettyPrintKeyValue(null, sub, depth + 1, out);
             }
             println(out, depth, "]");
@@ -202,7 +202,7 @@ public class AdminCommands {
 
         @Override
         public void run(String[] args, Map<String, Object> conf, String command) throws Exception {
-            for (String arg: args) {
+            for (String arg : args) {
                 System.out.println(arg + ":");
                 StormTopology topo;
                 File f = new File(arg);
@@ -232,7 +232,7 @@ public class AdminCommands {
             IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
             Map<String, SupervisorInfo> infos = stormClusterState.allSupervisorInfo();
             if (args.length <= 0) {
-                for (Map.Entry<String, SupervisorInfo> entry: infos.entrySet()) {
+                for (Map.Entry<String, SupervisorInfo> entry : infos.entrySet()) {
                     System.out.println(entry.getKey() + ":");
                     System.out.println(prettyPrint(entry.getValue()));
                 }
@@ -260,7 +260,7 @@ public class AdminCommands {
             stormClusterState.setAssignmentsBackendSynchronized();
             Map<String, Assignment> infos = stormClusterState.assignmentsInfo();
             if (args.length <= 0) {
-                for (Map.Entry<String, Assignment> entry: infos.entrySet()) {
+                for (Map.Entry<String, Assignment> entry : infos.entrySet()) {
                     System.out.println(entry.getKey() + ":");
                     System.out.println(prettyPrint(entry.getValue()));
                 }
@@ -321,7 +321,7 @@ public class AdminCommands {
         }
         out.println("storm admin <command> [args]");
         out.println();
-        for (Map.Entry<String, AdminCommand> entry: COMMANDS.entrySet()) {
+        for (Map.Entry<String, AdminCommand> entry : COMMANDS.entrySet()) {
             entry.getValue().printCliHelp(entry.getKey(), out);
             out.println();
         }
