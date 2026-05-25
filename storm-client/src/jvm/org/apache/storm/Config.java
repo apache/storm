@@ -1497,13 +1497,14 @@ public class Config extends HashMap<String, Object> {
     /**
      * Topology configuration specifying the minimum size threshold (in bytes) for compressing serialized tuples
      * during inter-worker network transfer.
-     * When the serialized byte array of a tuple equals or exceeds this threshold, it will be compressed
+     * When the serialized byte array of a tuple exceeds this threshold, it will be compressed
      * prior to being transmitted over the network to a remote worker process. This optimizes network I/O
      * for large payloads (such as text blocks or massive objects) without wasting cycles on small data.
+     * Set to 0 to bypass the size check and compress all tuples regardless of size.
      * Default: {@code 1460} bytes (The typical maximum segment size [MSS] for a standard
      * Ethernet TCP payload, preventing compression on packets that already fit within a single network frame).
      */
-    @IsPositiveNumber
+    @IsPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_TUPLE_COMPRESSION_THRESHOLD = "topology.tuple.compression.threshold";
     /**
      * GZIP max decompression bytes. Defaults to 104857600 (100MB).

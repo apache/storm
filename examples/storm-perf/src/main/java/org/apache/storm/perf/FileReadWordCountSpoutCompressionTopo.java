@@ -38,7 +38,7 @@ public class FileReadWordCountSpoutCompressionTopo {
     public static final String SPOUT_ID = "spout";
     public static final String COUNT_ID = "counter";
     public static final String SPLIT_ID = "splitter";
-    public static final String TOPOLOGY_NAME = "FileReadWordCountTopo";
+    public static final String TOPOLOGY_NAME = "FileReadWordCountSpoutCompressionTopo";
 
     // Config settings
     public static final String SPOUT_NUM = "spout.count";
