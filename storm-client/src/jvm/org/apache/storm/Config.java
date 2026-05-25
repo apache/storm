@@ -1524,6 +1524,11 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber(includeZero = false)
     public static final String STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES = "storm.compression.zstd.max.decompressed.bytes";
     /**
+     * Max decompression bytes for tuples. Defaults to 10485760 (10MB).
+     */
+    @IsPositiveNumber(includeZero = false)
+    public static final String TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES = "topology.tuple.compression.max.decompressed.bytes";
+    /**
      * Configure the topology metrics reporters to be used on workers.
      */
     @IsListEntryCustom(entryValidatorClasses = {MetricReportersValidator.class})

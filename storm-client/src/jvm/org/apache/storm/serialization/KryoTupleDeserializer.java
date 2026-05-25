@@ -24,7 +24,7 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 
 public class KryoTupleDeserializer implements ITupleDeserializer {
-    private static final Integer DEFAULT_MAX_DECOMPRESSED_BYTES = 100 * 1024 * 1024;
+    private static final Integer DEFAULT_MAX_DECOMPRESSED_BYTES = 10 * 1024 * 1024; // 10MBytes
     private final GeneralTopologyContext context;
     private final KryoValuesDeserializer kryo;
     private final SerializationFactory.IdDictionary ids;
@@ -36,7 +36,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
         this.context = context;
         ids = new SerializationFactory.IdDictionary(context.getRawTopology());
         kryoInput = new Input(1);
-        maxZstdDecompressedBytes = ObjectReader.getInt(conf.get(Config.STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES),
+        maxZstdDecompressedBytes = ObjectReader.getInt(conf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES),
                 DEFAULT_MAX_DECOMPRESSED_BYTES);
     }
 
