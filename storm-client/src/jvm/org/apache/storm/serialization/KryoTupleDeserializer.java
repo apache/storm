@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
+import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
@@ -31,6 +32,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
     private final SerializationFactory.IdDictionary ids;
     private final Input kryoInput;
     private final int maxZstdDecompressedBytes;
+    private final boolean anyTupleCompressionEnabled;
 
     public KryoTupleDeserializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
         kryo = new KryoValuesDeserializer(conf);
@@ -39,11 +41,13 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
         kryoInput = new Input(1);
         maxZstdDecompressedBytes = ObjectReader.getInt(conf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES),
                 DEFAULT_MAX_DECOMPRESSED_BYTES);
+        anyTupleCompressionEnabled = isTupleCompressionEnabled(conf, context);
     }
 
     @Override
     public TupleImpl deserialize(byte[] ser) {
-        if (Utils.ZstdUtils.isZstd(ser)) {
+        // check zstd header if at least one component is compressing tuples.
+        if (anyTupleCompressionEnabled && Utils.ZstdUtils.isZstd(ser)) {
             try {
                 byte[] decompressed = Utils.ZstdUtils.decompress(ser, this.maxZstdDecompressedBytes);
                 return deserializeTuple(decompressed);
@@ -77,5 +81,19 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
         } catch (IOException e) {
             throw new RuntimeException(FAILED_TO_DESERIALIZE_TUPLE, e);
         }
+    }
+
+    private static boolean isTupleCompressionEnabled(final Map<String, Object> conf, final GeneralTopologyContext context) {
+        if (ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE), false)) {
+            return true;
+        }
+        for (String componentId : context.getComponentIds()) {
+            ComponentCommon common = context.getComponentCommon(componentId);
+            Map<String, Object> componentConf = Utils.parseJson(common.get_json_conf());
+            if (ObjectReader.getBoolean(componentConf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE), false)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

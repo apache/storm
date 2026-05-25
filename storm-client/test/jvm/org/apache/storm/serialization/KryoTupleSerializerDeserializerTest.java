@@ -12,11 +12,14 @@
 
 package org.apache.storm.serialization;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
+import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
@@ -75,6 +78,15 @@ public class KryoTupleSerializerDeserializerTest {
         conf.put(Config.TOPOLOGY_TUPLE_COMPRESSION_THRESHOLD, threshold);
         conf.put(Config.STORM_COMPRESSION_ZSTD_LEVEL, 3);
         return conf;
+    }
+
+    private void enableComponentLevelCompression(String componentId) {
+        Map<String, Object> componentConf = new HashMap<>();
+        componentConf.put(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE, true);
+        ComponentCommon common = mock(ComponentCommon.class);
+        when(common.get_json_conf()).thenReturn(JSONValue.toJSONString(componentConf));
+        when(context.getComponentIds()).thenReturn(Collections.singleton(componentId));
+        when(context.getComponentCommon(componentId)).thenReturn(common);
     }
 
     @Test
@@ -157,7 +169,8 @@ public class KryoTupleSerializerDeserializerTest {
     }
 
     @Test
-    public void testCompressedTupleDeserializedWhenDeserializerCompressionDisabled() {
+    public void testComponentLevelCompressionEnablesDecompressPath() {
+        enableComponentLevelCompression(SOURCE_COMPONENT);
         KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0), context);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
 
@@ -166,6 +179,16 @@ public class KryoTupleSerializerDeserializerTest {
 
         assertTrue(Utils.ZstdUtils.isZstd(bytes));
         assertSameTuple(original, deserializer.deserialize(bytes));
+    }
+
+    @Test
+    public void testNoComponentCompressionSkipsDecompressPath() {
+        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0), context);
+        KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
+
+        byte[] bytes = serializer.serialize(tuple(new Values(bigString(16 * 1024)), MessageId.makeRootId(8L, 9L)));
+        assertTrue(Utils.ZstdUtils.isZstd(bytes), "precondition: serializer produced a compressed frame");
+        assertThrows(RuntimeException.class, () -> deserializer.deserialize(bytes));
     }
 
     // corner cases
@@ -209,6 +232,7 @@ public class KryoTupleSerializerDeserializerTest {
 
     @Test
     public void testDeserializeZstdMagicButInvalidFrameThrows() {
+        enableComponentLevelCompression(SOURCE_COMPONENT);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
         // First 4 bytes are the little-endian zstd magic 0xFD2FB528 so isZstd() is true, but the rest is
         // not a valid zstd frame. decompress() throws, the false-positive fallback re-parses the raw bytes,
@@ -223,9 +247,10 @@ public class KryoTupleSerializerDeserializerTest {
         // A genuinely compressed tuple, but the deserializer is configured with a tiny decompression cap.
         // decompress() throws ("threshold exceeded"), the fallback re-parses the still-compressed raw bytes,
         // which are not a valid kryo tuple -> RuntimeException.
+        enableComponentLevelCompression(SOURCE_COMPONENT);
         KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0), context);
         Map<String, Object> deserConf = baseConf();
-        deserConf.put(Config.STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES, 1);
+        deserConf.put(Config.TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES, 1);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(deserConf, context);
 
         byte[] bytes = serializer.serialize(tuple(new Values(bigString(8192)), MessageId.makeUnanchored()));
