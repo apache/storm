@@ -25,6 +25,7 @@ import org.apache.storm.utils.Utils;
 
 public class KryoTupleDeserializer implements ITupleDeserializer {
     private static final Integer DEFAULT_MAX_DECOMPRESSED_BYTES = 10 * 1024 * 1024; // 10MBytes
+    public static final String FAILED_TO_DESERIALIZE_TUPLE = "Failed to deserialize tuple";
     private final GeneralTopologyContext context;
     private final KryoValuesDeserializer kryo;
     private final SerializationFactory.IdDictionary ids;
@@ -47,10 +48,17 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
                 byte[] decompressed = Utils.ZstdUtils.decompress(ser, this.maxZstdDecompressedBytes);
                 return deserializeTuple(decompressed);
             } catch (RuntimeException e) {
-                // isZstd() false positive: a raw Kryo tuple's first 4 bytes matched ZSTD_MAGIC_HEADER by chance.
-                // This is mathematically impossible in practice: the first field is a varint taskId, whose
-                // valid range produces a first byte that never reaches 0xFD (the magic header's first byte).
-                // Branch retained for correctness in case assumptions about taskId range ever change.
+                if (e.getMessage() != null && e.getMessage().contains(FAILED_TO_DESERIALIZE_TUPLE)) {
+                    // isZstd() false positive: a raw Kryo tuple's first 4 bytes matched ZSTD_MAGIC_HEADER by chance.
+                    // This is astronomically unlikely in practice. Because ZSTD_MAGIC_HEADER (0xFD2FB528) is little-endian
+                    // on the wire, the first byte checked is 0x28. A Kryo writeInt(taskId, true) of 40 yields exactly 0x28.
+                    // The collision is prevented not by the taskId range, but by the second field (streamId),
+                    // which would rigidly have to equal 6069 to match the remaining magic bytes.
+                    // Branch retained for correctness in case of an accidental collision.
+                    return deserializeTuple(ser);
+                } else {
+                    throw e;
+                }
             }
         }
         return deserializeTuple(ser);
@@ -67,7 +75,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
             List<Object> values = kryo.deserializeFrom(kryoInput);
             return new TupleImpl(context, values, componentName, taskId, streamName, id);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to deserialize tuple", e);
+            throw new RuntimeException(FAILED_TO_DESERIALIZE_TUPLE, e);
         }
     }
 }
