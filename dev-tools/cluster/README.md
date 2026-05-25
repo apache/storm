@@ -56,6 +56,10 @@ detailed under [Metrics & reports](#metrics--reports-prometheus--grafana).
 
 ## Prerequisites
 
+> **Platform:** Linux or macOS (or Windows via WSL2). The helper scripts are
+> bash and call `mvn` (not `mvn.cmd`), and `netsim.sh` relies on Linux
+> `tc`/`netem`. Native Windows is not supported yet.
+
 1. Build the distribution **and** the Docker image from the current source — one command:
 
    ```bash

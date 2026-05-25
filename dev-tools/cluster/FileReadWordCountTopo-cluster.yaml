@@ -21,16 +21,8 @@ input.file: "/topology/randomwords.txt"
 
 # Two workers force the spout and bolts onto separate worker processes (and,
 # with two supervisors, separate containers), so inter-worker tuple traffic
-# crosses the network -- the only path where tuple compression takes effect.
+# crosses the network.
 topology.workers: 2
-
-# Tuple compression is OFF by default. Flip to true to compress every
-# component's serialized tuples cluster-wide and watch the difference in the UI
-# (emitted/transferred bytes, capacity). For *selective* per-component
-# compression (e.g. compress the spout's text lines but not the splitter's tiny
-# words), set it via ComponentConfigurationDeclarer.addConfiguration(...) in the
-# topology code instead of here.
-topology.tuple.compression.enable: false
 
 # Enable the EWMA jitter estimators (RFC 3550) in TaskMetrics so the
 # __execute-jitter / __process-jitter / __complete-jitter metrics are emitted.

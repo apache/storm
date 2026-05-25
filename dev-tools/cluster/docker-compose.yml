@@ -71,7 +71,7 @@ services:
       - -c
       - storm.daemon.metrics.reporter.plugin.prometheus.job=nimbus
     ports:
-      - "6627:6627"   # Thrift, for submitting topologies from the host
+      - "127.0.0.1:6627:6627"   # Thrift, for submitting topologies from the host
     volumes:
       - ./storm.yaml:/opt/storm/conf/storm.yaml:ro
       # Prometheus Pushgateway reporter + its runtime deps (see prepare-extlib.sh).
@@ -106,7 +106,7 @@ services:
     hostname: ui
     command: storm ui
     ports:
-      - "8080:8080"   # Storm UI http://localhost:8080
+      - "127.0.0.1:8080:8080"   # Storm UI http://localhost:8080
     depends_on:
       - nimbus
 
@@ -146,7 +146,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     ports:
-      - "9090:9090"   # Prometheus UI http://localhost:9090
+      - "127.0.0.1:9090:9090"   # Prometheus UI http://localhost:9090
     depends_on:
       - pushgateway
     networks:
@@ -166,7 +166,7 @@ services:
       # datasource and dashboards are re-provisioned from files on every start.
       - grafana-data:/var/lib/grafana
     ports:
-      - "3000:3000"   # Grafana -> http://localhost:3000 (admin/admin)
+      - "127.0.0.1:3000:3000"   # Grafana -> http://localhost:3000 (admin/admin)
     depends_on:
       - prometheus
     networks:

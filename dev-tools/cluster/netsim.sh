@@ -38,9 +38,28 @@
 # Override the shaped containers with TARGETS="..." ./netsim.sh ...
 set -euo pipefail
 
-TARGETS="${TARGETS:-cluster-supervisor1-1 cluster-supervisor2-1}"
+COMPOSE_SERVICES="${COMPOSE_SERVICES:-supervisor1 supervisor2}"
 HELPER_IMAGE="${HELPER_IMAGE:-nicolaka/netshoot}"
 IFACE="${IFACE:-eth0}"
+
+targets() { # echo the containers to shape (resolved once, memoized in TARGETS)
+  if [[ -z "${TARGETS:-}" ]]; then
+    TARGETS="$(docker compose ps -q ${COMPOSE_SERVICES} 2>/dev/null | tr '\n' ' ')"
+    if [[ -z "${TARGETS// /}" ]]; then
+      echo "error: no running containers for services: ${COMPOSE_SERVICES}" >&2
+      echo "       run from dev-tools/cluster with the cluster up (docker compose up -d)," >&2
+      echo "       or set TARGETS=\"<name-or-id> ...\" to shape containers explicitly." >&2
+      exit 1
+    fi
+  fi
+  echo "${TARGETS}"
+}
+
+cname() { # human-readable container name for id/name $1 (falls back to $1)
+  local n; n="$(docker inspect -f '{{.Name}}' "$1" 2>/dev/null)" || true
+  n="${n#/}"
+  echo "${n:-$1}"
+}
 
 inns() { # run a command inside container $1's network namespace with NET_ADMIN
   local c="$1"; shift
@@ -51,28 +70,28 @@ cmd="${1:-show}"
 case "${cmd}" in
   add)
     delay="${2:-50}"; jitter="${3:-10}"; loss="${4:-0}"; limit="${5:-1000000}"
-    for c in ${TARGETS}; do
-      echo "==> ${c}: netem delay ${delay}ms ${jitter}ms loss ${loss}% limit ${limit} on ${IFACE}"
+    for c in $(targets); do
+      echo "==> $(cname "${c}"): netem delay ${delay}ms ${jitter}ms loss ${loss}% limit ${limit} on ${IFACE}"
       inns "${c}" tc qdisc replace dev "${IFACE}" root netem \
         delay "${delay}ms" "${jitter}ms" distribution normal loss "${loss}%" limit "${limit}"
     done
     ;;
   clear)
-    for c in ${TARGETS}; do
-      echo "==> ${c}: removing netem"
+    for c in $(targets); do
+      echo "==> $(cname "${c}"): removing netem"
       inns "${c}" tc qdisc del dev "${IFACE}" root 2>/dev/null || true
     done
     ;;
   show)
-    for c in ${TARGETS}; do
-      echo "==> ${c}:"
+    for c in $(targets); do
+      echo "==> $(cname "${c}"):"
       inns "${c}" tc qdisc show dev "${IFACE}"
     done
     ;;
   ping)
-    set -- ${TARGETS}
-    src="$1"; dst_host="${2:-supervisor2}"
-    echo "==> RTT from ${src} to ${dst_host} (5 pings)"
+    set -- $(targets)
+    src="$1"; dst_host="$(cname "${PING_DST:-${2:-supervisor2}}")"
+    echo "==> RTT from $(cname "${src}") to ${dst_host} (5 pings)"
     inns "${src}" ping -c 5 "${dst_host}"
     ;;
   *)

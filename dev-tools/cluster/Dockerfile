@@ -14,8 +14,7 @@
 # limitations under the License.
 
 # Runtime image for a local Storm cluster, built FROM the locally compiled
-# distribution so it runs *your* code (e.g. the zstd tuple-compression feature),
-# not a release from Docker Hub.
+# distribution so it runs *your* code, not a release from Docker Hub.
 #
 # The build context must be the directory that holds the distribution tarball,
 # i.e. storm-dist/binary/final-package/target. Build with:
