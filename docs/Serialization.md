@@ -88,6 +88,20 @@ builder.setBolt(COUNT_ID, new CountBolt(), cntBoltNum)
 
 You can also enable it topology-wide (or cluster-wide via `storm.yaml`) by setting `topology.tuple.compression.enable: true`, but enabling it only where large tuples are actually emitted is recommended.
 
+#### Flux
+
+> **Note:** With [Flux](flux.html), only **topology-wide** enablement is currently possible. Flux has no per-component configuration mechanism — `FluxBuilder` applies only parallelism, number of tasks, memory/CPU load, and groupings to the underlying declarers, and the `config:` block is topology-scoped. There is no Flux equivalent of `declarer.addConfiguration(...)`, so the per-component approach recommended above cannot be expressed in a Flux YAML definition.
+
+To enable compression for a Flux topology, set it in the topology-level `config:` block:
+
+```yaml
+config:
+  topology.tuple.compression.enable: true
+  topology.tuple.compression.threshold: 1460
+```
+
+Be aware that this enables compression for *every* remote-bound tuple in the topology that exceeds the threshold.
+
 #### Configuration reference
 
 | Config | Default | Description |
@@ -95,11 +109,13 @@ You can also enable it topology-wide (or cluster-wide via `storm.yaml`) by setti
 | `topology.tuple.compression.enable` | `false` | Enables Zstd compression of serialized tuples before remote transfer. Best set per component via `addConfiguration`. |
 | `topology.tuple.compression.threshold` | `1460` | Minimum serialized tuple size, in bytes, before compression is attempted. Tuples at or below this size are sent uncompressed. The default matches the typical Ethernet TCP MSS, so payloads that already fit in a single network frame are never compressed. |
 | `storm.compression.zstd.level` | `3` | Zstd compression level. Supported range is 1–19; levels 20–22 (ultra mode) are prohibited because of their memory requirements. |
-| `storm.compression.zstd.max.decompressed.bytes` | `104857600` (100 MB) | Upper bound on the decompressed size of a single tuple. Decompression that would exceed this limit fails, guarding against malicious or corrupt payloads. |
+| `topology.tuple.compression.max.decompressed.bytes` | `10485760` (10 MB) | Upper bound on the decompressed size of a single tuple. Decompression that would exceed this limit fails, guarding against malicious or corrupt payloads. |
 
 #### How decompression works
 
-Compression is self-describing on the wire, so **no configuration is required on the receiving side**. The deserializer inspects the leading bytes of each incoming payload: if they match the Zstd magic header it decompresses the payload (bounded by `storm.compression.zstd.max.decompressed.bytes`) before deserializing, otherwise it deserializes the bytes directly. This means a single deserializer transparently handles a mix of compressed and uncompressed tuples, and a worker that does not enable compression can still receive compressed tuples from one that does.
+Compression is self-describing on the wire, so **no extra configuration is required on the receiving side**. The deserializer inspects the leading bytes of each incoming payload: if they match the Zstd magic header it decompresses the payload (bounded by `topology.tuple.compression.max.decompressed.bytes`) before deserializing, otherwise it deserializes the bytes directly. A single deserializer therefore transparently handles a mix of compressed and uncompressed tuples.
+
+As an optimization, the deserializer determines once — when the worker starts — whether *any* component in the topology enables compression (by scanning the merged per-component configurations). If none does, the magic-header check is skipped entirely and the Zstd code path is never touched, so topologies that do not use the feature pay no per-tuple cost. The corollary is that compression must be enabled somewhere in the topology config for compressed tuples to be decompressed on receipt; since the setting is part of the topology configuration shared by all of its workers, this is always the case for tuples produced within the same topology.
 
 ### Component-specific serialization registrations
 

@@ -81,12 +81,24 @@ public class KryoTupleSerializerDeserializerTest {
     }
 
     private void enableComponentLevelCompression(String componentId) {
+        enableComponentLevelCompression(context, componentId);
+    }
+
+    private void enableComponentLevelCompression(GeneralTopologyContext ctx, String componentId) {
         Map<String, Object> componentConf = new HashMap<>();
         componentConf.put(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE, true);
         ComponentCommon common = mock(ComponentCommon.class);
         when(common.get_json_conf()).thenReturn(JSONValue.toJSONString(componentConf));
-        when(context.getComponentIds()).thenReturn(Collections.singleton(componentId));
-        when(context.getComponentCommon(componentId)).thenReturn(common);
+        when(ctx.getComponentIds()).thenReturn(Collections.singleton(componentId));
+        when(ctx.getComponentCommon(componentId)).thenReturn(common);
+    }
+
+    private GeneralTopologyContext newContext() {
+        GeneralTopologyContext ctx = mock(GeneralTopologyContext.class);
+        when(ctx.getRawTopology()).thenReturn(createStormTopology());
+        when(ctx.getComponentId(SOURCE_TASK_ID)).thenReturn(SOURCE_COMPONENT);
+        when(ctx.doSanityCheck()).thenReturn(false);
+        return ctx;
     }
 
     @Test
@@ -179,6 +191,28 @@ public class KryoTupleSerializerDeserializerTest {
 
         assertTrue(Utils.ZstdUtils.isZstd(bytes));
         assertSameTuple(original, deserializer.deserialize(bytes));
+    }
+
+    @Test
+    public void testDecompressPathGatedPerTopology() {
+        // Two distinct topologies sharing the exact same compressed frame on the wire. The gating decision is
+        // per-topology (workers are per-topology), so the same bytes must be decompressed by one and not the other.
+        GeneralTopologyContext compressingTopology = newContext();
+        enableComponentLevelCompression(compressingTopology, SOURCE_COMPONENT); // at least one component compresses
+        GeneralTopologyContext plainTopology = newContext();                    // no component enables compression
+
+        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0), compressingTopology);
+        TupleImpl original = tuple(new Values(bigString(16 * 1024)), MessageId.makeRootId(8L, 9L));
+        byte[] bytes = serializer.serialize(original);
+        assertTrue(Utils.ZstdUtils.isZstd(bytes), "precondition: serializer produced a compressed frame");
+
+        KryoTupleDeserializer compressingDeser = new KryoTupleDeserializer(baseConf(), compressingTopology);
+        KryoTupleDeserializer plainDeser = new KryoTupleDeserializer(baseConf(), plainTopology);
+
+        // Compressing topology: decompress path is taken, the frame round-trips.
+        assertSameTuple(original, compressingDeser.deserialize(bytes));
+        // Plain topology: decompress path is skipped, the frame is treated as a raw kryo tuple and fails to parse.
+        assertThrows(RuntimeException.class, () -> plainDeser.deserialize(bytes));
     }
 
     @Test
