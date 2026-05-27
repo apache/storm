@@ -56,8 +56,7 @@ public class KryoTupleSerializer implements ITupleSerializer {
             int dataLength = kryoOut.position();
 
             if (this.isCompressionEnabled && dataLength > this.compressionThreshold) {
-                byte[] bytesToCompress = Arrays.copyOf(rawBytes, dataLength);
-                return Utils.ZstdUtils.compress(bytesToCompress, this.zstdCompressionLevel);
+                return Utils.ZstdUtils.compress(rawBytes, 0, dataLength, this.zstdCompressionLevel);
             } else {
                 return Arrays.copyOf(rawBytes, dataLength);
             }
