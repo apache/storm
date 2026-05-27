@@ -23,9 +23,12 @@ import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KryoTupleDeserializer implements ITupleDeserializer {
     private static final Integer DEFAULT_MAX_DECOMPRESSED_BYTES = 10 * 1024 * 1024; // 10MBytes
+    public static final Logger LOG = LoggerFactory.getLogger(KryoTupleDeserializer.class);
     public static final String FAILED_TO_DESERIALIZE_TUPLE = "Failed to deserialize tuple";
     private final GeneralTopologyContext context;
     private final KryoValuesDeserializer kryo;
@@ -59,6 +62,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
                     // The collision is prevented not by the taskId range, but by the second field (streamId),
                     // which would rigidly have to equal 6069 to match the remaining magic bytes.
                     // Branch retained for correctness in case of an accidental collision.
+                    LOG.debug("isZstd() false positive: raw Kryo tuple matched ZSTD_MAGIC_HEADER (0xFD2FB528).");
                     return deserializeTuple(ser);
                 } else {
                     throw e;
