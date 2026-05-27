@@ -117,6 +117,33 @@ Compression is self-describing on the wire, so **no extra configuration is requi
 
 As an optimization, the deserializer determines once — when the worker starts — whether *any* component in the topology enables compression (by scanning the merged per-component configurations). If none does, the magic-header check is skipped entirely and the Zstd code path is never touched, so topologies that do not use the feature pay no per-tuple cost. The corollary is that compression must be enabled somewhere in the topology config for compressed tuples to be decompressed on receipt; since the setting is part of the topology configuration shared by all of its workers, this is always the case for tuples produced within the same topology.
 
+#### Indicative benchmark
+
+> **Disclaimer:** These numbers were gathered in a limited capacity while developing this feature and should be treated as a rough guide only, not as a performance guarantee. They were produced on a specific, deliberately favourable setup and your results will vary with topology shape, tuple size, network characteristics, and hardware.
+
+The benchmark ran two equivalent word-count topologies defined in `storm-perf` — one with tuple compression enabled in Spout component (`FileReadWordCountSpoutCompressionTopo`) and one without (`FileReadWordCountTopo`) — across workers connected by a simulated network with **10 ms latency** and **0.5 ms jitter**. This does not represent a typical intra-datacenter network; it deliberately emphasizes the maximum advantage the feature can offer when configured well. The tuple size used is the smallest that still yields a real benefit from compression (~1.5 KB).
+
+Sample round-trip ping between two supervisors on the Docker network:
+```
+--- cluster-supervisor2-1 ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4004ms
+rtt min/avg/max/mdev = 18.767/24.353/42.486/9.083 ms
+```
+
+Results (compression vs. no compression):
+
+| Metric | Compression | No compression | Difference | Better |
+| --- | --- | --- | --- | --- |
+| Avg transfer rate (msg/s) | 776,389 | 744,544 | +31,845 (+4.3%) | Compression |
+| Peak transfer rate (msg/s) | 805,700 | 790,300 | +15,400 | Compression |
+| Avg spout throughput (acks/s) | 98,167 | 92,844 | +5,323 (+5.8%) | Compression |
+| Peak spout throughput (acks/s) | 100,300 | 98,666 | +1,634 | Compression |
+| Avg complete latency (ms) | 362.48 | 376.73 | -14.25 (-3.8%) | Compression |
+| Max complete latency (ms) | 366.44 | 385.72 | -19.28 | Compression |
+| Runtime stability | More consistent | More fluctuation | — | Compression |
+
+In this configuration, compression improved transfer rate and spout throughput by roughly 4–6% and reduced complete latency by a few percent, while also producing more consistent per-task behaviour (less jitter across tasks). The takeaway is qualitative: when large tuples cross a high-latency link, trading CPU for fewer bytes on the wire can pay off — but you should measure with your own workload before enabling it broadly.
+
 ### Component-specific serialization registrations
 
 Storm 0.7.0 lets you set component-specific configurations (read more about this at [Configuration](Configuration.html)). Of course, if one component defines a serialization that serialization will need to be available to other bolts -- otherwise they won't be able to receive messages from that component!
