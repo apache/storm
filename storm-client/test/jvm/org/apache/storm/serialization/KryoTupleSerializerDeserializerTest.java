@@ -31,12 +31,16 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -223,6 +227,46 @@ public class KryoTupleSerializerDeserializerTest {
         byte[] bytes = serializer.serialize(tuple(new Values(bigString(16 * 1024)), MessageId.makeRootId(8L, 9L)));
         assertTrue(Utils.ZstdUtils.isZstd(bytes), "precondition: serializer produced a compressed frame");
         assertThrows(RuntimeException.class, () -> deserializer.deserialize(bytes));
+    }
+
+    @Test
+    public void testDecompressFailureFallsBackToRawTupleParsing() {
+        // Exercises the false-positive fallback in KryoTupleDeserializer#deserialize: compression is enabled and
+        // isZstd() reports a match, but the decompress path surfaces a "Failed to deserialize tuple" error.
+        enableComponentLevelCompression(SOURCE_COMPONENT); // anyTupleCompressionEnabled == true
+        KryoTupleSerializer serializer = new KryoTupleSerializer(baseConf(), context);
+        KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
+
+        TupleImpl original = tuple(new Values("hello", 42), MessageId.makeRootId(5L, 11L));
+        byte[] raw = serializer.serialize(original);
+        assertFalse(Utils.ZstdUtils.isZstd(raw), "precondition: serializer produced a raw, uncompressed tuple");
+
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            // Force entry into the decompress branch, then make decompression report a tuple-deserialization failure.
+            mocked.when(() -> Utils.ZstdUtils.isZstd(raw)).thenReturn(true);
+            mocked.when(() -> Utils.ZstdUtils.decompress(eq(raw), anyInt()))
+                  .thenThrow(new RuntimeException(KryoTupleDeserializer.FAILED_TO_DESERIALIZE_TUPLE));
+
+            TupleImpl result = deserializer.deserialize(raw);
+            assertSameTuple(original, result); // fallback re-parsed the raw bytes and recovered the tuple
+        }
+    }
+
+    @Test
+    public void testDecompressFailureFallbackRethrowsWhenRawBytesAlsoInvalid() {
+        // the raw bytes are not a valid kryo tuple either: the fallback parse
+        // must surface a RuntimeException rather than silently returning a bogus tuple.
+        enableComponentLevelCompression(SOURCE_COMPONENT);
+        KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
+
+        byte[] raw = {1, 2, 3, 4, 5, 6, 7, 8};
+        try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
+            mocked.when(() -> Utils.ZstdUtils.isZstd(raw)).thenReturn(true);
+            mocked.when(() -> Utils.ZstdUtils.decompress(eq(raw), anyInt()))
+                  .thenThrow(new RuntimeException(KryoTupleDeserializer.FAILED_TO_DESERIALIZE_TUPLE));
+
+            assertThrows(RuntimeException.class, () -> deserializer.deserialize(raw));
+        }
     }
 
     // corner cases
