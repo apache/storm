@@ -47,8 +47,8 @@ detailed under [Metrics & reports](#metrics--reports-prometheus--grafana).
 | `docker-compose.yml` | dev ZooKeeper, Nimbus, supervisor1, supervisor2, UI, Pushgateway, graphite-exporter, Prometheus, Grafana. |
 | `FileReadWordCountTopo-cluster.yaml` | Sample topology config for the smoke test below. |
 | `storm-client.yaml` | Client config to submit topologies from the host (e.g. from IntelliJ). |
-| `build-image.sh` | One command: rebuild the dist from current source (lib **and** lib-worker) and the Docker image. |
-| `prepare-extlib.sh` | Builds the Prometheus reporter + deps into `extlib-daemon/` (mounted on Nimbus). |
+| `build-image.sh` | One command: rebuild the dist from current source (lib **and** lib-worker), the Docker image, and (unless `--no-extlib`) the `extlib-daemon/` jars. |
+| `prepare-extlib.sh` | Builds the Prometheus reporter + deps into `extlib-daemon/` (mounted on Nimbus); run by `build-image.sh`, or standalone. |
 | `netsim.sh` | Inject network delay/jitter/loss between worker hosts (tc/netem) to test the network path. |
 | `prometheus/prometheus.yml` | Prometheus scrape config (Pushgateway + graphite-exporter). |
 | `graphite/graphite-mapping.yml` | Maps Storm metrics-v2 Graphite names into labelled Prometheus series. |
@@ -60,23 +60,28 @@ detailed under [Metrics & reports](#metrics--reports-prometheus--grafana).
 > bash and call `mvn` (not `mvn.cmd`), and `netsim.sh` relies on Linux
 > `tc`/`netem`. Native Windows is not supported yet.
 
-1. Build the distribution **and** the Docker image from the current source — one command:
+Build the distribution, the Docker image, **and** stage the Prometheus reporter
+onto Nimbus's classpath — one command:
 
-   ```bash
-   dev-tools/cluster/build-image.sh
-   ```
+```bash
+dev-tools/cluster/build-image.sh
+```
 
-   It rebuilds `storm-client-bin` + `final-package` (so both the daemon `lib` and
-   the worker `lib-worker` classpaths reflect your code), then builds the
-   `storm-local` image. Building only `final-package -am` is **not** enough: it
-   leaves `lib-worker` (the worker classpath) stale, so workers run old code.
+It rebuilds `storm-client-bin` + `final-package` (so both the daemon `lib` and
+the worker `lib-worker` classpaths reflect your code), then builds the
+`storm-local` image. Building only `final-package -am` is **not** enough: it
+leaves `lib-worker` (the worker classpath) stale, so workers run old code.
 
-2. Stage the Prometheus reporter (jar + runtime deps) onto Nimbus's classpath:
+As a final step it runs `prepare-extlib.sh`, which fills `extlib-daemon/`
+(git-ignored build artifacts) with the Prometheus reporter jar + runtime deps
+that docker-compose mounts onto Nimbus. Pass `--no-extlib` (or set
+`PREPARE_EXTLIB=0`) to skip it, or run it standalone after changing only that
+module:
 
-   ```bash
-   cd dev-tools/cluster
-   ./prepare-extlib.sh        # fills extlib-daemon/ (git-ignored build artifacts)
-   ```
+```bash
+cd dev-tools/cluster
+./prepare-extlib.sh
+```
 
 The Storm version is taken from the repo root `pom.xml` (`project.version`).
 `build-image.sh` reads it and writes `dev-tools/cluster/.env`; the compose file

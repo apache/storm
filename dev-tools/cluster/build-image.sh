@@ -23,7 +23,24 @@
 # workers keep running old code. This script rebuilds BOTH storm-client-bin and
 # final-package (with -am to refresh their Maven deps), so the tarball -- and the
 # image built from it -- reflect the current source on every classpath.
+#
+# As a final step it also runs prepare-extlib.sh (the extlib-daemon jars that
+# docker-compose mounts onto Nimbus), so a single command sets up everything.
+# Pass --no-extlib (or set PREPARE_EXTLIB=0) to skip that step.
 set -euo pipefail
+
+PREPARE_EXTLIB="${PREPARE_EXTLIB:-1}"
+for arg in "$@"; do
+  case "${arg}" in
+    --no-extlib) PREPARE_EXTLIB=0 ;;
+    -h|--help)
+      echo "usage: $0 [--no-extlib]"
+      echo "  --no-extlib   skip running prepare-extlib.sh after the image build"
+      exit 0
+      ;;
+    *) echo "error: unknown argument: ${arg}" >&2; echo "usage: $0 [--no-extlib]" >&2; exit 2 ;;
+  esac
+done
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${HERE}/../.." && pwd)"
@@ -50,6 +67,12 @@ docker build -f "${HERE}/Dockerfile" \
     --build-arg "STORM_VERSION=${VERSION}" \
     -t "${IMAGE}" \
     "${REPO_ROOT}/storm-dist/binary/final-package/target"
+
+if [[ "${PREPARE_EXTLIB}" != "0" ]]; then
+  echo
+  echo "==> Preparing extlib-daemon (prepare-extlib.sh; --no-extlib to skip)"
+  STORM_VERSION="${VERSION}" "${HERE}/prepare-extlib.sh"
+fi
 
 echo
 echo "Done. Image ${IMAGE} is up to date with the current source."

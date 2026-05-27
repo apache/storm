@@ -70,6 +70,9 @@ cmd="${1:-show}"
 case "${cmd}" in
   add)
     delay="${2:-50}"; jitter="${3:-10}"; loss="${4:-0}"; limit="${5:-1000000}"
+    if (( delay > 150 )); then
+      echo "warning: delay ${delay}ms > 150ms may cause heartbeats to Nimbus/ZK to time out" >&2
+    fi
     for c in $(targets); do
       echo "==> $(cname "${c}"): netem delay ${delay}ms ${jitter}ms loss ${loss}% limit ${limit} on ${IFACE}"
       inns "${c}" tc qdisc replace dev "${IFACE}" root netem \
