@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -1044,6 +1045,48 @@ public class Utils {
         }
 
         /**
+         * Compresses a slice of the provided byte array using Zstandard.
+         *
+         * <p>The output includes the standard Zstandard frame header, making it
+         * self-describing for the decompression phase.</p>
+         *
+         * @param data the raw byte array to compress.
+         * @param offset the start offset of the slice to compress.
+         * @param length the number of bytes to compress starting at {@code offset}.
+         * @param compressionLevel the zstd compression level.
+         * @return a compressed byte array, or an empty array if {@code data} is null or {@code length} is 0.
+         * @throws IndexOutOfBoundsException if {@code offset} and {@code length} describe a slice
+         *                                   that falls outside the bounds of {@code data}.
+         * @throws RuntimeException wrapping an {@link IOException} if the compression fails.
+         */
+        public static byte[] compress(byte[] data, int offset, int length, int compressionLevel) {
+            if (data == null || data.length == 0) {
+                return data;
+            }
+
+            if (length == 0) {
+                return new byte[0];
+            }
+
+            // Validate the slice up front so we fail clearly before opening any streams.
+            Objects.checkFromIndexSize(offset, length, data.length);
+
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream(length)) {
+                try (ZstdCompressorOutputStream zstdOut = ZstdCompressorOutputStream.builder()
+                        .setOutputStream(bos)
+                        .setBufferSize(BUFFER_SIZE) // impacts on compression ratio
+                        .setLevel(compressionLevel)
+                        .get()) {
+                    zstdOut.write(data, offset, length); // Write the slice directly
+                    zstdOut.finish();
+                }
+                return bos.toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException("Zstd compression failed", e);
+            }
+        }
+
+        /**
          * Compresses the provided byte array using Zstandard.
          *
          * <p>The output includes the standard Zstandard frame header, making it
@@ -1058,20 +1101,7 @@ public class Utils {
             if (data == null || data.length == 0) {
                 return data;
             }
-
-            try (ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length)) {
-                try (ZstdCompressorOutputStream zstdOut = ZstdCompressorOutputStream.builder()
-                        .setOutputStream(bos)
-                        .setBufferSize(BUFFER_SIZE) // impacts on compression ratio
-                        .setLevel(compressionLevel)
-                        .get()) {
-                    zstdOut.write(data);
-                    zstdOut.finish();
-                }
-                return bos.toByteArray();
-            } catch (IOException e) {
-                throw new RuntimeException("Zstd compression failed", e);
-            }
+            return compress(data, 0, data.length, compressionLevel);
         }
 
         /**

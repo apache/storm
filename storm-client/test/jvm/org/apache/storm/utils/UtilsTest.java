@@ -567,6 +567,56 @@ public class UtilsTest {
     }
 
     @Test
+    void compress_offsetLength_compressesOnlyTheSlice() {
+        byte[] prefix = "PREFIX-".getBytes(StandardCharsets.UTF_8);
+        byte[] payload = "Hello, ZSTD!".getBytes(StandardCharsets.UTF_8);
+        byte[] suffix = "-SUFFIX".getBytes(StandardCharsets.UTF_8);
+
+        byte[] framed = new byte[prefix.length + payload.length + suffix.length];
+        System.arraycopy(prefix, 0, framed, 0, prefix.length);
+        System.arraycopy(payload, 0, framed, prefix.length, payload.length);
+        System.arraycopy(suffix, 0, framed, prefix.length + payload.length, suffix.length);
+
+        byte[] compressedSlice = Utils.ZstdUtils.compress(framed, prefix.length, payload.length, 3);
+        byte[] decompressed = Utils.ZstdUtils.decompress(compressedSlice, 1024 * 1024);
+        assertArrayEquals(payload, decompressed,
+                "Compressing a slice then decompressing must recover only that slice");
+
+        // The slice path must match the full-array path when the slice spans the whole array.
+        byte[] compressedWhole = Utils.ZstdUtils.compress(payload, 3);
+        byte[] compressedFullSlice = Utils.ZstdUtils.compress(payload, 0, payload.length, 3);
+        assertArrayEquals(compressedWhole, compressedFullSlice,
+                "Whole-array slice must produce the same output as the convenience overload");
+    }
+
+    @Test
+    void compress_offsetLength_zeroLengthOrNull() {
+        byte[] empty = Utils.ZstdUtils.compress(new byte[]{1, 2, 3}, 1, 0, 3);
+        assertNotNull(empty);
+        assertEquals(0, empty.length);
+
+        byte[] fromNull = Utils.ZstdUtils.compress(null, 0, 0, 3);
+        assertNull(fromNull);
+
+        byte[] emptyArray = new byte[0];
+        byte[] fromEmpty = Utils.ZstdUtils.compress(emptyArray, 0, 0, 3);
+        assertEquals(emptyArray, fromEmpty);
+    }
+
+    @Test
+    void compress_offsetLength_outOfBounds_throws() {
+        byte[] data = {1, 2, 3, 4};
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> Utils.ZstdUtils.compress(data, -1, 2, 3));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> Utils.ZstdUtils.compress(data, 0, -1, 3));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> Utils.ZstdUtils.compress(data, 3, 2, 3));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> Utils.ZstdUtils.compress(data, 5, 1, 3));
+    }
+
+    @Test
     void compress_highEntropData_doesNotThrow() {
         // Random-ish bytes — Zstd may not shrink them, but must not fail
         byte[] input = zstdSampleData(8192);
