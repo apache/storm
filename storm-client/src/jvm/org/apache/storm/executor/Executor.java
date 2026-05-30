@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -134,7 +135,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final String upstreamFeedbackStreamId;
     protected final boolean upstreamFeedbackEnabled;
     protected final ChildEwmaStats childEwmaStats;
-
+    private final Map<Integer, EwmaFeedbackRecord> ewmaRecordCache; // taskId, EwmaRecord implemented for lazy update
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
         this.executorId = executorId;
@@ -196,8 +197,11 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
         this.childEwmaStats = new ChildEwmaStats(this.upstreamFeedbackEnabled);
         if (this.upstreamFeedbackEnabled) {
+            this.ewmaRecordCache = new ConcurrentHashMap<>();
             // register ewma stats for loadaware streaming grouping
             groupers.forEach(g -> g.registerEwmaStats(childEwmaStats));
+        } else {
+            this.ewmaRecordCache = Collections.emptyMap();
         }
     }
 
@@ -387,10 +391,16 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      *         compatible with the metrics stream schema.
      */
     public Values buildUpstreamFeedbackTuple(int taskId) {
+        EwmaFeedbackRecord statsRecord = EwmaFeedbackRecord.fromWorkerState(this.workerData, taskId);
+        EwmaFeedbackRecord prevStatsRecords = this.ewmaRecordCache.put(taskId, statsRecord);
+        if (prevStatsRecords != null && prevStatsRecords.equals(statsRecord)) {
+            // lazy update, the metrics are stable, and it is not required to propagate the same value.
+            return null;
+        }
         IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
             hostname, workerTopologyContext.getThisWorkerPort(),
             componentId, taskId, Time.currentTimeSecs(), -1);
-        return new Values(taskInfo, EwmaFeedbackRecord.fromWorkerState(this.workerData, taskId));
+        return new Values(taskInfo, statsRecord);
     }
 
     /**

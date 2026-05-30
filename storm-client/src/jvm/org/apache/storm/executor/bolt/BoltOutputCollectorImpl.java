@@ -135,10 +135,13 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         }
         // send upstream feedback if enabled
         if (anchors != null && isUpstreamFeedback && upstreamFeedbackRate.get()) {
-            for (Tuple a : anchors) {
-                int parentTask = a.getSourceTask();
-                task.sendUnanchoredFeedback(upstreamFeedbackStreamId, executor.buildUpstreamFeedbackTuple(taskId),
-                        parentTask, xsfer, executor.getPendingEmits());
+            Values upstreamFeedbackTuple = executor.buildUpstreamFeedbackTuple(taskId);
+            if (upstreamFeedbackTuple != null) {
+                for (Tuple a : anchors) {
+                    int parentTask = a.getSourceTask();
+                    task.sendUnanchoredFeedback(upstreamFeedbackStreamId, upstreamFeedbackTuple, parentTask, xsfer,
+                            executor.getPendingEmits());
+                }
             }
         }
         return outTasks;
