@@ -1,0 +1,54 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Cluster config shared by every daemon. Bind-mounted over
+# ${STORM_HOME}/conf/storm.yaml by docker-compose. Hostnames below are the
+# docker-compose service names, resolvable on the cluster's bridge network.
+storm.zookeeper.servers:
+  - "zookeeper"
+nimbus.seeds: ["nimbus"]
+
+storm.local.dir: "/data/storm"
+
+# Two slots per supervisor. With two supervisors that is four worker slots,
+# so a topology.workers >= 2 topology spreads workers across containers and
+# its inter-worker traffic actually crosses the network.
+supervisor.slots.ports:
+  - 6700
+  - 6701
+
+ui.port: 8080
+
+# Modest heaps so the whole cluster fits comfortably on a laptop.
+nimbus.childopts: "-Xmx512m"
+ui.childopts: "-Xmx256m"
+logviewer.childopts: "-Xmx128m"
+supervisor.childopts: "-Xmx256m"
+worker.childopts: "-Xmx512m"
+
+# Metrics v2: every worker reports its Dropwizard metrics (per-task tuple
+# rates/latencies/capacity, JCQueue, JVM memory/GC/threads, cgroup, messaging)
+# in Graphite plaintext to the graphite_exporter, which Prometheus scrapes.
+# This push model handles ephemeral workers without per-worker scrape targets.
+topology.metrics.reporters:
+  - class: "org.apache.storm.metrics2.reporters.GraphiteStormReporter"
+    report.period: 10
+    report.period.units: "SECONDS"
+    graphite.host: "graphite-exporter"
+    graphite.port: 9109
+    graphite.transport: "tcp"
+
+# enable EWMA metrics
+topology.stats.ewma.enable: true

@@ -1,0 +1,182 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A local Storm cluster in cluster (distributed) mode: dev ZooKeeper + Nimbus +
+# two Supervisors + UI, plus a Pushgateway + Prometheus + Grafana stack for
+# metrics. Built from the locally compiled distribution so it runs your code.
+# Prereq: run ./prepare-extlib.sh once. Start with: docker compose up --build
+
+# Build the Storm image once; every storm service reuses it.
+# STORM_VERSION must match the project version in the repo root pom.xml. It is
+# read from .env (written by build-image.sh from the pom); the default below is
+# the fallback when .env is absent.
+x-storm: &storm
+  image: storm-local:${STORM_VERSION:-3.0.0-SNAPSHOT}
+  build:
+    context: ../../storm-dist/binary/final-package/target
+    dockerfile: ../../../../dev-tools/cluster/Dockerfile
+    args:
+      STORM_VERSION: "${STORM_VERSION:-3.0.0-SNAPSHOT}"
+  volumes:
+    - ./storm.yaml:/opt/storm/conf/storm.yaml:ro
+    # Sample input read by FileReadSpout. It runs on the workers, so the file
+    # must exist on every supervisor host, not just where you submit from.
+    - ../../examples/storm-perf/src/main/sampledata/randomwords.txt:/topology/randomwords.txt:ro
+  restart: on-failure
+  networks:
+    - storm
+
+services:
+  # Storm's built-in development ZooKeeper (single node, in-memory-ish, under
+  # dev.zookeeper.path).
+  zookeeper:
+    <<: *storm
+    hostname: zookeeper
+    command: storm dev-zookeeper
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import socket; socket.create_connection((\"localhost\", 2181), 2)'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  nimbus:
+    <<: *storm
+    hostname: nimbus
+    # Cluster-summary metrics live on the Nimbus leader, so the Prometheus
+    # Pushgateway reporter is enabled here (and only here) via -c overrides --
+    # keeping storm.yaml clean and avoiding multiple daemons clobbering the same
+    # Pushgateway group. The reporter jars come from the extlib-daemon mount.
+    command:
+      - storm
+      - nimbus
+      - -c
+      - 'storm.daemon.metrics.reporter.plugins=["org.apache.storm.metrics.prometheus.PrometheusPreparableReporter"]'
+      - -c
+      - storm.daemon.metrics.reporter.interval.secs=10
+      - -c
+      - storm.daemon.metrics.reporter.plugin.prometheus.endpoint=pushgateway:9091
+      - -c
+      - storm.daemon.metrics.reporter.plugin.prometheus.job=nimbus
+    ports:
+      - "127.0.0.1:6627:6627"   # Thrift, for submitting topologies from the host
+    volumes:
+      - ./storm.yaml:/opt/storm/conf/storm.yaml:ro
+      # Prometheus Pushgateway reporter + its runtime deps (see prepare-extlib.sh).
+      - ./extlib-daemon:/opt/storm/extlib-daemon:ro
+      # Storm-perf jar and sample.
+      - ../../examples/storm-perf/target/storm-perf-${STORM_VERSION:-3.0.0-SNAPSHOT}.jar:/topology/storm-perf.jar:ro
+      - ../../examples/storm-perf/src/main/sampledata/randomwords.txt:/topology/randomwords.txt:ro
+      # This is only an example. Customize your cluster conf per benchmark.
+      - ./FileReadWordCountTopo-cluster.yaml:/topology/topo.yaml:ro
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      pushgateway:
+        condition: service_started
+
+  supervisor1:
+    <<: *storm
+    hostname: supervisor1
+    command: storm supervisor
+    depends_on:
+      - nimbus
+
+  supervisor2:
+    <<: *storm
+    hostname: supervisor2
+    command: storm supervisor
+    depends_on:
+      - nimbus
+
+  ui:
+    <<: *storm
+    hostname: ui
+    command: storm ui
+    ports:
+      - "127.0.0.1:8080:8080"   # Storm UI http://localhost:8080
+    depends_on:
+      - nimbus
+
+  # Observability: Storm cluster metrics -> Pushgateway -> Prometheus -> Grafana
+
+  # Nimbus pushes cluster-summary metrics here every 10s; Prometheus scrapes it.
+  pushgateway:
+    image: prom/pushgateway:v1.10.0
+    hostname: pushgateway
+    networks:
+      - storm
+
+  # Receives Storm metrics-v2 in Graphite plaintext (port 9109) from every worker
+  # and exposes them to Prometheus on :9108. Unmapped names still appear (auto
+  # named), so ALL v2 metrics are available; the mapping just tidies the common
+  # families into labelled storm_worker / storm_topology series.
+  graphite-exporter:
+    image: prom/graphite-exporter:v0.16.0
+    hostname: graphite-exporter
+    command:
+      - "--graphite.mapping-config=/etc/graphite/graphite-mapping.yml"
+    volumes:
+      - ./graphite/graphite-mapping.yml:/etc/graphite/graphite-mapping.yml:ro
+    networks:
+      - storm
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    hostname: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      # Short retention keeps the on-disk TSDB small for a dev cluster.
+      - "--storage.tsdb.retention.time=2h"
+    # TSDB on a named volume (on disk). It is deleted by `docker compose down -v`.
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"   # Prometheus UI http://localhost:9090
+    depends_on:
+      - pushgateway
+    networks:
+      - storm
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    hostname: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      # Grafana DB/state on a named volume (on disk). Deleted by `down -v`; the
+      # datasource and dashboards are re-provisioned from files on every start.
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"   # Grafana -> http://localhost:3000 (admin/admin)
+    depends_on:
+      - prometheus
+    networks:
+      - storm
+
+volumes:
+  # Metrics live here on disk; `docker compose down -v` deletes them.
+  prometheus-data:
+  grafana-data:
+
+networks:
+  storm:
+    driver: bridge

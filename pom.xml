@@ -274,6 +274,7 @@
                                 <exclude>**/src/test/resources/test-worker.log.test</exclude>
                                 <exclude>**/src/test/resources/logviewer-search-context-tests.log.test
                                 </exclude>
+                                <exclude>**/dev-tools/cluster/grafana/dashboards/*.json</exclude>
 
                                 <!-- StormSQL -->
                                 <exclude>**/src/codegen/config.fmpp</exclude>
