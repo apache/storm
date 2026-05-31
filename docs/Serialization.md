@@ -61,6 +61,89 @@ Beware that Java serialization is extremely expensive, both in terms of CPU cost
 
 You can turn on/off the behavior to fall back on Java serialization by setting the `Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION` config to true/false. The default value is false for security reasons.
 
+### Tuple compression
+
+For inter-worker (remote) traffic, Storm can optionally compress serialized tuples with [Zstandard](https://facebook.github.io/zstd/) before they are sent over the network. This is intended for one specific scenario: components that emit **large** payloads to a remote worker, where the bytes saved on the wire outweigh the CPU cost of compression. A good example is a spout that emits entire lines of text to a downstream bolt running on a different worker.
+
+Compression is **disabled by default** and follows the serialization lifecycle exactly:
+
+- **Intra-worker (local) traffic** bypasses `KryoTupleSerializer` altogether, so it is never compressed regardless of configuration. You do not pay any CPU cost for tuples that stay inside a worker process.
+- **Inter-worker (remote) traffic** is compressed only when compression is enabled for the source component *and* the serialized tuple is larger than the configured threshold. Small tuples (single words, IDs, etc.) are left uncompressed, since the framing overhead of a compressed payload can exceed the original size.
+
+#### Enabling compression per component
+
+Compression is controlled by the component-specific configuration `topology.tuple.compression.enable`. Because Storm merges component-specific configuration over the topology configuration, you can enable it for just the components that emit large tuples, leaving the rest of the topology untouched:
+
+```java
+TopologyBuilder builder = new TopologyBuilder();
+
+builder.setSpout(SPOUT_ID, new FileReadSpout(inputFile), spoutNum)
+       .addConfiguration(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE, true);
+
+builder.setBolt(SPLIT_ID, new SplitSentenceBolt(), spBoltNum)
+       .localOrShuffleGrouping(SPOUT_ID);
+builder.setBolt(COUNT_ID, new CountBolt(), cntBoltNum)
+       .fieldsGrouping(SPLIT_ID, new Fields(SplitSentenceBolt.FIELDS));
+```
+
+You can also enable it topology-wide (or cluster-wide via `storm.yaml`) by setting `topology.tuple.compression.enable: true`, but enabling it only where large tuples are actually emitted is recommended.
+
+#### Flux
+
+> **Note:** With [Flux](flux.html), only **topology-wide** enablement is currently possible. Flux has no per-component configuration mechanism — `FluxBuilder` applies only parallelism, number of tasks, memory/CPU load, and groupings to the underlying declarers, and the `config:` block is topology-scoped. There is no Flux equivalent of `declarer.addConfiguration(...)`, so the per-component approach recommended above cannot be expressed in a Flux YAML definition.
+
+To enable compression for a Flux topology, set it in the topology-level `config:` block:
+
+```yaml
+config:
+  topology.tuple.compression.enable: true
+  topology.tuple.compression.threshold: 1460
+```
+
+Be aware that this enables compression for *every* remote-bound tuple in the topology that exceeds the threshold.
+
+#### Configuration reference
+
+| Config | Default | Description |
+| --- | --- | --- |
+| `topology.tuple.compression.enable` | `false` | Enables Zstd compression of serialized tuples before remote transfer. Best set per component via `addConfiguration`. |
+| `topology.tuple.compression.threshold` | `1460` | Minimum serialized tuple size, in bytes, before compression is attempted. Tuples at or below this size are sent uncompressed. The default matches the typical Ethernet TCP MSS, so payloads that already fit in a single network frame are never compressed. |
+| `storm.compression.zstd.level` | `3` | Zstd compression level. Supported range is 1–19; levels 20–22 (ultra mode) are prohibited because of their memory requirements. |
+| `topology.tuple.compression.max.decompressed.bytes` | `10485760` (10 MB) | Upper bound on the decompressed size of a single tuple. Decompression that would exceed this limit fails, guarding against malicious or corrupt payloads. |
+
+#### How decompression works
+
+Compression is self-describing on the wire, so **no extra configuration is required on the receiving side**. The deserializer inspects the leading bytes of each incoming payload: if they match the Zstd magic header it decompresses the payload (bounded by `topology.tuple.compression.max.decompressed.bytes`) before deserializing, otherwise it deserializes the bytes directly. A single deserializer therefore transparently handles a mix of compressed and uncompressed tuples.
+
+As an optimization, the deserializer determines once — when the worker starts — whether *any* component in the topology enables compression (by scanning the merged per-component configurations). If none does, the magic-header check is skipped entirely and the Zstd code path is never touched, so topologies that do not use the feature pay no per-tuple cost. The corollary is that compression must be enabled somewhere in the topology config for compressed tuples to be decompressed on receipt; since the setting is part of the topology configuration shared by all of its workers, this is always the case for tuples produced within the same topology.
+
+#### Indicative benchmark
+
+> **Disclaimer:** These numbers were gathered in a limited capacity while developing this feature and should be treated as a rough guide only, not as a performance guarantee. They were produced on a specific, deliberately favourable setup and your results will vary with topology shape, tuple size, network characteristics, and hardware.
+
+The benchmark ran two equivalent word-count topologies defined in `storm-perf` — one with tuple compression enabled in Spout component (`FileReadWordCountSpoutCompressionTopo`) and one without (`FileReadWordCountTopo`) — across workers connected by a simulated network with **10 ms latency** and **0.5 ms jitter**. This does not represent a typical intra-datacenter network; it deliberately emphasizes the maximum advantage the feature can offer when configured well. The tuple size used is the smallest that still yields a real benefit from compression (~1.5 KB).
+
+Sample round-trip ping between two supervisors on the Docker network:
+```
+--- cluster-supervisor2-1 ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4004ms
+rtt min/avg/max/mdev = 18.767/24.353/42.486/9.083 ms
+```
+
+Results (compression vs. no compression):
+
+| Metric | Compression | No compression | Difference | Better |
+| --- | --- | --- | --- | --- |
+| Avg transfer rate (msg/s) | 776,389 | 744,544 | +31,845 (+4.3%) | Compression |
+| Peak transfer rate (msg/s) | 805,700 | 790,300 | +15,400 | Compression |
+| Avg spout throughput (acks/s) | 98,167 | 92,844 | +5,323 (+5.8%) | Compression |
+| Peak spout throughput (acks/s) | 100,300 | 98,666 | +1,634 | Compression |
+| Avg complete latency (ms) | 362.48 | 376.73 | -14.25 (-3.8%) | Compression |
+| Max complete latency (ms) | 366.44 | 385.72 | -19.28 | Compression |
+| Runtime stability | More consistent | More fluctuation | — | Compression |
+
+In this configuration, compression improved transfer rate and spout throughput by roughly 4–6% and reduced complete latency by a few percent, while also producing more consistent per-task behaviour (less jitter across tasks). The takeaway is qualitative: when large tuples cross a high-latency link, trading CPU for fewer bytes on the wire can pay off — but you should measure with your own workload before enabling it broadly.
+
 ### Component-specific serialization registrations
 
 Storm 0.7.0 lets you set component-specific configurations (read more about this at [Configuration](Configuration.html)). Of course, if one component defines a serialization that serialization will need to be available to other bolts -- otherwise they won't be able to receive messages from that component!

@@ -1,0 +1,130 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Maps Storm metrics-v2 Graphite names into clean, labelled Prometheus series.
+#
+# Storm worker/topology metric names look like (dots are field separators, the
+# metric itself is appended after a dash):
+#   storm.worker.<stormId>.<host>.<component>.<stream>.<task>.<port>-<metric>   (per-stream)
+#   storm.worker.<stormId>.<host>.<component>.<task>.<port>-<metric>            (no stream)
+#   storm.topology.<stormId>.<host>.<component>.<task>.<port>-<metric>          (__system JVM, task -1)
+#
+# Rules are tried in order, first match wins. The first block models TaskMetrics
+# (org.apache.storm.metrics2.TaskMetrics) explicitly: the operation names are a
+# fixed set, so we hard-code them and avoid the dash-ambiguity of generic parsing.
+# Each TaskMetrics metric is per (component, task, stream); the `key` label holds
+# the metric key -- the own stream for OUTPUT metrics (emit/transfer) or the
+# <sourceComponent>:<sourceStream> for INPUT metrics (execute/ack/fail/latency).
+# RateCounter exports both `.count` (cumulative, sampling-scaled) and `.m1_rate`
+# (tuples/s over 1 min); latencies/capacity are RollingAverageGauge single values.
+#
+# Anything not matched by these falls through to the generic storm_worker /
+# storm_topology rules, so EVERY v2 metric remains queryable.
+
+# common worker prefix capture used below:
+#   $1 topology_id  $2 host  $3 component  $4 stream  $5 task  $6 port  $7 key
+mappings:
+  # ---- TaskMetrics: throughput rates (tuples/s) ----
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__emit-count-(.+)\.m1_rate$'
+    match_type: regex
+    name: "storm_emit_rate"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__transfer-count-(.+)\.m1_rate$'
+    match_type: regex
+    name: "storm_transfer_rate"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__execute-count-(.+)\.m1_rate$'
+    match_type: regex
+    name: "storm_execute_rate"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__ack-count-(.+)\.m1_rate$'
+    match_type: regex
+    name: "storm_ack_rate"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__fail-count-(.+)\.m1_rate$'
+    match_type: regex
+    name: "storm_fail_rate"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+
+  # ---- TaskMetrics: cumulative totals (sampling-scaled) ----
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__emit-count-(.+)\.count$'
+    match_type: regex
+    name: "storm_emit_total"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__transfer-count-(.+)\.count$'
+    match_type: regex
+    name: "storm_transfer_total"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__execute-count-(.+)\.count$'
+    match_type: regex
+    name: "storm_execute_total"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__ack-count-(.+)\.count$'
+    match_type: regex
+    name: "storm_ack_total"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__fail-count-(.+)\.count$'
+    match_type: regex
+    name: "storm_fail_total"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+
+  # ---- TaskMetrics: latencies (ms, RollingAverageGauge) ----
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__execute-latency-(.+)$'
+    match_type: regex
+    name: "storm_execute_latency_ms"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__process-latency-(.+)$'
+    match_type: regex
+    name: "storm_process_latency_ms"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__complete-latency-(.+)$'
+    match_type: regex
+    name: "storm_complete_latency_ms"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+
+  # ---- TaskMetrics: latency jitter (EWMA, RFC 3550; needs topology.stats.ewma.enable=true) ----
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__execute-jitter-(.+)$'
+    match_type: regex
+    name: "storm_execute_jitter_ms"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__process-jitter-(.+)$'
+    match_type: regex
+    name: "storm_process_jitter_ms"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__complete-jitter-(.+)$'
+    match_type: regex
+    name: "storm_complete_jitter_ms"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", key: "$7"}
+
+  # ---- TaskMetrics: capacity (RollingAverageGauge over all streams) ----
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-__capacity$'
+    match_type: regex
+    name: "storm_capacity"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6"}
+
+  # ---- Generic fallback: any other worker/topology metric (messaging, skipped,
+  #      backpressure, heartbeat, JVM/GC/memory/threads ...) ----
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-(.+)$'
+    match_type: regex
+    name: "storm_worker"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "$4", task: "$5", port: "$6", metric: "$7"}
+  - match: '^storm\.worker\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-(.+)$'
+    match_type: regex
+    name: "storm_worker"
+    labels: {topology_id: "$1", host: "$2", component: "$3", stream: "", task: "$4", port: "$5", metric: "$6"}
+  - match: '^storm\.topology\.([^.]+)\.([^.]+)\.([^.]+)\.(-?\d+)\.(\d+)-(.+)$'
+    match_type: regex
+    name: "storm_topology"
+    labels: {topology_id: "$1", host: "$2", component: "$3", task: "$4", port: "$5", metric: "$6"}

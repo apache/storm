@@ -1523,6 +1523,27 @@ public class Config extends HashMap<String, Object> {
     @IsString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
     /**
+     * Topology configuration to enable compression of serialized tuples during inter-worker network transfer.
+     * When set to {@code true}, tuples emitted by this component will be compressed prior to being sent
+     * over the network to remote worker processes. This is highly recommended for topologies exchanging
+     * large payloads (e.g., entire lines of text or large data blocks) to significantly reduce network I/O.
+     * Default: {@code false} (Disabled by default to prevent unexpected CPU overhead).
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_TUPLE_COMPRESSION_ENABLE = "topology.tuple.compression.enable";
+    /**
+     * Topology configuration specifying the minimum size threshold (in bytes) for compressing serialized tuples
+     * during inter-worker network transfer.
+     * When the serialized byte array of a tuple exceeds this threshold, it will be compressed
+     * prior to being transmitted over the network to a remote worker process. This optimizes network I/O
+     * for large payloads (such as text blocks or massive objects) without wasting cycles on small data.
+     * Set to 0 to bypass the size check and compress all tuples regardless of size.
+     * Default: {@code 1460} bytes (The typical maximum segment size [MSS] for a standard
+     * Ethernet TCP payload, preventing compression on packets that already fit within a single network frame).
+     */
+    @IsPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_TUPLE_COMPRESSION_THRESHOLD = "topology.tuple.compression.threshold";
+    /**
      * GZIP max decompression bytes. Defaults to 104857600 (100MB).
      */
     @IsPositiveNumber(includeZero = false)
@@ -1540,6 +1561,11 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber(includeZero = false)
     public static final String STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES = "storm.compression.zstd.max.decompressed.bytes";
+    /**
+     * Max decompression bytes for tuples. Defaults to 10485760 (10MB).
+     */
+    @IsPositiveNumber(includeZero = false)
+    public static final String TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES = "topology.tuple.compression.max.decompressed.bytes";
     /**
      * Configure the topology metrics reporters to be used on workers.
      */
