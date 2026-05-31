@@ -49,6 +49,7 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.shade.org.apache.curator.framework.api.BackgroundVersionable;
 import org.apache.storm.shade.org.apache.curator.framework.api.DeleteBuilder;
 import org.apache.storm.shade.org.apache.curator.framework.api.ExistsBuilder;
@@ -565,6 +566,40 @@ public class ClusterStateTest {
         assertDoesNotThrow(() -> ClientZookeeper.deleteNode(zk, "/race"));
         // ensure to delete was actually attempted (the catch branch was exercised, not skipped)
         Mockito.verify(deleteBuilder).deletingChildrenIfNeeded();
+    }
+
+    @Test
+    public void testGetDataArmsWatchOnAbsentNode() throws Exception {
+        try (InProcessZookeeper zk = new InProcessZookeeper()) {
+            Map<String, Object> conf = mkConfig(zk.getPort());
+            AtomicReference<Map<String, Object>> lastEvent = new AtomicReference<>();
+
+            WatcherCallBack watcher = (state, type, path) -> {
+                if (type != Watcher.Event.EventType.None) {
+                    lastEvent.set(event(type, path));
+                }
+            };
+
+            CuratorFramework client = ClientZookeeper.mkClient(conf, List.of("localhost"),
+                zk.getPort(), "", watcher, null, DaemonType.UNKNOWN);
+            try {
+                final String path = String.format("/node-%s", Time.currentTimeMillis());
+                // absent node,  the fallback must have armed a watch
+                assertNull(ClientZookeeper.getData(client, path, true));
+                assertNull(lastEvent.get());
+
+                // create the node
+                ClientZookeeper.createNode(client, path, barr(1, 2, 3), OPEN_ACL);
+                Awaitility.await().atMost(5, TimeUnit.SECONDS)
+                    .pollInterval(10, TimeUnit.MILLISECONDS)
+                    .until(() -> lastEvent.get() != null);
+
+                // check the node is announced
+                assertEquals(event(Watcher.Event.EventType.NodeCreated, path), lastEvent.get());
+            } finally {
+                client.close();
+            }
+        }
     }
 
 }
