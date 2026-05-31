@@ -623,31 +623,30 @@ public class Config extends HashMap<String, Object> {
     @IsString
     public static final String TOPOLOGY_UPSTREAM_FEEDBACK_STREAM_ID = "topology.upstream.feedback.stream";
     /**
-     * Configuration for the sampling rate of upstream feedback messages within the topology.
+     * The period, in seconds, between upstream feedback messages within the topology.
      *
-     * <p>This ratio defines the probability with which a task will emit a feedback tuple
-     * (containing metrics such as EWMA jitter stats) back to its parent tasks.
+     * <p>A dedicated internal feedback tick fires on this interval; on each tick a task emits
+     * a feedback tuple (containing metrics such as EWMA jitter stats) back to its parent tasks.
      * This mechanism allows parent tasks to receive performance signals from downstream
-     * components to facilitate adaptive flow control or load balancing.</p>
+     * components to facilitate adaptive flow control or load balancing. Unlike a probabilistic
+     * trigger, the period yields a deterministic, data-volume-independent feedback cadence.</p>
      *
-     * <p><b>Validation:</b> Must be a double value within the <b>open interval (0.0, 1.0)</b>.
-     * Values of 0.0 (disabled) or 1.0 (every tuple) are rejected by the
-     * {@link ConfigValidation.ZeroOneOpenIntervalValidator} to prevent improper
-     * configuration of the feedback loop.</p>
+     * <p><b>Validation:</b> Must be a positive integer (seconds).</p>
      *
      * <p><b>Impact:</b>
      * <ul>
-     *   <li>Higher values provide more precise, real-time performance data but increase
+     *   <li>Lower values provide more precise, real-time performance data but increase
      *       network overhead and CPU usage on the control plane.</li>
-     *   <li>Lower values minimize the "observer effect" on the topology's throughput
-     *       while still providing statistical snapshots of health.</li>
+     *   <li>Higher values minimize the "observer effect" on the topology's throughput
+     *       while still providing periodic statistical snapshots of health.</li>
      * </ul>
      * </p>
      *
-     * Defaults to 0.01 if not explicitly configured.
+     * Defaults to 10 if not explicitly configured.
      */
-    @CustomValidator(validatorClass = ConfigValidation.ZeroOneOpenIntervalValidator.class)
-    public static final String TOPOLOGY_UPSTREAM_FEEDBACK_RATIO = "topology.upstream.feedback.ratio";
+    @IsInteger
+    @IsPositiveNumber
+    public static final String TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS = "topology.upstream.feedback.freq.secs";
     /**
      * The time period that builtin metrics data in bucketed into.
      */

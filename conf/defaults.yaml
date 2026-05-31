@@ -283,7 +283,7 @@ topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.stats.ewma.enable: false
 topology.stats.ewma.smoothing.factor: 0.0625
-topology.upstream.feedback.ratio: 0.01
+topology.upstream.feedback.freq.secs: 10
 topology.upstream.feedback.stream: "__feedback"
 topology.builtin.metrics.bucket.size.secs: 60
 topology.fall.back.on.java.serialization: false

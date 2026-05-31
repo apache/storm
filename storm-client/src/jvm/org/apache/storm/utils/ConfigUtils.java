@@ -211,15 +211,14 @@ public class ConfigUtils {
         return ObjectReader.getString(value);
     }
 
-    public static double upstreamFeedbackRatio(Map<String, Object> conf) {
-        Object value = conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_RATIO);
-        double ratio = ObjectReader.getDouble(value);
-        if (ratio > 0.0 && ratio < 1.0) {
-            return ratio;
+    public static int upstreamFeedbackFreqSecs(Map<String, Object> conf) {
+        int freqSecs = ObjectReader.getInt(conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS), 10);
+        if (freqSecs > 0) {
+            return freqSecs;
         }
         throw new IllegalArgumentException(
-            "Illegal " + Config.TOPOLOGY_UPSTREAM_FEEDBACK_RATIO
-                + " in conf: " + ratio + " must be in (0, 1)");
+            "Illegal " + Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS
+                + " in conf: " + freqSecs + " must be > 0");
     }
 
     public static BooleanSupplier mkStatsSampler(Map<String, Object> conf) {

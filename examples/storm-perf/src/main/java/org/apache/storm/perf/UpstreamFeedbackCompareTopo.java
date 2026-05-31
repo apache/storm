@@ -103,7 +103,7 @@ public class UpstreamFeedbackCompareTopo {
 
         // EWMA jitter gauges feed the feedback signal; enable them regardless of the toggle under test.
         topoConf.put(Config.TOPOLOGY_STATS_EWMA_ENABLE, true);
-        topoConf.putIfAbsent(Config.TOPOLOGY_UPSTREAM_FEEDBACK_RATIO, 0.01);
+        topoConf.putIfAbsent(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, 10);
         topoConf.putIfAbsent(Config.TOPOLOGY_MAX_SPOUT_PENDING, 2000);
         // TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE is left to the command line so the two runs differ only by it.
         topoConf.putAll(Utils.readCommandLineOpts());

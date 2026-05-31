@@ -28,6 +28,7 @@ public class Constants {
     public static final String METRICS_COMPONENT_ID_PREFIX = "__metrics_";
     public static final String METRICS_STREAM_ID = "__metrics";
     public static final String METRICS_TICK_STREAM_ID = "__metrics_tick";
+    public static final String FEEDBACK_TICK_STREAM_ID = "__feedback_tick";
 
     public static final Object TOPOLOGY = "topology";
     public static final String SYSTEM_TOPOLOGY = "system-topology";

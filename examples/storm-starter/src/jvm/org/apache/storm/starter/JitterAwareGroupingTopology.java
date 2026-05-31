@@ -59,7 +59,7 @@ public class JitterAwareGroupingTopology extends ConfigurableTopology {
         // Required: jitter feedback must flow from the children (worker) back to the parents (source).
         conf.put(Config.TOPOLOGY_STATS_EWMA_ENABLE, true);
         conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, true);
-        conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_RATIO, 0.01);
+        conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, 2);
 
         conf.setNumWorkers(2);
 

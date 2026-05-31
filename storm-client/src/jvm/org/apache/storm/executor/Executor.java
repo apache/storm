@@ -25,11 +25,13 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -59,6 +61,7 @@ import org.apache.storm.executor.spout.SpoutExecutor;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.DebugOptions;
+import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
@@ -134,6 +137,9 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private final Integer v2MetricsTickInterval;
     protected final String upstreamFeedbackStreamId;
     protected final boolean upstreamFeedbackEnabled;
+    protected final int upstreamFeedbackFreqSecs;
+    // task ids of all upstream (source component) tasks, recipients of the periodic feedback tick
+    protected final List<Integer> upstreamTaskIds;
     protected final ChildEwmaStats childEwmaStats;
     private final Map<Integer, EwmaFeedbackRecord> ewmaRecordCache; // taskId, EwmaRecord implemented for lazy update
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
@@ -198,10 +204,14 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.childEwmaStats = new ChildEwmaStats(this.upstreamFeedbackEnabled);
         if (this.upstreamFeedbackEnabled) {
             this.ewmaRecordCache = new ConcurrentHashMap<>();
+            this.upstreamFeedbackFreqSecs = ConfigUtils.upstreamFeedbackFreqSecs(topoConf);
+            this.upstreamTaskIds = computeUpstreamTaskIds();
             // register ewma stats for loadaware streaming grouping
             groupers.forEach(g -> g.registerEwmaStats(childEwmaStats));
         } else {
             this.ewmaRecordCache = Collections.emptyMap();
+            this.upstreamFeedbackFreqSecs = 0;
+            this.upstreamTaskIds = Collections.emptyList();
         }
     }
 
@@ -585,6 +595,66 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                 }
             }
         );
+    }
+
+    /**
+     * Collects the task ids of every upstream (source component) task. These are the recipients of
+     * the periodic upstream feedback tick. System components (e.g. ackers, metrics) are excluded.
+     */
+    private List<Integer> computeUpstreamTaskIds() {
+        Set<Integer> taskIds = new HashSet<>();
+        for (GlobalStreamId source : workerTopologyContext.getSources(componentId).keySet()) {
+            String sourceComponentId = source.get_componentId();
+            if (Utils.isSystemId(sourceComponentId)) {
+                continue;
+            }
+            taskIds.addAll(workerTopologyContext.getComponentTasks(sourceComponentId));
+        }
+        return new ArrayList<>(taskIds);
+    }
+
+    /**
+     * Schedules a recurring internal tick on {@link Constants#FEEDBACK_TICK_STREAM_ID}. Handling the
+     * tick (see BoltExecutor.tupleActionFn) triggers {@link #sendUpstreamFeedback(Task)}, replacing
+     * the former probabilistic per-emit trigger with a deterministic periodic one.
+     */
+    protected void scheduleUpstreamFeedbackTick(int interval) {
+        StormTimer timerTask = workerData.getUserTimer();
+        timerTask.scheduleRecurring(interval, interval,
+            () -> {
+                TupleImpl tuple =
+                        new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
+                                (int) Constants.SYSTEM_TASK_ID, Constants.FEEDBACK_TICK_STREAM_ID);
+                AddressedTuple feedbackTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                try {
+                    receiveQueue.publish(feedbackTickTuple);
+                    receiveQueue.flush();  // avoid buffering
+                } catch (InterruptedException e) {
+                    LOG.warn("Thread interrupted when publishing upstream feedback tick. Setting interrupt flag.");
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        );
+    }
+
+    /**
+     * Sends an upstream feedback tuple for the given task to all of its upstream tasks. Invoked on
+     * each feedback tick. The snapshot is built by {@link #buildUpstreamFeedbackTuple(int)}, which
+     * returns {@code null} (and thus skips the send) when the metrics are stable (lazy update).
+     */
+    public void sendUpstreamFeedback(Task task) {
+        if (!upstreamFeedbackEnabled) {
+            return;
+        }
+        Values feedbackTuple = buildUpstreamFeedbackTuple(task.getTaskId());
+        if (feedbackTuple == null) {
+            return;
+        }
+        for (int parentTask : upstreamTaskIds) {
+            task.sendUnanchoredFeedback(upstreamFeedbackStreamId, feedbackTuple, parentTask,
+                    executorTransfer, pendingEmits);
+        }
     }
 
     protected void setupTicks(boolean isSpout) {
