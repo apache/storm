@@ -778,7 +778,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * SnakeYAML (org.yaml:snakeyaml:2.6 - https://bitbucket.org/snakeyaml/snakeyaml)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.8 - https://github.com/xerial/snappy-java)
         * Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.5.3 - https://github.com/dropwizard/logback-throttling-appender/)
-        * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.1 - https://github.com/FasterXML/woodstox)
+        * Woodstox (com.fasterxml.woodstox:woodstox-core:7.2.0 - https://github.com/FasterXML/woodstox)
         * Apache Thrift (org.apache.thrift:libthrift:0.23.0 - http://thrift.apache.org)
         * Java Concurrency Tools Core Library (org.jctools:jctools-core:4.0.6 - https://github.com/JCTools)
         * JHeaps (org.jheaps:jheaps:0.14 - http://www.jheaps.org)
