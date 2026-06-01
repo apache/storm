@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "bootstrap": "5.3.8",
-    "cytoscape": "3.33.3",
+    "cytoscape": "3.33.4",
     "cytoscape-dagre": "3.0.0",
     "dagre": "0.8.5",
     "datatables.net": "2.3.8",
