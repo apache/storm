@@ -40,6 +40,6 @@
     "start-server-and-test": "^3.0.5",
     "terser-webpack-plugin": "^5.6.0",
     "webpack": "^5.106.2",
-    "webpack-cli": "^7.0.2"
+    "webpack-cli": "^7.0.3"
   }
 }
