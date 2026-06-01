@@ -151,7 +151,7 @@
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
-        <asm.version>9.10</asm.version>
+        <asm.version>9.10.1</asm.version>
         <error_prone_annotations.version>2.49.0</error_prone_annotations.version>
         <bouncycastle.version>1.84</bouncycastle.version>
     </properties>
