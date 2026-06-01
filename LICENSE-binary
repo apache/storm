@@ -615,11 +615,11 @@ The license texts of these dependencies can be found in the licenses directory.
 
     AL 2.0, GPL v2, MPL 2.0
 
-        * RabbitMQ Java Client (com.rabbitmq:amqp-client:5.28.0 - https://www.rabbitmq.com)
+        * RabbitMQ Java Client (com.rabbitmq:amqp-client:5.30.0 - https://www.rabbitmq.com)
 
     Apache License, Version 2.0
 
-        * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.38 - https://metrics.dropwizard.io/metrics-annotation)
+        * Annotations for Metrics (io.dropwizard.metrics:metrics-annotation:4.2.39 - https://metrics.dropwizard.io/metrics-annotation)
         * Apache Avro (org.apache.avro:avro:1.12.1 - https://avro.apache.org)
         * Apache Commons CLI (commons-cli:commons-cli:1.11.0 - https://commons.apache.org/proper/commons-cli/)
         * Apache Commons Codec (commons-codec:commons-codec:1.22.0 - https://commons.apache.org/proper/commons-codec/)
@@ -656,7 +656,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Apache HBase Unsafe Wrapper (org.apache.hbase.thirdparty:hbase-unsafe:4.1.13 - https://hbase.apache.org/hbase-unsafe)
         * Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.14 - http://hc.apache.org/httpcomponents-client-ga)
         * Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.16 - http://hc.apache.org/httpcomponents-core-ga)
-        * Apache Kafka (org.apache.kafka:kafka-clients:4.2.0 - https://kafka.apache.org)
+        * Apache Kafka (org.apache.kafka:kafka-clients:4.3.0 - https://kafka.apache.org)
         * Apache Log4j API (org.apache.logging.log4j:log4j-api:2.26.0 - https://logging.apache.org/log4j/2.x/)
         * Apache Log4j Core (org.apache.logging.log4j:log4j-core:2.26.0 - https://logging.apache.org/log4j/2.x/)
         * Apache Yetus - Audience Annotations (org.apache.yetus:audience-annotations:0.12.0 - https://yetus.apache.org/audience-annotations)
@@ -670,23 +670,23 @@ The license texts of these dependencies can be found in the licenses directory.
         * Curator Client (org.apache.curator:curator-client:5.9.0 - https://curator.apache.org/curator-client)
         * Curator Framework (org.apache.curator:curator-framework:5.9.0 - https://curator.apache.org/curator-framework)
         * Curator Recipes (org.apache.curator:curator-recipes:5.9.0 - https://curator.apache.org/curator-recipes)
-        * Dropwizard (io.dropwizard:dropwizard-core:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-core)
-        * Dropwizard Asset Bundle (io.dropwizard:dropwizard-assets:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-assets)
-        * Dropwizard Configuration Support (io.dropwizard:dropwizard-configuration:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-configuration)
-        * Dropwizard Health Checking Support (io.dropwizard:dropwizard-health:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-health)
-        * Dropwizard Jackson Support (io.dropwizard:dropwizard-jackson:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-jackson)
-        * Dropwizard Jersey Support (io.dropwizard:dropwizard-jersey:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-jersey)
-        * Dropwizard Jetty Support (io.dropwizard:dropwizard-jetty:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-jetty)
-        * Dropwizard Lifecycle Support (io.dropwizard:dropwizard-lifecycle:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-lifecycle)
-        * Dropwizard Logging Support (io.dropwizard:dropwizard-logging:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-logging)
-        * Dropwizard Metrics Support (io.dropwizard:dropwizard-metrics:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-metrics)
-        * Dropwizard Request Logging Support (io.dropwizard:dropwizard-request-logging:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-request-logging)
-        * Dropwizard Servlet Support (io.dropwizard:dropwizard-servlets:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-servlets)
-        * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
-        * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:5.0.1 - http://www.dropwizard.io/5.0.1/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
+        * Dropwizard (io.dropwizard:dropwizard-core:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-core)
+        * Dropwizard Asset Bundle (io.dropwizard:dropwizard-assets:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-assets)
+        * Dropwizard Configuration Support (io.dropwizard:dropwizard-configuration:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-configuration)
+        * Dropwizard Health Checking Support (io.dropwizard:dropwizard-health:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-health)
+        * Dropwizard Jackson Support (io.dropwizard:dropwizard-jackson:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-jackson)
+        * Dropwizard Jersey Support (io.dropwizard:dropwizard-jersey:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-jersey)
+        * Dropwizard Jetty Support (io.dropwizard:dropwizard-jetty:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-jetty)
+        * Dropwizard Lifecycle Support (io.dropwizard:dropwizard-lifecycle:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-lifecycle)
+        * Dropwizard Logging Support (io.dropwizard:dropwizard-logging:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-logging)
+        * Dropwizard Metrics Support (io.dropwizard:dropwizard-metrics:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-metrics)
+        * Dropwizard Request Logging Support (io.dropwizard:dropwizard-request-logging:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-request-logging)
+        * Dropwizard Servlet Support (io.dropwizard:dropwizard-servlets:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-servlets)
+        * Dropwizard Utility Classes (io.dropwizard:dropwizard-util:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-util)
+        * Dropwizard Validation Support (io.dropwizard:dropwizard-validation:5.0.2 - http://www.dropwizard.io/5.0.2/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
         * error-prone annotations (com.google.errorprone:error_prone_annotations:2.49.0 - https://errorprone.info/error_prone_annotations)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
-        * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.38 - https://metrics.dropwizard.io/metrics-graphite)
+        * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.39 - https://metrics.dropwizard.io/metrics-graphite)
         * Gson (com.google.code.gson:gson:2.14.0 - https://github.com/google/gson)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:33.6.0-jre - https://github.com/google/guava)
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.3 - https://github.com/google/guava/failureaccess)
@@ -702,7 +702,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Jackson datatype: Guava (com.fasterxml.jackson.datatype:jackson-datatype-guava:2.21.3 - https://github.com/FasterXML/jackson-datatypes-collections)
         * Jackson datatype: jdk8 (com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.21.3 - https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8)
         * Jackson datatype: JSR310 (com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.3 - https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310)
-        * Jackson Integration for Metrics (io.dropwizard.metrics:metrics-json:4.2.38 - https://metrics.dropwizard.io/metrics-json)
+        * Jackson Integration for Metrics (io.dropwizard.metrics:metrics-json:4.2.39 - https://metrics.dropwizard.io/metrics-json)
         * Jackson Jakarta-RS: base (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base:2.21.3 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-base)
         * Jackson Jakarta-RS: JSON (com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider:2.21.3 - https://github.com/FasterXML/jackson-jakarta-rs-providers/jackson-jakarta-rs-json-provider)
         * Jackson module: Blackbird (com.fasterxml.jackson.module:jackson-module-blackbird:2.21.3 - https://github.com/FasterXML/jackson-modules-base)
@@ -715,7 +715,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * JCL 1.2 implemented over SLF4J (org.slf4j:jcl-over-slf4j:2.0.18 - http://www.slf4j.org)
         * JSON Small and Fast Parser (net.minidev:json-smart:2.6.0 - https://urielch.github.io/)
         * JSpecify annotations (org.jspecify:jspecify:1.0.0 - http://jspecify.org/)
-        * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.38 - https://metrics.dropwizard.io/metrics-jvm)
+        * JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.2.39 - https://metrics.dropwizard.io/metrics-jvm)
         * Kerby ASN1 Project (org.apache.kerby:kerby-asn1:2.0.3 - https://directory.apache.org/kerby/kerby-common/kerby-asn1)
         * Kerby Config (org.apache.kerby:kerby-config:2.0.3 - https://directory.apache.org/kerby/kerby-common/kerby-config)
         * Kerby-kerb core (org.apache.kerby:kerb-core:2.0.3 - https://directory.apache.org/kerby/kerby-kerb/kerb-core)
@@ -724,7 +724,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * Kerby PKIX Project (org.apache.kerby:kerby-pkix:2.0.3 - https://directory.apache.org/kerby/kerby-pkix)
         * Kerby Util (org.apache.kerby:kerby-util:2.0.3 - https://directory.apache.org/kerby/kerby-common/kerby-util)
         * Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:2.0.18 - http://www.slf4j.org)
-        * LZ4 Java Compression (at.yawk.lz4:lz4-java:1.10.1 - https://github.com/yawkat/lz4-java)
+        * LZ4 Java Compression (at.yawk.lz4:lz4-java:1.10.2 - https://github.com/yawkat/lz4-java)
         * Maven Artifact (org.apache.maven:maven-artifact:3.9.16 - https://maven.apache.org/ref/3.9.16/maven-artifact/)
         * Maven Artifact Resolver API (org.apache.maven.resolver:maven-resolver-api:1.9.27 - https://maven.apache.org/resolver/maven-resolver-api/)
         * Maven Artifact Resolver Connector Basic (org.apache.maven.resolver:maven-resolver-connector-basic:1.9.27 - https://maven.apache.org/resolver/maven-resolver-connector-basic/)
@@ -739,14 +739,14 @@ The license texts of these dependencies can be found in the licenses directory.
         * Maven Model (org.apache.maven:maven-model:3.9.16 - https://maven.apache.org/ref/3.9.16/maven-model/)
         * Maven Model Builder (org.apache.maven:maven-model-builder:3.9.16 - https://maven.apache.org/ref/3.9.16/maven-model-builder/)
         * Maven Repository Metadata Model (org.apache.maven:maven-repository-metadata:3.9.16 - https://maven.apache.org/ref/3.9.16/maven-repository-metadata/)
-        * Metrics Core (io.dropwizard.metrics:metrics-core:4.2.38 - https://metrics.dropwizard.io/metrics-core)
-        * Metrics Health Checks (io.dropwizard.metrics:metrics-healthchecks:4.2.38 - https://metrics.dropwizard.io/metrics-healthchecks)
-        * Metrics Integration for Jersey 3.x (io.dropwizard.metrics:metrics-jersey3:4.2.38 - https://metrics.dropwizard.io/metrics-jersey3)
-        * Metrics Integration for Jetty 12.x and higher (io.dropwizard.metrics:metrics-jetty12:4.2.38 - https://metrics.dropwizard.io/metrics-jetty12)
-        * Metrics Integration for Jetty 12.x and higher with Jakarta EE 10 (io.dropwizard.metrics:metrics-jetty12-ee10:4.2.38 - https://metrics.dropwizard.io/metrics-jetty12-ee10)
-        * Metrics Integration for Logback (io.dropwizard.metrics:metrics-logback:4.2.38 - https://metrics.dropwizard.io/metrics-logback)
-        * Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.2.38 - https://metrics.dropwizard.io/metrics-jmx)
-        * Metrics Utility Jakarta Servlets (io.dropwizard.metrics:metrics-jakarta-servlets:4.2.38 - https://metrics.dropwizard.io/metrics-jakarta-servlets)
+        * Metrics Core (io.dropwizard.metrics:metrics-core:4.2.39 - https://metrics.dropwizard.io/metrics-core)
+        * Metrics Health Checks (io.dropwizard.metrics:metrics-healthchecks:4.2.39 - https://metrics.dropwizard.io/metrics-healthchecks)
+        * Metrics Integration for Jersey 3.x (io.dropwizard.metrics:metrics-jersey3:4.2.39 - https://metrics.dropwizard.io/metrics-jersey3)
+        * Metrics Integration for Jetty 12.x and higher (io.dropwizard.metrics:metrics-jetty12:4.2.39 - https://metrics.dropwizard.io/metrics-jetty12)
+        * Metrics Integration for Jetty 12.x and higher with Jakarta EE 10 (io.dropwizard.metrics:metrics-jetty12-ee10:4.2.39 - https://metrics.dropwizard.io/metrics-jetty12-ee10)
+        * Metrics Integration for Logback (io.dropwizard.metrics:metrics-logback:4.2.39 - https://metrics.dropwizard.io/metrics-logback)
+        * Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.2.39 - https://metrics.dropwizard.io/metrics-jmx)
+        * Metrics Utility Jakarta Servlets (io.dropwizard.metrics:metrics-jakarta-servlets:4.2.39 - https://metrics.dropwizard.io/metrics-jakarta-servlets)
         * Netty/Buffer (io.netty:netty-buffer:4.2.14.Final - https://netty.io/netty-buffer/)
         * Netty/Codec/Base (io.netty:netty-codec-base:4.2.14.Final - https://netty.io/netty-codec-base/)
         * Netty/Codec/Compression (io.netty:netty-codec-compression:4.2.14.Final - https://netty.io/netty-codec-compression/)
@@ -773,7 +773,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * SnakeYAML (org.yaml:snakeyaml:2.6 - https://bitbucket.org/snakeyaml/snakeyaml)
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.8 - https://github.com/xerial/snappy-java)
         * Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.5.3 - https://github.com/dropwizard/logback-throttling-appender/)
-        * Woodstox (com.fasterxml.woodstox:woodstox-core:7.1.1 - https://github.com/FasterXML/woodstox)
+        * Woodstox (com.fasterxml.woodstox:woodstox-core:7.2.0 - https://github.com/FasterXML/woodstox)
         * Apache Thrift (org.apache.thrift:libthrift:0.23.0 - http://thrift.apache.org)
         * Java Concurrency Tools Core Library (org.jctools:jctools-core:4.0.6 - https://github.com/JCTools)
         * JHeaps (org.jheaps:jheaps:0.14 - http://www.jheaps.org)
@@ -821,12 +821,9 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * Core :: HTTP (org.eclipse.jetty:jetty-http:12.1.9 - https://jetty.org/jetty-core/jetty-http)
         * Core :: IO (org.eclipse.jetty:jetty-io:12.1.9 - https://jetty.org/jetty-core/jetty-io)
-        * Core :: Security (org.eclipse.jetty:jetty-security:12.1.5 - https://jetty.org/jetty-core/jetty-security)
         * Core :: Security (org.eclipse.jetty:jetty-security:12.1.9 - https://jetty.org/jetty-core/jetty-security)
-        * Core :: Server (org.eclipse.jetty:jetty-server:12.1.5 - https://jetty.org/jetty-core/jetty-server)
         * Core :: Server (org.eclipse.jetty:jetty-server:12.1.9 - https://jetty.org/jetty-core/jetty-server)
         * Core :: Sessions (org.eclipse.jetty:jetty-session:12.1.9 - https://jetty.org/jetty-core/jetty-session)
-        * Core :: Utilities (org.eclipse.jetty:jetty-util:12.1.5 - https://jetty.org/jetty-core/jetty-util)
         * Core :: Utilities (org.eclipse.jetty:jetty-util:12.1.9 - https://jetty.org/jetty-core/jetty-util)
         * EE10 :: Servlet (org.eclipse.jetty.ee10:jetty-ee10-servlet:12.1.9 - https://jetty.org/jetty-ee10/jetty-ee10-servlet)
         * EE10 :: Utility Servlets and Filters (org.eclipse.jetty.ee10:jetty-ee10-servlets:12.1.9 - https://jetty.org/jetty-ee10/jetty-ee10-servlets)
@@ -859,11 +856,11 @@ The license texts of these dependencies can be found in the licenses directory.
 
     BSD 2-Clause License
 
-        * zstd-jni (com.github.luben:zstd-jni:1.5.7-8 - https://github.com/luben/zstd-jni)
+        * zstd-jni (com.github.luben:zstd-jni:1.5.7-9 - https://github.com/luben/zstd-jni)
 
     BSD 3-Clause License
 
-        * asm (org.ow2.asm:asm:9.10 - http://asm.ow2.io/)
+        * asm (org.ow2.asm:asm:9.10.1 - http://asm.ow2.io/)
         * dnsjava (dnsjava:dnsjava:3.6.1 - https://github.com/dnsjava/dnsjava)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
 
@@ -897,15 +894,15 @@ The license texts of these dependencies can be found in the licenses directory.
 
         * JGraphT - Core (org.jgrapht:jgrapht-core:1.5.3 - http://www.jgrapht.org/jgrapht-core)
 
+    Eclipse Public License - v 2.0, GNU Lesser General Public License
+
+        * Logback Access Common Module (ch.qos.logback.access:logback-access-common:2.0.12 - http://logback.qos.ch/logback-access-common)
+        * Logback Access Jetty 12 Module (ch.qos.logback.access:logback-access-jetty12:2.0.12 - http://logback.qos.ch/logback-access-jetty12)
+
     Eclipse Public License v. 2.0, GNU General Public License, version 2 with the GNU Classpath Exception
 
         * Eclipse Expressly (org.glassfish.expressly:expressly:5.0.0 - https://projects.eclipse.org/projects/ee4j.expressly)
         * Jakarta Expression Language API (jakarta.el:jakarta.el-api:5.0.1 - https://projects.eclipse.org/projects/ee4j.el)
-
-    Eclipse Public License, Version 1.0, GNU Lesser General Public License
-
-        * Logback Access Common Module (ch.qos.logback.access:logback-access-common:2.0.9 - http://logback.qos.ch/logback-access-common)
-        * Logback Access Jetty 12 Module (ch.qos.logback.access:logback-access-jetty12:2.0.9 - http://logback.qos.ch/logback-access-jetty12)
 
     Eclipse Public License, Version 2.0
 
