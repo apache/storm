@@ -165,7 +165,7 @@
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
         <jakarta-el.version>3.0.1-b12</jakarta-el.version>
-        <asm.version>9.10</asm.version>
+        <asm.version>9.10.1</asm.version>
         <checker-qual.version>4.1.0</checker-qual.version>
         <error_prone_annotations.version>2.49.0</error_prone_annotations.version>
         <bouncycastle.version>1.84</bouncycastle.version>
