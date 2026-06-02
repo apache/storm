@@ -48,6 +48,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.hooks.IWorkerHook;
 import org.apache.storm.topology.BoltDeclarer;
+import org.apache.storm.topology.ComponentConfigurationDeclarer;
 import org.apache.storm.topology.IBasicBolt;
 import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.IRichSpout;
@@ -57,6 +58,7 @@ import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -235,6 +237,7 @@ public class FluxBuilder {
             if (boltDef.getNumTasks() > -1) {
                 declarer.setNumTasks(boltDef.getNumTasks());
             }
+            applyComponentConfig(boltDef.getConfig(), declarer);
 
             GroupingDef grouping = stream.getGrouping();
             // if the streamId is defined, use it for the grouping, otherwise assume storm's default stream
@@ -456,6 +459,7 @@ public class FluxBuilder {
             if (sd.getNumTasks() > -1) {
                 declarer.setNumTasks(sd.getNumTasks());
             }
+            applyComponentConfig(sd.getConfig(), declarer);
 
             context.addSpout(sd.getId(), spout);
         }
@@ -468,6 +472,14 @@ public class FluxBuilder {
     private static IRichSpout buildSpout(SpoutDef def, ExecutionContext context) throws ClassNotFoundException,
             IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, NoSuchFieldException {
         return (IRichSpout) buildObject(def, context);
+    }
+
+    private static void applyComponentConfig(Map<String, Object> config, ComponentConfigurationDeclarer declarer) {
+        if (config == null || config.isEmpty()) {
+            return;
+        }
+        ConfigValidation.validateFields(config);
+        declarer.addConfigurations(config);
     }
 
     /**

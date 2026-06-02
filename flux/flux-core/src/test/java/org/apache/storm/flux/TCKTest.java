@@ -23,11 +23,13 @@ import org.apache.storm.flux.model.ExecutionContext;
 import org.apache.storm.flux.model.TopologyDef;
 import org.apache.storm.flux.parser.FluxParser;
 import org.apache.storm.flux.test.TestBolt;
+import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 
 public class TCKTest {
@@ -101,6 +103,71 @@ public class TCKTest {
         StormTopology topology = FluxBuilder.buildTopology(context);
         assertNotNull(topology);
         topology.validate();
+    }
+
+    @Test
+    public void testComponentConfig() throws Exception {
+        TopologyDef topologyDef = FluxParser.parseResource("/configs/component-config-test.yaml",
+                false, true, null, false);
+        Config conf = FluxBuilder.buildConfig(topologyDef);
+        ExecutionContext context = new ExecutionContext(topologyDef, conf);
+        StormTopology topology = FluxBuilder.buildTopology(context);
+        assertNotNull(topology);
+        topology.validate();
+
+        Map<String, Object> spoutConf = (Map<String, Object>) JSONValue.parse(
+                topology.get_spouts().get("spout-1").get_common().get_json_conf());
+        assertEquals(Boolean.TRUE, spoutConf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE));
+
+        Map<String, Object> boltConf = (Map<String, Object>) JSONValue.parse(
+                topology.get_bolts().get("bolt-1").get_common().get_json_conf());
+        assertEquals(Boolean.FALSE, boltConf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE));
+    }
+
+    @Test
+    public void testComponentConfigWithInvalidValue() throws Exception {
+        TopologyDef topologyDef = FluxParser.parseResource("/configs/component-config-invalid-test.yaml", false,
+                true, null, false);
+        Config conf = FluxBuilder.buildConfig(topologyDef);
+        ExecutionContext context = new ExecutionContext(topologyDef, conf);
+
+        IllegalArgumentException expectedException = assertThrows(IllegalArgumentException.class,
+                () -> FluxBuilder.buildTopology(context));
+        assertTrue(expectedException.getMessage().contains("must be of type"));
+        assertTrue(expectedException.getMessage().contains("Boolean"));
+    }
+
+    @Test
+    public void testComponentConfigWithNotRegisteredKey() throws Exception {
+        TopologyDef topologyDef = FluxParser.parseResource("/configs/component-config-invalid-key-test.yaml", false,
+                true, null, false);
+        Config conf = FluxBuilder.buildConfig(topologyDef);
+        ExecutionContext context = new ExecutionContext(topologyDef, conf);
+
+        StormTopology topology = FluxBuilder.buildTopology(context);
+        Map<String, Object> boltConf = (Map<String, Object>) JSONValue.parse(
+                topology.get_bolts().get("bolt-1").get_common().get_json_conf());
+        // properties added for custom purposes and persisted in the component conf
+        assertTrue(boltConf.containsKey("MY.INAVLID.KEY"));
+    }
+
+    @Test
+    public void testComponentConfigMissing() throws Exception {
+        TopologyDef topologyDef = FluxParser.parseResource("/configs/component-config-missing-test.yaml", false,
+                true, null, false);
+        Config conf = FluxBuilder.buildConfig(topologyDef);
+        ExecutionContext context = new ExecutionContext(topologyDef, conf);
+        StormTopology topology = FluxBuilder.buildTopology(context);
+        assertNotNull(topology);
+        topology.validate();
+
+        Map<String, Object> spoutConf = (Map<String, Object>) JSONValue.parse(
+                topology.get_spouts().get("spout-1").get_common().get_json_conf());
+        assertTrue(spoutConf == null || !spoutConf.containsKey(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE));
+
+        Map<String, Object> boltConf = (Map<String, Object>) JSONValue.parse(
+                topology.get_bolts().get("bolt-1").get_common().get_json_conf());
+        assertTrue(boltConf == null || !boltConf.containsKey(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE));
     }
 
     @Test
