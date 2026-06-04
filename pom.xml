@@ -227,6 +227,7 @@
                                 <!-- exclude CHANGELOG, VERSION, AND TODO files -->
                                 <exclude>**/CHANGELOG.md</exclude>
                                 <exclude>**/README.md</exclude>
+                                <exclude>**/AGENTS.md</exclude>
                                 <exclude>**/README.markdown</exclude>
                                 <exclude>**/DEVELOPER.md</exclude>
                                 <exclude>**/RELEASING.md</exclude>
