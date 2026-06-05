@@ -136,6 +136,7 @@ public class EvenScheduler implements IScheduler {
         int nonBlacklistedSupervisorCount = 0;
         int idleSupervisorCount = 0;
         Deque<WorkerSlot> idleTargets = new ArrayDeque<>();
+        Set<String> idleSupervisorIds = new HashSet<>();
         List<SupervisorDetails> supervisors = new ArrayList<>(cluster.getSupervisors().values());
         supervisors.sort(Comparator.comparing(SupervisorDetails::getId));
         for (SupervisorDetails s : supervisors) {
@@ -148,6 +149,7 @@ public class EvenScheduler implements IScheduler {
             nonBlacklistedSupervisorCount++;
             if (cluster.isIdleSupervisorAvailableForEvenRebalance(s)) {
                 idleSupervisorCount++;
+                idleSupervisorIds.add(s.getId());
                 List<Integer> ports = new ArrayList<>(s.getAllPorts());
                 Collections.sort(ports);
                 for (Integer port : ports) {
@@ -165,7 +167,9 @@ public class EvenScheduler implements IScheduler {
         List<TopologyDetails> orderedTopos = new ArrayList<>();
         Map<String, Integer> remainingBudget = new HashMap<>();
         for (TopologyDetails topo : topologies.getTopologies()) {
-            if (!cluster.hasIdleSupervisorReusableBy(topo)) {
+            // Equivalent to cluster.hasIdleSupervisorReusableBy(topo) but reuses the idle-supervisor set already
+            // computed above instead of re-reading the config and re-scanning every supervisor for each topology.
+            if (!topologyCanReuseIdleSupervisor(cluster, topo, idleSupervisorIds)) {
                 continue;
             }
             int target = (topo.getNumWorkers() / nonBlacklistedSupervisorCount) * idleSupervisorCount;
@@ -210,6 +214,26 @@ public class EvenScheduler implements IScheduler {
             LOG.info("EvenScheduler: relocated {} worker(s) onto idle supervisor(s) round-robin across {} topologies.",
                     totalRelocated, orderedTopos.size());
         }
+    }
+
+    /**
+     * Returns true when at least one of the already-identified idle supervisors does not currently host {@code topology}
+     * -- i.e. the topology can gain workload diversity by relocating onto it. This mirrors the binary trigger in
+     * {@link Cluster#hasIdleSupervisorReusableBy(TopologyDetails)} but operates on the pre-computed {@code idleSupervisorIds}
+     * to avoid the redundant per-topology config read and full supervisor rescan.
+     */
+    private static boolean topologyCanReuseIdleSupervisor(Cluster cluster, TopologyDetails topology,
+                                                          Set<String> idleSupervisorIds) {
+        Set<String> nodesUsedByTopology = new HashSet<>();
+        for (WorkerSlot slot : cluster.getUsedSlotsByTopologyId(topology.getId())) {
+            nodesUsedByTopology.add(slot.getNodeId());
+        }
+        for (String idleSupervisorId : idleSupervisorIds) {
+            if (!nodesUsedByTopology.contains(idleSupervisorId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -300,6 +324,11 @@ public class EvenScheduler implements IScheduler {
     public static void scheduleTopologiesEvenly(Topologies topologies, Cluster cluster) {
         redistributeOntoIdleSupervisors(topologies, cluster);
         for (TopologyDetails topology : cluster.needsSchedulingTopologies()) {
+            // needsSchedulingTopologies() returns the cluster's full topology set, but this run is scoped to the
+            // topologies passed in: EvenScheduler.schedule passes the full set (so the guard is a no-op), while
+            // DefaultScheduler.defaultSchedule calls us once per leftover topology with a single-topology Topologies.
+            // redistributeOntoIdleSupervisors above acted only on that passed-in set too. Skip topologies outside it so
+            // the leftover path never schedules one the caller excluded -- e.g. a down isolated topology on a reserved host.
             if (topologies.getById(topology.getId()) == null) {
                 continue;
             }

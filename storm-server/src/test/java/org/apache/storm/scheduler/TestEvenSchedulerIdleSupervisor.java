@@ -31,6 +31,8 @@ import org.apache.storm.scheduler.blacklist.TestUtilsForBlacklistScheduler;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -173,31 +175,16 @@ public class TestEvenSchedulerIdleSupervisor {
         Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(2, 4);
         TopologyDetails topology = makeTopologyDetails(TOPO_ID, 3);
 
-        WorkerSlot s0p0 = new WorkerSlot("sup-0", 0);
-        WorkerSlot s0p1 = new WorkerSlot("sup-0", 1);
-        WorkerSlot s1p0 = new WorkerSlot("sup-1", 0);
-
-        List<ExecutorDetails> execs = new LinkedList<>(topology.getExecutors());
-        Collections.sort(execs, (a, b) -> Integer.compare(a.getStartTask(), b.getStartTask()));
-        Map<ExecutorDetails, WorkerSlot> execToSlot = new HashMap<>();
-        WorkerSlot[] slotRing = new WorkerSlot[]{s0p0, s0p1, s1p0};
-        for (int i = 0; i < execs.size(); i++) {
-            execToSlot.put(execs.get(i), slotRing[i % slotRing.length]);
-        }
         Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
-        assignments.put(TOPO_ID, new SchedulerAssignmentImpl(TOPO_ID, execToSlot, null, null));
+        assignments.put(TOPO_ID, buildAssignment(topology, new WorkerSlot[]{
+                new WorkerSlot("sup-0", 0), new WorkerSlot("sup-0", 1), new WorkerSlot("sup-1", 0),
+        }));
 
         Map<String, TopologyDetails> topoMap = new HashMap<>();
         topoMap.put(TOPO_ID, topology);
         Topologies topologies = new Topologies(topoMap);
 
-        Map<String, Object> conf = new HashMap<>();
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED, true);
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY, 1);
-        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
-        Cluster cluster = new Cluster(new TestUtilsForBlacklistScheduler.INimbusTest(), resourceMetrics,
-                supMap, assignments, topologies, conf);
+        Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 1));
 
         assertFalse(cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)));
         assertFalse(cluster.needsScheduling(firstTopology(cluster)));
@@ -225,30 +212,16 @@ public class TestEvenSchedulerIdleSupervisor {
         Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(3, 4);
         TopologyDetails topology = makeTopologyDetails(TOPO_ID, 2);
 
-        WorkerSlot s0p0 = new WorkerSlot("sup-0", 0);
-        WorkerSlot s1p0 = new WorkerSlot("sup-1", 0);
-
-        List<ExecutorDetails> execs = new LinkedList<>(topology.getExecutors());
-        Collections.sort(execs, (a, b) -> Integer.compare(a.getStartTask(), b.getStartTask()));
-        Map<ExecutorDetails, WorkerSlot> execToSlot = new HashMap<>();
-        WorkerSlot[] slotRing = new WorkerSlot[]{s0p0, s1p0};
-        for (int i = 0; i < execs.size(); i++) {
-            execToSlot.put(execs.get(i), slotRing[i % slotRing.length]);
-        }
         Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
-        assignments.put(TOPO_ID, new SchedulerAssignmentImpl(TOPO_ID, execToSlot, null, null));
+        assignments.put(TOPO_ID, buildAssignment(topology, new WorkerSlot[]{
+                new WorkerSlot("sup-0", 0), new WorkerSlot("sup-1", 0),
+        }));
 
         Map<String, TopologyDetails> topoMap = new HashMap<>();
         topoMap.put(TOPO_ID, topology);
         Topologies topologies = new Topologies(topoMap);
 
-        Map<String, Object> conf = new HashMap<>();
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED, true);
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY, 5);
-        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
-        Cluster cluster = new Cluster(new TestUtilsForBlacklistScheduler.INimbusTest(), resourceMetrics,
-                supMap, assignments, topologies, conf);
+        Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 5));
 
         EvenScheduler.redistributeOntoIdleSupervisors(topologies, cluster);
 
@@ -272,6 +245,8 @@ public class TestEvenSchedulerIdleSupervisor {
                 + usedSlotCount(cluster, "sup-1")
                 + usedSlotCount(cluster, "sup-2");
         assertEquals(3, total);
+        assertEquals(3, cluster.getAssignedNumWorkers(firstTopology(cluster)),
+                "relocation must preserve the topology's declared worker count, not just keep 3 slots occupied");
     }
 
     /**
@@ -285,25 +260,14 @@ public class TestEvenSchedulerIdleSupervisor {
         Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(3, 4);
         TopologyDetails topology = makeTopologyDetails(topoId, 1, 1);
 
-        WorkerSlot s0 = new WorkerSlot("sup-0", 0);
-        Map<ExecutorDetails, WorkerSlot> execToSlot = new HashMap<>();
-        for (ExecutorDetails e : topology.getExecutors()) {
-            execToSlot.put(e, s0);
-        }
         Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
-        assignments.put(topoId, new SchedulerAssignmentImpl(topoId, execToSlot, null, null));
+        assignments.put(topoId, buildAssignment(topology, new WorkerSlot[]{ new WorkerSlot("sup-0", 0) }));
 
         Map<String, TopologyDetails> topoMap = new HashMap<>();
         topoMap.put(topoId, topology);
         Topologies topologies = new Topologies(topoMap);
 
-        Map<String, Object> conf = new HashMap<>();
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED, true);
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY, 0);
-        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
-        Cluster cluster = new Cluster(new TestUtilsForBlacklistScheduler.INimbusTest(), resourceMetrics,
-                supMap, assignments, topologies, conf);
+        Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 0));
 
         EvenScheduler.scheduleTopologiesEvenly(topologies, cluster);
 
@@ -323,32 +287,19 @@ public class TestEvenSchedulerIdleSupervisor {
         Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(3, 4);
         TopologyDetails topology = makeTopologyDetails(topoId, 8, 4);
 
-        WorkerSlot[] slots = new WorkerSlot[]{
+        Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
+        assignments.put(topoId, buildAssignment(topology, new WorkerSlot[]{
                 new WorkerSlot("sup-0", 0), new WorkerSlot("sup-0", 1),
                 new WorkerSlot("sup-0", 2), new WorkerSlot("sup-0", 3),
                 new WorkerSlot("sup-1", 0), new WorkerSlot("sup-1", 1),
                 new WorkerSlot("sup-1", 2), new WorkerSlot("sup-1", 3),
-        };
-        List<ExecutorDetails> execs = new LinkedList<>(topology.getExecutors());
-        Collections.sort(execs, (a, b) -> Integer.compare(a.getStartTask(), b.getStartTask()));
-        Map<ExecutorDetails, WorkerSlot> execToSlot = new HashMap<>();
-        for (int i = 0; i < execs.size(); i++) {
-            execToSlot.put(execs.get(i), slots[i]);
-        }
-        Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
-        assignments.put(topoId, new SchedulerAssignmentImpl(topoId, execToSlot, null, null));
+        }));
 
         Map<String, TopologyDetails> topoMap = new HashMap<>();
         topoMap.put(topoId, topology);
         Topologies topologies = new Topologies(topoMap);
 
-        Map<String, Object> conf = new HashMap<>();
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED, true);
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY, 0);
-        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
-        Cluster cluster = new Cluster(new TestUtilsForBlacklistScheduler.INimbusTest(), resourceMetrics,
-                supMap, assignments, topologies, conf);
+        Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 0));
 
         assertEquals(4, usedSlotCount(cluster, "sup-0"));
         assertEquals(4, usedSlotCount(cluster, "sup-1"));
@@ -361,6 +312,8 @@ public class TestEvenSchedulerIdleSupervisor {
         assertEquals(8, usedSlotCount(cluster, "sup-0")
                 + usedSlotCount(cluster, "sup-1")
                 + usedSlotCount(cluster, "sup-2"));
+        assertEquals(8, cluster.getAssignedNumWorkers(cluster.getTopologies().getById(topoId)),
+                "relocation must preserve the declared worker count of an 8-worker topology");
         // No supervisor is idle anymore — the trigger will not refire on the next round.
         assertFalse(cluster.hasIdleSupervisorReusableBy(cluster.getTopologies().getById(topoId)));
     }
@@ -392,61 +345,57 @@ public class TestEvenSchedulerIdleSupervisor {
         topoMap.put("topo-B", topoB);
         Topologies topologies = new Topologies(topoMap);
 
-        Map<String, Object> conf = new HashMap<>();
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED, true);
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY, 0);
-        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
-        ResourceMetrics resourceMetrics = new ResourceMetrics(metricsRegistry);
-        Cluster cluster = new Cluster(new TestUtilsForBlacklistScheduler.INimbusTest(), resourceMetrics,
-                supMap, assignments, topologies, conf);
+        Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 0));
 
         EvenScheduler.redistributeOntoIdleSupervisors(topologies, cluster);
 
         // floor(4/3)=1 per topology, two topologies → sup-2 hosts 1 worker from each, in round-robin order.
+        // Exact counts (not >= 1) are what actually enforce round-robin fairness: a broken inner loop that let the
+        // first topology grab both idle slots would leave topo-B at 0 here.
         assertEquals(2, usedSlotCount(cluster, "sup-2"));
         assertEquals(1, supervisorWorkerCount(cluster, "topo-A", "sup-2"));
         assertEquals(1, supervisorWorkerCount(cluster, "topo-B", "sup-2"));
         // Each topology kept its total worker count; only one host moved.
         assertEquals(4, cluster.getAssignedNumWorkers(topoA));
         assertEquals(4, cluster.getAssignedNumWorkers(topoB));
+        // Donor supervisors are never drained to zero (which would make them the next round's idle target).
+        assertTrue(usedSlotCount(cluster, "sup-0") > 0);
+        assertTrue(usedSlotCount(cluster, "sup-1") > 0);
     }
 
-    @Test
-    public void idleSupervisorYoungerThanStableRoundsDoesNotMoveWorkers() {
+    /**
+     * Flap-guard boundary: with 3 stable rounds at a 3s monitor frequency a returning supervisor must have been up for
+     * at least 9 seconds before it is eligible. {@code uptime == requiredUptime} is the first value that moves, making
+     * the off-by-one contract explicit: {@code uptimeSecs >= minStableRounds * monitorFrequencySecs}.
+     */
+    @ParameterizedTest
+    @CsvSource({
+            "8, false",   // threshold - 1: too young, stays idle
+            "9, true",    // exactly at threshold: eligible
+            "10, true",   // threshold + 1: eligible
+    })
+    public void flapGuardHonorsMinStableRoundBoundary(long sup2UptimeSecs, boolean expectMove) {
         Map<String, SupervisorDetails> supMap = genSupervisorsWithUptime(3, 4, 100);
-        supMap.put("sup-2", supervisor("sup-2", "host-2", 4, 8));
+        supMap.put("sup-2", supervisor("sup-2", "host-2", 4, sup2UptimeSecs));
 
         Map<String, Object> conf = evenRebalanceConf(true, 1);
         conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_IDLE_SUPERVISOR_MIN_STABLE_ROUNDS, 3);
         conf.put(DaemonConfig.SUPERVISOR_MONITOR_FREQUENCY_SECS, 3);
         Cluster cluster = buildClusterWithIdleSupervisor(supMap, conf);
 
-        assertFalse(cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)),
+        assertEquals(expectMove, cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)),
                 "3 stable rounds at a 3 second monitor frequency require at least 9 seconds of supervisor uptime");
 
         EvenScheduler.scheduleTopologiesEvenly(cluster.getTopologies(), cluster);
 
-        assertEquals(2, usedSlotCount(cluster, "sup-0"));
-        assertEquals(1, usedSlotCount(cluster, "sup-1"));
-        assertEquals(0, usedSlotCount(cluster, "sup-2"));
-    }
-
-    @Test
-    public void idleSupervisorAtStableRoundThresholdCanReceiveWorker() {
-        Map<String, SupervisorDetails> supMap = genSupervisorsWithUptime(3, 4, 100);
-        supMap.put("sup-2", supervisor("sup-2", "host-2", 4, 9));
-
-        Map<String, Object> conf = evenRebalanceConf(true, 1);
-        conf.put(DaemonConfig.NIMBUS_EVEN_REBALANCE_IDLE_SUPERVISOR_MIN_STABLE_ROUNDS, 3);
-        conf.put(DaemonConfig.SUPERVISOR_MONITOR_FREQUENCY_SECS, 3);
-        Cluster cluster = buildClusterWithIdleSupervisor(supMap, conf);
-
-        assertTrue(cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)));
-
-        EvenScheduler.scheduleTopologiesEvenly(cluster.getTopologies(), cluster);
-
-        assertEquals(1, usedSlotCount(cluster, "sup-2"));
-        assertEquals(3, cluster.getAssignedNumWorkers(firstTopology(cluster)));
+        if (expectMove) {
+            assertEquals(1, usedSlotCount(cluster, "sup-2"));
+            assertEquals(3, cluster.getAssignedNumWorkers(firstTopology(cluster)));
+        } else {
+            assertEquals(2, usedSlotCount(cluster, "sup-0"));
+            assertEquals(1, usedSlotCount(cluster, "sup-1"));
+            assertEquals(0, usedSlotCount(cluster, "sup-2"));
+        }
     }
 
     @Test
@@ -471,6 +420,8 @@ public class TestEvenSchedulerIdleSupervisor {
                 "sup-0 and sup-1 started with two workers each; lexicographic tie-break chooses sup-0 as donor");
         assertEquals(2, supervisorWorkerCount(cluster, "topo-tie", "sup-1"));
         assertEquals(1, supervisorWorkerCount(cluster, "topo-tie", "sup-2"));
+        assertEquals(4, cluster.getAssignedNumWorkers(topology),
+                "the tie-break relocation preserves the topology's declared worker count");
     }
 
     @Test
@@ -516,6 +467,9 @@ public class TestEvenSchedulerIdleSupervisor {
         assertEquals(0, supervisorWorkerCount(cluster, isolated.getId(), "sup-2"));
         assertEquals(2, supervisorWorkerCount(cluster, regular.getId(), "sup-1"));
         assertEquals(1, supervisorWorkerCount(cluster, regular.getId(), "sup-2"));
+        // Both topologies keep their declared worker counts: the leftover one is relocated, the excluded one untouched.
+        assertEquals(3, cluster.getAssignedNumWorkers(regular));
+        assertEquals(2, cluster.getAssignedNumWorkers(isolated));
     }
 
     @Test
@@ -551,6 +505,9 @@ public class TestEvenSchedulerIdleSupervisor {
         assertEquals(2, supervisorWorkerCount(cluster, regular.getId(), "sup-1"));
         assertEquals(1, supervisorWorkerCount(cluster, regular.getId(), "sup-2"),
                 "only the leftover regular topology is allowed to move onto the non-isolated idle supervisor");
+        // The relocated leftover topology and the untouched isolated topology both keep their declared worker counts.
+        assertEquals(3, cluster.getAssignedNumWorkers(regular));
+        assertEquals(1, cluster.getAssignedNumWorkers(isolated));
     }
 
     /**
@@ -598,6 +555,8 @@ public class TestEvenSchedulerIdleSupervisor {
                 "the leftover regular topology rebalances onto the genuinely idle, non-reserved supervisor");
         assertEquals(1, supervisorWorkerCount(cluster, regular.getId(), "sup-0"));
         assertEquals(2, supervisorWorkerCount(cluster, regular.getId(), "sup-1"));
+        assertEquals(4, cluster.getAssignedNumWorkers(regular),
+                "the leftover topology keeps all 4 workers; the move never loses executors");
         assertEquals(0, cluster.getUsedSlotsByTopologyId(isolated.getId()).size(),
                 "the isolated topology is down and is never scheduled by the leftover path");
     }

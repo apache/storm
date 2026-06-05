@@ -74,6 +74,11 @@ public class DefaultScheduler implements IScheduler {
     public static void defaultSchedule(Topologies topologies, Cluster cluster) {
         EvenScheduler.redistributeOntoIdleSupervisors(topologies, cluster);
         for (TopologyDetails topology : cluster.needsSchedulingTopologies()) {
+            // needsSchedulingTopologies() returns the cluster's full topology set, but this run is scoped to the
+            // topologies passed in: DefaultScheduler.schedule passes the full set (so the guard is a no-op), while
+            // IsolationScheduler delegates only its leftover, non-isolated topologies here. redistributeOntoIdleSupervisors
+            // above acted only on that passed-in set too. Skip topologies outside it so the leftover path never schedules
+            // one the caller excluded -- e.g. a down isolated topology on a reserved host.
             if (topologies.getById(topology.getId()) == null) {
                 continue;
             }
