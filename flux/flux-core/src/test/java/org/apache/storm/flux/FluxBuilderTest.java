@@ -17,8 +17,15 @@
  */
 package org.apache.storm.flux;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.storm.Config;
+import org.apache.storm.flux.model.TopologyDef;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FluxBuilderTest {
@@ -28,5 +35,27 @@ public class FluxBuilderTest {
         assertTrue(FluxBuilder.isPrimitiveNumber(int.class));
         assertFalse(FluxBuilder.isPrimitiveNumber(boolean.class));
         assertFalse(FluxBuilder.isPrimitiveNumber(String.class));
+    }
+
+    @Test
+    public void testBuildConfigAcceptsValidTopologyConfig() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(Config.TOPOLOGY_WORKERS, 4);
+        TopologyDef topologyDef = new TopologyDef();
+        topologyDef.setConfig(config);
+
+        Config result = FluxBuilder.buildConfig(topologyDef);
+        assertEquals(4, result.get(Config.TOPOLOGY_WORKERS));
+    }
+
+    @Test
+    public void testBuildConfigRejectsInvalidTopologyConfig() {
+        // topology.workers must be a positive integer; a String value is invalid
+        Map<String, Object> config = new HashMap<>();
+        config.put(Config.TOPOLOGY_WORKERS, "not-a-number");
+        TopologyDef topologyDef = new TopologyDef();
+        topologyDef.setConfig(config);
+
+        assertThrows(IllegalArgumentException.class, () -> FluxBuilder.buildConfig(topologyDef));
     }
 }

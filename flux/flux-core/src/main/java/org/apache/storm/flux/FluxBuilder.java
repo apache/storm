@@ -74,7 +74,10 @@ public class FluxBuilder {
     public static Config buildConfig(TopologyDef topologyDef) {
         // merge contents of `config` into topology config
         Config conf = new Config();
-        conf.putAll(topologyDef.getConfig());
+        Map<String, Object> topologyConfig = topologyDef.getConfig();
+        // validate the topology-wide config so invalid values fail fast
+        ConfigValidation.validateFields(topologyConfig);
+        conf.putAll(topologyConfig);
         return conf;
     }
 
