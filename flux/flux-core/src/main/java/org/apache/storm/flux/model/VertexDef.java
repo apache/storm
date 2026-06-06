@@ -34,7 +34,7 @@ public abstract class VertexDef extends BeanDef {
     private int offHeapMemoryLoad = -1;
     private int cpuLoad = -1;
     // per-component configuration
-    private Map<String, Object> config = new HashMap<String, Object>();
+    private Map<String, Object> config = new HashMap<>();
 
     public int getParallelism() {
         return parallelism;

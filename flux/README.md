@@ -693,7 +693,8 @@ bolts:
 ```
 
 Known Storm configuration keys are validated when the topology is built, so an invalid value (for example, a
-non-boolean value for `topology.tuple.compression.enable`) fails fast rather than at submission time.
+non-boolean value for `topology.tuple.compression.enable`) fails fast rather than at submission time. Unknown/custom
+keys are not validated and are passed through verbatim; validation runs client-side at build time.
 
 ## Streams and Stream Groupings
 Streams in Flux are represented as a list of connections (Graph edges, data flow, etc.) between the Spouts and Bolts in
