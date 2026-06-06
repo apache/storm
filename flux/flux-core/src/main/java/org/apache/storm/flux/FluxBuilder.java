@@ -63,7 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FluxBuilder {
-    private static Logger LOG = LoggerFactory.getLogger(FluxBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FluxBuilder.class);
 
 
     /**
@@ -187,57 +187,41 @@ public class FluxBuilder {
         for (StreamDef stream : topologyDef.getStreams()) {
             Object boltObj = context.getBolt(stream.getTo());
             BoltDeclarer declarer = declarers.get(stream.getTo());
-            if (boltObj instanceof IRichBolt) {
-                if (declarer == null) {
-                    declarer = builder.setBolt(stream.getTo(),
-                            (IRichBolt) boltObj,
+            boolean newDeclarer = declarer == null;
+            if (newDeclarer) {
+                declarer = switch (boltObj) {
+                    case IRichBolt b -> builder.setBolt(stream.getTo(), b,
                             topologyDef.parallelismForBolt(stream.getTo()));
-                    declarers.put(stream.getTo(), declarer);
-                }
-            } else if (boltObj instanceof IBasicBolt) {
-                if (declarer == null) {
-                    declarer = builder.setBolt(
-                            stream.getTo(),
-                            (IBasicBolt) boltObj,
+                    case IBasicBolt b -> builder.setBolt(stream.getTo(), b,
                             topologyDef.parallelismForBolt(stream.getTo()));
-                    declarers.put(stream.getTo(), declarer);
-                }
-            } else if (boltObj instanceof IWindowedBolt) {
-                if (declarer == null) {
-                    declarer = builder.setBolt(
-                            stream.getTo(),
-                            (IWindowedBolt) boltObj,
+                    case IWindowedBolt b -> builder.setBolt(stream.getTo(), b,
                             topologyDef.parallelismForBolt(stream.getTo()));
-                    declarers.put(stream.getTo(), declarer);
-                }
-            } else if (boltObj instanceof IStatefulBolt) {
-                if (declarer == null) {
-                    declarer = builder.setBolt(
-                            stream.getTo(),
-                            (IStatefulBolt) boltObj,
+                    case IStatefulBolt b -> builder.setBolt(stream.getTo(), b,
                             topologyDef.parallelismForBolt(stream.getTo()));
-                    declarers.put(stream.getTo(), declarer);
+                    default -> throw new IllegalArgumentException("Class does not appear to be a bolt: "
+                            + boltObj.getClass().getName());
+                };
+                // resource and config declarations apply to the bolt as a whole, so only apply them once
+                // when the declarer is first created rather than on every incoming stream
+                BoltDef boltDef = topologyDef.getBoltDef(stream.getTo());
+                if (boltDef.getOnHeapMemoryLoad() > -1) {
+                    if (boltDef.getOffHeapMemoryLoad() > -1) {
+                        declarer.setMemoryLoad(boltDef.getOnHeapMemoryLoad(), boltDef.getOffHeapMemoryLoad());
+                    } else {
+                        declarer.setMemoryLoad(boltDef.getOnHeapMemoryLoad());
+                    }
                 }
-            } else {
-                throw new IllegalArgumentException("Class does not appear to be a bolt: "
-                        + boltObj.getClass().getName());
-            }
+                if (boltDef.getCpuLoad() > -1) {
+                    declarer.setCPULoad(boltDef.getCpuLoad());
+                }
+                if (boltDef.getNumTasks() > -1) {
+                    declarer.setNumTasks(boltDef.getNumTasks());
+                }
+                applyComponentConfig(boltDef.getConfig(), declarer);
 
-            BoltDef boltDef = topologyDef.getBoltDef(stream.getTo());
-            if (boltDef.getOnHeapMemoryLoad() > -1) {
-                if (boltDef.getOffHeapMemoryLoad() > -1) {
-                    declarer.setMemoryLoad(boltDef.getOnHeapMemoryLoad(), boltDef.getOffHeapMemoryLoad());
-                } else {
-                    declarer.setMemoryLoad(boltDef.getOnHeapMemoryLoad());
-                }
+                // persist in declares cache
+                declarers.put(stream.getTo(), declarer);
             }
-            if (boltDef.getCpuLoad() > -1) {
-                declarer.setCPULoad(boltDef.getCpuLoad());
-            }
-            if (boltDef.getNumTasks() > -1) {
-                declarer.setNumTasks(boltDef.getNumTasks());
-            }
-            applyComponentConfig(boltDef.getConfig(), declarer);
 
             GroupingDef grouping = stream.getGrouping();
             // if the streamId is defined, use it for the grouping, otherwise assume storm's default stream
