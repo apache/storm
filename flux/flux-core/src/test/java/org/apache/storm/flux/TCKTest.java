@@ -24,6 +24,7 @@ import org.apache.storm.flux.model.TopologyDef;
 import org.apache.storm.flux.parser.FluxParser;
 import org.apache.storm.flux.test.TestBolt;
 import org.apache.storm.shade.net.minidev.json.JSONValue;
+import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.CoreMatchers.is;
@@ -122,6 +123,32 @@ public class TCKTest {
         Map<String, Object> boltConf = (Map<String, Object>) JSONValue.parse(
                 topology.get_bolts().get("bolt-1").get_common().get_json_conf());
         assertEquals(Boolean.FALSE, boltConf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE));
+    }
+
+    @Test
+    public void testComponentConfigOverridesTopologyConfig() throws Exception {
+        TopologyDef topologyDef = FluxParser.parseResource("/configs/component-config-override-test.yaml",
+                false, true, null, false);
+        Config conf = FluxBuilder.buildConfig(topologyDef);
+        ExecutionContext context = new ExecutionContext(topologyDef, conf);
+        StormTopology topology = FluxBuilder.buildTopology(context);
+        assertNotNull(topology);
+        topology.validate();
+
+        // the topology-level config carries the original value
+        assertEquals(Boolean.TRUE, conf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE));
+
+        // evaluate the effective config the way a worker does: topology config overlaid with the
+        // per-component config
+        Map<String, Object> boltComponentConf = (Map<String, Object>) JSONValue.parse(
+                topology.get_bolts().get("bolt-1").get_common().get_json_conf());
+        Map<String, Object> effectiveBoltConf = Utils.merge(conf, boltComponentConf);
+        assertEquals(Boolean.FALSE, effectiveBoltConf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE));
+
+        Map<String, Object> spoutComponentConf = (Map<String, Object>) JSONValue.parse(
+                topology.get_spouts().get("spout-1").get_common().get_json_conf());
+        Map<String, Object> effectiveSpoutConf = Utils.merge(conf, spoutComponentConf);
+        assertEquals(Boolean.TRUE, effectiveSpoutConf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE));
     }
 
     @Test
