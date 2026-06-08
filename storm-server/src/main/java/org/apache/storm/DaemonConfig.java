@@ -176,6 +176,37 @@ public class DaemonConfig implements Validated {
     public static final String SCHEDULER_DISPLAY_RESOURCE = "scheduler.display.resource";
 
     /**
+     * If true, {@link org.apache.storm.scheduler.EvenScheduler} may move already-assigned workers onto non-blacklisted supervisors
+     * with no slot in use. This lets a freshly returned supervisor pick up workers instead of staying idle. The number of workers
+     * freed per topology in a single scheduling round is capped by {@link #NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY}, so even
+     * distribution is approached gradually rather than rebuilt from scratch.
+     */
+    @IsBoolean
+    public static final String NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED
+            = "nimbus.even.rebalance.idle.supervisor.enabled";
+
+    /**
+     * Optional upper bound on the number of currently-assigned workers a single topology may release in one scheduling round
+     * when the idle-supervisor rebalance defined by {@link #NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED} kicks in. The
+     * default budget already targets an even per-supervisor distribution (idle supervisors absorb roughly {@code numWorkers /
+     * numSupervisors} workers each in one round), capped by the idle side's free slot capacity. Setting this to a positive
+     * value tightens that budget; setting it to {@code 0} or a negative value leaves the even-distribution budget unbounded.
+     */
+    @IsInteger
+    public static final String NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY
+            = "nimbus.even.rebalance.max.free.per.topology";
+
+    /**
+     * Minimum number of consecutive supervisor monitor rounds that a fully-idle supervisor must have been alive before
+     * {@link org.apache.storm.scheduler.EvenScheduler} can relocate workers onto it. A positive value avoids moving workers onto a
+     * supervisor that has only just returned and may still be flapping. Setting this to {@code 0} or a negative value disables the
+     * uptime guard.
+     */
+    @IsInteger
+    public static final String NIMBUS_EVEN_REBALANCE_IDLE_SUPERVISOR_MIN_STABLE_ROUNDS
+            = "nimbus.even.rebalance.idle.supervisor.min.stable.rounds";
+
+    /**
      * The directory where storm's health scripts go.
      */
     @IsString

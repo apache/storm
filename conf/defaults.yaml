@@ -94,6 +94,9 @@ topology.max.replication.wait.time.sec: 60
 nimbus.credential.renewers.freq.secs: 600
 nimbus.queue.size: 100000
 scheduler.display.resource: false
+nimbus.even.rebalance.idle.supervisor.enabled: false
+nimbus.even.rebalance.max.free.per.topology: 0
+nimbus.even.rebalance.idle.supervisor.min.stable.rounds: 3
 nimbus.local.assignments.backend.class: "org.apache.storm.assignments.InMemoryAssignmentBackend"
 nimbus.assignments.service.threads: 10
 nimbus.assignments.service.thread.queue.size: 100
