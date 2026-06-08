@@ -364,36 +364,14 @@ public class Cluster implements ISchedulingState {
     }
 
     /**
-     * Returns true when there is at least one stable, non-blacklisted supervisor whose slots are all currently free and the
-     * topology is not already on that supervisor. Controlled by
-     * {@link DaemonConfig#NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED}; returns false when disabled. The check is
-     * binary by design -- a supervisor either has zero used slots or it does not -- so this never fires for "almost balanced"
-     * clusters. Topologies that cannot benefit from a move (e.g. only a single worker assigned) are filtered later by the
-     * drain-budget computation in {@link EvenScheduler}, which evaluates to zero whenever
-     * {@code floor(numWorkers / nonBlacklistedSupervisorCount)} is zero.
+     * Returns true when {@code supervisor} is a stable, non-blacklisted supervisor whose slots are all currently free --
+     * i.e. a returning idle supervisor the {@link EvenScheduler} idle-rebalance pass may relocate workers onto. The check
+     * is binary by design -- a supervisor either has zero used slots or it does not -- so the rebalance never fires for an
+     * "almost balanced" cluster. Stability is gated by {@link #hasMinimumIdleSupervisorStability(SupervisorDetails)} so a
+     * supervisor that has only just returned (and may still be flapping) is held back until it has been up long enough. The
+     * opt-in {@link DaemonConfig#NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED} flag is checked once by the caller
+     * ({@link EvenScheduler#redistributeOntoIdleSupervisors(Topologies, Cluster)}), not here.
      */
-    public boolean hasIdleSupervisorReusableBy(TopologyDetails topology) {
-        if (!ObjectReader.getBoolean(
-                conf.get(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED), false)) {
-            return false;
-        }
-        Set<String> nodesUsedByTopology = new HashSet<>();
-        for (WorkerSlot slot : getUsedSlotsByTopologyId(topology.getId())) {
-            nodesUsedByTopology.add(slot.getNodeId());
-        }
-        for (SupervisorDetails s : supervisors.values()) {
-            String sid = s.getId();
-            if (!isIdleSupervisorAvailableForEvenRebalance(s)) {
-                continue;
-            }
-            if (nodesUsedByTopology.contains(sid)) {
-                continue;
-            }
-            return true;
-        }
-        return false;
-    }
-
     public boolean isIdleSupervisorAvailableForEvenRebalance(SupervisorDetails supervisor) {
         if (supervisor == null) {
             return false;

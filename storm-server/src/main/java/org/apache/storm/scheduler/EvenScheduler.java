@@ -117,7 +117,9 @@ public class EvenScheduler implements IScheduler {
      * {@link DaemonConfig#NIMBUS_EVEN_REBALANCE_MAX_FREE_PER_TOPOLOGY} when set to a positive value. Topologies whose
      * computed cap is zero (typically {@code numWorkers < numSupervisors}) are skipped entirely. The trigger remains
      * binary — only fires when at least one supervisor has zero used slots — so a near-balanced cluster sees no
-     * movement.
+     * movement. {@code numWorkers} here is the topology's <em>declared</em> worker count, so the cap is an upper bound,
+     * not a guarantee: for an under-assigned topology the donor guard in {@link #relocateOneWorkerOntoIdleSlot} — which
+     * never drains a source supervisor below one worker — can keep the actual number of relocations below it.
      *
      * <p>Workers are always pulled from the supervisor where this topology has the most workers, and only when that
      * supervisor would still hold at least one worker afterward. Each pulled worker's executors are placed directly
@@ -126,8 +128,11 @@ public class EvenScheduler implements IScheduler {
      *
      * <p>Gated by {@link DaemonConfig#NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED}: when disabled (the default) the
      * method returns before scanning any supervisor, so a cluster that has not opted in pays no per-scheduling-round cost.
+     *
+     * <p>This is the package-private entry point shared by {@link #scheduleTopologiesEvenly(Topologies, Cluster)} and
+     * {@link DefaultScheduler#defaultSchedule(Topologies, Cluster)}; its visibility is dictated by those callers, not by
+     * tests (which also reach it from the same package).
      */
-    @VisibleForTesting
     static void redistributeOntoIdleSupervisors(Topologies topologies, Cluster cluster) {
         if (!ObjectReader.getBoolean(
                 cluster.getConf().get(DaemonConfig.NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED), false)) {
@@ -167,8 +172,8 @@ public class EvenScheduler implements IScheduler {
         List<TopologyDetails> orderedTopos = new ArrayList<>();
         Map<String, Integer> remainingBudget = new HashMap<>();
         for (TopologyDetails topo : topologies.getTopologies()) {
-            // Equivalent to cluster.hasIdleSupervisorReusableBy(topo) but reuses the idle-supervisor set already
-            // computed above instead of re-reading the config and re-scanning every supervisor for each topology.
+            // Skip topologies already present on every idle supervisor -- relocating gains them no workload diversity.
+            // Reuses the idle-supervisor set computed above instead of re-scanning every supervisor for each topology.
             if (!topologyCanReuseIdleSupervisor(cluster, topo, idleSupervisorIds)) {
                 continue;
             }
@@ -218,9 +223,10 @@ public class EvenScheduler implements IScheduler {
 
     /**
      * Returns true when at least one of the already-identified idle supervisors does not currently host {@code topology}
-     * -- i.e. the topology can gain workload diversity by relocating onto it. This mirrors the binary trigger in
-     * {@link Cluster#hasIdleSupervisorReusableBy(TopologyDetails)} but operates on the pre-computed {@code idleSupervisorIds}
-     * to avoid the redundant per-topology config read and full supervisor rescan.
+     * -- i.e. the topology can gain workload diversity by relocating onto it. This is the per-topology half of the binary
+     * idle-rebalance trigger; it operates on the pre-computed {@code idleSupervisorIds} (each already vetted by
+     * {@link Cluster#isIdleSupervisorAvailableForEvenRebalance(SupervisorDetails)}) so the per-topology loop avoids a full
+     * supervisor rescan.
      */
     private static boolean topologyCanReuseIdleSupervisor(Cluster cluster, TopologyDetails topology,
                                                           Set<String> idleSupervisorIds) {
@@ -270,6 +276,11 @@ public class EvenScheduler implements IScheduler {
             return false;
         }
         WorkerSlot target = idleTargets.poll();
+        // freeSlot-then-assign is intentionally ordered and non-atomic. target is a pre-verified fully-idle slot --
+        // idleTargets only holds ports from supervisors that passed Cluster#isIdleSupervisorAvailableForEvenRebalance,
+        // which requires getUsedPorts to be empty -- so assign cannot hit its slot-occupied path and no rollback is
+        // needed. In the near-impossible event assign threw here, the freed executors are picked up by the regular
+        // scheduling pass on the same round.
         cluster.freeSlot(victim);
         cluster.assign(target, topology.getId(), execs);
         return true;

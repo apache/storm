@@ -39,12 +39,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for the idle-supervisor rebalance behavior added to {@link Cluster#hasIdleSupervisorReusableBy(TopologyDetails)}
- * and {@link EvenScheduler#redistributeOntoIdleSupervisors(Topologies, Cluster)}.
+ * Tests for the idle-supervisor rebalance behavior added to
+ * {@link EvenScheduler#redistributeOntoIdleSupervisors(Topologies, Cluster)} and its per-supervisor eligibility predicate
+ * {@link Cluster#isIdleSupervisorAvailableForEvenRebalance(SupervisorDetails)}.
  *
  * <p>Trigger condition is binary: at least one non-blacklisted supervisor with zero used slots must exist. The cluster
  * being "almost balanced" never triggers the new logic, so a near-even distribution is preserved as-is. Each round only
  * frees up to {@code nimbus.even.rebalance.max.free.per.topology} workers and never drains a supervisor down to zero.
+ * The tests assert on the observable effect of {@code redistributeOntoIdleSupervisors} (the resulting assignment) rather
+ * than on any internal boolean predicate.
  */
 public class TestEvenSchedulerIdleSupervisor {
 
@@ -153,8 +156,13 @@ public class TestEvenSchedulerIdleSupervisor {
     @Test
     public void disabledByDefault_doesNotTrigger() {
         Cluster cluster = buildClusterWithIdleSupervisor(false, 1);
-        assertFalse(cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)),
-                "disabled flag must short-circuit the trigger even when an idle supervisor exists");
+
+        EvenScheduler.redistributeOntoIdleSupervisors(cluster.getTopologies(), cluster);
+
+        // Disabled flag must short-circuit the rebalance even when an idle supervisor exists: nothing moves onto sup-2.
+        assertEquals(2, usedSlotCount(cluster, "sup-0"));
+        assertEquals(1, usedSlotCount(cluster, "sup-1"));
+        assertEquals(0, usedSlotCount(cluster, "sup-2"));
         assertFalse(cluster.needsScheduling(firstTopology(cluster)),
                 "needsScheduling must remain false when the new behavior is disabled and the topology is fully assigned");
     }
@@ -162,11 +170,21 @@ public class TestEvenSchedulerIdleSupervisor {
     @Test
     public void enabledWithIdleSupervisor_doesNotChangeGenericNeedsScheduling() {
         Cluster cluster = buildClusterWithIdleSupervisor(true, 1);
-        assertTrue(cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)));
+
+        // Enabling the opt-in idle rebalance must not leak into the generic scheduling triggers other schedulers use.
         assertFalse(cluster.needsScheduling(firstTopology(cluster)),
                 "needsScheduling is used by schedulers other than EvenScheduler; the idle trigger stays out of that generic path");
         assertFalse(cluster.needsSchedulingRas(firstTopology(cluster)),
                 "ResourceAwareScheduler keeps using needsSchedulingRas, so this opt-in EvenScheduler feature is out of RAS scope");
+
+        EvenScheduler.redistributeOntoIdleSupervisors(cluster.getTopologies(), cluster);
+
+        // The feature itself still fires: one worker relocates onto the idle supervisor (the observable trigger)...
+        assertEquals(1, usedSlotCount(cluster, "sup-2"));
+        assertEquals(3, cluster.getAssignedNumWorkers(firstTopology(cluster)));
+        // ...while the generic triggers stay false afterward -- the relocation kept the topology fully assigned.
+        assertFalse(cluster.needsScheduling(firstTopology(cluster)));
+        assertFalse(cluster.needsSchedulingRas(firstTopology(cluster)));
     }
 
     @Test
@@ -186,7 +204,12 @@ public class TestEvenSchedulerIdleSupervisor {
 
         Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 1));
 
-        assertFalse(cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)));
+        EvenScheduler.redistributeOntoIdleSupervisors(cluster.getTopologies(), cluster);
+
+        // No supervisor has zero used slots, so the binary trigger never fires: the assignment is left untouched.
+        assertEquals(2, usedSlotCount(cluster, "sup-0"));
+        assertEquals(1, usedSlotCount(cluster, "sup-1"));
+        assertEquals(3, cluster.getAssignedNumWorkers(firstTopology(cluster)));
         assertFalse(cluster.needsScheduling(firstTopology(cluster)));
     }
 
@@ -314,8 +337,12 @@ public class TestEvenSchedulerIdleSupervisor {
                 + usedSlotCount(cluster, "sup-2"));
         assertEquals(8, cluster.getAssignedNumWorkers(cluster.getTopologies().getById(topoId)),
                 "relocation must preserve the declared worker count of an 8-worker topology");
-        // No supervisor is idle anymore — the trigger will not refire on the next round.
-        assertFalse(cluster.hasIdleSupervisorReusableBy(cluster.getTopologies().getById(topoId)));
+        // No supervisor is idle anymore, so a second pass relocates nothing -- the trigger will not refire next round.
+        EvenScheduler.redistributeOntoIdleSupervisors(cluster.getTopologies(), cluster);
+        assertEquals(2, usedSlotCount(cluster, "sup-2"));
+        assertEquals(8, usedSlotCount(cluster, "sup-0")
+                + usedSlotCount(cluster, "sup-1")
+                + usedSlotCount(cluster, "sup-2"));
     }
 
     /**
@@ -383,11 +410,10 @@ public class TestEvenSchedulerIdleSupervisor {
         conf.put(DaemonConfig.SUPERVISOR_MONITOR_FREQUENCY_SECS, 3);
         Cluster cluster = buildClusterWithIdleSupervisor(supMap, conf);
 
-        assertEquals(expectMove, cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)),
-                "3 stable rounds at a 3 second monitor frequency require at least 9 seconds of supervisor uptime");
-
         EvenScheduler.scheduleTopologiesEvenly(cluster.getTopologies(), cluster);
 
+        // 3 stable rounds at a 3 second monitor frequency require at least 9 seconds of supervisor uptime before sup-2
+        // becomes an eligible target; the placement below is the observable expression of that boundary.
         if (expectMove) {
             assertEquals(1, usedSlotCount(cluster, "sup-2"));
             assertEquals(3, cluster.getAssignedNumWorkers(firstTopology(cluster)));
@@ -424,19 +450,101 @@ public class TestEvenSchedulerIdleSupervisor {
                 "the tie-break relocation preserves the topology's declared worker count");
     }
 
+    /**
+     * Two simultaneously-idle supervisors must let a single topology relocate
+     * {@code floor(numWorkers / nonBlacklistedSupervisorCount) * idleSupervisorCount} workers in one round, exercising the
+     * {@code * idleSupervisorCount} term of the budget formula. With 4 non-blacklisted supervisors (two busy, two idle)
+     * and an 8-worker topology the budget is {@code floor(8 / 4) * 2 = 4}; a regression that dropped the multiplier would
+     * compute 2 and relocate only half as many workers. Every other test has exactly one usable idle supervisor, so this
+     * fixture is the one that pins the multiplier down.
+     */
+    @Test
+    public void twoIdleSupervisors_budgetScalesWithIdleSupervisorCount() {
+        String topoId = "topo-two-idle";
+        Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(4, 4);
+        TopologyDetails topology = makeTopologyDetails(topoId, 8, 4);
+
+        Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
+        assignments.put(topoId, buildAssignment(topology, new WorkerSlot[]{
+                new WorkerSlot("sup-0", 0), new WorkerSlot("sup-0", 1),
+                new WorkerSlot("sup-0", 2), new WorkerSlot("sup-0", 3),
+                new WorkerSlot("sup-1", 0), new WorkerSlot("sup-1", 1),
+                new WorkerSlot("sup-1", 2), new WorkerSlot("sup-1", 3),
+        }));
+
+        Map<String, TopologyDetails> topoMap = new HashMap<>();
+        topoMap.put(topoId, topology);
+        Topologies topologies = new Topologies(topoMap);
+
+        Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 0));
+
+        // sup-2 and sup-3 both start idle.
+        assertEquals(0, usedSlotCount(cluster, "sup-2"));
+        assertEquals(0, usedSlotCount(cluster, "sup-3"));
+
+        EvenScheduler.redistributeOntoIdleSupervisors(topologies, cluster);
+
+        // budget = floor(8 / 4 non-blacklisted) * 2 idle = 4 relocations onto the idle supervisors. Asserting the sum
+        // (not a single supervisor) keeps this independent of the idle-slot fill order. Dropping the * idleSupervisorCount
+        // term would compute budget 2 and move only 2 workers, failing this assertion.
+        assertEquals(4, usedSlotCount(cluster, "sup-2") + usedSlotCount(cluster, "sup-3"),
+                "budget must scale with the number of simultaneously-idle supervisors: floor(8/4) * 2 = 4");
+        assertEquals(4, usedSlotCount(cluster, "sup-0") + usedSlotCount(cluster, "sup-1"));
+        assertEquals(8, cluster.getAssignedNumWorkers(cluster.getTopologies().getById(topoId)),
+                "relocation preserves the declared worker count");
+    }
+
+    /**
+     * {@code max.free.per.topology} must be able to bind more tightly than the even-distribution budget. With 3
+     * supervisors and a 6-worker topology the even budget is {@code floor(6 / 3) * 1 = 2}, but {@code maxFree = 1} clamps
+     * it to a single relocation. This is the only fixture where the {@code Math.min(target, maxFree)} clamp is the
+     * strictly binding constraint -- removing the clamp would relocate 2 workers and push sup-2 to 2, failing the
+     * assertion below.
+     */
+    @Test
+    public void maxFreePerTopologyClampsBelowEvenBudget() {
+        String topoId = "topo-clamp";
+        Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(3, 4);
+        TopologyDetails topology = makeTopologyDetails(topoId, 6, 3);
+
+        Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
+        assignments.put(topoId, buildAssignment(topology, new WorkerSlot[]{
+                new WorkerSlot("sup-0", 0), new WorkerSlot("sup-0", 1), new WorkerSlot("sup-0", 2),
+                new WorkerSlot("sup-1", 0), new WorkerSlot("sup-1", 1), new WorkerSlot("sup-1", 2),
+        }));
+
+        Map<String, TopologyDetails> topoMap = new HashMap<>();
+        topoMap.put(topoId, topology);
+        Topologies topologies = new Topologies(topoMap);
+
+        Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 1));
+
+        EvenScheduler.redistributeOntoIdleSupervisors(topologies, cluster);
+
+        // even budget = floor(6/3)*1 = 2, but maxFree=1 clamps it to a single relocation. Without Math.min(target,
+        // maxFree) two workers would move and sup-2 would hold 2.
+        assertEquals(1, usedSlotCount(cluster, "sup-2"),
+                "max.free.per.topology must clamp the even-distribution budget of 2 down to 1");
+        assertEquals(6, cluster.getAssignedNumWorkers(cluster.getTopologies().getById(topoId)));
+        assertTrue(usedSlotCount(cluster, "sup-0") > 0);
+        assertTrue(usedSlotCount(cluster, "sup-1") > 0);
+    }
+
     @Test
     public void blacklistedIdleSupervisorIsNotReusableTarget() {
         Cluster cluster = buildClusterWithIdleSupervisor(true, 1);
         cluster.blacklistHost("host-2");
 
-        assertFalse(cluster.hasIdleSupervisorReusableBy(firstTopology(cluster)),
+        assertFalse(cluster.isIdleSupervisorAvailableForEvenRebalance(cluster.getSupervisorById("sup-2")),
                 "IsolationScheduler represents reserved hosts by blacklisting them before delegating to DefaultScheduler");
 
         EvenScheduler.scheduleTopologiesEvenly(cluster.getTopologies(), cluster);
 
+        // The blacklisted idle supervisor is never a target, so the assignment is left untouched.
         assertEquals(2, usedSlotCount(cluster, "sup-0"));
         assertEquals(1, usedSlotCount(cluster, "sup-1"));
         assertEquals(0, usedSlotCount(cluster, "sup-2"));
+        assertEquals(3, cluster.getAssignedNumWorkers(firstTopology(cluster)));
     }
 
     @Test

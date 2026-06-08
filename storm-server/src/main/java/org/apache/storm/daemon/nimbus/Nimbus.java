@@ -992,6 +992,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private static long supervisorUptimeSecs(SupervisorInfo info) {
+        // An unset uptime maps to 0L (not the Long.MAX_VALUE default the bare SupervisorDetails constructors use) so a
+        // freshly (re)registered supervisor is treated as just-returned and must accrue real uptime before
+        // Cluster#hasMinimumIdleSupervisorStability lets the idle rebalance place workers on it -- the conservative
+        // choice on the production path.
         return info.is_set_uptime_secs() ? info.get_uptime_secs() : 0L;
     }
 

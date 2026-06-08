@@ -60,6 +60,10 @@ public class SupervisorDetails {
      */
     public SupervisorDetails(String id, Integer serverPort, String host, Object meta, Object schedulerMeta,
                              Collection<? extends Number> allPorts, Map<String, Double> totalResources) {
+        // Callers that do not supply uptime (tests and every path other than the idle-supervisor rebalance) default to
+        // Long.MAX_VALUE, i.e. treated as indefinitely stable so the rebalance flap guard never holds them back. This is
+        // the deliberate opposite of Nimbus#supervisorUptimeSecs, which maps an unset uptime to 0L; production always
+        // supplies the real uptime through that path, so this default only affects non-feature callers.
         this(id, serverPort, host, meta, schedulerMeta, allPorts, totalResources, Long.MAX_VALUE);
     }
 
