@@ -15,6 +15,7 @@ package org.apache.storm.daemon.supervisor.timer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
@@ -23,6 +24,8 @@ import org.apache.storm.generated.SupervisorWorkerHeartbeats;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,10 +39,12 @@ public class ReportWorkerHeartbeats implements Runnable {
 
     private Supervisor supervisor;
     private Map<String, Object> conf;
+    private final int workerTimeoutSecs;
 
     public ReportWorkerHeartbeats(Map<String, Object> conf, Supervisor supervisor) {
         this.conf = conf;
         this.supervisor = supervisor;
+        this.workerTimeoutSecs = ObjectReader.getInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
     }
 
     @Override
@@ -59,7 +64,7 @@ public class ReportWorkerHeartbeats implements Runnable {
         }
     }
 
-    private SupervisorWorkerHeartbeats getSupervisorWorkerHeartbeatsFromLocal(Map<String, LSWorkerHeartbeat> localHeartbeats) {
+    SupervisorWorkerHeartbeats getSupervisorWorkerHeartbeatsFromLocal(Map<String, LSWorkerHeartbeat> localHeartbeats) {
         SupervisorWorkerHeartbeats supervisorWorkerHeartbeats = new SupervisorWorkerHeartbeats();
 
         List<SupervisorWorkerHeartbeat> heartbeatList = new ArrayList<>();
@@ -67,6 +72,18 @@ public class ReportWorkerHeartbeats implements Runnable {
         for (LSWorkerHeartbeat lsWorkerHeartbeat : localHeartbeats.values()) {
             // local worker heartbeat can be null cause some error/exception
             if (null == lsWorkerHeartbeat) {
+                continue;
+            }
+
+            // Skip stale heartbeats left by worker directories that were never cleaned up
+            // (e.g. a worker that died before the supervisor finished cleanup). Such a worker
+            // has not heartbeat within the timeout, so it is already considered dead; forwarding
+            // it would make Nimbus repeatedly read the (often deleted) topology conf and log noise.
+            // A live worker always refreshes its heartbeat well within the timeout.
+            long hbAgeSecs = Time.deltaSecsLong(lsWorkerHeartbeat.get_time_secs());
+            if (hbAgeSecs > workerTimeoutSecs) {
+                LOG.debug("Skipping stale heartbeat for topology {}: age {}s > worker timeout {}s",
+                    lsWorkerHeartbeat.get_topology_id(), hbAgeSecs, workerTimeoutSecs);
                 continue;
             }
 
