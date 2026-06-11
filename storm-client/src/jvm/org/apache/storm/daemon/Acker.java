@@ -12,13 +12,17 @@
 
 package org.apache.storm.daemon;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.TupleUtils;
@@ -38,15 +42,32 @@ public class Acker implements IBolt {
     private OutputCollector collector;
     private RotatingMap<Object, AckObject> pending;
 
+    // Progress-based timeout fields (STORM-2359)
+    private boolean progressTimeoutEnabled = false;
+    private long progressTimeoutMs = Long.MAX_VALUE;
+
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
         this.pending = new RotatingMap<>(TIMEOUT_BUCKET_NUM);
+
+        // STORM-2359: opt-in progress-based timeout
+        Number progressSecs = ObjectReader.getInt(
+            topoConf.get(Config.TOPOLOGY_MESSAGE_PROGRESS_TIMEOUT_SECS), null);
+        if (progressSecs != null) {
+            this.progressTimeoutEnabled = true;
+            this.progressTimeoutMs = progressSecs.longValue() * 1000L;
+            LOG.info("Progress-based timeout enabled: {} secs ({} ms)",
+                progressSecs, this.progressTimeoutMs);
+        }
     }
 
     @Override
     public void execute(Tuple input) {
         if (TupleUtils.isTick(input)) {
+            if (progressTimeoutEnabled) {
+                rescueRecentlyActiveEntries();
+            }
             Map<Object, AckObject> tmp = pending.rotate();
             LOG.debug("Number of timeout tuples:{}", tmp.size());
             return;
@@ -114,19 +135,67 @@ public class Acker implements IBolt {
         LOG.info("Acker: cleanup successfully");
     }
 
+    /**
+     * STORM-2359: Before rotating the pending map, inspect the oldest bucket and re-insert
+     * any entries that have received a bolt ack within the progress timeout window.
+     * Re-inserting via {@code pending.put()} moves the entry to the head (newest) bucket,
+     * rescuing it from the eviction that {@code pending.rotate()} is about to perform.
+     *
+     * <p>Only entries in the oldest (last) bucket are candidates for eviction on the next
+     * rotate(), so we only need to scan that bucket. Entries in earlier buckets are safe
+     * for at least one more rotation cycle.
+     *
+     * <p>This method is only called when {@code progressTimeoutEnabled} is true.
+     */
+    private void rescueRecentlyActiveEntries() {
+        long now = Time.currentTimeMillis();
+        // Collect keys to rescue first to avoid ConcurrentModificationException —
+        // pending.put() structurally modifies the bucket list.
+        List<Object> toRescue = new ArrayList<>();
+        for (Map.Entry<Object, AckObject> entry : pending.peekOldestBucket().entrySet()) {
+            AckObject obj = entry.getValue();
+            if ((now - obj.lastProgressTime) < progressTimeoutMs) {
+                toRescue.add(entry.getKey());
+            }
+        }
+        for (Object key : toRescue) {
+            AckObject obj = pending.get(key);
+            if (obj != null) {
+                // put() moves key to the head bucket — rescued from the upcoming rotation
+                pending.put(key, obj);
+                LOG.debug("STORM-2359: Rescued tuple tree {} from timeout; last progress {}ms ago",
+                    key, now - obj.lastProgressTime);
+            }
+        }
+        if (!toRescue.isEmpty()) {
+            LOG.debug("STORM-2359: Rescued {} tuple tree(s) with recent progress", toRescue.size());
+        }
+    }
+
     private long getTimeDeltaMillis(long startTimeMillis) {
         return Time.currentTimeMillis() - startTimeMillis;
     }
 
-    private static class AckObject {
+    static class AckObject {
         public long val = 0L;
         public long startTime = Time.currentTimeMillis();
+        /**
+         * STORM-2359: Wall-clock timestamp of the last bolt ack received for this tuple tree.
+         * Updated by {@link #updateAck(Long)} on every partial ack from any bolt in the tree.
+         * Used by {@link Acker#rescueRecentlyActiveEntries()} to determine whether the tree
+         * has made forward progress recently and should be rescued from timeout expiry.
+         *
+         * <p>Initialized to {@code startTime} so a newly-emitted tree is not immediately
+         * considered stale.
+         */
+        public long lastProgressTime = Time.currentTimeMillis();
         public int spoutTask = -1;
         public boolean failed = false;
 
-        // val xor value
+        // val xor value; also records that progress was made on this tree
         public void updateAck(Long value) {
             val = Utils.bitXor(val, value);
+            lastProgressTime = Time.currentTimeMillis();
         }
     }
 }
