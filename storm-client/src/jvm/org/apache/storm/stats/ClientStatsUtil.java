@@ -85,7 +85,7 @@ public class ClientStatsUtil {
         ret.put("storm-id", topoId);
         ret.put(EXECUTOR_STATS, executorStats);
         ret.put(UPTIME, uptime);
-        ret.put(TIME_SECS, Time.currentTimeSecs());
+        ret.put(TIME_SECS, Time.currentTimeSecsLong());
 
         return ret;
     }
@@ -119,7 +119,7 @@ public class ClientStatsUtil {
         ClusterWorkerHeartbeat ret = new ClusterWorkerHeartbeat();
         ret.set_uptime_secs(getByKeyOr0(heartbeat, UPTIME).intValue());
         ret.set_storm_id((String) heartbeat.get("storm-id"));
-        ret.set_time_secs(getByKeyOr0(heartbeat, TIME_SECS).intValue());
+        ret.set_time_secs(getByKeyOr0(heartbeat, TIME_SECS).longValue());
 
         Map<ExecutorInfo, ExecutorStats> convertedStats = new HashMap<>();
 
