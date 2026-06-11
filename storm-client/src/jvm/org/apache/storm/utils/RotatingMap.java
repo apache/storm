@@ -126,7 +126,7 @@ public class RotatingMap<K, V> {
      *
      * @return unmodifiable view of the oldest bucket
      */
-    Map<K, V> peekOldestBucket() {
+    public Map<K, V> peekOldestBucket() {
         return Collections.unmodifiableMap(buckets.getLast());
     }
 
