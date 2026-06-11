@@ -499,6 +499,25 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber
     @NotNull
     public static final String TOPOLOGY_MESSAGE_TIMEOUT_SECS = "topology.message.timeout.secs";
+
+    /**
+     * When set, changes tuple expiry from wall-clock-since-emit to time-since-last-bolt-progress.
+     * A tuple tree is only considered timed out if no bolt has acked any tuple in the tree for this
+     * many seconds. Tuple trees that are actively being processed (even if queued under backpressure)
+     * will be rescued from expiry as long as the tree is making forward progress.
+     *
+     * <p>This is an opt-in complement to {@link #TOPOLOGY_MESSAGE_TIMEOUT_SECS}, which remains as
+     * the hard upper-bound wall-clock timeout. Set this value less than or equal to
+     * {@link #TOPOLOGY_MESSAGE_TIMEOUT_SECS} for it to have effect.
+     *
+     * <p>When null (the default), behavior is identical to prior versions — the standard
+     * wall-clock bucket-rotation timeout applies, with no change to existing topologies.
+     *
+     * <p>See: https://github.com/apache/storm/issues/6141 (STORM-2359)
+     */
+    @IsInteger
+    @IsPositiveNumber
+    public static final String TOPOLOGY_MESSAGE_PROGRESS_TIMEOUT_SECS = "topology.message.progress.timeout.secs";
     /**
      * A list of serialization registrations for Kryo ( https://github.com/EsotericSoftware/kryo ), the underlying serialization framework
      * for Storm. A serialization can either be the name of a class (in which case Kryo will automatically create a serializer for the class
