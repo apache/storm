@@ -12,6 +12,7 @@
 
 package org.apache.storm.utils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -109,6 +110,24 @@ public class RotatingMap<K, V> {
             size += bucket.size();
         }
         return size;
+    }
+
+    /**
+     * Returns a read-only view of the oldest (soonest-to-expire) bucket without removing it.
+     *
+     * <p>The oldest bucket is the one that will be evicted on the next call to {@link #rotate()}.
+     * This method is used by {@link org.apache.storm.daemon.Acker} to inspect which entries are
+     * about to expire, so that entries with recent progress can be rescued (re-inserted into the
+     * head bucket) before rotation evicts them.
+     *
+     * <p>The returned map is unmodifiable. The caller must not retain a reference across calls
+     * to {@link #rotate()} or {@link #put(Object, Object)}, as the underlying bucket will be
+     * replaced. This class is not thread-safe; callers must ensure single-threaded access.
+     *
+     * @return unmodifiable view of the oldest bucket
+     */
+    Map<K, V> peekOldestBucket() {
+        return Collections.unmodifiableMap(buckets.getLast());
     }
 
     public interface ExpiredCallback<K, V> {
