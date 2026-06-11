@@ -149,7 +149,7 @@ public class PaceMakerStateStorage implements IStateStorage {
         while (true) {
             try {
                 byte[] ret = null;
-                int latestTimeSecs = 0;
+                long latestTimeSecs = 0;
                 boolean gotResponse = false;
 
                 HBMessage message = new HBMessage(HBServerMessageType.GET_PULSE, HBMessageData.path(path));
