@@ -508,6 +508,22 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         if (tickTimeSecs != null) {
             boolean enableMessageTimeout = (Boolean) topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
             boolean isAcker = Acker.ACKER_COMPONENT_ID.equals(componentId);
+
+            // STORM-3514: warn about a dangerous config combination — disabling message timeouts
+            // while max.spout.pending is set causes orphaned tuple trees (from dead workers) to
+            // accumulate in the spout's pending map indefinitely, stalling nextTuple() forever.
+            if (!enableMessageTimeout && isSpout) {
+                Integer maxPending = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING), 0);
+                if (maxPending != null && maxPending > 0) {
+                    LOG.warn("topology.enable.message.timeouts=false with topology.max.spout.pending={} detected "
+                        + "on spout executor {}:{}. Orphaned tuple trees from dead workers will never be "
+                        + "reclaimed and the spout will stall permanently once max.spout.pending is reached. "
+                        + "This combination is only safe in debugging sessions with no worker failures. "
+                        + "See STORM-3514 (https://github.com/apache/storm/issues/7296).",
+                        maxPending, componentId, executorId);
+                }
+            }
+
             if ((!isAcker && Utils.isSystemId(componentId))
                 || (!enableMessageTimeout && isSpout)
                 || (!enableMessageTimeout && isAcker)) {
