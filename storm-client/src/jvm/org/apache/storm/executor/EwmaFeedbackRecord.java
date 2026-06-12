@@ -28,6 +28,8 @@ import org.apache.storm.metrics2.TaskMetrics;
  */
 public record EwmaFeedbackRecord(double processJitter, double completeJitter, double executeJitter) {
 
+    // Sentinel for an absent metric. Jitter values are always >= 0, so a negative value can never
+    // collide with a real measurement and unambiguously marks "gauge missing / not a Number".
     private static final double VOID = -1;
 
     private static double fromGauge(Gauge<?> gauge) {
@@ -40,11 +42,27 @@ public record EwmaFeedbackRecord(double processJitter, double completeJitter, do
         return VOID;
     }
 
+    private static double aggregate(Map<String, Gauge> gauges, String metricName) {
+        String suffixedPrefix = metricName + "-";
+        double agg = VOID;
+        for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
+            String name = entry.getKey();
+            if (!name.equals(metricName) && !name.startsWith(suffixedPrefix)) {
+                continue;
+            }
+            double value = fromGauge(entry.getValue());
+            if (value != VOID && (agg == VOID || value > agg)) {
+                agg = value;
+            }
+        }
+        return agg;
+    }
+
     public static EwmaFeedbackRecord fromWorkerState(WorkerState workerData, int taskId) {
         Map<String, Gauge> allGauges = workerData.getMetricRegistry().getTaskGauges(taskId);
-        return new EwmaFeedbackRecord(fromGauge(allGauges.get(TaskMetrics.METRIC_NAME_PROCESS_JITTER)),
-                fromGauge(allGauges.get(TaskMetrics.METRIC_NAME_COMPLETE_JITTER)),
-                fromGauge(allGauges.get(TaskMetrics.METRIC_NAME_EXECUTE_JITTER)));
+        return new EwmaFeedbackRecord(aggregate(allGauges, TaskMetrics.METRIC_NAME_PROCESS_JITTER),
+                aggregate(allGauges, TaskMetrics.METRIC_NAME_COMPLETE_JITTER),
+                aggregate(allGauges, TaskMetrics.METRIC_NAME_EXECUTE_JITTER));
     }
 
     /**

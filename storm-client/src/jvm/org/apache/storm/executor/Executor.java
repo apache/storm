@@ -389,16 +389,20 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     /**
-     * Constructs a Storm {@link Values} object containing a snapshot of specific metrics
+     * Constructs a Storm {@link Values} object carrying a snapshot of this task's jitter metrics
      * to be sent as upstream feedback.
      *
      * <p>This method generates a {@link IMetricsConsumer.TaskInfo} header with a timestamp
-     * and a default interval of -1 (indicating an on-demand or non-standard tick),
-     * followed by a list of filtered DataPoints.</p>
+     * and a default interval of -1 (indicating an on-demand, non-periodic-metrics tick),
+     * followed by the {@link EwmaFeedbackRecord} snapshot.</p>
+     *
+     * <p>Applies a lazy-update optimization: if the freshly sampled record equals the one last
+     * sent for this task, {@code null} is returned so the caller skips the redundant emit.</p>
      *
      * @param taskId  The ID of the task for which metrics are being collected.
-     * @return A {@link Values} object containing [TaskInfo, List<DataPoint>],
-     *         compatible with the metrics stream schema.
+     * @return A {@link Values} object containing {@code [TaskInfo, EwmaFeedbackRecord]} (matching the
+     *         feedback stream schema declared by {@link StormCommon#upstreamFeedbackFields()}), or
+     *         {@code null} when the metrics are unchanged since the previous send.
      */
     public Values buildUpstreamFeedbackTuple(int taskId) {
         EwmaFeedbackRecord statsRecord = EwmaFeedbackRecord.fromWorkerState(this.workerData, taskId);

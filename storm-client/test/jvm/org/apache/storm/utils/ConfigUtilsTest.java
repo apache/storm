@@ -23,8 +23,10 @@ import org.apache.storm.Config;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConfigUtilsTest {
 
@@ -156,5 +158,47 @@ public class ConfigUtilsTest {
         principal = "primary/instance@EXAMPLE.COM";
         conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
         assertEquals(Config.getHdfsPrincipal(conf), principal);
+    }
+
+    @Test
+    public void upstreamFeedbackEnable_defaultsFalseWhenAbsent() {
+        assertFalse(ConfigUtils.upstreamFeedbackEnable(new HashMap<>()));
+    }
+
+    @Test
+    public void upstreamFeedbackEnable_readsConfiguredValue() {
+        assertTrue(ConfigUtils.upstreamFeedbackEnable(
+            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, true)));
+        assertFalse(ConfigUtils.upstreamFeedbackEnable(
+            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, false)));
+    }
+
+    @Test
+    public void upstreamFeedbackStreamId_returnsConfiguredStream() {
+        assertEquals("__feedback", ConfigUtils.upstreamFeedbackStreamId(
+            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_STREAM_ID, "__feedback")));
+    }
+
+    @Test
+    public void upstreamFeedbackFreqSecs_defaultsToTenWhenAbsent() {
+        assertEquals(10, ConfigUtils.upstreamFeedbackFreqSecs(new HashMap<>()));
+    }
+
+    @Test
+    public void upstreamFeedbackFreqSecs_returnsConfiguredPositiveValue() {
+        assertEquals(5, ConfigUtils.upstreamFeedbackFreqSecs(
+            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, 5)));
+    }
+
+    @Test
+    public void upstreamFeedbackFreqSecs_rejectsZero() {
+        assertThrows(IllegalArgumentException.class, () -> ConfigUtils.upstreamFeedbackFreqSecs(
+            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, 0)));
+    }
+
+    @Test
+    public void upstreamFeedbackFreqSecs_rejectsNegative() {
+        assertThrows(IllegalArgumentException.class, () -> ConfigUtils.upstreamFeedbackFreqSecs(
+            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, -1)));
     }
 }
