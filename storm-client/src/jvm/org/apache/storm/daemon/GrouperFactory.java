@@ -45,11 +45,6 @@ public class GrouperFactory {
         }
 
         @Override
-        public void registerEwmaStats(ChildEwmaStats childEwmaStats) {
-
-        }
-
-        @Override
         public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
 
         }
@@ -139,11 +134,6 @@ public class GrouperFactory {
 
         @Override
         public void refreshLoad(LoadMapping loadMapping) {
-
-        }
-
-        @Override
-        public void registerEwmaStats(ChildEwmaStats childEwmaStats) {
 
         }
 

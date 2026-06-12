@@ -17,5 +17,7 @@ import org.apache.storm.executor.ChildEwmaStats;
 public interface LoadAwareCustomStreamGrouping extends CustomStreamGrouping {
     void refreshLoad(LoadMapping loadMapping);
 
-    void registerEwmaStats(ChildEwmaStats childEwmaStats);
+    default void registerEwmaStats(ChildEwmaStats childEwmaStats) {
+        // no-op: backward compatibility
+    }
 }

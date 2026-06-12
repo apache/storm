@@ -112,11 +112,6 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         updateRing(loadMapping);
     }
 
-    @Override
-    public void registerEwmaStats(ChildEwmaStats childEwmaStats) {
-        // jitter agnostic. see JitterAwareStreamGrouping
-    }
-
     private void refreshLocalityGroup() {
         // taskToNodePort and nodeToHost might be out of sync when they are refreshed by WorkerState
         // but this is okay since it will only cause a temporary misjudgement on LocalityScope
