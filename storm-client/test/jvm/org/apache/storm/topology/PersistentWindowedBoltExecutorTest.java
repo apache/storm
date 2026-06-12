@@ -28,6 +28,8 @@ import org.apache.storm.state.KeyValueState;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.DetachedTuple;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.windowing.Event;
@@ -136,6 +138,8 @@ public class PersistentWindowedBoltExecutorTest {
         Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong())).thenReturn(false);
         Mockito.when(mockTimestampExtractor.extractTimestamp(Mockito.any())).thenReturn(tupleTs);
         Tuple mockTuple = Mockito.mock(Tuple.class);
+        Mockito.when(mockTuple.getFields()).thenReturn(new Fields("ts"));
+        Mockito.when(mockTuple.getValues()).thenReturn(new Values(tupleTs));
         executor.initState(null);
         executor.waterMarkEventGenerator = mockWaterMarkEventGenerator;
         executor.execute(mockTuple);
@@ -147,7 +151,7 @@ public class PersistentWindowedBoltExecutorTest {
                .emit(stringCaptor.capture(), anchorCaptor.capture(), valuesCaptor.capture());
         assertEquals(LATE_STREAM, stringCaptor.getValue());
         assertEquals(Collections.singletonList(mockTuple), anchorCaptor.getValue());
-        assertEquals(new Values(mockTuple), valuesCaptor.getValue());
+        assertEquals(new Values(new DetachedTuple(mockTuple)), valuesCaptor.getValue());
     }
 
     @Test
