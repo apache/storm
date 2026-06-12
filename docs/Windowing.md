@@ -188,7 +188,9 @@ public BaseWindowedBolt withLateTupleStream(String streamId)
 
 ```
 This behaviour can be changed by specifying the above `streamId`. In this case late tuples are going to be emitted on the specified stream and accessible
-via the field `WindowedBoltExecutor.LATE_TUPLE_FIELD`.
+via the field `WindowedBoltExecutor.LATE_TUPLE_FIELD`. The value of this field is a `org.apache.storm.tuple.DetachedTuple`, a serializable copy of the
+original tuple (source component, task, stream, fields and values) detached from the topology context, so that the late tuple stream can also be
+consumed by bolts running in different workers.
 
 
 ### Watermarks
