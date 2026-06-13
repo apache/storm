@@ -15,29 +15,43 @@ package org.apache.storm.grouping;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.storm.executor.ChildEwmaStats;
 import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.task.WorkerTopologyContext;
 
 /**
- * A {@link CustomStreamGrouping} that routes each tuple to the downstream (child) task with the lowest
- * jitter, as reported back to the emitting task through upstream feedback and aggregated by
- * {@link ChildEwmaStats}. Candidates are ordered with {@link ChildEwmaStats#compareByJitter}, so a lower
+ * A {@link LoadAwareCustomStreamGrouping} that steers each tuple toward the downstream (child) task with
+ * lower jitter, as reported back to the emitting task through upstream feedback and aggregated by
+ * {@link ChildEwmaStats}. Jitter is compared with {@link ChildEwmaStats#compareByJitter}, so a lower
  * {@code __execute-jitter} wins first, then {@code __process-jitter}, then {@code __complete-jitter}.
- * Until a source task has any feedback data — and for targets that have not reported yet — the grouping
- * falls back to round-robin over the target tasks, so it degrades to an even spread rather than pinning a
- * single task.
+ *
+ * <p>Steering uses <b>power-of-two-choices</b>: for each tuple two target tasks are sampled at random and
+ * the lower-jitter one wins. Random sampling keeps the best task from receiving every tuple (the
+ * "thundering herd" a plain arg-min selection would cause) while still biasing traffic toward the good
+ * tasks.
+ *
+ * <p>Whenever jitter cannot pick a winner — the sampled pair ties (equal jitter, or neither has reported),
+ * no feedback exists yet for the source task, or no {@link ChildEwmaStats} was registered — the decision is
+ * delegated to an embedded {@link LoadAwareShuffleGrouping}. When <i>all</i> targets carry equal jitter,
+ * every sampled pair ties, so the grouping behaves as a pure load-aware shuffle. {@link #refreshLoad} is
+ * forwarded to that delegate, so the fallback path honours real system load and locality.
  */
 public class JitterAwareStreamGrouping implements LoadAwareCustomStreamGrouping {
 
-    private final AtomicInteger roundRobin = new AtomicInteger();
+    private final LoadAwareShuffleGrouping fallback = new LoadAwareShuffleGrouping();
     private List<Integer> targetTasks;
     private ChildEwmaStats stats;
 
+    // deterministic test
+    @VisibleForTesting
+    Random random;
+
     @Override
     public void refreshLoad(LoadMapping loadMapping) {
-        // load mapping agnostic
+        fallback.refreshLoad(loadMapping);
     }
 
     @Override
@@ -48,6 +62,10 @@ public class JitterAwareStreamGrouping implements LoadAwareCustomStreamGrouping 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
         this.targetTasks = targetTasks;
+        // The fallback rejects an empty target list; chooseTasks short-circuits that case before delegating.
+        if (targetTasks != null && !targetTasks.isEmpty()) {
+            fallback.prepare(context, stream, targetTasks);
+        }
     }
 
     @Override
@@ -60,42 +78,40 @@ public class JitterAwareStreamGrouping implements LoadAwareCustomStreamGrouping 
         }
 
         if (stats == null) {
-            return roundRobin();
+            return fallback.chooseTasks(taskId, values);
         }
 
-        // childTaskId -> (metricName -> averaged value), as reported back to this source task.
         Map<Integer, Map<String, Double>> childStats = stats.getStats(taskId);
         if (childStats.isEmpty()) {
-            return roundRobin();
+            return fallback.chooseTasks(taskId, values);
         }
 
-        Integer best = null;
-        Map<String, Double> bestMetrics = null;
-        boolean anyData = false;
-        for (Integer target : targetTasks) {
-            Map<String, Double> metrics = childStats.get(target);
-            if (metrics != null && !metrics.isEmpty()) {
-                anyData = true;
-            } else {
-                // A target with no feedback yet is treated as worst by compareByJitter (empty map).
-                metrics = Collections.emptyMap();
-            }
-            if (best == null || ChildEwmaStats.compareByJitter(metrics, bestMetrics) < 0) {
-                best = target;
-                bestMetrics = metrics;
-            }
+        // Power-of-two-choices: sample two distinct targets and keep the lower-jitter one.
+        int n = targetTasks.size();
+        int i = nextInt(n);
+        int j = nextInt(n - 1);
+        if (j >= i) {
+            j++;
         }
+        Integer a = targetTasks.get(i);
+        Integer b = targetTasks.get(j);
 
-        if (!anyData) {
-            // No target has reported for this source task yet: spread evenly instead of pinning the first.
-            return roundRobin();
+        // An unreported target is an empty map, which compareByJitter treats as worst.
+        Map<String, Double> metricsA = childStats.getOrDefault(a, Collections.emptyMap());
+        Map<String, Double> metricsB = childStats.getOrDefault(b, Collections.emptyMap());
+        int cmp = ChildEwmaStats.compareByJitter(metricsA, metricsB);
+        if (cmp < 0) {
+            return Collections.singletonList(a);
         }
-        return Collections.singletonList(best);
+        if (cmp > 0) {
+            return Collections.singletonList(b);
+        }
+        // Tie (equal jitter, or both unreported): no jitter winner -> defer to the load-aware fallback.
+        return fallback.chooseTasks(taskId, values);
     }
 
-    private List<Integer> roundRobin() {
-        int index = Math.floorMod(roundRobin.getAndIncrement(), targetTasks.size());
-        return Collections.singletonList(targetTasks.get(index));
+    private int nextInt(int bound) {
+        return random != null ? random.nextInt(bound) : ThreadLocalRandom.current().nextInt(bound);
     }
 
 }
