@@ -56,8 +56,8 @@ import org.apache.storm.utils.Utils;
  * the grouping ranks on — RFC-1889 jitter (the EWMA of {@code |Δlatency|}), which measures dispersion,
  * not level. A per-task <i>mean</i> offset would not work: it cancels in the estimator's
  * consecutive-difference, leaving every task with identical jitter. With upstream feedback enabled,
- * {@link JitterAwareStreamGrouping} steers more tuples toward the steadiest (lowest-jitter) tasks,
- * improving throughput and reducing complete latency compared to a load-aware shuffle baseline.
+ * {@link JitterAwareStreamGrouping} steers more tuples toward the steadiest (lowest-jitter) tasks; run it
+ * against the {@code loadaware} baseline mode to measure the effect.
  *
  * <p>Run the baseline and the jitter-aware run back-to-back to compare. Select the grouping with the
  * {@code grouping.mode} flag:
@@ -118,6 +118,11 @@ public class JitterAwareGroupingTopology {
         int sinks = Helper.getInt(conf, SINK_NUM, 1);
         long baseDelayUs = Helper.getInt(conf, WORKER_BASE_DELAY_US, 2000);
         String inputFile = Helper.getStr(conf, INPUT_FILE);
+        if (inputFile == null || inputFile.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                "Required config '" + INPUT_FILE + "' is not set. Pass a sentence file, e.g. "
+                + "-c " + INPUT_FILE + "=src/main/sampledata/randomwords.txt");
+        }
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, new GenSpout(inputFile), spouts);

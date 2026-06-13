@@ -617,12 +617,6 @@ public class Config extends HashMap<String, Object> {
     @IsBoolean
     public static final String TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE = "topology.upstream.feedback.enable";
     /**
-     * The specific stream ID used for upstream feedback communication.
-     * Defaults to "__feedback" if not explicitly configured.
-     */
-    @IsString
-    public static final String TOPOLOGY_UPSTREAM_FEEDBACK_STREAM_ID = "topology.upstream.feedback.stream";
-    /**
      * The period, in seconds, between upstream feedback messages within the topology.
      *
      * <p>A dedicated internal feedback tick fires on this interval; on each tick a task emits

@@ -364,10 +364,9 @@ public class StormCommon {
         // Only invoked when hasUpstreamFeedback(conf) is true, so declare the feedback stream on every
         // component unconditionally. The schema must match the tuple emitted by
         // Executor.buildUpstreamFeedbackTuple: [TaskInfo, EwmaFeedbackRecord].
-        String feedbackStreamId = ConfigUtils.upstreamFeedbackStreamId(conf);
         for (Object component : allComponents(topology).values()) {
             ComponentCommon common = getComponentCommon(component);
-            common.put_to_streams(feedbackStreamId, Thrift.outputFields(upstreamFeedbackFields()));
+            common.put_to_streams(Constants.FEEDBACK_STREAM_ID, Thrift.outputFields(upstreamFeedbackFields()));
         }
     }
 

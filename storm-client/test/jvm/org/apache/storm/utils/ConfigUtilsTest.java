@@ -172,13 +172,7 @@ public class ConfigUtilsTest {
         assertFalse(ConfigUtils.upstreamFeedbackEnable(
             mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, false)));
     }
-
-    @Test
-    public void upstreamFeedbackStreamId_returnsConfiguredStream() {
-        assertEquals("__feedback", ConfigUtils.upstreamFeedbackStreamId(
-            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_STREAM_ID, "__feedback")));
-    }
-
+    
     @Test
     public void upstreamFeedbackFreqSecs_defaultsToTenWhenAbsent() {
         assertEquals(10, ConfigUtils.upstreamFeedbackFreqSecs(new HashMap<>()));

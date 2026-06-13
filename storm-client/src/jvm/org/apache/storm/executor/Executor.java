@@ -135,7 +135,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private final RateCounter reportedErrorCount;
     private final boolean enableV2MetricsDataPoints;
     private final Integer v2MetricsTickInterval;
-    protected final String upstreamFeedbackStreamId;
     protected final boolean upstreamFeedbackEnabled;
     protected final int upstreamFeedbackFreqSecs;
     // task ids of all upstream (source component) tasks, recipients of the periodic feedback tick
@@ -188,7 +187,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.hasEventLoggers = StormCommon.hasEventLoggers(topoConf);
         this.ackingEnabled = StormCommon.hasAckers(topoConf);
         this.upstreamFeedbackEnabled = ConfigUtils.upstreamFeedbackEnable(topoConf);
-        this.upstreamFeedbackStreamId = ConfigUtils.upstreamFeedbackStreamId(topoConf);
 
         try {
             this.hostname = Utils.hostname();
@@ -656,7 +654,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             return;
         }
         for (int parentTask : upstreamTaskIds) {
-            task.sendUnanchoredFeedback(upstreamFeedbackStreamId, feedbackTuple, parentTask,
+            task.sendUnanchoredFeedback(Constants.FEEDBACK_STREAM_ID, feedbackTuple, parentTask,
                     executorTransfer, pendingEmits);
         }
     }

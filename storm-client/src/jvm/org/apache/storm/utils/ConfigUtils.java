@@ -205,12 +205,7 @@ public class ConfigUtils {
         }
         return ObjectReader.getBoolean(value, false);
     }
-
-    public static String upstreamFeedbackStreamId(Map<String, Object> conf) {
-        Object value = conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_STREAM_ID);
-        return ObjectReader.getString(value);
-    }
-
+    
     public static int upstreamFeedbackFreqSecs(Map<String, Object> conf) {
         int freqSecs = ObjectReader.getInt(conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS), 10);
         if (freqSecs > 0) {

@@ -74,10 +74,10 @@ public class SerializationFactory {
         k.register(Values.class);
         k.register(org.apache.storm.metric.api.IMetricsConsumer.DataPoint.class);
         k.register(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo.class);
-        k.register(org.apache.storm.executor.EwmaFeedbackRecord.class);
         k.register(ConsList.class);
         k.register(BackPressureStatus.class);
         k.register(NodeInfo.class);
+        k.register(org.apache.storm.executor.EwmaFeedbackRecord.class);
 
         synchronized (loader) {
             for (SerializationRegister sr : loader) {
