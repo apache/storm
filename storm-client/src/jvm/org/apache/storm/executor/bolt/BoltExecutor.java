@@ -131,7 +131,7 @@ public class BoltExecutor extends Executor {
         LOG.info("Prepared bolt {}:{}", componentId, taskIds);
         setupTicks(false);
         setupMetrics();
-        if (upstreamFeedbackEnabled) {
+        if (upstreamFeedbackEnabled && !Utils.isSystemId(componentId)) {
             scheduleUpstreamFeedbackTick(upstreamFeedbackFreqSecs);
         }
     }
@@ -206,7 +206,7 @@ public class BoltExecutor extends Executor {
                 // periodic trigger: emit this task's feedback snapshot to its upstream tasks
                 sendUpstreamFeedback(idToTask.get(taskId - idToTaskBase));
             }
-        } else if (this.upstreamFeedbackStreamId.equals(streamId)) {
+        } else if (Constants.FEEDBACK_STREAM_ID.equals(streamId)) {
             if (!this.upstreamFeedbackEnabled) {
                 LOG.debug("Upstream feedback skipped.");
             } else {

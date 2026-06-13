@@ -613,6 +613,13 @@ public class Config extends HashMap<String, Object> {
     /**
      * Flag to enable or disable the feedback channel for upstream communication.
      * When true, components can send unanchored tuples back to their source tasks.
+     *
+     * <p><b>Security:</b> feedback tuples carry a routing control signal (e.g. per-task EWMA jitter
+     * used by grouping decisions), so a peer that can inject messages on the worker transport could
+     * forge feedback and deterministically steer a topology's traffic to a chosen task. This stays
+     * within Storm's existing worker-transport trust model, but because the default
+     * {@code storm.messaging.netty.authentication} is {@code false}, enable Netty authentication
+     * (and TLS where available) when running this feature in an untrusted network.</p>
      */
     @IsBoolean
     public static final String TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE = "topology.upstream.feedback.enable";
