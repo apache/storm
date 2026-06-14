@@ -724,7 +724,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
         LSWorkerHeartbeat hb = dynamicState.container.readHeartbeat();
         if (hb != null) {
-            long hbAgeMs = (Time.currentTimeSecs() - hb.get_time_secs()) * 1000;
+            long hbAgeMs = Time.deltaSecsLong(hb.get_time_secs()) * 1000;
             long hbTimeoutMs = getHbTimeoutMs(staticState, dynamicState);
             if (hbAgeMs <= hbTimeoutMs) {
                 return dynamicState.withState(MachineState.RUNNING);
@@ -820,7 +820,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             return killContainerFor(KillReason.HB_NULL, dynamicState, staticState);
         }
 
-        long timeDiffMs = (Time.currentTimeSecs() - hb.get_time_secs()) * 1000;
+        long timeDiffMs = Time.deltaSecsLong(hb.get_time_secs()) * 1000;
         long hbTimeoutMs = getHbTimeoutMs(staticState, dynamicState);
         if (timeDiffMs > hbTimeoutMs) {
             LOG.warn("SLOT {}: HB is too old {} > {} for topology: {}",

@@ -1885,7 +1885,7 @@ public class StatsUtil {
         supervisorWorkerHeartbeat.set_storm_id(stormId);
         supervisorWorkerHeartbeat
             .set_executors(Collections.singletonList(new ExecutorInfo(executorId.get(0).intValue(), executorId.get(1).intValue())));
-        supervisorWorkerHeartbeat.set_time_secs(Time.currentTimeSecs());
+        supervisorWorkerHeartbeat.set_time_secs(Time.currentTimeSecsLong());
         return supervisorWorkerHeartbeat;
     }
 

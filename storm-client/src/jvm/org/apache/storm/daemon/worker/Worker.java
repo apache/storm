@@ -387,7 +387,7 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     public void doHeartBeat() throws IOException {
         LocalState state = ConfigUtils.workerState(workerState.conf, workerState.workerId);
-        LSWorkerHeartbeat lsWorkerHeartbeat = new LSWorkerHeartbeat(Time.currentTimeSecs(), workerState.topologyId,
+        LSWorkerHeartbeat lsWorkerHeartbeat = new LSWorkerHeartbeat(Time.currentTimeSecsLong(), workerState.topologyId,
                                                                     workerState.localExecutors.stream()
                                                                                               .map(executor -> new ExecutorInfo(
                                                                                                   executor.get(0).intValue(),
