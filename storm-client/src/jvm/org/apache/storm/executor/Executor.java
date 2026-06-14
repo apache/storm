@@ -33,7 +33,6 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -140,7 +139,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     // task ids of all upstream (source component) tasks, recipients of the periodic feedback tick
     protected final List<Integer> upstreamTaskIds;
     protected final ChildEwmaStats childEwmaStats;
-    private final Map<Integer, EwmaFeedbackRecord> ewmaRecordCache; // taskId, EwmaRecord implemented for lazy update
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
         this.workerData = workerData;
         this.executorId = executorId;
@@ -201,13 +199,11 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
         this.childEwmaStats = new ChildEwmaStats(this.upstreamFeedbackEnabled);
         if (this.upstreamFeedbackEnabled) {
-            this.ewmaRecordCache = new ConcurrentHashMap<>();
             this.upstreamFeedbackFreqSecs = ConfigUtils.upstreamFeedbackFreqSecs(topoConf);
             this.upstreamTaskIds = computeUpstreamTaskIds();
             // register ewma stats for loadaware streaming grouping
             groupers.forEach(g -> g.registerEwmaStats(childEwmaStats));
         } else {
-            this.ewmaRecordCache = Collections.emptyMap();
             this.upstreamFeedbackFreqSecs = 0;
             this.upstreamTaskIds = Collections.emptyList();
         }
@@ -392,23 +388,17 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      *
      * <p>This method generates a {@link IMetricsConsumer.TaskInfo} header with a timestamp
      * and a default interval of -1 (indicating an on-demand, non-periodic-metrics tick),
-     * followed by the {@link EwmaFeedbackRecord} snapshot.</p>
-     *
-     * <p>Applies a lazy-update optimization: if the freshly sampled record equals the one last
-     * sent for this task, {@code null} is returned so the caller skips the redundant emit.</p>
+     * followed by the {@link EwmaFeedbackRecord} snapshot. The snapshot is emitted on every tick:
+     * the tick frequency ({@code topology.upstream.feedback.freq.secs}) is the rate limit, and an
+     * unconditional resend keeps a restarted/reassigned upstream task from being stranded with stale
+     * or empty stats when the metric value happens to be stable.</p>
      *
      * @param taskId  The ID of the task for which metrics are being collected.
      * @return A {@link Values} object containing {@code [TaskInfo, EwmaFeedbackRecord]} (matching the
-     *         feedback stream schema declared by {@link StormCommon#upstreamFeedbackFields()}), or
-     *         {@code null} when the metrics are unchanged since the previous send.
+     *         feedback stream schema declared by {@link StormCommon#upstreamFeedbackFields()}).
      */
     public Values buildUpstreamFeedbackTuple(int taskId) {
         EwmaFeedbackRecord statsRecord = EwmaFeedbackRecord.fromWorkerState(this.workerData, taskId);
-        EwmaFeedbackRecord prevStatsRecords = this.ewmaRecordCache.put(taskId, statsRecord);
-        if (prevStatsRecords != null && prevStatsRecords.equals(statsRecord)) {
-            // lazy update, the metrics are stable, and it is not required to propagate the same value.
-            return null;
-        }
         IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
             hostname, workerTopologyContext.getThisWorkerPort(),
             componentId, taskId, Time.currentTimeSecs(), -1);
@@ -642,17 +632,13 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     /**
      * Sends an upstream feedback tuple for the given task to all of its upstream tasks. Invoked on
-     * each feedback tick. The snapshot is built by {@link #buildUpstreamFeedbackTuple(int)}, which
-     * returns {@code null} (and thus skips the send) when the metrics are stable (lazy update).
+     * each feedback tick. The snapshot is built by {@link #buildUpstreamFeedbackTuple(int)}.
      */
     public void sendUpstreamFeedback(Task task) {
         if (!upstreamFeedbackEnabled) {
             return;
         }
         Values feedbackTuple = buildUpstreamFeedbackTuple(task.getTaskId());
-        if (feedbackTuple == null) {
-            return;
-        }
         for (int parentTask : upstreamTaskIds) {
             task.sendUnanchoredFeedback(Constants.FEEDBACK_STREAM_ID, feedbackTuple, parentTask,
                     executorTransfer, pendingEmits);
