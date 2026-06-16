@@ -27,8 +27,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -95,6 +97,67 @@ public class DetachedTupleTest {
 
         Tuple differentTuple = new TupleImpl(getContext(new Fields("id", "ts")), new Values(43, 1000L), "srcComponent", 7, "srcStream");
         assertNotEquals(detached, new DetachedTuple(differentTuple));
+    }
+
+    @Test
+    public void testNotEqualToNullOrOtherType() {
+        assertFalse(detached.equals(null));
+        assertFalse(detached.equals("not a tuple"));
+        assertFalse(detached.equals(sourceTuple));
+    }
+
+    @Test
+    public void testTypedGetters() {
+        Fields fields = new Fields("bool", "byte", "short");
+        Tuple typed = new TupleImpl(getContext(fields), new Values(true, (byte) 1, (short) 2), "srcComponent", 0, "srcStream");
+        DetachedTuple typedDetached = new DetachedTuple(typed);
+
+        assertEquals(Boolean.TRUE, typedDetached.getBoolean(0));
+        assertEquals(Byte.valueOf((byte) 1), typedDetached.getByte(1));
+        assertEquals(Short.valueOf((short) 2), typedDetached.getShort(2));
+        assertEquals(Boolean.TRUE, typedDetached.getBooleanByField("bool"));
+        assertEquals(Byte.valueOf((byte) 1), typedDetached.getByteByField("byte"));
+        assertEquals(Short.valueOf((short) 2), typedDetached.getShortByField("short"));
+    }
+
+    @Test
+    public void testKryoRoundTripWithNullValue() {
+        Fields fields = new Fields("id", "ts");
+        Tuple withNull = new TupleImpl(getContext(fields), new Values(42, null), "srcComponent", 7, "srcStream");
+        DetachedTuple detachedWithNull = new DetachedTuple(withNull);
+
+        Map<String, Object> conf = Utils.readDefaultConfig();
+        conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, false);
+
+        byte[] serialized = new KryoValuesSerializer(conf).serialize(new Values(detachedWithNull));
+        List<Object> roundTripped = new KryoValuesDeserializer(conf).deserialize(serialized);
+
+        DetachedTuple deserialized = (DetachedTuple) roundTripped.get(0);
+        assertEquals(detachedWithNull, deserialized);
+        assertNull(deserialized.getValue(1));
+        assertNull(deserialized.getLongByField("ts"));
+    }
+
+    /**
+     * The {@code fields} member is transient and rebuilt lazily. Populate it via {@link DetachedTuple#getFields()}
+     * before serializing so the transient-skip path is actually exercised: the deserialized copy must rebuild its
+     * fields from scratch rather than carry a serialized {@link Fields} instance.
+     */
+    @Test
+    public void testKryoRoundTripWithPopulatedFields() {
+        // force the lazy transient Fields to be built before serialization
+        detached.getFields();
+
+        Map<String, Object> conf = Utils.readDefaultConfig();
+        conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, false);
+
+        byte[] serialized = new KryoValuesSerializer(conf).serialize(new Values(detached));
+        List<Object> roundTripped = new KryoValuesDeserializer(conf).deserialize(serialized);
+
+        DetachedTuple deserialized = (DetachedTuple) roundTripped.get(0);
+        assertEquals(detached, deserialized);
+        assertEquals(Arrays.asList("id", "ts"), deserialized.getFields().toList());
+        assertEquals(Long.valueOf(1000L), deserialized.getLongByField("ts"));
     }
 
     /**
