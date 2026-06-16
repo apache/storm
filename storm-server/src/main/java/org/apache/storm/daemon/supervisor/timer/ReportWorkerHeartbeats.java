@@ -21,6 +21,7 @@ import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.generated.SupervisorWorkerHeartbeats;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
@@ -64,6 +65,7 @@ public class ReportWorkerHeartbeats implements Runnable {
         }
     }
 
+    @VisibleForTesting
     SupervisorWorkerHeartbeats getSupervisorWorkerHeartbeatsFromLocal(Map<String, LSWorkerHeartbeat> localHeartbeats) {
         SupervisorWorkerHeartbeats supervisorWorkerHeartbeats = new SupervisorWorkerHeartbeats();
 
