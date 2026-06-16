@@ -192,6 +192,11 @@ via the field `WindowedBoltExecutor.LATE_TUPLE_FIELD`. The value of this field i
 original tuple (source component, task, stream, fields and values) detached from the topology context, so that the late tuple stream can also be
 consumed by bolts running in different workers.
 
+> **Behavior change:** previously the value in `LATE_TUPLE_FIELD` was the original input tuple (`TupleImpl`), which could not be serialized and therefore
+> only worked when the late tuple stream was consumed in the same worker. It is now a `DetachedTuple`. Read it through the `Tuple` interface as before;
+> however the detached tuple is unanchored and carries no topology context, so `getContext()` throws `UnsupportedOperationException` and the value can no
+> longer be cast to `TupleImpl`.
+
 
 ### Watermarks
 For processing tuples with timestamp field, storm internally computes watermarks based on the incoming tuple timestamp. Watermark is 
