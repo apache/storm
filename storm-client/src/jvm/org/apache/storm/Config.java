@@ -39,6 +39,7 @@ import org.apache.storm.validation.ConfigValidation.MetricRegistryValidator;
 import org.apache.storm.validation.ConfigValidation.MetricReportersValidator;
 import org.apache.storm.validation.ConfigValidation.RasConstraintsTypeValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations;
+import org.apache.storm.validation.ConfigValidationAnnotations.CustomComboValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.CustomValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsBoolean;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsExactlyOneOf;
@@ -622,6 +623,7 @@ public class Config extends HashMap<String, Object> {
      * (and TLS where available) when running this feature in an untrusted network.</p>
      */
     @IsBoolean
+    @CustomComboValidator(validatorClass = ConfigValidation.UpstreamFeedbackValidator.class)
     public static final String TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE = "topology.upstream.feedback.enable";
     /**
      * The period, in seconds, between upstream feedback messages within the topology.
