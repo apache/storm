@@ -22,23 +22,29 @@ import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
+import org.apache.storm.serialization.KryoValuesDeserializer;
+import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.base.BaseWindowedBolt;
+import org.apache.storm.tuple.DetachedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 import org.apache.storm.windowing.TupleWindow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -215,7 +221,51 @@ public class WindowedBoltExecutorTest {
         }
         System.out.println(testWindowedBolt.tupleWindows);
         Tuple tuple = tuples.get(tuples.size() - 1);
-        Mockito.verify(outputCollector).emit("$late", Collections.singletonList(tuple), new Values(tuple));
+        Mockito.verify(outputCollector).emit("$late", Collections.singletonList(tuple), new Values(new DetachedTuple(tuple)));
+    }
+
+    @Test
+    public void testLateTupleStreamEmitsSerializableTuple() throws Exception {
+        testWindowedBolt = new TestWindowedBolt();
+        testWindowedBolt.withTimestampField("ts");
+        executor = new WindowedBoltExecutor(testWindowedBolt);
+        TopologyContext context = getTopologyContext();
+        Mockito.when(context.getThisStreams()).thenReturn(new HashSet<>(Arrays.asList("default", "$late")));
+
+        OutputCollector outputCollector = Mockito.mock(OutputCollector.class);
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100000);
+        conf.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, 20);
+        conf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, 10);
+        conf.put(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, "$late");
+        conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS, 5);
+        //Trigger manually to avoid timing issues
+        conf.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, 1_000_000);
+        executor.prepare(conf, context, outputCollector);
+
+        long[] timestamps = { 603, 605, 607, 618, 626, 636, 600 };
+        Tuple lateTuple = null;
+        for (long ts : timestamps) {
+            lateTuple = getTuple("s1", new Fields("ts"), new Values(ts), "s1Src");
+            executor.execute(lateTuple);
+            executor.waterMarkEventGenerator.run();
+        }
+
+        ArgumentCaptor<List<Object>> valuesCaptor = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(outputCollector).emit(Mockito.eq("$late"), Mockito.anyCollection(), valuesCaptor.capture());
+        Object lateValue = valuesCaptor.getValue().get(0);
+        assertInstanceOf(DetachedTuple.class, lateValue);
+        DetachedTuple detached = (DetachedTuple) lateValue;
+        assertEquals(lateTuple.getValues(), detached.getValues());
+        assertEquals(lateTuple.getSourceComponent(), detached.getSourceComponent());
+        assertEquals(lateTuple.getSourceStreamId(), detached.getSourceStreamId());
+
+        // STORM-4000 regression: the late tuple must survive Kryo serialization without java fallback
+        Map<String, Object> serConf = Utils.readDefaultConfig();
+        serConf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, false);
+        byte[] serialized = new KryoValuesSerializer(serConf).serialize(new Values(lateValue));
+        List<Object> roundTripped = new KryoValuesDeserializer(serConf).deserialize(serialized);
+        assertEquals(detached, roundTripped.get(0));
     }
 
     @Test

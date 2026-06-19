@@ -40,6 +40,7 @@ import org.apache.storm.serialization.types.HashMapSerializer;
 import org.apache.storm.serialization.types.HashSetSerializer;
 import org.apache.storm.transactional.TransactionAttempt;
 import org.apache.storm.trident.tuple.ConsList;
+import org.apache.storm.tuple.DetachedTuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.ListDelegate;
 import org.apache.storm.utils.ReflectionUtils;
@@ -77,6 +78,7 @@ public class SerializationFactory {
         k.register(ConsList.class);
         k.register(BackPressureStatus.class);
         k.register(NodeInfo.class);
+        k.register(DetachedTuple.class);
         k.register(org.apache.storm.executor.EwmaFeedbackRecord.class);
 
         synchronized (loader) {

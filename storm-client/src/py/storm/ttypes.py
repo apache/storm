@@ -7678,8 +7678,8 @@ class ClusterWorkerHeartbeat(object):
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
-                if ftype == TType.I32:
-                    self.time_secs = iprot.readI32()
+                if ftype == TType.I64:
+                    self.time_secs = iprot.readI64()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
@@ -7711,8 +7711,8 @@ class ClusterWorkerHeartbeat(object):
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.time_secs is not None:
-            oprot.writeFieldBegin('time_secs', TType.I32, 3)
-            oprot.writeI32(self.time_secs)
+            oprot.writeFieldBegin('time_secs', TType.I64, 3)
+            oprot.writeI64(self.time_secs)
             oprot.writeFieldEnd()
         if self.uptime_secs is not None:
             oprot.writeFieldBegin('uptime_secs', TType.I32, 4)
@@ -8239,8 +8239,8 @@ class LSWorkerHeartbeat(object):
             if ftype == TType.STOP:
                 break
             if fid == 1:
-                if ftype == TType.I32:
-                    self.time_secs = iprot.readI32()
+                if ftype == TType.I64:
+                    self.time_secs = iprot.readI64()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -8276,8 +8276,8 @@ class LSWorkerHeartbeat(object):
             return
         oprot.writeStructBegin('LSWorkerHeartbeat')
         if self.time_secs is not None:
-            oprot.writeFieldBegin('time_secs', TType.I32, 1)
-            oprot.writeI32(self.time_secs)
+            oprot.writeFieldBegin('time_secs', TType.I64, 1)
+            oprot.writeI64(self.time_secs)
             oprot.writeFieldEnd()
         if self.topology_id is not None:
             oprot.writeFieldBegin('topology_id', TType.STRING, 2)
@@ -9183,8 +9183,8 @@ class SupervisorWorkerHeartbeat(object):
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
-                if ftype == TType.I32:
-                    self.time_secs = iprot.readI32()
+                if ftype == TType.I64:
+                    self.time_secs = iprot.readI64()
                 else:
                     iprot.skip(ftype)
             else:
@@ -9210,8 +9210,8 @@ class SupervisorWorkerHeartbeat(object):
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.time_secs is not None:
-            oprot.writeFieldBegin('time_secs', TType.I32, 3)
-            oprot.writeI32(self.time_secs)
+            oprot.writeFieldBegin('time_secs', TType.I64, 3)
+            oprot.writeI64(self.time_secs)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -13264,7 +13264,7 @@ ClusterWorkerHeartbeat.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'storm_id', 'UTF8', None, ),  # 1
     (2, TType.MAP, 'executor_stats', (TType.STRUCT, [ExecutorInfo, None], TType.STRUCT, [ExecutorStats, None], False), None, ),  # 2
-    (3, TType.I32, 'time_secs', None, None, ),  # 3
+    (3, TType.I64, 'time_secs', None, None, ),  # 3
     (4, TType.I32, 'uptime_secs', None, None, ),  # 4
 )
 all_structs.append(ThriftSerializedObject)
@@ -13305,7 +13305,7 @@ LSSupervisorAssignments.thrift_spec = (
 all_structs.append(LSWorkerHeartbeat)
 LSWorkerHeartbeat.thrift_spec = (
     None,  # 0
-    (1, TType.I32, 'time_secs', None, None, ),  # 1
+    (1, TType.I64, 'time_secs', None, None, ),  # 1
     (2, TType.STRING, 'topology_id', 'UTF8', None, ),  # 2
     (3, TType.LIST, 'executors', (TType.STRUCT, [ExecutorInfo, None], False), None, ),  # 3
     (4, TType.I32, 'port', None, None, ),  # 4
@@ -13382,7 +13382,7 @@ SupervisorWorkerHeartbeat.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'storm_id', 'UTF8', None, ),  # 1
     (2, TType.LIST, 'executors', (TType.STRUCT, [ExecutorInfo, None], False), None, ),  # 2
-    (3, TType.I32, 'time_secs', None, None, ),  # 3
+    (3, TType.I64, 'time_secs', None, None, ),  # 3
 )
 all_structs.append(SupervisorWorkerHeartbeats)
 SupervisorWorkerHeartbeats.thrift_spec = (

@@ -18,6 +18,9 @@
 
 package org.apache.storm.flux.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Abstract parent class of component definitions.
  * (spouts/bolts)
@@ -30,6 +33,8 @@ public abstract class VertexDef extends BeanDef {
     private int onHeapMemoryLoad = -1;
     private int offHeapMemoryLoad = -1;
     private int cpuLoad = -1;
+    // per-component configuration
+    private Map<String, Object> config = new HashMap<>();
 
     public int getParallelism() {
         return parallelism;
@@ -69,5 +74,13 @@ public abstract class VertexDef extends BeanDef {
 
     public void setCpuLoad(int cpuLoad) {
         this.cpuLoad = cpuLoad;
+    }
+
+    public Map<String, Object> getConfig() {
+        return config;
+    }
+
+    public void setConfig(Map<String, Object> config) {
+        this.config = config;
     }
 }

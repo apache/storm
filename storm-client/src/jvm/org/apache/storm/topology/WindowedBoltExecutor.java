@@ -33,6 +33,7 @@ import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.task.IOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.DetachedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
@@ -61,6 +62,10 @@ import org.slf4j.LoggerFactory;
  * An {@link IWindowedBolt} wrapper that does the windowing of tuples.
  */
 public class WindowedBoltExecutor implements IRichBolt {
+    /**
+     * Name of the field carrying a late tuple on the late tuple stream. The value is a {@link DetachedTuple},
+     * a serializable copy of the original tuple detached from the topology context.
+     */
     public static final String LATE_TUPLE_FIELD = "late_tuple";
     private static final Logger LOG = LoggerFactory.getLogger(WindowedBoltExecutor.class);
     private static final int DEFAULT_WATERMARK_EVENT_INTERVAL_MS = 1000; // 1s
@@ -310,7 +315,8 @@ public class WindowedBoltExecutor implements IRichBolt {
                 windowManager.add(input, ts);
             } else {
                 if (lateTupleStream != null) {
-                    windowedOutputCollector.emit(lateTupleStream, input, new Values(input));
+                    // emit a detached copy: the original tuple references the topology context and cannot be serialized
+                    windowedOutputCollector.emit(lateTupleStream, input, new Values(new DetachedTuple(input)));
                 } else {
                     LOG.info("Received a late tuple {} with ts {}. This will not be processed.", input, ts);
                 }

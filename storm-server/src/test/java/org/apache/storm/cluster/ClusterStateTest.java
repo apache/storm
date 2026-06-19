@@ -49,6 +49,13 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.storm.callback.WatcherCallBack;
+import org.apache.storm.shade.org.apache.curator.framework.api.BackgroundVersionable;
+import org.apache.storm.shade.org.apache.curator.framework.api.DeleteBuilder;
+import org.apache.storm.shade.org.apache.curator.framework.api.ExistsBuilder;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
+import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
+import org.apache.storm.zookeeper.ClientZookeeper;
 import org.junit.jupiter.api.Test;
 import org.awaitility.Awaitility;
 import org.mockito.Mockito;
@@ -479,6 +486,119 @@ public class ClusterStateTest {
             Mockito.verify(builder).authorization(
                 "digest",
                 ((String) conf.get(Config.STORM_ZOOKEEPER_AUTH_PAYLOAD)).getBytes());
+        }
+    }
+
+    @Test
+    public void testGetVersion() throws Exception {
+        try (InProcessZookeeper zk = new InProcessZookeeper()) {
+            IStateStorage state = mkState(zk.getPort());
+
+            // absent node -> null version
+            assertNull(state.get_version("/v", false));
+
+            // first set_data creates the node at dataVersion 0
+            state.set_data("/v", barr(1), OPEN_ACL);
+            assertEquals(Integer.valueOf(0), state.get_version("/v", false));
+
+            // each subsequent update bumps the version
+            state.set_data("/v", barr(2), OPEN_ACL);
+            assertEquals(Integer.valueOf(1), state.get_version("/v", false));
+            state.set_data("/v", barr(3), OPEN_ACL);
+            assertEquals(Integer.valueOf(2), state.get_version("/v", false));
+
+            // deleted -> null again
+            state.delete_node("/v");
+            assertNull(state.get_version("/v", false));
+
+            state.close();
+        }
+    }
+
+    @Test
+    public void testGetDataWithVersion() throws Exception {
+        try (InProcessZookeeper zk = new InProcessZookeeper()) {
+            IStateStorage state = mkState(zk.getPort());
+
+            // absent node -> null
+            assertNull(state.get_data_with_version("/v", false));
+
+            // created -> data with dataVersion 0
+            state.set_data("/v", barr(1), OPEN_ACL);
+            VersionedData<byte[]> v0 = state.get_data_with_version("/v", false);
+            assertNotNull(v0);
+            assertArrayEquals(barr(1), v0.getData());
+            assertEquals(0, v0.getVersion());
+
+            // updated -> new data and bumped version, consistent with get_version
+            state.set_data("/v", barr(2, 3), OPEN_ACL);
+            VersionedData<byte[]> v1 = state.get_data_with_version("/v", false);
+            assertNotNull(v1);
+            assertArrayEquals(barr(2, 3), v1.getData());
+            assertEquals(1, v1.getVersion());
+            assertEquals(Integer.valueOf(1), state.get_version("/v", false));
+
+            // deleted -> null
+            state.delete_node("/v");
+            assertNull(state.get_data_with_version("/v", false));
+
+            state.close();
+        }
+    }
+
+    // concurrent delete
+    @Test
+    public void testDeleteNodeSwallowsConcurrentDelete() throws Exception {
+        // Simulates the race where the node is present at the exists-check but removed by another
+        // client before the delete runs: deleteNode must swallow NoNodeException, not rethrow it.
+        CuratorFramework zk = Mockito.mock(CuratorFramework.class);
+
+        ExistsBuilder existsBuilder = Mockito.mock(ExistsBuilder.class);
+        Mockito.when(zk.checkExists()).thenReturn(existsBuilder);
+        Mockito.when(existsBuilder.forPath("/race")).thenReturn(new Stat());
+
+        DeleteBuilder deleteBuilder = Mockito.mock(DeleteBuilder.class);
+        BackgroundVersionable childrenDeletable = Mockito.mock(BackgroundVersionable.class);
+        Mockito.when(zk.delete()).thenReturn(deleteBuilder);
+        Mockito.when(deleteBuilder.deletingChildrenIfNeeded()).thenReturn(childrenDeletable);
+        Mockito.when(childrenDeletable.forPath("/race")).thenThrow(new KeeperException.NoNodeException());
+
+        assertDoesNotThrow(() -> ClientZookeeper.deleteNode(zk, "/race"));
+        // ensure to delete was actually attempted (the catch branch was exercised, not skipped)
+        Mockito.verify(deleteBuilder).deletingChildrenIfNeeded();
+    }
+
+    @Test
+    public void testGetDataArmsWatchOnAbsentNode() throws Exception {
+        try (InProcessZookeeper zk = new InProcessZookeeper()) {
+            Map<String, Object> conf = mkConfig(zk.getPort());
+            AtomicReference<Map<String, Object>> lastEvent = new AtomicReference<>();
+
+            WatcherCallBack watcher = (state, type, path) -> {
+                if (type != Watcher.Event.EventType.None) {
+                    lastEvent.set(event(type, path));
+                }
+            };
+
+            CuratorFramework client = ClientZookeeper.mkClient(conf, List.of("localhost"),
+                zk.getPort(), "", watcher, null, DaemonType.UNKNOWN);
+            try {
+                final String path = String.format("/node-%s", Time.currentTimeMillis());
+                // absent node,  the fallback must have armed a watch
+                assertNull(ClientZookeeper.getData(client, path, true));
+                assertNull(lastEvent.get());
+
+                // create the node
+                ClientZookeeper.createNode(client, path, barr(1, 2, 3), OPEN_ACL);
+                Awaitility.await().atMost(5, TimeUnit.SECONDS)
+                    .pollInterval(10, TimeUnit.MILLISECONDS)
+                    .until(() -> lastEvent.get() != null);
+
+                // check the node is announced
+                assertEquals(event(Watcher.Event.EventType.NodeCreated, path), lastEvent.get());
+            } finally {
+                client.close();
+            }
         }
     }
 

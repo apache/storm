@@ -15,17 +15,17 @@ package org.apache.storm.cluster;
 import org.apache.storm.generated.ExecutorStats;
 
 public class ExecutorBeat {
-    private final int timeSecs;
+    private final long timeSecs;
     private final int uptime;
     private final ExecutorStats stats;
 
-    public ExecutorBeat(int timeSecs, int uptime, ExecutorStats stats) {
+    public ExecutorBeat(long timeSecs, int uptime, ExecutorStats stats) {
         this.timeSecs = timeSecs;
         this.uptime = uptime;
         this.stats = stats;
     }
 
-    public int getTimeSecs() {
+    public long getTimeSecs() {
         return timeSecs;
     }
 

@@ -167,7 +167,7 @@ public class LogCleaner implements Runnable, Closeable {
             Set<Path> oldLogDirs = selectDirsForCleanup(nowMills);
 
             final long nowSecs = TimeUnit.MILLISECONDS.toSeconds(nowMills);
-            SortedSet<Path> deadWorkerDirs = getDeadWorkerDirs((int) nowSecs, oldLogDirs);
+            SortedSet<Path> deadWorkerDirs = getDeadWorkerDirs(nowSecs, oldLogDirs);
 
             LOG.debug("log cleanup: now={} old log dirs {} dead worker dirs {}", nowSecs,
                     oldLogDirs.stream().map(p -> p.getFileName().toString()).collect(joining(",")),
@@ -247,7 +247,7 @@ public class LogCleaner implements Runnable, Closeable {
      * Return a sorted set of paths that were written by workers that are now dead.
      */
     @VisibleForTesting
-    SortedSet<Path> getDeadWorkerDirs(int nowSecs, Set<Path> logDirs) throws Exception {
+    SortedSet<Path> getDeadWorkerDirs(long nowSecs, Set<Path> logDirs) throws Exception {
         if (logDirs.isEmpty()) {
             return new TreeSet<>();
         } else {

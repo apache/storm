@@ -156,8 +156,8 @@ public class ClientZookeeper {
                 zk.delete().deletingChildrenIfNeeded().forPath(normalizePath(path));
             }
         } catch (Exception e) {
-            if (Utils.exceptionCauseIsInstanceOf(KeeperException.NodeExistsException.class, e)) {
-                // do nothing
+            if (Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
+                // Node was deleted concurrently between the exists check and the delete.
                 LOG.info("delete {} failed.", path, e);
             } else {
                 throw Utils.wrapInRuntime(e);
@@ -189,13 +189,13 @@ public class ClientZookeeper {
 
     public static Integer getVersion(CuratorFramework zk, String path, boolean watch) throws Exception {
         String npath = normalizePath(path);
-        Stat stat = null;
-        if (existsNode(zk, npath, watch)) {
-            if (watch) {
-                stat = zk.checkExists().watched().forPath(npath);
-            } else {
-                stat = zk.checkExists().forPath(npath);
-            }
+        // checkExists returns the Stat directly (null when absent) and still arms the watch when
+        // watch is true. request 1.
+        Stat stat;
+        if (watch) {
+            stat = zk.checkExists().watched().forPath(npath);
+        } else {
+            stat = zk.checkExists().forPath(npath); // request 2.
         }
         return stat == null ? null : Integer.valueOf(stat.getVersion());
     }
@@ -214,23 +214,23 @@ public class ClientZookeeper {
     }
 
     public static byte[] getData(CuratorFramework zk, String path, boolean watch) {
+        String npath = normalizePath(path);
         try {
-            String npath = normalizePath(path);
-            if (existsNode(zk, npath, watch)) {
-                if (watch) {
-                    return zk.getData().watched().forPath(npath);
-                } else {
-                    return zk.getData().forPath(npath);
-                }
+            if (watch) {
+                return zk.getData().watched().forPath(npath);
+            } else {
+                return zk.getData().forPath(npath);
             }
         } catch (Exception e) {
             if (Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
-                // this is fine b/c we still have a watch from the successful exists call
-            } else {
-                throw Utils.wrapInRuntime(e);
+                // Node is absent. A watcher can notify when the node is announced.
+                if (watch) {
+                    existsNode(zk, npath, true);
+                }
+                return null;
             }
+            throw Utils.wrapInRuntime(e);
         }
-        return null;
     }
 
     /**
@@ -243,26 +243,27 @@ public class ClientZookeeper {
      */
     public static VersionedData<byte[]> getDataWithVersion(CuratorFramework zk, String path, boolean watch) {
         VersionedData<byte[]> data = null;
+        String npath = normalizePath(path);
+        Stat stats = new Stat();
         try {
-            byte[] bytes = null;
-            Stat stats = new Stat();
-            String npath = normalizePath(path);
-            if (existsNode(zk, npath, watch)) {
-                if (watch) {
-                    bytes = zk.getData().storingStatIn(stats).watched().forPath(npath);
-                } else {
-                    bytes = zk.getData().storingStatIn(stats).forPath(npath);
-                }
-                if (bytes != null) {
-                    int version = stats.getVersion();
-                    data = new VersionedData<>(version, bytes);
-                }
+            byte[] bytes;
+            if (watch) {
+                bytes = zk.getData().storingStatIn(stats).watched().forPath(npath);
+            } else {
+                bytes = zk.getData().storingStatIn(stats).forPath(npath);
+            }
+            if (bytes != null) {
+                data = new VersionedData<>(stats.getVersion(), bytes);
             }
         } catch (Exception e) {
             if (Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
-                // this is fine b/c we still have a watch from the successful exists call
+                // Node is absent. getData does not arm a watch when it fails, so when watching we
+                // set an existence watch separately to be notified if the node is created.
+                if (watch) {
+                    existsNode(zk, npath, true);
+                }
             } else {
-                Utils.wrapInRuntime(e);
+                throw Utils.wrapInRuntime(e);
             }
         }
         return data;

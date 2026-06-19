@@ -90,9 +90,24 @@ You can also enable it topology-wide (or cluster-wide via `storm.yaml`) by setti
 
 #### Flux
 
-> **Note:** With [Flux](flux.html), only **topology-wide** enablement is currently possible. Flux has no per-component configuration mechanism — `FluxBuilder` applies only parallelism, number of tasks, memory/CPU load, and groupings to the underlying declarers, and the `config:` block is topology-scoped. There is no Flux equivalent of `declarer.addConfiguration(...)`, so the per-component approach recommended above cannot be expressed in a Flux YAML definition.
+[Flux](flux.html) supports per-component configuration. In addition to parallelism, number of tasks, memory/CPU load, and groupings, each spout and bolt definition accepts a `config:` block that `FluxBuilder` applies to the underlying declarer via `addConfigurations(...)`. This is the Flux equivalent of `declarer.addConfiguration(...)`, so you can enable compression for just the components that emit large tuples:
 
-To enable compression for a Flux topology, set it in the topology-level `config:` block:
+```yaml
+spouts:
+  - id: "file-read-spout"
+    className: "org.apache.storm.perf.spout.FileReadSpout"
+    parallelism: 1
+    # enable compression for this spout only
+    config:
+      topology.tuple.compression.enable: true
+
+bolts:
+  - id: "split"
+    className: "org.apache.storm.perf.bolt.SplitSentenceBolt"
+    parallelism: 1
+```
+
+You can also enable it topology-wide by setting it in the topology-level `config:`
 
 ```yaml
 config:
@@ -100,7 +115,7 @@ config:
   topology.tuple.compression.threshold: 1460
 ```
 
-Be aware that this enables compression for *every* remote-bound tuple in the topology that exceeds the threshold.
+Be aware that the topology-wide form enables compression for *every* remote-bound tuple in the topology that exceeds the threshold.
 
 #### Configuration reference
 

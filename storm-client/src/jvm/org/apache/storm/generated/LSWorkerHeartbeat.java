@@ -28,7 +28,7 @@ package org.apache.storm.generated;
 public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorkerHeartbeat, LSWorkerHeartbeat._Fields>, java.io.Serializable, Cloneable, Comparable<LSWorkerHeartbeat> {
   private static final org.apache.storm.thrift.protocol.TStruct STRUCT_DESC = new org.apache.storm.thrift.protocol.TStruct("LSWorkerHeartbeat");
 
-  private static final org.apache.storm.thrift.protocol.TField TIME_SECS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("time_secs", org.apache.storm.thrift.protocol.TType.I32, (short)1);
+  private static final org.apache.storm.thrift.protocol.TField TIME_SECS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("time_secs", org.apache.storm.thrift.protocol.TType.I64, (short)1);
   private static final org.apache.storm.thrift.protocol.TField TOPOLOGY_ID_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("topology_id", org.apache.storm.thrift.protocol.TType.STRING, (short)2);
   private static final org.apache.storm.thrift.protocol.TField EXECUTORS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("executors", org.apache.storm.thrift.protocol.TType.LIST, (short)3);
   private static final org.apache.storm.thrift.protocol.TField PORT_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("port", org.apache.storm.thrift.protocol.TType.I32, (short)4);
@@ -36,7 +36,7 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new LSWorkerHeartbeatStandardSchemeFactory();
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new LSWorkerHeartbeatTupleSchemeFactory();
 
-  private int time_secs; // required
+  private long time_secs; // required
   private @org.apache.storm.thrift.annotation.Nullable java.lang.String topology_id; // required
   private @org.apache.storm.thrift.annotation.Nullable java.util.List<ExecutorInfo> executors; // required
   private int port; // required
@@ -120,7 +120,7 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
   static {
     java.util.Map<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.storm.thrift.meta_data.FieldMetaData>(_Fields.class);
     tmpMap.put(_Fields.TIME_SECS, new org.apache.storm.thrift.meta_data.FieldMetaData("time_secs", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.I32)));
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.I64)));
     tmpMap.put(_Fields.TOPOLOGY_ID, new org.apache.storm.thrift.meta_data.FieldMetaData("topology_id", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.EXECUTORS, new org.apache.storm.thrift.meta_data.FieldMetaData("executors", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
@@ -136,7 +136,7 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
   }
 
   public LSWorkerHeartbeat(
-    int time_secs,
+    long time_secs,
     java.lang.String topology_id,
     java.util.List<ExecutorInfo> executors,
     int port)
@@ -184,11 +184,11 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
     this.port = 0;
   }
 
-  public int get_time_secs() {
+  public long get_time_secs() {
     return this.time_secs;
   }
 
-  public void set_time_secs(int time_secs) {
+  public void set_time_secs(long time_secs) {
     this.time_secs = time_secs;
     set_time_secs_isSet(true);
   }
@@ -299,7 +299,7 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
       if (value == null) {
         unset_time_secs();
       } else {
-        set_time_secs((java.lang.Integer)value);
+        set_time_secs((java.lang.Long)value);
       }
       break;
 
@@ -426,7 +426,7 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
   public int hashCode() {
     int hashCode = 1;
 
-    hashCode = hashCode * 8191 + time_secs;
+    hashCode = hashCode * 8191 + org.apache.storm.thrift.TBaseHelper.hashCode(time_secs);
 
     hashCode = hashCode * 8191 + ((is_set_topology_id()) ? 131071 : 524287);
     if (is_set_topology_id())
@@ -600,8 +600,8 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
         }
         switch (schemeField.id) {
           case 1: // TIME_SECS
-            if (schemeField.type == org.apache.storm.thrift.protocol.TType.I32) {
-              struct.time_secs = iprot.readI32();
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.I64) {
+              struct.time_secs = iprot.readI64();
               struct.set_time_secs_isSet(true);
             } else { 
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
@@ -657,7 +657,7 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
 
       oprot.writeStructBegin(STRUCT_DESC);
       oprot.writeFieldBegin(TIME_SECS_FIELD_DESC);
-      oprot.writeI32(struct.time_secs);
+      oprot.writeI64(struct.time_secs);
       oprot.writeFieldEnd();
       if (struct.topology_id != null) {
         oprot.writeFieldBegin(TOPOLOGY_ID_FIELD_DESC);
@@ -697,7 +697,7 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
     @Override
     public void write(org.apache.storm.thrift.protocol.TProtocol prot, LSWorkerHeartbeat struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol oprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-      oprot.writeI32(struct.time_secs);
+      oprot.writeI64(struct.time_secs);
       oprot.writeString(struct.topology_id);
       {
         oprot.writeI32(struct.executors.size());
@@ -712,7 +712,7 @@ public class LSWorkerHeartbeat implements org.apache.storm.thrift.TBase<LSWorker
     @Override
     public void read(org.apache.storm.thrift.protocol.TProtocol prot, LSWorkerHeartbeat struct) throws org.apache.storm.thrift.TException {
       org.apache.storm.thrift.protocol.TTupleProtocol iprot = (org.apache.storm.thrift.protocol.TTupleProtocol) prot;
-      struct.time_secs = iprot.readI32();
+      struct.time_secs = iprot.readI64();
       struct.set_time_secs_isSet(true);
       struct.topology_id = iprot.readString();
       struct.set_topology_id_isSet(true);

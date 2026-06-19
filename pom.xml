@@ -82,7 +82,7 @@
 
         <!-- dependency versions -->
         <commons-compress.version>1.28.0</commons-compress.version>
-        <zstd-jni.version>1.5.7-8</zstd-jni.version>
+        <zstd-jni.version>1.5.7-9</zstd-jni.version>
         <commons-io.version>2.22.0</commons-io.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-exec.version>1.6.0</commons-exec.version>
@@ -101,11 +101,11 @@
         <guava.version>33.6.0-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.77.Final</netty-tcnative.version>
-        <netty.version>4.2.13.Final</netty.version>
+        <netty.version>4.2.14.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.26.0</log4j.version>
         <slf4j.version>2.0.18</slf4j.version>
-        <metrics.version>4.2.38</metrics.version>
+        <metrics.version>4.2.39</metrics.version>
         <mockito.version>5.23.0</mockito.version>
         <zookeeper.version>3.9.5</zookeeper.version>
         <snappy.version>1.1.10.8</snappy.version>
@@ -117,18 +117,18 @@
         <objensis.version>3.5</objensis.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <thrift.version>0.23.0</thrift.version>
-        <junit.jupiter.version>6.0.3</junit.jupiter.version>
-        <surefire.version>3.5.5</surefire.version>
+        <junit.jupiter.version>6.1.0</junit.jupiter.version>
+        <surefire.version>3.5.6</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <jedis.version>7.5.0</jedis.version>
-        <activemq.version>6.2.5</activemq.version>
+        <jedis.version>7.5.2</jedis.version>
+        <activemq.version>6.2.6</activemq.version>
         <commons-logging.version>1.3.6</commons-logging.version>
 
         <jackson.version>2.21.3</jackson.version>
-        <jackson.databind.version>2.21.3</jackson.databind.version>
-        <storm.kafka.client.version>4.2.0</storm.kafka.client.version>
+        <jackson.databind.version>2.22.0</jackson.databind.version>
+        <storm.kafka.client.version>4.3.0</storm.kafka.client.version>
         <testcontainers.version>1.21.4</testcontainers.version>
 
         <java.unit.test.exclude.groups>PerformanceTest</java.unit.test.exclude.groups>
@@ -137,7 +137,7 @@
         <maven-resolver.version>1.9.27</maven-resolver.version>
         <maven.version>3.9.16</maven.version>
         <jersey.version>3.1.11</jersey.version>
-        <dropwizard.version>5.0.1</dropwizard.version>
+        <dropwizard.version>5.0.2</dropwizard.version>
         <j2html.version>1.6.0</j2html.version>
         <caffeine.version>3.2.4</caffeine.version>
         <jakarta-jaxb-version>4.0.5</jakarta-jaxb-version>
@@ -151,7 +151,7 @@
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
-        <asm.version>9.10</asm.version>
+        <asm.version>9.10.1</asm.version>
         <error_prone_annotations.version>2.49.0</error_prone_annotations.version>
         <bouncycastle.version>1.84</bouncycastle.version>
     </properties>
@@ -227,6 +227,7 @@
                                 <!-- exclude CHANGELOG, VERSION, AND TODO files -->
                                 <exclude>**/CHANGELOG.md</exclude>
                                 <exclude>**/README.md</exclude>
+                                <exclude>**/AGENTS.md</exclude>
                                 <exclude>**/README.markdown</exclude>
                                 <exclude>**/DEVELOPER.md</exclude>
                                 <exclude>**/RELEASING.md</exclude>
@@ -974,7 +975,7 @@
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
-                <version>7.1.1</version>
+                <version>7.2.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -984,7 +985,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.15.0</version>
+                <version>2.15.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1077,7 +1078,7 @@
                             <artifactId>checkstyle</artifactId>
                             <!-- If you change this, you should also update the storm_checkstyle.xml file to be
                             based on the google_checks.xml from the version of checkstyle you are choosing. -->
-                            <version>13.4.2</version>
+                            <version>13.5.0</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1365,7 +1366,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.5.5</version>
+                <version>3.5.6</version>
                 <configuration>
                     <reportsDirectories>
                         <file>${project.build.directory}/test-reports</file>

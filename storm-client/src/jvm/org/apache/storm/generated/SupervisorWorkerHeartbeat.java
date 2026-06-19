@@ -30,14 +30,14 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
 
   private static final org.apache.storm.thrift.protocol.TField STORM_ID_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("storm_id", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
   private static final org.apache.storm.thrift.protocol.TField EXECUTORS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("executors", org.apache.storm.thrift.protocol.TType.LIST, (short)2);
-  private static final org.apache.storm.thrift.protocol.TField TIME_SECS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("time_secs", org.apache.storm.thrift.protocol.TType.I32, (short)3);
+  private static final org.apache.storm.thrift.protocol.TField TIME_SECS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("time_secs", org.apache.storm.thrift.protocol.TType.I64, (short)3);
 
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new SupervisorWorkerHeartbeatStandardSchemeFactory();
   private static final org.apache.storm.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new SupervisorWorkerHeartbeatTupleSchemeFactory();
 
   private @org.apache.storm.thrift.annotation.Nullable java.lang.String storm_id; // required
   private @org.apache.storm.thrift.annotation.Nullable java.util.List<ExecutorInfo> executors; // required
-  private int time_secs; // required
+  private long time_secs; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.storm.thrift.TFieldIdEnum {
@@ -119,7 +119,7 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
         new org.apache.storm.thrift.meta_data.ListMetaData(org.apache.storm.thrift.protocol.TType.LIST, 
             new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, ExecutorInfo.class))));
     tmpMap.put(_Fields.TIME_SECS, new org.apache.storm.thrift.meta_data.FieldMetaData("time_secs", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.I32)));
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.I64)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
     org.apache.storm.thrift.meta_data.FieldMetaData.addStructMetaDataMap(SupervisorWorkerHeartbeat.class, metaDataMap);
   }
@@ -130,7 +130,7 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
   public SupervisorWorkerHeartbeat(
     java.lang.String storm_id,
     java.util.List<ExecutorInfo> executors,
-    int time_secs)
+    long time_secs)
   {
     this();
     this.storm_id = storm_id;
@@ -234,11 +234,11 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
     }
   }
 
-  public int get_time_secs() {
+  public long get_time_secs() {
     return this.time_secs;
   }
 
-  public void set_time_secs(int time_secs) {
+  public void set_time_secs(long time_secs) {
     this.time_secs = time_secs;
     set_time_secs_isSet(true);
   }
@@ -279,7 +279,7 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
       if (value == null) {
         unset_time_secs();
       } else {
-        set_time_secs((java.lang.Integer)value);
+        set_time_secs((java.lang.Long)value);
       }
       break;
 
@@ -376,7 +376,7 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
     if (is_set_executors())
       hashCode = hashCode * 8191 + executors.hashCode();
 
-    hashCode = hashCode * 8191 + time_secs;
+    hashCode = hashCode * 8191 + org.apache.storm.thrift.TBaseHelper.hashCode(time_secs);
 
     return hashCode;
   }
@@ -549,8 +549,8 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
             }
             break;
           case 3: // TIME_SECS
-            if (schemeField.type == org.apache.storm.thrift.protocol.TType.I32) {
-              struct.time_secs = iprot.readI32();
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.I64) {
+              struct.time_secs = iprot.readI64();
               struct.set_time_secs_isSet(true);
             } else { 
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
@@ -588,7 +588,7 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
         oprot.writeFieldEnd();
       }
       oprot.writeFieldBegin(TIME_SECS_FIELD_DESC);
-      oprot.writeI32(struct.time_secs);
+      oprot.writeI64(struct.time_secs);
       oprot.writeFieldEnd();
       oprot.writeFieldStop();
       oprot.writeStructEnd();
@@ -616,7 +616,7 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
           _iter924.write(oprot);
         }
       }
-      oprot.writeI32(struct.time_secs);
+      oprot.writeI64(struct.time_secs);
     }
 
     @Override
@@ -636,7 +636,7 @@ public class SupervisorWorkerHeartbeat implements org.apache.storm.thrift.TBase<
         }
       }
       struct.set_executors_isSet(true);
-      struct.time_secs = iprot.readI32();
+      struct.time_secs = iprot.readI64();
       struct.set_time_secs_isSet(true);
     }
   }

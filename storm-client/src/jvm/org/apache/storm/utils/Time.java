@@ -150,12 +150,43 @@ public class Time {
         return (long) (1000 * secs);
     }
 
+    /**
+     * Current time in seconds since the epoch, as an int.
+     *
+     * @deprecated the int representation overflows on 2038-01-19T03:14:07Z. Use
+     *     {@link #currentTimeSecsLong()} for absolute timestamps; this method remains
+     *     valid only for short relative durations such as uptime.
+     */
+    @Deprecated
     public static int currentTimeSecs() {
         return (int) (currentTimeMillis() / 1000);
     }
 
+    /**
+     * Current time in seconds since the epoch, as a long. Safe past the 2038
+     * int-seconds overflow; use this for all absolute timestamps.
+     */
+    public static long currentTimeSecsLong() {
+        return currentTimeMillis() / 1000;
+    }
+
+    /**
+     * Seconds elapsed since {@code timeInSeconds}, as an int.
+     *
+     * @deprecated int epoch-seconds overflow on 2038-01-19T03:14:07Z. Use
+     *     {@link #deltaSecsLong(long)} when the reference point is an absolute timestamp.
+     */
+    @Deprecated
     public static int deltaSecs(int timeInSeconds) {
         return Time.currentTimeSecs() - timeInSeconds;
+    }
+
+    /**
+     * Seconds elapsed since {@code timeInSeconds} (an absolute epoch timestamp), as a long.
+     * Safe past the 2038 int-seconds overflow.
+     */
+    public static long deltaSecsLong(long timeInSeconds) {
+        return currentTimeSecsLong() - timeInSeconds;
     }
 
     public static long deltaMs(long timeInMilliseconds) {

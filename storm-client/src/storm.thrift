@@ -551,7 +551,7 @@ struct StormBase {
 struct ClusterWorkerHeartbeat {
     1: required string storm_id;
     2: required map<ExecutorInfo,ExecutorStats> executor_stats;
-    3: required i32 time_secs;
+    3: required i64 time_secs;
     4: required i32 uptime_secs;
 }
 
@@ -586,7 +586,7 @@ struct LSSupervisorAssignments {
 }
 
 struct LSWorkerHeartbeat {
-   1: required i32 time_secs;
+   1: required i64 time_secs;
    2: required string topology_id;
    3: required list<ExecutorInfo> executors
    4: required i32 port;
@@ -688,7 +688,7 @@ struct OwnerResourceSummary {
 struct SupervisorWorkerHeartbeat {
   1: required string storm_id;
   2: required list<ExecutorInfo> executors
-  3: required i32 time_secs;
+  3: required i64 time_secs;
 }
 
 struct SupervisorWorkerHeartbeats {
