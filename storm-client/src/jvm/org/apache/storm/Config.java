@@ -752,6 +752,13 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     public static final String TOPOLOGY_PRODUCER_BATCH_SIZE = "topology.producer.batch.size";
     /**
+     * When enabled, the producer batch size adapts at runtime between 1 and {@link #TOPOLOGY_PRODUCER_BATCH_SIZE} using AIMD:
+     * it shrinks toward 1 to reduce latency under light load and grows back toward the configured size to preserve throughput
+     * under heavy load. Has no effect unless {@link #TOPOLOGY_PRODUCER_BATCH_SIZE} is greater than 1.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_PRODUCER_BATCH_DYNAMIC = "topology.producer.batch.dynamic";
+    /**
      * If number of items in task's overflowQ exceeds this, new messages coming from other workers to this task will be dropped This
      * prevents OutOfMemoryException that can occur in rare scenarios in the presence of BackPressure. This affects only inter-worker
      * messages. Messages originating from within the same worker will not be dropped.
