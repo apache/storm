@@ -312,6 +312,7 @@ public class IsolationScheduler implements IScheduler {
     private LinkedList<HostAssignableSlots> hostAssignableSlots(Cluster cluster) {
         List<WorkerSlot> assignableSlots = cluster.getAssignableSlots();
         Map<String, List<WorkerSlot>> hostAssignableSlots = new HashMap<String, List<WorkerSlot>>();
+        Map<String, Integer> hostFreeSlotCounts = new HashMap<String, Integer>();
         for (WorkerSlot slot : assignableSlots) {
             String host = cluster.getHost(slot.getNodeId());
             List<WorkerSlot> slots = hostAssignableSlots.get(host);
@@ -320,20 +321,16 @@ public class IsolationScheduler implements IScheduler {
                 hostAssignableSlots.put(host, slots);
             }
             slots.add(slot);
-        }
-
-        final Map<String, Integer> hostFreeSlotCount = new HashMap<String, Integer>();
-        for (WorkerSlot slot : cluster.getAvailableSlots()) {
-            String host = cluster.getHost(slot.getNodeId());
-            if (hostAssignableSlots.containsKey(host)) {
-                Integer count = hostFreeSlotCount.get(host);
-                hostFreeSlotCount.put(host, (count == null ? 0 : count) + 1);
+            if (!cluster.isSlotOccupied(slot)) {
+                Integer count = hostFreeSlotCounts.get(host);
+                hostFreeSlotCounts.put(host, count == null ? 1 : count + 1);
             }
         }
-
         List<HostAssignableSlots> sortHostAssignSlots = new ArrayList<HostAssignableSlots>();
         for (Map.Entry<String, List<WorkerSlot>> entry : hostAssignableSlots.entrySet()) {
-            sortHostAssignSlots.add(new HostAssignableSlots(entry.getKey(), entry.getValue()));
+            Integer free = hostFreeSlotCounts.get(entry.getKey());
+            sortHostAssignSlots.add(new HostAssignableSlots(entry.getKey(), entry.getValue(),
+                                                            free != null ? free.intValue() : 0));
         }
         Collections.sort(sortHostAssignSlots, new Comparator<HostAssignableSlots>() {
             @Override
@@ -342,14 +339,12 @@ public class IsolationScheduler implements IScheduler {
                 if (bySlots != 0) {
                     return bySlots;
                 }
-                int free1 = hostFreeSlotCount.containsKey(o1.getHostName())
-                            ? hostFreeSlotCount.get(o1.getHostName()) : 0;
-                int free2 = hostFreeSlotCount.containsKey(o2.getHostName())
-                            ? hostFreeSlotCount.get(o2.getHostName()) : 0;
-                int byFree = free2 - free1;
+
+                int byFree = o2.getFreeSlots() - o1.getFreeSlots();
                 if (byFree != 0) {
                     return byFree;
                 }
+
                 return o1.getHostName().compareTo(o2.getHostName());
             }
         });
@@ -427,10 +422,12 @@ public class IsolationScheduler implements IScheduler {
     class HostAssignableSlots {
         private String hostName;
         private List<WorkerSlot> workerSlots;
+        private final int freeSlots;
 
-        HostAssignableSlots(String hostName, List<WorkerSlot> workerSlots) {
+        HostAssignableSlots(String hostName, List<WorkerSlot> workerSlots, int freeSlots) {
             this.hostName = hostName;
             this.workerSlots = workerSlots;
+            this.freeSlots = freeSlots;
         }
 
         public String getHostName() {
@@ -439,6 +436,10 @@ public class IsolationScheduler implements IScheduler {
 
         public List<WorkerSlot> getWorkerSlots() {
             return workerSlots;
+        }
+
+        public int getFreeSlots() {
+            return freeSlots;
         }
 
     }
