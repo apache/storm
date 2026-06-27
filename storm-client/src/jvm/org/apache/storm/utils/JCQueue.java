@@ -438,6 +438,10 @@ public class JCQueue implements Closeable {
                 for (JCQueueMetrics jcQueueMetric : queue.jcqMetrics) {
                     jcQueueMetric.notifyInsertFailure();
                 }
+                // afterFlush is invoked intentionally even though nothing was published: a full batch that the recvQueue
+                // could not accept is a heavy-load signal, so subclasses grow the effective batch size (see
+                // DynamicBatchInserter#afterFlush). This matches the blocking flush(), which also grows on wasFull after its
+                // retry loop drains the queue. Do not move this out of the failure branch without revisiting that symmetry.
                 afterFlush(wasFull);
                 return false;
             } else {
