@@ -15,12 +15,12 @@ Apache Storm follows the basic idea of [Semantic Versioning](https://semver.org/
 
 ## Preparation
 
-- We strongly encourage you to read the [Apache release signing page](http://www.apache.org/dev/release-signing.html), the [release distribution page](http://www.apache.org/dev/release-distribution.html#sigs-and-sums), as well as the [release publishing](http://www.apache.org/dev/release-publishing), [release policy](http://www.apache.org/legal/release-policy.html) and [Maven publishing](https://infra.apache.org/publishing-maven-artifacts.html) pages. ASF has common guidelines that apply to all projects.
-- Ensure you can log in to http://repository.apache.org. You should use your Apache ID username and password.
+- We strongly encourage you to read the [Apache release signing page](https://www.apache.org/dev/release-signing.html), the [release distribution page](https://www.apache.org/dev/release-distribution.html#sigs-and-sums), as well as the [release publishing](https://www.apache.org/dev/release-publishing), [release policy](https://www.apache.org/legal/release-policy.html) and [Maven publishing](https://infra.apache.org/publishing-maven-artifacts.html) pages. ASF has common guidelines that apply to all projects.
+- Ensure you can log in to https://repository.apache.org. You should use your Apache ID username and password.
 - Install a SVN client, and ensure you can access the https://dist.apache.org/repos/dist/dev/storm/ and https://dist.apache.org/repos/dist/release/storm/ repositories. You should be able to access these with your Apache ID username and password.
 - During the release phase, artifacts will be uploaded to https://repository.apache.org. This means Maven needs to know your LDAP credentials. It is recommended that you use Maven's mechanism for [password encryption](https://maven.apache.org/guides/mini/guide-encryption.html). Please configure this in your `${user.home}/.m2/settings.xml`:
   
-```
+```xml
     <settings>
   ...
     <servers>
@@ -42,35 +42,57 @@ Apache Storm follows the basic idea of [Semantic Versioning](https://semver.org/
 ``` 
 - Ensure you have a signed GPG key, and that the GPG key is listed in the Storm KEYS file at https://dist.apache.org/repos/dist/release/storm/KEYS. The key should be hooked into the Apache web of trust (https://keyserver.ubuntu.com for example)
    - set up the key as the default one to be used during the signing operations that the GPG Maven plugin will request (your OS GPG agent can do this)
+   - If your key is not yet in the KEYS file, add it:
+     ```bash
+     svn checkout https://dist.apache.org/repos/dist/release/storm/
+     gpg --export --armor <YOUR_KEY_ID> >> storm/KEYS
+     svn commit storm/KEYS -m "Add GPG key for release manager <YOUR NAME>"
+     ```
 - Compile environment:
   - some tests currently rely on the following packages being available locally:
     - NodeJS
     - Python3
-  - some tests will require Docker to be running since they will create/launch containers (make sure `/var/run/docker.sock` has the correct permissions, otherwise you migh see the error `Could not find a valid Docker environment`)
+  - some tests will require Docker to be running since they will create/launch containers (make sure `/var/run/docker.sock` has the correct permissions, otherwise you might see the error `Could not find a valid Docker environment`)
 
 
 
-If you are setting up a new MINOR version release, create a new branch based on `master` branch, e.g. `2.6.x-branch`. Then on master branch, set the version to a higher MINOR version (with SNAPSHOT), e.g. `mvn versions:set -DnewVersion=2.3.0-SNAPSHOT -P dist,rat,externals,examples`.
-In this way, you create a new release line and then you can create PATCH version releases from it, e.g. `2.8.1`.
+If you are setting up a new MINOR version release, create a new branch based on `master` branch, e.g. `2.7.x-branch`. Then on master branch, set the version to a higher MINOR version (with SNAPSHOT), e.g. `mvn versions:set -DnewVersion=2.8.0-SNAPSHOT -P dist,rat,externals,examples`.
+In this way, you create a new release line and then you can create PATCH version releases from it, e.g. `2.7.1`.
 
 ## Setting up a vote
 
 1. Checkout to the branch to be released.
 
-2. Run `mvn release:prepare -P dist,rat,externals,examples` followed `mvn release:perform -P dist,rat,externals,examples`. 
+2. Run `mvn release:prepare -P dist,rat,externals,examples` followed by `mvn release:perform -P dist,rat,externals,examples`. 
 This will create all the artifacts that will eventually be available in maven central. This step may seem simple, 
 but a lot can go wrong (mainly flaky tests). Note that this will create and push two commits with the commit message 
 starting with "[maven-release-plugin]" and it will also create and publish a git tag, e.g. `v2.8.1`. Note: the full build can take up to 30 minutes to complete.
 
-3. Once you get a successful maven release, a “staging repository” will be created at http://repository.apache.org 
-in the “open” state, meaning it is still writable. You will need to close it, making it read-only. You can find more 
+   If the build fails mid-way, run `mvn release:clean` to remove generated files before retrying.
+
+3. Once you get a successful maven release, a "staging repository" will be created at https://repository.apache.org 
+in the "open" state, meaning it is still writable. You will need to close it, making it read-only. You can find more 
 information on this step [here](https://infra.apache.org/publishing-maven-artifacts.html).
 
-4. Checkout to the git tag that was published by Step 1 above, e.g. `git checkout tags/v2.8.1 -b v2.8.1`. 
-Then build it with `mvn clean install -DskipTests`. Run `mvn package` for `storm-dist/binary` and `storm-dist/source` 
-to create the actual distributions.
+   Note the staging repository ID (e.g. `orgapachestorm-1234`) shown in the Maven console output, or find it in the
+   Nexus UI under **Staging Repositories** at https://repository.apache.org/#stagingRepositories. You will need this
+   ID in the vote email template.
+
+4. Checkout to the git tag that was published by Step 2 above, e.g. `git checkout tags/v2.8.1 -b v2.8.1`. 
+Then build and package the distributions:
+```bash
+mvn clean install -DskipTests -P dist
+cd storm-dist/binary && mvn package && cd ../..
+cd storm-dist/source && mvn package && cd ../..
+```
 
 5. Generate checksums for the *.tar.gz and *.zip distribution files, e.g.
+
+   > **macOS note:** use `shasum -a 512` in place of `sha512sum`.
+
+   > The Maven build may already have generated `.sha512` files in the target directories; verify they exist before
+   > running the commands below.
+
 ```bash
 pushd storm-dist/source/target
 sha512sum apache-storm-2.8.1-src.zip > apache-storm-2.8.1-src.zip.sha512
@@ -89,7 +111,7 @@ popd
 
 8. Run `dev-tools/release_notes.py` for the release version, piping the output to a RELEASE_NOTES.html file. Move that file to the svn release directory, sign it, and generate checksums, e.g.
 ```bash
-export GITHUB_TOKEN=MY_PERSONAL_ACCESS_TOKEN_FOR_GI
+export GITHUB_TOKEN=<your-github-pat>
 python3 dev-tools/release_notes.py <id-of-the-github-milestone> > RELEASE_NOTES.html
 gpg --armor --output RELEASE_NOTES.html.asc --detach-sig RELEASE_NOTES.html
 sha512sum RELEASE_NOTES.html > RELEASE_NOTES.html.sha512
@@ -106,20 +128,25 @@ To obtain the ID of a GitHub milestone:
 - Click on the milestone you want to create release notes for. 
 - Look at the URL in your browser. It will look like this: `https://github.com/apache/storm/milestone/40`, where the last number is the milestone ID.
 
-9. Move the release files from steps 4,5 and 8 to the svn directory from Step 6. Example of the set of files:
+9. Move the release files from steps 4, 5 and 8 to the svn directory from Step 6. Example of the set of files:
    ```
    apache-storm-2.8.3-src.tar.gz         apache-storm-2.8.3-src.zip         apache-storm-2.8.3.tar.gz         apache-storm-2.8.3.zip         RELEASE_NOTES.html
    apache-storm-2.8.3-src.tar.gz.asc     apache-storm-2.8.3-src.zip.asc     apache-storm-2.8.3.tar.gz.asc     apache-storm-2.8.3.zip.asc     RELEASE_NOTES.html.asc
    apache-storm-2.8.3-src.tar.gz.sha512  apache-storm-2.8.3-src.zip.sha512  apache-storm-2.8.3.tar.gz.sha512  apache-storm-2.8.3.zip.sha512  RELEASE_NOTES.html.sha512
    ```
 
- Add and commit the files. This makes them available in the Apache staging repo.
+10. Add and commit the files to SVN. This makes them available in the Apache staging repo.
+```bash
+cd <your-svn-checkout>/apache-storm-x.x.x-rcx
+svn add *
+svn commit -m "Add release candidate apache-storm-x.x.x-rcx"
+```
 
 11. Start the VOTE thread. The vote should follow the [ASF voting process](https://www.apache.org/foundation/voting.html). 
 Sample Template sent to dev@storm.apache.org
 
 ```
-Subject: [VOTE] Release Apache Storm [VERSION]] (rcN)
+Subject: [VOTE] Release Apache Storm [VERSION] (rcN)
 
 Hi folks,
 
@@ -132,7 +159,7 @@ Storm Source and Binary Release with sha512 signature files are here:
     https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/
 The release artifacts are signed with the following key:
     https://keyserver.ubuntu.com/pks/lookup?op=index&fingerprint=on&search=[KEY]
-    in this file https://www.apache.org/dist/storm/KEYS
+    in this file https://downloads.apache.org/storm/KEYS
 
 The release was made from the Apache Storm [VERSION] tag at:
     https://github.com/apache/storm/tree/v[VERSION]
@@ -168,7 +195,7 @@ Thanks!
 
 0. Announce the results. Use the following template:
 
-```agsl
+```text
 Subject: [VOTE][RESULT] Storm [VERSION] Release Candidate [N]
 
 Dear Community,
@@ -189,9 +216,9 @@ Thanks to everyone who contributed to this release.
 [RELEASE MANAGER NAME]
 ```
 
-1. `svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx https://dist.apache.org/repos/dist/release/storm/apache-storm-x.x.x`. This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
+1. `svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx https://dist.apache.org/repos/dist/release/storm/apache-storm-x.x.x -m "Publish Apache Storm x.x.x release"`. This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
 
-2. Go to http://repository.apache.org and release the staging repository
+2. Go to https://repository.apache.org and release the staging repository.
 
 3. Wait at least 24 hrs. for the mirrors to catch up.
 
@@ -203,17 +230,17 @@ the site as described in the storm-site README to publish the site.
 
 6. Announce the new release to dev@storm.apache.org, user@storm.apache.org, and announce@apache.org. You will need to use your @apache.org email to do this.
 
-7. Delete any outdated releases from the https://dist.apache.org/repos/dist/release/storm/ repository. See [when to archive](http://www.apache.org/legal/release-policy.html#when-to-archive). 
+7. Delete any outdated releases from the https://dist.apache.org/repos/dist/release/storm/ repository. See [when to archive](https://www.apache.org/legal/release-policy.html#when-to-archive). 
 
 8. Delete any outdated releases from the storm-site releases directory, and republish the site.
 
-10. Create a release on [GitHub](https://github.com/apache/storm/releases). Generate the release notes with the GitHub tooling.
+9. Create a release on [GitHub](https://github.com/apache/storm/releases). Generate the release notes with the GitHub tooling.
 
-11. Create a new release for [Storm Docker](https://github.com/apache/storm-docker). Example of a version release [here](https://github.com/apache/storm-docker/commit/177a1534bf910c2271845f4eaedef7c040559fbc). After that is done, a PR to [docker-library](https://github.com/docker-library/official-images) must be submitted, so that the new docker-storm version is officially released. Example of such a PR is [here](https://github.com/docker-library/official-images/pull/21525#issuecomment-4526751672).
+10. Create a new release for [Storm Docker](https://github.com/apache/storm-docker). Example of a version release [here](https://github.com/apache/storm-docker/commit/177a1534bf910c2271845f4eaedef7c040559fbc). After that is done, a PR to [docker-library](https://github.com/docker-library/official-images) must be submitted, so that the new docker-storm version is officially released. Example of such a PR is [here](https://github.com/docker-library/official-images/pull/21525#issuecomment-4526751672).
 
-12. Post, promote, celebrate. ;) Annoucement email can be sent to announce@apache.org using the following template:
+11. Post, promote, celebrate. ;) Announcement email can be sent to announce@apache.org using the following template:
 
-```agsl
+```text
 Subject: [ANNOUNCE] Apache Storm [VERSION] Released
 
 The Apache Storm community is pleased to announce the release of Apache
@@ -254,17 +281,15 @@ The Apache Storm Team
 
 ## Cleaning up if the vote fails
 
-1. Sent email to dev@storm.apache.org 
+1. Go to https://repository.apache.org and drop the staging repository.
 
-2. Go to http://repository.apache.org and drop the staging repository.
+2. Delete the staged distribution files from https://dist.apache.org/repos/dist/dev/storm/.
 
-3. Delete the staged distribution files from https://dist.apache.org/repos/dist/dev/storm/
+3. Delete the git tag.
 
-4. Delete the git tag.
+4. Send a [VOTE][CANCELED] message to dev@storm.apache.org using the following format:
 
-5. Send a [VOTE][CANCELED] message using the following format:
-
-```agsl
+```text
 Subject: [VOTE][CANCELED] Storm [VERSION] Release Candidate [N]
 
 This release candidate Storm Release candidate [VERSION] rcN https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/ has been canceled.
@@ -285,9 +310,9 @@ Please note this list is not exhaustive and only includes some of the common ste
 3. Set up a standalone cluster using apache-storm-xxx.zip, apache-storm-xxx.tar.gz, the Apache Storm distribution created from step 2, separately;
 4. Launch WordCountTopology and ThroughputVsLatency topology and check logs, UI metrics, etc;
 5. Test basic UI functionalities such as jstack, heap dump, deactivate, activate, rebalance, change log level, log search, kill topology;
-6. Test basic CLI such as kill, list, deactivate, deactivate, rebalance, etc.
+6. Test basic CLI such as kill, list, deactivate, activate, rebalance, etc.
 
-It's also preferable to set up a standalone secure Apache Storm cluster and test basic funcionalities on it.
+It's also preferable to set up a standalone secure Apache Storm cluster and test basic functionalities on it.
 
 Don't feel the pressure to do everything listed above. After you finish your review, reply to the corresponding email thread with your vote, summarize the work you have performed and elaborate the issues
 you have found if any. Also please feel free to update the checklist if you think anything important is missing there. 
