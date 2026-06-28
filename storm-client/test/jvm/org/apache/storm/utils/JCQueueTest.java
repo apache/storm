@@ -15,8 +15,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.metrics2.StormMetricRegistry;
@@ -228,6 +231,46 @@ public class JCQueueTest {
         assertFalse(inserter.tryPublish(4L));       // full batch, queue full -> tryFlush fails
         // A full batch that could not be published must be read as heavy load (grow), not light load (shrink).
         assertEquals(3, inserter.batchSize());
+    }
+
+    @Test
+    public void testQueueIsCollectedAfterLongLivedProducerPublishes() {
+        Assertions.assertTimeoutPreemptively(Duration.ofSeconds(30), () -> {
+            ExecutorService producerPool = Executors.newSingleThreadExecutor();
+            try {
+                WeakReference<JCQueue> ref = publishFromLongLivedThread(producerPool);
+                assertTrue(awaitGarbageCollection(ref),
+                    "JCQueue was not garbage collected — BatchInserter may still hold a strong reference to it");
+            } finally {
+                producerPool.shutdownNow();
+            }
+        });
+    }
+
+    // Publishes a few tuples from a pooled thread so that the BatchInserter's ThreadLocal entry is
+    // created on that thread. Once .get() returns the lambda is done and its closure ref is gone;
+    // when the method returns the local `queue` variable goes out of scope. The only remaining
+    // reference is the WeakReference — if it is not cleared after GC, the ThreadLocal cycle is still live.
+    private WeakReference<JCQueue> publishFromLongLivedThread(ExecutorService pool) throws Exception {
+        JCQueue queue = createQueue("leak", 100, 1024);
+        pool.submit(() -> {
+            try {
+                for (long i = 0; i < 10; i++) {
+                    queue.publish(i);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).get();
+        return new WeakReference<>(queue);
+    }
+
+    private boolean awaitGarbageCollection(WeakReference<JCQueue> ref) throws InterruptedException {
+        for (int i = 0; i < 50 && ref.get() != null; i++) {
+            System.gc();
+            Thread.sleep(100);
+        }
+        return ref.get() == null;
     }
 
     /** Drive the inserter with full flushes until the effective batch size reaches the target. */
