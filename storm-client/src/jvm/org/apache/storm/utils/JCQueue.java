@@ -19,6 +19,7 @@
 package org.apache.storm.utils;
 
 import java.io.Closeable;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.storm.metrics2.StormMetricRegistry;
@@ -345,11 +346,16 @@ public class JCQueue implements Closeable {
     /* Not thread safe. Have one instance per producer thread or synchronize externally */
     private static class BatchInserter implements Inserter {
         private final int batchSz;
-        private final JCQueue queue;
+        // WeakReference breaks the ThreadLocal retention cycle: thdLocalBatcher is an instance field
+        // of JCQueue, so the ThreadLocalMap key (the ThreadLocal object) is kept strongly reachable
+        // via value(BatchInserter) -> queue(JCQueue) -> field. A WeakReference here cuts that path,
+        // allowing the key to become weakly-reachable and the entry to be expunged once the JCQueue
+        // is no longer externally referenced.
+        private final WeakReference<JCQueue> queueRef;
         private final ArrayList<Object> currentBatch;
 
         BatchInserter(JCQueue queue, int batchSz) {
-            this.queue = queue;
+            this.queueRef = new WeakReference<>(queue);
             this.batchSz = batchSz;
             this.currentBatch = new ArrayList<>(batchSz + 1);
         }
@@ -402,6 +408,13 @@ public class JCQueue implements Closeable {
             if (currentBatch.isEmpty()) {
                 return;
             }
+            JCQueue queue = queueRef.get();
+            if (queue == null) {
+                // The JCQueue was GC'd (topology stopped on a long-lived thread, e.g. LocalCluster).
+                // Nothing to flush; discard the buffered batch and return cleanly.
+                currentBatch.clear();
+                return;
+            }
             boolean wasFull = currentBatch.size() >= batchSize();
             int publishCount = queue.tryPublishInternal(currentBatch);
             int retryCount = 0;
@@ -430,6 +443,13 @@ public class JCQueue implements Closeable {
         @Override
         public boolean tryFlush() {
             if (currentBatch.isEmpty()) {
+                return true;
+            }
+            JCQueue queue = queueRef.get();
+            if (queue == null) {
+                // The JCQueue was GC'd (topology stopped on a long-lived thread, e.g. LocalCluster).
+                // Nothing to flush; discard the buffered batch and report success.
+                currentBatch.clear();
                 return true;
             }
             boolean wasFull = currentBatch.size() >= batchSize();
