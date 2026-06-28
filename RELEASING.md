@@ -209,7 +209,9 @@ the site as described in the storm-site README to publish the site.
 
 10. Create a release on [GitHub](https://github.com/apache/storm/releases). Generate the release notes with the GitHub tooling.
 
-11. Post, promote, celebrate. ;) Annoucement email can be sent to announce@apache.org using the following template:
+11. Create a new release for [Storm Docker](https://github.com/apache/storm-docker). Example of a version release [here](https://github.com/apache/storm-docker/commit/177a1534bf910c2271845f4eaedef7c040559fbc). After that is done, a PR to [docker-library](https://github.com/docker-library/official-images) must be submitted, so that the new docker-storm version is officially released. Example of such a PR is [here](https://github.com/docker-library/official-images/pull/21525#issuecomment-4526751672).
+
+12. Post, promote, celebrate. ;) Annoucement email can be sent to announce@apache.org using the following template:
 
 ```agsl
 Subject: [ANNOUNCE] Apache Storm [VERSION] Released
