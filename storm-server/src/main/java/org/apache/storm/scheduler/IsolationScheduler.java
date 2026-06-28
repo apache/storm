@@ -26,6 +26,7 @@ import java.util.TreeMap;
 import org.apache.commons.lang3.Validate;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -309,7 +310,8 @@ public class IsolationScheduler implements IScheduler {
     //                                                         need fewer evictions
     //   3. (tertiary)  host name,                 ascending  — deterministic order
     //                                                         for testability
-    private LinkedList<HostAssignableSlots> hostAssignableSlots(Cluster cluster) {
+    @VisibleForTesting
+    LinkedList<HostAssignableSlots> hostAssignableSlots(Cluster cluster) {
         List<WorkerSlot> assignableSlots = cluster.getAssignableSlots();
         Map<String, List<WorkerSlot>> hostAssignableSlots = new HashMap<String, List<WorkerSlot>>();
         Map<String, Integer> hostFreeSlotCounts = new HashMap<String, Integer>();
