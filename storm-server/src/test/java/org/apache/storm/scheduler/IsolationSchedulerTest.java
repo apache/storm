@@ -12,7 +12,6 @@
 
 package org.apache.storm.scheduler;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,14 +49,6 @@ public class IsolationSchedulerTest {
                            topologies, new HashMap<String, Object>());
     }
 
-    @SuppressWarnings("unchecked")
-    private static LinkedList<IsolationScheduler.HostAssignableSlots> hostAssignableSlots(
-        IsolationScheduler scheduler, Cluster cluster) throws Exception {
-        Method method = IsolationScheduler.class.getDeclaredMethod("hostAssignableSlots", Cluster.class);
-        method.setAccessible(true);
-        return (LinkedList<IsolationScheduler.HostAssignableSlots>) method.invoke(scheduler, cluster);
-    }
-
     private static List<String> hostOrder(LinkedList<IsolationScheduler.HostAssignableSlots> slots) {
         List<String> hosts = new ArrayList<>();
         for (IsolationScheduler.HostAssignableSlots slot : slots) {
@@ -67,7 +58,7 @@ public class IsolationSchedulerTest {
     }
 
     @Test
-    public void hostAssignableSlots_prefersHostWithMoreFreeSlots() throws Exception {
+    public void hostAssignableSlots_prefersHostWithMoreFreeSlots() {
         Map<String, SupervisorDetails> supervisors = new HashMap<>();
         supervisors.put("sup-busy", mkSupervisor("sup-busy", "host-busy", 2));
         supervisors.put("sup-free", mkSupervisor("sup-free", "host-free", 2));
@@ -83,7 +74,7 @@ public class IsolationSchedulerTest {
                        Collections.singletonList(filler.getExecutors().iterator().next()));
 
         LinkedList<IsolationScheduler.HostAssignableSlots> ranked =
-            hostAssignableSlots(new IsolationScheduler(), cluster);
+            new IsolationScheduler().hostAssignableSlots(cluster);
 
         assertEquals(2, ranked.size());
         assertEquals("host-free", ranked.get(0).getHostName());
@@ -94,7 +85,7 @@ public class IsolationSchedulerTest {
     }
 
     @Test
-    public void hostAssignableSlots_breaksTiesByHostName() throws Exception {
+    public void hostAssignableSlots_breaksTiesByHostName() {
         Map<String, SupervisorDetails> supervisors = new HashMap<>();
         supervisors.put("sup-a", mkSupervisor("sup-a", "host-aaa", 2));
         supervisors.put("sup-b", mkSupervisor("sup-b", "host-bbb", 2));
@@ -102,7 +93,7 @@ public class IsolationSchedulerTest {
         Cluster cluster = mkCluster(supervisors, new Topologies());
 
         LinkedList<IsolationScheduler.HostAssignableSlots> ranked =
-            hostAssignableSlots(new IsolationScheduler(), cluster);
+            new IsolationScheduler().hostAssignableSlots(cluster);
 
         assertEquals(2, ranked.size());
         assertEquals(2, ranked.get(0).getWorkerSlots().size());
