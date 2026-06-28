@@ -120,6 +120,124 @@ public class JCQueueTest {
         });
     }
 
+    @Test
+    public void testInOrderDynamicBatch() {
+        Assertions.assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
+            final AtomicBoolean allInOrder = new AtomicBoolean(true);
+
+            JCQueue queue = createQueue("dynamicBatch", 10, 1024, true);
+            Runnable producer = new IncProducer(queue, 1024 * 1024, 100);
+            Runnable consumer = new ConsumerThd(queue, new JCQueue.Consumer() {
+                long _expected = 0;
+
+                @Override
+                public void accept(Object obj) {
+                    if (_expected != ((Number) obj).longValue()) {
+                        allInOrder.set(false);
+                        System.out.println("Expected " + _expected + " but got " + obj);
+                    }
+                    _expected++;
+                }
+
+                @Override
+                public void flush() {
+                }
+            });
+
+            run(producer, consumer, queue, 1000, 1);
+            assertTrue(allInOrder.get(), "Messages delivered out of order");
+        });
+    }
+
+    @Test
+    public void testDynamicBatchStartsAtOne() {
+        JCQueue queue = createQueue("dynStart", 1024);
+        JCQueue.DynamicBatchInserter inserter = new JCQueue.DynamicBatchInserter(queue, 8);
+        assertEquals(1, inserter.batchSize());
+    }
+
+    @Test
+    public void testDynamicBatchGrowsOnFullFlush() throws Exception {
+        JCQueue queue = createQueue("dynGrow", 1024);
+        JCQueue.DynamicBatchInserter inserter = new JCQueue.DynamicBatchInserter(queue, 8);
+
+        inserter.publish(1L);                       // batch hits effective(1) -> full flush -> grow to 2
+        assertEquals(2, inserter.batchSize());
+
+        inserter.publish(2L);                       // batch size 1 < 2, no flush
+        inserter.publish(3L);                       // batch size 2 == 2 -> full flush -> grow to 3
+        assertEquals(3, inserter.batchSize());
+    }
+
+    @Test
+    public void testDynamicBatchCapsAtMax() throws Exception {
+        JCQueue queue = createQueue("dynCap", 1024);
+        JCQueue.DynamicBatchInserter inserter = new JCQueue.DynamicBatchInserter(queue, 4);
+        for (int i = 0; i < 40; i++) {
+            inserter.publish((long) i);
+            assertTrue(inserter.batchSize() <= 4, "effective batch exceeded max");
+        }
+        assertEquals(4, inserter.batchSize());
+    }
+
+    @Test
+    public void testDynamicBatchShrinksOnPartialFlush() throws Exception {
+        JCQueue queue = createQueue("dynShrink", 1024);
+        JCQueue.DynamicBatchInserter inserter = new JCQueue.DynamicBatchInserter(queue, 8);
+        growEffectiveTo(inserter, 4);
+
+        inserter.publish(100L);                     // partial batch (size 1 < 4)
+        inserter.flush();                           // timer-style flush of a partial batch -> shrink (4 -> 2)
+        assertEquals(2, inserter.batchSize());
+    }
+
+    @Test
+    public void testDynamicBatchEmptyFlushIsNoOp() throws Exception {
+        JCQueue queue = createQueue("dynEmpty", 1024);
+        JCQueue.DynamicBatchInserter inserter = new JCQueue.DynamicBatchInserter(queue, 8);
+        growEffectiveTo(inserter, 4);               // leaves the batch empty after the growing flush
+
+        inserter.flush();                           // empty batch -> no adaptation
+        assertEquals(4, inserter.batchSize());
+    }
+
+    @Test
+    public void testDynamicBatchNeverDropsBelowOne() throws Exception {
+        JCQueue queue = createQueue("dynFloor", 1024);
+        JCQueue.DynamicBatchInserter inserter = new JCQueue.DynamicBatchInserter(queue, 8);
+        growEffectiveTo(inserter, 2);
+
+        inserter.publish(1L);                       // partial (size 1 < 2)
+        inserter.flush();                           // shrink 2 -> 1
+        assertEquals(1, inserter.batchSize());
+    }
+
+    @Test
+    public void testDynamicBatchGrowsNotShrinksUnderBackpressure() throws Exception {
+        JCQueue queue = createQueue("dynBp", 8);
+        JCQueue.DynamicBatchInserter inserter = new JCQueue.DynamicBatchInserter(queue, 4);
+
+        inserter.publish(1L);                       // eff 1 -> 2, recvQueue now has 1 element
+        assertEquals(2, inserter.batchSize());
+
+        while (queue.tryPublishDirect(99L)) {       // fill recvQueue to capacity
+        }
+
+        assertTrue(inserter.tryPublish(2L));        // batch size 1
+        assertTrue(inserter.tryPublish(3L));        // batch size 2 (== effective)
+        assertFalse(inserter.tryPublish(4L));       // full batch, queue full -> tryFlush fails
+        // A full batch that could not be published must be read as heavy load (grow), not light load (shrink).
+        assertEquals(3, inserter.batchSize());
+    }
+
+    /** Drive the inserter with full flushes until the effective batch size reaches the target. */
+    private void growEffectiveTo(JCQueue.DynamicBatchInserter inserter, int target) throws InterruptedException {
+        long val = 0;
+        while (inserter.batchSize() < target) {
+            inserter.publish(val++);
+        }
+    }
+
     private void run(Runnable producer, Runnable consumer, JCQueue queue)
         throws InterruptedException {
         run(producer, consumer, queue, 20, PRODUCER_NUM);
@@ -157,6 +275,11 @@ public class JCQueueTest {
 
     private JCQueue createQueue(String name, int batchSize, int queueSize) {
         return new JCQueue(name, name, queueSize, 0, batchSize, waitStrategy, "test", "test", Collections.singletonList(1000), 1000, new StormMetricRegistry());
+    }
+
+    private JCQueue createQueue(String name, int batchSize, int queueSize, boolean dynamicBatch) {
+        return new JCQueue(name, name, queueSize, 0, batchSize, waitStrategy, "test", "test", Collections.singletonList(1000), 1000,
+                new StormMetricRegistry(), dynamicBatch);
     }
 
     private static class IncProducer implements Runnable {

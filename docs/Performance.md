@@ -47,6 +47,22 @@ the **Worker Transfer Queue**. The Worker Transfer Thread is responsible for dra
 worker process over the network. This setting controls the batch size for writes into the Worker Transfer Queue.  This impacts the communication
 between worker processes.
 
+- `topology.producer.batch.dynamic` (default `false`) : When enabled, the receive-queue producer batch size is no longer fixed: it adapts at
+runtime between 1 and `topology.producer.batch.size` so that the topology gets low latency under light traffic and high throughput under heavy
+traffic, without having to pick a single compromise value. It has no effect unless `topology.producer.batch.size` is greater than 1. It applies to
+the producer (receive-queue) batch only; the Worker Transfer Queue batch (`topology.transfer.batch.size`) remains fixed.
+
+  The effective batch size is adjusted using an AIMD (additive-increase / multiplicative-decrease) policy driven solely by *why* a batch is
+  flushed, so it requires no extra metrics:
+
+   - a batch flushed because it filled up to the current effective size is read as heavy load, and the effective size is increased by 1 (up to the
+   configured maximum);
+   - a partially-filled batch flushed by a *flush tuple* (see [Flush Tuple Frequency](#3-flush-tuple-frequency)) is read as light load, and the
+   effective size is halved (down to a minimum of 1).
+
+  Under sustained heavy traffic the effective size climbs to `topology.producer.batch.size` and behaves like a fixed batch; under light traffic it
+  shrinks toward 1 so that each message is published immediately instead of waiting for the batch to fill or for the next flush tuple.
+
 #### Guidance
 
 **For Low latency:** Set batch size to 1. This basically disables batching. This is likely to reduce peak sustainable throughput under heavy traffic, but
@@ -57,7 +73,9 @@ Beyond a certain point the throughput is likely to get worse.
 
 **Varying throughput:** Topologies often experience fluctuating amounts of incoming traffic over the day. Other topos may experience higher traffic in some
 paths and lower throughput in other paths simultaneously. If latency is not a concern, a small bach size (e.g. 10) and in conjunction with the right flush
-frequency may provide a reasonable compromise for such scenarios. For meeting stricter latency SLAs, consider setting it to 1.
+frequency may provide a reasonable compromise for such scenarios. For meeting stricter latency SLAs, consider setting it to 1. Alternatively, set
+`topology.producer.batch.size` to the throughput-optimal value and enable `topology.producer.batch.dynamic`: the batch will automatically shrink toward 1
+during quiet periods (for latency) and grow back toward the configured size during bursts (for throughput), instead of committing to one compromise value.
 
 
 ## 3. Flush Tuple Frequency

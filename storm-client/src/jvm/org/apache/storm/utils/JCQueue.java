@@ -39,15 +39,26 @@ public class JCQueue implements Closeable {
     private final MpscUnboundedArrayQueue<Object> overflowQ;
     private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow limiting.
     private final int producerBatchSz;
+    private final boolean dynamicBatch;
     private final DirectInserter directInserter = new DirectInserter(this);
     private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
+    // ensure 1 instance per producer thd.
+    private final ThreadLocal<DynamicBatchInserter> thdLocalDynamicBatcher = new ThreadLocal<DynamicBatchInserter>();
     private final IWaitStrategy backPressureWaitStrategy;
     private final String queueName;
 
     public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
                    IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
                    int port, StormMetricRegistry metricRegistry) {
+        this(queueName, metricNamePrefix, size, overflowLimit, producerBatchSz, backPressureWaitStrategy, topologyId, componentId,
+                taskIds, port, metricRegistry, false);
+    }
+
+    public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
+                   IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
+                   int port, StormMetricRegistry metricRegistry, boolean dynamicBatch) {
         this.queueName = queueName;
+        this.dynamicBatch = dynamicBatch;
         this.overflowLimit = overflowLimit;
         this.recvQueue = new MpscArrayQueue<>(size);
         this.overflowQ = new MpscUnboundedArrayQueue<>(size);
@@ -160,11 +171,20 @@ public class JCQueue implements Closeable {
     private Inserter getInserter() {
         Inserter inserter;
         if (producerBatchSz > 1) {
-            inserter = thdLocalBatcher.get();
-            if (inserter == null) {
-                BatchInserter b = new BatchInserter(this, producerBatchSz);
+            if (dynamicBatch) {
+                DynamicBatchInserter d = thdLocalDynamicBatcher.get();
+                if (d == null) {
+                    d = new DynamicBatchInserter(this, producerBatchSz);
+                    thdLocalDynamicBatcher.set(d);
+                }
+                inserter = d;
+            } else {
+                BatchInserter b = thdLocalBatcher.get();
+                if (b == null) {
+                    b = new BatchInserter(this, producerBatchSz);
+                    thdLocalBatcher.set(b);
+                }
                 inserter = b;
-                thdLocalBatcher.set(b);
             }
         } else {
             inserter = directInserter;
@@ -325,8 +345,8 @@ public class JCQueue implements Closeable {
     /* Not thread safe. Have one instance per producer thread or synchronize externally */
     private static class BatchInserter implements Inserter {
         private final int batchSz;
-        private JCQueue queue;
-        private ArrayList<Object> currentBatch;
+        private final JCQueue queue;
+        private final ArrayList<Object> currentBatch;
 
         BatchInserter(JCQueue queue, int batchSz) {
             this.queue = queue;
@@ -335,12 +355,26 @@ public class JCQueue implements Closeable {
         }
 
         /**
+         * Number of buffered elements that triggers a flush. Constant here; subclasses may vary it at runtime.
+         */
+        int batchSize() {
+            return batchSz;
+        }
+
+        /**
+         * Hook invoked after every non-empty flush, passing whether the batch had reached {@link #batchSize()} when the flush started.
+         * No-op here; subclasses may use it to adapt {@link #batchSize()}.
+         */
+        void afterFlush(boolean wasFull) {
+        }
+
+        /**
          * Blocking call - retires till element is successfully added.
          */
         @Override
         public void publish(Object obj) throws InterruptedException {
             currentBatch.add(obj);
-            if (currentBatch.size() >= batchSz) {
+            if (currentBatch.size() >= batchSize()) {
                 flush();
             }
         }
@@ -350,7 +384,7 @@ public class JCQueue implements Closeable {
          */
         @Override
         public boolean tryPublish(Object obj) {
-            if (currentBatch.size() >= batchSz) {
+            if (currentBatch.size() >= batchSize()) {
                 if (!tryFlush()) {
                     return false;
                 }
@@ -368,6 +402,7 @@ public class JCQueue implements Closeable {
             if (currentBatch.isEmpty()) {
                 return;
             }
+            boolean wasFull = currentBatch.size() >= batchSize();
             int publishCount = queue.tryPublishInternal(currentBatch);
             int retryCount = 0;
             while (publishCount == 0) { // retry till at least 1 element is drained
@@ -385,6 +420,7 @@ public class JCQueue implements Closeable {
                 publishCount = queue.tryPublishInternal(currentBatch);
             }
             currentBatch.subList(0, publishCount).clear();
+            afterFlush(wasFull);
         }
 
         /**
@@ -396,16 +432,56 @@ public class JCQueue implements Closeable {
             if (currentBatch.isEmpty()) {
                 return true;
             }
+            boolean wasFull = currentBatch.size() >= batchSize();
             int publishCount = queue.tryPublishInternal(currentBatch);
             if (publishCount == 0) {
                 for (JCQueueMetrics jcQueueMetric : queue.jcqMetrics) {
                     jcQueueMetric.notifyInsertFailure();
                 }
+                // afterFlush is invoked intentionally even though nothing was published: a full batch that the recvQueue
+                // could not accept is a heavy-load signal, so subclasses grow the effective batch size (see
+                // DynamicBatchInserter#afterFlush). This matches the blocking flush(), which also grows on wasFull after its
+                // retry loop drains the queue. Do not move this out of the failure branch without revisiting that symmetry.
+                afterFlush(wasFull);
                 return false;
             } else {
                 currentBatch.subList(0, publishCount).clear();
+                afterFlush(wasFull);
                 return true;
             }
         }
     } // class BatchInserter
+
+    /**
+     * A {@link BatchInserter} that adapts its batch size between 1 and a configured maximum using AIMD, to favor low latency under
+     * light load while preserving throughput under heavy load. It reuses the parent's publish/flush logic and only customizes the
+     * flush threshold ({@link #batchSize()}) and the post-flush adaptation ({@link #afterFlush(boolean)}): a flush of a full batch
+     * is read as heavy load and additively grows the effective size; a flush of a partially-filled batch (e.g. driven by the
+     * flush-tuple timer) is read as light load and multiplicatively shrinks it toward 1. Not thread safe. Have one instance per
+     * producer thread or synchronize externally.
+     */
+    static class DynamicBatchInserter extends BatchInserter {
+        private final int maxBatchSz;
+        private int effectiveBatchSz;
+
+        DynamicBatchInserter(JCQueue queue, int maxBatchSz) {
+            super(queue, maxBatchSz); // sizes the buffer to the max; the flush threshold comes from batchSize()
+            this.maxBatchSz = maxBatchSz;
+            this.effectiveBatchSz = 1; // start small to favor latency; grows under sustained load
+        }
+
+        @Override
+        int batchSize() {
+            return effectiveBatchSz;
+        }
+
+        @Override
+        void afterFlush(boolean wasFull) {
+            if (wasFull) {
+                effectiveBatchSz = Math.min(maxBatchSz, effectiveBatchSz + 1); // additive increase
+            } else {
+                effectiveBatchSz = Math.max(1, effectiveBatchSz >> 1); // multiplicative decrease
+            }
+        }
+    }
 }
