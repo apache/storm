@@ -26,6 +26,7 @@ import java.util.TreeMap;
 import org.apache.commons.lang3.Validate;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -303,10 +304,17 @@ public class IsolationScheduler implements IScheduler {
         return hostUsedSlots;
     }
 
-    // returns list of list of slots, reverse sorted by number of slots
-    private LinkedList<HostAssignableSlots> hostAssignableSlots(Cluster cluster) {
+    // Returns list of hosts with their assignable slots, sorted by:
+    //   1. (primary)   total assignable slots,    descending — same as before
+    //   2. (secondary) currently free slots,      descending — prefer hosts that
+    //                                                         need fewer evictions
+    //   3. (tertiary)  host name,                 ascending  — deterministic order
+    //                                                         for testability
+    @VisibleForTesting
+    LinkedList<HostAssignableSlots> hostAssignableSlots(Cluster cluster) {
         List<WorkerSlot> assignableSlots = cluster.getAssignableSlots();
         Map<String, List<WorkerSlot>> hostAssignableSlots = new HashMap<String, List<WorkerSlot>>();
+        Map<String, Integer> hostFreeSlotCounts = new HashMap<String, Integer>();
         for (WorkerSlot slot : assignableSlots) {
             String host = cluster.getHost(slot.getNodeId());
             List<WorkerSlot> slots = hostAssignableSlots.get(host);
@@ -315,15 +323,31 @@ public class IsolationScheduler implements IScheduler {
                 hostAssignableSlots.put(host, slots);
             }
             slots.add(slot);
+            if (!cluster.isSlotOccupied(slot)) {
+                Integer count = hostFreeSlotCounts.get(host);
+                hostFreeSlotCounts.put(host, count == null ? 1 : count + 1);
+            }
         }
         List<HostAssignableSlots> sortHostAssignSlots = new ArrayList<HostAssignableSlots>();
         for (Map.Entry<String, List<WorkerSlot>> entry : hostAssignableSlots.entrySet()) {
-            sortHostAssignSlots.add(new HostAssignableSlots(entry.getKey(), entry.getValue()));
+            Integer free = hostFreeSlotCounts.get(entry.getKey());
+            sortHostAssignSlots.add(new HostAssignableSlots(entry.getKey(), entry.getValue(),
+                                                            free != null ? free.intValue() : 0));
         }
         Collections.sort(sortHostAssignSlots, new Comparator<HostAssignableSlots>() {
             @Override
             public int compare(HostAssignableSlots o1, HostAssignableSlots o2) {
-                return o2.getWorkerSlots().size() - o1.getWorkerSlots().size();
+                int bySlots = o2.getWorkerSlots().size() - o1.getWorkerSlots().size();
+                if (bySlots != 0) {
+                    return bySlots;
+                }
+
+                int byFree = o2.getFreeSlots() - o1.getFreeSlots();
+                if (byFree != 0) {
+                    return byFree;
+                }
+
+                return o1.getHostName().compareTo(o2.getHostName());
             }
         });
 
@@ -400,10 +424,12 @@ public class IsolationScheduler implements IScheduler {
     class HostAssignableSlots {
         private String hostName;
         private List<WorkerSlot> workerSlots;
+        private final int freeSlots;
 
-        HostAssignableSlots(String hostName, List<WorkerSlot> workerSlots) {
+        HostAssignableSlots(String hostName, List<WorkerSlot> workerSlots, int freeSlots) {
             this.hostName = hostName;
             this.workerSlots = workerSlots;
+            this.freeSlots = freeSlots;
         }
 
         public String getHostName() {
@@ -412,6 +438,10 @@ public class IsolationScheduler implements IScheduler {
 
         public List<WorkerSlot> getWorkerSlots() {
             return workerSlots;
+        }
+
+        public int getFreeSlots() {
+            return freeSlots;
         }
 
     }

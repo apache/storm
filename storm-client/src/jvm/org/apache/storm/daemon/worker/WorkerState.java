@@ -724,6 +724,7 @@ public class WorkerState {
                                                        Set<List<Long>> executors, Map<Integer, String> taskToComponent) {
         Integer recvQueueSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE));
         Integer recvBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
+        boolean dynamicBatch = ObjectReader.getBoolean(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_DYNAMIC), false);
         Integer overflowLimit = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT));
 
         if (recvBatchSize > recvQueueSize / 2) {
@@ -746,7 +747,7 @@ public class WorkerState {
             }
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(), "receive-queue",
                                                       recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
-                this.getTopologyId(), compId, taskIds, this.getPort(), metricRegistry));
+                this.getTopologyId(), compId, taskIds, this.getPort(), metricRegistry, dynamicBatch));
 
         }
         return receiveQueueMap;

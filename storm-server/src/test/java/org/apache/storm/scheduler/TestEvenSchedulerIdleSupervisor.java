@@ -547,6 +547,61 @@ public class TestEvenSchedulerIdleSupervisor {
         assertEquals(3, cluster.getAssignedNumWorkers(firstTopology(cluster)));
     }
 
+    /**
+     * Regression for the apache/storm#8778 follow-up: in the {@link DefaultScheduler} path the per-topology
+     * {@code max.free.per.topology} cap must bind once per scheduling round, not once per redistribute call.
+     *
+     * <p>{@link DefaultScheduler#defaultSchedule(Topologies, Cluster)} runs the idle-supervisor redistribute once over
+     * the full topology set, then delegates to {@link EvenScheduler#scheduleTopologiesEvenly(Topologies, Cluster, boolean)}
+     * once per under-assigned topology (now passing {@code redistributeOntoIdle=false}) -- the 2-arg overload it used to
+     * call ran the redistribute a second time. With two idle supervisors the
+     * full-set pass fills one of them (consuming the cap), leaving the second idle for the per-topology pass to fill
+     * again, so an under-assigned topology relocated up to {@code 2 * maxFree} workers in a single round.
+     *
+     * <p>The fixture makes the topology under-assigned by declaring more workers than it has slots (8 declared, 4
+     * executors on 4 slots) so {@code needsScheduling} stays true and the delegated call fires, while leaving no
+     * executor unassigned -- the ordinary even-scheduling pass is then a no-op and only the redistribute relocations are
+     * observable. sup-0 and sup-1 are donors with two workers each; sup-2 and sup-3 start idle.
+     */
+    @Test
+    public void defaultSchedulerAppliesMaxFreeCapOncePerRound() {
+        String topoId = "topo-double-cap";
+        Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(4, 4);
+        // 8 declared workers but only 4 executors: needsScheduling stays true (8 > 4 assigned) with nothing to reassign.
+        TopologyDetails topology = makeTopologyDetails(topoId, 8, 2);
+
+        Map<String, SchedulerAssignmentImpl> assignments = new HashMap<>();
+        assignments.put(topoId, buildAssignment(topology, new WorkerSlot[]{
+                new WorkerSlot("sup-0", 0), new WorkerSlot("sup-0", 1),
+                new WorkerSlot("sup-1", 0), new WorkerSlot("sup-1", 1),
+        }));
+
+        Map<String, TopologyDetails> topoMap = new HashMap<>();
+        topoMap.put(topoId, topology);
+        Topologies topologies = new Topologies(topoMap);
+
+        Cluster cluster = newCluster(supMap, assignments, topologies, evenRebalanceConf(true, 1));
+
+        // sup-2 and sup-3 both start idle; the topology has two workers on each of sup-0 and sup-1.
+        assertEquals(0, usedSlotCount(cluster, "sup-2"));
+        assertEquals(0, usedSlotCount(cluster, "sup-3"));
+
+        DefaultScheduler.defaultSchedule(new Topologies(topology), cluster);
+
+        // maxFree=1 caps relocation at one existing worker per round. The old double redistribute moved two -- one onto
+        // each idle supervisor; with the cap applied once per round only one idle supervisor is filled and the other
+        // stays untouched.
+        int relocatedOntoIdle = supervisorWorkerCount(cluster, topoId, "sup-2")
+                + supervisorWorkerCount(cluster, topoId, "sup-3");
+        assertEquals(1, relocatedOntoIdle,
+                "max.free.per.topology must cap idle-supervisor relocation at 1 per round, not 2 (apache/storm#8778 follow-up)");
+        assertEquals(0, supervisorWorkerCount(cluster, topoId, "sup-3"),
+                "the second idle supervisor stays idle once the per-round cap is reached");
+        // The relocation moves existing workers only -- the assigned worker count is unchanged and no executor is lost.
+        assertEquals(4, cluster.getAssignedNumWorkers(cluster.getTopologies().getById(topoId)),
+                "relocation must preserve the topology's four assigned workers");
+    }
+
     @Test
     public void defaultSchedulerIdleRebalanceHonorsLeftoverTopologySubset() {
         Map<String, SupervisorDetails> supMap = genSupervisorsWithUptime(3, 4, 100);
