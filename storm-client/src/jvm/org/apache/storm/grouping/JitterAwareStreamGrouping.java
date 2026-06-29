@@ -38,6 +38,23 @@ import org.apache.storm.task.WorkerTopologyContext;
  * delegated to an embedded {@link LoadAwareShuffleGrouping}. When <i>all</i> targets carry equal jitter,
  * every sampled pair ties, so the grouping behaves as a pure load-aware shuffle. {@link #refreshLoad} is
  * forwarded to that delegate, so the fallback path honours real system load and locality.
+ *
+ * <p><b>Ordering:</b> like any load-aware shuffle, this grouping does <i>not</i> preserve tuple ordering.
+ * It is a routing policy layered on top of {@link LoadAwareShuffleGrouping} and inherits the same (lack of)
+ * ordering semantics: successive tuples emitted by the same source task may be steered to different
+ * downstream tasks, so consumers must not rely on receiving tuples in emission order. Use a fields grouping
+ * if per-key ordering is required.
+ *
+ * <p><b>Requirements:</b> this grouping is purely opt-in and only steers while the upstream feedback loop is
+ * active. The feedback records carry EWMA jitter stats, which are produced solely when
+ * {@code topology.stats.ewma.enable=true}; enabling {@code topology.upstream.feedback.enable} without EWMA
+ * is therefore rejected at config validation (see {@code ConfigValidation.UpstreamFeedbackValidator}), since
+ * the grouping would otherwise silently degrade to a plain load-aware shuffle forever.
+ *
+ * <p><b>Performance:</b> benchmarks show the feedback signal adds negligible overhead and, at moderate load yields
+ * a directionally lower complete latency than a  plain load-aware shuffle at comparable throughput.
+ * At higher load the advantage disappears and results are neutral-to-slightly-worse.
+ * Treat it as an opt-in latency-smoothing policy rather than a general throughput improvement.
  */
 public class JitterAwareStreamGrouping implements LoadAwareCustomStreamGrouping {
 
