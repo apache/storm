@@ -128,6 +128,10 @@ public class ConfigValidation {
      * @param conf  map of confs
      */
     public static void validateField(Field field, Map<String, Object> conf) {
+        validateField(field, conf, false);
+    }
+
+    private static void validateField(Field field, Map<String, Object> conf, boolean comboPhase) {
         Annotation[] annotations = field.getAnnotations();
         if (annotations.length == 0) {
             LOG.warn("Field {} does not have validator annotation", field);
@@ -152,20 +156,29 @@ public class ConfigValidation {
                 if (validatorClass != null) {
                     Object v = validatorClass.cast(annotation);
                     String key = (String) field.get(null);
-                    @SuppressWarnings("unchecked")
-                    Class<Validator> clazz = (Class<Validator>) validatorClass
+                    Class<?> clazz = (Class<?>) validatorClass
                         .getMethod(ConfigValidationAnnotations.ValidatorParams.VALIDATOR_CLASS).invoke(v);
-                    Validator o = null;
+                    //run each validator only in its phase, so cross-field rules are deferred to pass 2.
+                    boolean isCombo = ComboValidator.class.isAssignableFrom(clazz);
+                    if (isCombo != comboPhase) {
+                        continue;
+                    }
                     Map<String, Object> params = getParamsFromAnnotation(validatorClass, v);
                     //two constructor signatures used to initialize validators.
                     //One constructor takes input a Map of arguments, the other doesn't take any arguments (default constructor)
                     //If validator has a constructor that takes a Map as an argument call that constructor
+                    Object o;
                     if (hasConstructor(clazz, Map.class)) {
                         o = clazz.getConstructor(Map.class).newInstance(params);
                     } else { //If not call default constructor
                         o = clazz.newInstance();
                     }
-                    o.validateField(field.getName(), conf.get(key));
+                    if (isCombo) {
+                        //cross-field rule: pass the whole conf, keyed off the annotated field's name.
+                        ((ComboValidator) o).validateComboFields(conf);
+                    } else {
+                        ((Validator) o).validateField(field.getName(), conf.get(key));
+                    }
                 }
             }
         } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
@@ -197,12 +210,13 @@ public class ConfigValidation {
      * @param classes config class
      */
     public static void validateFields(Map<String, Object> conf, List<Class<?>> classes) {
+        List<Field> presentFields = new ArrayList<>();
         for (Class<?> clazz : classes) {
             for (Field field : clazz.getDeclaredFields()) {
                 if (!isFieldAllowed(field)) {
                     continue;
                 }
-                Object keyObj = null;
+                Object keyObj;
                 try {
                     keyObj = field.get(null);
                 } catch (IllegalAccessException e) {
@@ -210,13 +224,18 @@ public class ConfigValidation {
                     throw new RuntimeException(e);
                 }
                 //make sure that defined key is string in case wrong stuff got put into Config.java
-                if (keyObj instanceof String) {
-                    String confKey = (String) keyObj;
-                    if (conf.containsKey(confKey)) {
-                        validateField(field, conf);
-                    }
+                if (keyObj instanceof String && conf.containsKey((String) keyObj)) {
+                    presentFields.add(field);
                 }
             }
+        }
+        //Pass 1: validate each present field on its own, so the whole conf is individually valid first.
+        for (Field field : presentFields) {
+            validateField(field, conf, false);
+        }
+        //Pass 2: cross-field rules, run only after pass 1 so a ComboValidator sees an already-valid conf.
+        for (Field field : presentFields) {
+            validateField(field, conf, true);
         }
     }
 
@@ -262,6 +281,16 @@ public class ConfigValidation {
         }
 
         public abstract void validateField(String name, Object o);
+    }
+
+    public abstract static class ComboValidator {
+        public ComboValidator(Map<String, Object> params) {
+        }
+
+        public ComboValidator() {
+        }
+
+        public abstract void validateComboFields(Map<String, Object> conf);
     }
 
     /**
@@ -870,7 +899,7 @@ public class ConfigValidation {
         }
     }
 
-    public static class EwmaSmoothingFactorValidator extends Validator {
+    public static class ZeroOneOpenIntervalValidator extends Validator {
         @Override
         public void validateField(String name, Object o) {
             if (o == null) {
@@ -1093,4 +1122,30 @@ public class ConfigValidation {
             }
         }
     }
+
+
+    /**
+     * Rejects enabling upstream feedback without EWMA stats. The feedback loop only carries EWMA jitter
+     * statistics, which are populated solely when {@link Config#TOPOLOGY_STATS_EWMA_ENABLE} is on; with
+     * {@link Config#TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE} enabled but EWMA left at its default ({@code false}),
+     * every feedback record is empty and a jitter-aware grouping silently degrades to its load-aware
+     * fallback forever.
+     */
+    public static class UpstreamFeedbackValidator extends ComboValidator {
+        @Override
+        public void validateComboFields(Map<String, Object> conf) {
+            boolean feedbackEnabled =
+                    ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE), false);
+            boolean ewmaEnabled =
+                    ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_STATS_EWMA_ENABLE), false);
+            if (feedbackEnabled && !ewmaEnabled) {
+                throw new IllegalArgumentException(
+                        Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE + " requires " + Config.TOPOLOGY_STATS_EWMA_ENABLE
+                                + "=true: the feedback loop only carries EWMA jitter stats, which are produced solely "
+                                + "when EWMA is enabled. Enable " + Config.TOPOLOGY_STATS_EWMA_ENABLE + ", or disable "
+                                + Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE + " (it is otherwise a no-op).");
+            }
+        }
+    }
+
 }

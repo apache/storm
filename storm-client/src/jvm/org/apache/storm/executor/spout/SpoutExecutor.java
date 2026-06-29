@@ -95,7 +95,7 @@ public class SpoutExecutor extends Executor {
     }
 
     public void init(final ArrayList<Task> idToTask, int idToTaskBase) throws InterruptedException {
-        this.threadId = Thread.currentThread().getId();
+        this.threadId = Thread.currentThread().threadId();
         executorTransfer.initLocalRecvQueues();
         workerReady.await();
         while (!stormActive.get()) {
@@ -320,6 +320,13 @@ public class SpoutExecutor extends Executor {
             TupleInfo pendingForId = pending.get(id);
             if (pendingForId != null) {
                 pending.put(id, pendingForId);
+            }
+        } else if (Constants.FEEDBACK_STREAM_ID.equals(streamId)) {
+            if (!this.upstreamFeedbackEnabled) {
+                LOG.debug("Upstream feedback skipped.");
+            } else {
+                // update internal metrics
+                this.updateChildEwmaStats(idToTask.get(taskId - idToTaskBase), tuple);
             }
         } else {
             Long id = (Long) tuple.getValue(0);

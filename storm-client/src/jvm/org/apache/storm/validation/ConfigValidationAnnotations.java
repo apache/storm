@@ -205,6 +205,17 @@ public class ConfigValidationAnnotations {
     }
 
     /**
+     * For custom cross-field validators. Unlike {@link CustomValidator}, whose validator receives a single
+     * field's value, the referenced {@link ConfigValidation.ComboValidator} receives the whole configuration
+     * so it can enforce dependencies between keys. Place it on the field whose presence triggers the rule.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface CustomComboValidator {
+        Class<?> validatorClass();
+    }
+
+    /**
      * Custom validator where exactly one of the validations must be successful.
      * Used for overloaded configuration, where value must match one (and exactly one)
      * format of supplied values.

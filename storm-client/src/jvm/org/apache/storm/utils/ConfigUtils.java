@@ -198,6 +198,24 @@ public class ConfigUtils {
         return ObjectReader.getBoolean(value, false);
     }
 
+    public static boolean upstreamFeedbackEnable(Map<String, Object> conf) {
+        Object value = conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE);
+        if (value == null) {
+            return false;
+        }
+        return ObjectReader.getBoolean(value, false);
+    }
+    
+    public static int upstreamFeedbackFreqSecs(Map<String, Object> conf) {
+        int freqSecs = ObjectReader.getInt(conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS), 10);
+        if (freqSecs > 0) {
+            return freqSecs;
+        }
+        throw new IllegalArgumentException(
+            "Illegal " + Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS
+                + " in conf: " + freqSecs + " must be > 0");
+    }
+
     public static BooleanSupplier mkStatsSampler(Map<String, Object> conf) {
         return evenSampler(samplingRate(conf));
     }

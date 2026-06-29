@@ -79,6 +79,7 @@ public class SerializationFactory {
         k.register(BackPressureStatus.class);
         k.register(NodeInfo.class);
         k.register(DetachedTuple.class);
+        k.register(org.apache.storm.executor.EwmaFeedbackRecord.class);
 
         synchronized (loader) {
             for (SerializationRegister sr : loader) {
