@@ -24,21 +24,23 @@
         <format>zip</format>
     </formats>
 
-    <!-- put deps in the lib folder -->
-    <dependencySets>
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>lib</outputDirectory>
-            <unpack>false</unpack>
-        </dependencySet>
-    </dependencySets>
-
     <fileSets>
+        <!-- Daemon jars (lib) and shared jars (lib-common) are staged and de-duplicated by
+             final-package's build (maven-dependency-plugin + dedup-libs.py) before assembly.
+             The worker jars now live in lib-common, so the storm-client-bin tree (which only
+             contained lib-worker) is no longer copied here. -->
         <fileSet>
-            <directory>${project.basedir}/../storm-client-bin/target/client/client/</directory>
-            <outputDirectory>.</outputDirectory>
+            <directory>${project.build.directory}/staging/lib</directory>
+            <outputDirectory>lib</outputDirectory>
             <includes>
-                <include>*/**</include>
+                <include>*.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/staging/lib-common</directory>
+            <outputDirectory>lib-common</outputDirectory>
+            <includes>
+                <include>*.jar</include>
             </includes>
         </fileSet>
         <fileSet>
