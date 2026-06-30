@@ -241,12 +241,15 @@
             </includes>
         </fileSet>
 
-        <!-- Autocred plugins -->
+        <!-- Autocred plugins: ship only the README, consistent with the other
+             external connectors. The (Hadoop/HBase) jars are no longer bundled to
+             keep the distribution small; operators fetch them on demand with
+             bin/storm-autocreds-fetch (see external/storm-autocreds/README.md). -->
         <fileSet>
-            <directory>${project.basedir}/../storm-autocreds-bin/target/autocreds/autocreds/lib-autocreds</directory>
+            <directory>${project.basedir}/../../../external/storm-autocreds</directory>
             <outputDirectory>external/storm-autocreds</outputDirectory>
             <includes>
-                <include>*jar</include>
+                <include>README.*</include>
             </includes>
         </fileSet>
         <!-- storm-submit-tools -->
