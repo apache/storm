@@ -232,12 +232,15 @@
                 <include></include>
             </includes>
         </fileSet>
-        <!-- $STORM_HOME/toollib -->
+        <!-- storm-kafka-monitor: ship only the README. The (Kafka client) jars are no longer bundled
+             to keep the distribution small; they are only needed to display Kafka spout lag in the UI.
+             Operators fetch them on demand with bin/storm-kafka-monitor-fetch (see
+             external/storm-kafka-monitor/README.md). The UI degrades gracefully when they are absent. -->
         <fileSet>
-            <directory>${project.basedir}/../storm-kafka-monitor-bin/target/kafka-monitor/kafka-monitor/lib-kafka-monitor</directory>
-            <outputDirectory>lib-tools/storm-kafka-monitor</outputDirectory>
+            <directory>${project.basedir}/../../../external/storm-kafka-monitor</directory>
+            <outputDirectory>external/storm-kafka-monitor</outputDirectory>
             <includes>
-                <include>*jar</include>
+                <include>README.*</include>
             </includes>
         </fileSet>
 
