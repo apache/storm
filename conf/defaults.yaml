@@ -280,6 +280,10 @@ topology.eventlogger.executors: 0
 topology.tasks: null
 # maximum amount of time a message has to complete before it's considered failed
 topology.message.timeout.secs: 30
+# STORM-2359: when set, expire tuple trees only after this many seconds of no bolt progress,
+# instead of wall-clock time since emit. Prevents live tuples from timing out under backpressure.
+# Must be <= topology.message.timeout.secs to have effect. Default null = disabled (original behavior).
+topology.message.progress.timeout.secs: null
 topology.multilang.serializer: "org.apache.storm.multilang.JsonSerializer"
 topology.shellbolt.max.pending: 100
 topology.skip.missing.kryo.registrations: false
