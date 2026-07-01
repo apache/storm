@@ -62,7 +62,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=+topology.blobstore.map%3D%27%7B%22key1%22%3A%7B%22localname%22%3A%22blob_file%22%2C+%22uncompress%22%3Afalse%7D%2C%22key2%22%3A%7B%7D%7D%27',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib-worker:' + self.storm_dir
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib-worker:' + self.storm_dir
                 + '/extlib:example/storm-starter/storm-starter-topologies-*.jar:' + self.storm_dir + '/conf:'
                 + self.storm_dir + '/bin:./external/storm-redis/storm-redis-1.1.0.jar:./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"', '-Dstorm.jar=example/storm-starter/storm-starter-topologies-*.jar', '-Dstorm.dependency.jars=./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"', '-Dstorm.dependency.artifacts={}',
                 'org.apache.storm.starter.RollingTopWords', 'blobstore-remote2', 'remote'
@@ -80,7 +80,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib-worker:' + self.storm_dir
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib-worker:' + self.storm_dir
                 + '/extlib:/path/to/jar.jar:' + self.storm_dir + '/conf:' + self.storm_dir + '/bin:',
                 '-Dstorm.jar=/path/to/jar.jar', '-Dstorm.dependency.jars=', '-Dstorm.dependency.artifacts={}',
                 'some.Topology.Class', '-name', 'run-topology', 'randomArgument', '-randomFlag', 'randomFlagValue',
@@ -93,7 +93,7 @@ class TestStormCli(TestCase):
         self.base_test(
             ["storm", "localconfvalue", "conf_name"], self.mock_popen, mock.call([
              self.java_cmd, '-client', '-Dstorm.options=',
-             '-Dstorm.conf.file=', '-cp',  self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +'/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
+             '-Dstorm.conf.file=', '-cp',  self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +'/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
              'org.apache.storm.command.ConfigValue', 'conf_name'
              ], stdout=-1
             )
@@ -103,7 +103,7 @@ class TestStormCli(TestCase):
         self.base_test(
             ["storm", "remoteconfvalue", "conf_name"], self.mock_popen, mock.call([
              self.java_cmd, '-client', '-Dstorm.options=',
-             '-Dstorm.conf.file=', '-cp',  self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
+             '-Dstorm.conf.file=', '-cp',  self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
              'org.apache.storm.command.ConfigValue', 'conf_name'
              ], stdout=-1
             )
@@ -124,7 +124,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client','-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:example/storm-starter/storm-starter-topologies-*.jar:' + self.storm_dir +
                 '/conf:' + self.storm_dir +
                 '/bin:./external/storm-redis/storm-redis-1.1.0.jar:./external/storm-kafka-client/storm-kafka-client-1.1.0.jar"',
@@ -144,7 +144,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir + '/bin', 'org.apache.storm.command.KillTopology', 'doomed_topology'
             ])
         )
@@ -157,7 +157,7 @@ class TestStormCli(TestCase):
                 self.java_cmd,  '-client', '-Ddaemon.name=', '-Dstorm.options=test%3Dtest',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=/some/other/storm.yaml',
-                '-cp', self.storm_dir + '/*:' + self.storm_dir + '/lib:' +
+                '-cp', self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' +
                                              self.storm_dir +
                                              '/extlib:' + self.storm_dir + '/extlib-daemon:' +
                                              self.storm_dir + '/conf:' + self.storm_dir +
@@ -173,7 +173,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'create',
                 'mytopo:data.tgz', '-f', 'data.tgz', '-a', 'u:alice:rwa,u:bob:rw,o::r'])
@@ -188,7 +188,7 @@ class TestStormCli(TestCase):
                 '-Dstorm.home=' + self.storm_dir,
                 '-Dstorm.log.dir=' + self.storm_dir + "/logs", '-Djava.library.path=',
                 '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'list'])
         )
@@ -202,7 +202,7 @@ class TestStormCli(TestCase):
                 '-Dstorm.home=' + self.storm_dir,
                 '-Dstorm.log.dir=' + self.storm_dir + "/logs", '-Djava.library.path=',
                 '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'list', 'wordstotrack'])
         )
@@ -215,7 +215,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'update', '-f',
                 '/wordsToTrack.list', 'wordstotrack'])
@@ -229,7 +229,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.Blobstore', 'cat', 'wordstotrack'])
         )
@@ -242,7 +242,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir + '/bin',
                 'org.apache.storm.command.Activate', 'doomed_topology'
             ])
@@ -256,7 +256,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
                 '/bin', 'org.apache.storm.command.Deactivate', 'doomed_topology'
             ])
@@ -270,7 +270,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
                 '/bin', 'org.apache.storm.command.Rebalance', 'doomed_topology'
             ])
@@ -284,7 +284,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
                 '/bin', 'org.apache.storm.command.ListTopologies'
             ])
@@ -298,7 +298,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-server', '-Ddaemon.name=nimbus', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=nimbus.log',
                 '-Dlog4j.configurationFile=' + self.storm_dir + '/log4j2/cluster.xml',
@@ -314,7 +314,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-server', '-Ddaemon.name=supervisor', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=supervisor.log',
                 '-Dlog4j.configurationFile=' + self.storm_dir + '/log4j2/cluster.xml',
@@ -330,7 +330,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-server', '-Ddaemon.name=pacemaker', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=pacemaker.log',
                 '-Dlog4j.configurationFile=' + self.storm_dir + '/log4j2/cluster.xml',
@@ -346,7 +346,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-server', '-Ddaemon.name=ui', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir +
                 '/lib-webapp:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=ui.log',
@@ -363,7 +363,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-server', '-Ddaemon.name=logviewer', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir +
                 '/lib-webapp:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=logviewer.log',
@@ -380,7 +380,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-server', '-Ddaemon.name=drpc', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir +
                 '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir +
                 '/lib-webapp:' + self.storm_dir + '/conf',
                 '-Djava.deserialization.disabled=true', '-Dlogfile.name=drpc.log',
@@ -397,7 +397,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
                 '/bin', 'org.apache.storm.command.BasicDrpcClient', 'exclaim', 'a', 'exclaim', 'b', 'test', 'bar'
             ])
@@ -409,7 +409,7 @@ class TestStormCli(TestCase):
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs",
                 '-Djava.library.path=', '-Dstorm.conf.file=', '-cp',
-                self.storm_dir + '/*:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
+                self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' + self.storm_dir + '/extlib:' + self.storm_dir +
                 '/extlib-daemon:' + self.storm_dir + '/conf:' + self.storm_dir +
                 '/bin', 'org.apache.storm.command.BasicDrpcClient', '-f', 'exclaim', 'a', 'b'
             ])
@@ -422,7 +422,7 @@ class TestStormCli(TestCase):
             self.java_cmd, [
                 self.java_cmd, '-client', '-Ddaemon.name=', '-Dstorm.options=',
                 '-Dstorm.home=' + self.storm_dir, '-Dstorm.log.dir=' + self.storm_dir + "/logs", '-Djava.library.path=',
-                '-Dstorm.conf.file=', '-cp', self.storm_dir + '/*:' + self.storm_dir + '/lib:' +
+                '-Dstorm.conf.file=', '-cp', self.storm_dir + '/*:' + self.storm_dir + '/lib-common:' + self.storm_dir + '/lib:' +
                 self.storm_dir + '/extlib:' + self.storm_dir + '/extlib-daemon:' + self.storm_dir + '/conf:' +
                 self.storm_dir + '/bin', 'org.apache.storm.command.HealthCheck'
             ])
