@@ -37,7 +37,7 @@
     "cypress": "^15.16.0",
     "express": "^5.2.1",
     "mini-css-extract-plugin": "^2.10.2",
-    "start-server-and-test": "^3.0.5",
+    "start-server-and-test": "^3.0.11",
     "terser-webpack-plugin": "^5.6.1",
     "webpack": "^5.108.3",
     "webpack-cli": "^7.0.3"
