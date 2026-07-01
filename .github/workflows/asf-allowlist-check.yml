@@ -17,9 +17,10 @@ name: ASF Allowlist Check
 
 on:
   workflow_dispatch:
+  # No paths filter on purpose: as a required status check (see .asf.yaml) this
+  # job must report a status on every PR, otherwise PRs that don't touch
+  # .github/** would stay "Expected — waiting for status" and be blocked forever.
   pull_request:
-    paths:
-      - ".github/**"
   push:
     branches: [ "master", "2.x" ]
     paths:
