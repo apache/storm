@@ -129,9 +129,9 @@ public class EvenScheduler implements IScheduler {
      * <p>Gated by {@link DaemonConfig#NIMBUS_EVEN_REBALANCE_ON_IDLE_SUPERVISOR_ENABLED}: when disabled (the default) the
      * method returns before scanning any supervisor, so a cluster that has not opted in pays no per-scheduling-round cost.
      *
-     * <p>This is the package-private entry point shared by {@link #scheduleTopologiesEvenly(Topologies, Cluster)} and
-     * {@link DefaultScheduler#defaultSchedule(Topologies, Cluster)}; its visibility is dictated by those callers, not by
-     * tests (which also reach it from the same package).
+     * <p>This is the package-private entry point reached by the {@code scheduleTopologiesEvenly} overloads (when
+     * {@code redistributeOntoIdle} is true) and called directly by {@link DefaultScheduler#defaultSchedule(Topologies,
+     * Cluster)}; its visibility is dictated by those callers, not by tests (which also reach it from the same package).
      */
     static void redistributeOntoIdleSupervisors(Topologies topologies, Cluster cluster) {
         if (!ObjectReader.getBoolean(
@@ -333,12 +333,31 @@ public class EvenScheduler implements IScheduler {
     }
 
     public static void scheduleTopologiesEvenly(Topologies topologies, Cluster cluster) {
-        redistributeOntoIdleSupervisors(topologies, cluster);
+        scheduleTopologiesEvenly(topologies, cluster, true);
+    }
+
+    /**
+     * Even-schedules each topology in {@code topologies}, optionally running the idle-supervisor redistribute pass first.
+     *
+     * <p>{@code redistributeOntoIdle} exists to keep the per-topology {@code max.free.per.topology} cap applied once per
+     * scheduling round. The {@link EvenScheduler#schedule(Topologies, Cluster)} entry point passes {@code true}: it runs
+     * here once over the full topology set, so the redistribute is the single full-set round-robin pass.
+     * {@link DefaultScheduler#defaultSchedule(Topologies, Cluster)} instead calls
+     * {@link #redistributeOntoIdleSupervisors(Topologies, Cluster)} itself, once, over the full set, and then delegates
+     * here once per leftover topology with a single-topology {@link Topologies}; it passes {@code false} so the cap is not
+     * re-applied per topology. Without that guard a returning supervisor left idle by the full-set pass would be filled a
+     * second time in the same round, letting an under-assigned topology move up to twice the cap (apache/storm#8778
+     * follow-up).
+     */
+    static void scheduleTopologiesEvenly(Topologies topologies, Cluster cluster, boolean redistributeOntoIdle) {
+        if (redistributeOntoIdle) {
+            redistributeOntoIdleSupervisors(topologies, cluster);
+        }
         for (TopologyDetails topology : cluster.needsSchedulingTopologies()) {
             // needsSchedulingTopologies() returns the cluster's full topology set, but this run is scoped to the
             // topologies passed in: EvenScheduler.schedule passes the full set (so the guard is a no-op), while
             // DefaultScheduler.defaultSchedule calls us once per leftover topology with a single-topology Topologies.
-            // redistributeOntoIdleSupervisors above acted only on that passed-in set too. Skip topologies outside it so
+            // The redistribute pass (when run) acted only on that passed-in set too. Skip topologies outside it so
             // the leftover path never schedules one the caller excluded -- e.g. a down isolated topology on a reserved host.
             if (topologies.getById(topology.getId()) == null) {
                 continue;

@@ -30,7 +30,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
 
   private static final org.apache.storm.thrift.protocol.TField STORM_ID_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("storm_id", org.apache.storm.thrift.protocol.TType.STRING, (short)1);
   private static final org.apache.storm.thrift.protocol.TField EXECUTOR_STATS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("executor_stats", org.apache.storm.thrift.protocol.TType.MAP, (short)2);
-  private static final org.apache.storm.thrift.protocol.TField TIME_SECS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("time_secs", org.apache.storm.thrift.protocol.TType.I32, (short)3);
+  private static final org.apache.storm.thrift.protocol.TField TIME_SECS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("time_secs", org.apache.storm.thrift.protocol.TType.I64, (short)3);
   private static final org.apache.storm.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.storm.thrift.protocol.TField("uptime_secs", org.apache.storm.thrift.protocol.TType.I32, (short)4);
 
   private static final org.apache.storm.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new ClusterWorkerHeartbeatStandardSchemeFactory();
@@ -38,7 +38,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
 
   private @org.apache.storm.thrift.annotation.Nullable java.lang.String storm_id; // required
   private @org.apache.storm.thrift.annotation.Nullable java.util.Map<ExecutorInfo,ExecutorStats> executor_stats; // required
-  private int time_secs; // required
+  private long time_secs; // required
   private int uptime_secs; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -126,7 +126,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
             new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, ExecutorInfo.class), 
             new org.apache.storm.thrift.meta_data.StructMetaData(org.apache.storm.thrift.protocol.TType.STRUCT, ExecutorStats.class))));
     tmpMap.put(_Fields.TIME_SECS, new org.apache.storm.thrift.meta_data.FieldMetaData("time_secs", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.I32)));
+        new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.I64)));
     tmpMap.put(_Fields.UPTIME_SECS, new org.apache.storm.thrift.meta_data.FieldMetaData("uptime_secs", org.apache.storm.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.storm.thrift.meta_data.FieldValueMetaData(org.apache.storm.thrift.protocol.TType.I32)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
@@ -139,7 +139,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
   public ClusterWorkerHeartbeat(
     java.lang.String storm_id,
     java.util.Map<ExecutorInfo,ExecutorStats> executor_stats,
-    int time_secs,
+    long time_secs,
     int uptime_secs)
   {
     this();
@@ -252,11 +252,11 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
     }
   }
 
-  public int get_time_secs() {
+  public long get_time_secs() {
     return this.time_secs;
   }
 
-  public void set_time_secs(int time_secs) {
+  public void set_time_secs(long time_secs) {
     this.time_secs = time_secs;
     set_time_secs_isSet(true);
   }
@@ -319,7 +319,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
       if (value == null) {
         unset_time_secs();
       } else {
-        set_time_secs((java.lang.Integer)value);
+        set_time_secs((java.lang.Long)value);
       }
       break;
 
@@ -438,7 +438,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
     if (is_set_executor_stats())
       hashCode = hashCode * 8191 + executor_stats.hashCode();
 
-    hashCode = hashCode * 8191 + time_secs;
+    hashCode = hashCode * 8191 + org.apache.storm.thrift.TBaseHelper.hashCode(time_secs);
 
     hashCode = hashCode * 8191 + uptime_secs;
 
@@ -634,8 +634,8 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
             }
             break;
           case 3: // TIME_SECS
-            if (schemeField.type == org.apache.storm.thrift.protocol.TType.I32) {
-              struct.time_secs = iprot.readI32();
+            if (schemeField.type == org.apache.storm.thrift.protocol.TType.I64) {
+              struct.time_secs = iprot.readI64();
               struct.set_time_secs_isSet(true);
             } else { 
               org.apache.storm.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
@@ -682,7 +682,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
         oprot.writeFieldEnd();
       }
       oprot.writeFieldBegin(TIME_SECS_FIELD_DESC);
-      oprot.writeI32(struct.time_secs);
+      oprot.writeI64(struct.time_secs);
       oprot.writeFieldEnd();
       oprot.writeFieldBegin(UPTIME_SECS_FIELD_DESC);
       oprot.writeI32(struct.uptime_secs);
@@ -714,7 +714,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
           _iter827.getValue().write(oprot);
         }
       }
-      oprot.writeI32(struct.time_secs);
+      oprot.writeI64(struct.time_secs);
       oprot.writeI32(struct.uptime_secs);
     }
 
@@ -738,7 +738,7 @@ public class ClusterWorkerHeartbeat implements org.apache.storm.thrift.TBase<Clu
         }
       }
       struct.set_executor_stats_isSet(true);
-      struct.time_secs = iprot.readI32();
+      struct.time_secs = iprot.readI64();
       struct.set_time_secs_isSet(true);
       struct.uptime_secs = iprot.readI32();
       struct.set_uptime_secs_isSet(true);

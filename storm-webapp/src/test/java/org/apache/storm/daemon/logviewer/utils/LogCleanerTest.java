@@ -281,7 +281,7 @@ public class LogCleanerTest {
                 }
 
                 @Override
-                SortedSet<Path> getDeadWorkerDirs(int nowSecs, Set<Path> logDirs) {
+                SortedSet<Path> getDeadWorkerDirs(long nowSecs, Set<Path> logDirs) {
                     SortedSet<Path> dirs = new TreeSet<>();
                     dirs.add(dir1.getFile().toPath());
                     dirs.add(dir2.getFile().toPath());

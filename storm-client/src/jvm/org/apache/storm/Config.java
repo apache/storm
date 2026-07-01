@@ -39,6 +39,7 @@ import org.apache.storm.validation.ConfigValidation.MetricRegistryValidator;
 import org.apache.storm.validation.ConfigValidation.MetricReportersValidator;
 import org.apache.storm.validation.ConfigValidation.RasConstraintsTypeValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations;
+import org.apache.storm.validation.ConfigValidationAnnotations.CustomComboValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.CustomValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsBoolean;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsExactlyOneOf;
@@ -627,8 +628,47 @@ public class Config extends HashMap<String, Object> {
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc1889#appendix-A.8">RFC 1889 §A.8</a>
      */
-    @CustomValidator(validatorClass = ConfigValidation.EwmaSmoothingFactorValidator.class)
+    @CustomValidator(validatorClass = ConfigValidation.ZeroOneOpenIntervalValidator.class)
     public static final String TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR = "topology.stats.ewma.smoothing.factor";
+    /**
+     * Flag to enable or disable the feedback channel for upstream communication.
+     * When true, components can send unanchored tuples back to their source tasks.
+     *
+     * <p><b>Security:</b> feedback tuples carry a routing control signal (e.g. per-task EWMA jitter
+     * used by grouping decisions), so a peer that can inject messages on the worker transport could
+     * forge feedback and deterministically steer a topology's traffic to a chosen task. This stays
+     * within Storm's existing worker-transport trust model, but because the default
+     * {@code storm.messaging.netty.authentication} is {@code false}, enable Netty authentication
+     * (and TLS where available) when running this feature in an untrusted network.</p>
+     */
+    @IsBoolean
+    @CustomComboValidator(validatorClass = ConfigValidation.UpstreamFeedbackValidator.class)
+    public static final String TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE = "topology.upstream.feedback.enable";
+    /**
+     * The period, in seconds, between upstream feedback messages within the topology.
+     *
+     * <p>A dedicated internal feedback tick fires on this interval; on each tick a task emits
+     * a feedback tuple (containing metrics such as EWMA jitter stats) back to its parent tasks.
+     * This mechanism allows parent tasks to receive performance signals from downstream
+     * components to facilitate adaptive flow control or load balancing. Unlike a probabilistic
+     * trigger, the period yields a deterministic, data-volume-independent feedback cadence.</p>
+     *
+     * <p><b>Validation:</b> Must be a positive integer (seconds).</p>
+     *
+     * <p><b>Impact:</b>
+     * <ul>
+     *   <li>Lower values provide more precise, real-time performance data but increase
+     *       network overhead and CPU usage on the control plane.</li>
+     *   <li>Higher values minimize the "observer effect" on the topology's throughput
+     *       while still providing periodic statistical snapshots of health.</li>
+     * </ul>
+     * </p>
+     *
+     * Defaults to 10 if not explicitly configured.
+     */
+    @IsInteger
+    @IsPositiveNumber
+    public static final String TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS = "topology.upstream.feedback.freq.secs";
     /**
      * The time period that builtin metrics data in bucketed into.
      */
@@ -770,6 +810,13 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber
     @NotNull
     public static final String TOPOLOGY_PRODUCER_BATCH_SIZE = "topology.producer.batch.size";
+    /**
+     * When enabled, the producer batch size adapts at runtime between 1 and {@link #TOPOLOGY_PRODUCER_BATCH_SIZE} using AIMD:
+     * it shrinks toward 1 to reduce latency under light load and grows back toward the configured size to preserve throughput
+     * under heavy load. Has no effect unless {@link #TOPOLOGY_PRODUCER_BATCH_SIZE} is greater than 1.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_PRODUCER_BATCH_DYNAMIC = "topology.producer.batch.dynamic";
     /**
      * If number of items in task's overflowQ exceeds this, new messages coming from other workers to this task will be dropped This
      * prevents OutOfMemoryException that can occur in rare scenarios in the presence of BackPressure. This affects only inter-worker
@@ -1920,7 +1967,6 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_MESSAGING_NETTY_TLS_SSL_PROTOCOLS = "storm.messaging.netty.tls.ssl.protocols";
 
     /**
-     * /**
      * Netty based messaging: The number of milliseconds that a Netty client will retry flushing messages that are already
      * buffered to be sent.
      */

@@ -155,7 +155,7 @@ public class WorkerLogs {
      * Return a sorted set of paths that were written by workers that are now active.
      */
     public SortedSet<Path> getAliveWorkerDirs() throws IOException {
-        Set<String> aliveIds = getAliveIds(Time.currentTimeSecs());
+        Set<String> aliveIds = getAliveIds(Time.currentTimeSecsLong());
         Set<Path> logDirs = getAllWorkerDirs();
         return getLogDirs(logDirs, (wid) -> aliveIds.contains(wid));
     }
@@ -199,14 +199,14 @@ public class WorkerLogs {
      *
      * @param nowSecs current time in seconds
      */
-    public Set<String> getAliveIds(int nowSecs) throws IOException {
+    public Set<String> getAliveIds(long nowSecs) throws IOException {
         return SupervisorUtils.readWorkerHeartbeats(stormConf).entrySet().stream()
                 .filter(entry -> Objects.nonNull(entry.getValue()) && !isTimedOut(nowSecs, entry))
                 .map(Map.Entry::getKey)
                 .collect(toCollection(TreeSet::new));
     }
 
-    private boolean isTimedOut(int nowSecs, Map.Entry<String, LSWorkerHeartbeat> entry) {
+    private boolean isTimedOut(long nowSecs, Map.Entry<String, LSWorkerHeartbeat> entry) {
         LSWorkerHeartbeat hb = entry.getValue();
         int workerLogTimeout = getTopologyTimeout(hb);
         return (nowSecs - hb.get_time_secs()) >= workerLogTimeout;

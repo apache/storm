@@ -74,7 +74,7 @@ public class SupervisorHeartbeat implements Runnable {
         if (validatedNumaMap != null) {
             for (Map.Entry<String, Object> numaMapEntry : validatedNumaMap.entrySet()) {
                 SupervisorInfo supervisorInfo = new SupervisorInfo();
-                supervisorInfo.set_time_secs(Time.currentTimeSecs());
+                supervisorInfo.set_time_secs(Time.currentTimeSecsLong());
                 supervisorInfo.set_hostname(supervisor.getHostName());
                 supervisorInfo.set_assignment_id(
                         supervisor.getAssignmentId() + ServerConstants.NUMA_ID_SEPARATOR + numaMapEntry.getKey()
@@ -106,7 +106,7 @@ public class SupervisorHeartbeat implements Runnable {
         if (totalSupervisorNormalizedResources.getTotalCpu() > 0
             && totalSupervisorNormalizedResources.getTotalMemoryMb() > 0 && !allPortList.isEmpty()) {
             SupervisorInfo supervisorInfo = new SupervisorInfo();
-            supervisorInfo.set_time_secs(Time.currentTimeSecs());
+            supervisorInfo.set_time_secs(Time.currentTimeSecsLong());
             supervisorInfo.set_hostname(supervisor.getHostName());
             supervisorInfo.set_assignment_id(supervisor.getAssignmentId());
             supervisorInfo.set_server_port(supervisor.getThriftServerPort());

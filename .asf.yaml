@@ -7,7 +7,12 @@ github:
   homepage: https://storm.apache.org/
   protected_branches:
     # Prevent force pushes to primary branches
-    master: {}
+    master:
+      # Block merges when the ASF allowlist check fails (e.g. a Dependabot
+      # PR that bumps a GitHub Action to a version not on the ASF allowlist).
+      required_status_checks:
+        contexts:
+          - asf-allowlist-check
   custom_subjects:
     new_pr: "[PR] {title} ({repository})"
     close_pr: "Re: [PR] {title} ({repository})"

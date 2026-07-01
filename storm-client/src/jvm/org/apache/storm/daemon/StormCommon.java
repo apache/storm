@@ -360,6 +360,20 @@ public class StormCommon {
         topology.put_to_bolts(EVENTLOGGER_COMPONENT_ID, eventLoggerBolt);
     }
 
+    public static void addUpstreamFeedback(Map<String, Object> conf, StormTopology topology) {
+        // Only invoked when hasUpstreamFeedback(conf) is true, so declare the feedback stream on every
+        // component unconditionally. The schema must match the tuple emitted by
+        // Executor.buildUpstreamFeedbackTuple: [TaskInfo, EwmaFeedbackRecord].
+        for (Object component : allComponents(topology).values()) {
+            ComponentCommon common = getComponentCommon(component);
+            common.put_to_streams(Constants.FEEDBACK_STREAM_ID, Thrift.outputFields(upstreamFeedbackFields()));
+        }
+    }
+
+    public static List<String> upstreamFeedbackFields() {
+        return Arrays.asList("task-info", "feedback");
+    }
+
     @SuppressWarnings("unchecked")
     public static Map<String, Bolt> metricsConsumerBoltSpecs(Map<String, Object> conf, StormTopology topology) {
         Map<String, Bolt> metricsConsumerBolts = new HashMap<>();
@@ -429,6 +443,9 @@ public class StormCommon {
         outputStreams.put(Constants.SYSTEM_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("rate_secs")));
         outputStreams.put(Constants.SYSTEM_FLUSH_STREAM_ID, Thrift.outputFields(Arrays.asList()));
         outputStreams.put(Constants.METRICS_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("interval")));
+        if (ConfigUtils.upstreamFeedbackEnable(conf)) {
+            outputStreams.put(Constants.FEEDBACK_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("interval")));
+        }
 
         Map<String, Object> boltConf = new HashMap<>();
         boltConf.put(Config.TOPOLOGY_TASKS, 0);
@@ -462,6 +479,10 @@ public class StormCommon {
     public static boolean hasEventLoggers(Map<String, Object> topoConf) {
         Object eventLoggerNum = topoConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS);
         return eventLoggerNum == null || ObjectReader.getInt(eventLoggerNum) > 0;
+    }
+
+    public static boolean hasUpstreamFeedback(Map<String, Object> topoConf) {
+        return ConfigUtils.upstreamFeedbackEnable(topoConf);
     }
 
     public static int numStartExecutors(Object component) throws InvalidTopologyException {
@@ -537,6 +558,9 @@ public class StormCommon {
         addAcker(topoConf, ret);
         if (hasEventLoggers(topoConf)) {
             addEventLogger(topoConf, ret);
+        }
+        if (hasUpstreamFeedback(topoConf)) {
+            addUpstreamFeedback(topoConf, ret);
         }
         addMetricComponents(topoConf, ret);
         addSystemComponents(topoConf, ret);

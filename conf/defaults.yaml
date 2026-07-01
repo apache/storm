@@ -293,6 +293,8 @@ topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.stats.ewma.enable: false
 topology.stats.ewma.smoothing.factor: 0.0625
+topology.upstream.feedback.freq.secs: 10
+topology.upstream.feedback.enable: false
 topology.builtin.metrics.bucket.size.secs: 60
 topology.fall.back.on.java.serialization: false
 topology.worker.childopts: null
@@ -344,6 +346,7 @@ topology.transfer.batch.size: 1       # can be no larger than half of `topology.
 
 topology.executor.receive.buffer.size: 32768  # size of recv queue for spouts & bolts. Will be internally rounded up to next power of 2 (if not already a power of 2)
 topology.producer.batch.size: 1               # can be no larger than half of `topology.executor.receive.buffer.size`
+topology.producer.batch.dynamic: false        # when true, the producer batch size adapts between 1 and topology.producer.batch.size to reduce latency under light load. No effect unless topology.producer.batch.size > 1.
 
 topology.batch.flush.interval.millis: 1  # Flush tuples are disabled if this is set to 0 or if (topology.producer.batch.size=1 and topology.transfer.batch.size=1).
 topology.spout.recvq.skips: 3  # Check recvQ once every N invocations of Spout's nextTuple() [when ACKs disabled]

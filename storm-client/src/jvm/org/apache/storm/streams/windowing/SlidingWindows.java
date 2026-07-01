@@ -104,6 +104,9 @@ public class SlidingWindows<L, I> extends BaseWindow<L, I> {
      * org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field. It must be defined on a per-component basis, and in
      * conjunction with the {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
      *
+     * <p>The late tuple is emitted as a {@link org.apache.storm.tuple.DetachedTuple}, a serializable copy of the original
+     * tuple detached from the topology context, so it can be consumed by bolts running in other workers.
+     *
      * @param streamId the name of the stream used to emit late tuples on
      */
     public SlidingWindows<L, I> withLateTupleStream(String streamId) {

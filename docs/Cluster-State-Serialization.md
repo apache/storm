@@ -122,3 +122,34 @@ non-Thrift Java-serialization variant).
 The zstd codec is provided by Apache Commons Compress
 (`org.apache.commons:commons-compress`) backed by the `com.github.luben:zstd-jni`
 native binding.
+
+## Heartbeat timestamps and the year 2038
+
+Since STORM-7897, the `time_secs` field of `ClusterWorkerHeartbeat`,
+`SupervisorWorkerHeartbeat` and `LSWorkerHeartbeat` is a 64-bit integer
+(`i64`), and all heartbeat writers and timeout checks use the long-based
+clock (`Time.currentTimeSecsLong()` / `Time.deltaSecsLong(...)`). Earlier
+releases carried these timestamps as `i32` seconds, which overflows on
+2038-01-19T03:14:07Z and would have caused Nimbus to treat live workers
+as dead.
+
+`uptime_secs` fields remain `i32`: they are relative durations, not
+absolute timestamps. `Time.currentTimeSecs()` and `Time.deltaSecs(int)`
+are deprecated but retained for such relative-duration callers.
+
+### Upgrade implications
+
+Thrift tags `i32` and `i64` values differently on the wire, so heartbeat
+blobs written by a pre-upgrade daemon do **not** deserialize under the
+new schema: the reader skips the mistyped field and the blob then fails
+required-field validation with a `TProtocolException`. In practice:
+
+1. **A full-cluster upgrade is required.** Do not run a mixed-version
+   cluster across Nimbus, Supervisors and workers: heartbeats do not
+   round-trip between the old and new schema in either direction.
+2. **In-flight heartbeats are dropped once, then self-heal.** Nimbus
+   times workers out by *receipt* time, so a dropped heartbeat is
+   replaced on the next report interval; supervisors rewrite their
+   on-disk `LSWorkerHeartbeat` local state the same way. Expect at most
+   one report cycle of staleness around the restart, which is within the
+   normal tolerance of a full-cluster bounce.

@@ -93,6 +93,43 @@ public class TestConfigValidate {
     }
 
     @Test
+    public void upstreamFeedbackRequiresEwmaTest() {
+        // Cross-field rule: enabling feedback without EWMA stats is a no-op, so it is rejected.
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, true);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_ENABLE, false);
+        IllegalArgumentException ex =
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+        assertTrue(ex.getMessage().contains(Config.TOPOLOGY_STATS_EWMA_ENABLE),
+            "message should name the required key: " + ex.getMessage());
+    }
+
+    @Test
+    public void upstreamFeedbackEwmaAbsentTest() {
+        // EWMA defaults to false, so an absent key is still the rejected no-op combination.
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, true);
+        assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+    }
+
+    @Test
+    public void validUpstreamFeedbackTest() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, true);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_ENABLE, true);
+        ConfigValidation.validateFields(conf);
+    }
+
+    @Test
+    public void upstreamFeedbackDisabledTest() {
+        // Feedback off => no requirement on EWMA.
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, false);
+        conf.put(Config.TOPOLOGY_STATS_EWMA_ENABLE, false);
+        ConfigValidation.validateFields(conf);
+    }
+
+    @Test
     public void validConfigTest() {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG, 5);

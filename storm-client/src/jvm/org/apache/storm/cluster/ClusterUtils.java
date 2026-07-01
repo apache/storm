@@ -262,7 +262,7 @@ public class ClusterUtils {
         Map<ExecutorInfo, ExecutorStats> executorStatsMap = workerHeartbeat.get_executor_stats();
         for (ExecutorInfo executor : executors) {
             if (executorStatsMap.containsKey(executor)) {
-                int time = workerHeartbeat.get_time_secs();
+                long time = workerHeartbeat.get_time_secs();
                 int uptime = workerHeartbeat.get_uptime_secs();
                 ExecutorStats executorStats = workerHeartbeat.get_executor_stats().get(executor);
                 ExecutorBeat executorBeat = new ExecutorBeat(time, uptime, executorStats);
