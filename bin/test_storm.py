@@ -66,6 +66,19 @@ class Test(unittest.TestCase):
         expected = ":".join(extrajars)
         self.assertEqual(s[-len(expected):], expected)
 
+    def test_get_classpath_includes_lib_common(self):
+        extrajars = []
+        # When lib-common exists, it is included on both the daemon and the client classpaths.
+        storm.STORM_COMMON_LIB_DIR = storm.STORM_BIN_DIR
+        expected = os.path.join(storm.STORM_BIN_DIR, "*")
+        for client in (True, False):
+            cp = storm.get_classpath(extrajars, daemon=True, client=client)
+            self.assertIn(expected, cp.split(os.pathsep))
+        # When it does not exist, it contributes nothing (backward compatible with older layouts).
+        storm.STORM_COMMON_LIB_DIR = os.path.join(storm.STORM_DIR, "no-such-lib-common")
+        cp = storm.get_classpath(extrajars, daemon=True, client=False)
+        self.assertNotIn(os.path.join(storm.STORM_COMMON_LIB_DIR, "*"), cp.split(os.pathsep))
+
     def test_resolve_dependencies(self):
         artifacts = "org.apache.commons.commons-api"
         artifact_repositories = "maven-central"
