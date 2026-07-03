@@ -14,6 +14,7 @@ package org.apache.storm;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import org.apache.storm.coordination.CoordinatedBolt;
 
 
@@ -30,6 +31,51 @@ public class Constants {
     public static final String METRICS_TICK_STREAM_ID = "__metrics_tick";
     public static final String FEEDBACK_STREAM_ID = "__feedback";
     public static final String FEEDBACK_TICK_STREAM_ID = "__feedback_tick";
+
+    /**
+     * System streams carrying low-volume, time-driven control signals that may be routed to the executor receive
+     * queue's control lane (see {@code Config.TOPOLOGY_EXECUTOR_RECEIVE_CONTROL_QUEUE_ENABLE}). Tuples on these
+     * streams are wall-clock signals with no ordering contract against data tuples, so delivering them ahead of
+     * co-enqueued data tuples is safe, and dropping one when the control lane is full is self-healing because the
+     * next one arrives within the signal's period.
+     */
+    public static final Set<String> SYSTEM_CONTROL_STREAM_IDS =
+            Set.of(SYSTEM_TICK_STREAM_ID, SYSTEM_FLUSH_STREAM_ID, METRICS_TICK_STREAM_ID, FEEDBACK_STREAM_ID, FEEDBACK_TICK_STREAM_ID);
+
+    private static final long CONTROL_STREAM_LENGTH_MASK;
+    private static final long CONTROL_STREAM_THIRD_CHAR_MASK;
+
+    static {
+        long lengthMask = 0;
+        long thirdCharMask = 0;
+        for (String id : SYSTEM_CONTROL_STREAM_IDS) {
+            if (id.length() < 3 || id.length() >= 64) {
+                // fail fast
+                throw new IllegalStateException("control stream id length must be in [3, 63]: " + id);
+            }
+            lengthMask |= 1L << id.length();
+            thirdCharMask |= 1L << (id.charAt(2) & 63);
+        }
+        CONTROL_STREAM_LENGTH_MASK = lengthMask;
+        CONTROL_STREAM_THIRD_CHAR_MASK = thirdCharMask;
+    }
+
+    public static boolean isControlStreamId(String streamId) {
+        // Called per inbound tuple on the ingress hot paths when the control lane is enabled, so avoid
+        // hashing the string (remote stream ids are freshly deserialized, their hashCode is not cached)
+        if (streamId == null) {
+            return false;
+        }
+        int len = streamId.length();
+        if (len >= 64 || ((CONTROL_STREAM_LENGTH_MASK >>> len) & 1L) == 0) {
+            return false;
+        }
+        if (streamId.charAt(0) != '_' || streamId.charAt(1) != '_'
+                || ((CONTROL_STREAM_THIRD_CHAR_MASK >>> (streamId.charAt(2) & 63)) & 1L) == 0) {
+            return false;
+        }
+        return SYSTEM_CONTROL_STREAM_IDS.contains(streamId);
+    }
 
     public static final Object TOPOLOGY = "topology";
     public static final String SYSTEM_TOPOLOGY = "system-topology";

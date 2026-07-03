@@ -31,10 +31,15 @@ public class JCQueueMetrics implements Closeable {
     private final RateTracker arrivalsTracker = new RateTracker(10000, 10);
     private final RateTracker insertFailuresTracker = new RateTracker(10000, 10);
     private final AtomicLong droppedMessages = new AtomicLong(0);
+    private final AtomicLong droppedControlMessages = new AtomicLong(0);
 
+    /**
+     * Creates and registers the queue gauges. {@code controlQ} may be null when the queue has no control lane;
+     * the control-lane gauges are then not registered.
+     */
     public JCQueueMetrics(String metricNamePrefix, String topologyId, String componentId, int taskId, int port,
                           StormMetricRegistry metricRegistry, MpscArrayQueue<Object> receiveQ,
-                          MpscUnboundedArrayQueue<Object> overflowQ) {
+                          MpscUnboundedArrayQueue<Object> overflowQ, MpscArrayQueue<Object> controlQ) {
 
         Gauge<Integer> cap = new Gauge<Integer>() {
             @Override
@@ -103,6 +108,14 @@ public class JCQueueMetrics implements Closeable {
         metricRegistry.gauge(metricNamePrefix + "-insert_failures", insertFailures, topologyId, componentId, taskId, port);
         metricRegistry.gauge(metricNamePrefix + "-dropped_messages", dropped, topologyId, componentId, taskId, port);
         metricRegistry.gauge(metricNamePrefix + "-overflow", overflow, topologyId, componentId, taskId, port);
+
+        if (controlQ != null) {
+            Gauge<Integer> controlPop = controlQ::size;
+            Gauge<Long> controlDropped = droppedControlMessages::get;
+
+            metricRegistry.gauge(metricNamePrefix + "-control_population", controlPop, topologyId, componentId, taskId, port);
+            metricRegistry.gauge(metricNamePrefix + "-control_dropped_messages", controlDropped, topologyId, componentId, taskId, port);
+        }
     }
 
     public void notifyArrivals(long counts) {
@@ -115,6 +128,10 @@ public class JCQueueMetrics implements Closeable {
 
     public void notifyDroppedMsg() {
         droppedMessages.incrementAndGet();
+    }
+
+    public void notifyControlMsgDrop() {
+        droppedControlMessages.incrementAndGet();
     }
 
     @Override

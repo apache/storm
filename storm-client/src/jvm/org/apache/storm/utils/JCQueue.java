@@ -38,6 +38,8 @@ public class JCQueue implements Closeable {
     private final MpscArrayQueue<Object> recvQueue;
     // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
     private final MpscUnboundedArrayQueue<Object> overflowQ;
+    // dedicated lane for low-volume control tuples (flush/tick/metrics tick/feedback), drained before recvQueue
+    private final MpscArrayQueue<Object> controlQueue;
     private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow limiting.
     private final int producerBatchSz;
     private final boolean dynamicBatch;
@@ -58,15 +60,23 @@ public class JCQueue implements Closeable {
     public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
                    IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
                    int port, StormMetricRegistry metricRegistry, boolean dynamicBatch) {
+        this(queueName, metricNamePrefix, size, overflowLimit, producerBatchSz, backPressureWaitStrategy, topologyId, componentId,
+                taskIds, port, metricRegistry, dynamicBatch, 0);
+    }
+
+    public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
+                   IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
+                   int port, StormMetricRegistry metricRegistry, boolean dynamicBatch, int controlQueueSize) {
         this.queueName = queueName;
         this.dynamicBatch = dynamicBatch;
         this.overflowLimit = overflowLimit;
         this.recvQueue = new MpscArrayQueue<>(size);
         this.overflowQ = new MpscUnboundedArrayQueue<>(size);
+        this.controlQueue = (controlQueueSize > 0) ? new MpscArrayQueue<>(controlQueueSize) : null;
 
         for (Integer taskId : taskIds) {
             this.jcqMetrics.add(new JCQueueMetrics(metricNamePrefix, topologyId, componentId, taskId, port,
-                    metricRegistry, recvQueue, overflowQ));
+                    metricRegistry, recvQueue, overflowQ, controlQueue));
         }
 
         //The batch size can be no larger than half the full recvQueue size, to avoid contention issues.
@@ -105,9 +115,14 @@ public class JCQueue implements Closeable {
     }
 
     public int size() {
-        return recvQueue.size() + overflowQ.size();
+        int controlCount = (controlQueue == null) ? 0 : controlQueue.size();
+        return controlCount + recvQueue.size() + overflowQ.size();
     }
 
+    /**
+     * Load of the data plane only. The control lane and overflow lane are deliberately excluded so that load-aware groupings
+     * (e.g. LoadAwareShuffleGrouping) are unaffected by pending control tuples.
+     */
     public double getQueueLoad() {
         return ((double) recvQueue.size()) / recvQueue.capacity();
     }
@@ -116,6 +131,19 @@ public class JCQueue implements Closeable {
      * Non blocking. Returns immediately if Q is empty. Returns number of elements consumed from Q.
      */
     private int consumeImpl(Consumer consumer, ExitCondition exitCond) throws InterruptedException {
+        int controlDrainCount = 0;
+        if (controlQueue != null) {
+            // drain the control lane first: it is small and bounded, so it cannot starve the data plane
+            while (exitCond.keepRunning()) {
+                Object tuple = controlQueue.poll();
+                if (tuple == null) {
+                    break;
+                }
+                consumer.accept(tuple);
+                ++controlDrainCount;
+            }
+        }
+
         int drainCount = 0;
         while (exitCond.keepRunning()) {
             Object tuple = recvQueue.poll();
@@ -133,7 +161,7 @@ public class JCQueue implements Closeable {
             ++overflowDrainCount;
             consumer.accept(tuple);
         }
-        int total = drainCount + overflowDrainCount;
+        int total = controlDrainCount + drainCount + overflowDrainCount;
         if (total > 0) {
             consumer.flush();
         }
@@ -214,6 +242,32 @@ public class JCQueue implements Closeable {
      */
     public boolean tryPublishDirect(Object obj) {
         return tryPublishInternal(obj);
+    }
+
+    /**
+     * Whether this queue has a dedicated control lane for low-volume control tuples.
+     */
+    public boolean isControlLaneEnabled() {
+        return controlQueue != null;
+    }
+
+    /**
+     * Non-blocking, un-batched write to the control lane, exempt from backpressure. Falls back to an un-batched
+     * write to the recvQueue (same as {@link #tryPublishDirect(Object)}) when the control lane is disabled.
+     * Returns false if the target queue is full; a failed control publish is dropped by the caller and counted
+     * via the control drop metric, which is safe because control signals are periodic and self-healing.
+     */
+    public boolean tryPublishControl(Object obj) {
+        if (controlQueue == null) {
+            return tryPublishInternal(obj);
+        }
+        if (controlQueue.offer(obj)) {
+            return true;
+        }
+        for (JCQueueMetrics jcQueueMetric : jcqMetrics) {
+            jcQueueMetric.notifyControlMsgDrop();
+        }
+        return false;
     }
 
     /**
