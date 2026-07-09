@@ -54,9 +54,9 @@ public class TopologySpoutLag {
             BOOTSTRAP_CONFIG, SECURITY_PROTOCOL_CONFIG));
     private static final Logger LOGGER = LoggerFactory.getLogger(TopologySpoutLag.class);
 
-    // The storm-kafka-monitor jars are not bundled in the binary distribution; operators install them
-    // on demand (bin/storm-kafka-monitor-fetch). Log the "not installed" hint at most once to avoid
-    // spamming the UI logs, which poll the lag endpoint periodically.
+    // The storm-kafka-monitor jars ship only in the full binary distribution; users of the lite
+    // distribution install them on demand (bin/storm-kafka-monitor-fetch). Log the "not installed"
+    // hint at most once to avoid spamming the UI logs, which poll the lag endpoint periodically.
     private static volatile boolean warnedMonitorMissing = false;
 
     public static Map<String, Map<String, Object>> lag(StormTopology stormTopology, Map<String, Object> topologyConf) {
@@ -76,8 +76,8 @@ public class TopologySpoutLag {
 
     /**
      * Checks whether the storm-kafka-monitor jars (invoked by bin/storm-kafka-monitor) are present.
-     * They are not bundled in the binary distribution and are fetched on demand, so the UI must
-     * degrade gracefully when they are absent rather than failing the lag shell-out.
+     * They ship only in the full binary distribution and are fetched on demand on the lite one, so
+     * the UI must degrade gracefully when they are absent rather than failing the lag shell-out.
      *
      * @return true if the monitor appears installed, or if STORM_BASE_DIR is unknown (in which case
      *     the legacy behavior of attempting the shell-out is preserved).
@@ -191,8 +191,9 @@ public class TopologySpoutLag {
             // if commands contains one or more null value, spout is compiled with lower version of storm-kafka-client
             if (!commands.contains(null) && !isKafkaMonitorInstalled()) {
                 errorMsg = "Kafka spout lag monitoring is unavailable because the storm-kafka-monitor "
-                    + "jars are not installed. They are no longer bundled in the binary distribution; "
-                    + "run 'bin/storm-kafka-monitor-fetch' on the UI host (and restart the UI) to enable it.";
+                    + "jars are not installed. They ship only in the full binary distribution; on the "
+                    + "lite distribution run 'bin/storm-kafka-monitor-fetch' on the UI host (and restart "
+                    + "the UI) to enable it.";
                 if (!warnedMonitorMissing) {
                     warnedMonitorMissing = true;
                     LOGGER.info(errorMsg);

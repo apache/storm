@@ -20,9 +20,9 @@
 # into the daemon classpath, so Nimbus/Supervisor can populate and renew HDFS
 # and HBase delegation tokens on a secure (Kerberos) cluster.
 #
-# These jars are intentionally NOT bundled in the binary distribution to keep it
-# small; only secure-Hadoop deployments need them. See
-# external/storm-autocreds/README.md for details.
+# These jars ship only in the full binary distribution; the lite distribution
+# (apache-storm-x.x.x-lite.tar.gz) omits them because only secure-Hadoop
+# deployments need them. See external/storm-autocreds/README.md for details.
 
 set -euo pipefail
 

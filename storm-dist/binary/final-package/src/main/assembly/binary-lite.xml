@@ -16,17 +16,22 @@
 -->
 
 <!--
-    The full binary distribution: everything in common.xml plus the optional
-    plugins that need heavyweight third-party dependencies (Hadoop/HBase for
-    storm-autocreds, the Kafka client for storm-kafka-monitor).
+    The "storm-lite" binary distribution: identical to the full distribution
+    (binary.xml) except that the optional plugins carrying heavyweight
+    third-party dependencies are not bundled:
 
-    The storm-lite distribution (binary-lite.xml) omits those jars and ships only
-    their READMEs; see bin/storm-autocreds-fetch and bin/storm-kafka-monitor-fetch.
+      - storm-autocreds     (Hadoop/HBase client tree, secure clusters only)
+      - storm-kafka-monitor (Kafka client, only for spout lag in the UI)
+
+    Only their READMEs ship, consistent with the other external/* connectors.
+    Operators install them on demand with bin/storm-autocreds-fetch and
+    bin/storm-kafka-monitor-fetch, or use the full distribution instead.
+    The UI degrades gracefully when storm-kafka-monitor is absent.
 -->
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
-    <id>bin</id>
+    <id>lite</id>
     <formats>
         <format>tar.gz</format>
         <format>zip</format>
@@ -37,14 +42,7 @@
     </componentDescriptors>
 
     <fileSets>
-        <!-- storm-kafka-monitor: bundled here so Kafka spout lag works out of the box. -->
-        <fileSet>
-            <directory>${project.basedir}/../storm-kafka-monitor-bin/target/kafka-monitor/kafka-monitor/lib-kafka-monitor</directory>
-            <outputDirectory>lib-tools/storm-kafka-monitor</outputDirectory>
-            <includes>
-                <include>*jar</include>
-            </includes>
-        </fileSet>
+        <!-- README only; the jars are fetched on demand (bin/storm-kafka-monitor-fetch). -->
         <fileSet>
             <directory>${project.basedir}/../../../external/storm-kafka-monitor</directory>
             <outputDirectory>external/storm-kafka-monitor</outputDirectory>
@@ -53,15 +51,7 @@
             </includes>
         </fileSet>
 
-        <!-- Autocred plugins: bundled here so secure (Kerberos) clusters can enable them
-             by copying the jars onto the daemon classpath without fetching anything. -->
-        <fileSet>
-            <directory>${project.basedir}/../storm-autocreds-bin/target/autocreds/autocreds/lib-autocreds</directory>
-            <outputDirectory>external/storm-autocreds</outputDirectory>
-            <includes>
-                <include>*jar</include>
-            </includes>
-        </fileSet>
+        <!-- README only; the jars are fetched on demand (bin/storm-autocreds-fetch). -->
         <fileSet>
             <directory>${project.basedir}/../../../external/storm-autocreds</directory>
             <outputDirectory>external/storm-autocreds</outputDirectory>

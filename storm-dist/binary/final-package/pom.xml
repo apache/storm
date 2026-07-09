@@ -114,21 +114,43 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
+                    <!-- Full distribution: apache-storm-${version}.tar.gz / .zip -->
                     <execution>
+                        <id>bin</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/main/assembly/binary.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                    <!--
+                        Lean "storm-lite" distribution: apache-storm-${version}-lite.tar.gz / .zip
+                        (attached with the "lite" classifier). Same contents as the full
+                        distribution minus the bundled storm-autocreds and storm-kafka-monitor jars.
+                    -->
+                    <execution>
+                        <id>lite</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/main/assembly/binary-lite.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
                     <attach>true</attach>
                     <tarLongFileMode>posix</tarLongFileMode>
                     <runOnlyAtExecutionRoot>false</runOnlyAtExecutionRoot>
-                    <descriptors>
-                        <descriptor>${project.basedir}/src/main/assembly/binary.xml</descriptor>
-                    </descriptors>
-                    <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
             </plugin>
             <plugin>

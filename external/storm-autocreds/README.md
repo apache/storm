@@ -12,20 +12,31 @@ HDFS or HBase cluster without distributing keytabs to every worker host.
 See `docs/SECURITY.md` ("Automatic Credentials Push and Renewal") for the full
 design.
 
-## Why the jars are not bundled
+## Which distribution has the jars?
 
-Because these plugins run on the **daemon** classpath (Nimbus/Supervisor) and
-pull in the full Hadoop and HBase client dependency trees, they are **not**
-shipped inside the binary distribution — only secure-Hadoop deployments need
-them, and bundling them would bloat the distribution for everyone. This is the
-same convention used by the other `external/*` connectors.
+These plugins run on the **daemon** classpath (Nimbus/Supervisor) and pull in the
+full Hadoop and HBase client dependency trees, which is a large amount of weight
+that only secure-Hadoop deployments need. Therefore:
+
+| Distribution | storm-autocreds jars |
+|---|---|
+| `apache-storm-x.x.x.tar.gz` (full) | bundled under `external/storm-autocreds` |
+| `apache-storm-x.x.x-lite.tar.gz` (lite) | not bundled, README only |
+
+If you use the **lite** distribution, install the jars with the helper script
+below (or just use the full distribution).
 
 ## Installing
 
 The plugins must be present on the **daemon** classpath, i.e. in
-`$STORM_HOME/extlib-daemon` on Nimbus and the Supervisors.
+`$STORM_HOME/extlib-daemon` on Nimbus and the Supervisors. With the full
+distribution, copy them from `external/storm-autocreds`:
 
-### Option 1 — use the helper script (recommended)
+```bash
+cp $STORM_HOME/external/storm-autocreds/*.jar $STORM_HOME/extlib-daemon/
+```
+
+### Option 1 — use the helper script (recommended for the lite distribution)
 
 The distribution ships a helper that resolves `storm-autocreds` and its runtime
 dependencies from Maven Central and copies them into `extlib-daemon`:

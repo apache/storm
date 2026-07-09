@@ -4,14 +4,20 @@ Tool to query kafka spout lags and show in Storm UI
 
 ## Installation
 
-The storm-kafka-monitor jars (and their Kafka client dependencies) are **not**
-bundled in the binary distribution to keep it small — they are only needed to
-display Kafka spout lag in the UI or to run the `storm-kafka-monitor` command.
+The storm-kafka-monitor jars (and their Kafka client dependencies) are only
+needed to display Kafka spout lag in the UI or to run the `storm-kafka-monitor`
+command, so they are bundled only in the full distribution:
+
+| Distribution | storm-kafka-monitor jars |
+|---|---|
+| `apache-storm-x.x.x.tar.gz` (full) | bundled under `lib-tools/storm-kafka-monitor`, works out of the box |
+| `apache-storm-x.x.x-lite.tar.gz` (lite) | not bundled, README only |
+
 The Storm UI degrades gracefully when they are absent (no lag is shown and a
 hint is logged once).
 
-To enable it, install the jars on the UI host with the helper script, then
-restart the UI:
+With the **lite** distribution, install the jars on the UI host with the helper
+script, then restart the UI:
 
 ```bash
 $STORM_HOME/bin/storm-kafka-monitor-fetch

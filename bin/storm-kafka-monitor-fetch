@@ -20,10 +20,10 @@
 # into lib-tools/storm-kafka-monitor, enabling the "Kafka spout lag" display in
 # the Storm UI and the bin/storm-kafka-monitor command.
 #
-# These jars are intentionally NOT bundled in the binary distribution to keep it
-# small; they are only needed when running Kafka spouts and wanting lag info. The
-# UI degrades gracefully when they are absent. See
-# external/storm-kafka-monitor/README.md for details.
+# These jars ship only in the full binary distribution; the lite distribution
+# (apache-storm-x.x.x-lite.tar.gz) omits them because they are only needed when
+# running Kafka spouts and wanting lag info. The UI degrades gracefully when they
+# are absent. See external/storm-kafka-monitor/README.md for details.
 
 set -euo pipefail
 

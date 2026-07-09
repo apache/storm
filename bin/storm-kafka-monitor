@@ -49,7 +49,7 @@ if [ -z "$JAVA_HOME" ]; then
 else
   JAVA="$JAVA_HOME/bin/java"
 fi
-# The storm-kafka-monitor jars are not bundled in the distribution; they are fetched on demand.
+# The storm-kafka-monitor jars ship only in the full distribution; on the lite one they are fetched on demand.
 KAFKA_MONITOR_LIB="$STORM_BASE_DIR/lib-tools/storm-kafka-monitor"
 if ! ls "$KAFKA_MONITOR_LIB"/*.jar >/dev/null 2>&1; then
   echo "storm-kafka-monitor is not installed (no jars in $KAFKA_MONITOR_LIB)." >&2
