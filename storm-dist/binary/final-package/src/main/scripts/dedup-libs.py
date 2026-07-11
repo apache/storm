@@ -27,9 +27,20 @@
 #   worker classpath = lib-common (+ lib-worker, now empty)
 #
 # Only byte-identical jars (same name AND same sha-256) are de-duplicated, so a
-# version mismatch is never silently merged. Tool classpaths (lib-tools/*,
+# version mismatch is never silently merged. If a jar with the same name but a
+# DIFFERENT sha-256 exists on both classpaths the script fails the build: both
+# copies would otherwise land on the daemon classpath, with the lib-common copy
+# silently shadowing the lib one. All conflicts are detected in a read-only
+# pass BEFORE any file is moved or removed, so a failing run leaves the
+# distribution tree exactly as it found it. Tool classpaths (lib-tools/*,
 # lib-webapp) are intentionally left untouched: their wrappers do not include
 # lib-common, so their jars must stay in place.
+#
+# The summary also reports the number of worker-only jars (jars promoted to
+# lib-common with no same-name counterpart in lib). The worker classpath is a
+# strict subset of the daemon classpath in a single-reactor build, so this
+# count is expected to be 0; a non-zero value is an early warning that the two
+# classpaths have drifted apart.
 
 import hashlib
 import os
@@ -56,40 +67,90 @@ def dedup(dist_root):
     worker = os.path.join(dist_root, "lib-worker")
     common = os.path.join(dist_root, "lib-common")
 
-    # Absorb the worker jars into lib-common. This handles two layouts:
+    # Two supported layouts:
     #  - exploded distribution: lib-worker is present, lib-common is created here;
     #  - staged build:          lib-common is already populated, lib-worker is absent.
     worker_jars = jars(worker)
+    common_jars = jars(common)
+    lib_jars = jars(lib)
+
+    if not worker_jars and not common_jars:
+        print(f"dedup-libs: no jars in {common} (and none in {worker}); nothing to do")
+        return 0
+
+    # ---- Phase 1: read-only conflict detection. Hash each jar (at most once)
+    # and collect every same-name/different-sha pair BEFORE anything is moved
+    # or removed, so a failing run leaves the tree exactly as it found it.
+    hashes = {}
+
+    def digest(path):
+        if path not in hashes:
+            hashes[path] = sha256(path)
+        return hashes[path]
+
+    # Same-name jars whose sha-256 differs between two classpath dirs. Each
+    # entry is a fully formatted message naming the jar and both digests.
+    conflicts = []
+    for name in sorted(set(worker_jars) & set(common_jars)):
+        if digest(worker_jars[name]) != digest(common_jars[name]):
+            conflicts.append(f"{name}: lib-worker sha-256 {digest(worker_jars[name])} "
+                             f"!= lib-common sha-256 {digest(common_jars[name])}")
+
+    # The jar set lib-common will hold after absorbing lib-worker. On a
+    # worker-vs-common conflict the winner is ambiguous, but we fail anyway.
+    merged = dict(common_jars)
+    for name, path in worker_jars.items():
+        merged.setdefault(name, path)
+
+    lib_duplicates = []
+    worker_only = 0
+    for name, merged_copy in sorted(merged.items()):
+        lib_copy = lib_jars.get(name)
+        if not lib_copy:
+            # No same-name counterpart in lib: this jar is worker-only. Expected
+            # to never happen in a single-reactor build; reported as a canary.
+            worker_only += 1
+        elif digest(lib_copy) == digest(merged_copy):
+            # Byte-identical copy in the daemon lib dir; removable in phase 2.
+            lib_duplicates.append(lib_copy)
+        else:
+            # Same name, different bytes: the lib-common copy would silently
+            # shadow the lib copy on the daemon classpath. Fail the build.
+            other = "lib-common" if name in common_jars else "lib-worker"
+            conflicts.append(f"{name}: lib sha-256 {digest(lib_copy)} "
+                             f"!= {other} sha-256 {digest(merged_copy)}")
+
+    if conflicts:
+        for conflict in conflicts:
+            print(f"dedup-libs: ERROR: conflicting jar {conflict}", file=sys.stderr)
+        print(f"dedup-libs: ERROR: {len(conflicts)} jar(s) exist with the same name but different content "
+              "on the daemon (lib) and worker (lib-common/lib-worker) classpaths; "
+              "refusing to assemble a distribution with shadowed jars; no files were changed", file=sys.stderr)
+        return 1
+
+    # ---- Phase 2: mutation. No conflicts exist, so every same-name pair
+    # encountered below is known to be byte-identical.
     if worker_jars:
         os.makedirs(common, exist_ok=True)
         for name, src in sorted(worker_jars.items()):
             dst = os.path.join(common, name)
-            if not os.path.exists(dst):
-                shutil.move(src, dst)
-            else:
+            if os.path.exists(dst):
                 os.remove(src)
+            else:
+                shutil.move(src, dst)
         # lib-worker is now empty; remove it so the layout is unambiguous.
         if os.path.isdir(worker) and not os.listdir(worker):
             os.rmdir(worker)
 
-    common_jars = jars(common)
-    if not common_jars:
-        print(f"dedup-libs: no jars in {common} (and none in {worker}); nothing to do")
-        return 0
-
-    lib_jars = jars(lib)
+    # Drop the byte-identical copies from the daemon lib dir.
     reclaimed = 0
-    removed = 0
-    for name, common_copy in sorted(common_jars.items()):
-        # Drop the byte-identical copy from the daemon lib dir, if present.
-        lib_copy = lib_jars.get(name)
-        if lib_copy and os.path.exists(lib_copy) and sha256(lib_copy) == sha256(common_copy):
-            reclaimed += os.path.getsize(lib_copy)
-            os.remove(lib_copy)
-            removed += 1
+    for lib_copy in lib_duplicates:
+        reclaimed += os.path.getsize(lib_copy)
+        os.remove(lib_copy)
 
-    print(f"dedup-libs: lib-common has {len(common_jars)} jar(s); "
-          f"removed {removed} duplicate(s) from lib, reclaimed {reclaimed / (1024 * 1024):.1f} MB")
+    print(f"dedup-libs: lib-common has {len(merged)} jar(s); "
+          f"removed {len(lib_duplicates)} duplicate(s) from lib, reclaimed {reclaimed / (1024 * 1024):.1f} MB; "
+          f"{worker_only} worker-only jar(s) promoted to lib-common (expected 0)")
     return 0
 
 

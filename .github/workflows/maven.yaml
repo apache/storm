@@ -43,6 +43,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - name: Run distribution packaging script tests
+        run: python3 -B storm-dist/binary/final-package/src/main/scripts/test_dedup_libs.py
       - name: Ensure a clean state without storm artifacts
         run: rm -rf ~/.m2/repository/org/apache/storm
       - name: Build project (compile + install, skip tests)

@@ -167,4 +167,43 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>unix_py_tests</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- Run the dedup-libs.py unit tests before the script is used at prepare-package time. -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>python3-test-dedup-libs</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>python3</executable>
+                                    <workingDirectory>src/main/scripts</workingDirectory>
+                                    <arguments>
+                                        <argument>test_dedup_libs.py</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <PYTHONDONTWRITEBYTECODE>true</PYTHONDONTWRITEBYTECODE>
+                                    </environmentVariables>
+                                    <skip>${skipTests}</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
