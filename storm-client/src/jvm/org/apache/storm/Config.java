@@ -773,7 +773,12 @@ public class Config extends HashMap<String, Object> {
      * bounded while the data plane saturates. Control tuples are published to the lane without batching and without
      * participating in backpressure; if the lane is full they are dropped (and counted), which is safe because these
      * signals are periodic and the next one arrives within the signal's period. Ack and metrics payload streams are
-     * unaffected: they stay on the data path. Default value: false.
+     * unaffected: they stay on the data path.
+     *
+     * <p>Note that {@code __tick} tuples travel on the control lane. When this is enabled a {@code __tick} tuple may
+     * occasionally be dropped under sustained saturation rather than blocking until delivered as it does with the lane
+     * off. Bolts that rely on tick tuples for windowing or expiry logic must therefore tolerate an occasional missed
+     * tick; it is not only internal signals that may be dropped. Default value: false.
      */
     @IsBoolean
     public static final String TOPOLOGY_EXECUTOR_RECEIVE_CONTROL_QUEUE_ENABLE = "topology.executor.receive.control.queue.enable";

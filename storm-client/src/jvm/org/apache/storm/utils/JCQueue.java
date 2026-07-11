@@ -22,6 +22,8 @@ import java.io.Closeable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.shade.org.jctools.queues.MessagePassingQueue;
@@ -38,7 +40,8 @@ public class JCQueue implements Closeable {
     private final MpscArrayQueue<Object> recvQueue;
     // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
     private final MpscUnboundedArrayQueue<Object> overflowQ;
-    // dedicated lane for low-volume control tuples (flush/tick/metrics tick/feedback), drained before recvQueue
+    // dedicated lane for low-volume control tuples (flush/tick/metrics tick/feedback), drained before recvQueue.
+    // Like recvQueue, this lane is not drained on close(): any tuples still buffered at shutdown are discarded.
     private final MpscArrayQueue<Object> controlQueue;
     private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow limiting.
     private final int producerBatchSz;
@@ -49,6 +52,10 @@ public class JCQueue implements Closeable {
     private final ThreadLocal<DynamicBatchInserter> thdLocalDynamicBatcher = new ThreadLocal<DynamicBatchInserter>();
     private final IWaitStrategy backPressureWaitStrategy;
     private final String queueName;
+
+    // Throttle for the control-lane-full WARN so a stalled executor cannot flood the logs; log at most once per interval.
+    private static final long CONTROL_DROP_LOG_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(30);
+    private final AtomicLong lastControlDropLogNanos = new AtomicLong(Long.MIN_VALUE);
 
     public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
                    IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
@@ -267,7 +274,24 @@ public class JCQueue implements Closeable {
         for (JCQueueMetrics jcQueueMetric : jcqMetrics) {
             jcQueueMetric.notifyControlMsgDrop();
         }
+        maybeWarnControlDrop();
         return false;
+    }
+
+    // A full control lane means the consuming executor thread is stalled; surface it in the logs (rate-limited) and
+    // not only via the control_dropped_messages metric, which an operator may not be charting.
+    private void maybeWarnControlDrop() {
+        // Reads the clock on every invocation, but this is not a hot path: it runs only when a control tuple is
+        // dropped, and control tuples reach tryPublishControl only via the isControlStreamId guard (timer-driven
+        // tick/flush/metrics-tick/feedback signals). So drops are bounded by those signal periods (order of a few
+        // per second per queue even under a full stall), not by the data rate. A time-based throttle also has to
+        // read the clock to know the interval elapsed; on Linux nanoTime() is a vDSO read (no syscall/context switch).
+        long now = System.nanoTime();
+        long last = lastControlDropLogNanos.get();
+        if (now - last >= CONTROL_DROP_LOG_INTERVAL_NANOS && lastControlDropLogNanos.compareAndSet(last, now)) {
+            LOG.warn("Control lane full on queue '{}'; dropping control tuple. The consuming executor thread is likely "
+                    + "stalled. See the receive-queue-control_dropped_messages metric.", queueName);
+        }
     }
 
     /**

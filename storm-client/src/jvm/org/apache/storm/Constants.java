@@ -42,39 +42,10 @@ public class Constants {
     public static final Set<String> SYSTEM_CONTROL_STREAM_IDS =
             Set.of(SYSTEM_TICK_STREAM_ID, SYSTEM_FLUSH_STREAM_ID, METRICS_TICK_STREAM_ID, FEEDBACK_STREAM_ID, FEEDBACK_TICK_STREAM_ID);
 
-    private static final long CONTROL_STREAM_LENGTH_MASK;
-    private static final long CONTROL_STREAM_THIRD_CHAR_MASK;
-
-    static {
-        long lengthMask = 0;
-        long thirdCharMask = 0;
-        for (String id : SYSTEM_CONTROL_STREAM_IDS) {
-            if (id.length() < 3 || id.length() >= 64) {
-                // fail fast
-                throw new IllegalStateException("control stream id length must be in [3, 63]: " + id);
-            }
-            lengthMask |= 1L << id.length();
-            thirdCharMask |= 1L << (id.charAt(2) & 63);
-        }
-        CONTROL_STREAM_LENGTH_MASK = lengthMask;
-        CONTROL_STREAM_THIRD_CHAR_MASK = thirdCharMask;
-    }
-
     public static boolean isControlStreamId(String streamId) {
-        // Called per inbound tuple on the ingress hot paths when the control lane is enabled, so avoid
-        // hashing the string (remote stream ids are freshly deserialized, their hashCode is not cached)
-        if (streamId == null) {
-            return false;
-        }
-        int len = streamId.length();
-        if (len >= 64 || ((CONTROL_STREAM_LENGTH_MASK >>> len) & 1L) == 0) {
-            return false;
-        }
-        if (streamId.charAt(0) != '_' || streamId.charAt(1) != '_'
-                || ((CONTROL_STREAM_THIRD_CHAR_MASK >>> (streamId.charAt(2) & 63)) & 1L) == 0) {
-            return false;
-        }
-        return SYSTEM_CONTROL_STREAM_IDS.contains(streamId);
+        // All control stream ids start with "__"; the prefix check cheaply rejects the common data-stream
+        // case before falling through to the set lookup.
+        return streamId != null && streamId.startsWith("__") && SYSTEM_CONTROL_STREAM_IDS.contains(streamId);
     }
 
     public static final Object TOPOLOGY = "topology";

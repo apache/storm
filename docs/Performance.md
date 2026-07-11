@@ -46,6 +46,9 @@ saturates. Writes to the control lane are un-batched and never block: if the lan
 period. The ack streams and the `__metrics` payload stream are volume-proportional to the data plane and stay on the data path, so acking,
 `max.spout.pending` throttling and at-least-once semantics are unaffected. Note that enabling this delivers control tuples ahead of co-enqueued data
 tuples; the whitelisted streams are wall-clock signals with no ordering contract against data, so this is safe.
+Note also that `__tick` is one of these control streams, so the drop-when-full behavior applies to user-facing tick tuples too: with the lane
+enabled a `__tick` tuple may occasionally be dropped under sustained saturation instead of blocking until delivered. Bolts that rely on tick tuples
+for windowing or expiry logic must tolerate an occasional missed tick — it is not only internal signals that can be dropped.
 
 - `topology.executor.receive.control.buffer.size` (default `1024`) : The size of the control lane. Control traffic is low-volume, so the default is
 ample; like the other queue sizes it is internally rounded up to the next power of 2. The control lane is excluded from the queue load reported to
