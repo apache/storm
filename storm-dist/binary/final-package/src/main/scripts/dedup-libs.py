@@ -27,23 +27,32 @@
 #   worker classpath = lib-common (+ lib-worker, now empty)
 #
 # Only byte-identical jars (same name AND same sha-256) are de-duplicated, so a
-# version mismatch is never silently merged. If a jar with the same name but a
-# DIFFERENT sha-256 exists on both classpaths the script fails the build: both
-# copies would otherwise land on the daemon classpath, with the lib-common copy
-# silently shadowing the lib one. All conflicts are detected in a read-only
-# pass BEFORE any file is moved or removed, so a failing run leaves the
-# distribution tree exactly as it found it. Tool classpaths (lib-tools/*,
+# version mismatch is never silently merged. The script fails the build when
+# the two classpaths carry conflicting copies of an artifact, in either form:
+#  - same file name, different sha-256 (e.g. a patched rebuild), or
+#  - same Maven artifact, different version. The jars are named
+#    <artifactId>-<version>[-<classifier>].jar by maven-dependency-plugin, so a
+#    version bump changes the FILE NAME and a plain name comparison would let
+#    e.g. lib/foo-1.0.jar and lib-worker/foo-1.1.jar pass silently. Jars are
+#    therefore compared by their version-stripped artifact base name (the part
+#    before the first "-<digit>", the same heuristic Maven uses to start the
+#    version).
+# Either way both copies would land on the daemon classpath, with the
+# lib-common copy silently shadowing the lib one. All conflicts are detected in
+# a read-only pass BEFORE any file is moved or removed, so a failing run leaves
+# the distribution tree exactly as it found it. Tool classpaths (lib-tools/*,
 # lib-webapp) are intentionally left untouched: their wrappers do not include
 # lib-common, so their jars must stay in place.
 #
 # The summary also reports the number of worker-only jars (jars promoted to
-# lib-common with no same-name counterpart in lib). The worker classpath is a
-# strict subset of the daemon classpath in a single-reactor build, so this
-# count is expected to be 0; a non-zero value is an early warning that the two
-# classpaths have drifted apart.
+# lib-common whose artifact does not appear in lib at all). The worker
+# classpath is a strict subset of the daemon classpath in a single-reactor
+# build, so this count is expected to be 0; a non-zero value is an early
+# warning that the two classpaths have drifted apart.
 
 import hashlib
 import os
+import re
 import shutil
 import sys
 
@@ -60,6 +69,25 @@ def jars(directory):
     if not os.path.isdir(directory):
         return {}
     return {f: os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(".jar")}
+
+
+def artifact_base(name):
+    """Version-stripped artifact base of a maven-built jar file name.
+
+    "commons-io-2.13.0.jar" -> "commons-io"; the version starts at the first
+    "-" that is followed by a digit (Maven artifactId segments do not start
+    with a digit). A name without such a separator is returned as-is (minus
+    the .jar suffix)."""
+    stem = name[: -len(".jar")]
+    match = re.match(r"(.+?)-\d", stem)
+    return match.group(1) if match else stem
+
+
+def by_base(jar_names):
+    bases = {}
+    for name in jar_names:
+        bases.setdefault(artifact_base(name), []).append(name)
+    return bases
 
 
 def dedup(dist_root):
@@ -88,13 +116,21 @@ def dedup(dist_root):
             hashes[path] = sha256(path)
         return hashes[path]
 
-    # Same-name jars whose sha-256 differs between two classpath dirs. Each
-    # entry is a fully formatted message naming the jar and both digests.
+    # Conflicting jars between two classpath dirs: same file name with a
+    # different sha-256, or same artifact base with a different version (which
+    # a name comparison alone would miss, since the version is part of the
+    # file name). Each entry is a fully formatted message naming both copies.
     conflicts = []
-    for name in sorted(set(worker_jars) & set(common_jars)):
-        if digest(worker_jars[name]) != digest(common_jars[name]):
-            conflicts.append(f"{name}: lib-worker sha-256 {digest(worker_jars[name])} "
-                             f"!= lib-common sha-256 {digest(common_jars[name])}")
+    common_bases = by_base(common_jars)
+    for name in sorted(worker_jars):
+        if name in common_jars:
+            if digest(worker_jars[name]) != digest(common_jars[name]):
+                conflicts.append(f"{name}: lib-worker sha-256 {digest(worker_jars[name])} "
+                                 f"!= lib-common sha-256 {digest(common_jars[name])}")
+        else:
+            for other in sorted(common_bases.get(artifact_base(name), [])):
+                conflicts.append(f"{name}: lib-worker has {name} but lib-common has {other} "
+                                 f"(artifact '{artifact_base(name)}', different version)")
 
     # The jar set lib-common will hold after absorbing lib-worker. On a
     # worker-vs-common conflict the winner is ambiguous, but we fail anyway.
@@ -102,29 +138,39 @@ def dedup(dist_root):
     for name, path in worker_jars.items():
         merged.setdefault(name, path)
 
+    lib_bases = by_base(lib_jars)
     lib_duplicates = []
     worker_only = 0
     for name, merged_copy in sorted(merged.items()):
+        origin = "lib-common" if name in common_jars else "lib-worker"
         lib_copy = lib_jars.get(name)
-        if not lib_copy:
-            # No same-name counterpart in lib: this jar is worker-only. Expected
-            # to never happen in a single-reactor build; reported as a canary.
-            worker_only += 1
-        elif digest(lib_copy) == digest(merged_copy):
-            # Byte-identical copy in the daemon lib dir; removable in phase 2.
-            lib_duplicates.append(lib_copy)
+        if lib_copy:
+            if digest(lib_copy) == digest(merged_copy):
+                # Byte-identical copy in the daemon lib dir; removable in phase 2.
+                lib_duplicates.append(lib_copy)
+            else:
+                # Same name, different bytes: the lib-common copy would silently
+                # shadow the lib copy on the daemon classpath. Fail the build.
+                conflicts.append(f"{name}: lib sha-256 {digest(lib_copy)} "
+                                 f"!= {origin} sha-256 {digest(merged_copy)}")
         else:
-            # Same name, different bytes: the lib-common copy would silently
-            # shadow the lib copy on the daemon classpath. Fail the build.
-            other = "lib-common" if name in common_jars else "lib-worker"
-            conflicts.append(f"{name}: lib sha-256 {digest(lib_copy)} "
-                             f"!= {other} sha-256 {digest(merged_copy)}")
+            siblings = sorted(n for n in lib_bases.get(artifact_base(name), []))
+            if siblings:
+                # Same artifact, different version: promoting this jar would put
+                # both versions on the daemon classpath. Fail the build.
+                conflicts.append(f"{name}: {origin} has {name} but lib has {', '.join(siblings)} "
+                                 f"(artifact '{artifact_base(name)}', different version)")
+            else:
+                # Artifact absent from lib entirely: worker-only. Expected to
+                # never happen in a single-reactor build; reported as a canary.
+                worker_only += 1
 
     if conflicts:
         for conflict in conflicts:
             print(f"dedup-libs: ERROR: conflicting jar {conflict}", file=sys.stderr)
-        print(f"dedup-libs: ERROR: {len(conflicts)} jar(s) exist with the same name but different content "
-              "on the daemon (lib) and worker (lib-common/lib-worker) classpaths; "
+        print(f"dedup-libs: ERROR: {len(conflicts)} conflict(s) (same name with different content, or same "
+              "artifact with a different version) between the daemon (lib) and worker "
+              "(lib-common/lib-worker) classpaths; "
               "refusing to assemble a distribution with shadowed jars; no files were changed", file=sys.stderr)
         return 1
 

@@ -142,8 +142,69 @@ class TestDedupLibs(unittest.TestCase):
         self.assertNotEqual(code, 0)
         self.assertIn("first.jar", err)
         self.assertIn("second.jar", err)
-        self.assertIn("2 jar(s)", err)
+        self.assertIn("2 conflict(s)", err)
         self.assertIn("no files were changed", err)
+
+    def test_version_drift_between_lib_and_worker_fails(self):
+        # A version bump changes the FILE NAME (artifactId-version.jar), so
+        # drift must be caught on the version-stripped artifact base name.
+        self.write_jar("lib", "commons-io-2.11.0.jar", b"commons-io 2.11.0")
+        self.write_jar("lib-worker", "commons-io-2.13.0.jar", b"commons-io 2.13.0")
+        self.write_jar("lib", "shared-1.0.jar", b"same bytes")
+        self.write_jar("lib-worker", "shared-1.0.jar", b"same bytes")
+
+        code, out, err = self.run_dedup()
+
+        self.assertNotEqual(code, 0)
+        self.assertIn("commons-io-2.11.0.jar", err)
+        self.assertIn("commons-io-2.13.0.jar", err)
+        self.assertIn("different version", err)
+        # The whole tree is untouched on failure.
+        self.assertTrue(os.path.exists(self.path("lib", "commons-io-2.11.0.jar")))
+        self.assertTrue(os.path.exists(self.path("lib", "shared-1.0.jar")))
+        self.assertTrue(os.path.exists(self.path("lib-worker", "commons-io-2.13.0.jar")))
+        self.assertTrue(os.path.exists(self.path("lib-worker", "shared-1.0.jar")))
+        self.assertFalse(os.path.exists(self.path("lib-common")))
+
+    def test_version_drift_between_lib_and_prestaged_common_fails(self):
+        # Staged-build layout: lib-common is pre-populated, lib-worker absent.
+        self.write_jar("lib", "commons-io-2.11.0.jar", b"commons-io 2.11.0")
+        self.write_jar("lib-common", "commons-io-2.13.0.jar", b"commons-io 2.13.0")
+
+        code, out, err = self.run_dedup()
+
+        self.assertNotEqual(code, 0)
+        self.assertIn("commons-io-2.11.0.jar", err)
+        self.assertIn("commons-io-2.13.0.jar", err)
+        self.assertTrue(os.path.exists(self.path("lib", "commons-io-2.11.0.jar")))
+        self.assertTrue(os.path.exists(self.path("lib-common", "commons-io-2.13.0.jar")))
+
+    def test_version_drift_between_worker_and_common_fails(self):
+        self.write_jar("lib-common", "commons-io-2.11.0.jar", b"commons-io 2.11.0")
+        self.write_jar("lib-worker", "commons-io-2.13.0.jar", b"commons-io 2.13.0")
+
+        code, out, err = self.run_dedup()
+
+        self.assertNotEqual(code, 0)
+        self.assertIn("commons-io-2.11.0.jar", err)
+        self.assertIn("commons-io-2.13.0.jar", err)
+        self.assertTrue(os.path.exists(self.path("lib-worker", "commons-io-2.13.0.jar")))
+        self.assertTrue(os.path.exists(self.path("lib-common", "commons-io-2.11.0.jar")))
+
+    def test_artifact_base(self):
+        for name, base in [
+            ("commons-io-2.13.0.jar", "commons-io"),
+            ("commons-lang3-3.12.0.jar", "commons-lang3"),
+            ("commons-collections4-4.4.jar", "commons-collections4"),
+            ("zookeeper-3.9.2.jar", "zookeeper"),
+            ("slf4j-api-2.0.13.jar", "slf4j-api"),
+            ("kafka-clients-3.7.0.jar", "kafka-clients"),
+            ("javax.servlet-api-3.1.0.jar", "javax.servlet-api"),
+            ("netty-transport-native-epoll-4.1.100.Final-linux-x86_64.jar",
+             "netty-transport-native-epoll"),
+            ("storm-shaded-deps.jar", "storm-shaded-deps"),
+        ]:
+            self.assertEqual(dedup_libs.artifact_base(name), base)
 
     def test_worker_only_jar_is_promoted_and_counted(self):
         self.write_jar("lib", "shared.jar", b"same bytes")
