@@ -41,7 +41,7 @@ detailed under [Metrics & reports](#metrics--reports-prometheus--grafana).
 
 | File | Purpose |
 |------|---------|
-| `Dockerfile` | Runtime image `FROM eclipse-temurin:21-jre`, unpacks the built dist into `/opt/storm`. |
+| `Dockerfile` | Runtime image `FROM eclipse-temurin:25-jre`, unpacks the built dist into `/opt/storm`. |
 | `Dockerfile.dockerignore` | Keeps the build context to just the dist tarball. |
 | `storm.yaml` | Cluster config (ZK + Nimbus seeds + slots), bind-mounted into every daemon. |
 | `docker-compose.yml` | dev ZooKeeper, Nimbus, supervisor1, supervisor2, UI, Pushgateway, graphite-exporter, Prometheus, Grafana. |
