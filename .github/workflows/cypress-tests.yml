@@ -17,11 +17,11 @@ name: Cypress E2E Tests
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "2.x" ]
     paths:
       - 'storm-webapp/**'
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "2.x" ]
     paths:
       - 'storm-webapp/**'
   workflow_dispatch:

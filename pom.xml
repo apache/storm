@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>38</version>
+        <version>39</version>
     </parent>
 
     <groupId>org.apache.storm</groupId>
@@ -68,7 +68,7 @@
     </issueManagement>
 
     <properties>
-        <javaVersion>21</javaVersion>
+        <javaVersion>25</javaVersion>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
 
@@ -82,7 +82,7 @@
 
         <!-- dependency versions -->
         <commons-compress.version>1.28.0</commons-compress.version>
-        <zstd-jni.version>1.5.7-9</zstd-jni.version>
+        <zstd-jni.version>1.5.7-11</zstd-jni.version>
         <commons-io.version>2.22.0</commons-io.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-exec.version>1.6.0</commons-exec.version>
@@ -92,7 +92,7 @@
         <commons-text.version>1.15.0</commons-text.version>
         <commons-cli.version>1.11.0</commons-cli.version>
         <curator.version>5.9.0</curator.version>
-        <jetty.version>12.1.9</jetty.version>
+        <jetty.version>12.1.10</jetty.version>
         <snakeyaml.version>2.6</snakeyaml.version>
         <httpclient.version>4.5.14</httpclient.version>
         <httpclient.core.version>4.4.16</httpclient.core.version>
@@ -100,8 +100,8 @@
         <jgrapht.version>1.5.3</jgrapht.version>
         <guava.version>33.6.0-jre</guava.version>
         <auto-service.version>1.1.1</auto-service.version>
-        <netty-tcnative.version>2.0.77.Final</netty-tcnative.version>
-        <netty.version>4.2.14.Final</netty.version>
+        <netty-tcnative.version>2.0.80.Final</netty-tcnative.version>
+        <netty.version>4.2.15.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.26.0</log4j.version>
         <slf4j.version>2.0.18</slf4j.version>
@@ -110,25 +110,25 @@
         <zookeeper.version>3.9.5</zookeeper.version>
         <snappy.version>1.1.10.8</snappy.version>
         <jline.version>2.14.6</jline.version>
-        <hikari.version>7.0.2</hikari.version>
+        <hikari.version>7.1.0</hikari.version>
         <hadoop.version>3.5.0</hadoop.version>
-        <hbase.version>2.6.5-hadoop3</hbase.version>
+        <hbase.version>2.6.6-hadoop3</hbase.version>
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.5</objensis.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <thrift.version>0.23.0</thrift.version>
-        <junit.jupiter.version>6.1.0</junit.jupiter.version>
+        <junit.jupiter.version>6.1.1</junit.jupiter.version>
         <surefire.version>3.5.6</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
         <jedis.version>7.5.2</jedis.version>
-        <activemq.version>6.2.6</activemq.version>
-        <commons-logging.version>1.3.6</commons-logging.version>
+        <activemq.version>6.2.7</activemq.version>
+        <commons-logging.version>1.4.0</commons-logging.version>
 
         <jackson.version>2.21.3</jackson.version>
         <jackson.databind.version>2.22.0</jackson.databind.version>
-        <storm.kafka.client.version>4.3.0</storm.kafka.client.version>
+        <storm.kafka.client.version>4.3.1</storm.kafka.client.version>
         <testcontainers.version>1.21.4</testcontainers.version>
 
         <java.unit.test.exclude.groups>PerformanceTest</java.unit.test.exclude.groups>
@@ -146,13 +146,13 @@
         <jaxb-version>2.3.1</jaxb-version>
         <rocksdb-jni-version>10.10.1.1</rocksdb-jni-version>
         <json-smart.version>2.6.0</json-smart.version>
-        <byte-buddy.version>1.18.8</byte-buddy.version>
+        <byte-buddy.version>1.18.10</byte-buddy.version>
         <gson.version>2.14.0</gson.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
         <asm.version>9.10.1</asm.version>
-        <error_prone_annotations.version>2.49.0</error_prone_annotations.version>
+        <error_prone_annotations.version>2.50.0</error_prone_annotations.version>
         <bouncycastle.version>1.84</bouncycastle.version>
     </properties>
 
@@ -975,7 +975,7 @@
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
-                <version>7.2.0</version>
+                <version>7.2.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -1078,7 +1078,7 @@
                             <artifactId>checkstyle</artifactId>
                             <!-- If you change this, you should also update the storm_checkstyle.xml file to be
                             based on the google_checks.xml from the version of checkstyle you are choosing. -->
-                            <version>13.5.0</version>
+                            <version>13.7.0</version>
                         </dependency>
                     </dependencies>
                     <executions>

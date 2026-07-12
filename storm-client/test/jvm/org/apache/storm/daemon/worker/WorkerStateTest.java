@@ -20,17 +20,21 @@ import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.thrift.TException;
+import org.apache.storm.tuple.AddressedTuple;
+import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -103,6 +107,33 @@ public class WorkerStateTest {
             assertEquals(TestUtilsForWorkerState.RESOURCE_VALUE, workerState.getWorkerTopologyContext().getResource(TestUtilsForWorkerState.RESOURCE_KEY));
 
             workerState.runWorkerShutdownHooks();
+        } finally {
+            ConfigUtils.setInstance(previousConfigUtils);
+        }
+    }
+
+    @Test
+    public void testTransferLocalBatchDropsTuplesForUnknownTasks() throws TException, IOException {
+        ConfigUtils mockedConfigUtils = mock(ConfigUtils.class);
+        ConfigUtils previousConfigUtils = ConfigUtils.setInstance(mockedConfigUtils);
+
+        try {
+            Map<String, Object> conf = new HashMap<>();
+            conf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 1);
+
+            String topologyId = "1";
+            StormTopology topology = mock(StormTopology.class);
+            when(topology.deepCopy()).thenReturn(topology);
+            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId), any(AdvancedFSOps.class))).thenReturn(topology);
+
+            WorkerState workerState = TestUtilsForWorkerState.getWorkerState(conf, topologyId);
+
+            // the mocked assignment contains no executors, so no task id is known to this worker;
+            // a remote peer with a stale assignment may still address tuples to it (STORM-3751)
+            AddressedTuple tupleForUnknownTask = new AddressedTuple(42, mock(Tuple.class));
+
+            assertDoesNotThrow(() ->
+                workerState.transferLocalBatch(new ArrayList<>(Collections.singletonList(tupleForUnknownTask))));
         } finally {
             ConfigUtils.setInstance(previousConfigUtils);
         }

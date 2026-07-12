@@ -566,10 +566,17 @@ public class WorkerState {
 
     // Receives msgs from remote workers and feeds them to local executors. If any receiving local executor is under Back Pressure,
     // informs other workers about back pressure situation. Runs in the NettyWorker thread.
-    private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
+    // Package-private for testing.
+    void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
         for (int i = 0; i < tupleBatch.size(); i++) {
             AddressedTuple tuple = tupleBatch.get(i);
             JCQueue queue = taskToExecutorQueue.get(tuple.dest);
+            if (queue == null) {
+                // tuple addressed to a task not assigned to this worker, e.g. sent by a peer
+                // holding a stale assignment during a rebalance (STORM-3751)
+                dropMessage(tuple);
+                continue;
+            }
 
             // 1- try adding to main queue if its overflow is not empty
             if (queue.isEmptyOverflow()) {
@@ -607,6 +614,12 @@ public class WorkerState {
         LOG.warn(
             "Dropping message as overflow threshold has reached for Q = {}. OverflowCount = {}. Total Drop Count= {}, Dropped Message : {}",
             queue.getQueueName(), queue.getOverflowCount(), dropCount, tuple);
+    }
+
+    private void dropMessage(AddressedTuple tuple) {
+        ++dropCount;
+        LOG.warn("Dropping message for unknown task {}. Total Drop Count = {}, Dropped Message : {}",
+            tuple.dest, dropCount, tuple);
     }
 
     public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {

@@ -70,7 +70,14 @@
 
       function parseAndRender() {
         var input = document.getElementById('taInput').value;
-        var doc = jsyaml.load(input);
+        var doc;
+        try {
+          doc = jsyaml.load(input);
+        } catch (e) {
+          // js-yaml >=5 throws on empty/comment-only input instead of
+          // returning undefined (see migrate_v4_to_v5); treat as no document.
+          return;
+        }
 	if(doc==null){
 	   return;
 	}
