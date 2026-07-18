@@ -79,4 +79,6 @@ jobs:
             - `LICENSE-binary` (binary dependencies section)
 
             Please review the changes and merge if correct.
-          labels: dependencies
+          labels: |
+            dependencies
+            skip-changelog
