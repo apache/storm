@@ -38,6 +38,12 @@
                 <include>*.jar</include>
             </includes>
         </fileSet>
+        <!-- lib-worker ships empty (README only): it stays on the worker classpath as the
+             drop-in point for worker-only jars, matching the pre-dedup 2.x layout. -->
+        <fileSet>
+            <directory>${project.basedir}/src/main/dist/lib-worker</directory>
+            <outputDirectory>lib-worker</outputDirectory>
+        </fileSet>
         <fileSet>
             <directory>${project.basedir}/../storm-webapp-bin/target/webapp/webapp/</directory>
             <outputDirectory>.</outputDirectory>
