@@ -35,12 +35,10 @@ else
 fi
 
 # checking SHA
-GPG_SHA_FILE="/tmp/${TARGET_FILE}_GPG.sha512"
-gpg --print-md SHA512 ${TARGET_FILE} > ${GPG_SHA_FILE}
 SHA_TARGET_FILE="${TARGET_FILE}.sha512"
 
 echo ">> checking SHA file... (${SHA_TARGET_FILE})"
-diff /tmp/${TARGET_FILE}_GPG.sha512 ${SHA_TARGET_FILE}
+sha512sum -c ${SHA_TARGET_FILE}
 
 if [ $? -eq 0 ];
 then
