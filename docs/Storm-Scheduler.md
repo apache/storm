@@ -25,6 +25,14 @@ Any topologies submitted to the cluster not listed there will not be isolated. N
 
 The isolation scheduler solves the multi-tenancy problem – avoiding resource contention between topologies – by providing full isolation between topologies. The intention is that "productionized" topologies should be listed in the isolation config, and test or in-development topologies should not. The remaining machines on the cluster serve the dual role of failover for isolated topologies and for running the non-isolated topologies.
 
+When choosing which hosts to assign an isolated topology to, the scheduler sorts eligible hosts by three criteria in order:
+
+1. **Assignable slots (descending)** — prefer hosts with greater total slot capacity.
+2. **Free slots (descending)** — among hosts of equal capacity, prefer the one with more currently free slots, minimising the number of worker evictions needed.
+3. **Hostname (ascending)** — alphabetical tiebreaker for deterministic assignments.
+
+The secondary and tertiary sorts were added in Storm 3.0.0. Previously only the primary sort applied, which could cause unnecessary evictions when two hosts had the same total capacity but different numbers of occupied slots.
+
 ## EvenScheduler
 
 `EvenScheduler` (used directly or via `DefaultScheduler`) distributes workers as evenly as possible across available supervisors. It is the default when no custom scheduler is configured and `IsolationScheduler` is not in use.
