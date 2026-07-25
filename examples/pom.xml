@@ -36,6 +36,7 @@
         <module>storm-kafka-client-examples</module>
         <module>storm-jdbc-examples</module>
         <module>storm-hdfs-examples</module>
+        <module>storm-iceberg-examples</module>
         <module>storm-jms-examples</module>
         <module>storm-perf</module>
     </modules>
