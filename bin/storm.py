@@ -107,6 +107,7 @@ def confvalue(name, storm_config_opts, extrapaths, overriding_conf_file=None, da
 
 def get_classpath(extrajars, daemon=True, client=False):
     ret = get_wildcard_dir(STORM_DIR)
+    ret.extend(get_wildcard_dir(STORM_COMMON_LIB_DIR))
     if client:
         ret.extend(get_wildcard_dir(STORM_WORKER_LIB_DIR))
     else:
@@ -125,9 +126,9 @@ def get_classpath(extrajars, daemon=True, client=False):
 def init_storm_env(within_unittest=False):
 
     global NORMAL_CLASS_PATH, STORM_DIR, USER_CONF_DIR, STORM_CONF_DIR, STORM_WORKER_LIB_DIR, STORM_LIB_DIR,\
-        STORM_TOOLS_LIB_DIR, STORM_WEBAPP_LIB_DIR, STORM_BIN_DIR, STORM_LOG4J2_CONF_DIR, STORM_SUPERVISOR_LOG_FILE,\
-        CLUSTER_CONF_DIR, JAR_JVM_OPTS, JAVA_HOME, JAVA_CMD, CONF_FILE, STORM_EXT_CLASSPATH, \
-        STORM_EXT_CLASSPATH_DAEMON, LOCAL_TTL_DEFAULT
+        STORM_COMMON_LIB_DIR, STORM_TOOLS_LIB_DIR, STORM_WEBAPP_LIB_DIR, STORM_BIN_DIR, STORM_LOG4J2_CONF_DIR,\
+        STORM_SUPERVISOR_LOG_FILE, CLUSTER_CONF_DIR, JAR_JVM_OPTS, JAVA_HOME, JAVA_CMD, CONF_FILE, \
+        STORM_EXT_CLASSPATH, STORM_EXT_CLASSPATH_DAEMON, LOCAL_TTL_DEFAULT
 
     NORMAL_CLASS_PATH = cygpath if sys.platform == 'cygwin' else identity
     STORM_DIR = os.sep.join(os.path.realpath( __file__ ).split(os.sep)[:-2])
@@ -141,6 +142,10 @@ def init_storm_env(within_unittest=False):
 
     STORM_WORKER_LIB_DIR = os.path.join(STORM_DIR, "lib-worker")
     STORM_LIB_DIR = os.path.join(STORM_DIR, "lib")
+    # Jars shared by the daemon (lib) and worker (lib-worker) classpaths are de-duplicated into
+    # lib-common to keep the distribution small. It is added to both classpaths; absent in older
+    # layouts, in which case it contributes nothing.
+    STORM_COMMON_LIB_DIR = os.path.join(STORM_DIR, "lib-common")
 
     STORM_TOOLS_LIB_DIR = os.path.join(STORM_DIR, "lib-tools")
     STORM_WEBAPP_LIB_DIR = os.path.join(STORM_DIR, "lib-webapp")

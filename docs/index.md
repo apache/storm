@@ -57,6 +57,9 @@ We're also notifying it via annotating classes with marker interface `@Interface
 * [Daemon Metrics/Monitoring](ClusterMetrics.html)
 * [Windows users guide](windows-users-guide.html)
 * [Classpath handling](Classpath-handling.html)
+* [Binary Distributions (full vs. lite)](Binary-distributions.html)
+* [Cluster State Serialization](Cluster-State-Serialization.html)
+* [Local Development Cluster](Local-dev-cluster.html)
 
 ### Intermediate
 
@@ -71,6 +74,7 @@ We're also notifying it via annotating classes with marker interface `@Interface
 * [State Checkpointing](State-checkpointing.html)
 * [Windowing](Windowing.html)
 * [Joining Streams](Joins.html)
+* [JitterAwareStreamGrouping](JitterAwareStreamGrouping.html)
 * [Blobstore(Distcache)](distcache-blobstore.html)
 
 ### Debugging

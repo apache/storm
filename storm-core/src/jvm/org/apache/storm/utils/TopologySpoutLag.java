@@ -54,6 +54,11 @@ public class TopologySpoutLag {
             BOOTSTRAP_CONFIG, SECURITY_PROTOCOL_CONFIG));
     private static final Logger LOGGER = LoggerFactory.getLogger(TopologySpoutLag.class);
 
+    // The storm-kafka-monitor jars ship only in the full binary distribution; users of the lite
+    // distribution install them on demand (bin/storm-kafka-monitor-fetch). Log the "not installed"
+    // hint at most once to avoid spamming the UI logs, which poll the lag endpoint periodically.
+    private static volatile boolean warnedMonitorMissing = false;
+
     public static Map<String, Map<String, Object>> lag(StormTopology stormTopology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         Map<String, SpoutSpec> spouts = stormTopology.get_spouts();
@@ -67,6 +72,24 @@ public class TopologySpoutLag {
             }
         }
         return result;
+    }
+
+    /**
+     * Checks whether the storm-kafka-monitor jars (invoked by bin/storm-kafka-monitor) are present.
+     * They ship only in the full binary distribution and are fetched on demand on the lite one, so
+     * the UI must degrade gracefully when they are absent rather than failing the lag shell-out.
+     *
+     * @return true if the monitor appears installed, or if STORM_BASE_DIR is unknown (in which case
+     *     the legacy behavior of attempting the shell-out is preserved).
+     */
+    private static boolean isKafkaMonitorInstalled() {
+        String stormHomeDir = System.getenv("STORM_BASE_DIR");
+        if (stormHomeDir == null) {
+            return true;
+        }
+        File libDir = new File(new File(stormHomeDir, "lib-tools"), "storm-kafka-monitor");
+        File[] jars = libDir.listFiles((dir, name) -> name.endsWith(".jar"));
+        return jars != null && jars.length > 0;
     }
 
     private static List<String> getCommandLineOptionsForNewKafkaSpout(Map<String, Object> jsonConf) {
@@ -166,7 +189,19 @@ public class TopologySpoutLag {
             LOGGER.debug("Command to run: {}", commands);
 
             // if commands contains one or more null value, spout is compiled with lower version of storm-kafka-client
-            if (!commands.contains(null)) {
+            if (!commands.contains(null) && !isKafkaMonitorInstalled()) {
+                errorMsg = "Kafka spout lag monitoring is unavailable because the storm-kafka-monitor "
+                    + "jars are not installed. They ship only in the full binary distribution; on the "
+                    + "lite distribution run 'bin/storm-kafka-monitor-fetch' on the UI host (and restart "
+                    + "the UI) to enable it.";
+                if (!warnedMonitorMissing) {
+                    warnedMonitorMissing = true;
+                    LOGGER.info(errorMsg);
+                }
+                if (extraPropertiesFile != null) {
+                    extraPropertiesFile.delete();
+                }
+            } else if (!commands.contains(null)) {
                 try {
                     String resultFromMonitor = new ShellCommandRunnerImpl().execCommand(commands.toArray(new String[0]));
 

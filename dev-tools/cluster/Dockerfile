@@ -25,7 +25,7 @@
 #       storm-dist/binary/final-package/target
 #
 # or simply `docker compose up --build` from this directory.
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 
 ARG STORM_VERSION=3.0.0-SNAPSHOT
 

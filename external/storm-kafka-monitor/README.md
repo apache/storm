@@ -2,6 +2,36 @@
 
 Tool to query kafka spout lags and show in Storm UI
 
+## Installation
+
+The storm-kafka-monitor jars (and their Kafka client dependencies) are only
+needed to display Kafka spout lag in the UI or to run the `storm-kafka-monitor`
+command, so they are bundled only in the full distribution:
+
+| Distribution | storm-kafka-monitor jars |
+|---|---|
+| `apache-storm-x.x.x.tar.gz` (full) | bundled under `lib-tools/storm-kafka-monitor`, works out of the box |
+| `apache-storm-x.x.x-lite.tar.gz` (lite) | not bundled, README only |
+
+The Storm UI degrades gracefully when they are absent (no lag is shown and a
+hint is logged once).
+
+With the **lite** distribution, install the jars on the UI host with the helper
+script, then restart the UI:
+
+```bash
+$STORM_HOME/bin/storm-kafka-monitor-fetch
+```
+
+It resolves `org.apache.storm:storm-kafka-monitor` and its runtime dependencies
+from Maven Central into `lib-tools/storm-kafka-monitor`. Useful options:
+
+```bash
+bin/storm-kafka-monitor-fetch --version 3.0.0
+# pass extra arguments through to Maven (internal mirror / offline repo)
+bin/storm-kafka-monitor-fetch -- -s /etc/maven/settings.xml
+```
+
 ## Usage
 This tool provides a way to query kafka offsets that the spout has consumed successfully and the latest
 offsets in kafka. It provides an easy way to see how the topology is performing. It is a command line

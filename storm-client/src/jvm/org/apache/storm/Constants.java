@@ -14,6 +14,7 @@ package org.apache.storm;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import org.apache.storm.coordination.CoordinatedBolt;
 
 
@@ -30,6 +31,22 @@ public class Constants {
     public static final String METRICS_TICK_STREAM_ID = "__metrics_tick";
     public static final String FEEDBACK_STREAM_ID = "__feedback";
     public static final String FEEDBACK_TICK_STREAM_ID = "__feedback_tick";
+
+    /**
+     * System streams carrying low-volume, time-driven control signals that may be routed to the executor receive
+     * queue's control lane (see {@code Config.TOPOLOGY_EXECUTOR_RECEIVE_CONTROL_QUEUE_ENABLE}). Tuples on these
+     * streams are wall-clock signals with no ordering contract against data tuples, so delivering them ahead of
+     * co-enqueued data tuples is safe, and dropping one when the control lane is full is self-healing because the
+     * next one arrives within the signal's period.
+     */
+    public static final Set<String> SYSTEM_CONTROL_STREAM_IDS =
+            Set.of(SYSTEM_TICK_STREAM_ID, SYSTEM_FLUSH_STREAM_ID, METRICS_TICK_STREAM_ID, FEEDBACK_STREAM_ID, FEEDBACK_TICK_STREAM_ID);
+
+    public static boolean isControlStreamId(String streamId) {
+        // All control stream ids start with "__"; the prefix check cheaply rejects the common data-stream
+        // case before falling through to the set lookup.
+        return streamId != null && streamId.startsWith("__") && SYSTEM_CONTROL_STREAM_IDS.contains(streamId);
+    }
 
     public static final Object TOPOLOGY = "topology";
     public static final String SYSTEM_TOPOLOGY = "system-topology";

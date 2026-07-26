@@ -31,11 +31,13 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.SimpleVersion;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.VersionInfo;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -403,6 +405,47 @@ public class BasicContainerTest {
     }
 
     @Test
+    public void testFrameworkClasspathIncludesSharedAndWorkerLibs() throws Exception {
+        final String topoId = "test_topology_classpath";
+        final int supervisorPort = 6628;
+        final int port = 8080;
+        final String stormHome = ContainerTest.asAbsPath("tmp", "storm-home");
+        final String stormLogDir = ContainerTest.asFile(".", "target").getCanonicalPath();
+        final String stormLocal = ContainerTest.asAbsPath("tmp", "storm-local");
+
+        final Map<String, Object> superConf = new HashMap<>();
+        superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
+        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
+
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+
+        LocalState ls = mock(LocalState.class);
+        MockResourceIsolationManager iso = new MockResourceIsolationManager();
+
+        checkpoint(() -> {
+                       MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf,
+                           "SUPERVISOR", supervisorPort, port, la, iso, ls, "worker-id", new StormMetricsRegistry(),
+                           new HashMap<>(), ops, "profile");
+
+                       List<String> cp = mc.realFrameworkClasspath(VersionInfo.OUR_VERSION);
+
+                       // The distribution de-duplicates the jars shared by the daemon and worker
+                       // classpaths into lib-common; storm-client (LogWriter, Worker) ships there,
+                       // so a worker launched without lib-common on the classpath cannot start.
+                       String libCommon = stormHome + File.separator + "lib-common" + File.separator + "*";
+                       String libWorker = stormHome + File.separator + "lib-worker" + File.separator + "*";
+                       assertTrue(cp.contains(libCommon), "worker classpath must include lib-common/*, got: " + cp);
+                       assertTrue(cp.contains(libWorker), "worker classpath must include lib-worker/*, got: " + cp);
+                   },
+                   ConfigUtils.STORM_HOME, stormHome,
+                   "storm.log.dir", stormLogDir);
+    }
+
+    @Test
     public void testLaunchStorm1version() throws Exception {
         final String topoId = "test_topology_storm_1.x";
         final int supervisorPort = 6628;
@@ -710,6 +753,10 @@ public class BasicContainerTest {
             //We are not really running anything so make this
             // simple to check for
             return Collections.singletonList("FRAMEWORK_CP");
+        }
+
+        public List<String> realFrameworkClasspath(SimpleVersion version) {
+            return super.frameworkClasspath(version);
         }
 
         @Override

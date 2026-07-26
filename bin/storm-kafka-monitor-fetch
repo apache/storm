@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Fetch the storm-kafka-monitor tool and its (Kafka client) runtime dependencies
+# into lib-tools/storm-kafka-monitor, enabling the "Kafka spout lag" display in
+# the Storm UI and the bin/storm-kafka-monitor command.
+#
+# These jars ship only in the full binary distribution; the lite distribution
+# (apache-storm-x.x.x-lite.tar.gz) omits them because they are only needed when
+# running Kafka spouts and wanting lag info. The UI degrades gracefully when they
+# are absent. See external/storm-kafka-monitor/README.md for details.
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: storm-kafka-monitor-fetch [options] [-- <extra maven args>]
+
+Resolves org.apache.storm:storm-kafka-monitor and its runtime dependencies from
+a Maven repository (Maven Central by default) and copies them into
+lib-tools/storm-kafka-monitor.
+
+Options:
+  --version <ver>   Storm version to fetch (default: read from $STORM_HOME/RELEASE)
+  --dest <dir>      Target directory (default: $STORM_HOME/lib-tools/storm-kafka-monitor)
+  -h, --help        Show this help
+
+Any arguments after "--" are passed through to Maven, e.g. to use an internal
+mirror or an offline local repository:
+  storm-kafka-monitor-fetch -- -s /path/settings.xml
+  storm-kafka-monitor-fetch -- -Dmaven.repo.local=/path/to/offline-repo -o
+EOF
+}
+
+# Resolve symlinks so STORM_HOME is correct even when invoked via a link.
+PRG="${0}"
+while [ -h "${PRG}" ]; do
+  ls=$(ls -ld "${PRG}")
+  link=$(expr "${ls}" : '.*-> \(.*\)$')
+  if expr "${link}" : '/.*' > /dev/null; then
+    PRG="${link}"
+  else
+    PRG="$(dirname "${PRG}")/${link}"
+  fi
+done
+STORM_BIN_DIR=$(dirname "${PRG}")
+STORM_HOME=$(cd "${STORM_BIN_DIR}/.." && pwd)
+
+VERSION=""
+DEST=""
+MVN_ARGS=()
+while [ $# -gt 0 ]; do
+  case "${1}" in
+    --version) VERSION="${2}"; shift 2 ;;
+    --dest)    DEST="${2}"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    --)        shift; MVN_ARGS=("$@"); break ;;
+    *)         echo "Unknown option: ${1}" >&2; usage; exit 1 ;;
+  esac
+done
+
+if [ -z "${VERSION}" ]; then
+  if [ -f "${STORM_HOME}/RELEASE" ]; then
+    VERSION=$(tr -d '[:space:]' < "${STORM_HOME}/RELEASE")
+  fi
+fi
+if [ -z "${VERSION}" ]; then
+  echo "Error: could not determine Storm version. Pass --version <ver>." >&2
+  exit 1
+fi
+
+if [ -z "${DEST}" ]; then
+  DEST="${STORM_HOME}/lib-tools/storm-kafka-monitor"
+fi
+
+MVN="${MAVEN_HOME:+${MAVEN_HOME}/bin/}mvn"
+if ! command -v "${MVN}" > /dev/null 2>&1; then
+  echo "Error: '${MVN}' not found on PATH. Install Apache Maven or set MAVEN_HOME." >&2
+  exit 1
+fi
+
+mkdir -p "${DEST}"
+
+# Use a throwaway POM that depends on storm-kafka-monitor; copy-dependencies then
+# pulls the exact runtime closure. The artifact itself is a direct dependency and
+# is therefore copied too.
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "${TMP_DIR}"' EXIT
+cat > "${TMP_DIR}/pom.xml" <<EOF
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.storm.tools</groupId>
+  <artifactId>storm-kafka-monitor-fetch</artifactId>
+  <version>${VERSION}</version>
+  <packaging>pom</packaging>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.storm</groupId>
+      <artifactId>storm-kafka-monitor</artifactId>
+      <version>${VERSION}</version>
+    </dependency>
+  </dependencies>
+</project>
+EOF
+
+echo "Fetching org.apache.storm:storm-kafka-monitor:${VERSION} (runtime closure) into:"
+echo "  ${DEST}"
+"${MVN}" -q -f "${TMP_DIR}/pom.xml" \
+  org.apache.maven.plugins:maven-dependency-plugin:copy-dependencies \
+  -DincludeScope=runtime \
+  -DoutputDirectory="${DEST}" \
+  ${MVN_ARGS[@]+"${MVN_ARGS[@]}"}
+
+echo "Done. ${DEST} now contains:"
+ls -1 "${DEST}" | sed 's/^/  /'
+echo
+echo "Restart the Storm UI to enable Kafka spout lag display, or run"
+echo "bin/storm-kafka-monitor directly. See external/storm-kafka-monitor/README.md."

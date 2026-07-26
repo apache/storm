@@ -578,6 +578,14 @@ public class WorkerState {
                 continue;
             }
 
+            // 0- route control tuples to the control lane: un-batched, ahead of any data backlog, exempt from
+            //    backpressure and overflow. If the lane is full the tuple is dropped and counted; control signals
+            //    are periodic, so the next one arrives within its period.
+            if (queue.isControlLaneEnabled() && Constants.isControlStreamId(tuple.getTuple().getSourceStreamId())) {
+                queue.tryPublishControl(tuple);
+                continue;
+            }
+
             // 1- try adding to main queue if its overflow is not empty
             if (queue.isEmptyOverflow()) {
                 if (queue.tryPublish(tuple)) {
@@ -739,6 +747,11 @@ public class WorkerState {
         Integer recvBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
         boolean dynamicBatch = ObjectReader.getBoolean(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_DYNAMIC), false);
         Integer overflowLimit = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT));
+        boolean controlQueueEnable =
+            ObjectReader.getBoolean(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_CONTROL_QUEUE_ENABLE), false);
+        int controlQueueSize = controlQueueEnable
+            ? ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_CONTROL_BUFFER_SIZE), 1024)
+            : 0;
 
         if (recvBatchSize > recvQueueSize / 2) {
             throw new IllegalArgumentException(Config.TOPOLOGY_PRODUCER_BATCH_SIZE + ":" + recvBatchSize
@@ -760,7 +773,7 @@ public class WorkerState {
             }
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(), "receive-queue",
                                                       recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy,
-                this.getTopologyId(), compId, taskIds, this.getPort(), metricRegistry, dynamicBatch));
+                this.getTopologyId(), compId, taskIds, this.getPort(), metricRegistry, dynamicBatch, controlQueueSize));
 
         }
         return receiveQueueMap;

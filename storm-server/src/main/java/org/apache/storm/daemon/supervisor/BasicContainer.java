@@ -372,6 +372,10 @@ public class BasicContainer extends Container {
     }
 
     protected List<String> frameworkClasspath(SimpleVersion topoVersion) {
+        // Jars shared by the daemon and worker classpaths are de-duplicated into lib-common
+        // (see storm-dist dedup-libs.py); storm-client and its dependencies live there, so the
+        // worker classpath needs lib-common in addition to lib-worker.
+        File stormCommonLibDir = new File(stormHome, "lib-common");
         File stormWorkerLibDir = new File(stormHome, "lib-worker");
         String topoConfDir = System.getenv("STORM_CONF_DIR") != null
                 ? System.getenv("STORM_CONF_DIR")
@@ -379,6 +383,7 @@ public class BasicContainer extends Container {
         File stormExtlibDir = new File(stormHome, "extlib");
         String extcp = System.getenv("STORM_EXT_CLASSPATH");
         List<String> pathElements = new LinkedList<>();
+        pathElements.add(getWildcardDir(stormCommonLibDir));
         pathElements.add(getWildcardDir(stormWorkerLibDir));
         pathElements.add(getWildcardDir(stormExtlibDir));
         pathElements.add(extcp);

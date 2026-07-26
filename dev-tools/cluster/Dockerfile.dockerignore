@@ -20,3 +20,6 @@
 # (which also holds the .zip and the extracted distribution).
 *
 !apache-storm-*.tar.gz
+# The build ADDs the full distribution; keep the lean "storm-lite" tarball out of
+# the context so it does not add ~200 MB for nothing.
+apache-storm-*-lite.tar.gz

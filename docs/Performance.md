@@ -30,6 +30,30 @@ Very large message queues are also not desirable to deal with slow consumers. Be
 are large and often full, the messages will end up waiting longer in these queues at each step of the processing, leading to poor latency being
 reported on the Storm UI. Large queues also imply higher memory consumption especially if the queues are typically full.
 
+#### Control lane for system control tuples
+
+An executor's receive queue carries two very different kinds of traffic: the data tuples flowing between components, and low-volume time-driven
+system tuples (flush tuples, tick tuples, metrics ticks, upstream feedback) that keep the topology responsive. Because the queue is FIFO, a control
+tuple enqueued behind a full data backlog waits for the entire backlog to drain first, so data-plane saturation directly degrades control-plane
+latency.
+
+- `topology.executor.receive.control.queue.enable` (default `false`) : When enabled, each executor's receive queue gets a small dedicated *control
+lane* that is drained before the data queue on every consume pass. The time-driven system streams (`__flush`, `__tick`, `__metrics_tick`,
+`__feedback_tick`, `__feedback`) are routed to it at every ingress point (timer-generated tuples, intra-worker transfer, and inter-worker receive),
+insulating them from data-plane buffering, backpressure and overflow so that their delivery latency stays bounded even while the data plane
+saturates. Writes to the control lane are un-batched and never block: if the lane is full the tuple is dropped and counted (see the
+`receive-queue-control_dropped_messages` metric), which is safe because these signals are periodic and the next one arrives within the signal's
+period. The ack streams and the `__metrics` payload stream are volume-proportional to the data plane and stay on the data path, so acking,
+`max.spout.pending` throttling and at-least-once semantics are unaffected. Note that enabling this delivers control tuples ahead of co-enqueued data
+tuples; the whitelisted streams are wall-clock signals with no ordering contract against data, so this is safe.
+Note also that `__tick` is one of these control streams, so the drop-when-full behavior applies to user-facing tick tuples too: with the lane
+enabled a `__tick` tuple may occasionally be dropped under sustained saturation instead of blocking until delivered. Bolts that rely on tick tuples
+for windowing or expiry logic must tolerate an occasional missed tick — it is not only internal signals that can be dropped.
+
+- `topology.executor.receive.control.buffer.size` (default `1024`) : The size of the control lane. Control traffic is low-volume, so the default is
+ample; like the other queue sizes it is internally rounded up to the next power of 2. The control lane is excluded from the queue load reported to
+load-aware groupings.
+
 
 ## 2. Batch Size
 Producers can either write a batch of messages to the consumer's queue or write each message individually. This batch size can be configured.

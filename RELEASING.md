@@ -101,8 +101,16 @@ In this way, you create a new release line and then you can create PATCH version
    pushd storm-dist/binary/final-package/target
    sha512sum apache-storm-2.8.1.zip > apache-storm-2.8.1.zip.sha512
    sha512sum apache-storm-2.8.1.tar.gz > apache-storm-2.8.1.tar.gz.sha512
+   sha512sum apache-storm-2.8.1-lite.zip > apache-storm-2.8.1-lite.zip.sha512
+   sha512sum apache-storm-2.8.1-lite.tar.gz > apache-storm-2.8.1-lite.tar.gz.sha512
    popd
    ```
+
+   > **Note:** the binary build produces two distributions. The full one
+   > (`apache-storm-x.x.x.tar.gz` / `.zip`) bundles the optional `storm-autocreds` and
+   > `storm-kafka-monitor` jars, while the lean one (`apache-storm-x.x.x-lite.tar.gz` / `.zip`)
+   > omits them. Both must be signed, checksummed and staged for the release candidate.
+   > See [Storm lite distribution](#storm-lite-distribution) below.
 
 6. Create a directory in the dist svn repo for the release candidate: https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx
 
@@ -135,7 +143,30 @@ In this way, you create a new release line and then you can create PATCH version
    apache-storm-2.8.3-src.tar.gz         apache-storm-2.8.3-src.zip         apache-storm-2.8.3.tar.gz         apache-storm-2.8.3.zip         RELEASE_NOTES.html
    apache-storm-2.8.3-src.tar.gz.asc     apache-storm-2.8.3-src.zip.asc     apache-storm-2.8.3.tar.gz.asc     apache-storm-2.8.3.zip.asc     RELEASE_NOTES.html.asc
    apache-storm-2.8.3-src.tar.gz.sha512  apache-storm-2.8.3-src.zip.sha512  apache-storm-2.8.3.tar.gz.sha512  apache-storm-2.8.3.zip.sha512  RELEASE_NOTES.html.sha512
+   apache-storm-2.8.3-lite.tar.gz        apache-storm-2.8.3-lite.zip
+   apache-storm-2.8.3-lite.tar.gz.asc    apache-storm-2.8.3-lite.zip.asc
+   apache-storm-2.8.3-lite.tar.gz.sha512 apache-storm-2.8.3-lite.zip.sha512
    ```
+
+## Storm lite distribution
+
+Since 3.0.0 the binary build produces two distributions from `storm-dist/binary`:
+
+| Artifact | Contents |
+|---|---|
+| `apache-storm-x.x.x.tar.gz` / `.zip` | Full distribution. Bundles the `storm-autocreds` (Hadoop/HBase) and `storm-kafka-monitor` (Kafka client) jars. |
+| `apache-storm-x.x.x-lite.tar.gz` / `.zip` | Lean distribution. Ships only the READMEs for those two plugins; everything else is identical. |
+
+Both are produced by the same `mvn package` run in `storm-dist/binary` (assembly
+executions `bin` and `lite`), and both are automatically signed by the GPG plugin.
+The lite artifact is attached with the `lite` Maven classifier.
+
+Release managers must sign, checksum and stage **both** distributions, and list
+both in the release candidate VOTE mail so reviewers know which to verify.
+
+Users of the lite distribution can install the omitted plugins on demand with
+`bin/storm-autocreds-fetch` and `bin/storm-kafka-monitor-fetch`, which resolve them
+from Maven Central (or an internal mirror configured in `settings.xml`).
 
 10. Add and commit the files to SVN. This makes them available in the Apache staging repo.
 

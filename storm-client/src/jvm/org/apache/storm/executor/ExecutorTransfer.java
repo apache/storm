@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -99,6 +100,13 @@ public class ExecutorTransfer {
      */
     public boolean tryTransferLocal(AddressedTuple tuple, JCQueue localQueue, Queue<AddressedTuple> pendingEmits) {
         workerData.checkSerialize(threadLocalSerializer.get(), tuple);
+        if (localQueue.isControlLaneEnabled() && Constants.isControlStreamId(tuple.getTuple().getSourceStreamId())) {
+            // control tuples bypass batching, pendingEmits ordering and backpressure. If the control lane is full
+            // the tuple is dropped and counted; control signals are periodic, so the next one arrives within its
+            // period. Report the tuple as handled either way so it is never queued behind the data backlog.
+            localQueue.tryPublishControl(tuple);
+            return true;
+        }
         if (pendingEmits != null) {
             if (pendingEmits.isEmpty() && localQueue.tryPublish(tuple)) {
                 queuesToFlush.set(tuple.dest - indexingBase, localQueue);

@@ -577,16 +577,23 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                         new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
                                 (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
                 AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                try {
-                    receiveQueue.publish(metricsTickTuple);
-                    receiveQueue.flush();  // avoid buffering
-                } catch (InterruptedException e) {
-                    LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
-                    Thread.currentThread().interrupt();
-                    return;
-                }
+                publishTimerTuple(metricsTickTuple, "metrics tick tuple");
             }
         );
+    }
+    
+    private void publishTimerTuple(AddressedTuple timerTuple, String logContext) {
+        if (receiveQueue.isControlLaneEnabled()) {
+            receiveQueue.tryPublishControl(timerTuple);
+            return;
+        }
+        try {
+            receiveQueue.publish(timerTuple);
+            receiveQueue.flush();  // avoid buffering
+        } catch (InterruptedException e) {
+            LOG.warn("Thread interrupted when publishing {}. Setting interrupt flag.", logContext);
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**
@@ -618,14 +625,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                         new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
                                 (int) Constants.SYSTEM_TASK_ID, Constants.FEEDBACK_TICK_STREAM_ID);
                 AddressedTuple feedbackTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                try {
-                    receiveQueue.publish(feedbackTickTuple);
-                    receiveQueue.flush();  // avoid buffering
-                } catch (InterruptedException e) {
-                    LOG.warn("Thread interrupted when publishing upstream feedback tick. Setting interrupt flag.");
-                    Thread.currentThread().interrupt();
-                    return;
-                }
+                publishTimerTuple(feedbackTickTuple, "upstream feedback tick tuple");
             }
         );
     }
@@ -663,14 +663,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                                                         (int) Constants.SYSTEM_TASK_ID,
                                                         Constants.SYSTEM_TICK_STREAM_ID);
                         AddressedTuple tickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                        try {
-                            receiveQueue.publish(tickTuple);
-                            receiveQueue.flush(); // avoid buffering
-                        } catch (InterruptedException e) {
-                            LOG.warn("Thread interrupted when emitting tick tuple. Setting interrupt flag.");
-                            Thread.currentThread().interrupt();
-                            return;
-                        }
+                        publishTimerTuple(tickTuple, "tick tuple");
                     }
                 );
             }
@@ -683,13 +676,15 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         }
     }
 
-    // Called by flush-tuple-timer thread
+    // Called by flush-tuple-timer thread. Publishes to the control lane when enabled (insulating the flush signal
+    // from the data backlog); otherwise falls back to an un-batched write to the recvQueue as before.
     public boolean publishFlushTuple() {
-        if (receiveQueue.tryPublishDirect(flushTuple)) {
+        if (receiveQueue.tryPublishControl(flushTuple)) {
             LOG.debug("Published Flush tuple to: {} ", getComponentId());
             return true;
         } else {
-            LOG.debug("RecvQ is currently full, will retry publishing Flush Tuple later to : {}", getComponentId());
+            LOG.debug("Target queue (control lane or RecvQ) is currently full, will retry publishing Flush Tuple later to : {}",
+                getComponentId());
             return false;
         }
     }

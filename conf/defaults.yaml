@@ -343,6 +343,8 @@ topology.transfer.batch.size: 1       # can be no larger than half of `topology.
 topology.executor.receive.buffer.size: 32768  # size of recv queue for spouts & bolts. Will be internally rounded up to next power of 2 (if not already a power of 2)
 topology.producer.batch.size: 1               # can be no larger than half of `topology.executor.receive.buffer.size`
 topology.producer.batch.dynamic: false        # when true, the producer batch size adapts between 1 and topology.producer.batch.size to reduce latency under light load. No effect unless topology.producer.batch.size > 1.
+topology.executor.receive.control.queue.enable: false  # when true, low-volume control tuples (flush/tick/metrics tick/feedback) are delivered via a dedicated control lane of the recv queue, drained before the data queue and exempt from backpressure.
+topology.executor.receive.control.buffer.size: 1024    # size of the control lane of the recv queue. Only used when topology.executor.receive.control.queue.enable is true. Will be internally rounded up to next power of 2 (if not already a power of 2)
 
 topology.batch.flush.interval.millis: 1  # Flush tuples are disabled if this is set to 0 or if (topology.producer.batch.size=1 and topology.transfer.batch.size=1).
 topology.spout.recvq.skips: 3  # Check recvQ once every N invocations of Spout's nextTuple() [when ACKs disabled]

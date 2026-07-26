@@ -62,10 +62,12 @@ else
     if [[ "${USER}" == "github" ]]; then
         ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
     fi
-    (( $(find "${STORM_SRC_DIR}/storm-dist/binary" -iname 'apache-storm*.zip' | wc -l) == 1 )) || die "expected exactly one zip file, did you run: cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"
+    # The binary build also produces the lean "storm-lite" distribution; the integration
+    # tests run against the full one, so ignore apache-storm-*-lite.zip here.
+    (( $(find "${STORM_SRC_DIR}/storm-dist/binary" -iname 'apache-storm*.zip' -not -iname '*-lite.zip' | wc -l) == 1 )) || die "expected exactly one zip file, did you run: cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"
 fi
 
-storm_binary_zip=$(find "${STORM_SRC_DIR}/storm-dist" -iname '*.zip')
+storm_binary_zip=$(find "${STORM_SRC_DIR}/storm-dist" -iname 'apache-storm*.zip' -not -iname '*-lite.zip')
 storm_binary_name=$(basename "${storm_binary_zip}")
 export STORM_VERSION=$(grep -oPe '\d.*(?=.zip)' <<<"${storm_binary_name}")
 echo "Using storm version:" ${STORM_VERSION}
