@@ -22,6 +22,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.CatalogUtil;
@@ -76,6 +77,9 @@ public class IcebergState implements State {
     private long lastCommittedTxId;
     private boolean skipBatch;
     private TaskWriter<Record> writer;
+    private CountingAppenderFactory countingAppenderFactory;
+    private long highestBufferedTxId;
+    private long windowStartNanos;
     private Thread shutdownHook;
     private volatile boolean closed;
 
@@ -122,9 +126,20 @@ public class IcebergState implements State {
 
     @Override
     public void beginCommit(Long txId) {
-        // A failed batch attempt can leave a writer with partially written records; drop it so
-        // the replayed attempt starts from a clean writer.
-        abortWriter();
+        // A failed batch attempt can leave a writer with partially written records. Without
+        // buffering that is always the case here, so the writer is simply dropped. With buffering
+        // the writer also carries earlier, successfully delivered batches, so it may only be
+        // dropped when this txId is itself a replay of something already in the window: an open
+        // writer cannot un-write the failed attempt's records, and keeping them would duplicate
+        // rows once the replay writes them again.
+        if (!options.isCommitBatchingEnabled() || txId <= highestBufferedTxId) {
+            if (writer != null && txId <= highestBufferedTxId) {
+                LOG.warn("txId {} replays a batch already buffered (up to {}); dropping the "
+                    + "buffered window, its batches are lost", txId, highestBufferedTxId);
+                metrics.windowDropped();
+            }
+            abortWriter();
+        }
         refreshTable();
         skipBatch = txId <= lastCommittedTxId;
         if (skipBatch) {
@@ -174,6 +189,43 @@ public class IcebergState implements State {
             skipBatch = false;
             return;
         }
+        highestBufferedTxId = txId;
+        if (windowStartNanos == 0L) {
+            windowStartNanos = System.nanoTime();
+        }
+        if (!shouldFlush()) {
+            metrics.batchBuffered();
+            LOG.debug("Buffering txId {} ({} bytes so far in the window)", txId, bufferedBytes());
+            return;
+        }
+        flush(txId);
+    }
+
+    /**
+     * Decide whether the buffered window has to be committed now. With no interval configured
+     * every batch is flushed, which is the exactly-once behaviour.
+     */
+    private boolean shouldFlush() {
+        if (!options.isCommitBatchingEnabled()) {
+            return true;
+        }
+        Long intervalBytes = options.getCommitIntervalBytes();
+        if (intervalBytes != null && bufferedBytes() >= intervalBytes) {
+            return true;
+        }
+        Long intervalMillis = options.getCommitIntervalMillis();
+        if (intervalMillis != null) {
+            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - windowStartNanos);
+            return elapsedMillis >= intervalMillis;
+        }
+        return false;
+    }
+
+    private long bufferedBytes() {
+        return countingAppenderFactory == null ? 0L : countingAppenderFactory.estimatedBytes();
+    }
+
+    private void flush(Long txId) {
         DataFile[] dataFiles = completeWriter();
         long startNanos = System.nanoTime();
         try {
@@ -210,7 +262,9 @@ public class IcebergState implements State {
             : PropertyUtil.propertyAsLong(table.properties(),
                 TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
                 TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-        GenericAppenderFactory appenderFactory = new GenericAppenderFactory(schema, spec);
+        CountingAppenderFactory appenderFactory =
+            new CountingAppenderFactory(new GenericAppenderFactory(schema, spec));
+        this.countingAppenderFactory = appenderFactory;
         // A fresh OutputFileFactory per batch: its random operation id keeps file names from
         // replayed batches unique.
         OutputFileFactory fileFactory = OutputFileFactory
@@ -232,11 +286,15 @@ public class IcebergState implements State {
             throw new FailedException("Failed closing Iceberg writer, failing batch", e);
         } finally {
             writer = null;
+            // The window's writers are done either way: if the commit below fails, its files
+            // become orphans and the next batch must start counting from zero.
+            resetWindow();
         }
     }
 
     private void abortWriter() {
         if (writer == null) {
+            resetWindow();
             return;
         }
         try {
@@ -245,6 +303,14 @@ public class IcebergState implements State {
             LOG.warn("Failed aborting Iceberg writer; uncommitted files may remain as orphans", e);
         } finally {
             writer = null;
+            resetWindow();
+        }
+    }
+
+    private void resetWindow() {
+        windowStartNanos = 0L;
+        if (countingAppenderFactory != null) {
+            countingAppenderFactory.reset();
         }
     }
 

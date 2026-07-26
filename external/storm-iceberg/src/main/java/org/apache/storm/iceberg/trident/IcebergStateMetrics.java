@@ -38,6 +38,8 @@ class IcebergStateMetrics {
     static final String COMMIT_LATENCY = "iceberg-commit-latency";
     static final String COMMIT_FAILURES = "iceberg-commit-failures";
     static final String BATCHES_SKIPPED = "iceberg-batches-skipped";
+    static final String BATCHES_BUFFERED = "iceberg-batches-buffered";
+    static final String WINDOWS_DROPPED = "iceberg-windows-dropped";
 
     private final Counter recordsWritten;
     private final Counter dataFilesCommitted;
@@ -45,6 +47,8 @@ class IcebergStateMetrics {
     private final Timer commitLatency;
     private final Counter commitFailures;
     private final Counter batchesSkipped;
+    private final Counter batchesBuffered;
+    private final Counter windowsDropped;
 
     IcebergStateMetrics(IMetricsContext metrics) {
         this.recordsWritten = counter(metrics, RECORDS_WRITTEN);
@@ -52,6 +56,8 @@ class IcebergStateMetrics {
         this.bytesCommitted = counter(metrics, BYTES_COMMITTED);
         this.commitFailures = counter(metrics, COMMIT_FAILURES);
         this.batchesSkipped = counter(metrics, BATCHES_SKIPPED);
+        this.batchesBuffered = counter(metrics, BATCHES_BUFFERED);
+        this.windowsDropped = counter(metrics, WINDOWS_DROPPED);
         this.commitLatency = metrics == null ? new Timer() : metrics.registerTimer(COMMIT_LATENCY);
     }
 
@@ -78,5 +84,15 @@ class IcebergStateMetrics {
 
     void batchSkipped() {
         batchesSkipped.inc();
+    }
+
+    /** A batch was written but held back, waiting for the commit threshold. */
+    void batchBuffered() {
+        batchesBuffered.inc();
+    }
+
+    /** A buffered window was discarded; the batches it held were lost. */
+    void windowDropped() {
+        windowsDropped.inc();
     }
 }

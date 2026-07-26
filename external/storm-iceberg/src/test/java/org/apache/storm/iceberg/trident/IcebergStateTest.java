@@ -122,6 +122,16 @@ class IcebergStateTest {
         return tuple;
     }
 
+    private int countSnapshots() {
+        Table table = verifyCatalog.loadTable(TABLE_ID);
+        table.refresh();
+        int count = 0;
+        for (Object ignored : table.snapshots()) {
+            count++;
+        }
+        return count;
+    }
+
     private List<Record> readRows() throws IOException {
         Table table = verifyCatalog.loadTable(TABLE_ID);
         List<Record> rows = new ArrayList<>();
@@ -478,6 +488,140 @@ class IcebergStateTest {
             assertThrows(FailedException.class, () -> state.commit(1L));
             assertEquals(1L, metrics.counter(IcebergStateMetrics.COMMIT_FAILURES));
             assertEquals(0L, metrics.timerCount(IcebergStateMetrics.COMMIT_LATENCY));
+        } finally {
+            state.close();
+        }
+    }
+
+    @Test
+    void withoutCommitIntervalEveryBatchIsCommitted() throws IOException {
+        verifyCatalog.createTable(TABLE_ID, SCHEMA);
+        IcebergState state = newState(baseOptions().build());
+        try {
+            for (long txId = 1; txId <= 3; txId++) {
+                state.beginCommit(txId);
+                state.updateState(List.of(tuple(txId, "row" + txId)), null);
+                state.commit(txId);
+            }
+            assertEquals(3, readRows().size());
+            assertEquals(3, countSnapshots());
+        } finally {
+            state.close();
+        }
+    }
+
+    @Test
+    void commitIntervalBytesBuffersBatchesIntoASingleSnapshot() throws IOException {
+        verifyCatalog.createTable(TABLE_ID, SCHEMA);
+        RecordingMetricsContext metrics = new RecordingMetricsContext();
+        // Far larger than the few hundred bytes these batches produce, so only the last batch,
+        // driven by the time interval below, triggers the flush.
+        IcebergState state = newState(baseOptions()
+            .withCommitIntervalBytes(10L * 1024 * 1024)
+            .build(), metrics);
+        try {
+            for (long txId = 1; txId <= 3; txId++) {
+                state.beginCommit(txId);
+                state.updateState(List.of(tuple(txId, "row" + txId)), null);
+                state.commit(txId);
+            }
+            // Nothing is visible yet: three batches are buffered, no snapshot exists.
+            assertEquals(0, countSnapshots());
+            assertEquals(3L, metrics.counter(IcebergStateMetrics.BATCHES_BUFFERED));
+            assertEquals(0L, metrics.timerCount(IcebergStateMetrics.COMMIT_LATENCY));
+        } finally {
+            state.close();
+        }
+    }
+
+    @Test
+    void bufferedWindowIsFlushedOnceTheByteThresholdIsCrossed() throws IOException {
+        verifyCatalog.createTable(TABLE_ID, SCHEMA);
+        RecordingMetricsContext metrics = new RecordingMetricsContext();
+        // One byte: the first batch already exceeds it, but only once its bytes are counted.
+        IcebergState state = newState(baseOptions().withCommitIntervalBytes(1L).build(), metrics);
+        try {
+            state.beginCommit(1L);
+            state.updateState(List.of(tuple(1L, "a")), null);
+            state.commit(1L);
+
+            assertEquals(1, readRows().size());
+            assertEquals(1, countSnapshots());
+            assertEquals(1L, metrics.timerCount(IcebergStateMetrics.COMMIT_LATENCY));
+            assertEquals(0L, metrics.counter(IcebergStateMetrics.BATCHES_BUFFERED));
+        } finally {
+            state.close();
+        }
+    }
+
+    @Test
+    void commitIntervalMillisFlushesTheWindowOnTheNextBatch() throws IOException, InterruptedException {
+        verifyCatalog.createTable(TABLE_ID, SCHEMA);
+        IcebergState state = newState(baseOptions()
+            .withCommitIntervalBytes(10L * 1024 * 1024)
+            .withCommitIntervalMillis(50L)
+            .build());
+        try {
+            state.beginCommit(1L);
+            state.updateState(List.of(tuple(1L, "a")), null);
+            state.commit(1L);
+            assertEquals(0, countSnapshots(), "the first batch only opens the window");
+
+            // Once the deadline has passed, the next batch commits the whole window.
+            Thread.sleep(80L);
+            state.beginCommit(2L);
+            state.updateState(List.of(tuple(2L, "b")), null);
+            state.commit(2L);
+
+            assertEquals(2, readRows().size());
+            assertEquals(1, countSnapshots(), "both batches must land in one snapshot");
+        } finally {
+            state.close();
+        }
+    }
+
+    @Test
+    void replayOfABufferedBatchDropsTheWindow() throws IOException {
+        verifyCatalog.createTable(TABLE_ID, SCHEMA);
+        RecordingMetricsContext metrics = new RecordingMetricsContext();
+        IcebergState state = newState(baseOptions()
+            .withCommitIntervalBytes(10L * 1024 * 1024)
+            .withCommitIntervalMillis(300L)
+            .build(), metrics);
+        try {
+            state.beginCommit(1L);
+            state.updateState(List.of(tuple(1L, "a")), null);
+            state.commit(1L);
+            state.beginCommit(2L);
+            state.updateState(List.of(tuple(2L, "b")), null);
+            state.commit(2L);
+            assertEquals(0, countSnapshots(), "both batches are still buffered");
+
+            // txId 2 is replayed: it is buffered but not committed, so the window has to be
+            // discarded rather than replayed on top of itself.
+            state.beginCommit(2L);
+            assertEquals(1L, metrics.counter(IcebergStateMetrics.WINDOWS_DROPPED));
+
+            state.updateState(List.of(tuple(2L, "b")), null);
+            state.commit(2L);
+            state.beginCommit(3L);
+            state.updateState(List.of(tuple(3L, "c")), null);
+            state.commit(3L);
+
+            // Past the 300 ms deadline the next batch flushes the window. Batch 1 was lost with
+            // the dropped window (the documented cost of commit batching); 2, 3 and 4 land once.
+            Thread.sleep(350L);
+            state.beginCommit(4L);
+            state.updateState(List.of(tuple(4L, "d")), null);
+            state.commit(4L);
+
+            List<String> names = new ArrayList<>();
+            readRows().forEach(r -> names.add((String) r.getField("name")));
+            names.sort(String::compareTo);
+            assertEquals(List.of("b", "c", "d"), names);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
         } finally {
             state.close();
         }

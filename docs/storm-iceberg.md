@@ -40,6 +40,8 @@ so every Iceberg catalog works with its standard configuration keys: `type` = `h
 | `withFileFormat(FileFormat)` | `PARQUET` | Data file format |
 | `withTargetFileSizeBytes(long)` | table property `write.target-file-size-bytes` | Rolling file size |
 | `withAutoCreate(Schema, PartitionSpec)` | disabled | Create the table on first use if missing |
+| `withCommitIntervalBytes(long)` | disabled | Buffer batches until this many bytes, then commit once |
+| `withCommitIntervalMillis(long)` | disabled | Flush the buffered window once it is this old |
 
 ### Tuple mapping
 
@@ -83,6 +85,44 @@ The `PartitionSpec` above is only used when the table is auto-created; for an ex
 spec stored in the catalog wins. Note that a batch spread over many partitions opens many files
 at once — partition the stream on the partition columns (`partitionBy`) to keep file counts down.
 
+### Commit batching (trades exactly-once for fewer snapshots)
+
+By default **every Trident batch is one Iceberg commit and one snapshot**. On a high-rate stream
+with small batches that produces thousands of snapshots and as many small files, which degrades
+metastore and reader planning.
+
+`withCommitIntervalBytes` and `withCommitIntervalMillis` buffer batches and commit them together:
+
+```java
+IcebergOptions options = new IcebergOptions.Builder()
+    .withCatalogProperties(catalogProps)
+    .withTable("db.events")
+    .withCommitIntervalBytes(128L * 1024 * 1024)
+    .withCommitIntervalMillis(60_000)
+    .build();
+```
+
+The writer stays open across the buffered batches, so data files also grow towards
+`write.target-file-size-bytes` instead of being one-file-per-batch. Whichever threshold is
+reached first flushes the window; setting neither keeps the default one-commit-per-batch.
+
+> **This weakens the delivery guarantee, and cannot be made not to.** Trident treats a batch as
+> delivered the moment `commit()` returns. Batches that are buffered have already been
+> acknowledged, so if the worker dies before the flush **they are lost** — not duplicated, lost.
+> Use it only where losing the last window on a crash is acceptable, and leave both settings
+> unset when you need the exactly-once guarantee described below.
+
+Two further consequences of buffering:
+
+- A batch that fails after earlier batches were buffered forces the whole window to be dropped,
+  since an open writer cannot un-write the failed attempt's records. Watch
+  `iceberg-windows-dropped`.
+- The time threshold is evaluated when the *next* batch is committed, so a stream that stops
+  entirely leaves its last window uncommitted until data resumes. This matches how
+  `TimedRotationPolicy` behaves for `HdfsState`; Trident delivers no tick tuples to states and
+  skips empty batches, so there is no in-state timer that could do better without introducing
+  concurrency on the commit path.
+
 ### Metrics
 
 The state registers these metrics-v2 metrics per `partitionPersist` task, so they show up in
@@ -96,6 +136,8 @@ whatever reporter the cluster is configured with:
 | `iceberg-commit-latency` | timer | Duration of the Iceberg commit transaction |
 | `iceberg-commit-failures` | counter | Commits that failed (including unknown state) |
 | `iceberg-batches-skipped` | counter | Replayed batches skipped as already committed |
+| `iceberg-batches-buffered` | counter | Batches held back waiting for the commit threshold |
+| `iceberg-windows-dropped` | counter | Buffered windows discarded; their batches were lost |
 
 A steadily rising `iceberg-data-files-committed` with a flat `iceberg-bytes-committed` is the
 small-files signature: consider fewer, larger batches or a compaction job.

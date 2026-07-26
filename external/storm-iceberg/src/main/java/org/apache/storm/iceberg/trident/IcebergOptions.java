@@ -45,6 +45,8 @@ public class IcebergOptions implements Serializable {
     private final Long targetFileSizeBytes;
     private final Schema autoCreateSchema;
     private final PartitionSpec autoCreateSpec;
+    private final Long commitIntervalBytes;
+    private final Long commitIntervalMillis;
 
     private IcebergOptions(Builder builder) {
         this.catalogProperties = builder.catalogProperties;
@@ -54,6 +56,8 @@ public class IcebergOptions implements Serializable {
         this.targetFileSizeBytes = builder.targetFileSizeBytes;
         this.autoCreateSchema = builder.autoCreateSchema;
         this.autoCreateSpec = builder.autoCreateSpec;
+        this.commitIntervalBytes = builder.commitIntervalBytes;
+        this.commitIntervalMillis = builder.commitIntervalMillis;
     }
 
     public Map<String, String> getCatalogProperties() {
@@ -76,6 +80,19 @@ public class IcebergOptions implements Serializable {
         return targetFileSizeBytes;
     }
 
+    public Long getCommitIntervalBytes() {
+        return commitIntervalBytes;
+    }
+
+    public Long getCommitIntervalMillis() {
+        return commitIntervalMillis;
+    }
+
+    /** True when batches are buffered across commits instead of committed one by one. */
+    public boolean isCommitBatchingEnabled() {
+        return commitIntervalBytes != null || commitIntervalMillis != null;
+    }
+
     public Schema getAutoCreateSchema() {
         return autoCreateSchema;
     }
@@ -92,6 +109,8 @@ public class IcebergOptions implements Serializable {
         private Long targetFileSizeBytes;
         private Schema autoCreateSchema;
         private PartitionSpec autoCreateSpec;
+        private Long commitIntervalBytes;
+        private Long commitIntervalMillis;
 
         public Builder withCatalogProperties(Map<String, String> properties) {
             this.catalogProperties = properties == null ? null : new HashMap<>(properties);
@@ -128,6 +147,31 @@ public class IcebergOptions implements Serializable {
             return this;
         }
 
+        /**
+         * Buffer batches until roughly this many bytes have been written, then commit them all in
+         * one Iceberg transaction. Without it every Trident batch produces its own commit and
+         * snapshot.
+         *
+         * <p><strong>This weakens the delivery guarantee.</strong> Trident considers a batch
+         * delivered as soon as {@code commit()} returns, so batches buffered by this setting are
+         * lost if the worker dies before the flush. Leave it unset to keep exactly-once.
+         */
+        public Builder withCommitIntervalBytes(long bytes) {
+            this.commitIntervalBytes = bytes;
+            return this;
+        }
+
+        /**
+         * Flush the buffered batches once the oldest one is older than this, evaluated when the
+         * next batch is committed. A stalled stream therefore leaves the last window uncommitted
+         * until data resumes. Carries the same durability caveat as
+         * {@link #withCommitIntervalBytes(long)}.
+         */
+        public Builder withCommitIntervalMillis(long millis) {
+            this.commitIntervalMillis = millis;
+            return this;
+        }
+
         public IcebergOptions build() {
             if (catalogProperties == null || catalogProperties.isEmpty()) {
                 throw new IllegalStateException("Catalog properties must be specified.");
@@ -143,6 +187,12 @@ public class IcebergOptions implements Serializable {
             }
             if (targetFileSizeBytes != null && targetFileSizeBytes <= 0) {
                 throw new IllegalStateException("Target file size must be positive.");
+            }
+            if (commitIntervalBytes != null && commitIntervalBytes <= 0) {
+                throw new IllegalStateException("Commit interval bytes must be positive.");
+            }
+            if (commitIntervalMillis != null && commitIntervalMillis <= 0) {
+                throw new IllegalStateException("Commit interval millis must be positive.");
             }
             return new IcebergOptions(this);
         }
