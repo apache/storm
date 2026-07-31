@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.storm.iceberg.trident;
+package org.apache.storm.iceberg.common;
 
 import java.io.Serializable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.ITuple;
 
 /**
- * Converts a {@link TridentTuple} into an Iceberg {@link Record} matching the target table schema.
+ * Converts a {@link ITuple} into an Iceberg {@link Record} matching the target table schema.
  * Implementations must be serializable: they are shipped with the topology.
  */
 public interface RecordMapper extends Serializable {
@@ -36,5 +36,5 @@ public interface RecordMapper extends Serializable {
      * @param schema the current schema of the target Iceberg table
      * @return the record to write; never null
      */
-    Record map(TridentTuple tuple, Schema schema);
+    Record map(ITuple tuple, Schema schema);
 }

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.iceberg.trident;
+package org.apache.storm.iceberg.common;
 
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionKey;

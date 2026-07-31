@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.iceberg.trident;
+package org.apache.storm.iceberg.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -32,7 +32,7 @@ import java.time.ZoneOffset;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.ITuple;
 import org.junit.jupiter.api.Test;
 
 class FieldNameRecordMapperTest {
@@ -45,20 +45,20 @@ class FieldNameRecordMapperTest {
 
     private final FieldNameRecordMapper mapper = new FieldNameRecordMapper();
 
-    private TridentTuple mockTuple() {
-        TridentTuple tuple = mock(TridentTuple.class);
+    private ITuple mockTuple() {
+        ITuple tuple = mock(ITuple.class);
         when(tuple.contains(anyString())).thenReturn(false);
         return tuple;
     }
 
-    private void field(TridentTuple tuple, String name, Object value) {
+    private void field(ITuple tuple, String name, Object value) {
         when(tuple.contains(name)).thenReturn(true);
         when(tuple.getValueByField(name)).thenReturn(value);
     }
 
     @Test
     void mapsFieldsByName() {
-        TridentTuple tuple = mockTuple();
+        ITuple tuple = mockTuple();
         field(tuple, "id", 42L);
         field(tuple, "name", "storm");
         field(tuple, "score", 0.5d);
@@ -78,7 +78,7 @@ class FieldNameRecordMapperTest {
             Types.NestedField.required(2, "l", Types.LongType.get()),
             Types.NestedField.required(3, "f", Types.FloatType.get()),
             Types.NestedField.required(4, "d", Types.DoubleType.get()));
-        TridentTuple tuple = mockTuple();
+        ITuple tuple = mockTuple();
         field(tuple, "i", (short) 7);
         field(tuple, "l", 7);
         field(tuple, "f", 7);
@@ -95,7 +95,7 @@ class FieldNameRecordMapperTest {
     @Test
     void convertsInstantAndEpochMillisToTimestamptz() {
         Instant instant = Instant.parse("2026-07-12T10:15:30Z");
-        TridentTuple tuple = mockTuple();
+        ITuple tuple = mockTuple();
         field(tuple, "id", 1L);
         field(tuple, "name", "x");
         field(tuple, "ts", instant);
@@ -103,7 +103,7 @@ class FieldNameRecordMapperTest {
         Record record = mapper.map(tuple, SCHEMA);
         assertEquals(OffsetDateTime.ofInstant(instant, ZoneOffset.UTC), record.getField("ts"));
 
-        TridentTuple tuple2 = mockTuple();
+        ITuple tuple2 = mockTuple();
         field(tuple2, "id", 1L);
         field(tuple2, "name", "x");
         field(tuple2, "ts", instant.toEpochMilli());
@@ -114,7 +114,7 @@ class FieldNameRecordMapperTest {
 
     @Test
     void missingRequiredFieldThrows() {
-        TridentTuple tuple = mockTuple();
+        ITuple tuple = mockTuple();
         field(tuple, "id", 1L);
         // "name" (required) absent from the tuple
 
@@ -124,7 +124,7 @@ class FieldNameRecordMapperTest {
 
     @Test
     void nullForRequiredFieldThrows() {
-        TridentTuple tuple = mockTuple();
+        ITuple tuple = mockTuple();
         field(tuple, "id", 1L);
         field(tuple, "name", null);
 
@@ -133,7 +133,7 @@ class FieldNameRecordMapperTest {
 
     @Test
     void missingOptionalFieldIsNull() {
-        TridentTuple tuple = mockTuple();
+        ITuple tuple = mockTuple();
         field(tuple, "id", 1L);
         field(tuple, "name", "x");
 

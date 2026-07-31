@@ -20,74 +20,74 @@ package org.apache.storm.iceberg.examples;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
+import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.spout.IBatchSpout;
-import org.apache.storm.trident.topology.MasterBatchCoordinator;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 /**
- * Emits a bounded, deterministic sequence of generated tuples and then stops.
+ * Emits a bounded sequence of generated tuples and then stops, replaying any tuple that fails.
  *
- * <p>Each tuple's content is derived purely from its index, and the index range of a batch is
- * derived purely from the batch id, so a replayed batch always carries the same tuples. That is
- * what makes this spout usable with the exactly-once semantics of {@code IcebergState}: a
- * cycling {@code FixedBatchSpout} would not be, and a fixed list cannot reach interesting volumes.
+ * <p>Each tuple's content is derived purely from its index, and the index is used as its message
+ * id, so a failed tuple is re-emitted with exactly the same content. That makes the source
+ * replayable, which is what {@code IcebergBolt}'s at-least-once delivery needs: a failed batch is
+ * written again rather than lost.
+ *
+ * <p>Replay is what at-least-once means in practice here — a replayed tuple is appended a second
+ * time and both copies stay visible in the table, since the sink writes no equality deletes.
  */
-public class BoundedTupleSpout implements IBatchSpout {
+public class BoundedTupleSpout extends BaseRichSpout {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     private final long totalTuples;
-    private final int batchSize;
     private final Fields outputFields;
     private final ValuesFactory valuesFactory;
 
-    public BoundedTupleSpout(long totalTuples, int batchSize, Fields outputFields,
-                             ValuesFactory valuesFactory) {
+    private transient SpoutOutputCollector collector;
+    private transient long nextIndex;
+    private transient int taskCount;
+    private transient int taskIndex;
+
+    public BoundedTupleSpout(long totalTuples, Fields outputFields, ValuesFactory valuesFactory) {
         this.totalTuples = totalTuples;
-        this.batchSize = batchSize;
         this.outputFields = outputFields;
         this.valuesFactory = valuesFactory;
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+        this.collector = collector;
+        // Each task walks its own stride of the sequence, so the spout can be parallelised without
+        // any two tasks emitting the same row.
+        this.taskCount = context.getComponentTasks(context.getThisComponentId()).size();
+        this.taskIndex = context.getThisTaskIndex();
+        this.nextIndex = taskIndex;
     }
 
     @Override
-    public void emitBatch(long batchId, TridentCollector collector) {
-        // Trident transaction ids start at MasterBatchCoordinator.INIT_TXID (1).
-        long start = (batchId - MasterBatchCoordinator.INIT_TXID) * batchSize;
-        if (start < 0 || start >= totalTuples) {
+    public void nextTuple() {
+        if (nextIndex >= totalTuples) {
             return;
         }
-        long end = Math.min(start + batchSize, totalTuples);
-        for (long index = start; index < end; index++) {
-            collector.emit(valuesFactory.create(index));
-        }
+        long index = nextIndex;
+        nextIndex += taskCount;
+        collector.emit(valuesFactory.create(index), index);
     }
 
     @Override
-    public void ack(long batchId) {
+    public void fail(Object msgId) {
+        long index = (Long) msgId;
+        collector.emit(valuesFactory.create(index), index);
     }
 
     @Override
-    public void close() {
-    }
-
-    @Override
-    public Map<String, Object> getComponentConfiguration() {
-        return new HashMap<>();
-    }
-
-    @Override
-    public Fields getOutputFields() {
-        return outputFields;
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(outputFields);
     }
 
     /** Builds the tuple at a given position in the sequence. */

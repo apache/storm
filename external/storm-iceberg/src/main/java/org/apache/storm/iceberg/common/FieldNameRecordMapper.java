@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.iceberg.trident;
+package org.apache.storm.iceberg.common;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -29,7 +29,7 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.ITuple;
 
 /**
  * Default {@link RecordMapper}: matches tuple fields to Iceberg columns by name.
@@ -44,7 +44,7 @@ public class FieldNameRecordMapper implements RecordMapper {
     private static final long serialVersionUID = 1L;
 
     @Override
-    public Record map(TridentTuple tuple, Schema schema) {
+    public Record map(ITuple tuple, Schema schema) {
         GenericRecord record = GenericRecord.create(schema);
         for (Types.NestedField field : schema.columns()) {
             Object value = tuple.contains(field.name()) ? tuple.getValueByField(field.name()) : null;

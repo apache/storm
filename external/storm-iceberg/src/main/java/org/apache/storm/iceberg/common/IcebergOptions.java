@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.iceberg.trident;
+package org.apache.storm.iceberg.common;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -27,13 +27,16 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 
 /**
- * Serializable configuration for {@link IcebergState}.
+ * Serializable configuration for the Iceberg sink.
  *
  * <p>The catalog properties are passed verbatim to
  * {@code CatalogUtil.buildIcebergCatalog(...)}, so any Iceberg catalog (hive, hadoop, rest,
  * glue, nessie, ...) can be configured with the same property keys documented by Iceberg.
  */
 public class IcebergOptions implements Serializable {
+
+    /** Batch size used when a topology configures no commit threshold of its own. */
+    public static final int DEFAULT_COMMIT_INTERVAL_RECORDS = 1000;
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -47,6 +50,7 @@ public class IcebergOptions implements Serializable {
     private final PartitionSpec autoCreateSpec;
     private final Long commitIntervalBytes;
     private final Long commitIntervalMillis;
+    private final Integer commitIntervalRecords;
 
     private IcebergOptions(Builder builder) {
         this.catalogProperties = builder.catalogProperties;
@@ -58,6 +62,7 @@ public class IcebergOptions implements Serializable {
         this.autoCreateSpec = builder.autoCreateSpec;
         this.commitIntervalBytes = builder.commitIntervalBytes;
         this.commitIntervalMillis = builder.commitIntervalMillis;
+        this.commitIntervalRecords = builder.commitIntervalRecords;
     }
 
     public Map<String, String> getCatalogProperties() {
@@ -88,9 +93,8 @@ public class IcebergOptions implements Serializable {
         return commitIntervalMillis;
     }
 
-    /** True when batches are buffered across commits instead of committed one by one. */
-    public boolean isCommitBatchingEnabled() {
-        return commitIntervalBytes != null || commitIntervalMillis != null;
+    public Integer getCommitIntervalRecords() {
+        return commitIntervalRecords;
     }
 
     public Schema getAutoCreateSchema() {
@@ -111,6 +115,7 @@ public class IcebergOptions implements Serializable {
         private PartitionSpec autoCreateSpec;
         private Long commitIntervalBytes;
         private Long commitIntervalMillis;
+        private Integer commitIntervalRecords;
 
         public Builder withCatalogProperties(Map<String, String> properties) {
             this.catalogProperties = properties == null ? null : new HashMap<>(properties);
@@ -148,13 +153,11 @@ public class IcebergOptions implements Serializable {
         }
 
         /**
-         * Buffer batches until roughly this many bytes have been written, then commit them all in
-         * one Iceberg transaction. Without it every Trident batch produces its own commit and
-         * snapshot.
+         * Close the batch once roughly this many bytes have been written. Sizing batches this way
+         * keeps data files near the table's target size and the snapshot count sane.
          *
-         * <p><strong>This weakens the delivery guarantee.</strong> Trident considers a batch
-         * delivered as soon as {@code commit()} returns, so batches buffered by this setting are
-         * lost if the worker dies before the flush. Leave it unset to keep exactly-once.
+         * <p>Buffering costs latency and replay volume, not durability: buffered tuples are not
+         * acked, so a worker that dies before the commit has them replayed rather than lost.
          */
         public Builder withCommitIntervalBytes(long bytes) {
             this.commitIntervalBytes = bytes;
@@ -162,13 +165,18 @@ public class IcebergOptions implements Serializable {
         }
 
         /**
-         * Flush the buffered batches once the oldest one is older than this, evaluated when the
-         * next batch is committed. A stalled stream therefore leaves the last window uncommitted
-         * until data resumes. Carries the same durability caveat as
-         * {@link #withCommitIntervalBytes(long)}.
+         * Close the batch once it has been open this long, evaluated when the next tuple arrives.
+         * Configure {@link org.apache.storm.Config#TOPOLOGY_TICK_TUPLE_FREQ_SECS} as well to bound
+         * the latency of the last batch when the stream stalls.
          */
         public Builder withCommitIntervalMillis(long millis) {
             this.commitIntervalMillis = millis;
+            return this;
+        }
+
+        /** Close the batch once it holds this many tuples. */
+        public Builder withCommitIntervalRecords(int records) {
+            this.commitIntervalRecords = records;
             return this;
         }
 
@@ -193,6 +201,14 @@ public class IcebergOptions implements Serializable {
             }
             if (commitIntervalMillis != null && commitIntervalMillis <= 0) {
                 throw new IllegalStateException("Commit interval millis must be positive.");
+            }
+            if (commitIntervalRecords != null && commitIntervalRecords <= 0) {
+                throw new IllegalStateException("Commit interval records must be positive.");
+            }
+            if (commitIntervalBytes == null && commitIntervalMillis == null && commitIntervalRecords == null) {
+                // Without a threshold a batch would stay open until a tick tuple arrived, which
+                // costs unbounded latency on a topology that configured none.
+                this.commitIntervalRecords = DEFAULT_COMMIT_INTERVAL_RECORDS;
             }
             return new IcebergOptions(this);
         }

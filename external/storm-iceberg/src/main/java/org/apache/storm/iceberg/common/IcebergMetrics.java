@@ -16,83 +16,69 @@
  * limitations under the License.
  */
 
-package org.apache.storm.iceberg.trident;
+package org.apache.storm.iceberg.common;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Timer;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.iceberg.DataFile;
 import org.apache.storm.task.IMetricsContext;
 
 /**
- * Storm metrics-v2 instrumentation for {@link IcebergState}.
+ * Storm metrics-v2 instrumentation for the Iceberg sink.
  *
  * <p>When no {@link IMetricsContext} is available the metrics are still recorded, on unregistered
  * instances, so callers never need a null check.
  */
-class IcebergStateMetrics {
+public class IcebergMetrics {
 
     static final String RECORDS_WRITTEN = "iceberg-records-written";
     static final String DATA_FILES_COMMITTED = "iceberg-data-files-committed";
     static final String BYTES_COMMITTED = "iceberg-bytes-committed";
     static final String COMMIT_LATENCY = "iceberg-commit-latency";
     static final String COMMIT_FAILURES = "iceberg-commit-failures";
-    static final String BATCHES_SKIPPED = "iceberg-batches-skipped";
-    static final String BATCHES_BUFFERED = "iceberg-batches-buffered";
-    static final String WINDOWS_DROPPED = "iceberg-windows-dropped";
 
     private final Counter recordsWritten;
     private final Counter dataFilesCommitted;
     private final Counter bytesCommitted;
     private final Timer commitLatency;
     private final Counter commitFailures;
-    private final Counter batchesSkipped;
-    private final Counter batchesBuffered;
-    private final Counter windowsDropped;
 
-    IcebergStateMetrics(IMetricsContext metrics) {
+    public IcebergMetrics(IMetricsContext metrics) {
         this.recordsWritten = counter(metrics, RECORDS_WRITTEN);
         this.dataFilesCommitted = counter(metrics, DATA_FILES_COMMITTED);
         this.bytesCommitted = counter(metrics, BYTES_COMMITTED);
         this.commitFailures = counter(metrics, COMMIT_FAILURES);
-        this.batchesSkipped = counter(metrics, BATCHES_SKIPPED);
-        this.batchesBuffered = counter(metrics, BATCHES_BUFFERED);
-        this.windowsDropped = counter(metrics, WINDOWS_DROPPED);
-        this.commitLatency = metrics == null ? new Timer() : metrics.registerTimer(COMMIT_LATENCY);
+        this.commitLatency = timer(metrics, COMMIT_LATENCY);
     }
 
     private static Counter counter(IMetricsContext metrics, String name) {
-        return metrics == null ? new Counter() : metrics.registerCounter(name);
+        Counter registered = metrics == null ? null : metrics.registerCounter(name);
+        // Fall back to an unregistered instance: instrumentation must never be able to break the
+        // sink, whatever the metrics context does or does not hand back.
+        return registered == null ? new Counter() : registered;
     }
 
-    void recordsWritten(long count) {
+    private static Timer timer(IMetricsContext metrics, String name) {
+        Timer registered = metrics == null ? null : metrics.registerTimer(name);
+        return registered == null ? new Timer() : registered;
+    }
+
+    public void recordsWritten(long count) {
         recordsWritten.inc(count);
     }
 
     /** Counts the files and bytes made visible by a successful commit. */
-    void committed(DataFile[] dataFiles, long durationNanos) {
-        dataFilesCommitted.inc(dataFiles.length);
+    public void committed(List<DataFile> dataFiles, long durationNanos) {
+        dataFilesCommitted.inc(dataFiles.size());
         for (DataFile dataFile : dataFiles) {
             bytesCommitted.inc(dataFile.fileSizeInBytes());
         }
         commitLatency.update(durationNanos, TimeUnit.NANOSECONDS);
     }
 
-    void commitFailed() {
+    public void commitFailed() {
         commitFailures.inc();
-    }
-
-    void batchSkipped() {
-        batchesSkipped.inc();
-    }
-
-    /** A batch was written but held back, waiting for the commit threshold. */
-    void batchBuffered() {
-        batchesBuffered.inc();
-    }
-
-    /** A buffered window was discarded; the batches it held were lost. */
-    void windowDropped() {
-        windowsDropped.inc();
     }
 }
