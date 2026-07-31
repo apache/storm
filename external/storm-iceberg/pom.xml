@@ -29,10 +29,6 @@
 
     <name>Storm Iceberg</name>
 
-    <properties>
-        <iceberg.version>1.11.0</iceberg.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -43,28 +39,23 @@
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-api</artifactId>
-            <version>${iceberg.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-core</artifactId>
-            <version>${iceberg.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-data</artifactId>
-            <version>${iceberg.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-parquet</artifactId>
-            <version>${iceberg.version}</version>
         </dependency>
         <dependency>
             <!-- Required at runtime by iceberg-data's FormatModelRegistry even for Parquet-only use -->
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-orc</artifactId>
-            <version>${iceberg.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
