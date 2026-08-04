@@ -109,9 +109,7 @@ public class StatsUtil {
     private static final FromGlobalStreamIdTransformer FROM_GSID = new FromGlobalStreamIdTransformer();
 
 
-    // =====================================================================================
     // aggregation stats methods
-    // =====================================================================================
 
     /**
      * Aggregates number executed, process latency, and execute latency across all streams.
@@ -1315,9 +1313,7 @@ public class StatsUtil {
         return new ArrayList<WorkerSummary>(workerSummaryMap.values());
     }
 
-    // =====================================================================================
     // convert thrift stats to java maps
-    // =====================================================================================
 
     /**
      * convert thrift executor heartbeats into a java HashMap.
@@ -1478,9 +1474,7 @@ public class StatsUtil {
     }
 
 
-    // =====================================================================================
     // heartbeats related
-    // =====================================================================================
 
     /**
      * extracts a list of executor data from heart beats.
@@ -1873,9 +1867,7 @@ public class StatsUtil {
         return ret;
     }
 
-    // =====================================================================================
     // thriftify stats methods
-    // =====================================================================================
 
     /**
      * Used for local test.
@@ -2089,9 +2081,7 @@ public class StatsUtil {
     }
 
 
-    // =====================================================================================
     // helper methods
-    // =====================================================================================
 
     private static GlobalStreamId toGlobalStreamId(List list) {
         return new GlobalStreamId((String) list.get(0), (String) list.get(1));
@@ -2352,9 +2342,7 @@ public class StatsUtil {
     }
 
 
-    // =====================================================================================
     // key transformers
-    // =====================================================================================
 
     public static <K> Map windowSetConverter(Map stats, ClientStatsUtil.KeyTransformer<K> firstKeyFunc) {
         return ClientStatsUtil.windowSetConverter(stats, ClientStatsUtil.IDENTITY, firstKeyFunc);
