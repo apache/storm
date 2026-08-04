@@ -725,9 +725,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         return ret;
     }
 
-    // =============================================================================
-    // ============================ getter methods =================================
-    // =============================================================================
+    // getter methods
 
     private Map<String, Object> normalizedComponentConf(
         Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {

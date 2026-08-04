@@ -126,9 +126,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
         return raw;
     }
 
-    /*==================================================
-     * Helper Classes
-     *==================================================*/
+    // Helper Classes
 
     /**
      * This interface is responsible for choosing a subset of the target tasks to use for a given key.

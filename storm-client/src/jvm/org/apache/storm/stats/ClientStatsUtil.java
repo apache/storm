@@ -168,9 +168,7 @@ public class ClientStatsUtil {
         return ret;
     }
 
-    // =====================================================================================
     // key transformers
-    // =====================================================================================
 
     /**
      * Provides a way to transform one key into another.
