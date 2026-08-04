@@ -266,10 +266,10 @@ $(document).ready(function() {
         $.extend( $.fn.dataTable.defaults, {
           stateSave: true,
           stateSaveCallback: function (oSettings, oData) {
-            sessionStorage.setItem( oSettings.sTableId.concat(tableStateKey), JSON.stringify(oData) );
+            sessionStorage.setItem( oSettings.tableId.concat(tableStateKey), JSON.stringify(oData) );
           },
           stateLoadCallback: function (oSettings) {
-            return JSON.parse( sessionStorage.getItem(oSettings.sTableId.concat(tableStateKey)) );
+            return JSON.parse( sessionStorage.getItem(oSettings.tableId.concat(tableStateKey)) );
           },
           lengthMenu: [[20,40,60,100,-1], [20, 40, 60, 100, "All"]],
           pageLength: response["ui.pagination"]
