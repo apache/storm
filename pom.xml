@@ -69,6 +69,17 @@
 
     <properties>
         <javaVersion>25</javaVersion>
+        <!-- Switch for the active checkstyle ruleset, by basename (no .xml extension) -
+        e.g. "storm_checkstyle" or "checkstyle2" for a file named checkstyle2.xml placed
+        in storm-checkstyle/src/main/resources/storm/. Both the checkstyle check (below)
+        and checkstyle-autofix.groovy (which parses this same file directly at build
+        time) key off this one property, so swapping rulesets never requires touching
+        more than this line - or, per-module, redeclaring this same property with a
+        different value in that module's own <properties> block, or passing
+        -Dstorm.checkstyle.config=checkstyle2 on the CLI. -->
+        <storm.checkstyle.config>storm_checkstyle</storm.checkstyle.config>
+        <gmavenplus.version>4.2.0</gmavenplus.version>
+        <groovy.version>4.0.29</groovy.version>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
 
@@ -1095,6 +1106,48 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <!--
+                    Auto-fixes checkstyle violations before the maven-checkstyle-plugin
+                    execution below checks the code. Every fixer in checkstyle-autofix.groovy
+                    reads its parameters (basicOffset, LineLength max, CustomImportOrder rule,
+                    etc.) directly out of storm/${storm.checkstyle.config}.xml at run time via
+                    XmlSlurper - there is no formatter engine or preset style as it follows the
+                    checkstyle ruleset. Runs at `validate`, before the checkstyle. gmavenplus
+                    interprets Groovy directly, so it needs no prior `compile` phase
+                    -->
+                    <groupId>org.codehaus.gmavenplus</groupId>
+                    <artifactId>gmavenplus-plugin</artifactId>
+                    <version>${gmavenplus.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy</artifactId>
+                            <version>${groovy.version}</version>
+                        </dependency>
+                        <dependency>
+                            <!-- XmlSlurper, used by checkstyle-autofix.groovy to parse the
+                            checkstyle ruleset itself - split out of Groovy core since Groovy 4. -->
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-xml</artifactId>
+                            <version>${groovy.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>checkstyle-autofix</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>execute</goal>
+                            </goals>
+                            <configuration>
+                                <scripts>
+                                    <script>file:///${maven.multiModuleProjectDirectory}/storm-checkstyle/src/main/resources/storm/checkstyle-autofix.groovy</script>
+                                </scripts>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <!--To support checkstyle goals. For example: "mvn checkstyle:checkstyle"-->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
@@ -1118,7 +1171,7 @@
                             <id>validate</id>
                             <phase>validate</phase>
                             <configuration>
-                                <configLocation>storm/storm_checkstyle.xml</configLocation>
+                                <configLocation>storm/${storm.checkstyle.config}.xml</configLocation>
                                 <propertyExpansion>org.checkstyle.google.severity=error</propertyExpansion>
                                 <encoding>UTF-8</encoding>
                                 <failOnViolation>true</failOnViolation>
