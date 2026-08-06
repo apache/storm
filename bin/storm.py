@@ -1425,6 +1425,23 @@ def monitor(args):
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 
+def merge_args_preserving_order(sys_args, known_args, unknown_args):
+    #Recombine main_args and unknown_args in the order they originally appeared in sys_args.
+
+    known_args = list(known_args)
+    unknown_args = list(unknown_args)
+    merged = []
+    ki = ui = 0
+    for token in sys_args:
+        if ki < len(known_args) and known_args[ki] == token:
+            merged.append(token)
+            ki += 1
+        elif ui < len(unknown_args) and unknown_args[ui] == token:
+            merged.append(token)
+            ui += 1
+    return merged
+
+
 def main():
     init_storm_env()
     storm_parser = initialize_main_command()
@@ -1433,7 +1450,7 @@ def main():
         sys.exit(1)
     raw_args, unknown_args = storm_parser.parse_known_args()
     if hasattr(raw_args, "main_args"):
-        raw_args.main_args += unknown_args
+        raw_args.main_args = merge_args_preserving_order(sys.argv, raw_args.main_args, unknown_args)
     raw_args.func(raw_args)
 
 
