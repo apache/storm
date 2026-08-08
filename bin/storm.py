@@ -23,6 +23,7 @@ import os
 import shlex
 import subprocess
 import sys
+from collections import Counter
 from random import randint
 
 from argparse import HelpFormatter
@@ -1425,20 +1426,37 @@ def monitor(args):
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 
-def merge_args_preserving_order(sys_args, known_args, unknown_args):
-    #Recombine main_args and unknown_args in the order they originally appeared in sys_args.
+def merge_args_and_preserve_order(sys_args, known_args, unknown_args):
+    """
+    Attributes:
+     - sys_args: original system arguments
+     - known_args: tokens argparse recognized as a declared option or positional (e.g. raw_args.main_args
+       before reconstruction)
+     - unknown_args: tokens argparse did not recognize, as returned by parse_known_args()
+
+    Returns:
+        - merged: list containing tokes in the order they appear originally in sys_args, followed by any
+          tokens from known_args/unknown_args that could not be matched against sys_args (e.g. because they
+          were injected programmatically rather than typed on the command line).
+    """
 
     known_args = list(known_args)
     unknown_args = list(unknown_args)
+    remaining = Counter(known_args) + Counter(unknown_args)
     merged = []
-    ki = ui = 0
+
+    # Reorder 
     for token in sys_args:
-        if ki < len(known_args) and known_args[ki] == token:
+        if remaining[token] > 0:
+            remaining[token] -= 1
             merged.append(token)
-            ki += 1
-        elif ui < len(unknown_args) and unknown_args[ui] == token:
-            merged.append(token)
-            ui += 1
+
+    if sum(remaining.values()) > 0:
+        for token in known_args + unknown_args:
+            if remaining[token] > 0:
+                remaining[token] -= 1
+                merged.append(token)
+
     return merged
 
 
@@ -1450,7 +1468,7 @@ def main():
         sys.exit(1)
     raw_args, unknown_args = storm_parser.parse_known_args()
     if hasattr(raw_args, "main_args"):
-        raw_args.main_args = merge_args_preserving_order(sys.argv, raw_args.main_args, unknown_args)
+        raw_args.main_args = merge_args_and_preserve_order(sys.argv, raw_args.main_args, unknown_args)
     raw_args.func(raw_args)
 
 
