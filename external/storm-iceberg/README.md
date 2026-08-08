@@ -102,6 +102,9 @@ so every Iceberg catalog works with its standard configuration keys: `type` = `h
 | `withCommitIntervalRecords(int)` | 1000, when no other threshold is set | Close the batch after this many tuples |
 | `withCommitIntervalBytes(long)` | disabled | Close the batch after roughly this many bytes |
 | `withCommitIntervalMillis(long)` | disabled | Close the batch once it has been open this long |
+| `withGroupCommitIntervalMillis(long)` | 5000 | Committer only: commit once the oldest accumulated batch is this old |
+| `withGroupCommitMaxDataFiles(int)` | 1000 | Committer only: commit once this many data files have accumulated |
+| `withTickIntervalSecs(int)` | none — inherits `topology.tick.tuple.freq.secs` | Per-component tick frequency for the writer or committer |
 
 Buffering costs latency and replay volume, not durability: buffered tuples are not acked, so a
 worker that dies mid-batch has them replayed rather than losing them.
@@ -120,12 +123,86 @@ public interface RecordMapper extends Serializable {
 }
 ```
 
+## Choosing a topology shape
+
+`IcebergBolt` writes and commits in the same task. It is the simplest shape and the right one when
+the sink's parallelism is low: with parallelism N committing every T seconds, the table receives
+`N/T` snapshots per second, each a metadata rewrite plus a compare-and-swap on the catalog.
+
+`IcebergWriterBolt` plus `IcebergCommitterBolt` splits those two jobs. Writers seal batches and emit
+their data files, anchored to the batch's tuples; a single committer appends every writer's files in
+one commit and acks. The spout still advances only after the commit is visible — the ack tree keeps
+it open — but the commit cost no longer scales with parallelism, so the interval can be an order of
+magnitude shorter at the same load on the catalog.
+
+```java
+builder.setBolt("iceberg-writer", new IcebergWriterBolt(writerOptions), 8)
+    .fieldsGrouping("events", new Fields("region"));
+builder.setBolt("iceberg-committer", new IcebergCommitterBolt(committerOptions), 1)
+    .globalGrouping("iceberg-writer");
+```
+
+The committer must have a parallelism of one and a `globalGrouping`. It logs a warning if it finds
+itself running with more tasks than that, because each of them would commit independently — the
+very cost the split exists to remove.
+
+**The committer needs a tick.** Its group-commit interval is only evaluated when a descriptor
+arrives: after a lull, a single accumulated descriptor sits uncommitted indefinitely, and its
+tuples stay un-acked with it. Set `topology.tick.tuple.freq.secs` for the topology, or
+`withTickIntervalSecs` on the committer's options to give it a tick of its own. The same is true of
+the writers' time-based threshold, and of `IcebergBolt`'s.
+
+Working examples of both shapes live under
+[`examples/storm-iceberg-examples`](../../examples/storm-iceberg-examples/src/main/java/org/apache/storm/iceberg/examples):
+`IcebergPartitionedBoltExampleTopology` for the monolithic bolt, `IcebergSplitSinkExampleTopology`
+for the writer/committer split.
+
+## Sizing
+
+Two inequalities govern whether a topology behaves. Both are about ack latency, which with either
+shape is the time from a tuple arriving to its commit becoming visible.
+
+```
+topology.message.timeout.secs > ack latency + margin
+topology.max.spout.pending    ≳ target rate × ack latency
+```
+
+Violating the first replays tuples whose commit is still succeeding, so the duplicate is guaranteed
+rather than merely possible. Violating the second caps throughput at
+`max.spout.pending / ack latency` regardless of how fast the rest of the pipeline runs.
+
+One thing to size for with the split sink: a descriptor carries `ContentFileParser`'s
+serialization of every data file in the seal, per-column metrics included, so a wide schema sealing
+many partitions at once puts hundreds of KB on the wire each seal. `groupCommitMaxDataFiles` bounds
+what the committer holds; nothing bounds a single writer's seal but its own commit thresholds.
+
+One trap worth checking: if `commitIntervalRecords` exceeds `topology.max.spout.pending`, the record
+threshold can never fire, because the spout stops emitting before the batch fills. Every batch then
+ends up tick-driven and the thresholds appear to be ignored.
+
+## Metrics
+
+| Metric | Component | Meaning |
+| --- | --- | --- |
+| `iceberg-records-written` | writer | records appended to open files |
+| `iceberg-data-files-sealed` | writer | files closed and handed downstream |
+| `iceberg-seal-latency` | writer | time to close a batch's files |
+| `iceberg-data-files-committed` | committer | files made visible |
+| `iceberg-bytes-committed` | committer | bytes made visible |
+| `iceberg-commit-latency` | committer | time to append |
+| `iceberg-commit-failures` | committer | failed appends |
+| `iceberg-pending-data-files` | committer | files accumulated but not yet committed |
+| `iceberg-oldest-pending-age-ms` | committer | age of the oldest batch waiting to commit |
+
+`iceberg-oldest-pending-age-ms` is the one to alert on: a committer that has stopped making progress
+shows up there long before the upstream tuples start timing out.
+
 ## Recovery
 
 Data files are made durable first, then a write-ahead log entry naming them is written under
-`<table location>/metadata/_storm_wal/<topologyName>/<taskId>/` with a freshly minted commit id,
-then the files are appended in a single Iceberg operation that stamps that commit id on the
-snapshot summary, then the entry is deleted and the tuples are acked.
+`<table location>/metadata/_storm_wal/<topologyName>/<componentId>/<taskIndex>/` with a freshly
+minted commit id, then the files are appended in a single Iceberg operation that stamps that
+commit id on the snapshot summary, then the entry is deleted and the tuples are acked.
 
 On startup a task settles whatever it left pending: it asks the table whether a snapshot carries
 each entry's commit id, dropping the entry if the commit landed and re-appending the files if it
@@ -141,6 +218,16 @@ present — the tuples are acked and nothing is replayed. If it did not, the ent
 the tuples are failed, so the source's replay writes those rows exactly once and the abandoned
 files become orphans. Only when the table itself is unreachable is the entry left for startup,
 which is the one path that can duplicate rows.
+
+### Upgrade note
+
+The WAL was previously keyed by the global task id (`.../<topologyName>/<taskId>/`); it is now
+keyed by component id and task index, because global task ids are reassigned whenever the
+topology's structure changes and would strand entries under an id nobody reads again. Entries left
+under the old path by a pre-upgrade worker are therefore never read. That is safe — those tuples
+were never acked, so the source replays them — but their data files become orphans, cleaned up by
+`remove_orphan_files` like any other. Leftover JSON under an old `<taskId>` directory can be
+deleted once the replays have landed.
 
 ## Maintenance
 

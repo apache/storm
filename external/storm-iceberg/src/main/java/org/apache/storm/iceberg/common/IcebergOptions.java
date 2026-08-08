@@ -37,6 +37,10 @@ public class IcebergOptions implements Serializable {
 
     /** Batch size used when a topology configures no commit threshold of its own. */
     public static final int DEFAULT_COMMIT_INTERVAL_RECORDS = 1000;
+    /** How long the committer accumulates writer batches before a single append. */
+    public static final long DEFAULT_GROUP_COMMIT_INTERVAL_MILLIS = 5000L;
+    /** Ceiling on files per append, bounding manifest size and committer heap. */
+    public static final int DEFAULT_GROUP_COMMIT_MAX_DATA_FILES = 1000;
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -51,6 +55,9 @@ public class IcebergOptions implements Serializable {
     private final Long commitIntervalBytes;
     private final Long commitIntervalMillis;
     private final Integer commitIntervalRecords;
+    private final long groupCommitIntervalMillis;
+    private final int groupCommitMaxDataFiles;
+    private final Integer tickIntervalSecs;
 
     private IcebergOptions(Builder builder) {
         this.catalogProperties = builder.catalogProperties;
@@ -63,6 +70,9 @@ public class IcebergOptions implements Serializable {
         this.commitIntervalBytes = builder.commitIntervalBytes;
         this.commitIntervalMillis = builder.commitIntervalMillis;
         this.commitIntervalRecords = builder.commitIntervalRecords;
+        this.groupCommitIntervalMillis = builder.groupCommitIntervalMillis;
+        this.groupCommitMaxDataFiles = builder.groupCommitMaxDataFiles;
+        this.tickIntervalSecs = builder.tickIntervalSecs;
     }
 
     public Map<String, String> getCatalogProperties() {
@@ -105,6 +115,18 @@ public class IcebergOptions implements Serializable {
         return autoCreateSpec;
     }
 
+    public long getGroupCommitIntervalMillis() {
+        return groupCommitIntervalMillis;
+    }
+
+    public int getGroupCommitMaxDataFiles() {
+        return groupCommitMaxDataFiles;
+    }
+
+    public Integer getTickIntervalSecs() {
+        return tickIntervalSecs;
+    }
+
     public static class Builder {
         private Map<String, String> catalogProperties;
         private String tableIdentifier;
@@ -116,6 +138,9 @@ public class IcebergOptions implements Serializable {
         private Long commitIntervalBytes;
         private Long commitIntervalMillis;
         private Integer commitIntervalRecords;
+        private long groupCommitIntervalMillis = DEFAULT_GROUP_COMMIT_INTERVAL_MILLIS;
+        private int groupCommitMaxDataFiles = DEFAULT_GROUP_COMMIT_MAX_DATA_FILES;
+        private Integer tickIntervalSecs;
 
         public Builder withCatalogProperties(Map<String, String> properties) {
             this.catalogProperties = properties == null ? null : new HashMap<>(properties);
@@ -180,6 +205,34 @@ public class IcebergOptions implements Serializable {
             return this;
         }
 
+        /**
+         * How long {@code IcebergCommitterBolt} accumulates sealed batches before appending them
+         * in one commit. Read only by the committer bolt; the monolithic sink ignores it.
+         */
+        public Builder withGroupCommitIntervalMillis(long millis) {
+            this.groupCommitIntervalMillis = millis;
+            return this;
+        }
+
+        /**
+         * Commit as soon as this many data files have accumulated, whatever the interval says.
+         * Bounds the size of a single manifest and the committer's heap.
+         */
+        public Builder withGroupCommitMaxDataFiles(int dataFiles) {
+            this.groupCommitMaxDataFiles = dataFiles;
+            return this;
+        }
+
+        /**
+         * Tick frequency declared by the bolt itself, so a writer and a committer in the same
+         * topology can run at different cadences. Without it they inherit the topology-wide
+         * {@link org.apache.storm.Config#TOPOLOGY_TICK_TUPLE_FREQ_SECS}.
+         */
+        public Builder withTickIntervalSecs(int secs) {
+            this.tickIntervalSecs = secs;
+            return this;
+        }
+
         public IcebergOptions build() {
             if (catalogProperties == null || catalogProperties.isEmpty()) {
                 throw new IllegalStateException("Catalog properties must be specified.");
@@ -204,6 +257,15 @@ public class IcebergOptions implements Serializable {
             }
             if (commitIntervalRecords != null && commitIntervalRecords <= 0) {
                 throw new IllegalStateException("Commit interval records must be positive.");
+            }
+            if (groupCommitIntervalMillis <= 0) {
+                throw new IllegalStateException("Group commit interval millis must be positive.");
+            }
+            if (groupCommitMaxDataFiles <= 0) {
+                throw new IllegalStateException("Group commit max data files must be positive.");
+            }
+            if (tickIntervalSecs != null && tickIntervalSecs <= 0) {
+                throw new IllegalStateException("Tick interval secs must be positive.");
             }
             if (commitIntervalBytes == null && commitIntervalMillis == null && commitIntervalRecords == null) {
                 // Without a threshold a batch would stay open until a tick tuple arrived, which

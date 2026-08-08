@@ -85,4 +85,38 @@ class IcebergOptionsTest {
             out.writeObject(options); // must not throw NotSerializableException
         }
     }
+
+    @Test
+    void groupCommitOptionsHaveDefaults() {
+        IcebergOptions options = validBuilder().build();
+
+        assertEquals(IcebergOptions.DEFAULT_GROUP_COMMIT_INTERVAL_MILLIS,
+            options.getGroupCommitIntervalMillis());
+        assertEquals(IcebergOptions.DEFAULT_GROUP_COMMIT_MAX_DATA_FILES,
+            options.getGroupCommitMaxDataFiles());
+        assertNull(options.getTickIntervalSecs(), "no tick override unless asked for");
+    }
+
+    @Test
+    void groupCommitOptionsAreOverridable() {
+        IcebergOptions options = validBuilder()
+            .withGroupCommitIntervalMillis(2000L)
+            .withGroupCommitMaxDataFiles(50)
+            .withTickIntervalSecs(5)
+            .build();
+
+        assertEquals(2000L, options.getGroupCommitIntervalMillis());
+        assertEquals(50, options.getGroupCommitMaxDataFiles());
+        assertEquals(5, options.getTickIntervalSecs());
+    }
+
+    @Test
+    void nonPositiveGroupCommitOptionsAreRejected() {
+        assertThrows(IllegalStateException.class,
+            () -> validBuilder().withGroupCommitIntervalMillis(0L).build());
+        assertThrows(IllegalStateException.class,
+            () -> validBuilder().withGroupCommitMaxDataFiles(0).build());
+        assertThrows(IllegalStateException.class,
+            () -> validBuilder().withTickIntervalSecs(0).build());
+    }
 }

@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import org.apache.iceberg.ContentFileParser;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.FileIO;
@@ -63,14 +62,20 @@ public final class CommitWal {
     private final FileIO io;
     private final String prefix;
 
-    public CommitWal(Table table, String topologyName, int taskId) {
+    /**
+     * Entries are keyed by component and task index rather than by global task id: task ids are
+     * assigned per submission and shift when the topology's structure changes, which would strand
+     * an entry under an id nobody reads again.
+     */
+    public CommitWal(Table table, String topologyName, String componentId, int taskIndex) {
         this.table = table;
         this.io = table.io();
         String location = table.location();
         while (location.endsWith("/")) {
             location = location.substring(0, location.length() - 1);
         }
-        this.prefix = location + "/metadata/" + WAL_DIR + "/" + topologyName + "/" + taskId;
+        this.prefix = location + "/metadata/" + WAL_DIR + "/" + topologyName
+            + "/" + componentId + "/" + taskIndex;
     }
 
     /** Record the files of one prepared commit, returning the entry that identifies it. */
@@ -87,11 +92,8 @@ public final class CommitWal {
             json.writeStartObject();
             json.writeStringField(COMMIT_ID, commitId);
             json.writeNumberField(CREATED_AT_MS, createdAtMs);
-            json.writeArrayFieldStart(DATA_FILES);
-            for (DataFile dataFile : dataFiles) {
-                ContentFileParser.toJson(dataFile, table.specs().get(dataFile.specId()), json);
-            }
-            json.writeEndArray();
+            json.writeFieldName(DATA_FILES);
+            DataFileCodec.writeArray(json, dataFiles, table);
             json.writeEndObject();
         } catch (IOException e) {
             throw new UncheckedIOException("Failed writing Iceberg commit WAL entry " + location, e);
@@ -130,16 +132,12 @@ public final class CommitWal {
     /** The data files named by an entry, resolved against the spec they were written with. */
     public List<DataFile> read(WalEntry entry) {
         InputFile inputFile = io.newInputFile(entry.location());
-        List<DataFile> dataFiles = new ArrayList<>();
         try (InputStream in = inputFile.newStream()) {
             JsonNode root = JsonUtil.mapper().readTree(in);
-            for (JsonNode node : root.get(DATA_FILES)) {
-                dataFiles.add((DataFile) ContentFileParser.fromJson(node, table.specs()));
-            }
+            return DataFileCodec.readArray(root.get(DATA_FILES), table.specs());
         } catch (IOException e) {
             throw new UncheckedIOException("Failed reading Iceberg commit WAL entry " + entry.location(), e);
         }
-        return dataFiles;
     }
 
     /** Drop an entry whose commit is known to be visible. */

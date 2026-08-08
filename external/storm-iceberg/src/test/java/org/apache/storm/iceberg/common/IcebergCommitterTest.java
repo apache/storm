@@ -70,7 +70,7 @@ class IcebergCommitterTest {
     void setUp() {
         catalog = new HadoopCatalog(new Configuration(), tempDir.toUri().toString());
         table = catalog.createTable(TABLE_ID, SCHEMA, PartitionSpec.unpartitioned());
-        wal = new CommitWal(table, "topo", 0);
+        wal = new CommitWal(table, "topo", "iceberg", 0);
         committer = new IcebergCommitter(table, wal, new IcebergMetrics(null));
     }
 

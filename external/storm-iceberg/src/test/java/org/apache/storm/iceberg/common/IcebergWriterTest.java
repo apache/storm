@@ -116,7 +116,7 @@ class IcebergWriterTest {
             List<DataFile> dataFiles = writer.complete();
             assertFalse(dataFiles.isEmpty(), "completing a non-empty writer yields data files");
 
-            CommitWal wal = new CommitWal(writer.table(), "topo", 0);
+            CommitWal wal = new CommitWal(writer.table(), "topo", "iceberg", 0);
             new IcebergCommitter(writer.table(), wal, new IcebergMetrics(null)).commit(dataFiles);
         }
 

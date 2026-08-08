@@ -19,7 +19,12 @@
 package org.apache.storm.iceberg.bolt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -28,28 +33,20 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.CatalogUtil;
-import org.apache.iceberg.DataFiles;
-import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.data.IcebergGenerics;
-import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.HadoopCatalog;
-import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Types;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
-import org.apache.storm.iceberg.common.CommitWal;
-import org.apache.storm.iceberg.common.IcebergCommitter;
 import org.apache.storm.iceberg.common.IcebergOptions;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -58,8 +55,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
-class IcebergBoltTest {
+class IcebergWriterBoltTest {
 
     private static final Schema SCHEMA = new Schema(
         Types.NestedField.required(1, "id", Types.LongType.get()),
@@ -95,13 +94,13 @@ class IcebergBoltTest {
             .withTable("db.events");
     }
 
-    private IcebergBolt prepared(IcebergOptions options) {
-        IcebergBolt bolt = new IcebergBolt(options);
+    private IcebergWriterBolt prepared(IcebergOptions options) {
+        IcebergWriterBolt bolt = new IcebergWriterBolt(options);
         Map<String, Object> topoConf = new HashMap<>();
         topoConf.put(Config.TOPOLOGY_NAME, "test-topology");
         TopologyContext context = mock(TopologyContext.class);
         when(context.getThisTaskId()).thenReturn(7);
-        when(context.getThisComponentId()).thenReturn("iceberg");
+        when(context.getThisComponentId()).thenReturn("iceberg-writer");
         when(context.getThisTaskIndex()).thenReturn(0);
         bolt.prepare(topoConf, context, collector);
         return bolt;
@@ -125,81 +124,71 @@ class IcebergBoltTest {
         return tuple;
     }
 
-    private List<Record> readRows() {
-        Table table = verifyCatalog.loadTable(TABLE_ID);
-        table.refresh();
-        List<Record> rows = new ArrayList<>();
-        try (CloseableIterable<Record> records = IcebergGenerics.read(table).build()) {
-            records.forEach(rows::add);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return rows;
-    }
-
     @Test
-    void tuplesAreNotAckedBeforeTheirCommitLands() {
-        IcebergBolt bolt = prepared(baseOptions().withCommitIntervalRecords(3).build());
+    void nothingIsEmittedOrAckedBeforeTheSealThreshold() {
+        IcebergWriterBolt bolt = prepared(baseOptions().withCommitIntervalRecords(3).build());
 
         bolt.execute(tuple(1L, "alice"));
         bolt.execute(tuple(2L, "bob"));
 
-        verify(collector, never()).ack(org.mockito.ArgumentMatchers.any());
-        assertEquals(0, readRows().size(), "nothing is visible before the commit");
+        verify(collector, never()).emit(anyCollection(), anyList());
+        verify(collector, never()).ack(any());
         bolt.cleanup();
     }
 
     @Test
-    void reachingTheRecordThresholdCommitsAndAcksEveryBufferedTuple() {
-        IcebergBolt bolt = prepared(baseOptions().withCommitIntervalRecords(2).build());
+    void sealingEmitsOneDescriptorAnchoredToEveryTupleOfTheBatch() {
+        IcebergWriterBolt bolt = prepared(baseOptions().withCommitIntervalRecords(2).build());
+        Tuple first = tuple(1L, "alice");
+        Tuple second = tuple(2L, "bob");
 
-        bolt.execute(tuple(1L, "alice"));
-        bolt.execute(tuple(2L, "bob"));
+        bolt.execute(first);
+        bolt.execute(second);
 
-        verify(collector, times(2)).ack(org.mockito.ArgumentMatchers.any());
-        assertEquals(2, readRows().size());
+        ArgumentCaptor<Collection<Tuple>> anchors = ArgumentCaptor.forClass(Collection.class);
+        ArgumentCaptor<List<Object>> values = ArgumentCaptor.forClass(List.class);
+        verify(collector, times(1)).emit(anchors.capture(), values.capture());
+        assertEquals(List.of(first, second), List.copyOf(anchors.getValue()),
+            "the descriptor is a child of every tuple in the batch");
+        assertEquals(7, values.getValue().get(0), "the writer task id travels with the descriptor");
+        assertTrue(values.getValue().get(1).toString().contains("file_path")
+                || values.getValue().get(1).toString().contains("file-path"),
+            "the descriptor carries serialized data files");
+        verify(collector, times(2)).ack(any());
+        // The order is the guarantee: acking before emitting the anchored descriptor would close
+        // the spout's ack tree while the commit is still outstanding.
+        InOrder inOrder = inOrder(collector);
+        inOrder.verify(collector).emit(anyCollection(), anyList());
+        inOrder.verify(collector, times(2)).ack(any());
         bolt.cleanup();
     }
 
     @Test
-    void aTickTupleFlushesWhatIsBuffered() {
-        IcebergBolt bolt = prepared(baseOptions().withCommitIntervalRecords(100).build());
+    void aTickTupleSealsWhatIsBuffered() {
+        IcebergWriterBolt bolt = prepared(baseOptions().withCommitIntervalRecords(100).build());
 
         bolt.execute(tuple(1L, "alice"));
         bolt.execute(tickTuple());
 
-        verify(collector, times(1)).ack(org.mockito.ArgumentMatchers.any());
-        assertEquals(1, readRows().size());
+        verify(collector, times(1)).emit(anyCollection(), anyList());
+        verify(collector, times(1)).ack(any());
         bolt.cleanup();
     }
 
     @Test
-    void aTickTupleWithNothingBufferedCommitsNothing() {
-        IcebergBolt bolt = prepared(baseOptions().withCommitIntervalRecords(100).build());
+    void aTickTupleWithNothingBufferedEmitsNothing() {
+        IcebergWriterBolt bolt = prepared(baseOptions().withCommitIntervalRecords(100).build());
 
         bolt.execute(tickTuple());
 
-        verify(collector, never()).ack(org.mockito.ArgumentMatchers.any());
-        assertEquals(0, readRows().size());
+        verify(collector, never()).emit(anyCollection(), anyList());
+        verify(collector, never()).ack(any());
         bolt.cleanup();
     }
 
     @Test
-    void aFailedCommitFailsTheBufferedTuplesInsteadOfAckingThem() {
-        IcebergBolt bolt = prepared(baseOptions().withCommitIntervalRecords(2).build());
-        bolt.execute(tuple(1L, "alice"));
-        // The table disappears underneath the bolt, so the commit cannot land.
-        verifyCatalog.dropTable(TABLE_ID, true);
-
-        bolt.execute(tuple(2L, "bob"));
-
-        verify(collector, never()).ack(org.mockito.ArgumentMatchers.any());
-        verify(collector, times(2)).fail(org.mockito.ArgumentMatchers.any());
-    }
-
-    @Test
-    void aWriteFailureFailsTheOpenBatchAndTheOffendingTuple() {
-        IcebergBolt bolt = prepared(baseOptions().withCommitIntervalRecords(5).build());
+    void aWriteFailureFailsTheOpenBatchAndEmitsNothing() {
+        IcebergWriterBolt bolt = prepared(baseOptions().withCommitIntervalRecords(5).build());
         bolt.execute(tuple(1L, "alice"));
         Tuple wrongType = mock(Tuple.class);
         when(wrongType.getSourceComponent()).thenReturn("spout");
@@ -211,31 +200,19 @@ class IcebergBoltTest {
 
         bolt.execute(wrongType);
 
-        verify(collector, never()).ack(org.mockito.ArgumentMatchers.any());
-        // The tuple that failed to map is failed too, rather than left to time out.
-        verify(collector, times(1)).fail(wrongType);
-        verify(collector, times(2)).fail(org.mockito.ArgumentMatchers.any());
-        assertEquals(0, readRows().size());
+        verify(collector, never()).emit(anyCollection(), anyList());
+        verify(collector, never()).ack(any());
+        verify(collector, times(2)).fail(any());
     }
 
     @Test
-    void prepareReplaysACommitLeftPendingByAnEarlierRun() {
-        Table table = verifyCatalog.loadTable(TABLE_ID);
-        CommitWal wal = new CommitWal(table, "test-topology", "iceberg", 0);
-        CommitWal.WalEntry pending = wal.write(List.of(DataFiles.builder(table.spec())
-            .withPath(table.location() + "/data/left-behind.parquet")
-            .withFileSizeInBytes(1024L)
-            .withRecordCount(1L)
-            .withFormat(FileFormat.PARQUET)
-            .build()));
+    void cleanupFailsWhatWasNeverSealed() {
+        IcebergWriterBolt bolt = prepared(baseOptions().withCommitIntervalRecords(100).build());
+        bolt.execute(tuple(1L, "alice"));
 
-        IcebergBolt bolt = prepared(baseOptions().withCommitIntervalRecords(100).build());
-
-        table.refresh();
-        assertEquals(pending.commitId(),
-            table.currentSnapshot().summary().get(IcebergCommitter.COMMIT_ID_PROPERTY),
-            "the pending commit is replayed on startup");
-        assertEquals(List.of(), wal.listPending(), "and its WAL entry is cleared");
         bolt.cleanup();
+
+        verify(collector, never()).ack(any());
+        verify(collector, times(1)).fail(any());
     }
 }

@@ -29,58 +29,44 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.iceberg.bolt.IcebergBolt;
+import org.apache.storm.iceberg.bolt.IcebergCommitterBolt;
+import org.apache.storm.iceberg.bolt.IcebergWriterBolt;
 import org.apache.storm.iceberg.common.IcebergOptions;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 /**
- * Ingests 10 million generated rows into a partitioned Iceberg table on a local Hadoop catalog,
- * committing roughly every 1 MB written rather than once per tuple.
+ * The Iceberg sink split into parallel writers and one committer.
  *
- * <p>The table is partitioned by {@code identity(region)} and {@code days(event_time)}, so a
- * single batch can still span more than one partition and the sink opens one data file per
- * partition through the Iceberg fanout writer. The stream is field-grouped on {@code region}, so
- * each task only ever sees one region; with two days in the generated data, expect roughly two
- * files per commit per task rather than one per partition in the whole table.
+ * <p>Compared with {@link IcebergPartitionedBoltExampleTopology}, the commit cost no longer
+ * multiplies by the sink's parallelism: four writers still produce one snapshot per group commit
+ * rather than four. That is what makes the short intervals used here affordable — a five second
+ * group commit keeps ack latency far below the message timeout, which is what stops tuples from
+ * timing out and being replayed as duplicates.
  *
- * <p>Buffering costs latency and replay volume, not durability: tuples are not acked until the
- * commit that contains them lands, so a worker that dies mid-batch has them replayed. A tick tuple
- * every {@value #TICK_SECS} seconds bounds how long a partial batch waits when the stream stalls.
- *
- * <p>The sink is declared at {@value #SINK_PARALLELISM}-way parallelism, matching the number of
- * regions: the field grouping routes each region to exactly one task, so any task beyond that
- * would never receive a tuple. Each task buffers and commits independently against its own
- * region's share of the stream.
- *
- * <p>The row count and the commit threshold can be overridden on the command line:
- * {@code <warehouse> <topologyName> <totalTuples> <commitIntervalBytes>}.
- *
- * <p>Run locally with:
- * {@code storm local storm-iceberg-examples-*.jar
- * org.apache.storm.iceberg.examples.IcebergPartitionedBoltExampleTopology}
- * then inspect the warehouse directory (default {@code file:///tmp/storm-iceberg-warehouse}): the
- * data files are laid out under {@code example/events/data/region=.../event_time_day=...}.
+ * <p>Run with {@code storm jar storm-iceberg-examples.jar
+ * org.apache.storm.iceberg.examples.IcebergSplitSinkExampleTopology}, then inspect the warehouse
+ * directory (default {@code file:///tmp/storm-iceberg-warehouse}) and count the snapshots.
  */
-public final class IcebergPartitionedBoltExampleTopology {
+public final class IcebergSplitSinkExampleTopology {
 
     private static final long TOTAL_TUPLES = 10_000_000L;
-    private static final long COMMIT_INTERVAL_BYTES = 1024L * 1024;
-    private static final int SINK_PARALLELISM = 2;
+    private static final long SEAL_INTERVAL_BYTES = 1024L * 1024;
+    private static final long GROUP_COMMIT_INTERVAL_MILLIS = 5_000L;
+    private static final int WRITER_PARALLELISM = 4;
     private static final int SPOUT_PARALLELISM = 2;
-    private static final int TICK_SECS = 30;
-    private static final String[] REGIONS = {"eu-west", "us-east"};
+    private static final int WRITER_TICK_SECS = 5;
+    private static final int COMMITTER_TICK_SECS = 5;
+    private static final String[] REGIONS = {"eu-west", "us-east", "eu-central", "ap-south"};
 
-    private IcebergPartitionedBoltExampleTopology() {
+    private IcebergSplitSinkExampleTopology() {
     }
 
     public static void main(String[] args) throws Exception {
         String warehouse = args.length > 0 ? args[0] : "file:///tmp/storm-iceberg-warehouse";
-        String topologyName = args.length > 1 ? args[1] : "iceberg-partitioned-example";
+        String topologyName = args.length > 1 ? args[1] : "iceberg-split-example";
         long totalTuples = args.length > 2 ? Long.parseLong(args[2]) : TOTAL_TUPLES;
-        long commitIntervalBytes =
-            args.length > 3 ? Long.parseLong(args[3]) : COMMIT_INTERVAL_BYTES;
 
         Schema schema = new Schema(
             Types.NestedField.required(1, "id", Types.LongType.get()),
@@ -96,33 +82,47 @@ public final class IcebergPartitionedBoltExampleTopology {
         catalogProps.put(CatalogUtil.ICEBERG_CATALOG_TYPE, CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP);
         catalogProps.put(CatalogProperties.WAREHOUSE_LOCATION, warehouse);
 
-        IcebergOptions options = new IcebergOptions.Builder()
+        IcebergOptions writerOptions = new IcebergOptions.Builder()
             .withCatalogProperties(catalogProps)
             .withTable("example.events")
             .withAutoCreate(schema, spec)
-            .withCommitIntervalBytes(commitIntervalBytes)
+            .withCommitIntervalBytes(SEAL_INTERVAL_BYTES)
+            .withTickIntervalSecs(WRITER_TICK_SECS)
             .build();
 
-        // Two regions x two days -> four partitions, split two-and-two across sink tasks by region.
+        IcebergOptions committerOptions = new IcebergOptions.Builder()
+            .withCatalogProperties(catalogProps)
+            .withTable("example.events")
+            .withAutoCreate(schema, spec)
+            .withGroupCommitIntervalMillis(GROUP_COMMIT_INTERVAL_MILLIS)
+            .withTickIntervalSecs(COMMITTER_TICK_SECS)
+            .build();
+
         Instant today = Instant.now();
         Instant yesterday = today.minus(1, ChronoUnit.DAYS);
         BoundedTupleSpout spout = new BoundedTupleSpout(totalTuples,
             new Fields("id", "region", "event_time"),
             index -> new Values(index,
                 REGIONS[(int) (index % REGIONS.length)],
-                index % 4 < 2 ? yesterday : today));
+                // The day split's period (8) must not equal the region cycle's period
+                // (REGIONS.length, 4), or every region would collapse onto a single day.
+                index % 8 < 4 ? yesterday : today));
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("events", spout, SPOUT_PARALLELISM);
-        // fieldsGrouping on region: each task owns one region and its day-partitions, rather
-        // than every task fanning out across all four partitions the way a shuffle would.
-        builder.setBolt("iceberg", new IcebergBolt(options), SINK_PARALLELISM)
+        // fieldsGrouping on region: each writer owns a subset of regions and their day-partitions,
+        // rather than every task fanning out across all of them the way a shuffle would. With four
+        // regions and four writers, every writer task ends up with traffic.
+        builder.setBolt("iceberg-writer", new IcebergWriterBolt(writerOptions), WRITER_PARALLELISM)
             .fieldsGrouping("events", new Fields("region"));
+        // Parallelism one and a global grouping: the whole point is a single commit per group.
+        builder.setBolt("iceberg-committer", new IcebergCommitterBolt(committerOptions), 1)
+            .globalGrouping("iceberg-writer");
 
         Config conf = new Config();
-        conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, TICK_SECS);
-        // Un-acked tuples in flight; must stay comfortably above what one batch accumulates,
-        // since the sink holds a batch's tuples un-acked until it commits.
+        // The timeout now spans two hops: writer queue, seal, committer queue, group commit and
+        // the append itself. Each term is small, but there are more of them.
+        conf.setMessageTimeoutSecs(120);
         conf.setMaxSpoutPending(200_000);
         StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
     }

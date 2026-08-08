@@ -19,13 +19,13 @@
 package org.apache.storm.iceberg.bolt;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.iceberg.DataFile;
 import org.apache.storm.Config;
-import org.apache.storm.iceberg.common.CommitWal;
-import org.apache.storm.iceberg.common.IcebergCommitter;
+import org.apache.storm.iceberg.common.DataFileCodec;
 import org.apache.storm.iceberg.common.IcebergMetrics;
 import org.apache.storm.iceberg.common.IcebergOptions;
 import org.apache.storm.iceberg.common.IcebergWriter;
@@ -33,42 +33,46 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Appends tuples to an Apache Iceberg table, committing them in atomic batches.
+ * Writes tuples to Iceberg data files and hands their descriptors to the committer bolt,
+ * which makes them visible in one commit covering every writer.
  *
- * <p>Tuples are written to Iceberg data files as they arrive but are <em>not</em> acked until the
- * commit that makes them visible has landed. A batch therefore either becomes visible in full and
- * is acked, or is failed and replayed by the source. Readers never see part of a batch.
+ * <p>A sealed batch is emitted <em>anchored to all of its tuples</em> and only then acked. Acking
+ * an input after emitting an anchored child does not close the spout tuple's ack tree: the tree
+ * stays open until the committer acks the descriptor, so the source still advances only after the
+ * commit is visible. The guarantee is therefore the one {@link IcebergBolt} gives — atomic commits
+ * with at-least-once delivery — with the commit cost no longer multiplied by this bolt's
+ * parallelism.
  *
- * <p>The guarantee is <strong>atomic commits with at-least-once delivery</strong>. A replayed
- * batch is written again, and because the table is append-only with no equality deletes, the
- * duplicate rows stay visible until something downstream removes them. A crash between writing the
- * files and committing them leaves orphan data files: invisible to readers, and cleaned up by
- * Iceberg's standard orphan-file maintenance, which this module does not run for you.
- *
- * <p>Batches are closed when any configured threshold is crossed — records, bytes, or, if tick
- * tuples are configured, elapsed time. Because nothing is acked early, a larger batch costs
- * latency and replay volume, not durability.
+ * <p>Because the tuples are released as soon as the descriptor is emitted, a writer's heap does not
+ * grow with the commit interval the way the monolithic sink's does.
  */
-public class IcebergBolt extends BaseTickTupleAwareRichBolt {
+public class IcebergWriterBolt extends BaseTickTupleAwareRichBolt {
+
+    /** Which writer produced the batch. Carried for diagnostics only. */
+    public static final String FIELD_WRITER_TASK_ID = "writer-task-id";
+    /** The batch's data files, encoded by {@link DataFileCodec}. */
+    public static final String FIELD_DATA_FILES = "data-files";
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOG = LoggerFactory.getLogger(IcebergBolt.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IcebergWriterBolt.class);
 
     private final IcebergOptions options;
 
     private transient OutputCollector collector;
     private transient IcebergWriter writer;
-    private transient IcebergCommitter committer;
     private transient IcebergMetrics metrics;
     private transient List<Tuple> pending;
     private transient long batchStartNanos;
+    private transient int taskId;
 
-    public IcebergBolt(IcebergOptions options) {
+    public IcebergWriterBolt(IcebergOptions options) {
         this.options = options;
     }
 
@@ -77,28 +81,17 @@ public class IcebergBolt extends BaseTickTupleAwareRichBolt {
         this.collector = collector;
         this.pending = new ArrayList<>();
         this.metrics = new IcebergMetrics(context);
-        int taskId = context.getThisTaskId();
+        this.taskId = context.getThisTaskId();
         this.writer = new IcebergWriter(options, taskId);
         writer.open();
-        String topologyName = String.valueOf(topoConf.get(Config.TOPOLOGY_NAME));
-        CommitWal wal = new CommitWal(writer.table(), topologyName,
-            context.getThisComponentId(), context.getThisTaskIndex());
-        this.committer = new IcebergCommitter(writer.table(), wal, metrics);
-        // Settle whatever an earlier run of this task left half-committed, before writing anything
-        // new. A commit that never became visible is replayed here; one that did is dropped.
-        int replayed = committer.recover();
-        if (replayed > 0) {
-            LOG.info("Replayed {} commit(s) left pending by an earlier run of global task id {} ({}/{})",
-                replayed, taskId, context.getThisComponentId(), context.getThisTaskIndex());
-        }
+        // No recovery here: the committer owns the write-ahead log, because it owns the commits.
     }
 
     @Override
     protected void process(Tuple tuple) {
         try {
             if (pending.isEmpty()) {
-                // Schema and partition spec evolution is picked up between batches, not mid-batch:
-                // every file in one commit is written against the same metadata.
+                // Schema and partition spec evolution is picked up between batches, not mid-batch.
                 writer.refreshTable();
                 batchStartNanos = System.nanoTime();
             }
@@ -113,19 +106,19 @@ public class IcebergBolt extends BaseTickTupleAwareRichBolt {
         }
         pending.add(tuple);
         metrics.recordsWritten(1);
-        if (shouldFlush()) {
-            flush();
+        if (shouldSeal()) {
+            seal();
         }
     }
 
     @Override
     protected void onTickTuple(Tuple tuple) {
         if (!pending.isEmpty()) {
-            flush();
+            seal();
         }
     }
 
-    private boolean shouldFlush() {
+    private boolean shouldSeal() {
         Integer intervalRecords = options.getCommitIntervalRecords();
         if (intervalRecords != null && pending.size() >= intervalRecords) {
             return true;
@@ -140,23 +133,30 @@ public class IcebergBolt extends BaseTickTupleAwareRichBolt {
     }
 
     /**
-     * Close the batch's files, commit them, and only then ack. Any failure fails the whole batch:
-     * the source replays it, which is where at-least-once comes from.
+     * Close the batch's files and hand them downstream. Anything that goes wrong before the emit
+     * fails the whole batch, so the source replays it — the files written so far become orphans.
      */
-    private void flush() {
-        List<Tuple> committing = new ArrayList<>(pending);
+    private void seal() {
+        List<Tuple> sealing = new ArrayList<>(pending);
         pending.clear();
+        List<DataFile> dataFiles;
+        String descriptor;
+        long startNanos = System.nanoTime();
         try {
-            List<DataFile> dataFiles = writer.complete();
-            committer.commit(dataFiles);
+            dataFiles = writer.complete();
+            descriptor = dataFiles.isEmpty() ? null : DataFileCodec.toJson(dataFiles, writer.table());
         } catch (Exception e) {
-            LOG.error("Failed committing {} tuple(s) to Iceberg, failing them for replay",
-                committing.size(), e);
+            LOG.error("Failed sealing {} tuple(s) for Iceberg, failing them for replay",
+                sealing.size(), e);
             writer.abort();
-            committing.forEach(collector::fail);
+            sealing.forEach(collector::fail);
             return;
         }
-        committing.forEach(collector::ack);
+        metrics.sealed(dataFiles, System.nanoTime() - startNanos);
+        if (descriptor != null) {
+            collector.emit(sealing, new Values(taskId, descriptor));
+        }
+        sealing.forEach(collector::ack);
     }
 
     private void failBatch() {
@@ -167,8 +167,7 @@ public class IcebergBolt extends BaseTickTupleAwareRichBolt {
 
     @Override
     public void cleanup() {
-        // Whatever is still buffered was never acked, so it will be replayed; drop it rather than
-        // race a commit against shutdown.
+        // Whatever is still buffered was never handed downstream, so it will be replayed.
         if (pending != null && !pending.isEmpty()) {
             failBatch();
         }
@@ -179,6 +178,16 @@ public class IcebergBolt extends BaseTickTupleAwareRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        // Terminal sink: nothing is emitted downstream.
+        declarer.declare(new Fields(FIELD_WRITER_TASK_ID, FIELD_DATA_FILES));
+    }
+
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        if (options.getTickIntervalSecs() == null) {
+            return null;
+        }
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, options.getTickIntervalSecs());
+        return conf;
     }
 }

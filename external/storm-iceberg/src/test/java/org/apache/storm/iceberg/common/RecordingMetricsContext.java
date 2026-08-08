@@ -41,6 +41,7 @@ class RecordingMetricsContext implements IMetricsContext {
 
     private final Map<String, Counter> counters = new HashMap<>();
     private final Map<String, Timer> timers = new HashMap<>();
+    private final Map<String, Gauge<?>> gauges = new HashMap<>();
 
     long counter(String name) {
         Counter counter = counters.get(name);
@@ -50,6 +51,11 @@ class RecordingMetricsContext implements IMetricsContext {
     long timerCount(String name) {
         Timer timer = timers.get(name);
         return timer == null ? 0L : timer.getCount();
+    }
+
+    Object gauge(String name) {
+        Gauge<?> gauge = gauges.get(name);
+        return gauge == null ? null : gauge.getValue();
     }
 
     @Override
@@ -74,7 +80,8 @@ class RecordingMetricsContext implements IMetricsContext {
 
     @Override
     public <T> Gauge<T> registerGauge(String name, Gauge<T> gauge) {
-        throw new UnsupportedOperationException("not used by IcebergState");
+        gauges.put(name, gauge);
+        return gauge;
     }
 
     @Override

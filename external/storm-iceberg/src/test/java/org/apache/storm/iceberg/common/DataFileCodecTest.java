@@ -19,7 +19,6 @@
 package org.apache.storm.iceberg.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -39,11 +38,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class CommitWalTest {
+class DataFileCodecTest {
 
     private static final Schema SCHEMA = new Schema(
         Types.NestedField.required(1, "id", Types.LongType.get()),
-        Types.NestedField.required(2, "name", Types.StringType.get()));
+        Types.NestedField.required(2, "region", Types.StringType.get()));
     private static final TableIdentifier TABLE_ID = TableIdentifier.of("db", "events");
 
     @TempDir
@@ -63,7 +62,7 @@ class CommitWalTest {
         catalog.close();
     }
 
-    private DataFile dataFile(String name, long records) {
+    private DataFile unpartitionedFile(String name, long records) {
         return DataFiles.builder(table.spec())
             .withPath(table.location() + "/data/" + name)
             .withFileSizeInBytes(1024L)
@@ -73,57 +72,39 @@ class CommitWalTest {
     }
 
     @Test
-    void aTaskThatHasNeverWrittenHasNothingPending() {
-        assertEquals(List.of(), new CommitWal(table, "topo", "iceberg", 0).listPending());
+    void anEmptyListRoundTrips() {
+        String json = DataFileCodec.toJson(List.of(), table);
+
+        assertEquals(List.of(), DataFileCodec.fromJson(json, table.specs()));
     }
 
     @Test
-    void aPendingEntryCarriesTheTimeItWasWritten() {
-        long before = System.currentTimeMillis();
-        CommitWal wal = new CommitWal(table, "topo", "iceberg", 0);
+    void unpartitionedFilesRoundTripWithTheirCounts() {
+        DataFile first = unpartitionedFile("a.parquet", 5L);
+        DataFile second = unpartitionedFile("b.parquet", 7L);
 
-        CommitWal.WalEntry written = wal.write(List.of(dataFile("a.parquet", 1L)));
-        long after = System.currentTimeMillis();
+        List<DataFile> recovered =
+            DataFileCodec.fromJson(DataFileCodec.toJson(List.of(first, second), table), table.specs());
 
-        assertTrue(written.createdAtMs() >= before && written.createdAtMs() <= after,
-            "the entry records when it was written");
-        assertEquals(written.createdAtMs(), wal.listPending().get(0).createdAtMs(),
-            "and listing recovers it without reading the entry");
-    }
-
-    @Test
-    void pendingEntryReadsBackTheDataFilesItWasWritten() {
-        CommitWal wal = new CommitWal(table, "topo", "iceberg", 3);
-        DataFile first = dataFile("a.parquet", 5L);
-        DataFile second = dataFile("b.parquet", 7L);
-
-        CommitWal.WalEntry entry = wal.write(List.of(first, second));
-
-        List<CommitWal.WalEntry> pending = wal.listPending();
-        assertEquals(1, pending.size());
-        assertEquals(entry.commitId(), pending.get(0).commitId());
-
-        List<DataFile> recovered = wal.read(pending.get(0));
         assertEquals(2, recovered.size());
         assertEquals(first.location(), recovered.get(0).location());
         assertEquals(5L, recovered.get(0).recordCount());
         assertEquals(second.location(), recovered.get(1).location());
-        assertTrue(entry.location().contains("topo"), "WAL path should be scoped by topology");
+        assertEquals(7L, recovered.get(1).recordCount());
     }
 
     @Test
-    void entriesAreIsolatedByComponentAndTaskIndex() {
-        CommitWal mine = new CommitWal(table, "topo", "iceberg-committer", 0);
-        CommitWal other = new CommitWal(table, "topo", "iceberg-writer", 0);
-        CommitWal sameComponentOtherIndex = new CommitWal(table, "topo", "iceberg-committer", 1);
+    void aFileWrittenAgainstAnOlderSpecResolvesThroughTheTableSpecs() {
+        DataFile beforeEvolution = unpartitionedFile("old.parquet", 3L);
+        String json = DataFileCodec.toJson(List.of(beforeEvolution), table);
+        table.updateSpec().addField("region").commit();
+        table.refresh();
 
-        CommitWal.WalEntry entry = mine.write(List.of(dataFile("a.parquet", 1L)));
+        List<DataFile> recovered = DataFileCodec.fromJson(json, table.specs());
 
-        assertEquals(1, mine.listPending().size());
-        assertEquals(entry.commitId(), mine.listPending().get(0).commitId());
-        assertEquals(List.of(), other.listPending(), "another component sees nothing");
-        assertEquals(List.of(), sameComponentOtherIndex.listPending(), "another task index sees nothing");
-        assertTrue(entry.location().contains("/iceberg-committer/0/"),
-            "WAL path is scoped by component and task index");
+        assertEquals(1, recovered.size());
+        assertEquals(beforeEvolution.specId(), recovered.get(0).specId(),
+            "the file keeps the spec it was written with");
+        assertEquals(3L, recovered.get(0).recordCount());
     }
 }

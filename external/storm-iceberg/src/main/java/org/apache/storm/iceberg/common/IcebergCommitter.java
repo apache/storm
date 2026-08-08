@@ -40,6 +40,9 @@ import org.slf4j.LoggerFactory;
  * leaves orphan data files, which are invisible to readers and removed by Iceberg's standard
  * orphan-file maintenance; a replayed batch is written and committed again, and its rows stay
  * visible until something downstream removes them.
+ *
+ * <p>One commit may cover many batches — the aggregated committer hands it the files of every
+ * writer it collected — but it is still a single atomic append carrying a single commit id.
  */
 public class IcebergCommitter {
 
