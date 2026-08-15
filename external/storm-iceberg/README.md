@@ -104,7 +104,8 @@ so every Iceberg catalog works with its standard configuration keys: `type` = `h
 | `withCommitIntervalMillis(long)` | disabled | Close the batch once it has been open this long |
 | `withGroupCommitIntervalMillis(long)` | 5000 | Committer only: commit once the oldest accumulated batch is this old |
 | `withGroupCommitMaxDataFiles(int)` | 1000 | Committer only: commit once this many data files have accumulated |
-| `withTickIntervalSecs(int)` | none — inherits `topology.tick.tuple.freq.secs` | Per-component tick frequency for the writer or committer |
+| `withTickIntervalSecs(int)` | none — inherits `topology.tick.tuple.freq.secs` | Per-component tick frequency |
+| `withWalNamespace(String)` | none | Separates the commit WAL of deployments sharing one table |
 
 Buffering costs latency and replay volume, not durability: buffered tuples are not acked, so a
 worker that dies mid-batch has them replayed rather than losing them.
@@ -150,7 +151,8 @@ very cost the split exists to remove.
 arrives: after a lull, a single accumulated descriptor sits uncommitted indefinitely, and its
 tuples stay un-acked with it. Set `topology.tick.tuple.freq.secs` for the topology, or
 `withTickIntervalSecs` on the committer's options to give it a tick of its own. The same is true of
-the writers' time-based threshold, and of `IcebergBolt`'s.
+the writers' time-based threshold, and of `IcebergBolt`'s — each bolt declares whatever
+`withTickIntervalSecs` it was given, and inherits the topology-wide setting otherwise.
 
 Working examples of both shapes live under
 [`examples/storm-iceberg-examples`](../../examples/storm-iceberg-examples/src/main/java/org/apache/storm/iceberg/examples):
@@ -204,30 +206,23 @@ Data files are made durable first, then a write-ahead log entry naming them is w
 minted commit id, then the files are appended in a single Iceberg operation that stamps that
 commit id on the snapshot summary, then the entry is deleted and the tuples are acked.
 
-On startup a task settles whatever it left pending: it asks the table whether a snapshot carries
-each entry's commit id, dropping the entry if the commit landed and re-appending the files if it
-did not. The table answers the question, so no identity from the source is required — which is
-exactly why the guarantee is at-least-once rather than exactly-once.
+On startup a task drops whatever it left pending, leaving those data files as orphans. An entry
+only survives to startup if the task died before its commit resolved, and in that case the batch
+was never acked, so the source replays it: appending the entry's files then would only add a second
+copy of the rows that replay writes.
 
 A crash before the WAL entry exists leaves orphan data files: invisible to readers, and removed by
 Iceberg's `remove_orphan_files`.
 
 A commit that *fails* is settled straight away rather than at the next startup: the sink asks the
-table whether it landed. If it did — an append that reported an error but whose snapshot is
-present — the tuples are acked and nothing is replayed. If it did not, the entry is dropped before
-the tuples are failed, so the source's replay writes those rows exactly once and the abandoned
-files become orphans. Only when the table itself is unreachable is the entry left for startup,
-which is the one path that can duplicate rows.
+table whether a snapshot carries the commit id. If one does — an append that reported an error but
+reached the table — the tuples are acked and nothing is replayed. Otherwise they are failed and the
+source replays them, leaving the abandoned files as orphans.
 
-### Upgrade note
-
-The WAL was previously keyed by the global task id (`.../<topologyName>/<taskId>/`); it is now
-keyed by component id and task index, because global task ids are reassigned whenever the
-topology's structure changes and would strand entries under an id nobody reads again. Entries left
-under the old path by a pre-upgrade worker are therefore never read. That is safe — those tuples
-were never acked, so the source replays them — but their data files become orphans, cleaned up by
-`remove_orphan_files` like any other. Leftover JSON under an old `<taskId>` directory can be
-deleted once the replays have landed.
+That look at the table is one sample, not a verdict. A REST catalog maps HTTP 5xx to
+`CommitStateUnknownException` and `SnapshotProducer.commit()` retries only `CommitFailedException`,
+so a commit the backend applies afterwards reads as absent and the replay writes those rows again.
+Waiting longer narrows the window without closing it; duplicates are inside the contract.
 
 ## Maintenance
 

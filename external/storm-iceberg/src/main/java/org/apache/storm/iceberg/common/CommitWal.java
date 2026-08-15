@@ -66,16 +66,21 @@ public final class CommitWal {
      * Entries are keyed by component and task index rather than by global task id: task ids are
      * assigned per submission and shift when the topology's structure changes, which would strand
      * an entry under an id nobody reads again.
+     *
+     * <p>A topology name is unique within a cluster but not across clusters, so a namespace
+     * separates deployments that share one table; without it, each side's startup would clear the
+     * other's entries.
      */
-    public CommitWal(Table table, String topologyName, String componentId, int taskIndex) {
+    public CommitWal(Table table, String namespace, String topologyName, String componentId, int taskIndex) {
         this.table = table;
         this.io = table.io();
         String location = table.location();
         while (location.endsWith("/")) {
             location = location.substring(0, location.length() - 1);
         }
-        this.prefix = location + "/metadata/" + WAL_DIR + "/" + topologyName
-            + "/" + componentId + "/" + taskIndex;
+        this.prefix = location + "/metadata/" + WAL_DIR
+            + (namespace == null ? "" : "/" + namespace)
+            + "/" + topologyName + "/" + componentId + "/" + taskIndex;
     }
 
     /** Record the files of one prepared commit, returning the entry that identifies it. */

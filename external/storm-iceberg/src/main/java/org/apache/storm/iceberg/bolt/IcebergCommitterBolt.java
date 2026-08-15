@@ -91,14 +91,15 @@ public class IcebergCommitterBolt extends BaseTickTupleAwareRichBolt {
         this.writer = new IcebergWriter(options, context.getThisTaskId());
         writer.open();
         String topologyName = String.valueOf(topoConf.get(Config.TOPOLOGY_NAME));
-        CommitWal wal = new CommitWal(writer.table(), topologyName,
+        CommitWal wal = new CommitWal(writer.table(), options.getWalNamespace(), topologyName,
             context.getThisComponentId(), context.getThisTaskIndex());
         this.committer = new IcebergCommitter(writer.table(), wal, metrics);
         metrics.registerPendingGauges(context, () -> pendingFiles.size(), this::oldestPendingAgeMs);
-        // Settle whatever an earlier run left half-committed before appending anything new.
-        int replayed = committer.recover();
-        if (replayed > 0) {
-            LOG.info("Replayed {} commit(s) left pending by an earlier run", replayed);
+        // Clear whatever an earlier run left half-committed before appending anything new. Those
+        // batches were never acked, so the sources replay them.
+        int abandoned = committer.recover();
+        if (abandoned > 0) {
+            LOG.info("Abandoned {} commit(s) left pending by an earlier run", abandoned);
         }
     }
 

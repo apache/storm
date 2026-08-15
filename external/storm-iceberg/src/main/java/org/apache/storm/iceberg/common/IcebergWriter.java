@@ -112,22 +112,31 @@ public class IcebergWriter implements Closeable {
         if (writer == null) {
             return List.of();
         }
-        try {
-            return Arrays.asList(writer.complete().dataFiles());
-        } finally {
-            writer = null;
-            resetBuffer();
-        }
+        List<DataFile> dataFiles = Arrays.asList(writer.complete().dataFiles());
+        // Released only once complete() has returned. Were this in a finally, a complete() that
+        // threw would leave nothing for the caller's abort() to clean up, since the underlying
+        // TaskWriter still holds the files it closed. After a successful complete() the opposite
+        // holds: the files are named by a WAL entry, so abort() must not delete them.
+        writer = null;
+        resetBuffer();
+        return dataFiles;
     }
 
-    /** Discard what has been written. Files already closed remain as orphans. */
+    /**
+     * Discard what has been written, when the batch never reached {@link #complete()}. Files already
+     * closed are deleted where possible and remain as orphans where not.
+     */
     public void abort() {
         if (writer == null) {
             return;
         }
         try {
             writer.abort();
-        } catch (IOException e) {
+            // BaseTaskWriter.abort() deletes the completed files through Tasks.throwFailureWhenFinished(),
+            // which propagates whatever FileIO threw — unchecked for HadoopFileIO and S3FileIO alike.
+            // Callers abort while failing a batch, so an escaping exception would leave those tuples
+            // neither acked nor failed.
+        } catch (IOException | RuntimeException e) {
             LOG.warn("Failed aborting Iceberg writer; uncommitted files may remain as orphans", e);
         } finally {
             writer = null;
@@ -184,7 +193,7 @@ public class IcebergWriter implements Closeable {
         if (catalog instanceof Closeable) {
             try {
                 ((Closeable) catalog).close();
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 LOG.warn("Failed closing Iceberg catalog", e);
             }
         }

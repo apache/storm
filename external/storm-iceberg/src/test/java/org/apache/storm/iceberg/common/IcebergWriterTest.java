@@ -18,11 +18,14 @@
 
 package org.apache.storm.iceberg.common;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -42,7 +45,11 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.HadoopCatalog;
+import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.types.Types;
 import org.apache.storm.tuple.ITuple;
 import org.junit.jupiter.api.AfterEach;
@@ -116,7 +123,7 @@ class IcebergWriterTest {
             List<DataFile> dataFiles = writer.complete();
             assertFalse(dataFiles.isEmpty(), "completing a non-empty writer yields data files");
 
-            CommitWal wal = new CommitWal(writer.table(), "topo", "iceberg", 0);
+            CommitWal wal = new CommitWal(writer.table(), null, "topo", "iceberg", 0);
             new IcebergCommitter(writer.table(), wal, new IcebergMetrics(null)).commit(dataFiles);
         }
 
@@ -165,6 +172,99 @@ class IcebergWriterTest {
 
             writer.complete();
             assertEquals(0L, writer.bufferedBytes(), "completing starts a fresh buffer");
+        }
+    }
+    @Test
+    void abortSwallowsAFileIoFailureSoTheBatchCanStillBeFailed() throws IOException {
+        // BaseTaskWriter.abort() deletes its completed files through Tasks.throwFailureWhenFinished(),
+        // and FileIO reports failures unchecked. Callers abort while failing a batch, so an escaping
+        // exception would leave those tuples neither acked nor failed, and only replayed on timeout.
+        verifyCatalog.createTable(TABLE_ID, SCHEMA, PartitionSpec.unpartitioned());
+        Map<String, String> catalogProps = new HashMap<>();
+        catalogProps.put(CatalogProperties.CATALOG_IMPL, FailingDeleteCatalog.class.getName());
+        catalogProps.put(CatalogProperties.WAREHOUSE_LOCATION, warehouse);
+        IcebergOptions options = new IcebergOptions.Builder()
+            .withCatalogProperties(catalogProps)
+            .withTable("db.events")
+            .build();
+
+        try (IcebergWriter writer = new IcebergWriter(options, 0)) {
+            writer.open();
+            writer.write(tuple(1L, "alice"));
+
+            assertDoesNotThrow(writer::abort);
+        }
+    }
+
+    @Test
+    void abortAfterACompletedBatchLeavesItsFilesAlone() throws IOException {
+        // Once complete() has returned, the files are named by a WAL entry and may already be
+        // referenced by a snapshot. A commit failure aborts the writer; that must not delete them.
+        verifyCatalog.createTable(TABLE_ID, SCHEMA, PartitionSpec.unpartitioned());
+        try (IcebergWriter writer = new IcebergWriter(baseOptions().build(), 0)) {
+            writer.open();
+            writer.write(tuple(1L, "alice"));
+            List<DataFile> dataFiles = writer.complete();
+            assertFalse(dataFiles.isEmpty());
+
+            writer.abort();
+
+            Table table = verifyCatalog.loadTable(TABLE_ID);
+            for (DataFile dataFile : dataFiles) {
+                assertTrue(table.io().newInputFile(dataFile.location()).exists(),
+                    "a completed data file survives a later abort");
+            }
+        }
+    }
+
+    /** Loads tables whose {@link FileIO} fails every delete, as HadoopFileIO does in safe mode. */
+    public static class FailingDeleteCatalog extends HadoopCatalog {
+
+        @Override
+        public Table loadTable(TableIdentifier identifier) {
+            Table loaded = super.loadTable(identifier);
+            Table table = spy(loaded);
+            doReturn(new FailingDeleteFileIo(loaded.io())).when(table).io();
+            return table;
+        }
+    }
+
+    private static class FailingDeleteFileIo implements FileIO {
+
+        private final FileIO delegate;
+
+        FailingDeleteFileIo(FileIO delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public InputFile newInputFile(String path) {
+            return delegate.newInputFile(path);
+        }
+
+        @Override
+        public InputFile newInputFile(String path, long length) {
+            return delegate.newInputFile(path, length);
+        }
+
+        @Override
+        public OutputFile newOutputFile(String path) {
+            return delegate.newOutputFile(path);
+        }
+
+        @Override
+        public void deleteFile(String path) {
+            throw new RuntimeIOException(new IOException("Failed to delete file: " + path));
+        }
+
+        @Override
+        public Map<String, String> properties() {
+            return delegate.properties();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
         }
     }
 }

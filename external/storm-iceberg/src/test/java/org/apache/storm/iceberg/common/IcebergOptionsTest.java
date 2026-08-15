@@ -119,4 +119,15 @@ class IcebergOptionsTest {
         assertThrows(IllegalStateException.class,
             () -> validBuilder().withTickIntervalSecs(0).build());
     }
+
+    @Test
+    void aWalNamespaceMustBeOnePathSegment() {
+        assertEquals("staging", validBuilder().withWalNamespace("staging").build().getWalNamespace());
+        assertNull(validBuilder().build().getWalNamespace(), "unset unless asked for");
+        // The namespace is interpolated into the WAL path, so a separator would silently reshape it.
+        assertThrows(IllegalStateException.class,
+            () -> validBuilder().withWalNamespace("a/b").build());
+        assertThrows(IllegalStateException.class,
+            () -> validBuilder().withWalNamespace(" ").build());
+    }
 }

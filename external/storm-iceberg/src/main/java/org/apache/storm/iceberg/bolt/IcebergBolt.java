@@ -19,6 +19,7 @@
 package org.apache.storm.iceberg.bolt;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -81,15 +82,15 @@ public class IcebergBolt extends BaseTickTupleAwareRichBolt {
         this.writer = new IcebergWriter(options, taskId);
         writer.open();
         String topologyName = String.valueOf(topoConf.get(Config.TOPOLOGY_NAME));
-        CommitWal wal = new CommitWal(writer.table(), topologyName,
+        CommitWal wal = new CommitWal(writer.table(), options.getWalNamespace(), topologyName,
             context.getThisComponentId(), context.getThisTaskIndex());
         this.committer = new IcebergCommitter(writer.table(), wal, metrics);
-        // Settle whatever an earlier run of this task left half-committed, before writing anything
-        // new. A commit that never became visible is replayed here; one that did is dropped.
-        int replayed = committer.recover();
-        if (replayed > 0) {
-            LOG.info("Replayed {} commit(s) left pending by an earlier run of global task id {} ({}/{})",
-                replayed, taskId, context.getThisComponentId(), context.getThisTaskIndex());
+        // Clear whatever an earlier run of this task left half-committed, before writing anything
+        // new. Those batches were never acked, so the source replays them.
+        int abandoned = committer.recover();
+        if (abandoned > 0) {
+            LOG.info("Abandoned {} commit(s) left pending by an earlier run of global task id {} ({}/{})",
+                abandoned, taskId, context.getThisComponentId(), context.getThisTaskIndex());
         }
     }
 
@@ -180,5 +181,15 @@ public class IcebergBolt extends BaseTickTupleAwareRichBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         // Terminal sink: nothing is emitted downstream.
+    }
+
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        if (options.getTickIntervalSecs() == null) {
+            return null;
+        }
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, options.getTickIntervalSecs());
+        return conf;
     }
 }

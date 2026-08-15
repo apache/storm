@@ -74,13 +74,13 @@ class CommitWalTest {
 
     @Test
     void aTaskThatHasNeverWrittenHasNothingPending() {
-        assertEquals(List.of(), new CommitWal(table, "topo", "iceberg", 0).listPending());
+        assertEquals(List.of(), new CommitWal(table, null, "topo", "iceberg", 0).listPending());
     }
 
     @Test
     void aPendingEntryCarriesTheTimeItWasWritten() {
         long before = System.currentTimeMillis();
-        CommitWal wal = new CommitWal(table, "topo", "iceberg", 0);
+        CommitWal wal = new CommitWal(table, null, "topo", "iceberg", 0);
 
         CommitWal.WalEntry written = wal.write(List.of(dataFile("a.parquet", 1L)));
         long after = System.currentTimeMillis();
@@ -93,7 +93,7 @@ class CommitWalTest {
 
     @Test
     void pendingEntryReadsBackTheDataFilesItWasWritten() {
-        CommitWal wal = new CommitWal(table, "topo", "iceberg", 3);
+        CommitWal wal = new CommitWal(table, null, "topo", "iceberg", 3);
         DataFile first = dataFile("a.parquet", 5L);
         DataFile second = dataFile("b.parquet", 7L);
 
@@ -113,9 +113,9 @@ class CommitWalTest {
 
     @Test
     void entriesAreIsolatedByComponentAndTaskIndex() {
-        CommitWal mine = new CommitWal(table, "topo", "iceberg-committer", 0);
-        CommitWal other = new CommitWal(table, "topo", "iceberg-writer", 0);
-        CommitWal sameComponentOtherIndex = new CommitWal(table, "topo", "iceberg-committer", 1);
+        CommitWal mine = new CommitWal(table, null, "topo", "iceberg-committer", 0);
+        CommitWal other = new CommitWal(table, null, "topo", "iceberg-writer", 0);
+        CommitWal sameComponentOtherIndex = new CommitWal(table, null, "topo", "iceberg-committer", 1);
 
         CommitWal.WalEntry entry = mine.write(List.of(dataFile("a.parquet", 1L)));
 
@@ -125,5 +125,22 @@ class CommitWalTest {
         assertEquals(List.of(), sameComponentOtherIndex.listPending(), "another task index sees nothing");
         assertTrue(entry.location().contains("/iceberg-committer/0/"),
             "WAL path is scoped by component and task index");
+    }
+
+    @Test
+    void entriesAreIsolatedByNamespace() {
+        // A topology name is unique within a cluster but not across clusters. Without a namespace,
+        // two deployments writing to one table would clear each other's entries at startup.
+        CommitWal staging = new CommitWal(table, "staging", "topo", "iceberg", 0);
+        CommitWal production = new CommitWal(table, "production", "topo", "iceberg", 0);
+        CommitWal unnamespaced = new CommitWal(table, null, "topo", "iceberg", 0);
+
+        CommitWal.WalEntry entry = staging.write(List.of(dataFile("a.parquet", 1L)));
+
+        assertEquals(1, staging.listPending().size());
+        assertEquals(entry.commitId(), staging.listPending().get(0).commitId());
+        assertEquals(List.of(), production.listPending(), "another deployment sees nothing");
+        assertEquals(List.of(), unnamespaced.listPending(), "nor does an unnamespaced one");
+        assertTrue(entry.location().contains("/staging/topo/"), "WAL path is scoped by namespace");
     }
 }

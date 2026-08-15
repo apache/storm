@@ -58,6 +58,7 @@ public class IcebergOptions implements Serializable {
     private final long groupCommitIntervalMillis;
     private final int groupCommitMaxDataFiles;
     private final Integer tickIntervalSecs;
+    private final String walNamespace;
 
     private IcebergOptions(Builder builder) {
         this.catalogProperties = builder.catalogProperties;
@@ -73,6 +74,7 @@ public class IcebergOptions implements Serializable {
         this.groupCommitIntervalMillis = builder.groupCommitIntervalMillis;
         this.groupCommitMaxDataFiles = builder.groupCommitMaxDataFiles;
         this.tickIntervalSecs = builder.tickIntervalSecs;
+        this.walNamespace = builder.walNamespace;
     }
 
     public Map<String, String> getCatalogProperties() {
@@ -127,6 +129,10 @@ public class IcebergOptions implements Serializable {
         return tickIntervalSecs;
     }
 
+    public String getWalNamespace() {
+        return walNamespace;
+    }
+
     public static class Builder {
         private Map<String, String> catalogProperties;
         private String tableIdentifier;
@@ -141,6 +147,7 @@ public class IcebergOptions implements Serializable {
         private long groupCommitIntervalMillis = DEFAULT_GROUP_COMMIT_INTERVAL_MILLIS;
         private int groupCommitMaxDataFiles = DEFAULT_GROUP_COMMIT_MAX_DATA_FILES;
         private Integer tickIntervalSecs;
+        private String walNamespace;
 
         public Builder withCatalogProperties(Map<String, String> properties) {
             this.catalogProperties = properties == null ? null : new HashMap<>(properties);
@@ -233,6 +240,17 @@ public class IcebergOptions implements Serializable {
             return this;
         }
 
+        /**
+         * Namespace separating this deployment's commit write-ahead log from any other's. The log
+         * lives under the table, so two clusters running a same-named topology against one table
+         * otherwise share a WAL path, and either side's startup would clear the other's entries.
+         * Leave it unset when only one deployment writes to the table.
+         */
+        public Builder withWalNamespace(String namespace) {
+            this.walNamespace = namespace;
+            return this;
+        }
+
         public IcebergOptions build() {
             if (catalogProperties == null || catalogProperties.isEmpty()) {
                 throw new IllegalStateException("Catalog properties must be specified.");
@@ -266,6 +284,10 @@ public class IcebergOptions implements Serializable {
             }
             if (tickIntervalSecs != null && tickIntervalSecs <= 0) {
                 throw new IllegalStateException("Tick interval secs must be positive.");
+            }
+            if (walNamespace != null && (walNamespace.isBlank() || walNamespace.contains("/"))) {
+                throw new IllegalStateException(
+                    "WAL namespace must be a single non-blank path segment.");
             }
             if (commitIntervalBytes == null && commitIntervalMillis == null && commitIntervalRecords == null) {
                 // Without a threshold a batch would stay open until a tick tuple arrived, which

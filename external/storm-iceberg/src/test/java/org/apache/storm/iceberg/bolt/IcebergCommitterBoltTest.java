@@ -239,16 +239,15 @@ class IcebergCommitterBoltTest {
     }
 
     @Test
-    void prepareReplaysACommitLeftPendingByAnEarlierRun() {
-        CommitWal wal = new CommitWal(table, "test-topology", "iceberg-committer", 0);
-        CommitWal.WalEntry pending = wal.write(List.of(dataFile("left-behind.parquet")));
+    void prepareAbandonsACommitLeftPendingByAnEarlierRun() {
+        CommitWal wal = new CommitWal(table, null, "test-topology", "iceberg-committer", 0);
+        wal.write(List.of(dataFile("left-behind.parquet")));
 
         IcebergCommitterBolt bolt = prepared(baseOptions().build());
 
         table.refresh();
-        assertEquals(pending.commitId(),
-            table.currentSnapshot().summary().get(IcebergCommitter.COMMIT_ID_PROPERTY),
-            "the pending commit is replayed on startup");
+        // Those descriptors were never acked, so the writers' batches are replayed from the source.
+        assertEquals(0, snapshotCount(), "the pending commit is not appended on startup");
         assertEquals(List.of(), wal.listPending(), "and its WAL entry is cleared");
         bolt.cleanup();
     }

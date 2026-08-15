@@ -19,6 +19,7 @@
 package org.apache.storm.iceberg.bolt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -219,10 +220,21 @@ class IcebergBoltTest {
     }
 
     @Test
-    void prepareReplaysACommitLeftPendingByAnEarlierRun() {
+    void theBoltDeclaresItsOwnTickInterval() {
+        // Without the declaration the time-based threshold is only ever evaluated when the next
+        // tuple arrives, so a stalled stream leaves the last batch open and un-acked indefinitely.
+        IcebergBolt bolt = new IcebergBolt(baseOptions().withTickIntervalSecs(7).build());
+
+        assertEquals(7, bolt.getComponentConfiguration().get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS));
+        assertNull(new IcebergBolt(baseOptions().build()).getComponentConfiguration(),
+            "and inherits the topology-wide setting when none is configured");
+    }
+
+    @Test
+    void prepareAbandonsACommitLeftPendingByAnEarlierRun() {
         Table table = verifyCatalog.loadTable(TABLE_ID);
-        CommitWal wal = new CommitWal(table, "test-topology", "iceberg", 0);
-        CommitWal.WalEntry pending = wal.write(List.of(DataFiles.builder(table.spec())
+        CommitWal wal = new CommitWal(table, null, "test-topology", "iceberg", 0);
+        wal.write(List.of(DataFiles.builder(table.spec())
             .withPath(table.location() + "/data/left-behind.parquet")
             .withFileSizeInBytes(1024L)
             .withRecordCount(1L)
@@ -232,9 +244,9 @@ class IcebergBoltTest {
         IcebergBolt bolt = prepared(baseOptions().withCommitIntervalRecords(100).build());
 
         table.refresh();
-        assertEquals(pending.commitId(),
-            table.currentSnapshot().summary().get(IcebergCommitter.COMMIT_ID_PROPERTY),
-            "the pending commit is replayed on startup");
+        // The batch was never acked, so the source replays it; appending the entry's files here
+        // would add a second copy of the rows that replay writes.
+        assertNull(table.currentSnapshot(), "the pending commit is not appended on startup");
         assertEquals(List.of(), wal.listPending(), "and its WAL entry is cleared");
         bolt.cleanup();
     }

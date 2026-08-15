@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -44,6 +45,7 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitStateUnknownException;
+import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.AfterEach;
@@ -70,7 +72,7 @@ class IcebergCommitterTest {
     void setUp() {
         catalog = new HadoopCatalog(new Configuration(), tempDir.toUri().toString());
         table = catalog.createTable(TABLE_ID, SCHEMA, PartitionSpec.unpartitioned());
-        wal = new CommitWal(table, "topo", "iceberg", 0);
+        wal = new CommitWal(table, null, "topo", "iceberg", 0);
         committer = new IcebergCommitter(table, wal, new IcebergMetrics(null));
     }
 
@@ -215,32 +217,46 @@ class IcebergCommitterTest {
     }
 
     @Test
-    void recoveryReplaysAPreparedCommitThatNeverBecameVisible() {
+    void aLandedCommitSurvivesAFailureToDeleteItsWalEntry() {
+        // The append has already landed by then. Propagating the delete failure would have the
+        // caller fail tuples that are visible in the table, and the source would write them again.
+        CommitWal flakyWal = spy(wal);
+        doThrow(new RuntimeIOException(new IOException("metadata store unavailable")))
+            .when(flakyWal).delete(any());
+        IcebergCommitter committer = new IcebergCommitter(table, flakyWal, new IcebergMetrics(null));
+
+        committer.commit(List.of(dataFile("a.parquet")));
+
+        assertEquals(List.of("a.parquet"), committedFileNames());
+    }
+
+    @Test
+    void recoveryAbandonsAPreparedCommitThatNeverBecameVisible() {
         // A crash between "data files durable, WAL written" and "Iceberg commit": the entry exists,
-        // no snapshot references it.
+        // no snapshot references it. The batch was never acked, so the source replays it and
+        // appending these files here would only add a second copy of the rows the replay writes.
         wal.write(List.of(dataFile("lost.parquet")));
         assertEquals(List.of(), committedFileNames());
 
-        int replayed = committer.recover();
+        int abandoned = committer.recover();
 
-        assertEquals(1, replayed);
-        assertEquals(List.of("lost.parquet"), committedFileNames());
-        assertTrue(wal.listPending().isEmpty(), "the replayed entry is cleared");
+        assertEquals(1, abandoned);
+        assertEquals(List.of(), committedFileNames(), "the files are left as orphans");
+        assertTrue(wal.listPending().isEmpty(), "the abandoned entry is cleared");
     }
 
     @Test
     void recoveryDoesNotReappendACommitThatIsAlreadyVisible() {
-        // A crash between the Iceberg commit and the WAL delete: the snapshot is there, so the
-        // entry must be dropped rather than replayed, or the batch would be committed twice.
+        // A crash between the Iceberg commit and the WAL delete: the snapshot is there, and the
+        // entry must not add its files a second time.
         CommitWal.WalEntry entry = wal.write(List.of(dataFile("a.parquet")));
         table.newAppend()
             .appendFile(dataFile("a.parquet"))
             .set(IcebergCommitter.COMMIT_ID_PROPERTY, entry.commitId())
             .commit();
 
-        int replayed = committer.recover();
+        committer.recover();
 
-        assertEquals(0, replayed);
         assertEquals(List.of("a.parquet"), committedFileNames());
         assertTrue(wal.listPending().isEmpty(), "the settled entry is cleared");
     }

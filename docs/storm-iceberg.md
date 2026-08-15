@@ -71,7 +71,8 @@ so every Iceberg catalog works with its standard configuration keys: `type` = `h
 | `withCommitIntervalMillis(long)` | disabled | Close the batch once it has been open this long |
 | `withGroupCommitIntervalMillis(long)` | 5000 | `IcebergCommitterBolt` only: commit once the oldest accumulated batch is this old |
 | `withGroupCommitMaxDataFiles(int)` | 1000 | `IcebergCommitterBolt` only: commit once this many data files have accumulated |
-| `withTickIntervalSecs(int)` | none — inherits `topology.tick.tuple.freq.secs` | Per-component tick frequency for the writer or committer |
+| `withTickIntervalSecs(int)` | none — inherits `topology.tick.tuple.freq.secs` | Per-component tick frequency |
+| `withWalNamespace(String)` | none | Separates the commit WAL of deployments sharing one table |
 
 ### Batch sizing
 
@@ -181,7 +182,7 @@ descriptor arrives, so after a lull one accumulated descriptor sits uncommitted 
 tuples un-acked with it, until either another descriptor or a tick arrives. Configure
 `Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS` for the topology, or `withTickIntervalSecs` on the
 committer's own options. The same applies to the writers' `withCommitIntervalMillis` and to
-`IcebergBolt`'s.
+`IcebergBolt`'s; each of the three bolts declares whatever `withTickIntervalSecs` it was given.
 
 ## How a commit is made recoverable
 
@@ -200,26 +201,31 @@ a crash can do damage, and a write-ahead log closes it.
 The WAL belongs to whichever component commits: `IcebergBolt`, or `IcebergCommitterBolt` in the
 split sink. `IcebergWriterBolt` writes no WAL entries, because it makes nothing visible.
 
-On startup, before writing anything new, each committing task settles whatever its previous
-incarnation left behind. For every pending entry it asks the table whether a snapshot carries that
-commit id: if one does, the commit landed and the entry is simply dropped; if none does, the commit never landed
-and the data files — still durable — are appended again. The table itself answers the question, so
-no identity from the source is needed.
+On startup, before writing anything new, each committing task clears whatever its previous
+incarnation left behind. Every pending entry is dropped and its data files are left as orphans. An
+entry only survives to startup if the task died before its commit resolved, and in that case the
+batch was never acked, so the source replays it: appending the entry's files here would add a
+second copy of the rows that replay writes. For a reliable source this path can only add
+duplicates, never prevent loss — which is why a failed commit is settled while the batch is still
+in hand instead.
 
 ### When a commit fails
 
 A failed commit is resolved immediately, while the batch is still in hand, rather than left to the
 next startup. The sink asks the table whether the commit landed:
 
-- **It landed** — the append reported an error but the snapshot carries the commit id, the classic
-  `CommitStateUnknownException`. The batch is visible, so its tuples are acked and the WAL entry
-  is dropped. No replay, no duplicates.
-- **It did not land** — the WAL entry is dropped *before* the tuples are failed. The source
-  replays them and they are written exactly once; the abandoned data files become orphans. Were
-  the entry left in place, the next startup would append those files as well, duplicating the rows
-  the replay had already written.
-- **The table cannot be reached** — the outcome is genuinely unknown, so the entry is left for
-  startup to settle. This is the only path that can produce duplicate rows from a failed commit.
+- **A snapshot carries the commit id** — the append reported an error but reached the table, the
+  classic `CommitStateUnknownException`. The batch is visible, so its tuples are acked and nothing
+  is replayed.
+- **No snapshot carries it** — the tuples are failed, the source replays them, and the abandoned
+  data files become orphans.
+- **The table cannot be reached** — the outcome stays unknown, and the tuples are failed.
+
+The second answer is one sample, not a verdict. A REST catalog maps HTTP 500, 502, 503 and 504 to
+`CommitStateUnknownException`, and `SnapshotProducer.commit()` retries only `CommitFailedException`,
+so a commit the backend applies *after* the sink has looked reads as absent. The replay then writes
+those rows a second time. Waiting longer narrows that window without closing it, so the sink does
+not wait: duplicates are inside the contract this module offers.
 
 Note what the WAL does and does not protect. It protects the *reference* to durable data, which is
 why atomic commits survive a crash. It does not give exactly-once: a batch that failed before its
@@ -227,17 +233,6 @@ WAL entry existed is replayed from the source and written afresh, duplicates inc
 
 A crash before step 2 leaves orphan data files. They are invisible to readers, and cleaned up by
 Iceberg's standard `remove_orphan_files` maintenance.
-
-### Upgrading from an earlier layout
-
-The WAL used to be keyed by the global task id (`.../<topologyName>/<taskId>/`). It is now keyed by
-component id and task index, because global task ids are reassigned whenever the topology's
-structure changes, which strands an entry under an id no task reads again.
-
-Every existing deployment sees this once, on upgrade: entries a pre-upgrade worker left under the
-old path are never read. Nothing is lost — those tuples were never acked, so the source replays
-them — and the data files they named become orphans, removed by `remove_orphan_files` like any
-other. Leftover JSON under an old `<taskId>` directory can be deleted once the replays have landed.
 
 ## Table maintenance is still your job
 
@@ -316,7 +311,9 @@ catalog: `IcebergBoltExampleTopology` (unpartitioned), `IcebergPartitionedBoltEx
   with optimistic retries (tune with the table property `commit.retry.num-retries`), but beyond
   roughly 10–20 concurrent writers consider reducing the bolt's parallelism or moving to the
   writer/committer split.
-- If the table cannot be reached at all when a commit fails, the outcome stays unknown and the WAL
-  entry is left for the next startup to settle. That is the one case where a commit may be
-  replayed on top of tuples the source also replayed, producing duplicate rows. It is the
-  deliberate choice: replaying a commit is recoverable, losing one is not.
+- A commit whose outcome the catalog leaves unknown is settled by a single look at the table. A
+  backend that applies the commit after that look — an HTTP 504 in front of a REST catalog, say —
+  leaves the replay to write those rows a second time.
+- The WAL lives under the table, keyed by topology name, component id and task index. Two clusters
+  running a same-named topology against one table would share a WAL path and clear each other's
+  entries, so give each deployment its own `withWalNamespace(...)`.

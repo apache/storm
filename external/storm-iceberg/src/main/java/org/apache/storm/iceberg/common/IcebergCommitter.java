@@ -33,13 +33,17 @@ import org.slf4j.LoggerFactory;
  * <p>A commit is prepared in the {@link CommitWal} first, then appended in a single Iceberg
  * operation that stamps the commit id on the resulting snapshot, then cleared from the WAL.
  * Because the append is atomic, readers never observe part of a batch. Because the snapshot
- * carries the commit id, {@link #recover()} can tell a commit that landed from one that did not,
- * without needing any identity from the source: the table itself answers the question.
+ * carries the commit id, a commit whose outcome the catalog left unknown can be settled by asking
+ * the table whether it landed, without needing any identity from the source.
  *
- * <p>This yields atomic commits with at-least-once delivery. A crash before the WAL entry exists
- * leaves orphan data files, which are invisible to readers and removed by Iceberg's standard
- * orphan-file maintenance; a replayed batch is written and committed again, and its rows stay
- * visible until something downstream removes them.
+ * <p>That question is asked while the batch is still in hand, not at the next startup: an entry
+ * that survives to startup belongs to a batch that was never acked, which the source replays on
+ * its own, so {@link #recover()} abandons it rather than appending it a second time.
+ *
+ * <p>This yields atomic commits with at-least-once delivery. A crash leaves orphan data files,
+ * which are invisible to readers and removed by Iceberg's standard orphan-file maintenance; a
+ * replayed batch is written and committed again, and its rows stay visible until something
+ * downstream removes them.
  *
  * <p>One commit may cover many batches — the aggregated committer hands it the files of every
  * writer it collected — but it is still a single atomic append carrying a single commit id.
@@ -86,7 +90,22 @@ public class IcebergCommitter {
             return;
         }
         metrics.committed(dataFiles, System.nanoTime() - startNanos);
-        wal.delete(entry);
+        deleteQuietly(entry);
+    }
+
+    /**
+     * Drop a WAL entry whose commit is settled, without letting the drop itself unsettle it. The
+     * append has already landed by the time this runs, so propagating a delete failure would make
+     * the caller fail tuples that are visible in the table and have them replayed. A leftover entry
+     * is harmless: startup discards it.
+     */
+    private void deleteQuietly(CommitWal.WalEntry entry) {
+        try {
+            wal.delete(entry);
+        } catch (RuntimeException e) {
+            LOG.warn("Failed deleting WAL entry {} for a commit that has landed; "
+                + "it will be discarded at the next startup", entry.location(), e);
+        }
     }
 
     /**
@@ -112,7 +131,7 @@ public class IcebergCommitter {
             failure.addSuppressed(e);
             throw failure;
         }
-        wal.delete(entry);
+        deleteQuietly(entry);
         if (landed) {
             // The data is visible, so it counts as committed however the append reported itself.
             metrics.committed(dataFiles, System.nanoTime() - startNanos);
@@ -127,33 +146,28 @@ public class IcebergCommitter {
     }
 
     /**
-     * Settle every commit this task prepared but did not finish, replaying the ones whose snapshot
-     * never appeared and dropping the ones that are already visible.
+     * Discard every commit this task prepared but did not finish.
      *
-     * @return how many commits had to be replayed
+     * <p>An entry only survives to startup if the task died before its commit resolved, and in that
+     * case the batch was never acked, so the source replays it. Appending the entry's files here
+     * would therefore add a second copy of rows the replay writes anyway — for a reliable source
+     * this path can only add duplicates, never prevent loss. Dropping the entry and letting its
+     * files orphan is strictly the cheaper outcome, and it keeps startup off the commit path: no
+     * unbounded replay, no dependence on a snapshot that {@code expire_snapshots} may already have
+     * removed, and no unreadable entry that blocks every restart.
+     *
+     * @return how many prepared commits were abandoned
      */
     public int recover() {
-        int replayed = 0;
+        int abandoned = 0;
         for (CommitWal.WalEntry entry : wal.listPending()) {
-            if (isVisible(entry)) {
-                LOG.info("Commit {} is already visible; dropping its WAL entry", entry.commitId());
-            } else {
-                List<DataFile> dataFiles = wal.read(entry);
-                LOG.info("Commit {} never became visible; replaying {} data files",
-                    entry.commitId(), dataFiles.size());
-                long startNanos = System.nanoTime();
-                try {
-                    append(entry, dataFiles);
-                } catch (RuntimeException e) {
-                    metrics.commitFailed();
-                    throw e;
-                }
-                metrics.committed(dataFiles, System.nanoTime() - startNanos);
-                replayed++;
-            }
+            LOG.info("Commit {} was prepared but never resolved; abandoning it. Its tuples were "
+                + "never acked, so the source replays them; its data files are left as orphans",
+                entry.commitId());
             wal.delete(entry);
+            abandoned++;
         }
-        return replayed;
+        return abandoned;
     }
 
     /**
