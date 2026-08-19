@@ -281,9 +281,10 @@ public class DaemonConfig implements Validated {
      * @deprecated Unused. Supervisor liveness is tracked via an ephemeral ZooKeeper node (see
      *     {@code StormClusterState#supervisorHeartbeat}); when a supervisor dies its ZooKeeper session
      *     expires and the node disappears, so Nimbus detects the loss directly rather than by timing out
-     *     heartbeats. No code reads this value. Retained only for backward compatibility.
+     *     heartbeats. No code reads this value. It is scheduled for removal; retained for now only for
+     *     backward compatibility.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "3.0.1")
     @IsInteger
     @IsPositiveNumber
     public static final String NIMBUS_SUPERVISOR_TIMEOUT_SECS = "nimbus.supervisor.timeout.secs";
