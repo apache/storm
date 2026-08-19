@@ -29,7 +29,6 @@ import org.apache.storm.metric.StormMetricsRegistry;
 
 public class LogviewerLogDownloadHandler {
 
-    private WorkerLogs workerLogs;
     private final LogFileDownloader logFileDownloadHelper;
 
     /**
@@ -43,8 +42,7 @@ public class LogviewerLogDownloadHandler {
      */
     public LogviewerLogDownloadHandler(String logRoot, String daemonLogRoot, WorkerLogs workerLogs,
         ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
-        this.workerLogs = workerLogs;
-        this.logFileDownloadHelper = new LogFileDownloader(logRoot, daemonLogRoot, resourceAuthorizer, metricsRegistry);
+        this.logFileDownloadHelper = new LogFileDownloader(logRoot, daemonLogRoot, workerLogs, resourceAuthorizer, metricsRegistry);
     }
 
     /**
@@ -57,7 +55,6 @@ public class LogviewerLogDownloadHandler {
      *
      */
     public Response downloadLogFile(String host, String fileName, String user) throws IOException {
-        workerLogs.setLogFilePermission(fileName);
         return logFileDownloadHelper.downloadFile(host, fileName, user, false);
     }
 
