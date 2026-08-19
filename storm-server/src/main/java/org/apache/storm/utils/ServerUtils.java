@@ -36,6 +36,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -755,6 +756,44 @@ public class ServerUtils {
         Subject sub = new Subject();
         sub.getPrincipals().add(principal);
         return sub;
+    }
+
+    /**
+     * Resolve a name that came from the topology conf (for example the "localname" of a topology.blobstore.map entry)
+     * against a base directory. The name is only allowed to point at something strictly inside the base directory, so
+     * that a topology cannot make the supervisor create a symlink, and force delete whatever was there before, outside
+     * of the directories the supervisor manages for that topology.
+     *
+     * @param baseDir the directory the name has to resolve inside of
+     * @param name the name from the topology conf
+     * @return the resolved file
+     * @throws IOException if the name is empty, is absolute, contains a ".." component, or resolves outside of baseDir
+     */
+    public static File resolveTopologyConfSuppliedName(File baseDir, String name) throws IOException {
+        if (StringUtils.isEmpty(name)) {
+            throw new IOException("Invalid local name, it can't be null or empty string");
+        }
+        Path namePath;
+        try {
+            namePath = Paths.get(name);
+        } catch (InvalidPathException e) {
+            throw new IOException("Invalid local name '" + name + "'", e);
+        }
+        if (namePath.isAbsolute()) {
+            throw new IOException("Invalid local name '" + name + "', it must be relative");
+        }
+        for (Path part : namePath) {
+            if ("..".equals(part.toString())) {
+                throw new IOException("Invalid local name '" + name + "', it can't contain \"..\"");
+            }
+        }
+        File ret = new File(baseDir, name);
+        Path base = baseDir.toPath().toAbsolutePath().normalize();
+        Path resolved = ret.toPath().toAbsolutePath().normalize();
+        if (resolved.equals(base) || !resolved.startsWith(base)) {
+            throw new IOException("Invalid local name '" + name + "', it does not resolve inside of " + baseDir);
+        }
+        return ret;
     }
 
     // Non-static impl methods exist for mocking purposes.

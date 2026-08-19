@@ -19,6 +19,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -240,6 +242,76 @@ public class AsyncLocalizerTest {
         }
     }
 
+
+    @Test
+    public void testRequestDownloadTopologyBlobsWithLocalNameOutsideOfStormRoot() throws Exception {
+        ConfigUtils mockedConfigUtils = mock(ConfigUtils.class);
+        ConfigUtils previousConfigUtils = ConfigUtils.setInstance(mockedConfigUtils);
+
+        AsyncLocalizer victim = null;
+
+        try (TmpPath stormLocal = new TmpPath(); TmpPath localizerRoot = new TmpPath()) {
+
+            Map<String, Object> conf = new HashMap<>();
+            conf.put(Config.STORM_LOCAL_DIR, stormLocal.getPath());
+
+            AdvancedFSOps ops = AdvancedFSOps.make(conf);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+
+            victim = spy(new AsyncLocalizer(conf, ops, localizerRoot.getPath(), metricsRegistry));
+
+            final String topoId = "TOPO-12345";
+            final String user = "user";
+
+            final Path userDir = Paths.get(stormLocal.getPath(), user);
+            final Path topologyDirRoot = Paths.get(stormLocal.getPath(), topoId);
+
+            // the localname comes from the topology conf and tries to point outside of the topology's dist dir
+            final String escapingLocalName = Joiner.on(File.separator).join("..", "escaped.txt");
+            final String simpleKey = "simple";
+            Map<String, Map<String, Object>> topoBlobMap = new HashMap<>();
+            Map<String, Object> simple = new HashMap<>();
+            simple.put("localname", escapingLocalName);
+            simple.put("uncompress", false);
+            topoBlobMap.put(simpleKey, simple);
+
+            final int port = 8080;
+
+            Map<String, Object> topoConf = new HashMap<>(conf);
+            topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topoBlobMap);
+            topoConf.put(Config.TOPOLOGY_NAME, "TOPO");
+
+            List<LocalizedResource> localizedList = new ArrayList<>();
+            LocalizedResource simpleLocal = new LocalizedResource(simpleKey, localizerRoot.getFile().toPath(), false, ops, conf, user,
+                metricsRegistry);
+            localizedList.add(simpleLocal);
+
+            when(mockedConfigUtils.supervisorStormDistRootImpl(conf, topoId)).thenReturn(topologyDirRoot.toString());
+            when(mockedConfigUtils.readSupervisorStormConfImpl(conf, topoId)).thenReturn(topoConf);
+            when(mockedConfigUtils.readSupervisorTopologyImpl(conf, topoId, ops)).thenReturn(constructEmptyStormTopology());
+
+            //Write the mocking backwards so the actual method is not called on the spy object
+            doReturn(CompletableFuture.supplyAsync(() -> null)).when(victim)
+                    .requestDownloadBaseTopologyBlobs(any(), eq(null));
+
+            Files.createDirectories(topologyDirRoot);
+
+            doReturn(userDir.toFile()).when(victim).getLocalUserFileCacheDir(user);
+            doReturn(localizedList).when(victim).getBlobs(any(List.class), any(), any());
+
+            Future<Void> f = victim.requestDownloadTopologyBlobs(constructLocalAssignment(topoId, user), port, null);
+            assertThrows(ExecutionException.class, () -> f.get(20, TimeUnit.SECONDS));
+
+            // nothing was created outside of the topology's dist dir
+            assertFalse(Files.exists(topologyDirRoot.getParent().resolve("escaped.txt"), LinkOption.NOFOLLOW_LINKS));
+
+        } finally {
+            ConfigUtils.setInstance(previousConfigUtils);
+            if (victim != null) {
+                victim.close();
+            }
+        }
+    }
 
     @Test
     public void testRequestDownloadTopologyBlobsLocalMode() throws Exception {

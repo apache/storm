@@ -743,7 +743,9 @@ public class AsyncLocalizer implements AutoCloseable {
                                 // all things are from dependencies
                                 symlinkName = keyName;
                             }
-                            fsOps.createSymlink(new File(stormroot, symlinkName), rsrcFilePath);
+                            // the localname may come from the topology conf, it must not point outside of stormroot
+                            fsOps.createSymlink(ServerUtils.resolveTopologyConfSuppliedName(new File(stormroot), symlinkName),
+                                rsrcFilePath);
                         }
                     }
                 }

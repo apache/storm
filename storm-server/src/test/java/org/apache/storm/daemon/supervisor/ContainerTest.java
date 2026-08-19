@@ -37,7 +37,9 @@ import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -170,6 +172,47 @@ public class ContainerTest {
 
         //Create links to blobs
         verify(ops, never()).createSymlink(new File(workerRoot, "resources"), new File(distRoot, "resources"));
+    }
+
+    @Test
+    public void testCreateBlobstoreLinks() throws Exception {
+        final int port = 8080;
+        final String topoId = "test_topology";
+        final String workerId = "worker_id";
+        final String stormLocal = asAbsPath("tmp", "testing");
+        final File workerRoot = asAbsFile(stormLocal, "workers", workerId);
+        final File distRoot = asAbsFile(stormLocal, "supervisor", "stormdist", topoId);
+
+        final Map<String, Object> superConf = new HashMap<>();
+        superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
+        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
+
+        final Map<String, Object> topoConf = new HashMap<>();
+        Map<String, Object> blobInfo = new HashMap<>();
+        blobInfo.put("localname", "simple.txt");
+        topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, Collections.singletonMap("simple", blobInfo));
+
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+        ResourceIsolationInterface iso = mock(ResourceIsolationInterface.class);
+        MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf,
+                                             "SUPERVISOR", 6628, port, la, iso, workerId, topoConf, ops, new StormMetricsRegistry());
+
+        mc.createBlobstoreLinks();
+        verify(ops).createSymlink(new File(workerRoot, "simple.txt"), new File(distRoot, "simple.txt"));
+
+        //a localname that points outside of the worker root must not result in any link
+        AdvancedFSOps badOps = mock(AdvancedFSOps.class);
+        when(badOps.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+        blobInfo.put("localname", asPath("..", "..", "escaped.txt"));
+        MockContainer badMc = new MockContainer(ContainerType.LAUNCH, superConf,
+                                                "SUPERVISOR", 6628, port, la, iso, workerId, topoConf, badOps, new StormMetricsRegistry());
+
+        assertThrows(IOException.class, () -> badMc.createBlobstoreLinks());
+        verify(badOps, never()).createSymlink(any(File.class), any(File.class));
     }
 
     @Test
