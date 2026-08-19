@@ -50,6 +50,7 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
+import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -410,8 +411,9 @@ public abstract class Container implements Killable {
                     targetResourcesDir.toString());
             }
             for (String fileName : blobFileNames) {
-                ops.createSymlink(new File(workerRoot, fileName),
-                    new File(stormRoot, fileName));
+                // the localname may come from the topology conf, it must not point outside of the worker/dist dirs
+                ops.createSymlink(ServerUtils.resolveTopologyConfSuppliedName(new File(workerRoot), fileName),
+                    ServerUtils.resolveTopologyConfSuppliedName(new File(stormRoot), fileName));
             }
         } else if (blobFileNames.size() > 0) {
             LOG.warn("Symlinks are disabled, no symlinks created for blobs {}", blobFileNames);

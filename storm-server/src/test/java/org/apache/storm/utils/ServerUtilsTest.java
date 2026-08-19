@@ -23,6 +23,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -396,5 +397,25 @@ public class ServerUtilsTest {
             return true;
         }
         return false;
+    }
+
+    @Test
+    public void testResolveTopologyConfSuppliedName() throws Exception {
+        File baseDir = new File(System.getProperty("java.io.tmpdir"), "stormdist/topo-1-1");
+
+        assertEquals(new File(baseDir, "myblob"), ServerUtils.resolveTopologyConfSuppliedName(baseDir, "myblob"));
+        assertEquals(new File(baseDir, "resources/myblob"), ServerUtils.resolveTopologyConfSuppliedName(baseDir, "resources/myblob"));
+
+        assertThrows(IOException.class, () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, ".."));
+        assertThrows(IOException.class, () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, "../other-topo/stormjar.jar"));
+        assertThrows(IOException.class, () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, "a/../../../etc/passwd"));
+        assertThrows(IOException.class, () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, "a/../b/../.."));
+        //a sibling directory whose name only starts with the base directory name is not inside it
+        assertThrows(IOException.class, () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, "../topo-1-1-evil/stormjar.jar"));
+        assertThrows(IOException.class, () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, "."));
+        assertThrows(IOException.class,
+            () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, new File("etc", "passwd").getAbsolutePath()));
+        assertThrows(IOException.class, () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, ""));
+        assertThrows(IOException.class, () -> ServerUtils.resolveTopologyConfSuppliedName(baseDir, null));
     }
 }
