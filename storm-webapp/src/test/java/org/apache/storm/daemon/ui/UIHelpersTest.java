@@ -30,6 +30,8 @@ import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.utils.Time;
 import net.minidev.json.JSONValue;
+import org.eclipse.jetty.ee10.servlet.FilterHolder;
+import org.eclipse.jetty.ee10.servlets.CrossOriginFilter;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
@@ -723,5 +725,16 @@ class UIHelpersTest {
         SslContextFactory factory = connector.getConnectionFactory(SslConnectionFactory.class).getSslContextFactory();
         assertEquals(expectedProtocols, new LinkedHashSet<>(Arrays.asList(factory.getExcludeProtocols())));
         assertEquals(expectedCiphers, new LinkedHashSet<>(Arrays.asList(factory.getExcludeCipherSuites())));
+    }
+
+    @Test
+    public void testCorsFilterHandleSetsExplicitInitParameters() {
+        FilterHolder filterHolder = UIHelpers.corsFilterHandle();
+        assertEquals("*", filterHolder.getInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM));
+        assertEquals("GET, POST, PUT", filterHolder.getInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM));
+        assertEquals("X-Requested-With, X-Requested-By, Access-Control-Allow-Origin,"
+                + " Content-Type, Content-Length, Accept, Origin",
+                filterHolder.getInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM));
+        assertEquals("false", filterHolder.getInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM));
     }
 }

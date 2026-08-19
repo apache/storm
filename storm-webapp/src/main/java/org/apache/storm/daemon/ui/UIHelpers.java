@@ -324,7 +324,7 @@ public class UIHelpers {
                 CrossOriginFilter.ALLOWED_HEADERS_PARAM,
                 "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin,"
                         + " Content-Type, Content-Length, Accept, Origin");
-        filterHolder.setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*");
+        filterHolder.setInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM, "false");
         return filterHolder;
     }
 
