@@ -9,6 +9,15 @@ ZooKeeper (and other configured state stores) such as topology assignments, Nimb
 summaries, `StormBase` records, log configs, credentials, worker heartbeats,
 profile requests, errors, etc.
 
+> **Note on worker heartbeats.** Since 2.0 ([STORM-2693](https://issues.apache.org/jira/browse/STORM-2693)),
+> worker liveness heartbeats are, by default, *not* persisted in ZooKeeper: workers
+> write them to local disk, supervisors relay them to Nimbus over Thrift, and Nimbus
+> keeps them in an in-memory heartbeat cache. Worker heartbeats are only written to a
+> state store (the `WORKERBEATS_SUBTREE` path) when a heartbeat store such as Pacemaker
+> is configured. The serialization described below still applies to those stored
+> heartbeats, and to supervisor liveness (`SupervisorInfo`), which is always kept as an
+> ephemeral ZooKeeper node.
+
 It is distinct from
 [tuple serialization](Serialization.html), which covers payloads exchanged
 between spouts and bolts at runtime via Kryo.

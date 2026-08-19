@@ -34,6 +34,7 @@ First a couple of important notes about topologies:
     - Jars and configs are kept on local filesystem because they're too big for Zookeeper. The jar and configs are copied into the path {nimbus local dir}/stormdist/{topology id}
     - `setup-storm-static` writes task -> component mapping into ZK
     - `setup-heartbeats` creates a ZK "directory" in which tasks can heartbeat
+        - (**Since 2.0, STORM-2693**: workers no longer heartbeat directly into ZooKeeper. A worker now writes liveness heartbeats to local disk, and its supervisor relays them to Nimbus over Thrift. See [Daemon Fault Tolerance](Daemon-Fault-Tolerance.html) for the current mechanism.)
 - Nimbus calls `mk-assignment` to assign tasks to machines [code](https://github.com/apache/storm/blob/0.7.1/src/clj/org/apache/storm/daemon/nimbus.clj#L458)
     - Assignment record definition is here: [code](https://github.com/apache/storm/blob/0.7.1/src/clj/org/apache/storm/daemon/common.clj#L25)
     - Assignment contains:

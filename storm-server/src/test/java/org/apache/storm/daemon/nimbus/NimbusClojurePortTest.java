@@ -1717,7 +1717,6 @@ public class NimbusClojurePortTest {
                     DaemonConfig.NIMBUS_TASK_LAUNCH_SECS, 60,
                     DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS, 20,
                     DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10,
-                    DaemonConfig.NIMBUS_SUPERVISOR_TIMEOUT_SECS, 100,
                     Config.TOPOLOGY_ACKER_EXECUTORS, 0,
                     Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0))
                 .build()) {
@@ -1821,7 +1820,6 @@ public class NimbusClojurePortTest {
                     DaemonConfig.NIMBUS_TASK_LAUNCH_SECS, 60,
                     DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS, 20,
                     DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10,
-                    DaemonConfig.NIMBUS_SUPERVISOR_TIMEOUT_SECS, 100,
                     Config.TOPOLOGY_ACKER_EXECUTORS, 0,
                     Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0))
                 .build()) {
