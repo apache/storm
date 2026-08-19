@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.ui;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -89,6 +90,7 @@ import org.apache.storm.logging.filters.AccessLoggingFilter;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.thrift.TException;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.IVersionInfo;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
@@ -447,8 +449,25 @@ public class UIHelpers {
     private static final Pattern JSONP_CALLBACK_PATTERN =
             Pattern.compile("^[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)*$");
 
+    /**
+     * Whether the "callback" query parameter is honored, see {@link DaemonConfig#UI_ENABLE_JSONP}.
+     * It is read once, like the rest of the daemon configuration, so a change needs a restart.
+     */
+    private static boolean jsonpEnabled =
+            ObjectReader.getBoolean(ConfigUtils.readStormConfig().get(DaemonConfig.UI_ENABLE_JSONP), false);
+
+    @VisibleForTesting
+    static void setJsonpEnabled(boolean enabled) {
+        jsonpEnabled = enabled;
+    }
+
     private static String sanitizeJsonpCallback(String callback) {
         if (callback == null) {
+            return null;
+        }
+        if (!jsonpEnabled) {
+            LOG.warn("Ignoring JSONP callback parameter, set {} to true to enable JSONP responses",
+                     DaemonConfig.UI_ENABLE_JSONP);
             return null;
         }
         if (callback.length() > 128 || !JSONP_CALLBACK_PATTERN.matcher(callback).matches()) {
