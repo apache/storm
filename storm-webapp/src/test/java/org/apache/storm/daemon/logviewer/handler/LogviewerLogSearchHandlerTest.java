@@ -34,6 +34,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -47,12 +49,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import jakarta.ws.rs.core.Response;
+
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.streams.tuple.Tuple3;
+import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -860,6 +865,52 @@ public class LogviewerLogSearchHandlerTest {
             }).when(handler).findNMatches(any(), anyInt(), anyInt(), anyInt(), any());
 
             return handler;
+        }
+    }
+
+    @Test
+    public void testSearchDaemonLogFileUnauthorizedUser() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Files.createDirectories(daemonLogRoot);
+            Files.createFile(daemonLogRoot.resolve("nimbus.log"));
+
+            Map<String, Object> stormConf = Utils.readStormConfig();
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(false);
+            LogviewerLogSearchHandler handler = new LogviewerLogSearchHandler(stormConf, Paths.get(""), daemonLogRoot,
+                resourceAuthorizer, new StormMetricsRegistry());
+
+            Response response = handler.searchLogFile("nimbus.log", "user", true, "needle", null, null, null, null);
+
+            assertEquals(403, response.getStatus());
+        }
+    }
+
+    @Test
+    public void testSearchDaemonLogFileAuthorizedUser() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Files.createDirectories(daemonLogRoot);
+            Files.writeString(daemonLogRoot.resolve("nimbus.log"), "a needle in the daemon log\n");
+
+            Map<String, Object> stormConf = Utils.readStormConfig();
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            LogviewerLogSearchHandler handler = new LogviewerLogSearchHandler(stormConf, Paths.get(""), daemonLogRoot,
+                resourceAuthorizer, new StormMetricsRegistry());
+
+            Response response = handler.searchLogFile("nimbus.log", "user", true, "needle", null, null, null, null);
+
+            assertEquals(200, response.getStatus());
+            Map<?, ?> entity = new ObjectMapper().readValue((String) response.getEntity(), Map.class);
+            assertEquals("needle", entity.get("searchString"));
+            assertEquals("yes", entity.get("isDaemon"));
+            //A match must actually be reported, an empty match list would mean the file was never read.
+            List<?> matches = (List<?>) entity.get("matches");
+            assertEquals(1, matches.size());
+            assertEquals("needle", ((Map<?, ?>) matches.get(0)).get("matchString"));
+            verify(resourceAuthorizer).isUserAllowedToAccessDaemonFile("user");
         }
     }
 

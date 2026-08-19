@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -214,7 +215,47 @@ public class LogviewerLogPageHandlerTest {
         }
     }
 
+    @Test
+    public void testDaemonLogPageUnauthorizedUser() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(false);
+            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getFile().toPath(), resourceAuthorizer);
+            //Give the daemon log some content, so that an unauthorized request is the only reason not to render the page.
+            Files.writeString(rootPath.getFile().toPath().resolve("logs").resolve("nimbus.log"), "nimbus log content");
+
+            final Response returned = handler.daemonLogPage("nimbus.log", 0, 100, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testDaemonLogPageAuthorizedUser() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getFile().toPath(), resourceAuthorizer);
+            Files.writeString(rootPath.getFile().toPath().resolve("logs").resolve("nimbus.log"), "nimbus log content");
+
+            final Response returned = handler.daemonLogPage("nimbus.log", 0, 100, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat((String) returned.getEntity(), containsString("nimbus log content"));
+            verify(resourceAuthorizer).isUserAllowedToAccessDaemonFile("user");
+        }
+    }
+
     private LogviewerLogPageHandler createHandlerForTraversalTests(Path rootPath) throws IOException {
+        return createHandlerForTraversalTests(rootPath, new ResourceAuthorizer(Utils.readStormConfig()));
+    }
+
+    private LogviewerLogPageHandler createHandlerForTraversalTests(Path rootPath, ResourceAuthorizer resourceAuthorizer)
+            throws IOException {
         Path daemonLogRoot = rootPath.resolve("logs");
         Path fileOutsideDaemonRoot = rootPath.resolve("evil.sh");
         Path daemonFile = daemonLogRoot.resolve("nimbus.log");
@@ -236,6 +277,6 @@ public class LogviewerLogPageHandlerTest {
         Map<String, Object> stormConf = Utils.readStormConfig();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         return new LogviewerLogPageHandler(workerLogRoot.toString(), daemonLogRoot.toString(),
-            new WorkerLogs(stormConf, workerLogRoot, metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
+            new WorkerLogs(stormConf, workerLogRoot, metricsRegistry), resourceAuthorizer, metricsRegistry);
     }
 }

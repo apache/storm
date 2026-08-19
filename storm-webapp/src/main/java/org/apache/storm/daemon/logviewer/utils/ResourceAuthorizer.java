@@ -73,6 +73,41 @@ public class ResourceAuthorizer {
     }
 
     /**
+     * Checks whether user is allowed to access a daemon log file via UI. Daemon logs have no owning topology, so only the
+     * cluster level lists are consulted. Always true when the Logviewer filter is not configured.
+     *
+     * @param user username
+     */
+    public boolean isUserAllowedToAccessDaemonFile(String user) {
+        return !isLogviewerFilterConfigured() || isAuthorizedDaemonLogUser(user);
+    }
+
+    /**
+     * Checks whether user is authorized to access daemon log files. Checks regardless of UI filter.
+     *
+     * @param user username
+     */
+    public boolean isAuthorizedDaemonLogUser(String user) {
+        if (StringUtils.isEmpty(user)) {
+            return false;
+        }
+
+        List<String> logsUsers = new ArrayList<>();
+        logsUsers.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_USERS)));
+        logsUsers.addAll(ObjectReader.getStrings(stormConf.get(Config.NIMBUS_ADMINS)));
+
+        List<String> logsGroups = new ArrayList<>();
+        logsGroups.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_GROUPS)));
+        logsGroups.addAll(ObjectReader.getStrings(stormConf.get(Config.NIMBUS_ADMINS_GROUPS)));
+
+        String userName = principalToLocal.toLocal(user);
+        Set<String> groups = getUserGroups(userName);
+
+        return logsUsers.stream().anyMatch(u -> u.equals(userName))
+            || Sets.intersection(groups, new HashSet<>(logsGroups)).size() > 0;
+    }
+
+    /**
      * Checks whether user is authorized to access file. Checks regardless of UI filter.
      *
      * @param user username

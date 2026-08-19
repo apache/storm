@@ -31,11 +31,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.net.HttpHeaders;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -199,7 +202,58 @@ public class LogviewerLogDownloadHandlerTest {
         }
     }
 
+    @Test
+    public void testDownloadDaemonLogFileUnauthorizedUser() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(false);
+            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath(), resourceAuthorizer);
+
+            Response response = handler.downloadDaemonLogFile("host", "nimbus.log", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testDownloadDaemonLogFileAuthorizedUser() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            LogviewerLogDownloadHandler handler = createHandlerTraversalTests(rootPath.getFile().toPath(), resourceAuthorizer);
+            //Give the daemon log some content, so that the response is only empty if the file was not served.
+            Files.writeString(rootPath.getFile().toPath().resolve("logs").resolve("nimbus.log"), "nimbus log content");
+
+            Response response = handler.downloadDaemonLogFile("host", "nimbus.log", "user");
+            int status = response.getStatus();
+            String content = status == Response.Status.OK.getStatusCode() ? readEntity(response) : null;
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(status, is(Response.Status.OK.getStatusCode()));
+            assertThat(content, is("nimbus log content"));
+            String contentDisposition = response.getHeaderString(HttpHeaders.CONTENT_DISPOSITION);
+            assertThat(contentDisposition, containsString("host-nimbus.log"));
+            verify(resourceAuthorizer).isUserAllowedToAccessDaemonFile("user");
+        }
+    }
+
+    private String readEntity(Response response) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ((StreamingOutput) response.getEntity()).write(out);
+        return out.toString(StandardCharsets.UTF_8);
+    }
+
     private LogviewerLogDownloadHandler createHandlerTraversalTests(Path rootPath) throws IOException {
+        return createHandlerTraversalTests(rootPath, new ResourceAuthorizer(Utils.readStormConfig()));
+    }
+
+    private LogviewerLogDownloadHandler createHandlerTraversalTests(Path rootPath, ResourceAuthorizer resourceAuthorizer)
+            throws IOException {
         Path daemonLogRoot = rootPath.resolve("logs");
         Path fileOutsideDaemonRoot = rootPath.resolve("evil.sh");
         Path workerLogRoot = daemonLogRoot.resolve("workers-artifacts");
@@ -221,7 +275,7 @@ public class LogviewerLogDownloadHandlerTest {
         Map<String, Object> stormConf = Utils.readStormConfig();
         StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
         return new LogviewerLogDownloadHandler(workerLogRoot.toString(), daemonLogRoot.toString(),
-            new WorkerLogs(stormConf, workerLogRoot, metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
+            new WorkerLogs(stormConf, workerLogRoot, metricsRegistry), resourceAuthorizer, metricsRegistry);
     }
 
 }

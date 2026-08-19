@@ -81,7 +81,8 @@ public class LogFileDownloader {
         }
         
         if (file.toFile().exists()) {
-            if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
+            if (isDaemon ? resourceAuthorizer.isUserAllowedToAccessDaemonFile(user)
+                    : resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 if (!isDaemon) {
                     //Only widen the permission of a worker log once the request is known to be served
                     workerLogs.setLogFilePermission(fileName);
