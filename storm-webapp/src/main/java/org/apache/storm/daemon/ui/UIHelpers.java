@@ -234,8 +234,9 @@ public class UIHelpers {
                                                   Boolean needClientAuth, Boolean wantClientAuth,
                                                   Integer headerBufferSize, boolean enableSslReload) {
         SslContextFactory.Server factory = new ReloadableSslContextFactory(enableSslReload);
-        factory.setExcludeCipherSuites("SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA");
-        factory.setExcludeProtocols("SSLv3");
+        // add to, rather than replace, the exclusions Jetty's SslContextFactory ships with
+        factory.addExcludeCipherSuites("SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA");
+        factory.addExcludeProtocols("SSLv3");
         factory.setRenegotiationAllowed(false);
         factory.setKeyStorePath(ksPath);
         factory.setKeyStoreType(ksType);

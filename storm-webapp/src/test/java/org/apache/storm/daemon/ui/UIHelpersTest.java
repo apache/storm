@@ -30,13 +30,23 @@ import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.utils.Time;
 import net.minidev.json.JSONValue;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -691,5 +701,27 @@ class UIHelpersTest {
         Map headers = UIHelpers.getJsonResponseHeaders("myCb", null);
         assertEquals("application/json;charset=utf-8", headers.get("Content-Type"));
         assertEquals("nosniff", headers.get("X-Content-Type-Options"));
+    }
+
+    @Test
+    public void testConfigSslKeepsJettyDefaultTlsExclusions(@TempDir Path tempDir) throws Exception {
+        SslContextFactory.Server defaults = new SslContextFactory.Server();
+        Set<String> expectedProtocols = new LinkedHashSet<>(Arrays.asList(defaults.getExcludeProtocols()));
+        Set<String> expectedCiphers = new LinkedHashSet<>(Arrays.asList(defaults.getExcludeCipherSuites()));
+        assertFalse(expectedProtocols.isEmpty());
+        assertFalse(expectedCiphers.isEmpty());
+        expectedProtocols.add("SSLv3");
+        expectedCiphers.add("SSL_RSA_WITH_RC4_128_MD5");
+        expectedCiphers.add("SSL_RSA_WITH_RC4_128_SHA");
+
+        Path keyStore = Files.createFile(tempDir.resolve("keystore.jks"));
+        Server server = new Server();
+        UIHelpers.configSsl(server, 8443, keyStore.toString(), "password", "JKS", "password",
+                null, null, null, false, false, false);
+
+        ServerConnector connector = (ServerConnector) server.getConnectors()[0];
+        SslContextFactory factory = connector.getConnectionFactory(SslConnectionFactory.class).getSslContextFactory();
+        assertEquals(expectedProtocols, new LinkedHashSet<>(Arrays.asList(factory.getExcludeProtocols())));
+        assertEquals(expectedCiphers, new LinkedHashSet<>(Arrays.asList(factory.getExcludeCipherSuites())));
     }
 }
