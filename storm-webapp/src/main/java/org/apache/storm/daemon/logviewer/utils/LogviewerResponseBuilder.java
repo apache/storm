@@ -35,8 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.ui.UIHelpers;
@@ -61,11 +59,13 @@ public class LogviewerResponseBuilder {
      *
      * @param entity entity object to represent it as JSON
      * @param callback callbackParameterName for JSONP
-     * @param origin origin
+     * @param origin origin of the request, not echoed back in the response
      */
     public static Response buildSuccessJsonResponse(Object entity, String callback, String origin) {
-        return new JsonResponseBuilder().setData(entity).setCallback(callback)
-                .setHeaders(LogviewerResponseBuilder.getHeadersForSuccessResponse(origin)).build();
+        // The request origin is deliberately not reflected back: pairing a caller supplied
+        // Access-Control-Allow-Origin with Access-Control-Allow-Credentials would let browsers
+        // hand the response to any site. Keep the default Access-Control-Allow-Origin: * instead.
+        return new JsonResponseBuilder().setData(entity).setCallback(callback).build();
     }
 
     /**
@@ -134,13 +134,6 @@ public class LogviewerResponseBuilder {
         int statusCode = 500;
         return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(ex, statusCode))
                 .setCallback(callback).setStatus(statusCode).build();
-    }
-
-    private static Map<String, Object> getHeadersForSuccessResponse(String origin) {
-        Map<String, Object> headers = new HashMap<>();
-        headers.put("Access-Control-Allow-Origin", origin);
-        headers.put("Access-Control-Allow-Credentials", "true");
-        return headers;
     }
 
     private static String buildUnauthorizedUserHtml(String user) {
