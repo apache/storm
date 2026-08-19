@@ -18,17 +18,22 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.KeySequenceNumber;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.StormTopology;
@@ -198,6 +203,40 @@ class NimbusTest {
 
             verify(keySequenceNumber.constructed().get(0)).getKeySequenceNumber(any());
             verify(stormClusterState, never()).setupBlob(eq(BLOB_FILE_KEY), eq(nimbusInfo), any());
+        }
+    }
+
+    @Test
+    void testValidateUploadedJarLocationRejectsLocationsOutsideTheInbox() throws Exception {
+        Path inbox = Files.createTempDirectory("nimbus-inbox");
+        Path sibling = Paths.get(inbox + "evil");
+        try {
+            Path jar = Files.write(inbox.resolve("stormjar-cafebabe.jar"), new byte[]{ 1 });
+            Path outside = Files.write(Files.createDirectory(sibling).resolve("stormjar-cafebabe.jar"), new byte[]{ 1 });
+
+            // a location handed out by beginFileUpload is accepted, and so is one that only walks inside the inbox
+            Nimbus.validateUploadedJarLocation(inbox.toString(), jar.toString());
+            Files.createDirectory(inbox.resolve("nested"));
+            Nimbus.validateUploadedJarLocation(inbox.toString(), inbox + "/nested/../stormjar-cafebabe.jar");
+
+            // an absolute path elsewhere, a ".." walk out of the inbox, the inbox itself and a sibling directory
+            // whose name merely starts with the inbox path are all rejected
+            assertThrows(AuthorizationException.class,
+                () -> Nimbus.validateUploadedJarLocation(inbox.toString(), "/etc/passwd"));
+            assertThrows(AuthorizationException.class,
+                () -> Nimbus.validateUploadedJarLocation(inbox.toString(), inbox + "/../../etc/passwd"));
+            assertThrows(AuthorizationException.class,
+                () -> Nimbus.validateUploadedJarLocation(inbox.toString(), inbox.toString()));
+            assertThrows(AuthorizationException.class,
+                () -> Nimbus.validateUploadedJarLocation(inbox.toString(), outside.toString()));
+
+            // a symlink inside the inbox pointing back out of it is rejected too
+            Path link = Files.createSymbolicLink(inbox.resolve("stormjar-link.jar"), outside);
+            assertThrows(AuthorizationException.class,
+                () -> Nimbus.validateUploadedJarLocation(inbox.toString(), link.toString()));
+        } finally {
+            FileUtils.deleteQuietly(inbox.toFile());
+            FileUtils.deleteQuietly(sibling.toFile());
         }
     }
 }
