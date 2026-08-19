@@ -284,7 +284,7 @@ public class DaemonConfig implements Validated {
      *     heartbeats. No code reads this value. It is scheduled for removal; retained for now only for
      *     backward compatibility.
      */
-    @Deprecated(forRemoval = true, since = "3.0.1")
+    @Deprecated(forRemoval = true, since = "3.1.0")
     @IsInteger
     @IsPositiveNumber
     public static final String NIMBUS_SUPERVISOR_TIMEOUT_SECS = "nimbus.supervisor.timeout.secs";
