@@ -114,11 +114,18 @@ public class DependencyUploader {
                 String artifact = artifactToFile.getKey();
                 File dependency = artifactToFile.getValue();
 
-                String key = DependencyBlobStoreUtils.generateDependencyBlobKey(convertArtifactToJarFileName(artifact));
+                // the key must be unique per upload, as uploadFiles() already does: a key
+                // derived only from the artifact coordinate is shared by every submitter, so
+                // an existing blob under that key was reused without checking that it holds
+                // the artifact we resolved
+                String key = DependencyBlobStoreUtils.generateDependencyBlobKey(
+                    DependencyBlobStoreUtils.applyUUIDToFileName(
+                        convertArtifactToJarFileName(artifact)));
                 try {
                     uploadDependencyToBlobStore(key, dependency);
                 } catch (KeyAlreadyExistsException e) {
-                    // we lose the race, but it doesn't matter
+                    // cannot happen: the key carries a freshly generated UUID
+                    throw new RuntimeException(e);
                 }
 
                 keys.add(key);
