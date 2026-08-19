@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1836,6 +1837,28 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     /**
+     * Check that a client supplied jar location names a file inside the nimbus inbox, i.e. one that was handed out by
+     * beginFileUpload and written through uploadChunk/finishFileUpload. Both paths are canonicalized first so that
+     * ".." segments and symlinks cannot point outside of the inbox.
+     *
+     * @param inboxLocation the nimbus inbox directory
+     * @param uploadedJarLocation the client supplied jar location
+     * @throws AuthorizationException if uploadedJarLocation is not inside the inbox
+     * @throws IOException if the paths could not be resolved
+     */
+    @VisibleForTesting
+    static void validateUploadedJarLocation(String inboxLocation, String uploadedJarLocation)
+        throws AuthorizationException, IOException {
+        Path inboxDir = new File(inboxLocation).getCanonicalFile().toPath();
+        Path uploadedJar = new File(uploadedJarLocation).getCanonicalFile().toPath();
+        if (uploadedJar.equals(inboxDir) || !uploadedJar.startsWith(inboxDir)) {
+            throw new WrappedAuthorizationException("uploadedJarLocation " + uploadedJarLocation
+                + " is not inside the nimbus inbox. Topology jars must be uploaded through beginFileUpload/uploadChunk"
+                + "/finishFileUpload before the topology is submitted.");
+        }
+    }
+
+    /**
      * Used for local cluster.
      *
      * @param supervisor {@link org.apache.storm.daemon.supervisor.Supervisor}
@@ -1927,6 +1950,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         String jarKey = ConfigUtils.masterStormJarKey(topoId);
         if (tmpJarLocation != null) {
             //in local mode there is no jar
+            validateUploadedJarLocation(getInbox(), tmpJarLocation);
             try (FileInputStream fin = new FileInputStream(tmpJarLocation)) {
                 store.createBlob(jarKey, fin, new SettableBlobMeta(BlobStoreAclHandler.DEFAULT), subject);
             }
