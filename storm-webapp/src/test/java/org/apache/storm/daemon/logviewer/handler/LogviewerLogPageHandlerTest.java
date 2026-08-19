@@ -22,6 +22,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -69,19 +75,22 @@ public class LogviewerLogPageHandlerTest {
                 new WorkerLogs(stormConf, Paths.get(rootPath), metricsRegistry), new ResourceAuthorizer(stormConf), metricsRegistry);
 
         final Response expectedAll = LogviewerResponseBuilder.buildSuccessJsonResponse(
-                List.of("topoA/port1/worker.log", "topoA/port2/worker.log", "topoB/port1/worker.log"),
+                List.of(String.join(File.separator, "topoA", "1111", "worker.log"),
+                        String.join(File.separator, "topoA", "2222", "worker.log"),
+                        String.join(File.separator, "topoB", "1111", "worker.log")),
                 null,
                 origin
         );
 
         final Response expectedFilterPort = LogviewerResponseBuilder.buildSuccessJsonResponse(
-                List.of("topoA/port1/worker.log", "topoB/port1/worker.log"),
+                List.of(String.join(File.separator, "topoA", "1111", "worker.log"),
+                        String.join(File.separator, "topoB", "1111", "worker.log")),
                 null,
                 origin
         );
 
         final Response expectedFilterTopoId = LogviewerResponseBuilder.buildSuccessJsonResponse(
-                List.of("topoB/port1/worker.log"),
+                List.of(String.join(File.separator, "topoB", "1111", "worker.log")),
                 null,
                 origin
         );
@@ -97,11 +106,48 @@ public class LogviewerLogPageHandlerTest {
         assertEqualsJsonResponse(expectedFilterTopoId, returnedFilterTopoId, List.class);
     }
 
+    /**
+     * list-log-files only returns the log files the user is allowed to access.
+     */
+    @Test
+    public void testListLogFilesFiltersFilesTheUserMayNotAccess() throws IOException {
+        String rootPath = Files.createTempDirectory("workers-artifacts").toFile().getCanonicalPath();
+        File file1 = new File(String.join(File.separator, rootPath, "topoA", "1111"), "worker.log");
+        File file2 = new File(String.join(File.separator, rootPath, "topoA", "1111"), "worker.log.1");
+        File file3 = new File(String.join(File.separator, rootPath, "topoB", "1111"), "worker.log");
+
+        file1.getParentFile().mkdirs();
+        file3.getParentFile().mkdirs();
+        file1.createNewFile();
+        file2.createNewFile();
+        file3.createNewFile();
+
+        String origin = "www.origin.server.net";
+        String topoAPortDir = String.join(File.separator, "topoA", "1111");
+        Map<String, Object> stormConf = Utils.readStormConfig();
+        StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+        ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+        when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith(topoAPortDir))).thenReturn(true);
+        LogviewerLogPageHandler handler = new LogviewerLogPageHandler(rootPath, rootPath,
+                new WorkerLogs(stormConf, Paths.get(rootPath), metricsRegistry), resourceAuthorizer, metricsRegistry);
+
+        final Response returned = handler.listLogFiles("user", null, null, null, origin);
+
+        List<?> files = new ObjectMapper().readValue((String) returned.getEntity(), List.class);
+
+        Utils.forceDelete(rootPath);
+
+        assertEquals(List.of(String.join(File.separator, topoAPortDir, "worker.log"),
+                String.join(File.separator, topoAPortDir, "worker.log.1")), files);
+        //The authorization only depends on the port directory, so it is checked once per port directory, not once per file.
+        verify(resourceAuthorizer, times(2)).isUserAllowedToAccessFile(anyString(), anyString());
+    }
+
     private <T> void assertEqualsJsonResponse(Response expected, Response actual, Class<T> entityClass) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         T entityFromExpected = objectMapper.readValue((String) expected.getEntity(), entityClass);
-        T actualFromExpected = objectMapper.readValue((String) expected.getEntity(), entityClass);
-        assertEquals(entityFromExpected, actualFromExpected);
+        T entityFromActual = objectMapper.readValue((String) actual.getEntity(), entityClass);
+        assertEquals(entityFromExpected, entityFromActual);
 
         assertEquals(expected.getStatus(), actual.getStatus());
         assertTrue(expected.getHeaders().equalsIgnoreValueOrder(actual.getHeaders()));

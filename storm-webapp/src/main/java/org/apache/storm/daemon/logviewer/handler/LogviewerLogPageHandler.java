@@ -114,7 +114,7 @@ public class LogviewerLogPageHandler {
     }
 
     /**
-     * Enumerate worker log files for given criteria.
+     * Enumerate worker log files for given criteria. Only the files the user is allowed to access are returned.
      *
      * @param user username
      * @param port worker's port, null for all workers
@@ -175,14 +175,29 @@ public class LogviewerLogPageHandler {
 
         List<String> files;
         if (fileResults != null) {
+            Map<String, Boolean> authorizedPortDirs = new HashMap<>();
             files = fileResults.stream()
                     .map(WorkerLogs::getTopologyPortWorkerLog)
+                    .filter(fileStr -> isUserAllowedToAccessLog(user, fileStr, authorizedPortDirs))
                     .sorted().collect(toList());
         } else {
             files = new ArrayList<>();
         }
 
         return LogviewerResponseBuilder.buildSuccessJsonResponse(files, callback, origin);
+    }
+
+    /**
+     * Check whether the user may access the given "topologyId/port/fileName" worker log. The authorization only depends on the
+     * topology and the port, so the answer is cached per port directory to avoid re-reading the log metadata for every file.
+     */
+    private boolean isUserAllowedToAccessLog(String user, String fileStr, Map<String, Boolean> authorizedPortDirs) {
+        Path portDir = Paths.get(fileStr).getParent();
+        if (portDir == null) {
+            return resourceAuthorizer.isUserAllowedToAccessFile(user, fileStr);
+        }
+        return authorizedPortDirs.computeIfAbsent(portDir.toString(),
+            key -> resourceAuthorizer.isUserAllowedToAccessFile(user, fileStr));
     }
 
     /**
