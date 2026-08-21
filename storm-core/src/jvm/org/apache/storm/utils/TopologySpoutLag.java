@@ -16,6 +16,7 @@
 
 package org.apache.storm.utils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 
 import java.io.File;
@@ -52,6 +53,28 @@ public class TopologySpoutLag {
     private static final String SECURITY_PROTOCOL_CONFIG = CONFIG_KEY_PREFIX + "security.protocol";
     private static final Set<String> ALL_CONFIGS = new HashSet<>(Arrays.asList(TOPICS_CONFIG, GROUPID_CONFIG,
             BOOTSTRAP_CONFIG, SECURITY_PROTOCOL_CONFIG));
+    // The spout json_conf comes from the submitted topology, while storm-kafka-monitor runs on the UI host.
+    // Only the connection settings the monitor actually needs to reach the brokers are forwarded to it; anything
+    // else (deserializers, interceptor.classes, metric.reporters, sasl.jaas.config, callback handler classes, ...)
+    // is dropped, so the monitor keeps using its own defaults rather than classes named by the topology.
+    private static final Set<String> ALLOWED_EXTRA_PROPERTIES = new HashSet<>(Arrays.asList(
+            "client.id",
+            "request.timeout.ms",
+            "session.timeout.ms",
+            "sasl.mechanism",
+            "sasl.kerberos.service.name",
+            "ssl.protocol",
+            "ssl.provider",
+            "ssl.enabled.protocols",
+            "ssl.cipher.suites",
+            "ssl.endpoint.identification.algorithm",
+            "ssl.truststore.type",
+            "ssl.truststore.location",
+            "ssl.truststore.password",
+            "ssl.keystore.type",
+            "ssl.keystore.location",
+            "ssl.keystore.password",
+            "ssl.key.password"));
     private static final Logger LOGGER = LoggerFactory.getLogger(TopologySpoutLag.class);
 
     // The storm-kafka-monitor jars ship only in the full binary distribution; users of the lite
@@ -110,13 +133,25 @@ public class TopologySpoutLag {
         return commands;
     }
 
-    private static File createExtraPropertiesFile(Map<String, Object> jsonConf) {
+    @VisibleForTesting
+    static File createExtraPropertiesFile(Map<String, Object> jsonConf) {
         File file = null;
         Map<String, String> extraProperties = new HashMap<>();
+        List<String> droppedProperties = new ArrayList<>();
         for (Map.Entry<String, Object> conf : jsonConf.entrySet()) {
             if (conf.getKey().startsWith(CONFIG_KEY_PREFIX) && !ALL_CONFIGS.contains(conf.getKey())) {
-                extraProperties.put(conf.getKey().substring(CONFIG_KEY_PREFIX.length()), conf.getValue().toString());
+                String consumerKey = conf.getKey().substring(CONFIG_KEY_PREFIX.length());
+                if (ALLOWED_EXTRA_PROPERTIES.contains(consumerKey)) {
+                    extraProperties.put(consumerKey, conf.getValue().toString());
+                } else {
+                    droppedProperties.add(consumerKey);
+                }
             }
+        }
+        // The UI polls the lag endpoint, so log the dropped keys once per call rather than one line each.
+        if (!droppedProperties.isEmpty()) {
+            LOGGER.info("Not passing consumer properties {} from the topology to the Kafka spout lag monitor, "
+                + "only these properties are passed on: {}", droppedProperties, ALLOWED_EXTRA_PROPERTIES);
         }
         if (!extraProperties.isEmpty()) {
             try {
