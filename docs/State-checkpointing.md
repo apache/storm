@@ -211,6 +211,30 @@ The namespace is typically unique per task so that each task can have its own st
 State implementation should be available in the class path of Storm (by placing them in the extlib directory).
 
 
+### Kryo class registration for state
+
+State values are serialized with Kryo before being written to an external backend. When those bytes
+are read back, the serializer constructs only classes the topology has registered, so what a worker
+builds from the stored bytes is bounded by its own configuration.
+
+The classes Storm itself persists are registered automatically. Register your own key and value
+types in one of these ways:
+
+* `keyClass` / `valueClass` in `topology.state.provider.config` (see the backend sections below), or
+* `topology.state.kryo.register`, a list of fully qualified class names.
+
+Types handled by Kryo out of the box, such as `String`, boxed primitives and the common collections,
+need no registration. A value whose class is not registered fails with
+`IllegalArgumentException: Class is not registered`.
+
+Setting `topology.fall.back.on.java.serialization: true` restores the previous behaviour, in which
+any class named in the stored bytes is constructed.
+
+**Upgrading with an existing state store.** State written before this behaviour was introduced is
+still readable, including checkpoint state, as long as every type it contains is registered. If a
+topology stored values of a custom class and does not register it, reads of that state fail after
+the upgrade. Either register the class or clear the state namespace before starting the topology.
+
 ### Supported State Backends
 
 #### Redis
@@ -241,49 +265,6 @@ State implementation should be available in the class path of Storm (by placing 
 
 `org.apache.storm:storm-redis:<storm-version>`
 
-#### HBase
-
-In order to make state scalable, HBaseKeyValueState stores state KV to a row. This introduces `non-atomic` commit phase and guarantee 
-eventual consistency on HBase side. It doesn't matter in point of state's view because HBaseKeyValueState can still provide not-yet-committed value.
-Even if worker crashes at commit phase, after restart it will read pending-commit states (stored atomically) from HBase and states will be stored eventually. 
-
-NOTE: HBase state provider uses pre-created table and column family, so users need to create and provide one to the provider config.
-
-You can simply create table via `create 'state', 'cf'` in `hbase shell` but in production you may want to give some more properties.
-
-* State provider class name (`topology.state.provider`)
-
-`org.apache.storm.hbase.state.HBaseKeyValueStateProvider`
-
-* Provider config (`topology.state.provider.config`)
-        
-```
- {
-   "keyClass": "Optional fully qualified class name of the Key type.",
-   "valueClass": "Optional fully qualified class name of the Value type.",
-   "keySerializerClass": "Optional Key serializer implementation class.",
-   "valueSerializerClass": "Optional Value Serializer implementation class.",
-   "hbaseConfigKey": "config key to load hbase configuration from storm root configuration. (similar to storm-hbase)",
-   "tableName": "Pre-created table name for state.",
-   "columnFamily": "Pre-created column family for state."
- }
- ```
-
-If you want to initialize HBase state provider from codebase, please see below example:
-
-```
-Config conf = new Config();
-    Map<String, Object> hbConf = new HashMap<String, Object>();
-    hbConf.put("hbase.rootdir", "file:///tmp/hbase");
-    conf.put("hbase.conf", hbConf);
-    conf.put("topology.state.provider",  "org.apache.storm.hbase.state.HBaseKeyValueStateProvider");
-    conf.put("topology.state.provider.config", "{" +
-            "   \"hbaseConfigKey\": \"hbase.conf\"," +
-            "   \"tableName\": \"state\"," +
-            "   \"columnFamily\": \"cf\"" +
-            " }");
-```
-
-* Artifacts to add (`--artifacts`)
-
-`org.apache.storm:storm-hbase:<storm-version>`
+The HBase state backend was removed in Storm 3.0.0 along with the `storm-hbase` module (STORM-3988).
+Topologies that used `HBaseKeyValueStateProvider` need to move to another backend; there is no
+in-place migration, since the stored state is not portable between providers.
