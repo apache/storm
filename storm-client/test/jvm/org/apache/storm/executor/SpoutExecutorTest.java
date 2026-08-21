@@ -22,6 +22,7 @@ import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.TupleImpl;
+import org.apache.storm.utils.KeyStreamRandom;
 import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 
@@ -83,5 +85,31 @@ public class SpoutExecutorTest {
         spoutExecutor.accept(addressedTuple);
 
         Mockito.verify(rotatingMap,Mockito.times(1)).rotate();
+    }
+
+    @Test
+    public void testTupleTreeIdsComeFromAnUnguessableGenerator() {
+
+        RateCounter rateCounter = Mockito.mock(RateCounter.class);
+
+        StormMetricRegistry stormMetricRegistry = Mockito.mock(StormMetricRegistry.class);
+        Mockito.when(stormMetricRegistry.rateCounter(anyString(),anyString(),anyInt())).thenReturn(rateCounter);
+
+        ComponentCommon componentCommon = Mockito.mock(ComponentCommon.class);
+        Mockito.when(componentCommon.get_json_conf()).thenReturn(null);
+
+        WorkerTopologyContext workerTopologyContext = Mockito.mock(WorkerTopologyContext.class);
+        Mockito.when(workerTopologyContext.getComponentId(anyInt())).thenReturn("1");
+        Mockito.when(workerTopologyContext.getComponentCommon(anyString())).thenReturn(componentCommon);
+
+        WorkerState workerState = Mockito.mock(WorkerState.class);
+        Mockito.when(workerState.getWorkerTopologyContext()).thenReturn(workerTopologyContext);
+        Mockito.when(workerState.getStateStorage()).thenReturn(Mockito.mock(IStateStorage.class));
+        Mockito.when(workerState.getTopologyConf()).thenReturn(Utils.readDefaultConfig());
+        Mockito.when(workerState.getMetricRegistry()).thenReturn(stormMetricRegistry);
+
+        SpoutExecutor spoutExecutor = new SpoutExecutor(workerState,List.of(1L,5L),new HashMap<>());
+
+        assertInstanceOf(KeyStreamRandom.class, spoutExecutor.rand);
     }
 }
