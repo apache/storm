@@ -251,6 +251,8 @@ A user can specify on a per topology basis what scheduling strategy to use.  Use
 Parameters:
 * clazz – The strategy class that implements the IStrategy interface
 
+Only the strategies that ship with Storm may be selected by default.  A strategy of your own has to be added to `nimbus.scheduler.strategy.class.whitelist` in the nimbus configuration, otherwise nimbus refuses to schedule the topology and reports which class was refused.
+
 Example Usage:
 ```
     conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.class);

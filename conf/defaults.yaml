@@ -90,6 +90,15 @@ nimbus.code.sync.freq.secs: 120
 nimbus.task.launch.secs: 120
 nimbus.file.copy.expiration.secs: 600
 nimbus.topology.validator: "org.apache.storm.nimbus.DefaultTopologyValidator"
+# The scheduler strategies that a topology is allowed to select through topology.scheduler.strategy.
+# Defaults to the strategies shipped with Storm; a custom strategy must be added to this list.
+nimbus.scheduler.strategy.class.whitelist:
+  - "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy"
+  - "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld"
+  - "org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy"
+  - "org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld"
+  - "org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy"
+  - "org.apache.storm.scheduler.resource.strategies.scheduling.ConstraintSolverStrategy"
 topology.min.replication.count: 1
 topology.max.replication.wait.time.sec: 60
 nimbus.credential.renewers.freq.secs: 600

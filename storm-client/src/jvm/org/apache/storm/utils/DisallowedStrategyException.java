@@ -19,6 +19,7 @@
 package org.apache.storm.utils;
 
 import java.util.List;
+import org.apache.storm.Config;
 
 public class DisallowedStrategyException extends RuntimeException {
     private String attemptedClass;
@@ -26,6 +27,9 @@ public class DisallowedStrategyException extends RuntimeException {
 
 
     public DisallowedStrategyException(String attemptedClass, List<String> allowedStrategies) {
+        super(attemptedClass + " is not an allowed scheduler strategy. Either pick one of the allowed strategies "
+              + allowedStrategies + " or add " + attemptedClass + " to the nimbus config "
+              + Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST);
         this.attemptedClass = attemptedClass;
         this.allowedStrategies = allowedStrategies;
     }
