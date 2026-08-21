@@ -14,25 +14,38 @@ package org.apache.storm.messaging.netty;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import org.apache.storm.Config;
 import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.shade.io.netty.channel.Channel;
 import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
 import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
 import org.apache.storm.shade.io.netty.handler.ssl.SslContext;
+import org.apache.storm.shade.io.netty.handler.ssl.SslHandler;
+import org.apache.storm.utils.ObjectReader;
 
 class StormClientPipelineFactory extends ChannelInitializer<Channel> {
+    private static final String ENDPOINT_IDENTIFICATION_ALGORITHM = "HTTPS";
+    // An empty algorithm turns the check off. A null one must not be used here, the JDK engine ignores it and keeps
+    // whatever algorithm it already had.
+    private static final String NO_ENDPOINT_IDENTIFICATION = "";
+
     private final Client client;
     private final AtomicBoolean[] remoteBpStatus;
     private final Map<String, Object> conf;
     private final SslContext sslContext;
+    private final String dstHost;
+    private final int dstPort;
 
     StormClientPipelineFactory(Client client, AtomicBoolean[] remoteBpStatus, Map<String, Object> conf,
-                               SslContext sslContext) {
+                               SslContext sslContext, String dstHost, int dstPort) {
         this.client = client;
         this.remoteBpStatus = remoteBpStatus;
         this.conf = conf;
         this.sslContext = sslContext;
+        this.dstHost = dstHost;
+        this.dstPort = dstPort;
     }
 
     @Override
@@ -42,7 +55,16 @@ class StormClientPipelineFactory extends ChannelInitializer<Channel> {
 
         if (this.sslContext != null) {
             // Add SSL handler first to encrypt and decrypt everything.
-            pipeline.addLast("ssl", sslContext.newHandler(ch.alloc()));
+            // The peer host and port give the engine an identity to check the certificate against.
+            SslHandler sslHandler = sslContext.newHandler(ch.alloc(), dstHost, dstPort);
+            boolean verifyHostname = ObjectReader.getBoolean(
+                conf.get(Config.STORM_MESSAGING_NETTY_TLS_HOSTNAME_VERIFICATION), true);
+            SSLEngine sslEngine = sslHandler.engine();
+            SSLParameters sslParameters = sslEngine.getSSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm(
+                verifyHostname ? ENDPOINT_IDENTIFICATION_ALGORITHM : NO_ENDPOINT_IDENTIFICATION);
+            sslEngine.setSSLParameters(sslParameters);
+            pipeline.addLast("ssl", sslHandler);
         }
 
         // Decoder

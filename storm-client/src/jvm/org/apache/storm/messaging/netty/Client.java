@@ -160,7 +160,7 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
             .option(ChannelOption.SO_KEEPALIVE, true)
             .option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(lowWatermark, highWatermark))
             .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-            .handler(new StormClientPipelineFactory(this, remoteBpStatus, topoConf, sslContext));
+            .handler(new StormClientPipelineFactory(this, remoteBpStatus, topoConf, sslContext, host, port));
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
