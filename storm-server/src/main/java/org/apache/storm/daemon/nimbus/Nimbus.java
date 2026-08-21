@@ -197,6 +197,7 @@ import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
 import org.apache.storm.security.auth.workertoken.WorkerTokenManager;
+import org.apache.storm.security.serialization.BlowfishTupleSerializer;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.base.Strings;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
@@ -4802,7 +4803,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Map<String, Object> checkConf = Utils.merge(conf, topoConf);
             String topoName = (String) checkConf.get(Config.TOPOLOGY_NAME);
             checkAuthorization(topoName, checkConf, "getTopologyConf");
-            return JSONValue.toJSONString(topoConf);
+            Map<String, Object> maskedConf = new HashMap<>(ConfigUtils.maskPasswords(topoConf));
+            if (maskedConf.get(BlowfishTupleSerializer.SECRET_KEY) instanceof String) {
+                maskedConf.put(BlowfishTupleSerializer.SECRET_KEY, "*****");
+            }
+            return JSONValue.toJSONString(maskedConf);
         } catch (Exception e) {
             LOG.warn("Get topo conf exception. (topology id='{}')", id, e);
             if (e instanceof TException) {
