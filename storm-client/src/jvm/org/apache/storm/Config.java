@@ -2069,7 +2069,8 @@ public class Config extends HashMap<String, Object> {
         valueValidatorClasses = {ConfigValidation.ImpersonationAclUserEntryValidator.class})
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
     /**
-     * A whitelist of the RAS scheduler strategies allowed by nimbus. Should be a list of fully-qualified class names or null to allow all.
+     * A whitelist of the RAS scheduler strategies allowed by nimbus. Should be a list of fully-qualified class names. When it is not
+     * set only the scheduler strategies shipped with Storm are allowed, so a custom strategy has to be listed here explicitly.
      */
     @IsStringList
     public static final String NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST = "nimbus.scheduler.strategy.class.whitelist";

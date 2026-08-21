@@ -158,7 +158,9 @@ public class ResourceAwareScheduler implements IScheduler {
                                + " is not an allowed strategy. Please make sure your "
                                + Config.TOPOLOGY_SCHEDULER_STRATEGY
                                + " config is one of the allowed strategies: "
-                               + e.getAllowedStrategies(), e);
+                               + e.getAllowedStrategies()
+                               + ", or ask your administrator to add " + e.getAttemptedClass()
+                               + " to the nimbus config " + Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, e);
             return;
         } catch (RuntimeException e) {
             markFailedTopology(topologySubmitter, cluster, td,

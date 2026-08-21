@@ -18,11 +18,26 @@
 
 package org.apache.storm.utils;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 
 public class ReflectionUtils {
+    /**
+     * The scheduler strategies shipped with Storm. They are used when {@link Config#NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST} is not
+     * set at all, so that an unset config does not mean that any class on the nimbus classpath may be instantiated. The names are
+     * spelled out because the strategies live in storm-server. Keep this list in sync with conf/defaults.yaml.
+     */
+    public static final List<String> DEFAULT_SCHEDULER_STRATEGIES = Collections.unmodifiableList(Arrays.asList(
+        "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy",
+        "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld",
+        "org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy",
+        "org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld",
+        "org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy",
+        "org.apache.storm.scheduler.resource.strategies.scheduling.ConstraintSolverStrategy"));
+
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
     private static ReflectionUtils _instance = new ReflectionUtils();
@@ -76,7 +91,10 @@ public class ReflectionUtils {
 
     public static <T> T newSchedulerStrategyInstance(String klass, Map<String, Object> conf) {
         List<String> allowedSchedulerStrategies = (List<String>) conf.get(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST);
-        if (allowedSchedulerStrategies == null || allowedSchedulerStrategies.contains(klass)) {
+        if (allowedSchedulerStrategies == null) {
+            allowedSchedulerStrategies = DEFAULT_SCHEDULER_STRATEGIES;
+        }
+        if (allowedSchedulerStrategies.contains(klass)) {
             return newInstance(klass);
         } else {
             throw new DisallowedStrategyException(klass, allowedSchedulerStrategies);
