@@ -264,6 +264,10 @@ storm.messaging.netty.socket.backlog: 500
 # see https://issues.apache.org/jira/browse/STORM-348 for more details
 storm.messaging.netty.authentication: false
 
+# The Netty TLS client checks that the server certificate matches the host it connects to.
+# The worker certificates must carry a host or IP SAN for the address the workers connect to.
+storm.messaging.netty.tls.hostnameVerification: true
+
 # Default plugin to use for automatic network topology discovery
 storm.network.topography.plugin: org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping
 

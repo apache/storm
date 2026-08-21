@@ -1972,6 +1972,15 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_MESSAGING_NETTY_TLS_SSL_PROTOCOLS = "storm.messaging.netty.tls.ssl.protocols";
 
     /**
+     * Netty based messaging: Specifies whether the client checks that the server certificate matches the host it is
+     * connecting to when TLS is enabled. Defaults to true. Set this to false only if the worker certificates in use do
+     * not carry a host or IP SAN for the address the workers connect to.
+     */
+    @IsBoolean
+    public static final String STORM_MESSAGING_NETTY_TLS_HOSTNAME_VERIFICATION =
+        "storm.messaging.netty.tls.hostnameVerification";
+
+    /**
      * Netty based messaging: The number of milliseconds that a Netty client will retry flushing messages that are already
      * buffered to be sent.
      */
