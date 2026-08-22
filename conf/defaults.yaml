@@ -81,6 +81,7 @@ nimbus.thrift.tls.client.auth.required: true
 topology.worker.nimbus.thrift.client.use.tls: false
 nimbus.childopts: "-Xmx1024m"
 nimbus.task.timeout.secs: 30
+# Deprecated since 3.1.0 and unused; supervisor liveness is tracked via ephemeral ZooKeeper nodes, so Nimbus does not time supervisors out. Scheduled for removal in a future release.
 nimbus.supervisor.timeout.secs: 60
 nimbus.monitor.freq.secs: 10
 nimbus.cleanup.inbox.freq.secs: 600
