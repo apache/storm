@@ -25,10 +25,17 @@ import org.slf4j.LoggerFactory;
 public class MessageDecoder extends ByteToMessageDecoder {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessageDecoder.class);
+    private static final int MAX_UNAUTHENTICATED_SASL_TOKEN_BYTES = 64 * 1024;
     private final KryoValuesDeserializer deser;
+    private final boolean serverAuthRequired;
 
     public MessageDecoder(KryoValuesDeserializer deser) {
+        this(deser, false);
+    }
+
+    public MessageDecoder(KryoValuesDeserializer deser, boolean serverAuthRequired) {
         this.deser = deser;
+        this.serverAuthRequired = serverAuthRequired;
     }
 
     /*
@@ -86,6 +93,10 @@ public class MessageDecoder extends ByteToMessageDecoder {
 
                 // Read the length field.
                 int length = buf.readInt();
+                if (gateFrames(ctx) && length > MAX_UNAUTHENTICATED_SASL_TOKEN_BYTES) {
+                    discardAndClose(ctx, buf, "an oversized handshake frame");
+                    return;
+                }
                 if (length <= 0) {
                     out.add(new SaslMessageToken(null));
                     return;
@@ -109,6 +120,10 @@ public class MessageDecoder extends ByteToMessageDecoder {
 
             // case 3: BackPressureStatus
             if (code == BackPressureStatus.IDENTIFIER) {
+                if (gateFrames(ctx)) {
+                    discardAndClose(ctx, buf, "a status frame before the handshake completed");
+                    return;
+                }
                 available = buf.readableBytes();
                 if (available < 4) {
                     //Need  more data
@@ -128,6 +143,11 @@ public class MessageDecoder extends ByteToMessageDecoder {
             }
 
             // case 4: task Message
+
+            if (gateFrames(ctx)) {
+                discardAndClose(ctx, buf, "a data frame before the handshake completed");
+                return;
+            }
 
             // Make sure that we have received at least an integer (length)
             if (available < 4) {
@@ -166,6 +186,20 @@ public class MessageDecoder extends ByteToMessageDecoder {
         if (!ret.isEmpty()) {
             out.add(ret);
         }
+    }
+
+    private boolean gateFrames(ChannelHandlerContext ctx) {
+        if (!serverAuthRequired) {
+            return false;
+        }
+        SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
+        return saslNettyServer == null || !saslNettyServer.isComplete();
+    }
+
+    private static void discardAndClose(ChannelHandlerContext ctx, ByteBuf buf, String what) {
+        LOG.warn("Channel {} sent {}; closing the connection", ctx.channel(), what);
+        buf.skipBytes(buf.readableBytes());
+        ctx.close();
     }
 
     @Override

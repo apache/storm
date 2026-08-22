@@ -44,14 +44,15 @@ class StormServerPipelineFactory extends ChannelInitializer<Channel> {
             pipeline.addLast("ssl", sslContext.newHandler(ch.alloc()));
         }
 
+        boolean isNettyAuth = (Boolean) topoConf
+            .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder(new KryoValuesDeserializer(topoConf)));
+        pipeline.addLast("decoder", new MessageDecoder(new KryoValuesDeserializer(topoConf), isNettyAuth));
         // Encoders
         pipeline.addLast("netty-serializable-encoder", NettySerializableMessageEncoder.INSTANCE);
         pipeline.addLast("backpressure-encoder", new BackPressureStatusEncoder(new KryoValuesSerializer(topoConf)));
 
-        boolean isNettyAuth = (Boolean) topoConf
-            .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
         if (isNettyAuth) {
             // Authenticate: Removed after authentication completes
             pipeline.addLast("saslServerHandler", new SaslStormServerHandler(
