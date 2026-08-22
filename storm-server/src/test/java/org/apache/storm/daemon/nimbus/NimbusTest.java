@@ -31,8 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.security.auth.Subject;
 
-import javax.security.auth.Subject;
-
+import com.codahale.metrics.Meter;
 import net.minidev.json.JSONValue;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
@@ -42,6 +41,7 @@ import org.apache.storm.blobstore.KeySequenceNumber;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ListBlobsResult;
@@ -71,6 +71,7 @@ import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedAuthorizationException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -85,6 +86,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -95,6 +97,7 @@ import static org.mockito.Mockito.when;
 
 class NimbusTest {
     private static final String BLOB_FILE_KEY = "file-key";
+    private static final String TOPO_NAME = "topo";
     private static final String TOPO_ID = "topology1-1-1";
 
     @Mock
@@ -111,6 +114,8 @@ class NimbusTest {
     private ILeaderElector leaderElector;
     @Mock
     private IGroupMappingServiceProvider groupMapper;
+    @Mock
+    private TopoCache topoCache;
 
     private Nimbus nimbus;
 
@@ -120,6 +125,11 @@ class NimbusTest {
 
         Map<String, Object> conf = Map.of(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
         nimbus = new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, leaderElector, groupMapper, metricRegistry);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        ReqContext.reset();
     }
 
     @Test
@@ -270,6 +280,58 @@ class NimbusTest {
 
         assertThrows(AuthorizationException.class, () -> nimbus.listBlobs(""));
         verify(localBlobStore, never()).listKeys();
+    }
+
+    @Test
+    void testUploadNewCredentialsRejectsACallerWhoIsNotTheOwner() throws Exception {
+        Nimbus nimbus = makeNimbusOwningTopology(TOPO_NAME, TOPO_ID, "alice");
+        setCaller("bob");
+
+        // bob claims the topology is owned by alice, which it is, but bob is not alice
+        Credentials creds = new Credentials(Map.of("key", "value"));
+        creds.set_topoOwner("alice");
+
+        assertThrows(AuthorizationException.class, () -> nimbus.uploadNewCredentials(TOPO_NAME, creds));
+        verify(stormClusterState, never()).setCredentials(eq(TOPO_ID), any(), any());
+    }
+
+    @Test
+    void testUploadNewCredentialsAcceptsTheOwner() throws Exception {
+        Nimbus nimbus = makeNimbusOwningTopology(TOPO_NAME, TOPO_ID, "alice");
+        setCaller("alice");
+
+        Credentials creds = new Credentials(Map.of("key", "value"));
+        creds.set_topoOwner("alice");
+        nimbus.uploadNewCredentials(TOPO_NAME, creds);
+
+        verify(stormClusterState).setCredentials(eq(TOPO_ID), eq(creds), any());
+    }
+
+    @Test
+    void testUploadNewCredentialsRejectsAnOwnerMismatchClaimedByTheOwner() throws Exception {
+        Nimbus nimbus = makeNimbusOwningTopology(TOPO_NAME, TOPO_ID, "alice");
+        setCaller("alice");
+
+        // alice expects the topology to be owned by bob, so the push must not happen
+        Credentials creds = new Credentials(Map.of("key", "value"));
+        creds.set_topoOwner("bob");
+
+        assertThrows(AuthorizationException.class, () -> nimbus.uploadNewCredentials(TOPO_NAME, creds));
+        verify(stormClusterState, never()).setCredentials(eq(TOPO_ID), any(), any());
+    }
+
+    private Nimbus makeNimbusOwningTopology(String topoName, String topoId, String owner) throws Exception {
+        Map<String, Object> topoConf = new HashMap<>();
+        topoConf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, owner);
+        topoConf.put(Config.TOPOLOGY_SUBMITTER_USER, owner);
+        when(stormClusterState.getTopoId(topoName)).thenReturn(Optional.of(topoId));
+        when(topoCache.readTopoConf(eq(topoId), any())).thenReturn(topoConf);
+        when(metricRegistry.registerMeter(anyString())).thenReturn(new Meter());
+
+        Map<String, Object> conf = Map.of(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10,
+            Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
+        return new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, topoCache, leaderElector, groupMapper,
+            metricRegistry);
     }
 
     @Test

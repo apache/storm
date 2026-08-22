@@ -3862,21 +3862,25 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             checkAuthorization(topoName, topoConf, "uploadNewCredentials");
             String realPrincipal = (String) topoConf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
             String realUser = (String) topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
-            String expectedOwner = null;
-            if (credentials.is_set_topoOwner()) {
-                expectedOwner = credentials.get_topoOwner();
-            } else {
-                Principal p = ReqContext.context().principal();
-                if (p != null) {
-                    expectedOwner = principalToLocal.toLocal(p);
-                }
+            String caller = null;
+            Principal p = ReqContext.context().principal();
+            if (p != null) {
+                caller = principalToLocal.toLocal(p);
             }
-            // expectedOwner being null means that security is disabled (which why are we uploading credentials with security disabled???
-            if (expectedOwner == null) {
+            // caller being null means that security is disabled (which why are we uploading credentials with security disabled???
+            if (caller == null) {
                 LOG.warn("Please check you settings. Credentials are being uploaded to {} with security disabled.", topoId);
-            } else if (!realPrincipal.equals(expectedOwner) && !realUser.equals(expectedOwner)) {
-                throw new AuthorizationException(topoId + " is expected to be owned by " + expectedOwner
+            } else if (!realPrincipal.equals(caller) && !realUser.equals(caller)) {
+                throw new AuthorizationException(topoId + " is expected to be owned by " + caller
                     + " but is actually owned by " + realPrincipal);
+            }
+            // topoOwner is just the owner the client expects, so it can only reject a mismatch, never stand in for the caller.
+            if (credentials.is_set_topoOwner()) {
+                String expectedOwner = credentials.get_topoOwner();
+                if (!expectedOwner.equals(realPrincipal) && !expectedOwner.equals(realUser)) {
+                    throw new AuthorizationException(topoId + " is expected to be owned by " + expectedOwner
+                        + " but is actually owned by " + realPrincipal);
+                }
             }
 
             synchronized (credUpdateLock) {
