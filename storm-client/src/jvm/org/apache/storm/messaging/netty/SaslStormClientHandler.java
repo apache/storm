@@ -154,7 +154,6 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
         if (secretKey != null) {
             token = secretKey.getBytes();
         }
-        LOG.debug("SASL credentials for storm topology " + name
-                  + " is " + secretKey);
+        LOG.debug("Obtained SASL credentials for storm topology {}", name);
     }
 }

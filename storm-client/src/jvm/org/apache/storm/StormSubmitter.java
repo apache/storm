@@ -82,7 +82,7 @@ public class StormSubmitter {
                 || conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) == null
                 || !validateZKDigestPayload((String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
             secretPayload = generateZookeeperDigestSecretPayload();
-            LOG.info("Generated ZooKeeper secret payload for MD5-digest: " + secretPayload);
+            LOG.info("Generated ZooKeeper secret payload for MD5-digest.");
         }
         toRet.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD, secretPayload);
         // This should always be set to digest.
