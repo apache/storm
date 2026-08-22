@@ -39,6 +39,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         "submitTopology",
         "fileUpload",
         "getNimbusConf",
+        "listBlobs",
         "getClusterInfo",
         "getLeader",
         "isTopologyNameAllowed",
