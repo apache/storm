@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -83,6 +84,16 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
     private static final int SHA256_HASH_LENGTH = 64;
 
     private static final String ALPHA_NUMERIC = "[a-zA-Z0-9]+";
+
+    /**
+     * Check that a string can be used as an image hash, i.e. it consists of exactly
+     * {@link #SHA256_HASH_LENGTH} alphanumeric characters.
+     * @param hash the string to check
+     * @return true if the string has the shape of an image hash
+     */
+    private static boolean isValidHash(String hash) {
+        return hash != null && hash.length() == SHA256_HASH_LENGTH && hash.matches(ALPHA_NUMERIC);
+    }
 
     @Override
     public void init(Map<String, Object> conf) throws IOException {
@@ -213,7 +224,7 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
             String[] imageTagArray = imageTags.split(",");
             String hash = line.substring(index + 1);
 
-            if (!hash.matches(ALPHA_NUMERIC) || hash.length() != SHA256_HASH_LENGTH) {
+            if (!isValidHash(hash)) {
                 LOG.warn("Malformed image hash: " + hash);
                 continue;
             }
@@ -229,6 +240,10 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
     @Override
     public synchronized ImageManifest getManifestFromImageTag(String imageTag) throws IOException {
         String hash = getHashFromImageTag(imageTag);
+        if (!isValidHash(hash)) {
+            throw new IOException("Cannot get manifest for image tag " + imageTag
+                + ": " + hash + " is not a valid image hash");
+        }
         ImageManifest manifest = manifestCache.get(hash);
         if (manifest != null) {
             return manifest;
@@ -271,12 +286,16 @@ public class LocalOrHdfsImageTagToManifestPlugin implements OciImageTagToManifes
 
         // 1) Go to local file
         // 2) Go to HDFS
-        // 3) Use tag as is/Assume tag is the hash
+        // 3) Use tag as is/Assume tag is the hash; only acceptable if the tag looks like a hash
         if ((hash = localImageToHashCache.get(imageTag)) != null) {
             return hash;
         } else if ((hash = hdfsImageToHashCache.get(imageTag)) != null) {
             return hash;
         } else {
+            if (!isValidHash(imageTag)) {
+                throw new UncheckedIOException(new IOException("Image tag " + imageTag
+                    + " is not in the image-tag-to-hash files and is not a valid image hash itself"));
+            }
             return imageTag;
         }
     }
