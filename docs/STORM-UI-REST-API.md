@@ -13,6 +13,7 @@ metrics data and configuration information as well as management operations such
 
 The REST API returns JSON responses and supports JSONP.
 Clients can pass a callback query parameter to wrap JSON in the callback function.
+JSONP is disabled by default; the callback parameter is ignored unless `ui.enable.jsonp` is set to true.
 
 
 # Using the UI REST API

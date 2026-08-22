@@ -102,6 +102,8 @@ class UIHelpersTest {
     void cleanup() {
         // Stop simulating time
         mockTime.close();
+        // Restore the default of ui.enable.jsonp
+        UIHelpers.setJsonpEnabled(false);
     }
 
     /**
@@ -603,6 +605,7 @@ class UIHelpersTest {
 
     @Test
     public void testGetJsonResponseBodyValidCallbackIsWrapped() {
+        UIHelpers.setJsonpEnabled(true);
         Map<String, Object> data = new HashMap<>();
         data.put("a", 1);
         String body = UIHelpers.getJsonResponseBody(data, "myCb", true);
@@ -611,12 +614,14 @@ class UIHelpersTest {
 
     @Test
     public void testGetJsonResponseBodyValidDottedCallbackIsWrapped() {
+        UIHelpers.setJsonpEnabled(true);
         String body = UIHelpers.getJsonResponseBody("{\"x\":1}", "foo.bar.$baz_0", false);
         assertEquals("foo.bar.$baz_0({\"x\":1});", body);
     }
 
     @Test
     public void testGetJsonResponseBodyInvalidCallbackFallsBackToJson() {
+        UIHelpers.setJsonpEnabled(true);
         Map<String, Object> data = new HashMap<>();
         data.put("a", 1);
         String body = UIHelpers.getJsonResponseBody(data, "alert(document.cookie)//", true);
@@ -625,12 +630,14 @@ class UIHelpersTest {
 
     @Test
     public void testGetJsonResponseBodyEmptyCallbackFallsBackToJson() {
+        UIHelpers.setJsonpEnabled(true);
         String body = UIHelpers.getJsonResponseBody("{\"x\":1}", "", false);
         assertEquals("{\"x\":1}", body);
     }
 
     @Test
     public void testGetJsonResponseBodyTooLongCallbackFallsBackToJson() {
+        UIHelpers.setJsonpEnabled(true);
         StringBuilder sb = new StringBuilder("cb");
         for (int i = 0; i < 200; i++) {
             sb.append('x');
@@ -641,8 +648,18 @@ class UIHelpersTest {
 
     @Test
     public void testGetJsonResponseBodyRejectsCallbacksStartingWithDigit() {
+        UIHelpers.setJsonpEnabled(true);
         String body = UIHelpers.getJsonResponseBody("{\"x\":1}", "1cb", false);
         assertEquals("{\"x\":1}", body);
+    }
+
+    @Test
+    public void testGetJsonResponseBodyCallbackIgnoredWhenJsonpDisabled() {
+        UIHelpers.setJsonpEnabled(false);
+        Map<String, Object> data = new HashMap<>();
+        data.put("a", 1);
+        String body = UIHelpers.getJsonResponseBody(data, "myCb", true);
+        assertEquals("{\"a\":1}", body);
     }
 
     @Test
@@ -654,6 +671,7 @@ class UIHelpersTest {
 
     @Test
     public void testGetJsonResponseHeadersValidCallbackUsesJavaScriptContentType() {
+        UIHelpers.setJsonpEnabled(true);
         Map headers = UIHelpers.getJsonResponseHeaders("myCb", null);
         assertEquals("application/javascript;charset=utf-8", headers.get("Content-Type"));
         assertEquals("nosniff", headers.get("X-Content-Type-Options"));
@@ -661,7 +679,16 @@ class UIHelpersTest {
 
     @Test
     public void testGetJsonResponseHeadersInvalidCallbackFallsBackToJsonContentType() {
+        UIHelpers.setJsonpEnabled(true);
         Map headers = UIHelpers.getJsonResponseHeaders("alert(1)//", null);
+        assertEquals("application/json;charset=utf-8", headers.get("Content-Type"));
+        assertEquals("nosniff", headers.get("X-Content-Type-Options"));
+    }
+
+    @Test
+    public void testGetJsonResponseHeadersCallbackIgnoredWhenJsonpDisabled() {
+        UIHelpers.setJsonpEnabled(false);
+        Map headers = UIHelpers.getJsonResponseHeaders("myCb", null);
         assertEquals("application/json;charset=utf-8", headers.get("Content-Type"));
         assertEquals("nosniff", headers.get("X-Content-Type-Options"));
     }

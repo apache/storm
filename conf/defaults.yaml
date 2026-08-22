@@ -118,6 +118,7 @@ ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugi
 ui.pagination: 20
 ui.disable.http.binding: true
 ui.disable.spout.lag.monitoring: true
+ui.enable.jsonp: false
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"

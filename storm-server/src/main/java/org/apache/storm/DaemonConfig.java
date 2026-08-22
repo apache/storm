@@ -403,6 +403,14 @@ public class DaemonConfig implements Validated {
     public static final String UI_DISABLE_SPOUT_LAG_MONITORING = "ui.disable.spout.lag.monitoring";
 
     /**
+     * This controls whether the Storm UI and Logviewer REST APIs wrap their response in the
+     * JSONP callback named by the "callback" query parameter. It is disabled by default, since
+     * a JSONP response can be read by any page that is able to include it with a script tag.
+     */
+    @IsBoolean
+    public static final String UI_ENABLE_JSONP = "ui.enable.jsonp";
+
+    /**
      * This controls wheather Storm Logviewer should bind to http port even if logviewer.port is > 0.
      */
     @IsBoolean
