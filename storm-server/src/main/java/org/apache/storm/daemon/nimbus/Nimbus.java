@@ -87,6 +87,7 @@ import org.apache.storm.daemon.DaemonCommon;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.common.FileWatcher;
+import org.apache.storm.dependency.DependencyBlobStoreUtils;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.AuthorizationException;
@@ -1301,6 +1302,61 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Utils.validateTopologyName(name);
         } catch (IllegalArgumentException e) {
             throw new WrappedInvalidTopologyException(e.getMessage());
+        }
+    }
+
+    /**
+     * Check that a submitted topology only claims blobs that are topology dependencies, and that every one of them
+     * exists. The dependency lists of a submitted topology are filled in by the client, so without this a submission
+     * could name any blob at all, for example another topology's code or configuration blob, and nimbus would delete
+     * it as its own dependency once the submitted topology is cleaned up. A key that exists nowhere is just as
+     * damaging: on gaining leadership a nimbus compares the dependencies of every active topology against its
+     * blobstore and gives up leadership when one is missing, so a single unresolvable key on a single active topology
+     * leaves the cluster without a leader for as long as that topology is active.
+     *
+     * <p>Existence is probed with {@code getBlobMeta} as the submitter, exactly as
+     * {@link Utils#validateTopologyBlobStoreMap(Map, BlobStore)} probes the blobs of
+     * {@link Config#TOPOLOGY_BLOBSTORE_MAP}, so a submitter can only claim a dependency it is allowed to read. The
+     * client uploads the dependency blobs before it submits, so they are present by the time this runs.
+     *
+     * @param topology  the submitted topology
+     * @param blobStore the blobstore to look the keys up in
+     * @param subject   the subject to look the keys up as, i.e. the submitter
+     * @throws InvalidTopologyException if a dependency list holds something that is not a dependency blob key, or
+     *                                  names a dependency blob that does not exist
+     * @throws AuthorizationException   if the submitter may not read one of the dependency blobs it named
+     */
+    @VisibleForTesting
+    static void validateDependencyBlobKeys(StormTopology topology, BlobStore blobStore, Subject subject)
+        throws InvalidTopologyException, AuthorizationException {
+        Set<String> checked = new HashSet<>();
+        validateDependencyBlobKeys(topology.get_dependency_jars(), "dependency_jars", blobStore, subject, checked);
+        validateDependencyBlobKeys(topology.get_dependency_artifacts(), "dependency_artifacts", blobStore, subject, checked);
+    }
+
+    private static void validateDependencyBlobKeys(List<String> keys, String fieldName, BlobStore blobStore, Subject subject,
+                                                   Set<String> checked) throws InvalidTopologyException, AuthorizationException {
+        if (keys == null) {
+            return;
+        }
+        for (String key : keys) {
+            if (!DependencyBlobStoreUtils.isDependencyBlobKey(key)) {
+                throw new WrappedInvalidTopologyException("Topology " + fieldName + " lists [" + key
+                    + "], which is not a dependency blob key; every entry must start with \""
+                    + DependencyBlobStoreUtils.BLOB_DEPENDENCIES_PREFIX + "\"");
+            }
+            if (!checked.add(key)) {
+                // the same dependency may be listed twice, one lookup for it is enough
+                continue;
+            }
+            try {
+                blobStore.getBlobMeta(key, subject);
+            } catch (KeyNotFoundException keyNotFound) {
+                throw new WrappedInvalidTopologyException("Topology " + fieldName + " lists [" + key
+                    + "], which is not in the blobstore; upload the dependency before submitting the topology, and if it "
+                    + "was uploaded earlier note that a dependency blob is deleted once no topology uses it any more, so "
+                    + "it has to be uploaded again");
+            }
         }
     }
 
@@ -3333,6 +3389,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 throw new WrappedInvalidTopologyException(ex.getMessage());
             }
             validator.validate(topoName, topoConf, topology);
+            validateDependencyBlobKeys(topology, blobStore, getSubject());
             if ((boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> blobMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);

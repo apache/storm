@@ -24,10 +24,26 @@ import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 
 public class DependencyBlobStoreUtils {
 
-    private static final String BLOB_DEPENDENCIES_PREFIX = "dep-";
+    /**
+     * The prefix every blob key holding a topology dependency starts with.
+     */
+    public static final String BLOB_DEPENDENCIES_PREFIX = "dep-";
 
     public static String generateDependencyBlobKey(String key) {
         return BLOB_DEPENDENCIES_PREFIX + key;
+    }
+
+    /**
+     * Tell whether a blob key names a topology dependency, i.e. whether it could have been produced by
+     * {@link #generateDependencyBlobKey(String)}. Keys that a topology only refers to, rather than owns, must be
+     * checked with this before they are acted upon, because the dependency lists of a submitted topology are filled
+     * in by the client and can name any blob at all.
+     *
+     * @param key the blob key to check, may be null
+     * @return true if the key is a dependency blob key
+     */
+    public static boolean isDependencyBlobKey(String key) {
+        return key != null && key.startsWith(BLOB_DEPENDENCIES_PREFIX);
     }
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
