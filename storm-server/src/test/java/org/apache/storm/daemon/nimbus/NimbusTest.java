@@ -21,10 +21,14 @@ package org.apache.storm.daemon.nimbus;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import javax.security.auth.Subject;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
@@ -36,6 +40,8 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.ReadableBlobMeta;
+import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
@@ -45,12 +51,18 @@ import org.apache.storm.scheduler.resource.strategies.priority.DefaultScheduling
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
+import org.apache.storm.security.auth.DefaultPrincipalToLocal;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
+import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.security.auth.SingleUserPrincipal;
+import org.apache.storm.security.auth.authorizer.DenyAuthorizer;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -73,6 +85,7 @@ import static org.mockito.Mockito.when;
 
 class NimbusTest {
     private static final String BLOB_FILE_KEY = "file-key";
+    private static final String TOPO_ID = "topology1-1-1";
 
     @Mock
     private StormMetricsRegistry metricRegistry;
@@ -238,5 +251,64 @@ class NimbusTest {
             FileUtils.deleteQuietly(inbox.toFile());
             FileUtils.deleteQuietly(sibling.toFile());
         }
+    }
+
+    @Test
+    void testGetTopologyHistoryFiltersByTheAuthenticatedCaller() throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
+        conf.put(Config.NIMBUS_ADMINS, Collections.singletonList("admin"));
+        nimbus = new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, leaderElector, groupMapper, metricRegistry);
+
+        Map<String, Object> topoConf = new HashMap<>();
+        topoConf.put(Config.TOPOLOGY_NAME, "topology1");
+        topoConf.put(Config.TOPOLOGY_USERS, Collections.singletonList("alice"));
+        when(stormClusterState.assignments(null)).thenReturn(Collections.singletonList(TOPO_ID));
+        when(localBlobStore.readBlob(eq(ConfigUtils.masterStormConfKey(TOPO_ID)), any()))
+            .thenReturn(Utils.toCompressedJsonConf(topoConf));
+        when(localBlobStore.getBlobMeta(eq(ConfigUtils.masterStormConfKey(TOPO_ID)), any()))
+            .thenReturn(new ReadableBlobMeta(new SettableBlobMeta(new ArrayList<>()), 0));
+
+        try {
+            setCaller("bob");
+            // asking for somebody else's history is only for admins, the ui daemon is expected to be one.
+            // a caller that is not an admin gets its own history back rather than an error, so a ui that
+            // was left out of nimbus.admins keeps serving the page instead of failing it
+            assertTrue(nimbus.getTopologyHistory("alice").get_topo_ids().isEmpty());
+            // and no user argument at all is the caller's own history, not everybody's
+            assertTrue(nimbus.getTopologyHistory(null).get_topo_ids().isEmpty());
+
+            setCaller("alice");
+            assertEquals(Collections.singletonList(TOPO_ID), nimbus.getTopologyHistory(null).get_topo_ids());
+
+            setCaller("admin");
+            assertEquals(Collections.singletonList(TOPO_ID), nimbus.getTopologyHistory("alice").get_topo_ids());
+            assertTrue(nimbus.getTopologyHistory("bob").get_topo_ids().isEmpty());
+        } finally {
+            ReqContext.reset();
+        }
+    }
+
+    @Test
+    void testGetTopologyHistoryIsAuthorized() throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
+        conf.put(DaemonConfig.NIMBUS_AUTHORIZER, DenyAuthorizer.class.getName());
+        nimbus = new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, leaderElector, groupMapper, metricRegistry);
+
+        try {
+            setCaller("bob");
+            assertThrows(AuthorizationException.class, () -> nimbus.getTopologyHistory("bob"));
+        } finally {
+            ReqContext.reset();
+        }
+    }
+
+    private static void setCaller(String user) {
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new SingleUserPrincipal(user));
+        ReqContext.context().setSubject(subject);
     }
 }
