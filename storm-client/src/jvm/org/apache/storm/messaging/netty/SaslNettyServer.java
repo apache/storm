@@ -125,8 +125,7 @@ class SaslNettyServer {
             if (pc != null) {
                 char[] password = SaslUtils.encodePassword(userPassword);
 
-                LOG.debug("handle: SASL server DIGEST-MD5 callback: setting password for client: ",
-                          userPassword);
+                LOG.debug("handle: SASL server DIGEST-MD5 callback: setting password for client");
 
                 pc.setPassword(password);
             }
