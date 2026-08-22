@@ -62,6 +62,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 
@@ -411,6 +412,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             .build();
     private static final List<String> EMPTY_STRING_LIST = Collections.unmodifiableList(Collections.emptyList());
     private static final Set<String> EMPTY_STRING_SET = Collections.unmodifiableSet(Collections.emptySet());
+    //A dependency blob key whose file name part ends with a canonical UUID, which a client splices in per upload.
+    private static final Pattern UNIQUE_DEPENDENCY_KEY = Pattern.compile(
+        "^dep-.+-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\\..+)?$");
     private static final RotatingMap<String, Long> topologyCleanupDetected = new RotatingMap<>(2);
     private static long topologyCleanupRotationTime = 0L;
 
@@ -2884,22 +2888,114 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
+    /**
+     * Collect the dependency blob keys that are still referenced by a topology other than the ones being cleaned up.
+     *
+     * <p>Dependency blobs uploaded by a current client are unique to a single submission, but a cluster upgraded from an
+     * older release can still hold artifact blobs whose key is derived from the maven coordinate alone, and those are
+     * listed by every topology that was submitted with the same artifact. Deleting one of those while a topology still
+     * needs it breaks worker launch and makes every nimbus refuse leadership, so the reference set has to be exact.
+     *
+     * <p>This deliberately does not swallow read failures: a topology whose code blob cannot be read has unknown
+     * references, and treating it as referencing nothing would allow a live topology's dependencies to be deleted. Only
+     * a missing code blob is treated as contributing no references, because such a topology cannot be launched anyway.
+     *
+     * @param excludedTopoIds the topologies being cleaned up, which must not count as referencing anything
+     * @return every dependency blob key referenced by a topology that is not being cleaned up
+     */
     @VisibleForTesting
-    public void rmDependencyJarsInTopology(String topoId) {
+    Set<String> referencedDependencyKeys(Set<String> excludedTopoIds) throws Exception {
+        Set<String> candidateTopoIds = new HashSet<>(Utils.OR(blobStore.storedTopoIds(), EMPTY_STRING_SET));
+        candidateTopoIds.addAll(Utils.OR(stormClusterState.activeStorms(), EMPTY_STRING_LIST));
+        candidateTopoIds.removeAll(excludedTopoIds);
+
+        Set<String> referenced = new HashSet<>();
+        for (String topoId : candidateTopoIds) {
+            StormTopology topo;
+            try {
+                topo = readStormTopologyAsNimbus(topoId, topoCache);
+            } catch (KeyNotFoundException e) {
+                //The topology has no code blob, so it references no dependencies and cannot be launched.
+                LOG.debug("No code found for {} while collecting dependency blob references", topoId);
+                continue;
+            }
+            if (topo.is_set_dependency_jars()) {
+                referenced.addAll(topo.get_dependency_jars());
+            }
+            if (topo.is_set_dependency_artifacts()) {
+                referenced.addAll(topo.get_dependency_artifacts());
+            }
+        }
+        return referenced;
+    }
+
+    /**
+     * Tell whether a dependency blob key proves, by its shape alone, that no other topology can refer to it.
+     *
+     * <p>A client that uploads a dependency splices a freshly generated UUID into the file name before prefixing it
+     * with {@code dep-}, so a key of that shape belongs to exactly one upload and therefore to exactly one topology.
+     * Artifact keys written by older clients are derived from the maven coordinate alone
+     * ({@code dep-<group>-<artifact>-<version>.jar}) and are listed by every topology built against that artifact, so
+     * they do not match: a coordinate would have to end in five dash separated hexadecimal groups of exactly
+     * 8-4-4-4-12 characters for that.
+     *
+     * <p>This lives here rather than next to the key generator on purpose. It is not a restatement of what the current
+     * client writes, but nimbus' own list of the key shapes it is willing to treat as unique, and it has to keep
+     * recognising the shapes written by every client version whose blobs may still be in the store even if the
+     * generator changes.
+     *
+     * @param key a dependency blob key listed by a topology
+     * @return true only if no other topology can be referring to the key
+     */
+    @VisibleForTesting
+    static boolean isProvablyUniqueDependencyKey(String key) {
+        return key != null && UNIQUE_DEPENDENCY_KEY.matcher(key).matches();
+    }
+
+    /**
+     * Remove the dependency blobs of a topology that is being cleaned up, keeping the ones another topology still uses.
+     *
+     * <p>When {@code stillReferenced} is null the cluster-wide reference scan failed, so it is unknown which blobs
+     * other topologies use. The topology's code blob is deleted right after this call and a dependency blob key
+     * carries no topology id, so anything left behind now can never be found again. Instead of giving up, the keys
+     * whose shape proves that no other topology can refer to them, that is the ones carrying a generated UUID, are
+     * still reclaimed; keys that could be shared are kept.
+     *
+     * @param topoId          the topology being cleaned up
+     * @param stillReferenced the dependency blob keys referenced by topologies that are not being cleaned up, or null
+     *                        if that could not be determined
+     */
+    @VisibleForTesting
+    public void rmDependencyBlobsInTopology(String topoId, Set<String> stillReferenced) {
         try {
             BlobStore store = blobStore;
             IStormClusterState state = stormClusterState;
             StormTopology topo = readStormTopologyAsNimbus(topoId, topoCache);
-            List<String> dependencyJars = topo.get_dependency_jars();
-            LOG.info("Removing dependency jars from blobs - {}", dependencyJars);
-            if (dependencyJars != null && !dependencyJars.isEmpty()) {
-                for (String key : dependencyJars) {
+            Set<String> dependencies = new HashSet<>();
+            if (topo.is_set_dependency_jars()) {
+                dependencies.addAll(topo.get_dependency_jars());
+            }
+            if (topo.is_set_dependency_artifacts()) {
+                dependencies.addAll(topo.get_dependency_artifacts());
+            }
+            LOG.info("Removing dependency blobs of {} - {}", topoId, dependencies);
+            for (String key : dependencies) {
+                if (stillReferenced == null) {
+                    if (isProvablyUniqueDependencyKey(key)) {
+                        rmBlobKey(store, key, state);
+                    } else {
+                        LOG.warn("Keeping dependency blob {} of {}, another topology may refer to it and the references "
+                            + "could not be read", key, topoId);
+                    }
+                } else if (stillReferenced.contains(key)) {
+                    LOG.info("Keeping dependency blob {} of {}, it is still referenced by another topology", key, topoId);
+                } else {
                     rmBlobKey(store, key, state);
                 }
             }
         } catch (Exception e) {
-            //Yes eat the exception
-            LOG.info("Exception {}", e);
+            //Yes eat the exception, cleaning up the rest of the topology matters more, but this leaves blobs behind.
+            LOG.warn("Could not remove the dependency blobs of {}, they will be left in the blob store", topoId, e);
         }
     }
 
@@ -2940,13 +3036,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Set<String> toClean = new HashSet<>(topoIdsToClean(state, blobStore, this.conf));
             long topoIdSelectionDurationMs = Time.deltaMs(cleanupStartMs);
 
+            //Computed once for the whole pass, with the dying topologies excluded so that two of them sharing a
+            //dependency blob do not keep it alive for each other. A null result means the references are unknown and
+            //only the blobs that are provably unique to one topology are reclaimed below.
+            Set<String> stillReferenced = null;
+            try {
+                stillReferenced = referencedDependencyKeys(toClean);
+            } catch (Exception e) {
+                LOG.warn("Could not determine which dependency blobs are still in use, only the dependency blobs whose "
+                    + "key proves they belong to a single topology are reclaimed in this pass, the others are kept", e);
+            }
+
             for (String topoId : toClean) {
                 LOG.info("Cleaning up {}", topoId);
                 state.teardownHeartbeats(topoId);
                 state.teardownTopologyErrors(topoId);
                 state.removeAllPrivateWorkerKeys(topoId);
                 state.removeBackpressure(topoId);
-                rmDependencyJarsInTopology(topoId);
+                rmDependencyBlobsInTopology(topoId, stillReferenced);
                 forceDeleteTopoDistDir(topoId);
                 rmTopologyKeys(topoId);
                 heartbeatsCache.removeTopo(topoId);

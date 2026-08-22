@@ -131,6 +131,11 @@ public class DependencyUploader {
                 keys.add(key);
             }
         } catch (Throwable e) {
+            // the keys are unique to this upload and no topology refers to them, so the ones that made it to
+            // the blob store are only reachable from here
+            if (getBlobStore() != null) {
+                deleteBlobs(keys);
+            }
             throw new RuntimeException(e);
         }
 

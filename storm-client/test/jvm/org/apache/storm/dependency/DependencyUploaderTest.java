@@ -264,8 +264,9 @@ public class DependencyUploaderTest {
         verify(mockBlobStore).getBlobMeta(contains(expectedBlobKeyForArtifact));
         verify(mockBlobStore).getBlobMeta(contains(expectedBlobKeyForArtifact2));
 
-        // never rollback
-        verify(mockBlobStore, never()).deleteBlob(contains(expectedBlobKeyForArtifact));
+        // the artifacts uploaded before the failure are rolled back: their keys are unique to this upload,
+        // so nothing else can be referring to them and leaving them behind leaks blob store space forever
+        verify(mockBlobStore).deleteBlob(contains(expectedBlobKeyForArtifact));
         verify(mockBlobStore, never()).deleteBlob(contains(expectedBlobKeyForArtifact2));
     }
 

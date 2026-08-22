@@ -271,7 +271,7 @@ public class StormSubmitter {
 
                 // Dependency uploading only makes sense for distributed mode
                 List<String> jarsBlobKeys = Collections.emptyList();
-                List<String> artifactsBlobKeys;
+                List<String> artifactsBlobKeys = Collections.emptyList();
 
                 DependencyUploader uploader = new DependencyUploader();
                 try {
@@ -281,8 +281,10 @@ public class StormSubmitter {
 
                     artifactsBlobKeys = uploadDependencyArtifactsToBlobStore(uploader);
                 } catch (Throwable e) {
-                    // remove uploaded jars blobs, not artifacts since they're shared across the cluster
+                    // every uploaded blob carries a key unique to this submission, and no topology refers to
+                    // them yet, so nothing else can be using them
                     uploader.deleteBlobs(jarsBlobKeys);
+                    uploader.deleteBlobs(artifactsBlobKeys);
                     uploader.shutdown();
                     throw e;
                 }
@@ -291,10 +293,12 @@ public class StormSubmitter {
                     setDependencyBlobsToTopology(topology, jarsBlobKeys, artifactsBlobKeys);
                     submitTopologyInDistributeMode(name, topology, opts, progressListener, asUser, conf, serConf, client);
                 } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
-                    // remove uploaded jars blobs, not artifacts since they're shared across the cluster
-                    // Note that we don't handle TException to delete jars blobs
+                    // the topology was rejected, so the blobs it refers to are unreachable; their keys are
+                    // unique to this submission, so nothing else can be using them
+                    // Note that we don't handle TException to delete the blobs
                     // because it's safer to leave some blobs instead of topology not running
                     uploader.deleteBlobs(jarsBlobKeys);
+                    uploader.deleteBlobs(artifactsBlobKeys);
                     throw e;
                 } finally {
                     uploader.shutdown();

@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,9 +38,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.blobstore.BlobStore;
+import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.KeySequenceNumber;
 import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.dependency.DependencyBlobStoreUtils;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.InvalidTopologyException;
@@ -80,6 +83,7 @@ import org.mockito.MockedConstruction;
 import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -91,6 +95,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -99,6 +104,10 @@ class NimbusTest {
     private static final String BLOB_FILE_KEY = "file-key";
     private static final String TOPO_NAME = "topo";
     private static final String TOPO_ID = "topology1-1-1";
+    // an artifact blob key from before the key carried a uuid, which several topologies can share
+    private static final String LEGACY_ARTIFACT_KEY = "dep-group-artifact-1.0.0.jar";
+    // a dependency key written by a current client, which splices a generated uuid into the file name
+    private static final String UNIQUE_JAR_KEY = "dep-lib-11111111-1111-1111-1111-111111111111.jar";
 
     @Mock
     private StormMetricsRegistry metricRegistry;
@@ -443,6 +452,111 @@ class NimbusTest {
         }
     }
 
+    /**
+     * Register a topology in the blob store mock so that Nimbus can read its dependency lists back.
+     */
+    private static void storeTopology(BlobStore store, String topoId, List<String> jars, List<String> artifacts)
+        throws Exception {
+        StormTopology topo = new StormTopology();
+        topo.set_spouts(new HashMap<>());
+        topo.set_bolts(new HashMap<>());
+        topo.set_state_spouts(new HashMap<>());
+        topo.set_dependency_jars(jars);
+        topo.set_dependency_artifacts(artifacts);
+        String key = ConfigUtils.masterStormCodeKey(topoId);
+        when(store.readBlob(eq(key), any())).thenReturn(Utils.serialize(topo));
+        when(store.getBlobMeta(eq(key), any()))
+            .thenReturn(new ReadableBlobMeta(new SettableBlobMeta(BlobStoreAclHandler.WORLD_EVERYTHING), 1));
+    }
+
+    private Nimbus cleanupNimbus(BlobStore store, IStormClusterState state) throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        conf.put(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS, 0);
+        conf.put(Config.NIMBUS_THRIFT_TLS_PORT, 0);
+        when(leaderElector.isLeader()).thenReturn(true);
+        return new Nimbus(conf, iNimbus, state, nimbusInfo, store, leaderElector, groupMapper, new StormMetricsRegistry());
+    }
+
+    @Test
+    void doCleanupRemovesBothDependencyJarsAndArtifactsOfADeadTopology() throws Exception {
+        BlobStore store = mock(BlobStore.class);
+        IStormClusterState state = mock(IStormClusterState.class);
+        when(store.storedTopoIds()).thenReturn(Set.of("dead-topo"));
+        when(state.activeStorms()).thenReturn(List.of());
+        storeTopology(store, "dead-topo", List.of("dep-lib-11111111-1111-1111-1111-111111111111.jar"),
+            List.of("dep-group-artifact-1.0.0-22222222-2222-2222-2222-222222222222.jar"));
+
+        cleanupNimbus(store, state).doCleanup();
+
+        verify(store).deleteBlob(eq("dep-lib-11111111-1111-1111-1111-111111111111.jar"), any());
+        verify(store).deleteBlob(eq("dep-group-artifact-1.0.0-22222222-2222-2222-2222-222222222222.jar"), any());
+    }
+
+    @Test
+    void doCleanupKeepsADependencyBlobThatAnotherLiveTopologyStillReferences() throws Exception {
+        BlobStore store = mock(BlobStore.class);
+        IStormClusterState state = mock(IStormClusterState.class);
+        when(store.storedTopoIds()).thenReturn(Set.of("dead-topo", "live-topo"));
+        when(state.activeStorms()).thenReturn(List.of("live-topo"));
+        // both were submitted before artifact keys carried a uuid, so they share one artifact blob
+        storeTopology(store, "dead-topo", List.of("dep-lib-11111111-1111-1111-1111-111111111111.jar"),
+            List.of(LEGACY_ARTIFACT_KEY));
+        storeTopology(store, "live-topo", List.of("dep-lib-33333333-3333-3333-3333-333333333333.jar"),
+            List.of(LEGACY_ARTIFACT_KEY));
+
+        cleanupNimbus(store, state).doCleanup();
+
+        verify(store, never()).deleteBlob(eq(LEGACY_ARTIFACT_KEY), any());
+        // the blob that is unique to the dead topology is still reclaimed
+        verify(store).deleteBlob(eq("dep-lib-11111111-1111-1111-1111-111111111111.jar"), any());
+    }
+
+    @Test
+    void doCleanupRemovesADependencyBlobSharedOnlyBetweenTopologiesThatAreAllBeingCleanedUp() throws Exception {
+        BlobStore store = mock(BlobStore.class);
+        IStormClusterState state = mock(IStormClusterState.class);
+        when(store.storedTopoIds()).thenReturn(Set.of("dead-one", "dead-two"));
+        when(state.activeStorms()).thenReturn(List.of());
+        storeTopology(store, "dead-one", List.of(), List.of(LEGACY_ARTIFACT_KEY));
+        storeTopology(store, "dead-two", List.of(), List.of(LEGACY_ARTIFACT_KEY));
+
+        cleanupNimbus(store, state).doCleanup();
+
+        verify(store, atLeastOnce()).deleteBlob(eq(LEGACY_ARTIFACT_KEY), any());
+    }
+
+    @Test
+    void doCleanupReclaimsOnlyProvablyUniqueDependencyBlobsWhenTheReferencesCannotBeRead() throws Exception {
+        BlobStore store = mock(BlobStore.class);
+        IStormClusterState state = mock(IStormClusterState.class);
+        when(store.storedTopoIds()).thenReturn(Set.of("dead-topo", "live-topo"));
+        when(state.activeStorms()).thenReturn(List.of("live-topo"));
+        storeTopology(store, "dead-topo", List.of(UNIQUE_JAR_KEY), List.of(LEGACY_ARTIFACT_KEY));
+        // the live topology's code blob cannot be read, so what it references is unknown
+        when(store.readBlob(eq(ConfigUtils.masterStormCodeKey("live-topo")), any()))
+            .thenThrow(new IOException("blob store is unhappy"));
+
+        cleanupNimbus(store, state).doCleanup();
+
+        // the dead topology's code blob goes away in this pass and a dependency key carries no topology id, so a
+        // blob that is not reclaimed now can never be found again; the key that carries a uuid cannot be shared
+        verify(store).deleteBlob(eq(UNIQUE_JAR_KEY), any());
+        // the legacy key could still be listed by the topology whose references could not be read
+        verify(store, never()).deleteBlob(eq(LEGACY_ARTIFACT_KEY), any());
+        // the rest of the cleanup still runs
+        verify(store).deleteBlob(eq(ConfigUtils.masterStormJarKey("dead-topo")), any());
+    }
+
+    @Test
+    void everyDependencyKeyACurrentClientGeneratesIsRecognisedAsUniqueToOneTopology() {
+        for (String fileName : List.of("commons-lang3-3.12.0.jar", "some.lib.tar.gz", "noextension")) {
+            String key = DependencyBlobStoreUtils.generateDependencyBlobKey(
+                DependencyBlobStoreUtils.applyUUIDToFileName(fileName));
+            assertTrue(Nimbus.isProvablyUniqueDependencyKey(key), key + " should be recognised as unique");
+        }
+    }
+
     @Test
     void testGetTopologyHistoryIsAuthorized() throws Exception {
         Map<String, Object> conf = new HashMap<>();
@@ -457,6 +571,25 @@ class NimbusTest {
         } finally {
             ReqContext.reset();
         }
+    }
+
+    @Test
+    void aDependencyKeyThatDoesNotCarryAUuidIsNotTreatedAsUniqueToOneTopology() {
+        // the shapes an older client wrote for an artifact, dep- plus the maven coordinate with : replaced by -
+        for (String key : List.of("dep-group-artifact-1.0.0.jar",
+                                  "dep-org.apache.commons-commons-lang3-3.12.0.jar",
+                                  "dep-a-b-1.2.3-SNAPSHOT.jar",
+                                  // hexadecimal looking coordinates of the wrong lengths are not a uuid either
+                                  "dep-com.deadbeef-cafebabe-1.0.jar",
+                                  "dep-abcdefab-abcd-abcd-abcd-abcdefabcdef-1.0.jar",
+                                  // the uuid a client splices in is the last thing before the extension, so a
+                                  // coordinate that merely contains a uuid shaped run is still shareable
+                                  "dep-com.acme-abcdefab-abcd-abcd-abcd-abcdefabcdef-1.0.jar",
+                                  // a uuid with a dot instead of a dash is not canonical
+                                  "dep-lib-11111111.1111-1111-1111-111111111111.jar")) {
+            assertFalse(Nimbus.isProvablyUniqueDependencyKey(key), key + " should not be recognised as unique");
+        }
+        assertFalse(Nimbus.isProvablyUniqueDependencyKey(null));
     }
 
     private static void setCaller(String user) {

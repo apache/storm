@@ -455,8 +455,8 @@ public class NimbusClojurePortTest {
         Mockito.verify(nimbus).rmTopologyKeys("topo3");
 
         // removed topology dependencies
-        Mockito.verify(nimbus).rmDependencyJarsInTopology("topo2");
-        Mockito.verify(nimbus).rmDependencyJarsInTopology("topo3");
+        Mockito.verify(nimbus).rmDependencyBlobsInTopology(Mockito.eq("topo2"), Mockito.anySet());
+        Mockito.verify(nimbus).rmDependencyBlobsInTopology(Mockito.eq("topo3"), Mockito.anySet());
 
         // remove topos from heartbeat cache
         assertEquals(0, nimbus.getHeartbeatsCache().getNumToposCached());
