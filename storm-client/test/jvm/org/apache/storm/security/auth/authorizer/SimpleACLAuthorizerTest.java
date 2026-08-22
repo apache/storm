@@ -63,6 +63,11 @@ public class SimpleACLAuthorizerTest {
         assertTrue(authorizer.permit(new ReqContext(userA), "fileUpload", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userB), "fileUpload", new HashMap<>()));
 
+        assertTrue(authorizer.permit(new ReqContext(adminUser), "createStateInZookeeper", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(supervisorUser), "createStateInZookeeper", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userA), "createStateInZookeeper", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userB), "createStateInZookeeper", new HashMap<>()));
+
         assertTrue(authorizer.permit(new ReqContext(adminUser), "getNimbusConf", new HashMap<>()));
         assertFalse(authorizer.permit(new ReqContext(supervisorUser), "getNimbusConf", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userA), "getNimbusConf", new HashMap<>()));

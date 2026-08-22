@@ -4137,6 +4137,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @Override
     public void createStateInZookeeper(String key) throws TException {
         try {
+            checkAuthorization(null, null, "createStateInZookeeper");
             IStormClusterState state = stormClusterState;
             BlobStore store = blobStore;
             NimbusInfo ni = nimbusHostPortInfo;

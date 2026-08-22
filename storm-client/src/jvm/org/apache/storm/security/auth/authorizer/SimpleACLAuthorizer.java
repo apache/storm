@@ -38,6 +38,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
     protected Set<String> userCommands = new HashSet<>(Arrays.asList(
         "submitTopology",
         "fileUpload",
+        "createStateInZookeeper",
         "getNimbusConf",
         "getClusterInfo",
         "getLeader",

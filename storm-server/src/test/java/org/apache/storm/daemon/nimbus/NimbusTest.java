@@ -45,6 +45,7 @@ import org.apache.storm.scheduler.resource.strategies.priority.DefaultScheduling
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
+import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.thrift.TException;
@@ -171,6 +172,27 @@ class NimbusTest {
 
     @Test
     void testCreateStateInZookeeper() throws TException {
+        nimbus.createStateInZookeeper(BLOB_FILE_KEY);
+
+        verify(stormClusterState).setupBlob(eq(BLOB_FILE_KEY), eq(nimbusInfo), any());
+    }
+
+    @Test
+    void testCreateStateInZookeeperIsNotAllowedWhenTheAuthorizerDeniesIt() throws Exception {
+        IAuthorizer authorizer = mock(IAuthorizer.class);
+        when(authorizer.permit(any(), eq("createStateInZookeeper"), any())).thenReturn(false);
+        nimbus.setAuthorizationHandler(authorizer);
+
+        assertThrows(AuthorizationException.class, () -> nimbus.createStateInZookeeper(BLOB_FILE_KEY));
+        verify(stormClusterState, never()).setupBlob(eq(BLOB_FILE_KEY), eq(nimbusInfo), any());
+    }
+
+    @Test
+    void testCreateStateInZookeeperIsAllowedWhenTheAuthorizerPermitsIt() throws Exception {
+        IAuthorizer authorizer = mock(IAuthorizer.class);
+        when(authorizer.permit(any(), eq("createStateInZookeeper"), any())).thenReturn(true);
+        nimbus.setAuthorizationHandler(authorizer);
+
         nimbus.createStateInZookeeper(BLOB_FILE_KEY);
 
         verify(stormClusterState).setupBlob(eq(BLOB_FILE_KEY), eq(nimbusInfo), any());
