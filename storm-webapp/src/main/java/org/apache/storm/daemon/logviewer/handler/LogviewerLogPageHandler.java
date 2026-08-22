@@ -313,6 +313,10 @@ public class LogviewerLogPageHandler {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
 
+        if (!resourceAuthorizer.isUserAllowedToAccessDaemonFile(user)) {
+            return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
+        }
+
         if (file.toFile().exists()) {
             // all types of files included
             List<File> logFiles = Arrays.stream(daemonLogRoot.toFile().listFiles())

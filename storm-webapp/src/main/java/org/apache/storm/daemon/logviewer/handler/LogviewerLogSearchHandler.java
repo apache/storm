@@ -165,7 +165,8 @@ public class LogviewerLogSearchHandler {
         }
         Response response;
         if (absFile.toFile().exists()) {
-            if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
+            if (isDaemon ? resourceAuthorizer.isUserAllowedToAccessDaemonFile(user)
+                    : resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 Integer numMatchesInt = numMatchesStr != null ? tryParseIntParam("num-matches", numMatchesStr) : null;
                 Integer offsetInt = offsetStr != null ? tryParseIntParam("start-byte-offset", offsetStr) : null;
 
