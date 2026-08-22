@@ -24,6 +24,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.net.HttpHeaders;
 import java.io.IOException;
@@ -118,6 +123,79 @@ public class LogviewerLogDownloadHandlerTest {
             Utils.forceDelete(rootPath.toString());
 
             assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testDownloadLogFileUnauthorizedUserDoesNotChangeLogFilePermission() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = daemonLogRoot.resolve("workers-artifacts");
+            Path file = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log");
+            Files.createDirectories(file.getParent());
+            Files.createFile(file);
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), anyString())).thenReturn(false);
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+
+            LogviewerLogDownloadHandler handler = new LogviewerLogDownloadHandler(workerLogRoot.toString(),
+                daemonLogRoot.toString(), workerLogs, resourceAuthorizer, new StormMetricsRegistry());
+
+            Response response = handler.downloadLogFile("host", "topoA/1111/worker.log", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.FORBIDDEN.getStatusCode()));
+            verify(workerLogs, never()).setLogFilePermission(anyString());
+        }
+    }
+
+    @Test
+    public void testDownloadLogFileAuthorizedUserSetsLogFilePermission() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = daemonLogRoot.resolve("workers-artifacts");
+            Path file = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log");
+            Files.createDirectories(file.getParent());
+            Files.createFile(file);
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), anyString())).thenReturn(true);
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+
+            LogviewerLogDownloadHandler handler = new LogviewerLogDownloadHandler(workerLogRoot.toString(),
+                daemonLogRoot.toString(), workerLogs, resourceAuthorizer, new StormMetricsRegistry());
+
+            Response response = handler.downloadLogFile("host", "topoA/1111/worker.log", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            verify(workerLogs).setLogFilePermission("topoA/1111/worker.log");
+        }
+    }
+
+    @Test
+    public void testDownloadDaemonLogFileDoesNotChangeLogFilePermission() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = daemonLogRoot.resolve("workers-artifacts");
+            Path daemonFile = daemonLogRoot.resolve("nimbus.log");
+            Files.createDirectories(workerLogRoot);
+            Files.createFile(daemonFile);
+
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+
+            LogviewerLogDownloadHandler handler = new LogviewerLogDownloadHandler(workerLogRoot.toString(),
+                daemonLogRoot.toString(), workerLogs, new ResourceAuthorizer(Utils.readStormConfig()), new StormMetricsRegistry());
+
+            Response response = handler.downloadDaemonLogFile("host", "nimbus.log", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            verify(workerLogs, never()).setLogFilePermission(anyString());
         }
     }
 

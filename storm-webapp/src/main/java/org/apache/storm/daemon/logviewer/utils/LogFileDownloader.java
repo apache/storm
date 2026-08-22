@@ -36,6 +36,7 @@ public class LogFileDownloader {
     private final Meter numFileDownloadExceptions;
     private final Path logRoot;
     private final Path daemonLogRoot;
+    private final WorkerLogs workerLogs;
     private final ResourceAuthorizer resourceAuthorizer;
 
     /**
@@ -43,13 +44,15 @@ public class LogFileDownloader {
      *
      * @param logRoot root worker log directory
      * @param daemonLogRoot root daemon log directory
+     * @param workerLogs {@link WorkerLogs}
      * @param resourceAuthorizer {@link ResourceAuthorizer}
      * @param metricsRegistry The logviewer metrics registry
      */
-    public LogFileDownloader(String logRoot, String daemonLogRoot, ResourceAuthorizer resourceAuthorizer,
-        StormMetricsRegistry metricsRegistry) {
+    public LogFileDownloader(String logRoot, String daemonLogRoot, WorkerLogs workerLogs,
+        ResourceAuthorizer resourceAuthorizer, StormMetricsRegistry metricsRegistry) {
         this.logRoot = Paths.get(logRoot).toAbsolutePath().normalize();
         this.daemonLogRoot = Paths.get(daemonLogRoot).toAbsolutePath().normalize();
+        this.workerLogs = workerLogs;
         this.resourceAuthorizer = resourceAuthorizer;
         this.fileDownloadSizeDistMb = metricsRegistry.registerHistogram("logviewer:download-file-size-rounded-MB");
         this.numFileDownloadExceptions = metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS);
@@ -79,6 +82,10 @@ public class LogFileDownloader {
         
         if (file.toFile().exists()) {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
+                if (!isDaemon) {
+                    //Only widen the permission of a worker log once the request is known to be served
+                    workerLogs.setLogFilePermission(fileName);
+                }
                 fileDownloadSizeDistMb.update(Math.round((double) file.toFile().length() / FileUtils.ONE_MB));
                 String downloadedFileName;
                 Path pathRelativeToRootDir = rootDir.relativize(file);
