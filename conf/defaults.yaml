@@ -92,6 +92,7 @@ nimbus.file.copy.expiration.secs: 600
 nimbus.topology.validator: "org.apache.storm.nimbus.DefaultTopologyValidator"
 # The scheduler strategies that a topology is allowed to select through topology.scheduler.strategy.
 # Defaults to the strategies shipped with Storm; a custom strategy must be added to this list.
+# Removing this config or leaving it unset selects the same shipped strategies, not all of them.
 nimbus.scheduler.strategy.class.whitelist:
   - "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy"
   - "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld"
