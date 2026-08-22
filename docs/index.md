@@ -89,6 +89,7 @@ We're also notifying it via annotating classes with marker interface `@Interface
 * [Kafka Monitoring (storm-kafka-monitor)](https://github.com/apache/storm/tree/master/external/storm-kafka-monitor)
 * [Apache HBase Integration](storm-hbase.html)
 * [Apache HDFS Integration](storm-hdfs.html)
+* [Apache Iceberg Integration](storm-iceberg.html)
 * [JDBC Integration](storm-jdbc.html)
 * [JMS Integration](storm-jms.html)
 * [Redis Integration](storm-redis.html)

@@ -134,6 +134,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../../external/storm-iceberg</directory>
+            <outputDirectory>external/storm-iceberg</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../../external/storm-eventhubs</directory>
             <outputDirectory>external/storm-eventhubs</outputDirectory>
             <includes>

@@ -35,6 +35,7 @@
         <module>storm-hdfs</module>
         <module>storm-hdfs-blobstore</module>
         <module>storm-hdfs-oci</module>
+        <module>storm-iceberg</module>
         <module>storm-jdbc</module>
         <module>storm-jms</module>
         <module>storm-kafka-client</module>

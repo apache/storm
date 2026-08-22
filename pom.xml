@@ -113,6 +113,9 @@
         <hikari.version>7.1.0</hikari.version>
         <hadoop.version>3.5.0</hadoop.version>
         <hbase.version>2.6.6-hadoop3</hbase.version>
+        <!-- Pinned deliberately: storm-iceberg must stay buildable against the Java baseline
+             above, so this is bumped explicitly rather than tracking the newest release. -->
+        <iceberg.version>1.11.0</iceberg.version>
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.5</objensis.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
@@ -895,6 +898,35 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
+            </dependency>
+            <!-- Iceberg dependencies. Versions are managed here so a project-wide dependency bump
+                 sees the pin; storm-iceberg declares the artifacts without versions. The catalog
+                 implementations (iceberg-aws, -gcp, -hive, -nessie, ...) are deliberately absent:
+                 they are supplied by the topology, not pulled in transitively. -->
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-api</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-core</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-data</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-parquet</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-orc</artifactId>
+                <version>${iceberg.version}</version>
             </dependency>
             <!-- Hadoop dependencies. Specified here so HDFS/HBase don't import older versions of these jars in their projects-->
             <dependency>
