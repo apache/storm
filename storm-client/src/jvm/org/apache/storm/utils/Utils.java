@@ -1687,7 +1687,7 @@ public class Utils {
         if (map == null) {
             return null;
         }
-        return findOne(pred, (Set<T>) map.entrySet());
+        return findOne(pred, map.values());
     }
 
     public static Map<String, Object> parseJson(String json) {

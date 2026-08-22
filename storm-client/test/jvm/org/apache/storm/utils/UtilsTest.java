@@ -44,6 +44,7 @@ import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -767,5 +768,61 @@ public class UtilsTest {
             data[i] = (byte) (i % 256);
         }
         return data;
+    }
+
+    // FIND ONE TESTS
+
+    /** Test findOne method with null IPredicate, empty Map. Expected = null value */
+    @Test
+    public void findOneNullIPredicateEmptyCollectionShouldPass() {
+
+        assertNull(Utils.findOne(null, Map.of()));
+    }
+
+    /** Test findOne method with not valid IPredicate (throws RuntimeException), null Map. Expected = null value */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void findOneNotCorrectIPredicateNullCollectionShouldPass() {
+
+        IPredicate<Integer> mockPredicate = Mockito.mock(IPredicate.class);
+        Mockito.lenient().when(mockPredicate.test(Mockito.any())).thenThrow(new RuntimeException());
+        assertNull(Utils.findOne(mockPredicate, (Map<Integer, Integer>) null));
+    }
+
+    /** Test findOne method with correct IPredicate (first element in the map is coherent with check) , one value Map. Expected = first element */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void findOneValidIPredicateValidCollectionShouldPass() {
+
+        IPredicate<Integer> mockPredicate = Mockito.mock(IPredicate.class);
+        Mockito.when(mockPredicate.test(Mockito.any())).thenReturn(true);
+        Map<Integer, Integer> map = Map.of(1,1);
+        Integer integer = 1;
+        assertEquals(integer, Utils.findOne(mockPredicate, map));
+    }
+
+    /** Test findOne method with correct IPredicate (second element in the map is coherent with check) , two values Map. Expected = second element */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void findOneValidIPredicateValidCollection2ShouldPass() {
+
+        IPredicate<Integer> mockPredicate = Mockito.mock(IPredicate.class);
+        Integer integer = 1;
+        Integer integer2 = 2;
+        Mockito.lenient().when(mockPredicate.test(integer)).thenReturn(false);
+        Mockito.lenient().when(mockPredicate.test(integer2)).thenReturn(true);
+        Map<Integer, Integer> map = Map.of(1,1,2,2);
+        assertEquals(integer2, Utils.findOne(mockPredicate, map));
+    }
+
+    /** Test findOne method with not correct IPredicate (no element in the map is coherent with check) , one value Map. Expected = null */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void findOneNotCorrectIPredicateValidCollectionShouldPass() {
+
+        IPredicate<Integer> mockPredicate = Mockito.mock(IPredicate.class);
+        Mockito.when(mockPredicate.test(Mockito.any())).thenReturn(false);
+        Map<Integer, Integer> map = Map.of(1,1);
+        assertNull(Utils.findOne(mockPredicate, map));
     }
 }
