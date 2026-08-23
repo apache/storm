@@ -4468,7 +4468,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             getNimbusConfCalls.mark();
             checkAuthorization(null, null, "getNimbusConf");
-            return JSONValue.toJSONString(conf);
+            return JSONValue.toJSONString(ConfigUtils.maskCredentials(conf));
         } catch (Exception e) {
             LOG.warn("get nimbus conf exception.", e);
             if (e instanceof TException) {

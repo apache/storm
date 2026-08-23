@@ -1240,6 +1240,7 @@ public class Config extends HashMap<String, Object> {
      * The password of the keystore that the nimbus TLS server uses.
      */
     @IsString
+    @Password
     public static final String NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD = "nimbus.thrift.tls.server.keystore.password";
 
     /**
@@ -1258,6 +1259,7 @@ public class Config extends HashMap<String, Object> {
      * The password of the truststore that the nimbus TLS server uses.
      */
     @IsString
+    @Password
     public static final String NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD = "nimbus.thrift.tls.server.truststore.password";
 
     /**
@@ -1272,6 +1274,7 @@ public class Config extends HashMap<String, Object> {
      * The password of the keystore that the nimbus TLS client uses.
      */
     @IsString
+    @Password
     public static final String NIMBUS_THRIFT_TLS_CLIENT_KEYSTORE_PASSWORD = "nimbus.thrift.tls.client.keystore.password";
 
     /**
@@ -1296,6 +1299,7 @@ public class Config extends HashMap<String, Object> {
      * The password of the truststore that the nimbus TLS client uses.
      */
     @IsString
+    @Password
     public static final String NIMBUS_THRIFT_TLS_CLIENT_TRUSTSTORE_PASSWORD = "nimbus.thrift.tls.client.truststore.password";
 
     /**
@@ -1351,6 +1355,7 @@ public class Config extends HashMap<String, Object> {
      * The password of the keystore that the supervisor TLS server uses.
      */
     @IsString
+    @Password
     public static final String SUPERVISOR_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD = "supervisor.thrift.tls.server.keystore.password";
 
     /**
@@ -1363,6 +1368,7 @@ public class Config extends HashMap<String, Object> {
      * The password of the truststore that the supervisor TLS server uses.
      */
     @IsString
+    @Password
     public static final String SUPERVISOR_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD = "supervisor.thrift.tls.server.truststore.password";
 
     /**
@@ -1375,6 +1381,7 @@ public class Config extends HashMap<String, Object> {
      * The password of the keystore that the supervisor TLS client uses.
      */
     @IsString
+    @Password
     public static final String SUPERVISOR_THRIFT_TLS_CLIENT_KEYSTORE_PASSWORD = "supervisor.thrift.tls.client.keystore.password";
 
     /**
@@ -1387,6 +1394,7 @@ public class Config extends HashMap<String, Object> {
      * The password of the truststore that the supervisor TLS client uses.
      */
     @IsString
+    @Password
     public static final String SUPERVISOR_THRIFT_TLS_CLIENT_TRUSTSTORE_PASSWORD = "supervisor.thrift.tls.client.truststore.password";
 
     /**
@@ -1534,6 +1542,7 @@ public class Config extends HashMap<String, Object> {
      * Keystore password for ZooKeeper client connection over SSL.
      */
     @IsString
+    @Password
     public static final String STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD = "storm.zookeeper.ssl.keystore.password";
     /**
      * Truststore location for ZooKeeper client connection over SSL.
@@ -1544,6 +1553,7 @@ public class Config extends HashMap<String, Object> {
      * Truststore password for ZooKeeper client connection over SSL.
      */
     @IsString
+    @Password
     public static final String STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD = "storm.zookeeper.ssl.truststore.password";
     /**
      * Enable or disable hostname verification.
@@ -1735,6 +1745,7 @@ public class Config extends HashMap<String, Object> {
      * deny access from workers.
      */
     @IsString
+    @Password
     public static final String STORM_ZOOKEEPER_AUTH_PAYLOAD = "storm.zookeeper.auth.payload";
     /**
      * What Network Topography detection classes should we use. Given a list of supervisor hostnames (or IP addresses), this class would
@@ -1925,6 +1936,7 @@ public class Config extends HashMap<String, Object> {
      * Netty based messaging: Specifies the truststore password when TLS is enabled.
      */
     @IsString
+    @Password
     public static final String STORM_MESSAGING_NETTY_TLS_TRUSTSTORE_PASSWORD = "storm.messaging.netty.tls.truststore.password";
 
     /**
@@ -1937,6 +1949,7 @@ public class Config extends HashMap<String, Object> {
      * Netty based messaging: Specifies the keystore password when TLS is enabled.
      */
     @IsString
+    @Password
     public static final String STORM_MESSAGING_NETTY_TLS_KEYSTORE_PASSWORD = "storm.messaging.netty.tls.keystore.password";
 
     /**
@@ -1949,6 +1962,7 @@ public class Config extends HashMap<String, Object> {
      * Netty based messaging: Specifies the client truststore password when TLS is enabled.
      */
     @IsString
+    @Password
     public static final String STORM_MESSAGING_NETTY_TLS_CLIENT_TRUSTSTORE_PASSWORD =
         "storm.messaging.netty.tls.client.truststore.password";
 
@@ -1962,6 +1976,7 @@ public class Config extends HashMap<String, Object> {
      * Netty based messaging: Specifies the client keystore password when TLS is enabled.
      */
     @IsString
+    @Password
     public static final String STORM_MESSAGING_NETTY_TLS_CLIENT_KEYSTORE_PASSWORD =
         "storm.messaging.netty.tls.client.keystore.password";
 
