@@ -13,6 +13,7 @@
 package org.apache.storm.security.auth.authorizer;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -91,8 +92,9 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
      */
     @Override
     public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
-        String principal = context.principal().getName();
-        String user = ptol.toLocal(context.principal());
+        Principal requester = context.principal();
+        String principal = requester == null ? null : requester.getName();
+        String user = ptol.toLocal(requester);
         Set<String> userGroups = new HashSet<>();
 
         if (groupMappingServiceProvider != null) {
