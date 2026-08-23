@@ -218,11 +218,15 @@ int main(int argc, char **argv) {
       exit_code = INVALID_ARGUMENT_NUMBER;
     } else {
       working_dir = argv[optind++];
+      // Read and parse the docker command file before setup_dir_permissions
+      // changes the ownership of the worker directory (which contains the
+      // command file) below.
+      char *docker_command = parse_docker_command_file(argv[optind]);
       exit_code = setup_dir_permissions(working_dir, 1, TRUE);
       if (exit_code == 0) {
         exit_code = setup_worker_tmp_permissions(working_dir);
         if (exit_code == 0) {
-          exit_code = run_docker_cmd(working_dir, argv[optind]);
+          exit_code = exec_docker_cmd(docker_command);
         }
       }
     }
