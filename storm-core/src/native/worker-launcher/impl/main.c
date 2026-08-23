@@ -243,8 +243,16 @@ int main(int argc, char **argv) {
       exit_code = INVALID_ARGUMENT_NUMBER;
     } else {
       const char * worker_id = argv[optind++];
-      int pid = get_docker_container_pid(worker_id);
-      exit_code = profile_oci_container(pid, argv[optind]);
+      // Validate the worker id (a type 4 UUID, the same shape as a container
+      // id) before it is used to build the docker command line.
+      if (!validate_container_id(worker_id)) {
+        fprintf(ERRORFILE, "ERROR: Bad worker id in profile-docker-container: %s\n", worker_id);
+        fflush(ERRORFILE);
+        exit_code = INVALID_ARGUMENT_NUMBER;
+      } else {
+        int pid = get_docker_container_pid(worker_id);
+        exit_code = profile_oci_container(pid, argv[optind]);
+      }
     }
   } else if (strcasecmp("profiler", command) == 0) {
     if (argc != 5) {
