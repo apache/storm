@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -39,6 +40,7 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.ListBlobsResult;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -52,11 +54,13 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResou
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.SingleUserPrincipal;
+import org.apache.storm.security.auth.authorizer.DenyAuthorizer;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.WrappedAuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -212,6 +216,28 @@ class NimbusTest {
             verify(keySequenceNumber.constructed().get(0)).getKeySequenceNumber(any());
             verify(stormClusterState, never()).setupBlob(eq(BLOB_FILE_KEY), eq(nimbusInfo), any());
         }
+    }
+
+    @Test
+    void testListBlobsOnlyReturnsKeysTheCallerMayReadTheMetadataOf() throws Exception {
+        when(localBlobStore.listKeys()).thenReturn(List.of("readable-key", "other-users-key").iterator());
+        when(localBlobStore.getBlobMeta(eq("other-users-key"), any()))
+            .thenThrow(new WrappedAuthorizationException("not allowed"));
+
+        ListBlobsResult result = nimbus.listBlobs("");
+
+        assertEquals(List.of("readable-key"), result.get_keys());
+    }
+
+    @Test
+    void testListBlobsIsAuthorized() throws Exception {
+        Map<String, Object> conf = Map.of(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10,
+                                          DaemonConfig.NIMBUS_AUTHORIZER, DenyAuthorizer.class.getName());
+        nimbus = new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, leaderElector, groupMapper, metricRegistry);
+        when(localBlobStore.listKeys()).thenReturn(List.of("readable-key").iterator());
+
+        assertThrows(AuthorizationException.class, () -> nimbus.listBlobs(""));
+        verify(localBlobStore, never()).listKeys();
     }
 
     @Test

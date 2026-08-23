@@ -4070,6 +4070,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @Override
     public ListBlobsResult listBlobs(String session) throws TException {
         try {
+            checkAuthorization(null, null, "listBlobs");
             Iterator<String> keyIt;
             //Create a new session id if the user gave an empty session string.
             // This is the use case when the user wishes to list blobs
@@ -4092,9 +4093,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 return new ListBlobsResult(Collections.emptyList(), session);
             }
 
+            Subject who = getSubject();
             ArrayList<String> listChunk = new ArrayList<>();
-            for (int i = 0; i < 100 && keyIt.hasNext(); i++) {
-                listChunk.add(keyIt.next());
+            while (listChunk.size() < 100 && keyIt.hasNext()) {
+                String key = keyIt.next();
+                //Only list the blobs whose metadata the caller may read, the same check getBlobMeta does.
+                try {
+                    blobStore.getBlobMeta(key, who);
+                    listChunk.add(key);
+                } catch (AuthorizationException | KeyNotFoundException e) {
+                    LOG.debug("Not listing blob {} for {}", key, who);
+                }
             }
             blobListers.put(session, keyIt);
             LOG.info("Downloading {} entries", listChunk.size());

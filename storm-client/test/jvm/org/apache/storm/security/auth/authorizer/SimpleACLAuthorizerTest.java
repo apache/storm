@@ -68,6 +68,11 @@ public class SimpleACLAuthorizerTest {
         assertTrue(authorizer.permit(new ReqContext(userA), "getNimbusConf", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userB), "getNimbusConf", new HashMap<>()));
 
+        assertTrue(authorizer.permit(new ReqContext(adminUser), "listBlobs", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(supervisorUser), "listBlobs", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userA), "listBlobs", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userB), "listBlobs", new HashMap<>()));
+
         assertTrue(authorizer.permit(new ReqContext(adminUser), "getClusterInfo", new HashMap<>()));
         assertFalse(authorizer.permit(new ReqContext(supervisorUser), "getClusterInfo", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userA), "getClusterInfo", new HashMap<>()));
