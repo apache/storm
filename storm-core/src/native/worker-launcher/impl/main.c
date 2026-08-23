@@ -302,15 +302,31 @@ int main(int argc, char **argv) {
       working_dir = argv[optind++];
       const char* command_file = argv[optind++];
       const char* worker_artifacts_dir = argv[optind];
-      exit_code = setup_dir_permissions(working_dir, 1, TRUE);
-      if (exit_code == 0) {
-        exit_code = setup_worker_tmp_permissions(working_dir);
+      // Parse the launch command file before setup_dir_permissions changes
+      // the ownership of the worker directory (which contains the command
+      // file) below.
+      oci_launch_cmd* olc = parse_oci_launch_cmd(command_file);
+      if (olc == NULL) {
+        exit_code = INVALID_CONFIG_FILE;
+      } else if (strcmp(olc->username, user_name) != 0) {
+        // The launch command file's username must match the user passed to
+        // the worker-launcher on the command line.
+        fprintf(ERRORFILE, "ERROR: OCI command file username %s does not match %s\n",
+                olc->username, user_name);
+        fflush(ERRORFILE);
+        exit_code = INVALID_USER_NAME;
+      } else {
+        exit_code = setup_dir_permissions(working_dir, 1, TRUE);
         if (exit_code == 0) {
-          //becomes root.
-          setuid(0);
-          exit_code = run_oci_container(command_file, worker_artifacts_dir);
+          exit_code = setup_worker_tmp_permissions(working_dir);
+          if (exit_code == 0) {
+            //becomes root.
+            setuid(0);
+            exit_code = run_oci_container(olc, worker_artifacts_dir);
+          }
         }
       }
+      free_oci_launch_cmd(olc);
     }
   } else if (strcasecmp("reap-oci-container", command) == 0) {
     if (argc != 5) {

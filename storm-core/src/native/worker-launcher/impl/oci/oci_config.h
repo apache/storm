@@ -30,4 +30,10 @@
 #define OCI_RUNC_CONFIG_KEY OCI_CONFIG_PREFIX "runc"
 #define DEFAULT_OCI_RUNC   "/usr/bin/runc"
 
+// Configuration for the comma-separated list of directories that bind-mount
+// sources in an OCI launch command may come from. A mount source is allowed
+// if it is one of the listed paths or a path underneath one of them.
+// If this is not set, no bind mounts are allowed.
+#define OCI_ALLOWED_MOUNT_SRCS_CONFIG_KEY OCI_CONFIG_PREFIX "allowed.mount.source.dirs"
+
 #endif /* OCI_OCI_CONFIG_H */
