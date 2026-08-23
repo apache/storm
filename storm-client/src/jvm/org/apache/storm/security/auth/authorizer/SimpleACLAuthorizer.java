@@ -158,7 +158,11 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         }
 
         if (userCommands.contains(operation)) {
-            return nimbusUsers.size() == 0 || nimbusUsers.contains(user) || checkUserGroupAllowed(userGroups, nimbusGroups);
+            // Only an empty nimbus.users AND an empty nimbus.groups means no restriction is configured.
+            if (nimbusUsers.size() == 0 && nimbusGroups.size() == 0) {
+                return true;
+            }
+            return nimbusUsers.contains(user) || checkUserGroupAllowed(userGroups, nimbusGroups);
         }
 
         if (topoCommands.contains(operation)) {

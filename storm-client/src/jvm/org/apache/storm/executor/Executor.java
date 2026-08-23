@@ -84,6 +84,7 @@ import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
+import org.apache.storm.utils.KeyStreamRandom;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
@@ -180,7 +181,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
         this.sampler = ConfigUtils.mkStatsSampler(topoConf);
         this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
-        this.rand = new Random(Utils.secureRandomLong());
+        this.rand = new KeyStreamRandom();
         this.credentials = credentials;
         this.hasEventLoggers = StormCommon.hasEventLoggers(topoConf);
         this.ackingEnabled = StormCommon.hasAckers(topoConf);

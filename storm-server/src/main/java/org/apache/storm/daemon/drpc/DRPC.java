@@ -28,6 +28,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.generated.AuthorizationException;
@@ -145,8 +146,15 @@ public class DRPC implements AutoCloseable {
 
     private void cleanup(String id) {
         OutstandingRequest req = requests.remove(id);
-        if (req != null && !req.wasFetched()) {
-            queues.get(req.getFunction()).remove(req);
+        if (req != null) {
+            queues.computeIfPresent(req.getFunction(), (function, queue) -> {
+                if (!req.wasFetched()) {
+                    queue.remove(req);
+                }
+                //Drop the queue itself once nothing is waiting in it, otherwise the map keeps an
+                // entry for every function name a client has ever asked about.
+                return queue.isEmpty() ? null : queue;
+            });
         }
     }
 
@@ -165,16 +173,15 @@ public class DRPC implements AutoCloseable {
         return String.valueOf(ctr.incrementAndGet());
     }
 
-    private ConcurrentLinkedQueue<OutstandingRequest> getQueue(String function) {
+    private static void checkFunctionName(String function) {
         if (function == null) {
             throw new IllegalArgumentException("The function for a request cannot be null");
         }
-        ConcurrentLinkedQueue<OutstandingRequest> queue = queues.get(function);
-        if (queue == null) {
-            queues.putIfAbsent(function, new ConcurrentLinkedQueue<>());
-            queue = queues.get(function);
-        }
-        return queue;
+    }
+
+    @VisibleForTesting
+    int getNumTrackedFunctions() {
+        return queues.size();
     }
 
     public void returnResult(String id, String result) throws AuthorizationException {
@@ -190,8 +197,17 @@ public class DRPC implements AutoCloseable {
     public DRPCRequest fetchRequest(String functionName) throws AuthorizationException {
         meterFetchRequestCalls.mark();
         checkAuthorizationNoLog("fetchRequest", functionName);
-        ConcurrentLinkedQueue<OutstandingRequest> q = getQueue(functionName);
-        OutstandingRequest req = q.poll();
+        checkFunctionName(functionName);
+        //Never create a queue here.  A function name comes from the client, so a queue that no one
+        // ever puts a request into would stay in the map forever.  Poll and drop an emptied queue
+        // under the same lock execute() adds under, so a request can never be left in a queue that
+        // was just removed from the map.
+        AtomicReference<OutstandingRequest> polled = new AtomicReference<>();
+        queues.computeIfPresent(functionName, (function, queue) -> {
+            polled.set(queue.poll());
+            return queue.isEmpty() ? null : queue;
+        });
+        OutstandingRequest req = polled.get();
         if (req != null) {
             //Only log accesses that fetched something
             logAccess("fetchRequest", functionName);
@@ -219,12 +235,18 @@ public class DRPC implements AutoCloseable {
         AuthorizationException {
         meterExecuteCalls.mark();
         checkAuthorization("execute", functionName);
+        checkFunctionName(functionName);
         String id = nextId();
         LOG.debug("Execute {} {}", functionName, funcArgs);
         T req = factory.mkRequest(functionName, new DRPCRequest(funcArgs, id));
         requests.put(id, req);
-        ConcurrentLinkedQueue<OutstandingRequest> q = getQueue(functionName);
-        q.add(req);
+        queues.compute(functionName, (function, queue) -> {
+            if (queue == null) {
+                queue = new ConcurrentLinkedQueue<>();
+            }
+            queue.add(req);
+            return queue;
+        });
         return req;
     }
 

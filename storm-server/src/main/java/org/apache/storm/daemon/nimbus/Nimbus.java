@@ -3592,6 +3592,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     topoConfigOverrides.remove(Config.TOPOLOGY_CLASSPATH_BEGINNING);
                 }
                 topoConfigOverrides.remove(Config.STORM_LOCAL_HOSTNAME);
+                //Blobs referenced by the overrides have to be readable by the one asking for the rebalance,
+                // just like at submit time.
+                Utils.validateTopologyBlobStoreMap(topoConfigOverrides, blobStore);
                 options.set_topology_conf_overrides(JSONValue.toJSONString(topoConfigOverrides));
             }
             Subject subject = getSubject();
