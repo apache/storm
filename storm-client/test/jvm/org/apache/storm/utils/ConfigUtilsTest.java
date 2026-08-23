@@ -283,6 +283,22 @@ public class ConfigUtilsTest {
     }
 
     @Test
+    public void isCredentialKey_recognisesAnnotatedAndPluginDeclaredKeys() {
+        assertTrue(ConfigUtils.isCredentialKey(Config.STORM_ZOOKEEPER_AUTH_PAYLOAD));
+        assertTrue(ConfigUtils.isCredentialKey(Config.NIMBUS_THRIFT_TLS_CLIENT_KEYSTORE_PASSWORD));
+        assertTrue(ConfigUtils.isCredentialKey("storm.daemon.metrics.reporter.plugin.prometheus.basic_auth_password"));
+        assertTrue(ConfigUtils.isCredentialKey("some.plugin.shared_secret"));
+    }
+
+    @Test
+    public void isCredentialKey_ignoresKeysThatOnlyMentionCredentials() {
+        assertFalse(ConfigUtils.isCredentialKey("task.credentials.poll.secs"));
+        assertFalse(ConfigUtils.isCredentialKey(Config.TOPOLOGY_AUTO_CREDENTIALS));
+        assertFalse(ConfigUtils.isCredentialKey(Config.NIMBUS_THRIFT_TLS_CLIENT_KEYSTORE_PATH));
+        assertFalse(ConfigUtils.isCredentialKey(Config.TOPOLOGY_NAME));
+    }
+
+    @Test
     public void maskPasswords_keepsOrdinaryValues() {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_ZOOKEEPER_SERVERS, Collections.singletonList("zk1"));

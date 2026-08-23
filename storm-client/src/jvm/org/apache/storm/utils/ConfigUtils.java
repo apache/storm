@@ -114,6 +114,18 @@ public class ConfigUtils {
         return Maps.transformEntries(conf, maskCredentials);
     }
 
+    /**
+     * Whether a config key holds a credential, and therefore whether {@link #maskCredentials(Map)} would replace its
+     * value. Callers that read a config back from a daemon use this to tell which entries carry no usable value and
+     * must be taken from their own configuration instead.
+     *
+     * @param key the config key
+     * @return true when the key denotes a credential
+     */
+    public static boolean isCredentialKey(String key) {
+        return passwordConfigKeys.contains(key) || CREDENTIAL_KEY_NAME.matcher(key).find();
+    }
+
     public static boolean isLocalMode(Map<String, Object> conf) {
         String mode = (String) conf.get(Config.STORM_CLUSTER_MODE);
         if (mode != null) {
