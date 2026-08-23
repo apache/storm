@@ -356,6 +356,44 @@ public class SimpleACLAuthorizerTest {
         assertFalse(authorizer.permit(new ReqContext(userB), "getTopologyInfo", topoConf));
     }
 
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void requestWithoutPrincipalIsDeniedWhenNimbusUsersAreConfigured() {
+        Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
+        clusterConf.put(Config.NIMBUS_USERS, new HashSet<>(Collections.singletonList("user-a")));
+
+        IAuthorizer authorizer = new SimpleACLAuthorizer();
+        authorizer.prepare(clusterConf);
+
+        assertFalse(authorizer.permit(contextWithoutPrincipal(), "getNimbusConf", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(createSubject("user-a")), "getNimbusConf", new HashMap<>()));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void requestWithoutPrincipalKeepsTheAllowAllBehaviourOfEmptyLists() {
+        IAuthorizer authorizer = new SimpleACLAuthorizer();
+        authorizer.prepare(ConfigUtils.readStormConfig());
+
+        assertTrue(authorizer.permit(contextWithoutPrincipal(), "getNimbusConf", new HashMap<>()));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void requestWithoutPrincipalIsDeniedForTopologyOperations() {
+        IAuthorizer authorizer = new SimpleACLAuthorizer();
+        authorizer.prepare(ConfigUtils.readStormConfig());
+
+        Map<String, Object> topoConf = new HashMap<>();
+        topoConf.put(Config.TOPOLOGY_USERS, new HashSet<>(Collections.singletonList("user-a")));
+
+        assertFalse(authorizer.permit(contextWithoutPrincipal(), "killTopology", topoConf));
+    }
+
+    private ReqContext contextWithoutPrincipal() {
+        return new ReqContext(new Subject());
+    }
+
     private Subject createSubject(String name) {
         Set<Principal> principalSet = new HashSet<>();
         principalSet.add(createPrincipal(name));
