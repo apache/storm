@@ -549,6 +549,29 @@ class NimbusTest {
     }
 
     @Test
+    void doCleanupContinuesTheReferenceScanWhenACandidateTopologyHasNoCodeBlob() throws Exception {
+        BlobStore store = mock(BlobStore.class);
+        IStormClusterState state = mock(IStormClusterState.class);
+        when(store.storedTopoIds()).thenReturn(Set.of("dead-topo", "live-topo", "gone-topo"));
+        when(state.activeStorms()).thenReturn(List.of("live-topo", "gone-topo"));
+        storeTopology(store, "dead-topo", List.of(UNIQUE_JAR_KEY),
+            List.of(LEGACY_ARTIFACT_KEY, "dep-other-artifact-2.0.0.jar"));
+        storeTopology(store, "live-topo", List.of(), List.of(LEGACY_ARTIFACT_KEY));
+        // one candidate topology has no code blob at all, so it references no dependencies; unlike a read
+        // failure this does not abort the scan, the remaining topologies' references are still collected
+        when(store.readBlob(eq(ConfigUtils.masterStormCodeKey("gone-topo")), any()))
+            .thenThrow(new KeyNotFoundException(ConfigUtils.masterStormCodeKey("gone-topo")));
+
+        cleanupNimbus(store, state).doCleanup();
+
+        // the scan succeeded, so even a shareable-shaped key is reclaimed once nothing references it
+        verify(store).deleteBlob(eq("dep-other-artifact-2.0.0.jar"), any());
+        verify(store).deleteBlob(eq(UNIQUE_JAR_KEY), any());
+        // while the reference of the topology that could be read is honoured
+        verify(store, never()).deleteBlob(eq(LEGACY_ARTIFACT_KEY), any());
+    }
+
+    @Test
     void everyDependencyKeyACurrentClientGeneratesIsRecognisedAsUniqueToOneTopology() {
         for (String fileName : List.of("commons-lang3-3.12.0.jar", "some.lib.tar.gz", "noextension")) {
             String key = DependencyBlobStoreUtils.generateDependencyBlobKey(
