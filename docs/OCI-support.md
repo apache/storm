@@ -321,12 +321,14 @@ Bind-mount sources for OCI/runc workers are restricted to a configured set of di
 
 | Setting | Description |
 |---------|-------------|
-| `worker.launcher.oci.allowed.mount.source.dirs` | Comma-separated list of directories from which OCI bind-mount sources may come. A mount source is permitted only if it is one of these directories or a path underneath one of them. |
+| `worker.launcher.oci.allowed.mount.source.dirs` | Comma-separated list of directories from which OCI bind-mount sources may come. A mount source is permitted only if it (resolved with `realpath`) is one of these directories or a path underneath one of them. |
 
-If `worker.launcher.oci.allowed.mount.source.dirs` is not set, no bind mounts are permitted and OCI/runc workers will not start. When enabling the OCI/runc manager, set it to the directories the supervisor mounts — this includes the paths in `storm.oci.readonly.bindmounts` and `storm.oci.readwrite.bindmounts`, and the system paths the runtime needs (for example `/etc/resolv.conf`, `/etc/hostname`, `/etc/hosts`, the nscd directory, the Storm home directory, the cgroup root, the supervisor local directory, and the worker/artifacts/tmp roots). For example, in `worker-launcher.cfg`:
+If `worker.launcher.oci.allowed.mount.source.dirs` is not set, no bind mounts are permitted and OCI/runc workers will not start. When enabling the OCI/runc manager, set it to the directories the supervisor mounts — this includes the paths in `storm.oci.readonly.bindmounts` and `storm.oci.readwrite.bindmounts`, and the system paths the runtime needs (for example `/etc/resolv.conf`, `/etc/hostname`, `/etc/hosts`, the nscd directory, the Storm home directory, and the cgroup root).
+
+List only directories that the container (topology) user cannot write to. A source is resolved with `realpath` before it is matched, but runc resolves it again at mount time, so a directory that the topology user can write to — such as the supervisor local directory or the worker/artifacts/tmp roots — could have a symlink planted in it that points outside the allowed set. Point bind mounts at specific, non-writable paths (for example the exact files under `storm.oci.readonly.bindmounts`) rather than at a directory the topology user owns. List specific directories: the root directory `/` is not a usable entry, since a path is only accepted when it equals or sits under a listed directory as a whole component. For example, in `worker-launcher.cfg`:
 
 ```
-worker.launcher.oci.allowed.mount.source.dirs=/etc/resolv.conf,/etc/hostname,/etc/hosts,/var/run/nscd,/usr/lib/storm,/sys/fs/cgroup,/data/storm
+worker.launcher.oci.allowed.mount.source.dirs=/etc/resolv.conf,/etc/hostname,/etc/hosts,/var/run/nscd,/usr/lib/storm,/sys/fs/cgroup
 ```
 
 For example, 

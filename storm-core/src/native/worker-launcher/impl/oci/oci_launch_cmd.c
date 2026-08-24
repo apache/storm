@@ -341,6 +341,15 @@ bool is_mount_source_under(const char* source, const char* allowed) {
  * must be an absolute path with no "." or ".." component and must be equal
  * to or under one of the configured directories. If none are configured,
  * the source is rejected.
+ *
+ * The source and the configured directories are resolved with realpath()
+ * before the containment check, so a symlink whose textual path is under an
+ * allowed directory but which points outside of it is rejected on its
+ * resolved target rather than on its spelling. A source that cannot be
+ * resolved (for example one that does not exist) is rejected. This narrows
+ * but does not fully close the window, since runc resolves the path again at
+ * mount time; only allow-list directories that the container user cannot
+ * write to.
  */
 bool is_valid_mount_source(const char* source) {
   if (source[0] != '/' || has_relative_path_component(source)) {
@@ -349,13 +358,27 @@ bool is_valid_mount_source(const char* source) {
         source);
     return false;
   }
+  char* resolved_source = realpath(source, NULL);
+  if (resolved_source == NULL) {
+    fprintf(ERRORFILE, "ERROR: Cannot resolve OCI config mount source %s: %s\n",
+        source, strerror(errno));
+    return false;
+  }
   bool allowed = false;
   char** allowed_dirs = get_values(OCI_ALLOWED_MOUNT_SRCS_CONFIG_KEY);
   if (allowed_dirs != NULL) {
     char** entry;
     for (entry = allowed_dirs; *entry != NULL; ++entry) {
-      if (is_mount_source_under(source, *entry)) {
+      char* resolved_allowed = realpath(*entry, NULL);
+      if (resolved_allowed == NULL) {
+        // a configured directory that cannot be resolved cannot contain anything
+        continue;
+      }
+      if (is_mount_source_under(resolved_source, resolved_allowed)) {
         allowed = true;
+      }
+      free(resolved_allowed);
+      if (allowed) {
         break;
       }
     }
@@ -366,6 +389,7 @@ bool is_valid_mount_source(const char* source) {
         "ERROR: OCI config mount source %s is not under any directory in %s\n",
         source, OCI_ALLOWED_MOUNT_SRCS_CONFIG_KEY);
   }
+  free(resolved_source);
   return allowed;
 }
 

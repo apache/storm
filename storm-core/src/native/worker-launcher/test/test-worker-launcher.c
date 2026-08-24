@@ -213,24 +213,51 @@ void test_mount_path_helpers() {
   EXPECT(!is_mount_source_under("/etc/passwd", "/data/storm"), "unrelated path accepted");
 }
 
-// is_valid_mount_source reads global config, so run it via run_test_in_child to
-// keep read_config from leaking into later tests. The rejected cases print to
-// stderr, which is expected.
+// is_valid_mount_source resolves paths with realpath and reads global config, so it needs a real
+// tree and is run via run_test_in_child to keep read_config from leaking into later tests. The
+// rejected cases print to stderr, which is expected.
 void test_mount_source_allowed_dirs() {
+  // A real tree, since is_valid_mount_source now resolves with realpath:
+  //   .../allowed            an allow-listed directory
+  //   .../allowed/real.conf  a real file under it
+  //   .../allowed/escape     a symlink under it that points outside it
+  //   .../allowed-evil       a sibling whose name shares the prefix
+  //   .../outside/secret     a file outside every allowed directory
+  const char* base      = TEST_ROOT "/mounts";
+  const char* allowed   = TEST_ROOT "/mounts/allowed";
+  const char* real_conf = TEST_ROOT "/mounts/allowed/real.conf";
+  const char* escape    = TEST_ROOT "/mounts/allowed/escape";
+  const char* evil      = TEST_ROOT "/mounts/allowed-evil";
+  const char* outside   = TEST_ROOT "/mounts/outside";
+  const char* secret    = TEST_ROOT "/mounts/outside/secret";
+
+  EXPECT(mkdir(base, 0755) == 0 || errno == EEXIST, "could not create mounts base");
+  EXPECT(mkdir(allowed, 0755) == 0 || errno == EEXIST, "could not create allowed dir");
+  EXPECT(mkdir(evil, 0755) == 0 || errno == EEXIST, "could not create sibling dir");
+  EXPECT(mkdir(outside, 0755) == 0 || errno == EEXIST, "could not create outside dir");
+  FILE* rc = fopen(real_conf, "w");
+  EXPECT(rc != NULL, "could not create real.conf");
+  fclose(rc);
+  FILE* sc = fopen(secret, "w");
+  EXPECT(sc != NULL, "could not create secret");
+  fclose(sc);
+  EXPECT(symlink(secret, escape) == 0 || errno == EEXIST, "could not create escaping symlink");
+
   const char* cfg = TEST_ROOT "/mount-allowed.cfg";
   FILE* f = fopen(cfg, "w");
   EXPECT(f != NULL, "could not write mount-allowed.cfg");
   fprintf(f, "min.user.id=%d\n", getuid());
-  fprintf(f, "worker.launcher.oci.allowed.mount.source.dirs=/data/storm,/etc/storm-mounts/\n");
+  fprintf(f, "worker.launcher.oci.allowed.mount.source.dirs=%s\n", allowed);
   fclose(f);
   read_config(cfg);
 
-  EXPECT(is_valid_mount_source("/data/storm"), "allowed dir itself rejected");
-  EXPECT(is_valid_mount_source("/data/storm/resolv.conf"), "path under allowed dir rejected");
-  EXPECT(is_valid_mount_source("/etc/storm-mounts/hosts"), "path under trailing-slash entry rejected");
-  EXPECT(!is_valid_mount_source("/data/storm-evil/x"), "dir with shared name prefix accepted");
-  EXPECT(!is_valid_mount_source("/etc/passwd"), "path outside all allowed dirs accepted");
-  EXPECT(!is_valid_mount_source("/data/storm/../etc/passwd"), "path with '..' accepted");
+  EXPECT(is_valid_mount_source(allowed), "allowed dir itself rejected");
+  EXPECT(is_valid_mount_source(real_conf), "real path under allowed dir rejected");
+  // the key case: a symlink under the allowed dir that resolves outside it must be rejected
+  EXPECT(!is_valid_mount_source(escape), "symlink resolving outside the allowed dir accepted");
+  EXPECT(!is_valid_mount_source(secret), "path outside all allowed dirs accepted");
+  EXPECT(!is_valid_mount_source(evil), "sibling dir with shared name prefix accepted");
+  EXPECT(!is_valid_mount_source(TEST_ROOT "/mounts/does-not-exist"), "unresolvable source accepted");
   EXPECT(!is_valid_mount_source("relative/path"), "non-absolute path accepted");
 
   // With no directories configured, every source is rejected.
@@ -241,7 +268,7 @@ void test_mount_source_allowed_dirs() {
   fclose(f);
   read_config(cfg_none);
 
-  EXPECT(!is_valid_mount_source("/data/storm/x"), "source accepted with no directories configured");
+  EXPECT(!is_valid_mount_source(allowed), "source accepted with no directories configured");
 }
 
 void test_check_configuration_permissions() {
