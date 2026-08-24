@@ -161,8 +161,9 @@ void test_validate_container_id() {
     printf("FAIL: rejected valid container id\n");
     exit(1);
   }
-  // ids with characters outside [0-9a-fA-F-], or of the wrong length, are rejected
-  if (validate_container_id("6702-x nope; other stuff")) {
+  // ids with characters outside [0-9a-fA-F-], or of the wrong length, are rejected.
+  // this one is a valid length (40) so it exercises the character check, not the length check.
+  if (validate_container_id("6702-85afb30b-286e-4d32-ab7a-9d5aad89bZZ")) {
     printf("FAIL: accepted id with disallowed characters\n");
     exit(1);
   }

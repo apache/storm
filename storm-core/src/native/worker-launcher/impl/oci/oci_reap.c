@@ -761,8 +761,9 @@ int cleanup_oci_container(const char* container_id, const char* mount_path, cons
         container_id, strerror(errno));
     rc = 1;
   } else if (child == 0) {
+    // "--" ends option parsing so a container id is never treated as a runc flag.
     char* const delete_args[] = {
-        runc_path, "delete", (char*) container_id, NULL
+        runc_path, "delete", "--", (char*) container_id, NULL
     };
     execv(runc_path, delete_args);
     fprintf(ERRORFILE, "ERROR: Failed to exec %s delete %s : %s\n",
