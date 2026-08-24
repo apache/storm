@@ -186,6 +186,18 @@ int change_effective_user(uid_t user, gid_t group);
 char *get_docker_binary();
 
 /**
+ * Read and parse a docker command file. The file must be a regular file
+ * owned by the worker-launcher user (or root) and not writable by others.
+ * Exits the process on any error.
+ */
+char *parse_docker_command_file(const char *command_file);
+
+/**
+ * Exec the docker binary with an already-parsed docker command.
+ */
+int exec_docker_cmd(char *docker_command);
+
+/**
  * Run a docker command passing the command file as an argument
  */
 int run_docker_cmd(const char * working_dir, const char * command_file);

@@ -25,11 +25,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import javax.security.auth.Subject;
 
 import javax.security.auth.Subject;
 
+import net.minidev.json.JSONValue;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -40,6 +44,8 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.ListBlobsResult;
+import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
@@ -52,6 +58,7 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResource
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.security.auth.DefaultPrincipalToLocal;
+import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.SingleUserPrincipal;
@@ -63,8 +70,10 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.WrappedAuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockitoAnnotations;
@@ -74,6 +83,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -190,6 +200,27 @@ class NimbusTest {
     }
 
     @Test
+    void testCreateStateInZookeeperIsNotAllowedWhenTheAuthorizerDeniesIt() throws Exception {
+        IAuthorizer authorizer = mock(IAuthorizer.class);
+        when(authorizer.permit(any(), eq("createStateInZookeeper"), any())).thenReturn(false);
+        nimbus.setAuthorizationHandler(authorizer);
+
+        assertThrows(AuthorizationException.class, () -> nimbus.createStateInZookeeper(BLOB_FILE_KEY));
+        verify(stormClusterState, never()).setupBlob(eq(BLOB_FILE_KEY), eq(nimbusInfo), any());
+    }
+
+    @Test
+    void testCreateStateInZookeeperIsAllowedWhenTheAuthorizerPermitsIt() throws Exception {
+        IAuthorizer authorizer = mock(IAuthorizer.class);
+        when(authorizer.permit(any(), eq("createStateInZookeeper"), any())).thenReturn(true);
+        nimbus.setAuthorizationHandler(authorizer);
+
+        nimbus.createStateInZookeeper(BLOB_FILE_KEY);
+
+        verify(stormClusterState).setupBlob(eq(BLOB_FILE_KEY), eq(nimbusInfo), any());
+    }
+
+    @Test
     void testCreateStateInZookeeperWithoutLocalFsBlobStoreInstanceShouldNotCreate() throws Exception {
         BlobStore blobStore = mock(BlobStore.class);
         Map<String, Object> conf = Map.of(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
@@ -217,6 +248,28 @@ class NimbusTest {
             verify(keySequenceNumber.constructed().get(0)).getKeySequenceNumber(any());
             verify(stormClusterState, never()).setupBlob(eq(BLOB_FILE_KEY), eq(nimbusInfo), any());
         }
+    }
+
+    @Test
+    void testListBlobsOnlyReturnsKeysTheCallerMayReadTheMetadataOf() throws Exception {
+        when(localBlobStore.listKeys()).thenReturn(List.of("readable-key", "other-users-key").iterator());
+        when(localBlobStore.getBlobMeta(eq("other-users-key"), any()))
+            .thenThrow(new WrappedAuthorizationException("not allowed"));
+
+        ListBlobsResult result = nimbus.listBlobs("");
+
+        assertEquals(List.of("readable-key"), result.get_keys());
+    }
+
+    @Test
+    void testListBlobsIsAuthorized() throws Exception {
+        Map<String, Object> conf = Map.of(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10,
+                                          DaemonConfig.NIMBUS_AUTHORIZER, DenyAuthorizer.class.getName());
+        nimbus = new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, leaderElector, groupMapper, metricRegistry);
+        when(localBlobStore.listKeys()).thenReturn(List.of("readable-key").iterator());
+
+        assertThrows(AuthorizationException.class, () -> nimbus.listBlobs(""));
+        verify(localBlobStore, never()).listKeys();
     }
 
     @Test
@@ -250,6 +303,44 @@ class NimbusTest {
         } finally {
             FileUtils.deleteQuietly(inbox.toFile());
             FileUtils.deleteQuietly(sibling.toFile());
+        }
+    }
+
+    @Test
+    void testRebalanceRejectsConfOverridesWithBlobsTheCallerCannotRead() throws Exception {
+        final String topoName = "topo-with-blobs";
+        final String topoId = "topo-with-blobs-1-1234";
+        final String blobKey = "someone-elses-blob";
+
+        TopoCache topoCache = mock(TopoCache.class);
+        Map<String, Object> conf = Map.of(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        nimbus = new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, topoCache, leaderElector, groupMapper,
+            new StormMetricsRegistry());
+
+        StormTopology topology = new StormTopology();
+        topology.set_spouts(new HashMap<>());
+        topology.set_bolts(new HashMap<>());
+        topology.set_state_spouts(new HashMap<>());
+        when(stormClusterState.getTopoId(topoName)).thenReturn(Optional.of(topoId));
+        when(topoCache.readTopoConf(eq(topoId), any())).thenReturn(new HashMap<>(Map.of(Config.TOPOLOGY_NAME, topoName)));
+        when(topoCache.readTopology(eq(topoId), any())).thenReturn(topology);
+        doThrow(new AuthorizationException("does not have READ access to " + blobKey))
+            .when(localBlobStore).getBlobMeta(eq(blobKey), any());
+
+        RebalanceOptions options = new RebalanceOptions();
+        options.set_topology_conf_overrides(
+            JSONValue.toJSONString(Map.of(Config.TOPOLOGY_BLOBSTORE_MAP, Map.of(blobKey, new HashMap<>()))));
+
+        Subject caller = new Subject(false, Set.of(new SingleUserPrincipal("alice")), Set.of(), Set.of());
+        ReqContext.context().setSubject(caller);
+        try {
+            ArgumentCaptor<Subject> subjectCaptor = ArgumentCaptor.forClass(Subject.class);
+            assertThrows(AuthorizationException.class, () -> nimbus.rebalance(topoName, options));
+            verify(localBlobStore).getBlobMeta(eq(blobKey), subjectCaptor.capture());
+            //the blobs are looked up as the one asking for the rebalance, not as nimbus
+            assertSame(caller, subjectCaptor.getValue());
+        } finally {
+            ReqContext.reset();
         }
     }
 

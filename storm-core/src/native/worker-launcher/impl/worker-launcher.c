@@ -1171,7 +1171,31 @@ char *parse_docker_command_file(const char *command_file) {
     exit(ERROR_CHANGING_USER);
   }
 
-  stream = fopen(command_file, "r");
+  int fd = open(command_file, O_RDONLY | O_NOFOLLOW);
+  if (fd == -1) {
+    fprintf(ERRORFILE, "ERROR: Cannot open file %s - %s in parse_docker_command",
+            command_file, strerror(errno));
+    fflush(ERRORFILE);
+    exit(ERROR_OPENING_FILE);
+  }
+  // Require the command file to be a regular file owned by the
+  // worker-launcher user (or root) and not writable by others.
+  struct stat file_stat;
+  if (fstat(fd, &file_stat) != 0) {
+    fprintf(ERRORFILE, "ERROR: Cannot stat file %s - %s in parse_docker_command",
+            command_file, strerror(errno));
+    fflush(ERRORFILE);
+    exit(ERROR_OPENING_FILE);
+  }
+  if (!S_ISREG(file_stat.st_mode)
+      || (file_stat.st_uid != launcher_uid && file_stat.st_uid != 0)
+      || (file_stat.st_mode & S_IWOTH) != 0) {
+    fprintf(ERRORFILE, "ERROR: Refusing to use command file %s that is not a regular file"
+            " owned by the worker-launcher user and unwritable by others\n", command_file);
+    fflush(ERRORFILE);
+    exit(ERROR_OPENING_FILE);
+  }
+  stream = fdopen(fd, "r");
   if (stream == NULL) {
     fprintf(ERRORFILE, "ERROR: Cannot open file %s - %s in parse_docker_command",
             command_file, strerror(errno));
@@ -1198,8 +1222,7 @@ char *parse_docker_command_file(const char *command_file) {
   return ret;
 }
 
-int run_docker_cmd(const char *working_dir, const char *command_file) {
-  char *docker_command = parse_docker_command_file(command_file);
+int exec_docker_cmd(char *docker_command) {
   char *docker_binary = get_docker_binary();
   size_t command_size = MIN(sysconf(_SC_ARG_MAX), 128 * 1024);
 
@@ -1226,6 +1249,10 @@ int run_docker_cmd(const char *working_dir, const char *command_file) {
   }
   //Unreachable
   return -1;
+}
+
+int run_docker_cmd(const char *working_dir, const char *command_file) {
+  return exec_docker_cmd(parse_docker_command_file(command_file));
 }
 
 //functions below are nsenter related.

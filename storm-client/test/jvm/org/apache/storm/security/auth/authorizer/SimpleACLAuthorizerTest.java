@@ -63,10 +63,20 @@ public class SimpleACLAuthorizerTest {
         assertTrue(authorizer.permit(new ReqContext(userA), "fileUpload", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userB), "fileUpload", new HashMap<>()));
 
+        assertTrue(authorizer.permit(new ReqContext(adminUser), "createStateInZookeeper", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(supervisorUser), "createStateInZookeeper", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userA), "createStateInZookeeper", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userB), "createStateInZookeeper", new HashMap<>()));
+
         assertTrue(authorizer.permit(new ReqContext(adminUser), "getNimbusConf", new HashMap<>()));
         assertFalse(authorizer.permit(new ReqContext(supervisorUser), "getNimbusConf", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userA), "getNimbusConf", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userB), "getNimbusConf", new HashMap<>()));
+
+        assertTrue(authorizer.permit(new ReqContext(adminUser), "listBlobs", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(supervisorUser), "listBlobs", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userA), "listBlobs", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userB), "listBlobs", new HashMap<>()));
 
         assertTrue(authorizer.permit(new ReqContext(adminUser), "getClusterInfo", new HashMap<>()));
         assertFalse(authorizer.permit(new ReqContext(supervisorUser), "getClusterInfo", new HashMap<>()));
@@ -232,6 +242,57 @@ public class SimpleACLAuthorizerTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
+    public void SimpleACLNimbusGroupAuthTest() {
+        Subject userA = createSubject("user-a");
+        Subject userInGroup = createSubject("user-in-readonly-group");
+        Subject userB = createSubject("user-b");
+
+        // neither nimbus.users nor nimbus.groups is set, so there is no restriction
+        IAuthorizer authorizer = prepareNimbusAuthorizer(null, null);
+        assertTrue(authorizer.permit(new ReqContext(userA), "submitTopology", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userInGroup), "submitTopology", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userB), "getClusterInfo", new HashMap<>()));
+
+        // only nimbus.users is set
+        authorizer = prepareNimbusAuthorizer(Collections.singletonList("user-a"), null);
+        assertTrue(authorizer.permit(new ReqContext(userA), "submitTopology", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(userInGroup), "submitTopology", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(userB), "getClusterInfo", new HashMap<>()));
+
+        // only nimbus.groups is set
+        authorizer = prepareNimbusAuthorizer(null, Collections.singletonList("group-readonly"));
+        assertTrue(authorizer.permit(new ReqContext(userInGroup), "submitTopology", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(userA), "submitTopology", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(userB), "fileUpload", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(userB), "getClusterInfo", new HashMap<>()));
+
+        // both nimbus.users and nimbus.groups are set
+        authorizer = prepareNimbusAuthorizer(Collections.singletonList("user-a"), Collections.singletonList("group-readonly"));
+        assertTrue(authorizer.permit(new ReqContext(userA), "submitTopology", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userInGroup), "submitTopology", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(userB), "submitTopology", new HashMap<>()));
+    }
+
+    private IAuthorizer prepareNimbusAuthorizer(Collection<String> nimbusUsers, Collection<String> nimbusGroups) {
+        Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
+        clusterConf.put(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN,
+                        SimpleACLTopologyReadOnlyGroupAuthTestMock.class.getName());
+
+        if (nimbusUsers != null) {
+            clusterConf.put(Config.NIMBUS_USERS, new HashSet<>(nimbusUsers));
+        }
+
+        if (nimbusGroups != null) {
+            clusterConf.put(Config.NIMBUS_GROUPS, new HashSet<>(nimbusGroups));
+        }
+
+        IAuthorizer authorizer = new SimpleACLAuthorizer();
+        authorizer.prepare(clusterConf);
+        return authorizer;
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
     public void SimpleACLTopologyReadOnlyUserAuthTest() {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
 
@@ -359,6 +420,44 @@ public class SimpleACLAuthorizerTest {
 
         assertTrue(authorizer.permit(new ReqContext(userInReadOnlyGroup), "getTopologyInfo", topoConf));
         assertFalse(authorizer.permit(new ReqContext(userB), "getTopologyInfo", topoConf));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void requestWithoutPrincipalIsDeniedWhenNimbusUsersAreConfigured() {
+        Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
+        clusterConf.put(Config.NIMBUS_USERS, new HashSet<>(Collections.singletonList("user-a")));
+
+        IAuthorizer authorizer = new SimpleACLAuthorizer();
+        authorizer.prepare(clusterConf);
+
+        assertFalse(authorizer.permit(contextWithoutPrincipal(), "getNimbusConf", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(createSubject("user-a")), "getNimbusConf", new HashMap<>()));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void requestWithoutPrincipalKeepsTheAllowAllBehaviourOfEmptyLists() {
+        IAuthorizer authorizer = new SimpleACLAuthorizer();
+        authorizer.prepare(ConfigUtils.readStormConfig());
+
+        assertTrue(authorizer.permit(contextWithoutPrincipal(), "getNimbusConf", new HashMap<>()));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void requestWithoutPrincipalIsDeniedForTopologyOperations() {
+        IAuthorizer authorizer = new SimpleACLAuthorizer();
+        authorizer.prepare(ConfigUtils.readStormConfig());
+
+        Map<String, Object> topoConf = new HashMap<>();
+        topoConf.put(Config.TOPOLOGY_USERS, new HashSet<>(Collections.singletonList("user-a")));
+
+        assertFalse(authorizer.permit(contextWithoutPrincipal(), "killTopology", topoConf));
+    }
+
+    private ReqContext contextWithoutPrincipal() {
+        return new ReqContext(new Subject());
     }
 
     private Subject createSubject(String name) {

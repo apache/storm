@@ -13,6 +13,7 @@
 package org.apache.storm.security.auth.authorizer;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -38,7 +39,9 @@ public class SimpleACLAuthorizer implements IAuthorizer {
     protected Set<String> userCommands = new HashSet<>(Arrays.asList(
         "submitTopology",
         "fileUpload",
+        "createStateInZookeeper",
         "getNimbusConf",
+        "listBlobs",
         "getClusterInfo",
         "getTopologyHistory",
         "getLeader",
@@ -137,8 +140,9 @@ public class SimpleACLAuthorizer implements IAuthorizer {
      */
     @Override
     public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
-        String principal = context.principal().getName();
-        String user = ptol.toLocal(context.principal());
+        Principal requester = context.principal();
+        String principal = requester == null ? null : requester.getName();
+        String user = ptol.toLocal(requester);
         Set<String> userGroups = new HashSet<>();
 
         if (groupMappingServiceProvider != null) {
@@ -158,7 +162,11 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         }
 
         if (userCommands.contains(operation)) {
-            return nimbusUsers.size() == 0 || nimbusUsers.contains(user) || checkUserGroupAllowed(userGroups, nimbusGroups);
+            // Only an empty nimbus.users AND an empty nimbus.groups means no restriction is configured.
+            if (nimbusUsers.size() == 0 && nimbusGroups.size() == 0) {
+                return true;
+            }
+            return nimbusUsers.contains(user) || checkUserGroupAllowed(userGroups, nimbusGroups);
         }
 
         if (topoCommands.contains(operation)) {
