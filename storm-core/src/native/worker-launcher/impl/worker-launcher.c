@@ -505,12 +505,44 @@ static int copy_file(int input, const char* in_filename,
  * If setgid_on_dir is FALSE, don't set sticky bit on group permission on the directory.
  */
 static int setup_permissions(FTSENT* entry, uid_t euser, int user_write, boolean setgid_on_dir) {
-  if (lchown(entry->fts_path, euser, launcher_gid) != 0) {
+  mode_t mode = entry->fts_statp->st_mode;
+  // O_NONBLOCK keeps the open from blocking if the entry has been replaced by a
+  // FIFO between fts_read() classifying it and this open; it has no effect on
+  // regular files or directories, and fchown/fchmod on the descriptor still work.
+  int open_flags = O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK;
+  if ((mode & S_IFDIR) == S_IFDIR) {
+    open_flags = open_flags | O_DIRECTORY;
+  }
+  // Open the entry without following symlinks and apply the ownership and
+  // mode changes to that descriptor (fchown/fchmod) rather than by pathname,
+  // after confirming via fstat that it is still the same object fts_read()
+  // classified (same device and inode).
+  int fd = open(entry->fts_accpath, open_flags);
+  if (fd == -1) {
     fprintf(ERRORFILE, "ERROR: Failure to exec app initialization process - %s, fts_path=%s\n",
             strerror(errno), entry->fts_path);
     return -1;
   }
-  mode_t mode = entry->fts_statp->st_mode;
+  struct stat fd_stat;
+  if (fstat(fd, &fd_stat) != 0) {
+    fprintf(ERRORFILE, "ERROR: Failure to exec app initialization process - %s, fts_path=%s\n",
+            strerror(errno), entry->fts_path);
+    close(fd);
+    return -1;
+  }
+  if (fd_stat.st_dev != entry->fts_statp->st_dev
+      || fd_stat.st_ino != entry->fts_statp->st_ino) {
+    fprintf(ERRORFILE, "ERROR: Directory entry changed during the walk, not modifying it, fts_path=%s\n",
+            entry->fts_path);
+    close(fd);
+    return -1;
+  }
+  if (fchown(fd, euser, launcher_gid) != 0) {
+    fprintf(ERRORFILE, "ERROR: Failure to exec app initialization process - %s, fts_path=%s\n",
+            strerror(errno), entry->fts_path);
+    close(fd);
+    return -1;
+  }
   // Preserve user read and execute and set group read and write.
   mode_t new_mode = (mode & (S_IRUSR | S_IXUSR)) | S_IRGRP | S_IWGRP;
   if (user_write) {
@@ -523,11 +555,13 @@ static int setup_permissions(FTSENT* entry, uid_t euser, int user_write, boolean
       new_mode = new_mode | S_ISGID;
     }
   }
-  if (chmod(entry->fts_path, new_mode) != 0) {
+  if (fchmod(fd, new_mode) != 0) {
     fprintf(ERRORFILE, "ERROR: Failure to exec app initialization process - %s, fts_path=%s\n",
             strerror(errno), entry->fts_path);
+    close(fd);
     return -1;
   }
+  close(fd);
   return 0;
 }
 
