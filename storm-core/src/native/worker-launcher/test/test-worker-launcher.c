@@ -298,6 +298,63 @@ void test_signal_container_group() {
   }
 }
 
+// get_values must return an independently owned, NULL-terminated array for any
+// value, including ones with leading, trailing, or only delimiters, so that
+// free_values can release it without freeing an interior pointer of the parsed
+// buffer. Run in a child (via run_test_in_child) so the temporary config that
+// read_config installs does not leak into later tests.
+void test_get_values_degenerate() {
+  const char* cfg = TEST_ROOT "/get-values.cfg";
+  FILE* f = fopen(cfg, "w");
+  if (f == NULL) {
+    printf("FAIL: could not write %s\n", cfg);
+    exit(1);
+  }
+  fprintf(f, "test.values.normal=a,b,c\n");
+  fprintf(f, "test.values.leading=,a,b\n");
+  fprintf(f, "test.values.trailing=a,b,\n");
+  fprintf(f, "test.values.only.delims=,,\n");
+  fclose(f);
+  read_config(cfg);
+
+  char** v = get_values("test.values.normal");
+  if (v == NULL || v[0] == NULL || strcmp(v[0], "a") != 0
+      || v[1] == NULL || strcmp(v[1], "b") != 0
+      || v[2] == NULL || strcmp(v[2], "c") != 0 || v[3] != NULL) {
+    printf("FAIL: get_values did not return [a,b,c] for a normal value\n");
+    exit(1);
+  }
+  free_values(v);
+
+  // A leading delimiter makes the first token an interior pointer of the parsed
+  // buffer; get_values must still yield [a,b] and free_values must not choke.
+  v = get_values("test.values.leading");
+  if (v == NULL || v[0] == NULL || strcmp(v[0], "a") != 0
+      || v[1] == NULL || strcmp(v[1], "b") != 0 || v[2] != NULL) {
+    printf("FAIL: get_values did not return [a,b] for a leading-delimiter value\n");
+    exit(1);
+  }
+  free_values(v);
+
+  v = get_values("test.values.trailing");
+  if (v == NULL || v[0] == NULL || strcmp(v[0], "a") != 0
+      || v[1] == NULL || strcmp(v[1], "b") != 0 || v[2] != NULL) {
+    printf("FAIL: get_values did not return [a,b] for a trailing-delimiter value\n");
+    exit(1);
+  }
+  free_values(v);
+
+  // Only delimiters: an empty but NULL-terminated array, not an unterminated one.
+  v = get_values("test.values.only.delims");
+  if (v == NULL || v[0] != NULL) {
+    printf("FAIL: get_values did not return an empty terminated array for a delimiter-only value\n");
+    exit(1);
+  }
+  free_values(v);
+
+  printf("get_values degenerate-value handling OK\n");
+}
+
 int main(int argc, char **argv) {
   LOGFILE = stdout;
   ERRORFILE = stderr;
@@ -352,6 +409,7 @@ int main(int argc, char **argv) {
   // when they change user they don't give up our privs
   run_test_in_child("test_signal_container", test_signal_container);
   run_test_in_child("test_signal_container_group", test_signal_container_group);
+  run_test_in_child("test_get_values_degenerate", test_get_values_degenerate);
 
   seteuid(0);
   run("rm -fr " TEST_ROOT);

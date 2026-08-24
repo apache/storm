@@ -295,7 +295,31 @@ char * get_value(const char* key) {
  */
 char ** get_values(const char * key) {
   char *value = get_value(key);
-  return extract_values_delim(value, ",");
+  // extract_values_delim tokenizes value in place and returns pointers into it.
+  // Copy the tokens into an independently owned array and release the backing
+  // buffer here, so a leading or trailing delimiter (e.g. ",a") never leaves
+  // free_values with an interior pointer to free, and free_values can release
+  // each element without assuming anything about the original buffer.
+  char **tokens = extract_values_delim(value, ",");
+  if (tokens == NULL) {
+    free(value);
+    return NULL;
+  }
+  int count = 0;
+  while (tokens[count] != NULL) {
+    count++;
+  }
+  char **out = (char **) malloc(sizeof(char *) * (count + 1));
+  if (out != NULL) {
+    int i;
+    for (i = 0; i < count; i++) {
+      out[i] = strdup(tokens[i]);
+    }
+    out[count] = NULL;
+  }
+  free(tokens);
+  free(value);
+  return out;
 }
 
 /**
@@ -326,20 +350,23 @@ char ** extract_values_delim(char *value, const char *delim) {
       tempTok = strtok_r(NULL, delim, &tempstr);
     }
   }
-  if (size > 0) {
+  // Terminate whenever an array was allocated, including the zero-token case
+  // (e.g. a value consisting only of delimiters). Callers walk the array until
+  // the first NULL, so an unterminated array would be read past its contents.
+  if (toPass != NULL) {
     toPass[size] = NULL;
   }
   return toPass;
 }
 
-// free an entry set of values
+// free a NULL-terminated array of values and the array itself
 void free_values(char** values) {
-  if (*values != NULL) {
-    free(*values);
-    *values = NULL;
+  if (values == NULL) {
+    return;
   }
-  if (values != NULL) {
-    free(values);
-    values = NULL;
+  char** v;
+  for (v = values; *v != NULL; v++) {
+    free(*v);
   }
+  free(values);
 }
