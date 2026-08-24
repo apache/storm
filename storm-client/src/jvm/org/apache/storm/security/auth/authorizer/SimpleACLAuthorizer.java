@@ -43,6 +43,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         "getNimbusConf",
         "listBlobs",
         "getClusterInfo",
+        "getTopologyHistory",
         "getLeader",
         "isTopologyNameAllowed",
         "getTopologySummaries",

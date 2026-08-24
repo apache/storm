@@ -3008,6 +3008,44 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return !userGroups.isEmpty();
     }
 
+    /**
+     * Get the user whose topology history is to be returned.
+     *
+     * <p>The history is filtered for the caller authenticated on this request, not for the user named in the RPC
+     * argument. Only an admin (the ui daemon is expected to be one, see SECURITY.md) may ask for the history of
+     * somebody else, because it serves the endpoint on behalf of its own authenticated web users.
+     *
+     * @param user the user asked for by the caller
+     * @param adminUsers the configured admin users
+     * @param adminGroups the configured admin groups
+     * @return the user to filter the history with, the argument unchanged if security is off
+     *
+     * @throws AuthorizationException if a non admin caller asked for somebody else's history
+     * @throws IOException on any error while looking up the caller's groups
+     */
+    private String topologyHistoryUser(String user, Collection<String> adminUsers,
+                                       Collection<String> adminGroups) throws AuthorizationException, IOException {
+        Principal principal = ReqContext.context().principal();
+        if (principal == null) {
+            //security is off, there is no caller to filter by
+            return user;
+        }
+        String callerPrincipal = principal.getName();
+        String callerUser = principalToLocal.toLocal(principal);
+        if (adminUsers.contains(callerPrincipal) || adminUsers.contains(callerUser) || isUserPartOf(callerUser, adminGroups)) {
+            return user;
+        }
+        if (user != null && !user.equals(callerPrincipal) && !user.equals(callerUser)) {
+            //Only an admin may ask for somebody else's history. Fall back to the caller's own
+            //rather than failing the call: a UI that is not in nimbus.admins asks on behalf of
+            //its web users, and answering with the caller's history keeps that page working.
+            LOG.warn("{} is not an admin and asked for the topology history of {}, returning its own history instead. "
+                + "Add {} to {} if it should be able to read the history of other users.",
+                callerUser, user, callerPrincipal, Config.NIMBUS_ADMINS);
+        }
+        return callerUser;
+    }
+
     private List<String> readTopologyHistory(String user, Collection<String> adminUsers) throws IOException {
         LocalState state = topologyHistoryState;
         List<LSTopoHistory> topoHistoryList = state.getTopoHistoryList();
@@ -4894,25 +4932,27 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     @Override
     public TopologyHistoryInfo getTopologyHistory(String user) throws AuthorizationException, TException {
         try {
+            checkAuthorization(null, null, "getTopologyHistory");
             List<String> adminUsers = (List<String>) conf.getOrDefault(Config.NIMBUS_ADMINS, Collections.emptyList());
             List<String> adminGroups = (List<String>) conf.getOrDefault(Config.NIMBUS_ADMINS_GROUPS, Collections.emptyList());
+            String historyUser = topologyHistoryUser(user, adminUsers, adminGroups);
             IStormClusterState state = stormClusterState;
             List<String> assignedIds = state.assignments(null);
             Set<String> ret = new HashSet<>();
-            boolean isAdmin = adminUsers.contains(user);
+            boolean isAdmin = adminUsers.contains(historyUser);
             for (String topoId : assignedIds) {
                 Map<String, Object> topoConf = tryReadTopoConf(topoId, topoCache);
                 topoConf = Utils.merge(conf, topoConf);
                 List<String> groups = ServerConfigUtils.getTopoLogsGroups(topoConf);
                 List<String> topoLogUsers = ServerConfigUtils.getTopoLogsUsers(topoConf);
-                if (user == null || isAdmin
-                    || isUserPartOf(user, groups)
-                    || isUserPartOf(user, adminGroups)
-                    || topoLogUsers.contains(user)) {
+                if (historyUser == null || isAdmin
+                    || isUserPartOf(historyUser, groups)
+                    || isUserPartOf(historyUser, adminGroups)
+                    || topoLogUsers.contains(historyUser)) {
                     ret.add(topoId);
                 }
             }
-            ret.addAll(readTopologyHistory(user, adminUsers));
+            ret.addAll(readTopologyHistory(historyUser, adminUsers));
             return new TopologyHistoryInfo(new ArrayList<>(ret));
         } catch (Exception e) {
             LOG.warn("Get topology history. (user='{}')", user, e);

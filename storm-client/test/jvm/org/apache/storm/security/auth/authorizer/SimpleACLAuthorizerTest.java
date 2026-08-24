@@ -83,6 +83,11 @@ public class SimpleACLAuthorizerTest {
         assertTrue(authorizer.permit(new ReqContext(userA), "getClusterInfo", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userB), "getClusterInfo", new HashMap<>()));
 
+        assertTrue(authorizer.permit(new ReqContext(adminUser), "getTopologyHistory", new HashMap<>()));
+        assertFalse(authorizer.permit(new ReqContext(supervisorUser), "getTopologyHistory", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userA), "getTopologyHistory", new HashMap<>()));
+        assertTrue(authorizer.permit(new ReqContext(userB), "getTopologyHistory", new HashMap<>()));
+
         assertTrue(authorizer.permit(new ReqContext(adminUser), "getSupervisorPageInfo", new HashMap<>()));
         assertFalse(authorizer.permit(new ReqContext(supervisorUser), "getSupervisorPageInfo", new HashMap<>()));
         assertTrue(authorizer.permit(new ReqContext(userA), "getSupervisorPageInfo", new HashMap<>()));
