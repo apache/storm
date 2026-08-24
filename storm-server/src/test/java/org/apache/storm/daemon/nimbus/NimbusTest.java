@@ -52,6 +52,8 @@ import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.SubmitOptions;
+import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
@@ -87,6 +89,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -97,6 +100,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -619,5 +623,147 @@ class NimbusTest {
         Subject subject = new Subject();
         subject.getPrincipals().add(new SingleUserPrincipal(user));
         ReqContext.context().setSubject(subject);
+    }
+
+    @Test
+    void testValidateDependencyBlobKeysRejectsKeysThatAreNotDependencies() throws Exception {
+        // a topology fills its own dependency lists in on the client side, so nimbus has to check that they only
+        // name dependency blobs before it takes ownership of them and deletes them during cleanup
+        String victimJarKey = ConfigUtils.masterStormJarKey("victim-1-1234567890");
+        String victimConfKey = ConfigUtils.masterStormConfKey("victim-1-1234567890");
+        Subject submitter = new Subject();
+
+        StormTopology jarField = new StormTopology();
+        jarField.set_dependency_jars(List.of(victimJarKey));
+        InvalidTopologyException jarException = assertThrows(InvalidTopologyException.class,
+            () -> Nimbus.validateDependencyBlobKeys(jarField, localBlobStore, submitter));
+        assertTrue(jarException.get_msg().contains(victimJarKey), jarException.get_msg());
+        assertTrue(jarException.get_msg().contains("dependency_jars"), jarException.get_msg());
+
+        StormTopology artifactField = new StormTopology();
+        artifactField.set_dependency_artifacts(List.of(victimConfKey));
+        InvalidTopologyException artifactException = assertThrows(InvalidTopologyException.class,
+            () -> Nimbus.validateDependencyBlobKeys(artifactField, localBlobStore, submitter));
+        assertTrue(artifactException.get_msg().contains(victimConfKey), artifactException.get_msg());
+        assertTrue(artifactException.get_msg().contains("dependency_artifacts"), artifactException.get_msg());
+
+        // a good key followed by a bad one is caught too, and the message names the bad one
+        StormTopology mixed = new StormTopology();
+        mixed.set_dependency_jars(List.of(dependencyKey("a.jar"), victimJarKey));
+        InvalidTopologyException mixedException = assertThrows(InvalidTopologyException.class,
+            () -> Nimbus.validateDependencyBlobKeys(mixed, localBlobStore, submitter));
+        assertTrue(mixedException.get_msg().contains(victimJarKey), mixedException.get_msg());
+
+        // a key that is not a dependency key at all is rejected on its name, without asking the blobstore about it
+        verify(localBlobStore, never()).getBlobMeta(eq(victimJarKey), any());
+        verify(localBlobStore, never()).getBlobMeta(eq(victimConfKey), any());
+    }
+
+    @Test
+    void testValidateDependencyBlobKeysRejectsKeyThatIsNotInTheBlobStore() throws Exception {
+        // a key that merely looks like a dependency key is just as damaging: on gaining leadership a nimbus gives up
+        // leadership again when an active topology names a dependency it cannot find, so an unresolvable key leaves
+        // the cluster without a leader
+        String presentKey = dependencyKey("present.jar");
+        String missingKey = dependencyKey("missing.jar");
+        Subject submitter = new Subject();
+        when(localBlobStore.getBlobMeta(eq(missingKey), any())).thenThrow(new KeyNotFoundException(missingKey));
+
+        StormTopology jarField = new StormTopology();
+        jarField.set_dependency_jars(List.of(presentKey, missingKey));
+        InvalidTopologyException jarException = assertThrows(InvalidTopologyException.class,
+            () -> Nimbus.validateDependencyBlobKeys(jarField, localBlobStore, submitter));
+        assertTrue(jarException.get_msg().contains(missingKey), jarException.get_msg());
+        assertTrue(jarException.get_msg().contains("dependency_jars"), jarException.get_msg());
+        assertTrue(jarException.get_msg().contains("not in the blobstore"), jarException.get_msg());
+
+        StormTopology artifactField = new StormTopology();
+        artifactField.set_dependency_artifacts(List.of(missingKey));
+        InvalidTopologyException artifactException = assertThrows(InvalidTopologyException.class,
+            () -> Nimbus.validateDependencyBlobKeys(artifactField, localBlobStore, submitter));
+        assertTrue(artifactException.get_msg().contains(missingKey), artifactException.get_msg());
+        assertTrue(artifactException.get_msg().contains("dependency_artifacts"), artifactException.get_msg());
+    }
+
+    @Test
+    void testValidateDependencyBlobKeysLooksBlobsUpAsTheSubmitter() throws Exception {
+        // looking the blob up as the submitter, the way the TOPOLOGY_BLOBSTORE_MAP entries are looked up, also
+        // answers whether the submitter is allowed to read the dependency it claims; a dependency blob is uploaded
+        // with OTHER READ, so a legitimate submission passes
+        String key = dependencyKey("some-jar.jar");
+        Subject submitter = new Subject();
+
+        StormTopology topology = new StormTopology();
+        // listed under both fields to show that a key is looked up once no matter how often it is named
+        topology.set_dependency_jars(List.of(key, key));
+        topology.set_dependency_artifacts(List.of(key));
+        assertDoesNotThrow(() -> Nimbus.validateDependencyBlobKeys(topology, localBlobStore, submitter));
+
+        verify(localBlobStore, times(1)).getBlobMeta(key, submitter);
+    }
+
+    @Test
+    void testValidateDependencyBlobKeysAcceptsGeneratedKeysThatExist() throws Exception {
+        Subject submitter = new Subject();
+        StormTopology topology = new StormTopology();
+        topology.set_dependency_jars(List.of(dependencyKey("some-jar.jar"), dependencyKey("no-extension")));
+        topology.set_dependency_artifacts(List.of(dependencyKey("group-artifact-1.0.jar")));
+        assertDoesNotThrow(() -> Nimbus.validateDependencyBlobKeys(topology, localBlobStore, submitter));
+
+        // unset lists are how a topology submitted without dependencies looks
+        assertDoesNotThrow(() -> Nimbus.validateDependencyBlobKeys(new StormTopology(), localBlobStore, submitter));
+        verify(localBlobStore, never()).getBlobMeta(eq(null), any());
+    }
+
+    @Test
+    void testSubmitTopologyRejectsDependencyBlobKeyOfAnotherTopology() throws Exception {
+        Map<String, Object> conf = Map.of(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        Nimbus submitNimbus = new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, leaderElector,
+            groupMapper, new StormMetricsRegistry());
+        when(leaderElector.isLeader()).thenReturn(true);
+        when(stormClusterState.getTopoId(any())).thenReturn(Optional.empty());
+
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("wordSpout", new TestWordSpout(), 1);
+        StormTopology topology = builder.createTopology();
+        String victimJarKey = ConfigUtils.masterStormJarKey("victim-1-1234567890");
+        topology.set_dependency_artifacts(List.of(victimJarKey));
+
+        InvalidTopologyException exception = assertThrows(InvalidTopologyException.class,
+            () -> submitNimbus.submitTopologyWithOpts("thief", "/dev/null", "{}", topology,
+                new SubmitOptions(TopologyInitialStatus.ACTIVE)));
+        assertTrue(exception.get_msg().contains(victimJarKey), exception.get_msg());
+
+        // the submission was rejected before anything was stored for it
+        verify(stormClusterState, never()).setupHeatbeats(any(), any());
+    }
+
+    @Test
+    void testSubmitTopologyRejectsDependencyBlobKeyThatDoesNotExist() throws Exception {
+        Map<String, Object> conf = Map.of(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS, 10);
+        Nimbus submitNimbus = new Nimbus(conf, iNimbus, stormClusterState, nimbusInfo, localBlobStore, leaderElector,
+            groupMapper, new StormMetricsRegistry());
+        when(leaderElector.isLeader()).thenReturn(true);
+        when(stormClusterState.getTopoId(any())).thenReturn(Optional.empty());
+        String missingKey = dependencyKey("missing.jar");
+        when(localBlobStore.getBlobMeta(eq(missingKey), any())).thenThrow(new KeyNotFoundException(missingKey));
+
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("wordSpout", new TestWordSpout(), 1);
+        StormTopology topology = builder.createTopology();
+        topology.set_dependency_jars(List.of(missingKey));
+
+        InvalidTopologyException exception = assertThrows(InvalidTopologyException.class,
+            () -> submitNimbus.submitTopologyWithOpts("ghost", "/dev/null", "{}", topology,
+                new SubmitOptions(TopologyInitialStatus.ACTIVE)));
+        assertTrue(exception.get_msg().contains(missingKey), exception.get_msg());
+        assertTrue(exception.get_msg().contains("not in the blobstore"), exception.get_msg());
+
+        // the submission was rejected before anything was stored for it
+        verify(stormClusterState, never()).setupHeatbeats(any(), any());
+    }
+
+    private static String dependencyKey(String fileName) {
+        return DependencyBlobStoreUtils.generateDependencyBlobKey(DependencyBlobStoreUtils.applyUUIDToFileName(fileName));
     }
 }
