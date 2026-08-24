@@ -506,7 +506,10 @@ static int copy_file(int input, const char* in_filename,
  */
 static int setup_permissions(FTSENT* entry, uid_t euser, int user_write, boolean setgid_on_dir) {
   mode_t mode = entry->fts_statp->st_mode;
-  int open_flags = O_RDONLY | O_NOFOLLOW | O_CLOEXEC;
+  // O_NONBLOCK keeps the open from blocking if the entry has been replaced by a
+  // FIFO between fts_read() classifying it and this open; it has no effect on
+  // regular files or directories, and fchown/fchmod on the descriptor still work.
+  int open_flags = O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK;
   if ((mode & S_IFDIR) == S_IFDIR) {
     open_flags = open_flags | O_DIRECTORY;
   }
