@@ -19,6 +19,7 @@
 #include "configuration.h"
 #include "worker-launcher.h"
 #include "oci/oci.h"
+#include "oci/oci_launch_cmd.h"
 #include "oci/oci_reap.h"
 
 #include <errno.h>
@@ -246,8 +247,16 @@ int main(int argc, char **argv) {
       exit_code = INVALID_ARGUMENT_NUMBER;
     } else {
       const char * worker_id = argv[optind++];
-      int pid = get_docker_container_pid(worker_id);
-      exit_code = profile_oci_container(pid, argv[optind]);
+      // Validate the worker id (a type 4 UUID, the same shape as a container
+      // id) before it is used to build the docker command line.
+      if (!validate_container_id(worker_id)) {
+        fprintf(ERRORFILE, "ERROR: Bad worker id in profile-docker-container: %s\n", worker_id);
+        fflush(ERRORFILE);
+        exit_code = INVALID_ARGUMENT_NUMBER;
+      } else {
+        int pid = get_docker_container_pid(worker_id);
+        exit_code = profile_oci_container(pid, argv[optind]);
+      }
     }
   } else if (strcasecmp("profiler", command) == 0) {
     if (argc != 5) {
@@ -312,9 +321,17 @@ int main(int argc, char **argv) {
     } else {
       char* container_id = argv[optind++];
       int num_reap_layers_keep = atoi(argv[optind]);
-      //becomes root.
-      setuid(0);
-      exit_code = cleanup_oci_container_by_id(container_id, num_reap_layers_keep);
+      // Validate the container id before it is used in a filesystem path or
+      // the runc command line.
+      if (!validate_container_id(container_id)) {
+        fprintf(ERRORFILE, "ERROR: Bad container id in reap-oci-container: %s\n", container_id);
+        fflush(ERRORFILE);
+        exit_code = INVALID_ARGUMENT_NUMBER;
+      } else {
+        //becomes root.
+        setuid(0);
+        exit_code = cleanup_oci_container_by_id(container_id, num_reap_layers_keep);
+      }
     }
   } else if (strcasecmp("profile-oci-container", command) == 0) {
     if (argc != 5) {

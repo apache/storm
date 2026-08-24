@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -751,20 +752,34 @@ int cleanup_oci_container(const char* container_id, const char* mount_path, cons
     }
   }
 
-  char* cmd = NULL;
-  if (asprintf(&cmd, "%s delete %s", runc_path, container_id) == -1) {
+  fprintf(LOGFILE, "oci cleanup container command: %s delete %s\n", runc_path, container_id);
+  // Invoke runc with an explicit argument vector via fork/execv rather than
+  // through system().
+  pid_t child = fork();
+  if (child == -1) {
+    fprintf(ERRORFILE, "WARN: Failed to fork to delete oci container %s : %s\n",
+        container_id, strerror(errno));
     rc = 1;
-    goto cleanup;
-  }
-
-  fprintf(LOGFILE, "oci cleanup container command: %s\n", cmd);
-  if (system(cmd) != 0) {
-    fprintf(ERRORFILE, "WARN: oci cleanup container command %s failed\n", cmd);
-    rc = 1;
+  } else if (child == 0) {
+    // "--" ends option parsing so a container id is never treated as a runc flag.
+    char* const delete_args[] = {
+        runc_path, "delete", "--", (char*) container_id, NULL
+    };
+    execv(runc_path, delete_args);
+    fprintf(ERRORFILE, "ERROR: Failed to exec %s delete %s : %s\n",
+        runc_path, container_id, strerror(errno));
+    _exit(1);
+  } else {
+    int status = 0;
+    if (waitpid(child, &status, 0) == -1
+        || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+      fprintf(ERRORFILE, "WARN: oci cleanup container command %s delete %s failed\n",
+          runc_path, container_id);
+      rc = 1;
+    }
   }
 
 cleanup:
   free(runc_path);
-  free(cmd);
   return rc;
 }

@@ -18,6 +18,8 @@
 #ifndef OCI_OCI_LAUNCH_CMD_H
 #define OCI_OCI_LAUNCH_CMD_H
 
+#include <stdbool.h>
+
 #include "utils/cJSON.h"
 
 // NOTE: Update free_oci_launch_cmd when this is changed.
@@ -65,5 +67,13 @@ void free_oci_launch_cmd(oci_launch_cmd* olc);
  * Returns a pointer to the launch command or NULL on error.
  */
 oci_launch_cmd* parse_oci_launch_cmd(const char* command_filename);
+
+/**
+ * Validate a container id: a type 4 UUID with an optional "PORTNUM-"
+ * prefix, i.e. only hex digits and dashes, 36 to 42 characters.
+ *
+ * Returns true if the id is well-formed.
+ */
+bool validate_container_id(const char* input);
 
 #endif /* OCI_OCI_LAUNCH_CMD_H */

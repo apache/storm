@@ -17,6 +17,7 @@
  */
 #include "configuration.h"
 #include "worker-launcher.h"
+#include "oci/oci_launch_cmd.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -146,6 +147,40 @@ void test_check_user() {
   }
   if (check_user("root") != NULL) {
     printf("FAIL: failed check for system user root\n");
+    exit(1);
+  }
+}
+
+void test_validate_container_id() {
+  // well-formed: bare worker UUID and port-prefixed container id
+  if (!validate_container_id("85afb30b-286e-4d32-ab7a-9d5aad89bb88")) {
+    printf("FAIL: rejected valid worker id\n");
+    exit(1);
+  }
+  if (!validate_container_id("6702-85afb30b-286e-4d32-ab7a-9d5aad89bb88")) {
+    printf("FAIL: rejected valid container id\n");
+    exit(1);
+  }
+  // ids with characters outside [0-9a-fA-F-], or of the wrong length, are rejected.
+  // this one is a valid length (40) so it exercises the character check, not the length check.
+  if (validate_container_id("6702-85afb30b-286e-4d32-ab7a-9d5aad89bZZ")) {
+    printf("FAIL: accepted id with disallowed characters\n");
+    exit(1);
+  }
+  if (validate_container_id("6702/85afb30b-286e-4d32-ab7a-9d5aad89bb88")) {
+    printf("FAIL: accepted id containing a slash\n");
+    exit(1);
+  }
+  if (validate_container_id("85afb30b-286e-4d32-ab7a-9d5aad89bb88-aaaaaaaa")) {
+    printf("FAIL: accepted id that is too long\n");
+    exit(1);
+  }
+  if (validate_container_id("")) {
+    printf("FAIL: accepted empty id\n");
+    exit(1);
+  }
+  if (validate_container_id("abc")) {
+    printf("FAIL: accepted too-short id\n");
     exit(1);
   }
 }
@@ -309,6 +344,9 @@ int main(int argc, char **argv) {
 
   printf("\nTesting check_user()\n");
   test_check_user();
+
+  printf("\nTesting validate_container_id()\n");
+  test_validate_container_id();
 
   // the tests that change user need to be run in a subshell, so that
   // when they change user they don't give up our privs

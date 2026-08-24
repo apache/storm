@@ -1276,6 +1276,12 @@ int get_docker_container_pid(const char *worker_id) {
   fflush(LOGFILE);
   FILE *inspect_docker = popen(docker_inspect_command, "r");
   int pid = -1;
+  if (inspect_docker == NULL) {
+    fprintf(ERRORFILE,
+            "ERROR: Could not run %s in get_docker_container_pid\n", docker_inspect_command);
+    fflush(ERRORFILE);
+    goto cleanup;
+  }
   int res = fscanf(inspect_docker, "%d", &pid);
   if (pclose(inspect_docker) != 0 || res <= 0) {
     fprintf(ERRORFILE,

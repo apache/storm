@@ -445,7 +445,7 @@ static bool all_uuid_digit(const char* input) {
   return true;
 }
 
-static bool validate_container_id(const char* input) {
+bool validate_container_id(const char* input) {
   // The container id will be the same as the worker id, with a prefix of "PORTNUM-"
   // Worker id is a type 4 UUID, e.g. 85afb30b-286e-4d32-ab7a-9d5aad89bb88
   // Container id for this worker on port 6702 would be: 6702-85afb30b-286e-4d32-ab7a-9d5aad89bb88
