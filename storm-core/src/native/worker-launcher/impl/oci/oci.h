@@ -20,10 +20,14 @@
 
 #include <stdbool.h>
 
+#include "oci_launch_cmd.h"
+
 /**
- * Run a container via OCI.
+ * Run a container via OCI from an already parsed launch command. The caller
+ * parses the command file with parse_oci_launch_cmd and owns the returned
+ * structure.
  */
-int run_oci_container(const char* command_file, const char* worker_artifacts_dir);
+int run_oci_container(oci_launch_cmd* olc, const char* worker_artifacts_dir);
 
 // NOTE: Update init_oci_overlay_desc and destroy_oci_overlay_desc
 //       when this is changed.

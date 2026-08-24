@@ -27,7 +27,9 @@
 #include "utils/file-utils.h"
 #include "utils/string-utils.h"
 
+#include "configuration.h"
 #include "worker-launcher.h"
+#include "oci_config.h"
 #include "oci_launch_cmd.h"
 
 #define SQUASHFS_MEDIA_TYPE     "application/vnd.squashfs"
@@ -297,6 +299,100 @@ static bool is_valid_mount_options(const cJSON* mo) {
   return true;
 }
 
+/**
+ * Check whether a path contains a "." or ".." component.
+ */
+bool has_relative_path_component(const char* path) {
+  const char* p = path;
+  while (*p != '\0') {
+    while (*p == '/') {
+      ++p;
+    }
+    const char* start = p;
+    while (*p != '\0' && *p != '/') {
+      ++p;
+    }
+    size_t len = (size_t)(p - start);
+    if ((len == 1 && start[0] == '.')
+        || (len == 2 && start[0] == '.' && start[1] == '.')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Check whether the mount source equals the allowed path or is underneath it.
+ */
+bool is_mount_source_under(const char* source, const char* allowed) {
+  size_t allowed_len = strlen(allowed);
+  while (allowed_len > 1 && allowed[allowed_len - 1] == '/') {
+    --allowed_len;
+  }
+  if (strncmp(source, allowed, allowed_len) != 0) {
+    return false;
+  }
+  return source[allowed_len] == '\0' || source[allowed_len] == '/';
+}
+
+/**
+ * Check a mount source against the directories configured in
+ * worker-launcher.cfg under OCI_ALLOWED_MOUNT_SRCS_CONFIG_KEY. The source
+ * must be an absolute path with no "." or ".." component and must be equal
+ * to or under one of the configured directories. If none are configured,
+ * the source is rejected.
+ *
+ * The source and the configured directories are resolved with realpath()
+ * before the containment check, so a symlink whose textual path is under an
+ * allowed directory but which points outside of it is rejected on its
+ * resolved target rather than on its spelling. A source that cannot be
+ * resolved (for example one that does not exist) is rejected. This narrows
+ * but does not fully close the window, since runc resolves the path again at
+ * mount time; only allow-list directories that the container user cannot
+ * write to.
+ */
+bool is_valid_mount_source(const char* source) {
+  if (source[0] != '/' || has_relative_path_component(source)) {
+    fprintf(ERRORFILE,
+        "ERROR: OCI config mount source is not a normalized absolute path: %s\n",
+        source);
+    return false;
+  }
+  char* resolved_source = realpath(source, NULL);
+  if (resolved_source == NULL) {
+    fprintf(ERRORFILE, "ERROR: Cannot resolve OCI config mount source %s: %s\n",
+        source, strerror(errno));
+    return false;
+  }
+  bool allowed = false;
+  char** allowed_dirs = get_values(OCI_ALLOWED_MOUNT_SRCS_CONFIG_KEY);
+  if (allowed_dirs != NULL) {
+    char** entry;
+    for (entry = allowed_dirs; *entry != NULL; ++entry) {
+      char* resolved_allowed = realpath(*entry, NULL);
+      if (resolved_allowed == NULL) {
+        // a configured directory that cannot be resolved cannot contain anything
+        continue;
+      }
+      if (is_mount_source_under(resolved_source, resolved_allowed)) {
+        allowed = true;
+      }
+      free(resolved_allowed);
+      if (allowed) {
+        break;
+      }
+    }
+    free_values(allowed_dirs);
+  }
+  if (!allowed) {
+    fprintf(ERRORFILE,
+        "ERROR: OCI config mount source %s is not under any directory in %s\n",
+        source, OCI_ALLOWED_MOUNT_SRCS_CONFIG_KEY);
+  }
+  free(resolved_source);
+  return allowed;
+}
+
 static bool is_valid_mount(const cJSON* mount) {
   if (!cJSON_IsObject(mount)) {
     fputs("ERROR: OCI config mount entry is not an object\n", ERRORFILE);
@@ -356,7 +452,9 @@ static bool is_valid_mount(const cJSON* mount) {
     return false;
   }
 
-  // TODO: Need to add mount source/dest whitelist checking here.
+  if (!is_valid_mount_source(source)) {
+    return false;
+  }
 
   return true;
 }

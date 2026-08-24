@@ -185,6 +185,92 @@ void test_validate_container_id() {
   }
 }
 
+// Fail the test (with a message) unless the condition holds.
+#define EXPECT(cond, msg) do { if (!(cond)) { printf("FAIL: %s\n", (msg)); exit(1); } } while (0)
+
+// Path helpers used by is_valid_mount_source. No config needed.
+void test_mount_path_helpers() {
+  // has_relative_path_component: only real "." / ".." components count
+  EXPECT(!has_relative_path_component("/data/storm"), "clean path flagged as relative");
+  EXPECT(!has_relative_path_component("/data/storm/resolv.conf"), "clean nested path flagged as relative");
+  EXPECT(has_relative_path_component("/data/../etc"), "'..' component not detected");
+  EXPECT(has_relative_path_component("/data/./x"), "'.' component not detected");
+  EXPECT(has_relative_path_component("/.."), "leading '..' not detected");
+  EXPECT(has_relative_path_component("/a/b/.."), "trailing '..' not detected");
+  EXPECT(!has_relative_path_component("/data/..storm"), "'..storm' wrongly treated as '..'");
+  EXPECT(!has_relative_path_component("/data/storm."), "'storm.' wrongly treated as '.'");
+  EXPECT(!has_relative_path_component(""), "empty path flagged as relative");
+
+  // is_mount_source_under: whole-component containment
+  EXPECT(is_mount_source_under("/data/storm/x", "/data/storm"), "path under allowed dir rejected");
+  EXPECT(is_mount_source_under("/data/storm", "/data/storm"), "allowed dir itself rejected");
+  EXPECT(is_mount_source_under("/data/storm/a/b", "/data/storm"), "deep path under allowed dir rejected");
+  EXPECT(!is_mount_source_under("/data/storm-evil/x", "/data/storm"), "dir with shared name prefix accepted");
+  EXPECT(!is_mount_source_under("/data/stormx", "/data/storm"), "prefix without separator accepted");
+  EXPECT(is_mount_source_under("/data/storm/x", "/data/storm/"), "trailing slash in allowed dir not tolerated");
+  EXPECT(is_mount_source_under("/data/storm", "/data/storm/"), "trailing slash vs equal path not tolerated");
+  EXPECT(!is_mount_source_under("/data", "/data/storm"), "parent of allowed dir accepted");
+  EXPECT(!is_mount_source_under("/etc/passwd", "/data/storm"), "unrelated path accepted");
+}
+
+// is_valid_mount_source resolves paths with realpath and reads global config, so it needs a real
+// tree and is run via run_test_in_child to keep read_config from leaking into later tests. The
+// rejected cases print to stderr, which is expected.
+void test_mount_source_allowed_dirs() {
+  // A real tree, since is_valid_mount_source now resolves with realpath:
+  //   .../allowed            an allow-listed directory
+  //   .../allowed/real.conf  a real file under it
+  //   .../allowed/escape     a symlink under it that points outside it
+  //   .../allowed-evil       a sibling whose name shares the prefix
+  //   .../outside/secret     a file outside every allowed directory
+  const char* base      = TEST_ROOT "/mounts";
+  const char* allowed   = TEST_ROOT "/mounts/allowed";
+  const char* real_conf = TEST_ROOT "/mounts/allowed/real.conf";
+  const char* escape    = TEST_ROOT "/mounts/allowed/escape";
+  const char* evil      = TEST_ROOT "/mounts/allowed-evil";
+  const char* outside   = TEST_ROOT "/mounts/outside";
+  const char* secret    = TEST_ROOT "/mounts/outside/secret";
+
+  EXPECT(mkdir(base, 0755) == 0 || errno == EEXIST, "could not create mounts base");
+  EXPECT(mkdir(allowed, 0755) == 0 || errno == EEXIST, "could not create allowed dir");
+  EXPECT(mkdir(evil, 0755) == 0 || errno == EEXIST, "could not create sibling dir");
+  EXPECT(mkdir(outside, 0755) == 0 || errno == EEXIST, "could not create outside dir");
+  FILE* rc = fopen(real_conf, "w");
+  EXPECT(rc != NULL, "could not create real.conf");
+  fclose(rc);
+  FILE* sc = fopen(secret, "w");
+  EXPECT(sc != NULL, "could not create secret");
+  fclose(sc);
+  EXPECT(symlink(secret, escape) == 0 || errno == EEXIST, "could not create escaping symlink");
+
+  const char* cfg = TEST_ROOT "/mount-allowed.cfg";
+  FILE* f = fopen(cfg, "w");
+  EXPECT(f != NULL, "could not write mount-allowed.cfg");
+  fprintf(f, "min.user.id=%d\n", getuid());
+  fprintf(f, "worker.launcher.oci.allowed.mount.source.dirs=%s\n", allowed);
+  fclose(f);
+  read_config(cfg);
+
+  EXPECT(is_valid_mount_source(allowed), "allowed dir itself rejected");
+  EXPECT(is_valid_mount_source(real_conf), "real path under allowed dir rejected");
+  // the key case: a symlink under the allowed dir that resolves outside it must be rejected
+  EXPECT(!is_valid_mount_source(escape), "symlink resolving outside the allowed dir accepted");
+  EXPECT(!is_valid_mount_source(secret), "path outside all allowed dirs accepted");
+  EXPECT(!is_valid_mount_source(evil), "sibling dir with shared name prefix accepted");
+  EXPECT(!is_valid_mount_source(TEST_ROOT "/mounts/does-not-exist"), "unresolvable source accepted");
+  EXPECT(!is_valid_mount_source("relative/path"), "non-absolute path accepted");
+
+  // With no directories configured, every source is rejected.
+  const char* cfg_none = TEST_ROOT "/mount-none.cfg";
+  f = fopen(cfg_none, "w");
+  EXPECT(f != NULL, "could not write mount-none.cfg");
+  fprintf(f, "min.user.id=%d\n", getuid());
+  fclose(f);
+  read_config(cfg_none);
+
+  EXPECT(!is_valid_mount_source(allowed), "source accepted with no directories configured");
+}
+
 void test_check_configuration_permissions() {
   printf("\nTesting check_configuration_permissions\n");
   if (check_configuration_permissions("/etc/passwd") != 0) {
@@ -407,6 +493,11 @@ int main(int argc, char **argv) {
 
   // the tests that change user need to be run in a subshell, so that
   // when they change user they don't give up our privs
+  printf("\nTesting mount path helpers\n");
+  test_mount_path_helpers();
+
+  run_test_in_child("test_mount_source_allowed_dirs", test_mount_source_allowed_dirs);
+
   run_test_in_child("test_signal_container", test_signal_container);
   run_test_in_child("test_signal_container_group", test_signal_container_group);
   run_test_in_child("test_get_values_degenerate", test_get_values_degenerate);

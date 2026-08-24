@@ -76,4 +76,24 @@ oci_launch_cmd* parse_oci_launch_cmd(const char* command_filename);
  */
 bool validate_container_id(const char* input);
 
+/**
+ * Return true if the path contains a "." or ".." component.
+ */
+bool has_relative_path_component(const char* path);
+
+/**
+ * Return true if source equals allowed or is a path underneath it. Trailing
+ * slashes on allowed are ignored, and matching is on whole path components,
+ * so "/data/storm" matches "/data/storm/x" but not "/data/storm-evil".
+ */
+bool is_mount_source_under(const char* source, const char* allowed);
+
+/**
+ * Return true if source is a normalized absolute path that is equal to or
+ * under one of the directories configured in
+ * worker.launcher.oci.allowed.mount.source.dirs. If no such directories are
+ * configured, every source is rejected.
+ */
+bool is_valid_mount_source(const char* source);
+
 #endif /* OCI_OCI_LAUNCH_CMD_H */
