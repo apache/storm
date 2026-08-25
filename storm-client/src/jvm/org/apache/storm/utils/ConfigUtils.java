@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.storm.Config;
@@ -42,6 +43,7 @@ public class ConfigUtils {
     public static final double RFC1889_ALPHA = 1.0 / 16.0;
 
     private static final Set<String> passwordConfigKeys = new HashSet<>();
+    private static final Pattern CREDENTIAL_KEY_NAME = Pattern.compile("(?i)(password|passwd|secret)");
 
     static {
         for (Class<?> clazz : ConfigValidation.getConfigClasses()) {
@@ -87,6 +89,41 @@ public class ConfigUtils {
             }
         };
         return Maps.transformEntries(conf, maskPasswords);
+    }
+
+    /**
+     * Mask credential values before a config map is served over an API. This covers what
+     * {@link #maskPasswords(Map)} covers, plus string values whose key name denotes a secret: plugins read their
+     * own keys straight out of the config map, so those keys are declared by no annotated field and the annotation
+     * scan cannot see them. Only string values are considered, so timeouts and class lists whose names merely
+     * mention credentials keep their value.
+     *
+     * @param conf the config to mask
+     * @return a view of the config with credential values replaced
+     */
+    public static Map<String, Object> maskCredentials(final Map<String, Object> conf) {
+        Maps.EntryTransformer<String, Object, Object> maskCredentials = new Maps.EntryTransformer<String, Object, Object>() {
+            @Override
+            public Object transformEntry(String key, Object value) {
+                if (passwordConfigKeys.contains(key)) {
+                    return "*****";
+                }
+                return value instanceof String && CREDENTIAL_KEY_NAME.matcher(key).find() ? "*****" : value;
+            }
+        };
+        return Maps.transformEntries(conf, maskCredentials);
+    }
+
+    /**
+     * Whether a config key holds a credential, and therefore whether {@link #maskCredentials(Map)} would replace its
+     * value. Callers that read a config back from a daemon use this to tell which entries carry no usable value and
+     * must be taken from their own configuration instead.
+     *
+     * @param key the config key
+     * @return true when the key denotes a credential
+     */
+    public static boolean isCredentialKey(String key) {
+        return passwordConfigKeys.contains(key) || CREDENTIAL_KEY_NAME.matcher(key).find();
     }
 
     public static boolean isLocalMode(Map<String, Object> conf) {

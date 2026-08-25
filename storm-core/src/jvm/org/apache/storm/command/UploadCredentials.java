@@ -24,6 +24,7 @@ import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -113,6 +114,9 @@ public class UploadCredentials {
          */
         topologyConf.remove("java.security.auth.login.config");
         topologyConf.remove(Config.NIMBUS_THRIFT_CLIENT_USE_TLS);
+        // Nimbus masks credentials before serving a conf, so these entries hold no usable value here.
+        // Dropping them lets the client's own configuration supply them, e.g. TLS store passwords.
+        topologyConf.keySet().removeIf(ConfigUtils::isCredentialKey);
 
         boolean throwExceptionForEmptyCreds = (boolean) cl.get("e");
         boolean hasCreds = StormSubmitter.pushCredentials(topologyName, topologyConf, credentialsMap, (String) cl.get("u"));

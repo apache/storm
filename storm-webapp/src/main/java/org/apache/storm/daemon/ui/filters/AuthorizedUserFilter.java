@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.security.Principal;
 import java.util.Map;
@@ -39,6 +40,7 @@ import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.ui.UIHelpers;
 import org.apache.storm.daemon.ui.resources.AuthNimbusOp;
 import org.apache.storm.daemon.ui.resources.StormApiResource;
+import org.apache.storm.daemon.ui.resources.UnauthenticatedNimbusOp;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
@@ -100,12 +102,26 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext) {
-        AuthNimbusOp annotation = resourceInfo.getResourceMethod().getAnnotation(AuthNimbusOp.class);
+        Method resourceMethod = resourceInfo.getResourceMethod();
+        AuthNimbusOp annotation = resourceMethod.getAnnotation(AuthNimbusOp.class);
         if (annotation == null) {
+            if (resourceMethod.getAnnotation(UnauthenticatedNimbusOp.class) != null) {
+                return;
+            }
+            LOG.error("Endpoint {}.{} declares no authorization; rejecting the request.",
+                    resourceMethod.getDeclaringClass().getName(), resourceMethod.getName());
+            containerRequestContext.abortWith(
+                    makeResponse(new AuthorizationException("UI request is not authorized"),
+                            containerRequestContext, 403)
+            );
             return;
         }
         String op = annotation.value();
         if (op == null) {
+            containerRequestContext.abortWith(
+                    makeResponse(new AuthorizationException("UI request is not authorized"),
+                            containerRequestContext, 403)
+            );
             return;
         }
 

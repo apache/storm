@@ -107,6 +107,7 @@ public class StormApiResource {
 
     @GET
     @Path("/cluster/configuration")
+    @AuthNimbusOp("getNimbusConf")
     @Produces("application/json")
     public Response getClusterConfiguration(@QueryParam(callbackParameterName) String callback) throws TException {
         clusterConfigurationRequestMeter.mark();
@@ -198,6 +199,7 @@ public class StormApiResource {
      */
     @GET
     @Path("/history/summary")
+    @UnauthenticatedNimbusOp("Nimbus filters the history for the authenticated remote user")
     @Produces("application/json")
     public Response getHistorySummary(@QueryParam(callbackParameterName) String callback) throws TException {
         try (NimbusClient nimbusClient = NimbusClient.Builder.withConf(config).build()) {
