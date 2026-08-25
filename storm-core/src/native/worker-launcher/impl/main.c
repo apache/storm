@@ -308,7 +308,7 @@ int main(int argc, char **argv) {
       oci_launch_cmd* olc = parse_oci_launch_cmd(command_file);
       if (olc == NULL) {
         exit_code = INVALID_CONFIG_FILE;
-      } else if (strcmp(olc->username, user_name) != 0) {
+      } else if (!oci_launch_cmd_matches_user(olc, user_name)) {
         // The launch command file's username must match the user passed to
         // the worker-launcher on the command line.
         fprintf(ERRORFILE, "ERROR: OCI command file username %s does not match %s\n",

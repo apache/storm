@@ -96,4 +96,11 @@ bool is_mount_source_under(const char* source, const char* allowed);
  */
 bool is_valid_mount_source(const char* source);
 
+/**
+ * Return true if the launch command's username is present and equals
+ * user_name. Used to check that a launch command file's username matches the
+ * user the worker-launcher was invoked for.
+ */
+bool oci_launch_cmd_matches_user(const oci_launch_cmd* olc, const char* user_name);
+
 #endif /* OCI_OCI_LAUNCH_CMD_H */

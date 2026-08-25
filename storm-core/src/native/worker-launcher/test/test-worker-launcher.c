@@ -441,6 +441,80 @@ void test_get_values_degenerate() {
   printf("get_values degenerate-value handling OK\n");
 }
 
+// oci_launch_cmd_matches_user backs the check in main.c that a launch command
+// file's username matches the user the worker-launcher was invoked for.
+void test_oci_launch_cmd_matches_user() {
+  oci_launch_cmd olc;
+  memset(&olc, 0, sizeof(olc));
+  olc.username = "alice";
+  EXPECT(oci_launch_cmd_matches_user(&olc, "alice"), "matching username rejected");
+  EXPECT(!oci_launch_cmd_matches_user(&olc, "bob"), "mismatched username accepted");
+  olc.username = NULL;
+  EXPECT(!oci_launch_cmd_matches_user(&olc, "alice"), "command with no username accepted");
+  EXPECT(!oci_launch_cmd_matches_user(NULL, "alice"), "null command accepted");
+}
+
+// Write a launch command file that is valid except for the bind-mount source,
+// which is set to mount_source.
+static void write_olc_file(const char* path, const char* mount_source) {
+  FILE* f = fopen(path, "w");
+  EXPECT(f != NULL, "could not write launch command file");
+  fprintf(f,
+    "{\n"
+    "  \"username\": \"olcuser\",\n"
+    "  \"containerId\": \"85afb30b-286e-4d32-ab7a-9d5aad89bb88\",\n"
+    "  \"pidFile\": \"" TEST_ROOT "/olc/pid\",\n"
+    "  \"containerScriptPath\": \"" TEST_ROOT "/olc/script.sh\",\n"
+    "  \"reapLayerKeepCount\": 0,\n"
+    "  \"layers\": [ { \"mediaType\": \"application/vnd.squashfs\", \"path\": \"/layer\" } ],\n"
+    "  \"ociRuntimeConfig\": {\n"
+    "    \"linux\": { \"cgroupsPath\": \"/storm\" },\n"
+    "    \"process\": { \"args\": [\"/bin/true\"], \"cwd\": \"/\", \"env\": [\"A=B\"] },\n"
+    "    \"mounts\": [ { \"type\": \"bind\", \"source\": \"%s\", \"destination\": \"/dst\", \"options\": [\"rbind\", \"rprivate\"] } ]\n"
+    "  }\n"
+    "}\n", mount_source);
+  fclose(f);
+}
+
+// parse_oci_launch_cmd runs the bind-mount allow-list check (is_valid_mount ->
+// is_valid_mount_source) as part of validation, so a launch command whose mount
+// source is outside the configured directories must fail to parse. The source
+// is resolved with realpath, so build a real tree; run in a child so the
+// temporary config does not leak into later tests.
+void test_oci_parse_launch_cmd_mounts() {
+  const char* base     = TEST_ROOT "/olc";
+  const char* allowed  = TEST_ROOT "/olc/allowed";
+  const char* good_src = TEST_ROOT "/olc/allowed/mount.conf";
+  const char* bad_src  = TEST_ROOT "/olc/outside.conf";
+  EXPECT(mkdir(base, 0755) == 0 || errno == EEXIST, "could not create olc base");
+  EXPECT(mkdir(allowed, 0755) == 0 || errno == EEXIST, "could not create allowed dir");
+  FILE* g = fopen(good_src, "w"); EXPECT(g != NULL, "could not create mount.conf"); fclose(g);
+  FILE* b = fopen(bad_src, "w"); EXPECT(b != NULL, "could not create outside.conf"); fclose(b);
+
+  const char* cfg = TEST_ROOT "/olc/wl.cfg";
+  FILE* c = fopen(cfg, "w");
+  EXPECT(c != NULL, "could not write wl.cfg");
+  fprintf(c, "min.user.id=%d\n", getuid());
+  fprintf(c, "worker.launcher.oci.allowed.mount.source.dirs=%s\n", allowed);
+  fclose(c);
+  read_config(cfg);
+
+  const char* good_cmd = TEST_ROOT "/olc/good.json";
+  const char* bad_cmd  = TEST_ROOT "/olc/bad.json";
+  write_olc_file(good_cmd, good_src);
+  write_olc_file(bad_cmd, bad_src);
+
+  oci_launch_cmd* olc = parse_oci_launch_cmd(good_cmd);
+  EXPECT(olc != NULL, "launch command with an allowed mount source rejected");
+  free_oci_launch_cmd(olc);
+
+  // the key case: the mount hookup must reject a source outside the allowed dirs
+  olc = parse_oci_launch_cmd(bad_cmd);
+  EXPECT(olc == NULL, "launch command with a mount source outside the allowed dirs accepted");
+
+  printf("parse_oci_launch_cmd mount-source enforcement OK\n");
+}
+
 int main(int argc, char **argv) {
   LOGFILE = stdout;
   ERRORFILE = stderr;
@@ -496,7 +570,11 @@ int main(int argc, char **argv) {
   printf("\nTesting mount path helpers\n");
   test_mount_path_helpers();
 
+  printf("\nTesting oci_launch_cmd_matches_user\n");
+  test_oci_launch_cmd_matches_user();
+
   run_test_in_child("test_mount_source_allowed_dirs", test_mount_source_allowed_dirs);
+  run_test_in_child("test_oci_parse_launch_cmd_mounts", test_oci_parse_launch_cmd_mounts);
 
   run_test_in_child("test_signal_container", test_signal_container);
   run_test_in_child("test_signal_container_group", test_signal_container_group);

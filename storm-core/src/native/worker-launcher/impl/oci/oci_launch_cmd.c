@@ -393,6 +393,11 @@ bool is_valid_mount_source(const char* source) {
   return allowed;
 }
 
+bool oci_launch_cmd_matches_user(const oci_launch_cmd* olc, const char* user_name) {
+  return olc != NULL && olc->username != NULL && user_name != NULL
+      && strcmp(olc->username, user_name) == 0;
+}
+
 static bool is_valid_mount(const cJSON* mount) {
   if (!cJSON_IsObject(mount)) {
     fputs("ERROR: OCI config mount entry is not an object\n", ERRORFILE);
