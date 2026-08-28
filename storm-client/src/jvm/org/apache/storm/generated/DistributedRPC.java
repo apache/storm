@@ -650,8 +650,8 @@ public class DistributedRPC {
     }
 
     public void validate() throws org.apache.storm.thrift.TException {
-      // check for required fields
-      // check for sub-struct validity
+        // check for required fields
+        // check for sub-struct validity
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
@@ -1210,8 +1210,8 @@ public class DistributedRPC {
     }
 
     public void validate() throws org.apache.storm.thrift.TException {
-      // check for required fields
-      // check for sub-struct validity
+        // check for required fields
+        // check for sub-struct validity
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {

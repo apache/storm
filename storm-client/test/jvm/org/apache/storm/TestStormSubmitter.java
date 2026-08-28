@@ -18,6 +18,8 @@
 
 package org.apache.storm;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.Map;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.StormTopology;
@@ -26,8 +28,6 @@ import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestStormSubmitter {
 

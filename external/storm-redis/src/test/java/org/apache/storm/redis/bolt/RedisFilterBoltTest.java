@@ -18,6 +18,20 @@
 
 package org.apache.storm.redis.bolt;
 
+import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.GEO;
+import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.HASH;
+import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.HYPER_LOG_LOG;
+import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.SET;
+import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.SORTED_SET;
+import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.STRING;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisFilterMapper;
@@ -39,21 +53,6 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.GEO;
-import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.HASH;
-import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.HYPER_LOG_LOG;
-import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.SET;
-import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.SORTED_SET;
-import static org.apache.storm.redis.common.mapper.RedisDataTypeDescription.RedisDataType.STRING;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @Testcontainers
 class RedisFilterBoltTest {

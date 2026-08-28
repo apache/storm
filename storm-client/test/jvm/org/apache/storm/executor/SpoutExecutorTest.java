@@ -12,6 +12,14 @@
 
 package org.apache.storm.executor;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.Constants;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.daemon.worker.WorkerState;
@@ -28,15 +36,6 @@ import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.mockito.Mockito;
-
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 
 public class SpoutExecutorTest {
 

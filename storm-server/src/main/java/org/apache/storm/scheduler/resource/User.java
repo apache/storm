@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ISchedulingState;

@@ -51,12 +51,12 @@ class AckingProducer extends MyThread {
     private class Handler implements JCQueue.Consumer {
         @Override
         public void accept(Object event) {
-            // no-op
+        // no-op
         }
 
         @Override
         public void flush() {
-            // no-op
+        // no-op
         }
     }
 }

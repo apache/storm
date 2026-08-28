@@ -51,7 +51,7 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
 
     @Override
     public void track(Event<T> event) {
-        // NOOP
+    // NOOP
     }
 
     @Override
@@ -81,7 +81,7 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
 
     @Override
     public void reset() {
-        // NOOP
+    // NOOP
     }
 
     @Override

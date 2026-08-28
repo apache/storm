@@ -18,11 +18,11 @@
 
 package org.apache.storm.loadgen;
 
+import static org.apache.storm.loadgen.LoadMetricsServer.convert;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.apache.storm.loadgen.LoadMetricsServer.convert;
 
 public class LoadMetricsServerTest {
     @Test

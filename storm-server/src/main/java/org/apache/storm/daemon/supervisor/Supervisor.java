@@ -19,7 +19,6 @@
 package org.apache.storm.daemon.supervisor;
 
 import com.codahale.metrics.Meter;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;

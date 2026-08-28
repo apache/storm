@@ -185,16 +185,16 @@ public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWind
 
     @Override
     public void preCommit(long txid) {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void prePrepare(long txid) {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void preRollback() {
-        // NOOP
+    // NOOP
     }
 }

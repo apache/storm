@@ -18,14 +18,20 @@
 
 package org.apache.storm.scheduler.resource.strategies.priority;
 
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
+
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.INimbus;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
@@ -33,16 +39,8 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResource
 import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.utils.Time;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
-
-import org.apache.storm.metric.StormMetricsRegistry;
-import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class TestFIFOSchedulingPriorityStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestFIFOSchedulingPriorityStrategy.class);

@@ -17,6 +17,10 @@
  */
 package org.apache.storm.hdfs.testing;
 
+import static org.apache.hadoop.test.GenericTestUtils.DEFAULT_TEST_DATA_DIR;
+import static org.apache.hadoop.test.GenericTestUtils.SYSPROP_TEST_DATA_DIR;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.util.function.Supplier;
 import org.apache.hadoop.conf.Configuration;
@@ -24,10 +28,6 @@ import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-
-import static org.apache.hadoop.test.GenericTestUtils.DEFAULT_TEST_DATA_DIR;
-import static org.apache.hadoop.test.GenericTestUtils.SYSPROP_TEST_DATA_DIR;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MiniDFSClusterExtension implements BeforeEachCallback, AfterEachCallback {
 

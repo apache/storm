@@ -18,6 +18,33 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.TestBolt;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.TestSpout;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesNotScheduled;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genExecsAndComps;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.nimbus.Nimbus;
@@ -56,34 +83,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.TestBolt;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.TestSpout;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesNotScheduled;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genExecsAndComps;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith({NormalizedResourcesExtension.class})
 public class TestDefaultResourceAwareStrategy {
@@ -504,8 +503,8 @@ public class TestDefaultResourceAwareStrategy {
             // but with ackers added, probably more worker will be launched.
             // Parameterized test on different numOfAckersPerWorker
             if (numOfAckersPerWorker == -1) {
-                // Both Config.TOPOLOGY_ACKER_EXECUTORS and Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER are not set
-                // Default will be 2 (estimate num of workers) and 1 respectively
+            // Both Config.TOPOLOGY_ACKER_EXECUTORS and Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER are not set
+            // Default will be 2 (estimate num of workers) and 1 respectively
             } else {
                 conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
             }
@@ -622,7 +621,7 @@ public class TestDefaultResourceAwareStrategy {
 
 
             if (numOfAckersPerWorker == -1) {
-                // Leave topology.acker.executors.per.worker unset
+            // Leave topology.acker.executors.per.worker unset
             } else {
                 conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
             }

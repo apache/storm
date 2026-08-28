@@ -14,15 +14,15 @@ package org.apache.storm.trident.operation.impl;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import org.apache.storm.trident.operation.Aggregator;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.ComboList;
 import org.apache.storm.trident.tuple.TridentTuple;
-import org.apache.storm.trident.tuple.TridentTupleView;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
+import org.apache.storm.trident.tuple.TridentTupleView;
 import org.apache.storm.tuple.Fields;
 
 public class GroupedAggregator implements Aggregator<Object[]> {

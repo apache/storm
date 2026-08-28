@@ -22,8 +22,8 @@ import org.apache.storm.trident.planner.TridentProcessor;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.state.StateUpdater;
 import org.apache.storm.trident.topology.TransactionAttempt;
-import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTuple.Factory;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
@@ -73,7 +73,7 @@ public class PartitionPersistProcessor implements TridentProcessor {
 
     @Override
     public void flush() {
-        // NO-OP
+    // NO-OP
     }
 
     @Override

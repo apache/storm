@@ -16,10 +16,10 @@ import java.util.List;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.planner.ProcessorContext;
 import org.apache.storm.trident.planner.TupleReceiver;
-import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTuple.Factory;
-import org.apache.storm.trident.tuple.TridentTupleView;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView.OperationOutputFactory;
+import org.apache.storm.trident.tuple.TridentTupleView;
 
 
 public class AppendCollector implements TridentCollector {

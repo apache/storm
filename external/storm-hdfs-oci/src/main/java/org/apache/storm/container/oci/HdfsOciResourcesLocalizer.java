@@ -21,7 +21,6 @@ package org.apache.storm.container.oci;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-
 import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -31,7 +30,6 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.HadoopLoginUtil;
 import org.apache.storm.utils.ObjectReader;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

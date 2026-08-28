@@ -12,6 +12,10 @@
 
 package org.apache.storm.scheduler.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
@@ -21,10 +25,6 @@ import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class FileConfigLoaderTest {
 

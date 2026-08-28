@@ -67,7 +67,7 @@ public class ExecAndProcessLatencyEngine implements Serializable {
         long diff = newEnd - start;
         //There are some different levels of accuracy here, and we want to deal with all of them
         if (diff <= 1_000) {
-            //We are done, nothing that short is going to work here
+        //We are done, nothing that short is going to work here
         } else if (diff < NANO_IN_MS) {
             //Busy wait...
             long sum = 0;

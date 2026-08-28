@@ -12,13 +12,13 @@
 
 package org.apache.storm.command;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Map;
 import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SetLogLevelTest {
 

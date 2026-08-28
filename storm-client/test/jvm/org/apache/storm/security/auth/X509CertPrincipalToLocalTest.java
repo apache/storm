@@ -12,15 +12,13 @@
 
 package org.apache.storm.security.auth;
 
-import java.security.AccessControlException;
-import java.util.HashMap;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+
+import java.security.AccessControlException;
+import java.util.HashMap;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class X509CertPrincipalToLocalTest {
     private static X509CertPrincipalToLocal x509CertPrincipalToLocal;

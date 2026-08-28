@@ -13,7 +13,6 @@
 package org.apache.storm.trident.state;
 
 import java.nio.charset.StandardCharsets;
-
 import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.shade.net.minidev.json.parser.ParseException;
 

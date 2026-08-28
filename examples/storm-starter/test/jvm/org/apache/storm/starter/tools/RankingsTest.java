@@ -12,6 +12,8 @@
 
 package org.apache.storm.starter.tools;
 
+import static org.fest.assertions.api.Assertions.assertThat;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -19,8 +21,6 @@ import java.util.List;
 import org.jmock.lib.concurrent.Blitzer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.api.Assertions.assertThat;
 
 public class RankingsTest {
 

@@ -12,12 +12,13 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
 import java.util.*;
 import org.apache.storm.*;
 import org.apache.storm.generated.Nimbus;
 import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
 
 public class MultiThriftServerTest {
 

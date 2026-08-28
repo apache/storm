@@ -22,8 +22,8 @@ import org.apache.storm.trident.planner.ProcessorContext;
 import org.apache.storm.trident.planner.TridentProcessor;
 import org.apache.storm.trident.state.QueryFunction;
 import org.apache.storm.trident.state.State;
-import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTuple.Factory;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
@@ -75,7 +75,7 @@ public class StateQueryProcessor implements TridentProcessor {
 
     @Override
     public void flush() {
-        // NO-OP
+    // NO-OP
     }
 
     @Override

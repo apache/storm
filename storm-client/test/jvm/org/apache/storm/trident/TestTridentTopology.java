@@ -12,6 +12,8 @@
 
 package org.apache.storm.trident;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.Bolt;
@@ -24,8 +26,6 @@ import org.apache.storm.trident.testing.StringLength;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestTridentTopology {
 

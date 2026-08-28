@@ -18,13 +18,16 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,6 +38,7 @@ import org.apache.storm.daemon.nimbus.Nimbus;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.INimbus;
@@ -47,6 +51,7 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
@@ -58,12 +63,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.apache.storm.metric.StormMetricsRegistry;
-import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 
 public class TestGenericResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareStrategy.class);
@@ -229,8 +228,8 @@ public class TestGenericResourceAwareStrategy {
             // but with ackers added, probably more worker will be launched.
             // Parameterized test on different numOfAckersPerWorker
             if (numOfAckersPerWorker == -1) {
-                // Both Config.TOPOLOGY_ACKER_EXECUTORS and Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER are not set
-                // Default will be 2 (estimate num of workers) and 1 respectively
+            // Both Config.TOPOLOGY_ACKER_EXECUTORS and Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER are not set
+            // Default will be 2 (estimate num of workers) and 1 respectively
             } else {
                 conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
             }
@@ -276,7 +275,7 @@ public class TestGenericResourceAwareStrategy {
                         new ExecutorDetails(1, 1), //bolt-1 - 500 MB, 50% CPU, 0 GPU
                         new ExecutorDetails(0, 0), //Spout - 500 MB, 50% CPU, 0 GPU
                         new ExecutorDetails(7, 7)))); //acker - 250 MB, 50% CPU, 0 GPU
-                //Total 1750 MB, 200% CPU, 2 GPU -> this node has 250 MB, 0% CPU, 0 GPU left
+            //Total 1750 MB, 200% CPU, 2 GPU -> this node has 250 MB, 0% CPU, 0 GPU left
             } else if (numOfAckersPerWorker == 0) {
                 expectedScheduling.add(new HashSet<>(Collections.singletonList(
                         new ExecutorDetails(3, 3)))); //bolt-3 - 500 MB, 50% CPU, 2 GPU
@@ -290,7 +289,7 @@ public class TestGenericResourceAwareStrategy {
                 expectedScheduling.add(new HashSet<>(Arrays.asList(
                         new ExecutorDetails(0, 0), //Spout - 500 MB, 50% CPU, 0 GPU
                         new ExecutorDetails(4, 4)))); //bolt-3 500 MB, 50% cpu, 2 GPU
-                //Total 1000 MB, 100% CPU, 2 GPU -> this node has 1000 MB, 100% CPU, 0 GPU left
+            //Total 1000 MB, 100% CPU, 2 GPU -> this node has 1000 MB, 100% CPU, 0 GPU left
             } else if (numOfAckersPerWorker == 2) {
                 expectedScheduling.add(new HashSet<>(Collections.singletonList(
                         new ExecutorDetails(3, 3)))); //bolt-3 - 500 MB, 50% CPU, 2 GPU
@@ -363,7 +362,7 @@ public class TestGenericResourceAwareStrategy {
 
             conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 4);
             if (numOfAckersPerWorker == -1) {
-                // Leave topology.acker.executors.per.worker unset
+            // Leave topology.acker.executors.per.worker unset
             } else {
                 conf.put(Config.TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER, numOfAckersPerWorker);
             }

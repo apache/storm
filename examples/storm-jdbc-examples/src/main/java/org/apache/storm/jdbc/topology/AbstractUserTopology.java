@@ -20,11 +20,9 @@ package org.apache.storm.jdbc.topology;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;

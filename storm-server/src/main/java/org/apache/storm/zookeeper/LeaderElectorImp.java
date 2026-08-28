@@ -48,7 +48,7 @@ public class LeaderElectorImp implements ILeaderElector {
 
     @Override
     public void prepare(Map<String, Object> conf) {
-        // no-op for zookeeper implementation
+    // no-op for zookeeper implementation
     }
 
     @Override

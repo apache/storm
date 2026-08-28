@@ -12,23 +12,6 @@
 
 package org.apache.storm.stats;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.storm.cluster.IStormClusterState;
-import org.apache.storm.generated.ComponentAggregateStats;
-import org.apache.storm.generated.ComponentType;
-import org.apache.storm.generated.ErrorInfo;
-import org.apache.storm.generated.TopologyPageInfo;
-import org.apache.storm.generated.WorkerResources;
-import org.apache.storm.generated.WorkerSummary;
-import org.apache.storm.scheduler.WorkerSlot;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -38,6 +21,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.generated.ComponentAggregateStats;
+import org.apache.storm.generated.ComponentType;
+import org.apache.storm.generated.ErrorInfo;
+import org.apache.storm.generated.TopologyPageInfo;
+import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.generated.WorkerSummary;
+import org.apache.storm.scheduler.WorkerSlot;
+import org.junit.jupiter.api.Test;
 
 public class TestStatsUtil {
 

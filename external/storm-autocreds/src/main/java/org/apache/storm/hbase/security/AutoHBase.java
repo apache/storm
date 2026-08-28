@@ -21,7 +21,6 @@ package org.apache.storm.hbase.security;
 import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_CREDENTIALS;
 
 import java.util.Map;
-
 import org.apache.storm.common.AbstractHadoopAutoCreds;
 
 /**

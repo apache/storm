@@ -18,8 +18,15 @@
 
 package org.apache.storm.kafka.spout.metric2;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.Mockito.*;
+
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.ListOffsetsResult;
 import org.apache.kafka.common.KafkaFuture;
@@ -30,14 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class KafkaOffsetTopicMetricsTest {
@@ -130,7 +129,7 @@ public class KafkaOffsetTopicMetricsTest {
         Gauge gATotal = (Gauge) result.get("topicA/totalRecordsInPartitions");
         assertEquals(297L, gATotal.getValue());
 
-        //get again the values from the Gauge. Values cannot change
+         //get again the values from the Gauge. Values cannot change
          gATotal = (Gauge) result.get("topicA/totalRecordsInPartitions");
         assertEquals(297L, gATotal.getValue());
 

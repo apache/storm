@@ -12,6 +12,10 @@
 
 package org.apache.storm.redis.state;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import com.google.common.primitives.UnsignedBytes;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,10 +32,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import redis.clients.jedis.util.SafeEncoder;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Unit tests for {@link RedisKeyValueState}

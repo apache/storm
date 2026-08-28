@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
-
 import org.apache.storm.daemon.worker.BackPressureTracker.BackpressureState;
 import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.metrics2.StormMetricRegistry;

@@ -12,6 +12,9 @@
 
 package org.apache.storm.localizer;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -25,9 +28,6 @@ import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LocallyCachedBlobTest {
     private static final ClientBlobStore blobStore = Mockito.mock(ClientBlobStore.class);

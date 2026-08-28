@@ -28,6 +28,6 @@ public class BaseWorkerHook implements IWorkerHook, Serializable {
      */
     @Override
     public void shutdown() {
-        // NOOP
+    // NOOP
     }
 }

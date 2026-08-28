@@ -12,8 +12,8 @@
 
 package org.apache.storm.utils;
 
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 
 /**
  * Expires keys that have not been updated in the configured number of seconds. The algorithm used will take between expirationSecs and

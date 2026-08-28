@@ -17,8 +17,8 @@ import com.esotericsoftware.kryo.io.Output;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 

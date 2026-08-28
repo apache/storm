@@ -31,14 +31,13 @@ import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
 import org.apache.storm.utils.ShellLogHandler;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.EventLoggerRegistryValidator;
 import org.apache.storm.validation.ConfigValidation.ListOfListOfStringValidator;
 import org.apache.storm.validation.ConfigValidation.MapOfStringToMapOfStringToObjectValidator;
 import org.apache.storm.validation.ConfigValidation.MetricRegistryValidator;
 import org.apache.storm.validation.ConfigValidation.MetricReportersValidator;
 import org.apache.storm.validation.ConfigValidation.RasConstraintsTypeValidator;
-import org.apache.storm.validation.ConfigValidationAnnotations;
+import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidationAnnotations.CustomComboValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.CustomValidator;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsBoolean;
@@ -58,6 +57,7 @@ import org.apache.storm.validation.ConfigValidationAnnotations.IsStringOrStringL
 import org.apache.storm.validation.ConfigValidationAnnotations.IsType;
 import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
 import org.apache.storm.validation.ConfigValidationAnnotations.Password;
+import org.apache.storm.validation.ConfigValidationAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

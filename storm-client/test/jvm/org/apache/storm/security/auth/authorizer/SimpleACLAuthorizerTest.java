@@ -12,6 +12,17 @@
 
 package org.apache.storm.security.auth.authorizer;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.security.Principal;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.security.auth.Subject;
 import org.apache.storm.Config;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
@@ -20,18 +31,6 @@ import org.apache.storm.utils.ConfigUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-
-import javax.security.auth.Subject;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleACLAuthorizerTest {
 
@@ -474,7 +473,7 @@ public class SimpleACLAuthorizerTest {
 
         @Override
         public void prepare(Map<String, Object> conf) {
-            //Ignored
+        //Ignored
         }
 
         @Override

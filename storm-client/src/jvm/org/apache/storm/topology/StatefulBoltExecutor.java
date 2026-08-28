@@ -12,11 +12,11 @@
 
 package org.apache.storm.topology;
 
-import static org.apache.storm.spout.CheckPointState.Action;
 import static org.apache.storm.spout.CheckPointState.Action.COMMIT;
 import static org.apache.storm.spout.CheckPointState.Action.INITSTATE;
 import static org.apache.storm.spout.CheckPointState.Action.PREPARE;
 import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
+import static org.apache.storm.spout.CheckPointState.Action;
 
 import java.util.ArrayList;
 import java.util.Iterator;

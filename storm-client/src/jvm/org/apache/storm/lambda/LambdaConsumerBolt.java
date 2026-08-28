@@ -32,6 +32,6 @@ public class LambdaConsumerBolt extends BaseBasicBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        // this bolt dosen't emit to downstream bolts
+    // this bolt dosen't emit to downstream bolts
     }
 }

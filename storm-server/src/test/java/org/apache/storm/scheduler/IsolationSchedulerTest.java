@@ -12,6 +12,8 @@
 
 package org.apache.storm.scheduler;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,8 +25,6 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.blacklist.TestUtilsForBlacklistScheduler;
 import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit tests for {@link IsolationScheduler}.

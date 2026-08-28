@@ -21,7 +21,6 @@ package org.apache.storm.hdfs.security;
 import static org.apache.storm.hdfs.security.HdfsSecurityUtil.HDFS_CREDENTIALS;
 
 import java.util.Map;
-
 import org.apache.storm.common.AbstractHadoopAutoCreds;
 
 /**

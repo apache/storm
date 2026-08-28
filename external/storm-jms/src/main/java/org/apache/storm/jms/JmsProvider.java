@@ -14,7 +14,6 @@ package org.apache.storm.jms;
 
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
-
 import java.io.Serializable;
 
 /**

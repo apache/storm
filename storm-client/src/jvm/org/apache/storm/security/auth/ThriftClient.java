@@ -27,7 +27,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.UUID;
-
 import org.apache.storm.Config;
 import org.apache.storm.thrift.protocol.TBinaryProtocol;
 import org.apache.storm.thrift.protocol.TProtocol;

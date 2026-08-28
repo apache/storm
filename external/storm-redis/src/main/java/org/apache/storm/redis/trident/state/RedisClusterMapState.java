@@ -15,7 +15,6 @@ package org.apache.storm.redis.trident.state;
 import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;

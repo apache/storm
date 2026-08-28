@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-
 import org.apache.storm.Config;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.scheduler.ExecutorDetails;

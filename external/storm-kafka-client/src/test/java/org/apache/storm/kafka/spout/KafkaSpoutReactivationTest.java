@@ -33,7 +33,6 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

@@ -12,15 +12,16 @@
 
 package org.apache.storm;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.HashMap;
 import java.util.Map;
-
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
-
 import org.apache.storm.generated.ClusterSummary;
-import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.NotAliveException;
+import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
@@ -36,13 +37,9 @@ import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
-
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestRebalance {
     private static final Class[] strategyClasses = {

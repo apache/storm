@@ -12,6 +12,12 @@
 
 package org.apache.storm.executor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.codahale.metrics.Gauge;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -28,12 +34,6 @@ import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link EwmaFeedbackRecord}, covering three concerns:

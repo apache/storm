@@ -12,20 +12,6 @@
 
 package org.apache.storm.daemon.worker;
 
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.storm.generated.LogConfig;
-import org.apache.storm.generated.LogLevel;
-import org.apache.storm.generated.LogLevelAction;
-import org.apache.storm.utils.Time;
-import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,6 +21,19 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.LogLevel;
+import org.apache.storm.generated.LogLevelAction;
+import org.apache.storm.utils.Time.SimulatedTime;
+import org.apache.storm.utils.Time;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class LogConfigManagerTest {
@@ -260,7 +259,7 @@ public class LogConfigManagerTest {
 
         @Override
         public void setLoggerLevel(LoggerContext logContext, String loggerName, String newLevelStr) {
-            //NOOP, we don't actually want to change log levels for tests
+        //NOOP, we don't actually want to change log levels for tests
         }
     }
 }

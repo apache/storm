@@ -23,7 +23,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.regex.Matcher;
 import java.util.zip.CRC32C;
 import java.util.zip.Checksum;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.generated.SettableBlobMeta;
 

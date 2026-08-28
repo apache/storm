@@ -12,17 +12,16 @@
 
 package org.apache.storm;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.validation.ConfigValidation;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class DaemonConfigTest {
 

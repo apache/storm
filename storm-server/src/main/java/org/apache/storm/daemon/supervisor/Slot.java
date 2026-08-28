@@ -838,7 +838,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 if (!action.topoId.equals(dynamicState.currentAssignment.get_topology_id())) {
                     iter.remove();
                     LOG.warn("Dropping {} wrong topology is running", action);
-                    //Not for this topology so skip it
+                //Not for this topology so skip it
                 } else {
                     if (modPending.contains(action)) {
                         boolean isTimeForStop = Time.currentTimeMillis() > action.request.get_time_stamp();

@@ -13,7 +13,6 @@
 package org.apache.storm.starter.tools;
 
 import java.util.concurrent.ArrayBlockingQueue;
-
 import org.apache.storm.utils.Time;
 
 /**

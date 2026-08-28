@@ -16,9 +16,17 @@
 
 package org.apache.storm.messaging;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalCluster.Builder;
+import org.apache.storm.LocalCluster;
 import org.apache.storm.Testing;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.testing.CompleteTopologyParam;
@@ -30,15 +38,6 @@ import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Values;
 import org.junit.jupiter.api.Test;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @IntegrationTest
 public class NettyIntegrationTest {

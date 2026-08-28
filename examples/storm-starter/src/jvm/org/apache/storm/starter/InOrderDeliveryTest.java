@@ -128,12 +128,12 @@ public class InOrderDeliveryTest {
 
         @Override
         public void ack(Object id) {
-            //Ignored
+        //Ignored
         }
 
         @Override
         public void fail(Object id) {
-            //Ignored
+        //Ignored
         }
 
         @Override
@@ -163,7 +163,7 @@ public class InOrderDeliveryTest {
 
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            //Empty
+        //Empty
         }
     }
 }

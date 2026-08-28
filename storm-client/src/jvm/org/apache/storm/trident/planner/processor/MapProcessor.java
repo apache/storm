@@ -72,12 +72,12 @@ public class MapProcessor implements TridentProcessor {
 
     @Override
     public void startBatch(ProcessorContext processorContext) {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void finishBatch(ProcessorContext processorContext) {
-        // NOOP
+    // NOOP
     }
 
     @Override

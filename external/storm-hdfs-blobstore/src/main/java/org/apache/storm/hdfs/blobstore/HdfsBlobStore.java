@@ -245,7 +245,7 @@ public class HdfsBlobStore extends BlobStore {
      */
     @Override
     public void setLeaderElector(ILeaderElector leaderElector) {
-        // NO-OP
+    // NO-OP
     }
 
     @Override
@@ -324,7 +324,7 @@ public class HdfsBlobStore extends BlobStore {
 
     @Override
     public void shutdown() {
-        //Empty
+    //Empty
     }
 
     @Override

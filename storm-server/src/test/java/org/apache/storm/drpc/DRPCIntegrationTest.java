@@ -18,9 +18,10 @@
 
 package org.apache.storm.drpc;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.storm.ILocalDRPC;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalDRPC;
@@ -46,8 +47,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration and unit tests for DRPC topology patterns.

@@ -12,6 +12,10 @@
 
 package org.apache.storm.spout;
 
+import static org.apache.storm.spout.CheckPointState.Action;
+import static org.apache.storm.spout.CheckPointState.State.COMMITTED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -24,10 +28,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-
-import static org.apache.storm.spout.CheckPointState.Action;
-import static org.apache.storm.spout.CheckPointState.State.COMMITTED;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit test for {@link CheckpointSpout}

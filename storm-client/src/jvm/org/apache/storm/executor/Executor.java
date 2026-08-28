@@ -343,7 +343,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     @Override
     public void flush() {
-        // NO-OP
+    // NO-OP
     }
 
     public void metricsTick(Task task, TupleImpl tuple) {

@@ -17,6 +17,11 @@
 
 package org.apache.storm.st;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.storm.ExclamationTopology;
 import org.apache.storm.st.helper.AbstractTest;
 import org.apache.storm.st.wrapper.TopoWrap;
@@ -24,12 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
-
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class DemoTest extends AbstractTest {
     private static final Logger log = LoggerFactory.getLogger(DemoTest.class);

@@ -307,8 +307,8 @@ public class HBNodes implements org.apache.storm.thrift.TBase<HBNodes, HBNodes._
   }
 
   public void validate() throws org.apache.storm.thrift.TException {
-    // check for required fields
-    // check for sub-struct validity
+      // check for required fields
+      // check for sub-struct validity
   }
 
   private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {

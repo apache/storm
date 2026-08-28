@@ -12,16 +12,15 @@
 
 package org.apache.storm.dependency;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DependencyPropertiesParserTest {
     private final DependencyPropertiesParser sut = new DependencyPropertiesParser();

@@ -17,16 +17,16 @@
  */
 package org.apache.storm.flux;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.storm.Config;
-import org.apache.storm.flux.model.TopologyDef;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.storm.Config;
+import org.apache.storm.flux.model.TopologyDef;
+import org.junit.jupiter.api.Test;
 
 public class FluxBuilderTest {
 

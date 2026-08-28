@@ -232,17 +232,17 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void cleanup() {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        // NOOP
+    // NOOP
     }
 
     @Override

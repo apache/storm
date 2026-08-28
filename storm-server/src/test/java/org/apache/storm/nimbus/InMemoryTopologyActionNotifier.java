@@ -29,7 +29,7 @@ public class InMemoryTopologyActionNotifier implements ITopologyActionNotifierPl
 
     @Override
     public void prepare(Map<String, Object> stormConf) {
-        //no-op
+    //no-op
     }
 
     @Override
@@ -46,6 +46,6 @@ public class InMemoryTopologyActionNotifier implements ITopologyActionNotifierPl
 
     @Override
     public void cleanup() {
-        //no-op
+    //no-op
     }
 }

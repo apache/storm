@@ -18,13 +18,15 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.NodeInfo;
@@ -32,9 +34,6 @@ import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.utils.Time;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HeartbeatCacheTest {
     private static final String TOPO_ID = "test-topology-1";

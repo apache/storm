@@ -26,7 +26,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.SlidingTimeWindowReservoir;
 import com.codahale.metrics.Timer;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -51,8 +50,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeSet;
@@ -65,9 +64,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
-
 import net.minidev.json.JSONValue;
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -156,8 +153,8 @@ import org.apache.storm.logging.ThriftAccessLogger;
 import org.apache.storm.metric.ClusterMetricsConsumerExecutor;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.metric.api.DataPoint;
-import org.apache.storm.metric.api.IClusterMetricsConsumer;
 import org.apache.storm.metric.api.IClusterMetricsConsumer.ClusterInfo;
+import org.apache.storm.metric.api.IClusterMetricsConsumer;
 import org.apache.storm.metricstore.AggLevel;
 import org.apache.storm.metricstore.Metric;
 import org.apache.storm.metricstore.MetricStore;
@@ -224,8 +221,8 @@ import org.apache.storm.utils.SimpleVersion;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.TimeCacheMap;
 import org.apache.storm.utils.TupleUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.Utils.UptimeComputer;
+import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.VersionInfo;
 import org.apache.storm.utils.WrappedAlreadyAliveException;
 import org.apache.storm.utils.WrappedAuthorizationException;
@@ -1049,8 +1046,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         throws NotAliveException, AuthorizationException, IOException {
         try {
             return readTopoConfAsNimbus(topoId, tc);
-            //Was a try-cause but I looked at the code around this and key not found is not wrapped in runtime,
-            // so it is not needed
+        //Was a try-cause but I looked at the code around this and key not found is not wrapped in runtime,
+        // so it is not needed
         } catch (KeyNotFoundException e) {
             if (topoId == null) {
                 throw new NullPointerException();
@@ -1478,7 +1475,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static void validatePortAvailable(Map<String, Object> conf) throws IOException {
         int port = ObjectReader.getInt(conf.get(Config.NIMBUS_THRIFT_PORT));
         try (ServerSocket socket = new ServerSocket(port)) {
-            //Nothing
+        //Nothing
         } catch (BindException e) {
             LOG.error("{} is not available. Check if another process is already listening on {}", port, port);
             System.exit(0);
@@ -5524,7 +5521,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         @Override
         public void prepare(Map<String, Object> topoConf, String schedulerLocalDir) {
-            //NOOP
+        //NOOP
         }
 
         @SuppressWarnings("unchecked")
@@ -5543,7 +5540,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         @Override
         public void assignSlots(Topologies topologies, Map<String, Collection<WorkerSlot>> newSlotsByTopologyId) {
-            //NOOP
+        //NOOP
         }
 
         @Override

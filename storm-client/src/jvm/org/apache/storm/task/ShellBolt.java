@@ -366,8 +366,8 @@ public class ShellBolt implements IBolt {
                             break;
                     }
                 } catch (InterruptedException e) {
-                    // It's likely that Bolt is shutting down so no need to die.
-                    // just ignore and loop will be terminated eventually
+                // It's likely that Bolt is shutting down so no need to die.
+                // just ignore and loop will be terminated eventually
                 } catch (Throwable t) {
                     die(t);
                 }
@@ -398,8 +398,8 @@ public class ShellBolt implements IBolt {
                             "Unknown class type to write: " + write.getClass().getName());
                     }
                 } catch (InterruptedException e) {
-                    // It's likely that Bolt is shutting down so no need to die.
-                    // just ignore and loop will be terminated eventually
+                // It's likely that Bolt is shutting down so no need to die.
+                // just ignore and loop will be terminated eventually
                 } catch (Throwable t) {
                     die(t);
                 }

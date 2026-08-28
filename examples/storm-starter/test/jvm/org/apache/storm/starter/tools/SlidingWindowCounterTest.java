@@ -12,11 +12,11 @@
 
 package org.apache.storm.starter.tools;
 
+import static org.fest.assertions.api.Assertions.assertThat;
+
 import java.util.Map;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.api.Assertions.assertThat;
 
 public class SlidingWindowCounterTest {
 

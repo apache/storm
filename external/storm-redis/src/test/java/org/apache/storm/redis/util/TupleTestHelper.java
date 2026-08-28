@@ -12,13 +12,13 @@
 
 package org.apache.storm.redis.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.util.List;
 import java.util.Objects;
 import org.apache.storm.redis.util.outputcollector.EmittedTuple;
 import org.apache.storm.tuple.Tuple;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Utility for common test validations.

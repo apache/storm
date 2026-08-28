@@ -12,6 +12,9 @@
 
 package org.apache.storm.security.auth.authorizer;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,9 +29,6 @@ import org.apache.storm.utils.ConfigUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SupervisorSimpleACLAuthorizerTest {
 

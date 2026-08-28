@@ -20,7 +20,6 @@ package org.apache.storm.scheduler;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceRequest;
 

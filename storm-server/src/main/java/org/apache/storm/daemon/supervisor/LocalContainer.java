@@ -43,12 +43,12 @@ public class LocalContainer extends Container {
 
     @Override
     protected void createArtifactsLink() {
-        //NOOP no need to create links in local mode
+    //NOOP no need to create links in local mode
     }
 
     @Override
     protected void createBlobstoreLinks() {
-        // NOOP no need to create links in local mode
+    // NOOP no need to create links in local mode
     }
 
     @Override

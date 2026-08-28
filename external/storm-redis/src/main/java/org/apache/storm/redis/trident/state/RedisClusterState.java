@@ -13,7 +13,6 @@
 package org.apache.storm.redis.trident.state;
 
 import java.util.Map;
-
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.task.IMetricsContext;

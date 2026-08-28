@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.WorkerSlot;

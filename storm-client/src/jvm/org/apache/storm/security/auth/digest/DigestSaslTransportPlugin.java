@@ -17,7 +17,6 @@ import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
-
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;

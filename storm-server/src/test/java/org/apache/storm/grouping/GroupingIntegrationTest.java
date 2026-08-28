@@ -18,12 +18,13 @@
 
 package org.apache.storm.grouping;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.Testing;
@@ -39,16 +40,14 @@ import org.apache.storm.testing.MockedSources;
 import org.apache.storm.testing.NGrouping;
 import org.apache.storm.testing.TestWordBytesCounter;
 import org.apache.storm.testing.TestWordSpout;
-import org.apache.storm.tuple.Values;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for shuffle, field, and custom grouping behaviors.

@@ -12,6 +12,11 @@
 
 package org.apache.storm.topology;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.GlobalStreamId;
@@ -24,11 +29,6 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.topology.base.BaseStatefulBolt;
 import org.apache.storm.tuple.Tuple;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 public class TopologyBuilderTest {
     private final TopologyBuilder builder = new TopologyBuilder();

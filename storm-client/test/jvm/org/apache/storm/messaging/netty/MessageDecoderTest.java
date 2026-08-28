@@ -12,14 +12,6 @@
 
 package org.apache.storm.messaging.netty;
 
-import java.util.List;
-import org.apache.storm.messaging.TaskMessage;
-import org.apache.storm.serialization.KryoValuesDeserializer;
-import org.apache.storm.shade.io.netty.buffer.ByteBuf;
-import org.apache.storm.shade.io.netty.buffer.Unpooled;
-import org.apache.storm.shade.io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,6 +22,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
+import org.apache.storm.messaging.TaskMessage;
+import org.apache.storm.serialization.KryoValuesDeserializer;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.buffer.Unpooled;
+import org.apache.storm.shade.io.netty.channel.embedded.EmbeddedChannel;
+import org.junit.jupiter.api.Test;
 
 public class MessageDecoderTest {
 

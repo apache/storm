@@ -12,6 +12,10 @@
 
 package org.apache.storm.windowing.persistence;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.AdditionalAnswers.returnsArgAt;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -32,10 +36,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.AdditionalAnswers.returnsArgAt;
 
 /**
  * Unit tests for {@link WindowState}

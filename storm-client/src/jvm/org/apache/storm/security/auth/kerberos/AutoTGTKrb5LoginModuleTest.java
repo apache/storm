@@ -29,7 +29,7 @@ public class AutoTGTKrb5LoginModuleTest extends AutoTGTKrb5LoginModule {
 
     @Override
     protected void getKerbTicketFromCache() {
-        // Do nothing.
+    // Do nothing.
     }
 
     @Override

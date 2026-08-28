@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.container.cgroup.SubSystemType;
 import org.apache.storm.container.cgroup.core.CgroupCore;
-import org.apache.storm.container.cgroup.core.CpuacctCore;
 import org.apache.storm.container.cgroup.core.CpuacctCore.StatType;
+import org.apache.storm.container.cgroup.core.CpuacctCore;
 
 /**
  * Report CPU used in the cgroup.

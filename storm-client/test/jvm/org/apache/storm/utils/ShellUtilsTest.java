@@ -12,15 +12,15 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.task.TopologyContext;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ShellUtilsTest {
 

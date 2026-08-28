@@ -18,7 +18,6 @@ package org.apache.storm.utils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

@@ -18,6 +18,9 @@
 
 package org.apache.storm.utils;
 
+import static org.apache.storm.utils.Utils.handleUncaughtException;
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.io.IOException;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +35,6 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
@@ -47,9 +49,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.utils.Utils.handleUncaughtException;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class UtilsTest {
     public static final Logger LOG = LoggerFactory.getLogger(UtilsTest.class);

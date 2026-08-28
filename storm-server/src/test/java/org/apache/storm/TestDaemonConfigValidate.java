@@ -18,6 +18,8 @@
 
 package org.apache.storm;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,8 +27,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import org.apache.storm.validation.ConfigValidation;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestDaemonConfigValidate {
 

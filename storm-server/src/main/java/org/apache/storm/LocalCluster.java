@@ -45,8 +45,8 @@ import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.DaemonCommon;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.StormCommon;
-import org.apache.storm.daemon.nimbus.Nimbus;
 import org.apache.storm.daemon.nimbus.Nimbus.StandaloneINimbus;
+import org.apache.storm.daemon.nimbus.Nimbus;
 import org.apache.storm.daemon.nimbus.TopoCache;
 import org.apache.storm.daemon.supervisor.ReadClusterState;
 import org.apache.storm.daemon.supervisor.StandaloneSupervisor;
@@ -108,8 +108,8 @@ import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.RegisteredGlobalState;
 import org.apache.storm.utils.StormCommonInstaller;
-import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedAuthorizationException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
@@ -972,12 +972,12 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public void uploadChunk(String location, ByteBuffer chunk) throws AuthorizationException, TException {
-        //Just throw it away in local mode
+    //Just throw it away in local mode
     }
 
     @Override
     public void finishFileUpload(String location) throws AuthorizationException, TException {
-        //Just throw it away in local mode
+    //Just throw it away in local mode
     }
 
     @Override

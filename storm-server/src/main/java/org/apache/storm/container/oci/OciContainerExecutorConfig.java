@@ -21,7 +21,6 @@ package org.apache.storm.container.oci;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonRawValue;
-
 import java.util.List;
 import java.util.Map;
 
@@ -1201,7 +1200,7 @@ public class OciContainerExecutorConfig {
 
             @JsonInclude(JsonInclude.Include.NON_DEFAULT)
             static class Sysctl {
-                // for kernel params
+            // for kernel params
             }
 
             @JsonInclude(JsonInclude.Include.NON_DEFAULT)

@@ -22,8 +22,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.Utils;
@@ -112,7 +112,7 @@ public class DefaultScheduler implements IScheduler {
 
     @Override
     public void prepare(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) {
-        //noop
+    //noop
     }
 
     @Override

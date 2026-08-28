@@ -19,7 +19,6 @@
 package org.apache.storm.flux.api;
 
 import java.util.Map;
-
 import org.apache.storm.generated.StormTopology;
 
 /**

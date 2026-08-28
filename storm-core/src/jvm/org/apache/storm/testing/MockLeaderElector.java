@@ -38,17 +38,17 @@ public class MockLeaderElector implements ILeaderElector {
 
     @Override
     public void prepare(Map<String, Object> conf) {
-        //NOOP
+    //NOOP
     }
 
     @Override
     public void addToLeaderLockQueue() throws Exception {
-        //NOOP
+    //NOOP
     }
 
     @Override
     public void quitElectionFor(int delayMs) throws Exception {
-        //NOOP
+    //NOOP
     }
 
     @Override
@@ -73,6 +73,6 @@ public class MockLeaderElector implements ILeaderElector {
 
     @Override
     public void close() {
-        //NOOP
+    //NOOP
     }
 }

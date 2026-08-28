@@ -19,8 +19,8 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.ComboList;
 import org.apache.storm.trident.tuple.TridentTuple;
-import org.apache.storm.trident.tuple.TridentTupleView;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
+import org.apache.storm.trident.tuple.TridentTupleView;
 import org.apache.storm.tuple.Fields;
 
 public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {

@@ -138,7 +138,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      */
     @Override
     public void setupBlobPermissions(File path, String user) throws IOException {
-        //Normally this is a NOOP
+    //Normally this is a NOOP
     }
 
     /**
@@ -183,7 +183,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      */
     @Override
     public void setupStormCodeDir(String user, File path) throws IOException {
-        //By default this is a NOOP
+    //By default this is a NOOP
     }
 
     /**
@@ -195,7 +195,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      */
     @Override
     public void setupWorkerArtifactsDir(String user, File path) throws IOException {
-        //By default this is a NOOP
+    //By default this is a NOOP
     }
 
     /**
@@ -439,7 +439,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
 
         @Override
         public void restrictDirectoryPermissions(File dir) throws IOException {
-            //NOOP, if windows gets support for run as user we will need to find a way to support this
+        //NOOP, if windows gets support for run as user we will need to find a way to support this
         }
 
         @Override

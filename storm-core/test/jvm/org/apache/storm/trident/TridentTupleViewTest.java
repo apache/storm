@@ -24,14 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
-
 import org.apache.storm.Testing;
 import org.apache.storm.trident.tuple.TridentTuple;
-import org.apache.storm.trident.tuple.TridentTupleView;
 import org.apache.storm.trident.tuple.TridentTupleView.FreshOutputFactory;
 import org.apache.storm.trident.tuple.TridentTupleView.OperationOutputFactory;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.trident.tuple.TridentTupleView.RootFactory;
+import org.apache.storm.trident.tuple.TridentTupleView;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.junit.jupiter.api.Test;

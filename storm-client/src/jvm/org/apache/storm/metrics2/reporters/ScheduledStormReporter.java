@@ -13,7 +13,6 @@
 package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.ScheduledReporter;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

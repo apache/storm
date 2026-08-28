@@ -19,11 +19,9 @@
 package org.apache.storm.jdbc.spout;
 
 import com.google.common.collect.Lists;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;

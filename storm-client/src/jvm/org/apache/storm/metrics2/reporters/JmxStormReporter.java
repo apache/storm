@@ -14,7 +14,6 @@ package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.jmx.JmxReporter;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

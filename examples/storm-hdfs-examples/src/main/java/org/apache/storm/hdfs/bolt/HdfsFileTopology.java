@@ -180,7 +180,7 @@ public class HdfsFileTopology {
 
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            // this bolt does not emit anything
+        // this bolt does not emit anything
         }
 
         @Override

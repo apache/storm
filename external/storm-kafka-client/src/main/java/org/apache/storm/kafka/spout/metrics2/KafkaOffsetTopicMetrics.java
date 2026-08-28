@@ -24,13 +24,11 @@ import static org.apache.storm.kafka.spout.metrics2.KafkaOffsetUtil.getEndOffset
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.OffsetManager;

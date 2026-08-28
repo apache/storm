@@ -16,6 +16,15 @@
 
 package org.apache.storm.daemon.worker;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
@@ -29,16 +38,6 @@ import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.task.WorkerUserContext;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.SupervisorIfaceFactory;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class TestUtilsForWorkerState {
 

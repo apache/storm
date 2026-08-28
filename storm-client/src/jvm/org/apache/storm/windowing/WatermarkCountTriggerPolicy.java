@@ -45,7 +45,7 @@ public class WatermarkCountTriggerPolicy<T> implements TriggerPolicy<T, Long> {
 
     @Override
     public void reset() {
-        // NOOP
+    // NOOP
     }
 
     @Override
@@ -55,7 +55,7 @@ public class WatermarkCountTriggerPolicy<T> implements TriggerPolicy<T, Long> {
 
     @Override
     public void shutdown() {
-        // NOOP
+    // NOOP
     }
 
     /**

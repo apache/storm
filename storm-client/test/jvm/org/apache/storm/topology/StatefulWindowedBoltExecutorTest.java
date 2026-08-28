@@ -12,6 +12,10 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.topology.StatefulWindowedBoltExecutor.TaskStream;
+import static org.apache.storm.topology.StatefulWindowedBoltExecutor.WindowState;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,10 +33,6 @@ import org.apache.storm.windowing.TupleWindowImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import static org.apache.storm.topology.StatefulWindowedBoltExecutor.TaskStream;
-import static org.apache.storm.topology.StatefulWindowedBoltExecutor.WindowState;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit tests for {@link StatefulWindowedBoltExecutor}

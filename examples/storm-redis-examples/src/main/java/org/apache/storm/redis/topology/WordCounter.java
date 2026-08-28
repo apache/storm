@@ -19,9 +19,7 @@
 package org.apache.storm.redis.topology;
 
 import com.google.common.collect.Maps;
-
 import java.util.Map;
-
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.IBasicBolt;

@@ -57,7 +57,7 @@ class Consumer extends MyThread {
 
         @Override
         public void flush() {
-            // no-op
+        // no-op
         }
     }
 }
