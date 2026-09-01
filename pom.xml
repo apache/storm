@@ -126,7 +126,7 @@
         <hdrhistogram.version>2.2.2</hdrhistogram.version>
         <hamcrest.version>3.0</hamcrest.version>
         <jedis.version>7.5.3</jedis.version>
-        <activemq.version>6.3.0</activemq.version>
+        <activemq.version>6.3.1</activemq.version>
         <commons-logging.version>1.4.0</commons-logging.version>
 
         <jackson.version>2.22.1</jackson.version>
