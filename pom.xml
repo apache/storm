@@ -99,6 +99,13 @@
         <jctools.version>4.0.6</jctools.version>
         <jgrapht.version>1.5.3</jgrapht.version>
         <guava.version>33.7.1-jre</guava.version>
+        <!-- Guava's nullness-annotation transitive. Bump it together with guava.version, and
+             keep it equal to the value in that Guava release's guava-parent pom - never above.
+             It is pinned because JUnit 6 also declares org.jspecify:jspecify, at a nearer depth
+             than Guava, so without the managed entry below the daemon (lib) and worker
+             (lib-common) classpaths of the binary distribution mediate to different versions
+             and dedup-libs.py refuses to assemble the tarball. -->
+        <jspecify.version>1.0.1</jspecify.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.81.Final</netty-tcnative.version>
         <netty.version>4.2.16.Final</netty.version>
@@ -699,6 +706,15 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+            <!-- Not declared by any module: managed so every module resolves the same jspecify
+                 whether it arrives via Guava or, at a nearer depth, via JUnit. The binary
+                 distribution's dedup-libs check requires the daemon and worker classpaths to
+                 agree on every shared jar. -->
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>${jspecify.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.auto.service</groupId>
