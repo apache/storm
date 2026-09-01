@@ -116,7 +116,7 @@ public class TopologySpoutLag {
     }
 
     private static List<String> getCommandLineOptionsForNewKafkaSpout(Map<String, Object> jsonConf) {
-        LOGGER.debug("json configuration: {}", jsonConf);
+        LOGGER.debug("json configuration keys: {}", jsonConf.keySet());
 
         List<String> commands = new ArrayList<>();
         commands.add("-t");

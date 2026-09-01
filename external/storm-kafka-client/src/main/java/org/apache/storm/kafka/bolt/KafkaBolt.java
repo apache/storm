@@ -242,6 +242,6 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
             + " topicSelector: " + topicSelector
             + " fireAndForget: " + fireAndForget 
             + " async: " + async 
-            + " proerties: " + boltSpecifiedProperties;
+            + " properties: " + boltSpecifiedProperties.stringPropertyNames();
     }
 }
