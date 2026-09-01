@@ -14,7 +14,7 @@
   "dependencies": {
     "bootstrap": "5.3.8",
     "cytoscape": "3.34.0",
-    "cytoscape-dagre": "4.0.0",
+    "cytoscape-dagre": "4.0.1",
     "dagre": "0.8.5",
     "datatables.net": "3.0.0",
     "datatables.net-dt": "3.0.2",
