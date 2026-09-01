@@ -32,7 +32,7 @@
     "vis-network": "10.1.0"
   },
   "devDependencies": {
-    "css-loader": "^7.1.1",
+    "css-loader": "^7.1.5",
     "css-minimizer-webpack-plugin": "^8.0.0",
     "cypress": "^15.19.0",
     "express": "^5.2.1",
