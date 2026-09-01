@@ -795,6 +795,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     /**
+     * Mask the credential values in a config map that is about to be serialized to a client. Nimbus serves config over
+     * several read-only operations, and a caller authorized for those is not necessarily authorized to hold the cluster's
+     * or the topology's secrets. This covers what {@link ConfigUtils#maskCredentials(Map)} covers, plus the Blowfish
+     * tuple-serializer key, whose constant lives outside the config classes so the annotation scan cannot see it and
+     * whose name matches no credential pattern.
+     *
+     * @param conf the config about to be served
+     * @return a copy of the config with credential values replaced
+     */
+    private static Map<String, Object> maskCredentialsForApi(Map<String, Object> conf) {
+        Map<String, Object> masked = new HashMap<>(ConfigUtils.maskCredentials(conf));
+        if (masked.get(BlowfishTupleSerializer.SECRET_KEY) instanceof String) {
+            masked.put(BlowfishTupleSerializer.SECRET_KEY, "*****");
+        }
+        return masked;
+    }
+
+    /**
      * convert {topology-id -> SchedulerAssignment} to {topology-id -> {executor [node port]}}.
      *
      * @return {topology-id -> {executor [node port]}} mapping
@@ -4732,7 +4750,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             topoPageInfo.set_name(topoName);
             topoPageInfo.set_status(extractStatusStr(base));
             topoPageInfo.set_uptime_secs(Time.deltaSecs(launchTimeSecs));
-            topoPageInfo.set_topology_conf(JSONValue.toJSONString(topoConf));
+            // topoConf is the daemon conf merged with the topology conf, so it carries Nimbus secrets
+            // (the ZooKeeper digest payload, Thrift/Netty TLS store passwords) on top of the topology's own.
+            // getTopologyPageInfo is a topology read-only operation, so mask before it leaves Nimbus.
+            topoPageInfo.set_topology_conf(JSONValue.toJSONString(maskCredentialsForApi(topoConf)));
             topoPageInfo.set_replication_count(getBlobReplicationCount(ConfigUtils.masterStormCodeKey(topoId)));
             if (base.is_set_component_debug()) {
                 DebugOptions debug = base.get_component_debug().get(topoId);
@@ -5046,11 +5067,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Map<String, Object> checkConf = Utils.merge(conf, topoConf);
             String topoName = (String) checkConf.get(Config.TOPOLOGY_NAME);
             checkAuthorization(topoName, checkConf, "getTopologyConf");
-            Map<String, Object> maskedConf = new HashMap<>(ConfigUtils.maskPasswords(topoConf));
-            if (maskedConf.get(BlowfishTupleSerializer.SECRET_KEY) instanceof String) {
-                maskedConf.put(BlowfishTupleSerializer.SECRET_KEY, "*****");
-            }
-            return JSONValue.toJSONString(maskedConf);
+            return JSONValue.toJSONString(maskCredentialsForApi(topoConf));
         } catch (Exception e) {
             LOG.warn("Get topo conf exception. (topology id='{}')", id, e);
             if (e instanceof TException) {
