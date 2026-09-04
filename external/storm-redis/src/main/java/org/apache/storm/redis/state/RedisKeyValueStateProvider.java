@@ -25,6 +25,7 @@ import org.apache.storm.state.Serializer;
 import org.apache.storm.state.State;
 import org.apache.storm.state.StateProvider;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class RedisKeyValueStateProvider implements StateProvider {
         try {
             return getRedisKeyValueState(namespace, topoConf, context, getStateConfig(topoConf));
         } catch (Exception ex) {
-            LOG.error("Error loading config from storm conf {}", topoConf);
+            LOG.error("Error loading config from storm conf {}", ConfigUtils.maskCredentials(topoConf));
             throw new RuntimeException(ex);
         }
     }

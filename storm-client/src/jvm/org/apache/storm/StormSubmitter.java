@@ -45,6 +45,7 @@ import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.BufferFileInputStream;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedInvalidTopologyException;
@@ -264,6 +265,7 @@ public class StormSubmitter {
         }
         try {
             String serConf = JSONValue.toJSONString(topoConf);
+            String maskedSerConf = JSONValue.toJSONString(ConfigUtils.maskCredentials(topoConf));
             try (NimbusClient client = NimbusClient.Builder.withConf(conf).asUser(asUser).build()) {
                 if (!isTopologyNameAllowed(name, client)) {
                     throw new RuntimeException("Topology name " + name + " is either not allowed or it already exists on the cluster");
@@ -291,7 +293,8 @@ public class StormSubmitter {
 
                 try {
                     setDependencyBlobsToTopology(topology, jarsBlobKeys, artifactsBlobKeys);
-                    submitTopologyInDistributeMode(name, topology, opts, progressListener, asUser, conf, serConf, client);
+                    submitTopologyInDistributeMode(name, topology, opts, progressListener, asUser, conf, serConf,
+                                                   maskedSerConf, client);
                 } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
                     // the topology was rejected, so the blobs it refers to are unreachable; their keys are
                     // unique to this submission, so nothing else can be using them
@@ -349,10 +352,11 @@ public class StormSubmitter {
 
     private static void submitTopologyInDistributeMode(String name, StormTopology topology, SubmitOptions opts,
                                                        ProgressListener progressListener, String asUser, Map<String, Object> conf,
-                                                       String serConf, NimbusClient client) throws TException {
+                                                       String serConf, String maskedSerConf, NimbusClient client)
+        throws TException {
         try {
             String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, client);
-            LOG.info("Submitting topology {} in distributed mode with conf {}", name, serConf);
+            LOG.info("Submitting topology {} in distributed mode with conf {}", name, maskedSerConf);
             Utils.addVersions(topology);
             if (opts != null) {
                 client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);

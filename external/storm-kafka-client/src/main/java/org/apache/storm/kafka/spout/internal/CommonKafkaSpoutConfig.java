@@ -268,7 +268,7 @@ public abstract class CommonKafkaSpoutConfig<K, V> implements Serializable {
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-            .append("kafkaProps", kafkaProps)
+            .append("kafkaProps", kafkaProps.keySet())
             .append("partitionRefreshPeriodMs", partitionRefreshPeriodMs)
             .append("pollTimeoutMs", pollTimeoutMs)
             .append("topicFilter", topicFilter)

@@ -46,7 +46,7 @@ public class ResourceUtils {
                 NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(bolt.getValue().get_common(),
                         topologyConf, bolt.getKey());
                 if (LOG.isTraceEnabled()) {
-                    LOG.trace("Turned {} into {}", bolt.getValue().get_common().get_json_conf(), topologyResources);
+                    LOG.trace("Turned component {} into {}", bolt.getKey(), topologyResources);
                 }
                 boltResources.put(bolt.getKey(), topologyResources);
             }
@@ -71,7 +71,7 @@ public class ResourceUtils {
                 NormalizedResourceRequest topologyResources = new NormalizedResourceRequest(spout.getValue().get_common(),
                         topologyConf, spout.getKey());
                 if (LOG.isTraceEnabled()) {
-                    LOG.trace("Turned {} into {}", spout.getValue().get_common().get_json_conf(), topologyResources);
+                    LOG.trace("Turned component {} into {}", spout.getKey(), topologyResources);
                 }
                 spoutResources.put(spout.getKey(), topologyResources);
             }

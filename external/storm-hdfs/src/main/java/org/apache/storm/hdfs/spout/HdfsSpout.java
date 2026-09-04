@@ -34,6 +34,7 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -416,7 +417,8 @@ public class HdfsSpout extends BaseRichSpout {
             Map<String, Object> map = (Map<String, Object>) conf.get(configKey);
             if (map != null) {
                 for (String keyName : map.keySet()) {
-                    LOG.info("HDFS Config override : {} = {} ", keyName, String.valueOf(map.get(keyName)));
+                    LOG.info("HDFS Config override : {} = {} ", keyName,
+                             ConfigUtils.isCredentialKey(keyName) ? "*****" : String.valueOf(map.get(keyName)));
                     this.hdfsConfig.set(keyName, String.valueOf(map.get(keyName)));
                 }
                 try {
