@@ -661,6 +661,20 @@ public class Config extends HashMap<String, Object> {
     @IsBoolean
     public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION = "topology.fall.back.on.java.serialization";
     /**
+     * Optional <a href="https://openjdk.org/jeps/290">JEP-290</a> serial-filter pattern applied to the
+     * Java-serialization fallback bridge that {@link #TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION} enables for
+     * unregistered classes. When set to a non-empty pattern, it is parsed once at kryo construction and installed
+     * on every {@code ObjectInputStream} used to deserialize fallback values, so stream classes rejected by the
+     * filter are neither instantiated nor have their {@code readObject} logic invoked. {@code conf/defaults.yaml}
+     * sets a default gadget deny-list with a {@code maxbytes=10485760} limit; an empty or unset value leaves the
+     * bridge unfiltered, as before. An invalid pattern fails worker startup with a clear error. Note: Unlike a
+     * JVM-wide {@code jdk.serialFilter}, this is topology-scoped and also applies when the deserializer is built
+     * programmatically, e.g. local mode. Example deny-list: {@code !org.apache.commons.collections4.functors.*}.
+     */
+    @IsString
+    public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER =
+            "topology.fall.back.on.java.serialization.filter";
+    /**
      * Topology-specific options for the worker child process. This is used in addition to WORKER_CHILDOPTS.
      */
     @IsStringOrStringList

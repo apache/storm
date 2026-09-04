@@ -15,6 +15,7 @@ package org.apache.storm.serialization;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.util.Util;
+import java.io.ObjectInputFilter;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.slf4j.Logger;
@@ -29,7 +30,25 @@ public class DefaultKryoFactory implements IKryoFactory {
         KryoSerializableDefault k = new KryoSerializableDefault();
         k.setRegistrationRequired(!((Boolean) conf.get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION)));
         k.setReferences(false);
+        k.setJavaSerializationFilter(getJavaSerializationFilter(conf));
         return k;
+    }
+
+    /**
+     * Parses the pattern once at kryo construction so an invalid pattern fails worker setup with a clear error
+     * instead of failing per-tuple on the read path. Returns null when the key is unset or empty (no filter).
+     */
+    private static ObjectInputFilter getJavaSerializationFilter(Map<String, Object> conf) {
+        String filterSpec = (String) conf.get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER);
+        if (filterSpec == null || filterSpec.isEmpty()) {
+            return null;
+        }
+        try {
+            return ObjectInputFilter.Config.createFilter(filterSpec);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid " + Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER
+                    + " pattern: \"" + filterSpec + "\"", e);
+        }
     }
 
     @Override
@@ -47,6 +66,11 @@ public class DefaultKryoFactory implements IKryoFactory {
 
     public static class KryoSerializableDefault extends Kryo {
         boolean override = false;
+        private ObjectInputFilter javaSerializationFilter;
+
+        public void setJavaSerializationFilter(ObjectInputFilter filter) {
+            this.javaSerializationFilter = filter;
+        }
 
         public void overrideDefault(boolean value) {
             override = value;
@@ -61,7 +85,7 @@ public class DefaultKryoFactory implements IKryoFactory {
                         Util.className(type), Util.className(type)
                 );
 
-                return new SerializableSerializer();
+                return new SerializableSerializer(javaSerializationFilter);
             } else {
                 return super.getDefaultSerializer(type);
             }
