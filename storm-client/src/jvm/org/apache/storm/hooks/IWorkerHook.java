@@ -32,7 +32,7 @@ public interface IWorkerHook extends Serializable {
      *     {@link WorkerUserContext#setResource(String, Object)} to set the shared application state.
      */
     default void start(Map<String, Object> topoConf, WorkerUserContext context) {
-         // NOOP
+        // NOOP
     }
 
     /**

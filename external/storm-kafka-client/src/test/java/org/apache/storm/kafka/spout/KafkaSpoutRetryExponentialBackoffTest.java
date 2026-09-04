@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
-import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
+import org.apache.storm.utils.Time;
 import org.junit.jupiter.api.Test;
 
 public class KafkaSpoutRetryExponentialBackoffTest {

@@ -140,7 +140,7 @@ public class FastWordCountTopology {
 
         @Override
         public void ack(Object id) {
-            //Ignored
+        //Ignored
         }
 
         @Override

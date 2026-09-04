@@ -12,12 +12,12 @@
 
 package org.apache.storm.hdfs.avro;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 import org.apache.avro.Schema;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class TestFixedAvroSerializer {
     //These should match FixedAvroSerializer.config in the test resources

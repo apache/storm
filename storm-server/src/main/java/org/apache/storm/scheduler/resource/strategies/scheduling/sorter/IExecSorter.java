@@ -20,7 +20,6 @@ package org.apache.storm.scheduler.resource.strategies.scheduling.sorter;
 
 import java.util.List;
 import java.util.Set;
-
 import org.apache.storm.scheduler.ExecutorDetails;
 
 

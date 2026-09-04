@@ -184,7 +184,7 @@ public class InputStream implements Serializable {
                     } catch (Exception e) {
                         //ignored
                     }
-                    //Fall through if not supported
+                //Fall through if not supported
                 default:
                     LOG.warn("{} is not supported for replay of a topology.  Using SHUFFLE", thriftType);
                     break;

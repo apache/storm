@@ -12,6 +12,9 @@
 
 package org.apache.storm.serialization;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.esotericsoftware.kryo.Kryo;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -19,9 +22,6 @@ import org.apache.storm.security.serialization.BlowfishTupleSerializer;
 import org.apache.storm.utils.ListDelegate;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SerializationFactoryTest {
 

@@ -73,7 +73,7 @@ public class WatermarkCountEvictionPolicy<T> implements EvictionPolicy<T, Pair<L
 
     @Override
     public void track(Event<T> event) {
-        // NOOP
+    // NOOP
     }
 
     @Override

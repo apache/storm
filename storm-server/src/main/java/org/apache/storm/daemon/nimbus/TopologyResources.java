@@ -15,7 +15,6 @@ package org.apache.storm.daemon.nimbus;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.WorkerResources;

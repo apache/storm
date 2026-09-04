@@ -17,6 +17,8 @@
 
 package org.apache.storm.st.tests.window;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.apache.storm.st.helper.AbstractTest;
 import org.apache.storm.st.topology.window.SlidingTimeCorrectness;
 import org.apache.storm.st.topology.window.SlidingWindowCorrectness;
@@ -24,7 +26,6 @@ import org.apache.storm.st.wrapper.TopoWrap;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public final class SlidingWindowTest extends AbstractTest {
     private final WindowVerifier windowVerifier = new WindowVerifier();

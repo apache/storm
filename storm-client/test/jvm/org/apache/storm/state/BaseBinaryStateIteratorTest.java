@@ -12,6 +12,10 @@
 
 package org.apache.storm.state;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -20,10 +24,6 @@ import java.util.TreeMap;
 import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link BaseBinaryStateIterator}.

@@ -12,30 +12,6 @@
 
 package org.apache.storm.daemon.supervisor;
 
-import com.google.common.base.Joiner;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.storm.Config;
-import org.apache.storm.DaemonConfig;
-import org.apache.storm.container.ResourceIsolationInterface;
-import org.apache.storm.daemon.supervisor.BasicContainerTest.CommandRun;
-import org.apache.storm.daemon.supervisor.Container.ContainerType;
-import org.apache.storm.generated.LocalAssignment;
-import org.apache.storm.generated.ProfileRequest;
-import org.apache.storm.utils.ObjectReader;
-import org.junit.jupiter.api.Test;
-import org.yaml.snakeyaml.Yaml;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -47,7 +23,28 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.base.Joiner;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.daemon.supervisor.BasicContainerTest.CommandRun;
+import org.apache.storm.daemon.supervisor.Container.ContainerType;
+import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.utils.ObjectReader;
+import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
 
 public class ContainerTest {
     private static final Joiner PATH_JOIN = Joiner.on(File.separator).skipNulls();
@@ -355,7 +352,7 @@ public class ContainerTest {
 
         @Override
         public void cleanup(String user, String workerId, int port) {
-            //NO OP
+        //NO OP
         }
 
         @Override

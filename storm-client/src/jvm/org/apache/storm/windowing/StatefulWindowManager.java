@@ -66,7 +66,7 @@ public class StatefulWindowManager<T> extends WindowManager<T> {
 
     @Override
     protected void compactWindow() {
-        // NOOP
+    // NOOP
     }
 
     @Override

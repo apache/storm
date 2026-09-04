@@ -18,10 +18,9 @@
 
 package org.apache.storm.jms.spout;
 
-import org.apache.storm.spout.ISpoutOutputCollector;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.storm.spout.ISpoutOutputCollector;
 
 public class MockSpoutOutputCollector implements ISpoutOutputCollector {
     boolean emitted = false;
@@ -39,7 +38,7 @@ public class MockSpoutOutputCollector implements ISpoutOutputCollector {
 
     @Override
     public void flush() {
-        //NO-OP
+    //NO-OP
     }
 
     @Override

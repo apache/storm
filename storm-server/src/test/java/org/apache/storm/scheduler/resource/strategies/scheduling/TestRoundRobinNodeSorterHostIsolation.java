@@ -18,7 +18,26 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.createRoundRobinClusterConfig;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisorsWithRacksAndNuma;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.supervisorIdToRackName;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
@@ -38,26 +57,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.createRoundRobinClusterConfig;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisorsWithRacksAndNuma;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.supervisorIdToRackName;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith({NormalizedResourcesExtension.class})
 public class TestRoundRobinNodeSorterHostIsolation {

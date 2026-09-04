@@ -18,23 +18,21 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
+import net.minidev.json.JSONValue;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.IStormClusterState;
-import net.minidev.json.JSONValue;
-
 import org.apache.storm.security.serialization.BlowfishTupleSerializer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NimbusGetTopologyConfTest {
 

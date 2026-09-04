@@ -12,12 +12,11 @@
 
 package org.apache.storm.redis.util.outputcollector;
 
-import org.apache.storm.tuple.Tuple;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.apache.storm.tuple.Tuple;
 
 /**
  * Used with StubOutputCollector for testing.

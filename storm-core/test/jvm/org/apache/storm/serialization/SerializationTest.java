@@ -18,6 +18,8 @@
 
 package org.apache.storm.serialization;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,8 +29,6 @@ import org.apache.storm.Config;
 import org.apache.storm.testing.TestSerObject;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 // FIXME: it should be moved to storm-client when serialization-test.clj can be removed
 public class SerializationTest {

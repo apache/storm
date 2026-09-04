@@ -24,7 +24,6 @@ import static org.apache.storm.hdfs.security.HdfsSecurityUtil.STORM_USER_NAME_KE
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
-
 import org.apache.storm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

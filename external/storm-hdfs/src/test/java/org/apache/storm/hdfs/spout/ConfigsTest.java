@@ -12,12 +12,12 @@
 
 package org.apache.storm.hdfs.spout;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.validation.ConfigValidation;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class ConfigsTest {
 

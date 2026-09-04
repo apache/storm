@@ -15,7 +15,6 @@ package org.apache.storm.metrics2.reporters;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
-
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;

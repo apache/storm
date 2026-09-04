@@ -18,6 +18,8 @@
 
 package org.apache.storm.cluster;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,8 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.storm.Config;
+import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.callback.ZKStateChangedCallback;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.Credentials;
@@ -39,28 +41,25 @@ import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.storm.shade.org.apache.curator.framework.api.BackgroundVersionable;
+import org.apache.storm.shade.org.apache.curator.framework.api.DeleteBuilder;
+import org.apache.storm.shade.org.apache.curator.framework.api.ExistsBuilder;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
+import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
 import org.apache.storm.testing.InProcessZookeeper;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.storm.callback.WatcherCallBack;
-import org.apache.storm.shade.org.apache.curator.framework.api.BackgroundVersionable;
-import org.apache.storm.shade.org.apache.curator.framework.api.DeleteBuilder;
-import org.apache.storm.shade.org.apache.curator.framework.api.ExistsBuilder;
-import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
-import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
 import org.apache.storm.zookeeper.ClientZookeeper;
-import org.junit.jupiter.api.Test;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for IStateStorage (ZKStateStorage) and IStormClusterState (StormClusterStateImpl)

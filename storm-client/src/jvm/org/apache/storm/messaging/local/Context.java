@@ -56,7 +56,7 @@ public class Context implements IContext {
 
     @Override
     public void prepare(Map<String, Object> topoConf) {
-        //NOOP
+    //NOOP
     }
 
     @Override
@@ -71,7 +71,7 @@ public class Context implements IContext {
 
     @Override
     public void term() {
-        //NOOP
+    //NOOP
     }
 
     private class LocalServer implements IConnection {
@@ -118,7 +118,7 @@ public class Context implements IContext {
 
         @Override
         public void close() {
-            //NOOP
+        //NOOP
         }
     }
 

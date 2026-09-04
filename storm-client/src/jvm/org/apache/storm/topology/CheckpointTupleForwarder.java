@@ -16,7 +16,6 @@ import static org.apache.storm.spout.CheckPointState.Action;
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
 
 import java.util.Map;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;

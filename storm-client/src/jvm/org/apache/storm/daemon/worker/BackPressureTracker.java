@@ -20,8 +20,8 @@ package org.apache.storm.daemon.worker;
 
 import com.codahale.metrics.Gauge;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.apache.storm.messaging.netty.BackPressureStatus;

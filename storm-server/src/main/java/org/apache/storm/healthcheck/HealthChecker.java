@@ -19,7 +19,6 @@
 package org.apache.storm.healthcheck;
 
 import com.codahale.metrics.Meter;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +28,6 @@ import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;

@@ -18,13 +18,13 @@
 
 package org.apache.storm.scheduler.resource.normalization;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Constants;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NormalizedResourceOfferTest {
     @Test

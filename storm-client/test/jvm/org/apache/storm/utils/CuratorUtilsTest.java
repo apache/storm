@@ -18,13 +18,16 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.curator.test.InstanceSpec;
+import org.apache.curator.test.TestingServer;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.shade.org.apache.curator.ensemble.fixed.FixedEnsembleProvider;
@@ -36,13 +39,8 @@ import org.apache.storm.shade.org.apache.zookeeper.ZooKeeper;
 import org.apache.storm.shade.org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.storm.shade.org.apache.zookeeper.common.ClientX509Util;
 import org.junit.jupiter.api.Test;
-import org.apache.curator.test.TestingServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CuratorUtilsTest {
     private static final Logger LOG = LoggerFactory.getLogger(CuratorUtilsTest.class);
@@ -229,10 +227,10 @@ public class CuratorUtilsTest {
     @Test
     public void testTruststoreKeystoreConfiguration() {
         LOG.info("Entered to the testTruststoreKeystoreConfiguration test case.");
-    /*
-      By default the truststore/keystore configurations are not set, hence the values are null.
-      Validate that the null values are converted into empty strings by the class.
-     */
+        /*
+          By default the truststore/keystore configurations are not set, hence the values are null.
+          Validate that the null values are converted into empty strings by the class.
+         */
         Map<String, Object> conf = new HashMap<>();
         CuratorUtils.SslConf zkSslConf =
                 CuratorUtils.getSslConf(conf);

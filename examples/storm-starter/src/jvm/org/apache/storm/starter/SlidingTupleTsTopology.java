@@ -19,8 +19,8 @@ import org.apache.storm.starter.bolt.PrinterBolt;
 import org.apache.storm.starter.bolt.SlidingWindowSumBolt;
 import org.apache.storm.starter.spout.RandomIntegerSpout;
 import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+import org.apache.storm.topology.base.BaseWindowedBolt;
 
 /**
  * Windowing based on tuple timestamp (e.g. the time when tuple is generated

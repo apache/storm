@@ -16,25 +16,24 @@
 
 package org.apache.storm.security.auth.kerberos;
 
-import org.apache.storm.security.auth.kerberos.AutoTGTKrb5LoginModule;
-import org.apache.storm.security.auth.kerberos.AutoTGTKrb5LoginModuleTest;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.login.LoginException;
 import java.net.InetAddress;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.login.LoginException;
+import org.apache.storm.security.auth.kerberos.AutoTGTKrb5LoginModule;
+import org.apache.storm.security.auth.kerberos.AutoTGTKrb5LoginModuleTest;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 public class AutoLoginModuleTest {
 

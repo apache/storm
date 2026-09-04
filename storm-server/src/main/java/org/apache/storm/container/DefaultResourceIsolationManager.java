@@ -46,12 +46,12 @@ public class DefaultResourceIsolationManager implements ResourceIsolationInterfa
 
     @Override
     public void reserveResourcesForWorker(String workerId, Integer workerMemory, Integer workerCpu, String numaId) {
-        //NO OP
+    //NO OP
     }
 
     @Override
     public void cleanup(String user, String workerId, int port) throws IOException {
-        //NO OP
+    //NO OP
     }
 
     @Override

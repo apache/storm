@@ -31,7 +31,6 @@ import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.math3.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -71,7 +70,7 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
 
     @Override
     public void shutdown() {
-        //no op.
+    //no op.
     }
 
     @Override

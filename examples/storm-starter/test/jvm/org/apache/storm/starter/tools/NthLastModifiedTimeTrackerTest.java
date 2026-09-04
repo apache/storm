@@ -12,12 +12,12 @@
 
 package org.apache.storm.starter.tools;
 
-import org.apache.storm.utils.Time;
+import static org.fest.assertions.api.Assertions.assertThat;
+
 import org.apache.storm.utils.Time.SimulatedTime;
+import org.apache.storm.utils.Time;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.api.Assertions.assertThat;
 
 public class NthLastModifiedTimeTrackerTest {
 

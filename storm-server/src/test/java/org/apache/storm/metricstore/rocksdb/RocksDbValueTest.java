@@ -18,12 +18,12 @@
 
 package org.apache.storm.metricstore.rocksdb;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.apache.storm.metricstore.AggLevel;
 import org.apache.storm.metricstore.Metric;
 import org.apache.storm.metricstore.MetricException;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RocksDbValueTest {
 

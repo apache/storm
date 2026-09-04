@@ -17,16 +17,15 @@
  */
 package org.apache.storm.hdfs.testing;
 
+import static org.apache.storm.hdfs.testing.MiniDFSClusterExtension.getTestDir;
+
+import java.io.File;
+import java.util.function.Supplier;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-
-import java.io.File;
-import java.util.function.Supplier;
-
-import static org.apache.storm.hdfs.testing.MiniDFSClusterExtension.getTestDir;
 
 public class MiniDFSClusterExtensionClassLevel implements BeforeAllCallback, AfterAllCallback {
 

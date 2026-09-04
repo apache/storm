@@ -12,6 +12,11 @@
 
 package org.apache.storm.blobstore;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.util.Arrays;
 import java.util.List;
 import org.apache.log4j.Logger;
@@ -20,11 +25,6 @@ import org.apache.storm.shade.org.apache.curator.framework.api.ExistsBuilder;
 import org.apache.storm.shade.org.apache.curator.framework.api.GetChildrenBuilder;
 import org.apache.storm.shade.org.apache.curator.framework.api.Pathable;
 import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class MockZookeeperClientBuilder {
 

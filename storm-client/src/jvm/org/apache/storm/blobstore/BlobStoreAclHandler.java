@@ -96,7 +96,7 @@ public class BlobStoreAclHandler {
             } else if ('a' == c) {
                 ret = ret | ADMIN;
             } else if ('-' == c) {
-                //ignored
+            //ignored
             } else {
                 throw new IllegalArgumentException("");
             }

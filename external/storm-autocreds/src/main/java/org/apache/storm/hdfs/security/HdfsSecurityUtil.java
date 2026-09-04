@@ -24,13 +24,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
-
 import org.apache.storm.security.auth.kerberos.AutoTGT;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

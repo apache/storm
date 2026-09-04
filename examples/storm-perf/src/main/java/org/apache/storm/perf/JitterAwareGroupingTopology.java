@@ -343,7 +343,7 @@ public class JitterAwareGroupingTopology {
 
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            // terminal — no output
+        // terminal — no output
         }
     }
 }

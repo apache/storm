@@ -16,19 +16,6 @@
 
 package org.apache.storm.security.auth;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import org.apache.storm.Config;
-import org.apache.storm.utils.ShellCommandRunner;
-import org.apache.storm.utils.ShellUtils;
-import org.apache.storm.utils.Time;
-import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -36,6 +23,19 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import org.apache.storm.Config;
+import org.apache.storm.utils.ShellCommandRunner;
+import org.apache.storm.utils.ShellUtils;
+import org.apache.storm.utils.Time.SimulatedTime;
+import org.apache.storm.utils.Time;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 public class ShellBasedGroupsMappingTest {
 

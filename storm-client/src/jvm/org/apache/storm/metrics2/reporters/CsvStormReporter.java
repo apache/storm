@@ -14,7 +14,6 @@ package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;

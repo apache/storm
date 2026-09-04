@@ -12,6 +12,11 @@
 
 package org.apache.storm.executor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,11 +46,6 @@ import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Some topologies might spawn extra threads inside components to perform real processing work and emit processed results.
@@ -196,7 +196,7 @@ public class ExecutorTransferMultiThreadingTest {
 
         @Override
         public void flush() {
-            //no op
+        //no op
         }
     }
 }

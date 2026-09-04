@@ -39,7 +39,7 @@ public class LocalModeClientBlobStore extends ClientBlobStore {
 
     @Override
     public void prepare(Map<String, Object> conf) {
-        //NOOP prepare should have already been called
+    //NOOP prepare should have already been called
     }
 
     @Override
@@ -117,7 +117,7 @@ public class LocalModeClientBlobStore extends ClientBlobStore {
 
     @Override
     public void createStateInZookeeper(String key) {
-        //NOOP
+    //NOOP
     }
 
     @Override

@@ -12,6 +12,8 @@
 
 package org.apache.storm.jdbc.bolt;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.collect.Lists;
 import java.util.HashMap;
 import org.apache.storm.jdbc.common.Column;
@@ -21,8 +23,6 @@ import org.apache.storm.jdbc.mapper.JdbcLookupMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
 import org.apache.storm.tuple.Fields;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Created by pbrahmbhatt on 10/29/15.

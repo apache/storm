@@ -18,6 +18,9 @@
 
 package org.apache.storm.assignments;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,9 +32,6 @@ import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.shade.org.apache.commons.collections4.map.HashedMap;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 public class LocalAssignmentsBackendTest {

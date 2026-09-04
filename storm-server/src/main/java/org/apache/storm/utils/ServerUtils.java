@@ -1145,7 +1145,7 @@ public class ServerUtils {
             try {
                 exitCode = new ProcessBuilder(cmdArgs).start().waitFor();
             } catch (Exception e) {
-                // Ignore
+            // Ignore
             } finally {
                 if (exitCode != 0) {
                     LOG.debug("CMD: '{}' returned exit code of {}", String.join(" ", cmdArgs), exitCode);

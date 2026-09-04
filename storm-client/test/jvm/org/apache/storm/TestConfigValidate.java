@@ -18,6 +18,12 @@
 
 package org.apache.storm;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +36,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.security.auth.Subject;
-
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.generated.AuthorizationException;
@@ -40,13 +45,12 @@ import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.ImpersonationAclUserEntryValidator;
 import org.apache.storm.validation.ConfigValidation.IntegerValidator;
 import org.apache.storm.validation.ConfigValidation.KryoRegValidator;
-import org.apache.storm.validation.ConfigValidation.LongValidator;
 import org.apache.storm.validation.ConfigValidation.ListEntryTypeValidator;
 import org.apache.storm.validation.ConfigValidation.ListOfListOfStringValidator;
+import org.apache.storm.validation.ConfigValidation.LongValidator;
 import org.apache.storm.validation.ConfigValidation.NoDuplicateInListValidator;
 import org.apache.storm.validation.ConfigValidation.NotNullValidator;
 import org.apache.storm.validation.ConfigValidation.PositiveNumberValidator;
@@ -54,6 +58,7 @@ import org.apache.storm.validation.ConfigValidation.PowerOf2Validator;
 import org.apache.storm.validation.ConfigValidation.RasConstraintsTypeValidator;
 import org.apache.storm.validation.ConfigValidation.StringValidator;
 import org.apache.storm.validation.ConfigValidation.UserResourcePoolEntryValidator;
+import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsExactlyOneOf;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsImplementationOfClass;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsListEntryCustom;
@@ -63,14 +68,7 @@ import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryType;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsNoDuplicateInList;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsString;
 import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
-
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class TestConfigValidate {
 

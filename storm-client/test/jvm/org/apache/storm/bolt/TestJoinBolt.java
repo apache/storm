@@ -12,6 +12,9 @@
 
 package org.apache.storm.bolt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,8 +28,6 @@ import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.windowing.TupleWindow;
 import org.apache.storm.windowing.TupleWindowImpl;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestJoinBolt {
     String[] userFields = { "userId", "name", "city" };

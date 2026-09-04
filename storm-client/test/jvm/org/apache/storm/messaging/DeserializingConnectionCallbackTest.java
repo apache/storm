@@ -12,6 +12,12 @@
 
 package org.apache.storm.messaging;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -19,12 +25,6 @@ import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class DeserializingConnectionCallbackTest {
     private static final byte[] messageBytes = new byte[3];

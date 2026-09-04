@@ -16,12 +16,17 @@
 
 package org.apache.storm.trident;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+import java.util.Collections;
+import java.util.List;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.api.CreateBuilder;
 import org.apache.storm.shade.org.apache.curator.framework.api.ProtectACLCreateModeStatPathAndBytesable;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
-import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
+import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.trident.operation.builtin.Count;
 import org.apache.storm.trident.state.CombinerValueUpdater;
 import org.apache.storm.trident.state.OpaqueValue;
@@ -37,12 +42,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class StateTest {
 

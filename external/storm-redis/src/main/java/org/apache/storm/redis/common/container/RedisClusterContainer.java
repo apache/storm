@@ -52,7 +52,7 @@ public class RedisClusterContainer implements RedisCommandsInstanceContainer {
      */
     @Override
     public void returnInstance(RedisCommands redisCommands) {
-        // do nothing
+    // do nothing
     }
 
     /**

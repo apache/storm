@@ -13,7 +13,6 @@
 package org.apache.storm.nimbus;
 
 import com.codahale.metrics.Meter;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.security.auth.Subject;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;

@@ -12,6 +12,9 @@
 
 package org.apache.storm.trident;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.trident.windowing.InMemoryWindowsStore;
@@ -25,9 +28,6 @@ import org.apache.storm.trident.windowing.strategy.TumblingCountWindowStrategy;
 import org.apache.storm.trident.windowing.strategy.TumblingDurationWindowStrategy;
 import org.apache.storm.trident.windowing.strategy.WindowStrategy;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *

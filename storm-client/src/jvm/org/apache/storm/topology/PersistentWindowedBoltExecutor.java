@@ -195,9 +195,9 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
         return new WindowLifecycleListener<Tuple>() {
             @Override
             public void onExpiry(List<Tuple> events) {
-                /*
-                 * NO-OP: the events are ack-ed in execute
-                 */
+            /*
+             * NO-OP: the events are ack-ed in execute
+             */
             }
 
             @Override
@@ -242,7 +242,7 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
 
         @Override
         public void ack(Tuple input) {
-            // NOOP
+        // NOOP
         }
     }
 }

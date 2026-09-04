@@ -19,8 +19,8 @@ import org.apache.storm.trident.operation.Function;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.planner.ProcessorContext;
 import org.apache.storm.trident.planner.TridentProcessor;
-import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTuple.Factory;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 

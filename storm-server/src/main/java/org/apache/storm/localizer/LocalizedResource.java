@@ -43,7 +43,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -264,7 +263,7 @@ public class LocalizedResource extends LocallyCachedBlob {
                     try {
                         Files.createDirectories(parent);
                     } catch (FileAlreadyExistsException e) {
-                        //Ignored
+                    //Ignored
                     } catch (IOException e) {
                         LOG.error("Failed to create parent directory {}", parent, e);
                         throw e;

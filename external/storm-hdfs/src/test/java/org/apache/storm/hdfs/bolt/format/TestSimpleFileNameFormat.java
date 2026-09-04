@@ -12,6 +12,9 @@
 
 package org.apache.storm.hdfs.bolt.format;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
@@ -19,9 +22,6 @@ import java.util.Map;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestSimpleFileNameFormat {
 

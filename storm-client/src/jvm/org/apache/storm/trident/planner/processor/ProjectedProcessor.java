@@ -17,8 +17,8 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.planner.ProcessorContext;
 import org.apache.storm.trident.planner.TridentProcessor;
 import org.apache.storm.trident.planner.TupleReceiver;
-import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTuple.Factory;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 

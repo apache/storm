@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.util.Map;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Connection;
@@ -51,7 +50,7 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
 
     @Override
     public void doPrepare(Map<String, Object> conf) {
-        // we don't allow any cluster wide configuration
+    // we don't allow any cluster wide configuration
     }
 
     @Override
@@ -61,7 +60,7 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
 
     @Override
     public void shutdown() {
-        //no op.
+    //no op.
     }
 
     @Override

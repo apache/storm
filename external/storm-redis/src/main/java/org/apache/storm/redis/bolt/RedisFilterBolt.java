@@ -14,7 +14,6 @@ package org.apache.storm.redis.bolt;
 
 import java.util.List;
 import java.util.Objects;
-
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.container.JedisCommandsContainer;

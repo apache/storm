@@ -18,7 +18,6 @@ import com.codahale.metrics.Timer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
-
 import org.apache.storm.metric.timed.TimedResource;
 
 public class TimedWritableByteChannel extends TimedResource<WritableByteChannel> implements WritableByteChannel {

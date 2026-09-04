@@ -56,7 +56,7 @@ public class CountTriggerPolicy<T> implements TriggerPolicy<T, Integer> {
 
     @Override
     public void shutdown() {
-        // NOOP
+    // NOOP
     }
 
     @Override

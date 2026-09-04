@@ -58,8 +58,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
@@ -355,7 +355,7 @@ public class Utils {
                 LOG.warn("Forcing Halt... {}", Utils.threadDump());
                 Runtime.getRuntime().halt(20);
             } catch (InterruptedException ie) {
-                //Ignored/expected...
+            //Ignored/expected...
             } catch (Exception e) {
                 LOG.warn("Exception in the ShutDownHook", e);
             }

@@ -168,7 +168,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
         @Override
         public void flush() {
-            // NO-OP
+        // NO-OP
         }
 
         @Override

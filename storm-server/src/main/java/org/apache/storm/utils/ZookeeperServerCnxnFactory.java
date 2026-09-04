@@ -44,7 +44,7 @@ public class ZookeeperServerCnxnFactory {
                 LOG.debug("Zookeeper server successfully binded at port " + this.port);
                 break;
             } catch (BindException e1) {
-                //ignore
+            //ignore
             } catch (IOException e2) {
                 this.port = 0;
                 factory = null;

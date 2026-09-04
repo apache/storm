@@ -18,19 +18,6 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
-import org.apache.storm.Config;
-import org.apache.storm.DaemonConfig;
-import org.apache.storm.generated.Bolt;
-import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.generated.SpoutSpec;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.serialization.GzipThriftSerializationDelegate;
-import org.apache.storm.utils.Utils;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -43,6 +30,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.serialization.GzipThriftSerializationDelegate;
+import org.apache.storm.utils.Utils;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Anonymize Serialized Topologies and Configs with the goal of taking internally developed topologies and configuration

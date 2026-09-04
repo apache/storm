@@ -18,16 +18,15 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
-
 import net.minidev.json.JSONValue;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.LocalCluster;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NimbusGetNimbusConfTest {
 

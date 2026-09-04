@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.xml.bind.DatatypeConverter;
-
 import org.apache.commons.math3.util.Pair;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;

@@ -21,7 +21,6 @@ package org.apache.storm.redis.topology;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;

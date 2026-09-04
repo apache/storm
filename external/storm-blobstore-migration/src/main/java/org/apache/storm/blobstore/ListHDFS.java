@@ -19,9 +19,7 @@
 package org.apache.storm.blobstore;
 
 import java.util.Map;
-
 import javax.security.auth.Subject;
-
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.hdfs.blobstore.HdfsBlobStore;

@@ -88,7 +88,7 @@ public class KeyStreamRandom extends Random {
 
     @Override
     public void setSeed(long seed) {
-        // there is nothing to seed, and Random's constructor calls this before this class' fields exist
+    // there is nothing to seed, and Random's constructor calls this before this class' fields exist
     }
 
     private void fill() {

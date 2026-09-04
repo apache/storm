@@ -13,8 +13,8 @@
 package org.apache.storm.starter;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;

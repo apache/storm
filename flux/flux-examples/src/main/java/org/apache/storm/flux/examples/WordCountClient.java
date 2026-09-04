@@ -20,7 +20,6 @@ package org.apache.storm.flux.examples;
 
 import java.io.FileInputStream;
 import java.util.Properties;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;

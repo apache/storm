@@ -17,7 +17,6 @@ import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.codahale.metrics.graphite.GraphiteUDP;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

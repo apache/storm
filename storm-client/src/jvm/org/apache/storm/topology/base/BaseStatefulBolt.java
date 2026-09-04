@@ -23,17 +23,17 @@ public abstract class BaseStatefulBolt<T extends State> implements IStatefulBolt
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void cleanup() {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        // NOOP
+    // NOOP
     }
 
     @Override
@@ -43,16 +43,16 @@ public abstract class BaseStatefulBolt<T extends State> implements IStatefulBolt
 
     @Override
     public void preCommit(long txid) {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void prePrepare(long txid) {
-        // NOOP
+    // NOOP
     }
 
     @Override
     public void preRollback() {
-        // NOOP
+    // NOOP
     }
 }

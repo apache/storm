@@ -18,6 +18,21 @@
 
 package org.apache.storm.scheduler.resource.strategies.priority;
 
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.addTopologies;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesBeenEvicted;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesNotBeenEvicted;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesNotScheduled;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userRes;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -37,22 +52,6 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResou
 import org.apache.storm.utils.Time;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.addTopologies;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesBeenEvicted;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesFullyScheduled;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesNotBeenEvicted;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.assertTopologiesNotScheduled;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userRes;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
 
 public class TestGenericResourceAwareSchedulingPriorityStrategy {
     private static final Class[] strategyClasses = {

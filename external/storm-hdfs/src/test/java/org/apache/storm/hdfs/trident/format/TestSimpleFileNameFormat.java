@@ -12,13 +12,13 @@
 
 package org.apache.storm.hdfs.trident.format;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestSimpleFileNameFormat {
 

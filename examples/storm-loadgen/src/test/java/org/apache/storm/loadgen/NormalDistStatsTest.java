@@ -18,9 +18,9 @@
 
 package org.apache.storm.loadgen;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class NormalDistStatsTest {
     public static void assertNDSEquals(NormalDistStats a, NormalDistStats b) {

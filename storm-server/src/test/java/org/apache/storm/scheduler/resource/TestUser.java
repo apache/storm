@@ -12,6 +12,13 @@
 
 package org.apache.storm.scheduler.resource;
 
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.toDouble;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userRes;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -22,8 +29,8 @@ import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.INimbusTest;
+import org.apache.storm.scheduler.resource.normalization.ResourceMetrics;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategyOld;
 import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
@@ -31,13 +38,6 @@ import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResource
 import org.apache.storm.scheduler.resource.strategies.scheduling.RoundRobinResourceAwareStrategy;
 import org.apache.storm.utils.Time;
 import org.junit.jupiter.api.Test;
-
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genSupervisors;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.genTopology;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.toDouble;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userRes;
-import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.userResourcePool;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class TestUser {

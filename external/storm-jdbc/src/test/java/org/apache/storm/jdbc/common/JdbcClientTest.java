@@ -12,6 +12,9 @@
 
 package org.apache.storm.jdbc.common;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.sql.Connection;
@@ -23,9 +26,6 @@ import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JdbcClientTest {
 

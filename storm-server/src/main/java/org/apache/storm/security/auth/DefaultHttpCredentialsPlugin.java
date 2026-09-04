@@ -31,7 +31,7 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
      */
     @Override
     public void prepare(Map<String, Object> topoConf) {
-        // Do nothing.
+    // Do nothing.
     }
 
     @Override

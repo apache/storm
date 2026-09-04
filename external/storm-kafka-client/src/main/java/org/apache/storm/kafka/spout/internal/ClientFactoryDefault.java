@@ -17,7 +17,6 @@
 package org.apache.storm.kafka.spout.internal;
 
 import java.util.Map;
-
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.consumer.KafkaConsumer;

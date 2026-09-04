@@ -18,6 +18,10 @@
 
 package org.apache.storm.container.oci;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,10 +31,6 @@ import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.utils.WrappedInvalidTopologyException;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class OciUtilsTest {
 

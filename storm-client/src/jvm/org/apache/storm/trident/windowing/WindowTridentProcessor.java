@@ -166,7 +166,7 @@ public class WindowTridentProcessor implements TridentProcessor {
 
     @Override
     public void flush() {
-        // NO-OP
+    // NO-OP
     }
 
     @Override

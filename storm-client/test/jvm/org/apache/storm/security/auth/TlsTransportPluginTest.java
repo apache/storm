@@ -13,6 +13,12 @@
 package org.apache.storm.security.auth;
 
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -34,13 +40,8 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.security.auth.tls.ReloadableTsslTransportFactory;
 import org.apache.storm.security.auth.tls.TlsTransportPlugin;
 import org.apache.storm.thrift.transport.TServerSocket;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.mock;
 
 class TlsTransportPluginTest {
     static private final Map<String, Object> conf = new HashMap<>();

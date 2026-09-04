@@ -18,10 +18,11 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.LocalCluster;
@@ -39,8 +40,6 @@ import org.apache.storm.utils.NimbusClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for Nimbus authentication and authorization with various transport plugins.

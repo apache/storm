@@ -32,8 +32,8 @@ import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.TransferDrainer;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.Utils.SmartThread;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

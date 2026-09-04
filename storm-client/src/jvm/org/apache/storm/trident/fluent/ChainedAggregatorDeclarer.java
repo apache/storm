@@ -24,8 +24,8 @@ import org.apache.storm.trident.operation.impl.ChainedAggregatorImpl;
 import org.apache.storm.trident.operation.impl.CombinerAggregatorCombineImpl;
 import org.apache.storm.trident.operation.impl.CombinerAggregatorInitImpl;
 import org.apache.storm.trident.operation.impl.ReducerAggregatorImpl;
-import org.apache.storm.trident.operation.impl.SingleEmitAggregator;
 import org.apache.storm.trident.operation.impl.SingleEmitAggregator.BatchToPartition;
+import org.apache.storm.trident.operation.impl.SingleEmitAggregator;
 import org.apache.storm.trident.tuple.ComboList;
 import org.apache.storm.tuple.Fields;
 

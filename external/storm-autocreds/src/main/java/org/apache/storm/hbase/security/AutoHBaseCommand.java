@@ -24,7 +24,6 @@ import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_PRINCIPAL_
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -20,7 +20,6 @@ package org.apache.storm.redis.trident;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisLookupMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;

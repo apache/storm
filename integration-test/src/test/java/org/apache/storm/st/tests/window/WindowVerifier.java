@@ -16,6 +16,8 @@
 
 package org.apache.storm.st.tests.window;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -31,8 +33,6 @@ import org.apache.storm.st.wrapper.TopoWrap;
 import org.apache.storm.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WindowVerifier {
 

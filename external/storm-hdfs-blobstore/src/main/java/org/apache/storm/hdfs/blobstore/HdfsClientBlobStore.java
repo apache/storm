@@ -21,7 +21,6 @@ package org.apache.storm.hdfs.blobstore;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
@@ -119,7 +118,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
 
     @Override
     public void createStateInZookeeper(String key) {
-        // Do nothing
+    // Do nothing
     }
 
     @Override

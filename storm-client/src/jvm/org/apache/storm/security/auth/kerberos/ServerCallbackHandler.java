@@ -66,7 +66,7 @@ public class ServerCallbackHandler implements CallbackHandler {
             } else if (callback instanceof PasswordCallback) {
                 pc = (PasswordCallback) callback;
             } else if (callback instanceof RealmCallback) {
-                //Ignored...
+            //Ignored...
             } else {
                 throw new UnsupportedCallbackException(callback,
                                                        "Unrecognized SASL Callback");

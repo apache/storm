@@ -13,6 +13,14 @@
 package org.apache.storm.localizer;
 
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,18 +35,9 @@ import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.EquivalenceUtils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
-import org.apache.storm.metric.StormMetricsRegistry;
 
 public class LocalizedResourceRetentionSetTest {
 

@@ -12,6 +12,9 @@
 
 package org.apache.storm.blobstore;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,15 +32,12 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.shade.org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.testing.InProcessZookeeper;
+import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *  Unit tests for most of the testable utility methods

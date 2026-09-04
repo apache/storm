@@ -12,9 +12,9 @@
 
 package org.apache.storm.streams.windowing;
 
-import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.topology.base.BaseWindowedBolt.Count;
 import org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+import org.apache.storm.topology.base.BaseWindowedBolt;
 
 /**
  * A sliding window specification based on a window length and sliding interval.

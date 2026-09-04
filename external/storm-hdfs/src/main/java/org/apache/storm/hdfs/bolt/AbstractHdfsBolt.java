@@ -226,9 +226,9 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         } catch (IOException e) {
             this.collector.reportError(e);
             LOG.error("File could not be rotated");
-            //At this point there is nothing to do.  In all likelihood any filesystem operations will fail.
-            //The next tuple will almost certainly fail to write and/or sync, which force a rotation.  That
-            //will give rotateAndReset() a chance to work which includes creating a fresh file handle.
+        //At this point there is nothing to do.  In all likelihood any filesystem operations will fail.
+        //The next tuple will almost certainly fail to write and/or sync, which force a rotation.  That
+        //will give rotateAndReset() a chance to work which includes creating a fresh file handle.
         } finally {
             //rotateOutputFile(writer) has closed the writer. It's safe to remove the writer from the map here.
             writers.remove(writerKey);

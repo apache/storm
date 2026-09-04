@@ -12,6 +12,8 @@
 
 package org.apache.storm.hdfs.spout;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.io.File;
 import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
@@ -21,8 +23,6 @@ import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class TestProgressTracker {
 

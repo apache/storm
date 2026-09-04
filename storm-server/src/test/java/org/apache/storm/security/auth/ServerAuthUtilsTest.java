@@ -18,13 +18,12 @@
 
 package org.apache.storm.security.auth;
 
-import org.apache.storm.DaemonConfig;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
+import org.apache.storm.DaemonConfig;
+import org.junit.jupiter.api.Test;
 
 public class ServerAuthUtilsTest {
 
@@ -32,7 +31,7 @@ public class ServerAuthUtilsTest {
 
         @Override
         public void prepare(Map<String, Object> topoConf) {
-            //NO OP
+        //NO OP
         }
 
         @Override

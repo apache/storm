@@ -12,15 +12,15 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Collections;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue.Consumer;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JCQueueBackpressureTest {
     

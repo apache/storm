@@ -319,7 +319,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
         @Override
         public void close() {
-            //NOOP on purpose
+        //NOOP on purpose
         }
     }
 
@@ -363,7 +363,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
         @Override
         public void start() {
-            //NOOP
+        //NOOP
         }
 
         @Override
