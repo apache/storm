@@ -61,6 +61,8 @@ Beware that Java serialization is extremely expensive, both in terms of CPU cost
 
 You can turn on/off the behavior to fall back on Java serialization by setting the `Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION` config to true/false. The default value is false for security reasons.
 
+When the fallback is enabled, the bridge can be constrained with `Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER`, a [JEP-290](https://openjdk.org/jeps/290) serial-filter pattern (e.g. `!org.apache.commons.collections4.functors.*;maxbytes=10485760`) applied to every `ObjectInputStream` the bridge uses for deserialization. The pattern is parsed when the serialization stack is created, so an invalid pattern fails worker setup with the config key in the error. `conf/defaults.yaml` carries a default deny-list of well-known gadget namespaces with a `maxbytes=10485760` limit; an empty or unset value leaves the bridge unfiltered, as before. Unlike a JVM-wide `-Djdk.serialFilter`, this filter is topology-scoped and also applies when the deserializer is constructed programmatically, e.g. in local mode.
+
 ### Tuple compression
 
 For inter-worker (remote) traffic, Storm can optionally compress serialized tuples with [Zstandard](https://facebook.github.io/zstd/) before they are sent over the network. This is intended for one specific scenario: components that emit **large** payloads to a remote worker, where the bytes saved on the wire outweigh the CPU cost of compression. A good example is a spout that emits entire lines of text to a downstream bolt running on a different worker.

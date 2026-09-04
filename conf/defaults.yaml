@@ -309,6 +309,7 @@ topology.upstream.feedback.freq.secs: 10
 topology.upstream.feedback.enable: false
 topology.builtin.metrics.bucket.size.secs: 60
 topology.fall.back.on.java.serialization: false
+topology.fall.back.on.java.serialization.filter: "!org.apache.commons.collections.functors.*;!org.apache.commons.collections.comparators.*;!org.apache.commons.collections4.functors.*;!org.apache.commons.collections4.comparators.*;!org.apache.commons.beanutils.*;!org.apache.xalan.xsltc.trax.*;!com.sun.org.apache.xalan.internal.**;!com.sun.rowset.*;!com.sun.org.apache.rowset.internal.*;!com.mchange.v2.c3p0.**;!org.codehaus.groovy.runtime.ConvertedClosure;!org.codehaus.groovy.runtime.MethodClosure;maxbytes=10485760"
 topology.worker.childopts: null
 topology.worker.logwriter.childopts: "-Xmx64m"
 topology.tick.tuple.freq.secs: null

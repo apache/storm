@@ -19,11 +19,28 @@ import com.esotericsoftware.kryo.io.Output;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 
 public class SerializableSerializer extends Serializer<Object> {
+
+    /**
+     * Optional JEP-290 filter applied to each ObjectInputStream used for deserialization (null means unfiltered,
+     * as before). The filter itself is created once from
+     * {@link org.apache.storm.Config#TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER} by {@link DefaultKryoFactory};
+     * instances returned by {@link ObjectInputFilter.Config#createFilter} are immutable and safe to share across streams.
+     */
+    private final ObjectInputFilter serialFilter;
+
+    public SerializableSerializer() {
+        this(null);
+    }
+
+    public SerializableSerializer(ObjectInputFilter serialFilter) {
+        this.serialFilter = serialFilter;
+    }
 
     @Override
     public void write(Kryo kryo, Output output, Object object) {
@@ -48,6 +65,9 @@ public class SerializableSerializer extends Serializer<Object> {
         ByteArrayInputStream bis = new ByteArrayInputStream(ser);
         try {
             ObjectInputStream ois = new ObjectInputStream(bis);
+            if (serialFilter != null) {
+                ois.setObjectInputFilter(serialFilter);
+            }
             return ois.readObject();
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -663,6 +663,8 @@ Storm uses Kryo for serializing tuple data between spouts and bolts. By default,
 
 **Do not set `topology.fall.back.on.java.serialization` to `true` in production.** While topology submitters already run arbitrary code via their spouts and bolts, enabling the Java serialization fallback broadens the attack surface and may allow malicious data from external sources (e.g. message queues) to trigger unintended code execution during deserialization.
 
+As defense in depth, the fallback bridge is constrained by `topology.fall.back.on.java.serialization.filter`, a [JEP-290](https://openjdk.org/jeps/290) serial-filter pattern applied whenever the bridge deserializes. `conf/defaults.yaml` sets a default pattern: a deny-list of well-known gadget namespaces plus `maxbytes=10485760`. An empty or unset value leaves the bridge unfiltered, as before. This reduces the impact of a misconfigured cluster.
+
 For tuple encryption, use TLS-based transport encryption (`storm.messaging.netty.tls.enable`) instead of the deprecated `BlowfishTupleSerializer`, which uses a 64-bit block cipher vulnerable to birthday attacks.
 
 ### Log Cleanup
