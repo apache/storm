@@ -295,12 +295,14 @@ Be aware that the `__system` bolt is an actual bolt so regular bolt metrics desc
     "dequeuedMessages": 0,
     "enqueued": {
       "/127.0.0.1:49952": 389951
-    }
+    },
+    "deserializationFailures": 0
 }
 ```
 
 `dequeuedMessages` is a throwback to older code where there was an internal queue between the server and the bolts/spouts.  That is no longer the case and the value can be ignored.
 `enqueued` is a map between the address of the remote worker and the number of tuples that were sent from it to this worker.
+`deserializationFailures` is the number of incoming messages that failed to deserialize and were dropped.
 
 ##### Send (Netty Client)
 

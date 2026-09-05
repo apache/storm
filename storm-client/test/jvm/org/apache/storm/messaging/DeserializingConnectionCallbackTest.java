@@ -16,7 +16,6 @@ import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Output;
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -148,7 +147,7 @@ public class DeserializingConnectionCallbackTest {
         out.writeInt(1, true);    // default stream id
         byte[] unknownTask = out.toBytes();
 
-        assertThrows(NullPointerException.class, () -> new KryoTupleDeserializer(conf, context).deserialize(unknownTask));
+        assertThrows(IllegalArgumentException.class, () -> new KryoTupleDeserializer(conf, context).deserialize(unknownTask));
 
         assertBatchDeliversOnlyValidMessages(conf, unknownTask);
     }
@@ -202,30 +201,39 @@ public class DeserializingConnectionCallbackTest {
     }
 
     @Test
+    public void testFailuresCountedSeparatelyFromSizeMetrics() {
+        Map<String, Object> conf = baseConf();
+        conf.put(Config.TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS, Boolean.TRUE);
+        WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
+        DeserializingConnectionCallback callback = new DeserializingConnectionCallback(conf, context, transfer);
+
+        callback.recv(Arrays.asList(
+            taskMessage(serializedTuple(conf, new Values("nathan", 1))),
+            taskMessage(new byte[]{1, 2, 3})));
+
+        Object metrics = callback.getValueAndReset();
+        assertTrue(metrics instanceof Map);
+        assertEquals(1, ((Map<?, ?>) metrics).size());
+        assertTrue(((Map<?, ?>) metrics).containsKey("1-2"));
+
+        assertEquals(1L, callback.getAndResetDeserializationFailures());
+        assertEquals(0L, callback.getAndResetDeserializationFailures());
+    }
+
+    @Test
     public void testNonToleratedExceptionPropagates() throws Exception {
         WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
         DeserializingConnectionCallback callback = new DeserializingConnectionCallback(baseConf(), context, transfer);
         KryoTupleDeserializer failing = mock(KryoTupleDeserializer.class);
         when(failing.deserialize(any(byte[].class))).thenThrow(new IllegalStateException("injected"));
-        replaceDeserializer(callback, failing);
+        callback.setDeserializer(failing);
 
         assertThrows(IllegalStateException.class,
                      () -> callback.recv(Collections.singletonList(taskMessage(new byte[]{1}))));
 
         verify(transfer, never()).transfer(any());
+        assertEquals(0L, callback.getAndResetDeserializationFailures());
         assertNull(callback.getValueAndReset());
-    }
-
-    private static void replaceDeserializer(DeserializingConnectionCallback callback,
-                                            KryoTupleDeserializer replacement) throws Exception {
-        Field field = DeserializingConnectionCallback.class.getDeclaredField("des");
-        field.setAccessible(true);
-        field.set(callback, new ThreadLocal<KryoTupleDeserializer>() {
-            @Override
-            protected KryoTupleDeserializer initialValue() {
-                return replacement;
-            }
-        });
     }
 
     private void assertBatchDeliversOnlyValidMessages(Map<String, Object> conf, byte[] badPayload) {
@@ -247,9 +255,7 @@ public class DeserializingConnectionCallbackTest {
         assertEquals(DEST_TASK_ID, delivered.get(1).getDest());
         assertEquals(new Values("golda", 2), delivered.get(1).getTuple().getValues());
 
-        Object metrics = callback.getValueAndReset();
-        assertTrue(metrics instanceof Map, "expected the deserialization failure to be counted");
-        assertEquals(1L, ((Map<?, ?>) metrics).get(DeserializingConnectionCallback.DESERIALIZATION_FAILURES_KEY));
+        assertEquals(1L, callback.getAndResetDeserializationFailures());
         assertNull(callback.getValueAndReset());
     }
 

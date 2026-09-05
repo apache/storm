@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
+import org.apache.storm.messaging.DeserializingConnectionCallback;
 import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.metric.api.IMetric;
@@ -240,6 +241,11 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             }
         }
         ret.put("enqueued", enqueued);
+
+        if (cb instanceof DeserializingConnectionCallback) {
+            DeserializingConnectionCallback callback = (DeserializingConnectionCallback) cb;
+            ret.put("deserializationFailures", callback.getAndResetDeserializationFailures());
+        }
 
         // Report messageSizes metric, if enabled (non-null).
         if (cb instanceof IMetric) {
