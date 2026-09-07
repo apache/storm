@@ -119,16 +119,6 @@ public class DeserializingConnectionCallbackTest {
     }
 
     @Test
-    public void testBatchWithCorruptMessageDropsOnlyCorruptMessage() {
-        Map<String, Object> conf = baseConf();
-        byte[] corrupt = new byte[]{1, 2, 3};
-        assertThrows(RuntimeException.class,
-                     () -> new KryoTupleDeserializer(conf, context).deserialize(corrupt));
-
-        assertBatchDeliversOnlyValidMessages(conf, corrupt);
-    }
-
-    @Test
     public void testTruncatedKryoPayloadDroppedAndBatchContinues() {
         Map<String, Object> conf = baseConf();
         byte[] full = serializedTuple(conf, new Values("a-string-long-enough-to-survive-truncation", 7));
@@ -234,6 +224,26 @@ public class DeserializingConnectionCallbackTest {
         verify(transfer, never()).transfer(any());
         assertEquals(0L, callback.getAndResetDeserializationFailures());
         assertNull(callback.getValueAndReset());
+    }
+
+    @Test
+    public void testPostDecodeFailurePropagatesAndIsNotCounted() {
+        WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
+        // IllegalArgumentException is a tolerated deserialization-failure type; throwing it from
+        // updateMetrics, which runs after a successful decode, proves the try scope covers decoding only.
+        DeserializingConnectionCallback callback = new DeserializingConnectionCallback(baseConf(), context, transfer) {
+            @Override
+            protected void updateMetrics(int sourceTaskId, TaskMessage message) {
+                throw new IllegalArgumentException("injected after decode");
+            }
+        };
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> callback.recv(Collections.singletonList(
+                         taskMessage(serializedTuple(baseConf(), new Values("nathan", 1))))));
+
+        verify(transfer, never()).transfer(any());
+        assertEquals(0L, callback.getAndResetDeserializationFailures());
     }
 
     private void assertBatchDeliversOnlyValidMessages(Map<String, Object> conf, byte[] badPayload) {

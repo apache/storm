@@ -54,10 +54,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
         BufferUnderflowException.class,
         ClassNotFoundException.class));
 
-    // Drop-log rate limits: the first INDIVIDUAL_DROP_LOG_LIMIT failures are logged in full,
-    // then one summary line per DROP_LOG_SUMMARY_INTERVAL further failures, and a run of
-    // CONSECUTIVE_DROP_WARN_THRESHOLD failures without a successful deserialization logs
-    // a single WARN.
+    // Rate limits for drop logging; see recv().
     private static final int INDIVIDUAL_DROP_LOG_LIMIT = 10;
     private static final int DROP_LOG_SUMMARY_INTERVAL = 100;
     private static final long CONSECUTIVE_DROP_WARN_THRESHOLD = 1000L;
@@ -103,14 +100,9 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
         KryoTupleDeserializer des = this.des.get();
         ArrayList<AddressedTuple> ret = new ArrayList<>(batch.size());
         for (TaskMessage message : batch) {
+            Tuple tuple;
             try {
-                Tuple tuple = des.deserialize(message.message());
-                AddressedTuple addrTuple = new AddressedTuple(message.task(), tuple);
-                updateMetrics(tuple.getSourceTask(), message);
-                ret.add(addrTuple);
-                if (consecutiveDropCount.get() != 0L) {
-                    consecutiveDropCount.set(0L);
-                }
+                tuple = des.deserialize(message.message());
             } catch (Exception e) {
                 if (!isToleratedDeserializationFailure(e)) {
                     throw e;
@@ -128,10 +120,17 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
                 }
                 long consecutiveDrops = consecutiveDropCount.incrementAndGet();
                 if (consecutiveDrops == CONSECUTIVE_DROP_WARN_THRESHOLD) {
-                    LOG.warn("{} consecutive messages have failed to deserialize, indicating "
-                             + "a persistent fault such as a class missing from the classpath",
+                    LOG.warn("{} consecutive messages have failed to deserialize, which usually "
+                             + "means a class is missing from the worker classpath",
                              consecutiveDrops, e);
                 }
+                continue;
+            }
+            AddressedTuple addrTuple = new AddressedTuple(message.task(), tuple);
+            updateMetrics(tuple.getSourceTask(), message);
+            ret.add(addrTuple);
+            if (consecutiveDropCount.get() != 0L) {
+                consecutiveDropCount.set(0L);
             }
         }
         cb.transfer(ret);
@@ -151,7 +150,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
     /**
      * Returns serialized byte count traffic metrics.
      *
-     * @return Map of metric counts, or null when size metrics are disabled
+     * @return Map of metric counts, or null if disabled
      */
     @Override
     public Object getValueAndReset() {
