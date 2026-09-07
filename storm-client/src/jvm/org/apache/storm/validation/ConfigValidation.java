@@ -15,6 +15,7 @@ package org.apache.storm.validation;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputFilter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -587,6 +588,30 @@ public class ConfigValidation {
                 }
             }
             throw new IllegalArgumentException("Field " + name + " must be a power of 2.");
+        }
+    }
+
+    /**
+     * Validates that a String is a well-formed JEP-290 serial-filter pattern.
+     */
+    public static class SerialFilterPatternValidator extends Validator {
+
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, String.class, o);
+            String pattern = (String) o;
+            if (pattern.isEmpty()) {
+                return; // empty means no filter
+            }
+            try {
+                ObjectInputFilter.Config.createFilter(pattern);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                    "Field " + name + " is not a valid JEP-290 serial-filter pattern: '" + pattern + "'", e);
+            }
         }
     }
 

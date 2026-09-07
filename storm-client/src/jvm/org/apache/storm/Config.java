@@ -665,13 +665,17 @@ public class Config extends HashMap<String, Object> {
      * Java-serialization fallback bridge that {@link #TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION} enables for
      * unregistered classes. When set to a non-empty pattern, it is parsed once at kryo construction and installed
      * on every {@code ObjectInputStream} used to deserialize fallback values, so stream classes rejected by the
-     * filter are neither instantiated nor have their {@code readObject} logic invoked. {@code conf/defaults.yaml}
-     * sets a default gadget deny-list with a {@code maxbytes=10485760} limit; an empty or unset value leaves the
-     * bridge unfiltered, as before. An invalid pattern fails worker startup with a clear error. Note: Unlike a
-     * JVM-wide {@code jdk.serialFilter}, this is topology-scoped and also applies when the deserializer is built
-     * programmatically, e.g. local mode. Example deny-list: {@code !org.apache.commons.collections4.functors.*}.
+     * filter are neither instantiated nor have their {@code readObject} logic invoked. Unset by default;
+     * {@code docs/SECURITY.md} has a sample deny-list pattern to start from. An empty or unset value leaves the
+     * bridge unfiltered, as before. An invalid pattern fails topology submission and worker startup with a clear error.
+     * Note: unlike a JVM-wide {@code jdk.serialFilter}, this is topology-scoped and also applies when the
+     * deserializer is built programmatically, e.g. local mode; when both are present the two filters are merged,
+     * so each takes effect. Filters only {@code DefaultKryoFactory}'s fallback path; a custom
+     * {@code topology.kryo.factory} or the pre-kryo state serializer must arrange its own filtering.
+     * {@code maxbytes} is per value, not per tuple, and approximate: a large primitive array is measured at
+     * creation and may exceed it. Example deny-list: {@code !org.apache.commons.collections4.functors.*}.
      */
-    @IsString
+    @IsString(validatorClass = ConfigValidation.SerialFilterPatternValidator.class)
     public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER =
             "topology.fall.back.on.java.serialization.filter";
     /**

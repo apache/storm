@@ -27,10 +27,9 @@ public class DefaultKryoFactory implements IKryoFactory {
 
     @Override
     public Kryo getKryo(Map<String, Object> conf) {
-        KryoSerializableDefault k = new KryoSerializableDefault();
+        KryoSerializableDefault k = new KryoSerializableDefault(getJavaSerializationFilter(conf));
         k.setRegistrationRequired(!((Boolean) conf.get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION)));
         k.setReferences(false);
-        k.setJavaSerializationFilter(getJavaSerializationFilter(conf));
         return k;
     }
 
@@ -46,7 +45,7 @@ public class DefaultKryoFactory implements IKryoFactory {
         try {
             return ObjectInputFilter.Config.createFilter(filterSpec);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid " + Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER
+            throw new IllegalArgumentException("Invalid " + Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER
                     + " pattern: \"" + filterSpec + "\"", e);
         }
     }
@@ -66,10 +65,10 @@ public class DefaultKryoFactory implements IKryoFactory {
 
     public static class KryoSerializableDefault extends Kryo {
         boolean override = false;
-        private ObjectInputFilter javaSerializationFilter;
+        private final ObjectInputFilter javaSerializationFilter;
 
-        public void setJavaSerializationFilter(ObjectInputFilter filter) {
-            this.javaSerializationFilter = filter;
+        KryoSerializableDefault(ObjectInputFilter javaSerializationFilter) {
+            this.javaSerializationFilter = javaSerializationFilter;
         }
 
         public void overrideDefault(boolean value) {

@@ -13,6 +13,7 @@
 package org.apache.storm.serialization;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -60,17 +61,39 @@ public class SerializableSerializer extends Serializer<Object> {
     @Override
     public Object read(Kryo kryo, Input input, Class c) {
         int len = input.readInt();
+        if (len < 0) {
+            throw new KryoException("Invalid java-serialized value length: " + len);
+        }
+        // For a buffer-backed Input the remaining bytes are known (position/limit), so a declared length larger than the
+        // bytes actually left is refused before the new byte[len] allocation; a stream-backed Input may still deliver the
+        // declared bytes later, so the upper bound is not checked there.
+        if (input.getInputStream() == null) {
+            int remaining = input.limit() - input.position();
+            if (len > remaining) {
+                throw new KryoException("Declared java-serialized value length exceeds the input's remaining bytes "
+                        + "(declared: " + len + ", remaining: " + remaining + ")");
+            }
+        }
         byte[] ser = new byte[len];
         input.readBytes(ser);
         ByteArrayInputStream bis = new ByteArrayInputStream(ser);
         try {
             ObjectInputStream ois = new ObjectInputStream(bis);
             if (serialFilter != null) {
-                ois.setObjectInputFilter(serialFilter);
+                ois.setObjectInputFilter(mergeWithExisting(serialFilter, ois.getObjectInputFilter()));
             }
             return ois.readObject();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Combines the configured filter with the stream's existing filter (a JVM-wide {@code jdk.serialFilter}, if any), so both
+     * the configured pattern and any process-wide filter apply to the stream: per JEP-290,
+     * {@link ObjectInputStream#setObjectInputFilter} overrides the process-wide filter for that stream unless the two are merged.
+     */
+    static ObjectInputFilter mergeWithExisting(ObjectInputFilter configured, ObjectInputFilter existing) {
+        return existing != null ? ObjectInputFilter.merge(configured, existing) : configured;
     }
 }

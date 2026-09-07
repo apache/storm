@@ -61,7 +61,11 @@ Beware that Java serialization is extremely expensive, both in terms of CPU cost
 
 You can turn on/off the behavior to fall back on Java serialization by setting the `Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION` config to true/false. The default value is false for security reasons.
 
-When the fallback is enabled, the bridge can be constrained with `Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER`, a [JEP-290](https://openjdk.org/jeps/290) serial-filter pattern (e.g. `!org.apache.commons.collections4.functors.*;maxbytes=10485760`) applied to every `ObjectInputStream` the bridge uses for deserialization. The pattern is parsed when the serialization stack is created, so an invalid pattern fails worker setup with the config key in the error. `conf/defaults.yaml` carries a default deny-list of well-known gadget namespaces with a `maxbytes=10485760` limit; an empty or unset value leaves the bridge unfiltered, as before. Unlike a JVM-wide `-Djdk.serialFilter`, this filter is topology-scoped and also applies when the deserializer is constructed programmatically, e.g. in local mode.
+When the fallback is enabled, the bridge can be constrained with `Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER`, a [JEP-290](https://openjdk.org/jeps/290) serial-filter pattern (e.g. `!org.apache.commons.collections4.functors.*;maxbytes=10485760`) applied to every `ObjectInputStream` the bridge uses for deserialization. An invalid pattern is refused when the topology is submitted, and if one reaches a worker anyway its setup fails with the config key in the error. Unlike a JVM-wide `-Djdk.serialFilter`, this filter is topology-scoped and also applies when the deserializer is constructed programmatically, e.g. in local mode. When both are present, the two filters are merged, so both apply.
+
+This only filters the fallback path of the default kryo factory. A custom `topology.kryo.factory` gets no filter from Storm and must set its own; `DefaultStateSerializer`, used for worker state before kryo is set up, is unfiltered as well.
+
+There is no default value; see `docs/SECURITY.md` for a sample pattern. `maxbytes` is a per-object budget (one `ObjectInputStream` per value, not per tuple) and can be overshot by a single large array, since the array is measured before its contents are read. On buffered input the bridge rejects a declared length that exceeds the bytes remaining in the frame before allocating; streaming programmatic use is not covered. An empty or unset value leaves the bridge unfiltered, as before.
 
 ### Tuple compression
 

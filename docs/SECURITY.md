@@ -663,7 +663,19 @@ Storm uses Kryo for serializing tuple data between spouts and bolts. By default,
 
 **Do not set `topology.fall.back.on.java.serialization` to `true` in production.** While topology submitters already run arbitrary code via their spouts and bolts, enabling the Java serialization fallback broadens the attack surface and may allow malicious data from external sources (e.g. message queues) to trigger unintended code execution during deserialization.
 
-As defense in depth, the fallback bridge is constrained by `topology.fall.back.on.java.serialization.filter`, a [JEP-290](https://openjdk.org/jeps/290) serial-filter pattern applied whenever the bridge deserializes. `conf/defaults.yaml` sets a default pattern: a deny-list of well-known gadget namespaces plus `maxbytes=10485760`. An empty or unset value leaves the bridge unfiltered, as before. This reduces the impact of a misconfigured cluster.
+As defense in depth, the fallback bridge can be constrained with `topology.fall.back.on.java.serialization.filter`, a [JEP-290](https://openjdk.org/jeps/290) serial-filter pattern applied whenever the bridge deserializes. The filter covers the fallback bridge of the default kryo factory (`DefaultKryoFactory`) only; a custom `topology.kryo.factory` implementation is outside its reach and must handle filtering itself, and the pre-kryo worker state channel (`DefaultStateSerializer`) is not covered either. An empty or unset value leaves the bridge unfiltered, as before.
+
+When the bridge is used, the configured filter is merged with any JVM-wide `jdk.serialFilter` (e.g. set in `worker.childopts`) rather than replacing it, so enabling this setting can only tighten stream filtering, never loosen an operator-set allow-list.
+
+The pattern below is a starting point for operators who enable the fallback anyway and know which classes their payloads contain. It is not a security boundary, and the deny-list is not exhaustive. Following [JEP-290](https://openjdk.org/jeps/290) guidance, an allow-list of the exact classes a topology actually needs is the preferred design; deny-lists only block known gadget classes.
+
+```yaml
+topology.fall.back.on.java.serialization.filter: "!org.apache.commons.collections.functors.*;!org.apache.commons.collections.comparators.*;!org.apache.commons.collections4.functors.*;!org.apache.commons.collections4.comparators.*;!org.apache.commons.beanutils.*;!org.apache.xalan.xsltc.trax.*;!com.sun.org.apache.xalan.internal.**;!com.sun.rowset.*;!com.sun.org.apache.rowset.internal.*;!com.mchange.v2.c3p0.**;!org.codehaus.groovy.runtime.ConvertedClosure;!org.codehaus.groovy.runtime.MethodClosure;!javax.management.BadAttributeValueExpException;!sun.reflect.annotation.AnnotationInvocationHandler;!com.sun.jndi.**;!java.rmi.**;!clojure.**;!org.apache.commons.fileupload.**;!bsh.**;!org.python.**;!org.jboss.**;maxdepth=64;maxrefs=2097152;maxarray=1048576;maxbytes=10485760"
+```
+
+The size limits need a caveat. `maxbytes` counts stream bytes per object, not per tuple, and it is not exact: the filter sees a primitive array when the array is created, before its contents are read, so one big array can slip past the byte cap. `maxarray`, set well below `maxbytes`, is what bounds that case; `maxdepth` and `maxrefs` bound the depth and reference count of the graph. Workloads that legitimately use large arrays should raise these limits. On buffered input the bridge also refuses a declared value length larger than the bytes left in the frame before allocating it; streaming programmatic use of the deserializer is outside this guard.
+
+An invalid pattern is rejected when the topology is submitted, and otherwise fails worker startup.
 
 For tuple encryption, use TLS-based transport encryption (`storm.messaging.netty.tls.enable`) instead of the deprecated `BlowfishTupleSerializer`, which uses a 64-bit block cipher vulnerable to birthday attacks.
 

@@ -93,6 +93,30 @@ public class TestConfigValidate {
     }
 
     @Test
+    public void fallbackJavaSerializationFilterPatternTest() {
+        // A malformed JEP-290 pattern must be rejected at conf validation time, with the key named in the error.
+        for (String invalid : Arrays.asList("!", "maxbytes=not-a-number")) {
+            Map<String, Object> conf = new HashMap<>();
+            conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER, invalid);
+            IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+            // The validator reports the config field name (the convention for all validators here).
+            assertTrue(ex.getMessage().contains("TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER"),
+                "message should name the offending field: " + ex.getMessage());
+        }
+
+        // Valid, empty (no filter), and absent values all pass.
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER,
+                 "!org.apache.commons.collections4.functors.*;maxarray=1048576;maxbytes=10485760");
+        ConfigValidation.validateFields(conf);
+        conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER, "");
+        ConfigValidation.validateFields(conf);
+        conf.remove(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER);
+        ConfigValidation.validateFields(conf);
+    }
+
+    @Test
     public void upstreamFeedbackRequiresEwmaTest() {
         // Cross-field rule: enabling feedback without EWMA stats is a no-op, so it is rejected.
         Map<String, Object> conf = new HashMap<>();
