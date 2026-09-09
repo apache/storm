@@ -164,14 +164,14 @@ public class DeserializingConnectionCallbackTest {
         byte[] bytes = serializedTuple(conf, Collections.singletonList(new JavaSerializedValue()));
 
         // SerializableSerializer writes the java-serialization byte count right before the stream header;
-        // an all-bits-set count makes it allocate a negative-length array.
+        // an all-bits-set count reads back as a negative length, which the serializer rejects before allocation.
         int headerIdx = indexOf(bytes, JAVA_STREAM_HEADER, 0);
         assertTrue(headerIdx >= 4, "java serialization header not found in tuple payload");
         for (int i = 1; i <= 4; i++) {
             bytes[headerIdx - i] = (byte) 0xFF;
         }
 
-        assertThrows(NegativeArraySizeException.class, () -> new KryoTupleDeserializer(conf, context).deserialize(bytes));
+        assertThrows(KryoException.class, () -> new KryoTupleDeserializer(conf, context).deserialize(bytes));
 
         assertBatchDeliversOnlyValidMessages(conf, bytes);
     }
