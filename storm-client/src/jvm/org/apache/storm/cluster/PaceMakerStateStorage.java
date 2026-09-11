@@ -37,6 +37,14 @@ import org.apache.storm.utils.WrappedHBExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * State storage that keeps worker heartbeats in Pacemaker and everything else in ZooKeeper.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 public class PaceMakerStateStorage implements IStateStorage {
 
     private static final int maxRetries = 10;

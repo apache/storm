@@ -1119,36 +1119,56 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC = "topology.max.replication.wait.time.sec";
     /**
      * The list of servers that Pacemaker is running on.
+     *
+     * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+     *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @IsStringList
+    @Deprecated
     public static final String PACEMAKER_SERVERS = "pacemaker.servers";
     /**
      * The port Pacemaker should run on. Clients should connect to this port to submit or read heartbeats.
+     *
+     * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+     *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @IsNumber
     @IsPositiveNumber
+    @Deprecated
     public static final String PACEMAKER_PORT = "pacemaker.port";
     /**
      * The maximum number of threads that should be used by the Pacemaker client.
      * When Pacemaker gets loaded it will spawn new threads, up to
      * this many total, to handle the load.
+     *
+     * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+     *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @IsNumber
     @IsPositiveNumber
+    @Deprecated
     public static final String PACEMAKER_CLIENT_MAX_THREADS = "pacemaker.client.max.threads";
     /**
      * This should be one of "DIGEST", "KERBEROS", or "NONE" Determines the mode of authentication the pacemaker server and client use. The
      * client must either match the server, or be NONE. In the case of NONE, no authentication is performed for the client, and if the
      * server is running with DIGEST or KERBEROS, the client can only write to the server (no reads). This is intended to provide a
      * primitive form of access-control.
+     *
+     * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+     *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @CustomValidator(validatorClass = ConfigValidation.PacemakerAuthTypeValidator.class)
+    @Deprecated
     public static final String PACEMAKER_AUTH_METHOD = "pacemaker.auth.method";
     /**
      * Pacemaker Thrift Max Message Size (bytes).
+     *
+     * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+     *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @IsInteger
     @IsPositiveNumber
+    @Deprecated
     public static final String PACEMAKER_THRIFT_MESSAGE_SIZE_MAX = "pacemaker.thrift.message.size.max";
     /**
      * Max no.of seconds group mapping service will cache user groups

@@ -14,6 +14,14 @@ package org.apache.storm.pacemaker;
 
 import org.apache.storm.generated.HBMessage;
 
+/**
+ * Handles heartbeat requests received by a Pacemaker server.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 public interface IServerMessageHandler {
 
     HBMessage handleMessage(HBMessage m, boolean authenticated);

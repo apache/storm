@@ -925,6 +925,10 @@ def initialize_pacemaker_subcommand(subparsers):
     Launches the Pacemaker daemon. This command should be run under
     supervision with a tool like daemontools or monit.
 
+    Deprecated: Pacemaker is only kept for backward compatibility and will be
+    removed in a future release. By default workers heartbeat to their
+    supervisor, which reports them to Nimbus; no Pacemaker is needed.
+
     See Setting up a Storm cluster for more information.
     (https://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
     """

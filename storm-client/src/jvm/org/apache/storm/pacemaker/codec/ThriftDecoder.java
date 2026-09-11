@@ -25,6 +25,14 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Decodes length-prefixed thrift {@link HBMessage} frames of the Pacemaker protocol.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 public class ThriftDecoder extends ByteToMessageDecoder {
 
     private static final Logger LOG = LoggerFactory.getLogger(ThriftDecoder.class);

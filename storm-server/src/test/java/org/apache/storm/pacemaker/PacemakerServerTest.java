@@ -52,6 +52,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("deprecation")
 public class PacemakerServerTest {
 
     private static final int MAX_LENGTH = 1024 * 1024;

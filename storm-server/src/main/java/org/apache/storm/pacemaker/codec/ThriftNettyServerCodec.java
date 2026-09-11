@@ -28,6 +28,14 @@ import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Builds the Pacemaker server pipeline.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 public class ThriftNettyServerCodec extends ChannelInitializer<Channel> {
 
     public static final String SASL_HANDLER = "sasl-handler";

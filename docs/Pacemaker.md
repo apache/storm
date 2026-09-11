@@ -4,6 +4,12 @@ layout: documentation
 documentation: true
 ---
 
+> **Deprecated:** Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+> Since Storm 2.0 ([STORM-2693](https://issues.apache.org/jira/browse/STORM-2693)) workers no longer heartbeat directly into
+> ZooKeeper: each worker writes its heartbeats to local disk and its supervisor reports them to Nimbus over Thrift (see
+> [Daemon Fault Tolerance](Daemon-Fault-Tolerance.html)). This removes the ZooKeeper write load Pacemaker was built to avoid.
+> New clusters should keep the default `storm.cluster.state.store: "org.apache.storm.cluster.ZKStateStorageFactory"` and
+> not run Pacemaker; existing deployments should plan to move back to it.
 
 ### Introduction
 Pacemaker is a storm daemon designed to process heartbeats from workers. As Storm is scaled up, ZooKeeper begins to become a bottleneck due to high volumes of writes from workers doing heartbeats. Lots of writes to disk and too much traffic across the network is generated as ZooKeeper tries to maintain consistency.

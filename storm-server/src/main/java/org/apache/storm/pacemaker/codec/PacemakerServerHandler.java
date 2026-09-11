@@ -22,7 +22,12 @@ import org.slf4j.LoggerFactory;
  * Pacemaker server handler. A failure while handling a request only affects the connection it arrived on: the
  * connection is closed and the Pacemaker server keeps serving its other clients. Errors are still handled by
  * {@link StormServerHandler}.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
+@Deprecated
 public class PacemakerServerHandler extends StormServerHandler {
     private static final Logger LOG = LoggerFactory.getLogger(PacemakerServerHandler.class);
 

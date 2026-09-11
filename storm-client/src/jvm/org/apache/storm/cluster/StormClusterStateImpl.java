@@ -230,6 +230,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public boolean isPacemakerStateStore() {
         if (stateStorage == null) {
             return false;

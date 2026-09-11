@@ -38,6 +38,14 @@ import org.apache.storm.shade.io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Netty server of the Pacemaker daemon.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 class PacemakerServer implements ISaslServer {
 
     private static final int FIVE_MB_IN_BYTES = 5 * 1024 * 1024;

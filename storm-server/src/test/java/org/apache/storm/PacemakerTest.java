@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings("deprecation")
 public class PacemakerTest {
 
     private HBMessage hbMessage;

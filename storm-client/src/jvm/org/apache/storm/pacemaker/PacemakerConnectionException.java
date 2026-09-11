@@ -12,6 +12,14 @@
 
 package org.apache.storm.pacemaker;
 
+/**
+ * Thrown when no connection to a Pacemaker server is available.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 public class PacemakerConnectionException extends Exception {
     public PacemakerConnectionException(String err) {
         super(err);
