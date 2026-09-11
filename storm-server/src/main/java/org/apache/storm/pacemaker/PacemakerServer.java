@@ -133,6 +133,12 @@ class PacemakerServer implements ISaslServer {
 
     @Override
     public void received(Object mesg, String remote, Channel channel) throws InterruptedException {
+        if (!(mesg instanceof HBMessage)) {
+            LOG.warn("Dropping unexpected message of type {} from {}; closing the connection",
+                     mesg == null ? null : mesg.getClass().getName(), remote);
+            channel.close();
+            return;
+        }
         cleanPipeline(channel);
 
         boolean authenticated = (authMethod == ThriftNettyServerCodec.AuthMethod.NONE) || authenticatedChannels.contains(channel);
@@ -146,6 +152,15 @@ class PacemakerServer implements ISaslServer {
         } else {
             LOG.info("Got null response from handler handling message: {}", m);
         }
+    }
+
+    /**
+     * Close all channels and stop the event loops of this server.
+     */
+    void close() {
+        allChannels.close().awaitUninterruptibly();
+        bossEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
+        workerEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
     }
 
     @Override

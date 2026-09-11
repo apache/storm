@@ -22,9 +22,12 @@ import org.apache.storm.shade.io.netty.buffer.ByteBuf;
 import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
 import org.apache.storm.shade.io.netty.handler.codec.ByteToMessageDecoder;
 import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ThriftDecoder extends ByteToMessageDecoder {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ThriftDecoder.class);
     private static final int INTEGER_SIZE = 4;
 
     /**
@@ -33,10 +36,27 @@ public class ThriftDecoder extends ByteToMessageDecoder {
     private final int maxLength;
 
     /**
+     * Whether this decoder sits in a Pacemaker server pipeline. A server only accepts the control message a client
+     * sends to start the SASL handshake; any other control frame is dropped and the connection closed.
+     */
+    private final boolean serverSide;
+
+    /**
      * Instantiate a ThriftDecoder that accepts serialized messages of at most maxLength bytes.
      */
     public ThriftDecoder(final int maxLengthBytes) {
+        this(maxLengthBytes, false);
+    }
+
+    /**
+     * Instantiate a ThriftDecoder that accepts serialized messages of at most maxLength bytes.
+     *
+     * @param maxLengthBytes the maximum length of a serialized thrift message
+     * @param serverSide true if the decoder is used by a Pacemaker server, which restricts the control messages it accepts
+     */
+    public ThriftDecoder(final int maxLengthBytes, final boolean serverSide) {
         maxLength = maxLengthBytes;
+        this.serverSide = serverSide;
     }
 
     @Override
@@ -68,7 +88,19 @@ public class ThriftDecoder extends ByteToMessageDecoder {
         HBMessage m = (HBMessage) Utils.thriftDeserialize(HBMessage.class, serialized);
 
         if (m.get_type() == HBServerMessageType.CONTROL_MESSAGE) {
-            ControlMessage cm = ControlMessage.read(m.get_data().get_message_blob());
+            ControlMessage cm = readControlMessage(m);
+            if (cm == null) {
+                if (!serverSide) {
+                    // Let the client handler see the failure so that it reconnects.
+                    throw new IOException("Received a malformed control message");
+                }
+                dropAndClose(channelHandlerContext, buf, "a malformed control frame");
+                return;
+            }
+            if (serverSide && cm != ControlMessage.SASL_TOKEN_MESSAGE_REQUEST) {
+                dropAndClose(channelHandlerContext, buf, "an unexpected control frame " + cm);
+                return;
+            }
             out.add(cm);
         } else if (m.get_type() == HBServerMessageType.SASL_MESSAGE_TOKEN) {
             SaslMessageToken sm = SaslMessageToken.read(m.get_data().get_message_blob());
@@ -76,5 +108,22 @@ public class ThriftDecoder extends ByteToMessageDecoder {
         } else {
             out.add(m);
         }
+    }
+
+    private static ControlMessage readControlMessage(HBMessage m) {
+        if (m.get_data() == null || !m.get_data().is_set_message_blob()) {
+            return null;
+        }
+        byte[] blob = m.get_data().get_message_blob();
+        if (blob == null || blob.length < 2) {
+            return null;
+        }
+        return ControlMessage.read(blob);
+    }
+
+    private static void dropAndClose(ChannelHandlerContext ctx, ByteBuf buf, String what) {
+        LOG.warn("Channel {} sent {}; closing the connection", ctx.channel(), what);
+        buf.skipBytes(buf.readableBytes());
+        ctx.close();
     }
 }
