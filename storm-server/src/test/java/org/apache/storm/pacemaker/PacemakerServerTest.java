@@ -25,6 +25,7 @@ import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.messaging.netty.ControlMessage;
 import org.apache.storm.messaging.netty.ISaslClient;
 import org.apache.storm.messaging.netty.ISaslServer;
+import org.apache.storm.messaging.netty.SaslMessageToken;
 import org.apache.storm.messaging.netty.SaslStormClientHandler;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.pacemaker.codec.ThriftDecoder;
@@ -87,6 +88,18 @@ public class PacemakerServerTest {
         return frame(new HBMessage(HBServerMessageType.CONTROL_MESSAGE, HBMessageData.message_blob(blob)));
     }
 
+    private static ByteBuf saslTokenFrame(short identifier, int declaredPayloadLen, byte[] payload) {
+        ByteBuf buf = Unpooled.buffer();
+        buf.writeShort(identifier);
+        buf.writeInt(declaredPayloadLen);
+        if (payload != null) {
+            buf.writeBytes(payload);
+        }
+        byte[] blob = new byte[buf.readableBytes()];
+        buf.readBytes(blob);
+        return frame(new HBMessage(HBServerMessageType.SASL_MESSAGE_TOKEN, HBMessageData.message_blob(blob)));
+    }
+
     private static HBMessage readResponse(EmbeddedChannel serverChannel) {
         EmbeddedChannel decoder = new EmbeddedChannel(new ThriftDecoder(MAX_LENGTH));
         Object out;
@@ -130,6 +143,22 @@ public class PacemakerServerTest {
         EmbeddedChannel channel = pipeline();
 
         channel.writeInbound(controlFrame(ControlMessage.CLOSE_MESSAGE));
+
+        assertFalse(channel.isActive());
+        assertNull(channel.readOutbound());
+
+        other.writeInbound(frame(new HBMessage(HBServerMessageType.CREATE_PATH, HBMessageData.path("/path"))));
+        assertEquals(HBServerMessageType.CREATE_PATH_RESPONSE, readResponse(other).get_type());
+        assertTrue(other.isActive());
+    }
+
+    @Test
+    public void oversizedSaslTokenClosesOnlyThatConnection() {
+        EmbeddedChannel other = pipeline();
+        EmbeddedChannel channel = pipeline();
+
+        // A SASL token frame that declares a ~2GB payload previously OOM'd the decoder and terminated the daemon.
+        channel.writeInbound(saslTokenFrame(SaslMessageToken.IDENTIFIER, Integer.MAX_VALUE, null));
 
         assertFalse(channel.isActive());
         assertNull(channel.readOutbound());

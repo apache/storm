@@ -9,7 +9,8 @@ documentation: true
 > ZooKeeper: each worker writes its heartbeats to local disk and its supervisor reports them to Nimbus over Thrift (see
 > [Daemon Fault Tolerance](Daemon-Fault-Tolerance.html)). This removes the ZooKeeper write load Pacemaker was built to avoid.
 > New clusters should keep the default `storm.cluster.state.store: "org.apache.storm.cluster.ZKStateStorageFactory"` and
-> not run Pacemaker; existing deployments should plan to move back to it.
+> not run Pacemaker; existing deployments should plan to migrate away from Pacemaker back to the default
+> ZooKeeper-based state store.
 
 ### Introduction
 Pacemaker is a storm daemon designed to process heartbeats from workers. As Storm is scaled up, ZooKeeper begins to become a bottleneck due to high volumes of writes from workers doing heartbeats. Lots of writes to disk and too much traffic across the network is generated as ZooKeeper tries to maintain consistency.

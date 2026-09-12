@@ -111,7 +111,15 @@ public class ThriftDecoder extends ByteToMessageDecoder {
             }
             out.add(cm);
         } else if (m.get_type() == HBServerMessageType.SASL_MESSAGE_TOKEN) {
-            SaslMessageToken sm = SaslMessageToken.read(m.get_data().get_message_blob());
+            SaslMessageToken sm = readSaslMessageToken(m);
+            if (sm == null) {
+                if (!serverSide) {
+                    // Let the client handler see the failure so that it reconnects.
+                    throw new IOException("Received a malformed SASL token message");
+                }
+                dropAndClose(channelHandlerContext, buf, "a malformed SASL token frame");
+                return;
+            }
             out.add(sm);
         } else {
             out.add(m);
@@ -127,6 +135,17 @@ public class ThriftDecoder extends ByteToMessageDecoder {
             return null;
         }
         return ControlMessage.read(blob);
+    }
+
+    private static SaslMessageToken readSaslMessageToken(HBMessage m) {
+        if (m.get_data() == null || !m.get_data().is_set_message_blob()) {
+            return null;
+        }
+        byte[] blob = m.get_data().get_message_blob();
+        if (blob == null) {
+            return null;
+        }
+        return SaslMessageToken.read(blob);
     }
 
     private static void dropAndClose(ChannelHandlerContext ctx, ByteBuf buf, String what) {

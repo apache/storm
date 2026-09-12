@@ -57,6 +57,38 @@ public class ThriftDecoderTest {
         return new EmbeddedChannel(new ThriftDecoder(MAX_LENGTH, true));
     }
 
+    static ByteBuf saslTokenFrame(short identifier, int declaredPayloadLen, byte[] payload) {
+        ByteBuf blob = Unpooled.buffer();
+        blob.writeShort(identifier);
+        blob.writeInt(declaredPayloadLen);
+        if (payload != null) {
+            blob.writeBytes(payload);
+        }
+        byte[] bytes = new byte[blob.readableBytes()];
+        blob.readBytes(bytes);
+        return frame(new HBMessage(HBServerMessageType.SASL_MESSAGE_TOKEN, HBMessageData.message_blob(bytes)));
+    }
+
+    @Test
+    public void serverDropsSaslTokenWithOversizedPayloadLength() {
+        EmbeddedChannel channel = serverChannel();
+
+        // A tiny frame that claims a ~2GB payload must not be allocated; it is dropped and the connection closed.
+        channel.writeInbound(saslTokenFrame(SaslMessageToken.IDENTIFIER, Integer.MAX_VALUE, null));
+
+        assertNull(channel.readInbound());
+        assertFalse(channel.isActive());
+    }
+
+    @Test
+    public void clientReportsSaslTokenWithOversizedPayloadLength() {
+        EmbeddedChannel channel = new EmbeddedChannel(new ThriftDecoder(MAX_LENGTH));
+
+        assertThrows(DecoderException.class, () -> channel.writeInbound(
+            saslTokenFrame(SaslMessageToken.IDENTIFIER, Integer.MAX_VALUE, null)));
+        assertNull(channel.readInbound());
+    }
+
     @Test
     public void serverDropsUnexpectedControlFrames() {
         for (ControlMessage controlMessage : ControlMessage.values()) {

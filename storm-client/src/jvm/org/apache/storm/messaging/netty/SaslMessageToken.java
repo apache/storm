@@ -47,9 +47,12 @@ public class SaslMessageToken implements INettySerializable {
     public static SaslMessageToken read(byte[] serial) {
         ByteBuf smBuffer = Unpooled.wrappedBuffer(serial);
         try {
+            if (smBuffer.readableBytes() < 6) {
+                return null;
+            }
             short identifier = smBuffer.readShort();
             int payloadLen = smBuffer.readInt();
-            if (identifier != IDENTIFIER) {
+            if (identifier != IDENTIFIER || payloadLen < 0 || payloadLen > smBuffer.readableBytes()) {
                 return null;
             }
             byte[] token = new byte[payloadLen];

@@ -163,7 +163,8 @@ class PacemakerServer implements ISaslServer {
     }
 
     /**
-     * Close all channels and stop the event loops of this server.
+     * Close all channels and stop the event loops of this server. The Pacemaker daemon itself runs until the JVM exits,
+     * so this exists for tests to shut a server down deterministically.
      */
     void close() {
         allChannels.close().awaitUninterruptibly();
