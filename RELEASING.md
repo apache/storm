@@ -148,26 +148,6 @@ In this way, you create a new release line and then you can create PATCH version
    apache-storm-2.8.3-lite.tar.gz.sha512 apache-storm-2.8.3-lite.zip.sha512
    ```
 
-## Storm lite distribution
-
-Since 3.0.0 the binary build produces two distributions from `storm-dist/binary`:
-
-| Artifact | Contents |
-|---|---|
-| `apache-storm-x.x.x.tar.gz` / `.zip` | Full distribution. Bundles the `storm-autocreds` (Hadoop/HBase) and `storm-kafka-monitor` (Kafka client) jars. |
-| `apache-storm-x.x.x-lite.tar.gz` / `.zip` | Lean distribution. Ships only the READMEs for those two plugins; everything else is identical. |
-
-Both are produced by the same `mvn package` run in `storm-dist/binary` (assembly
-executions `bin` and `lite`), and both are automatically signed by the GPG plugin.
-The lite artifact is attached with the `lite` Maven classifier.
-
-Release managers must sign, checksum and stage **both** distributions, and list
-both in the release candidate VOTE mail so reviewers know which to verify.
-
-Users of the lite distribution can install the omitted plugins on demand with
-`bin/storm-autocreds-fetch` and `bin/storm-kafka-monitor-fetch`, which resolve them
-from Maven Central (or an internal mirror configured in `settings.xml`).
-
 10. Add and commit the files to SVN. This makes them available in the Apache staging repo.
 
     ```bash
@@ -224,6 +204,26 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
     Thanks!
     [Release Manager Name]
     ```
+
+## Storm lite distribution
+
+Since 3.0.0 the binary build produces two distributions from `storm-dist/binary`:
+
+| Artifact | Contents |
+|---|---|
+| `apache-storm-x.x.x.tar.gz` / `.zip` | Full distribution. Bundles the `storm-autocreds` (Hadoop/HBase) and `storm-kafka-monitor` (Kafka client) jars. |
+| `apache-storm-x.x.x-lite.tar.gz` / `.zip` | Lean distribution. Ships only the READMEs for those two plugins; everything else is identical. |
+
+Both are produced by the same `mvn package` run in `storm-dist/binary` (assembly
+executions `bin` and `lite`), and both are automatically signed by the GPG plugin.
+The lite artifact is attached with the `lite` Maven classifier.
+
+Release managers must sign, checksum and stage **both** distributions, and list
+both in the release candidate VOTE mail so reviewers know which to verify.
+
+Users of the lite distribution can install the omitted plugins on demand with
+`bin/storm-autocreds-fetch` and `bin/storm-kafka-monitor-fetch`, which resolve them
+from Maven Central (or an internal mirror configured in `settings.xml`).
 
 
 ## Releasing if the vote succeeds
