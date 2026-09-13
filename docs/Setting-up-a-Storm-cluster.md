@@ -29,7 +29,7 @@ A few notes about Zookeeper deployment:
 
 Next you need to install Storm's dependencies on Nimbus and the worker machines. These are:
 
-1. Java 21+ (Apache Storm 3.x is tested through GitHub actions against Java 21 and Java 25)
+1. Java 25+ (Apache Storm 3.x binaries require Java 25; GitHub Actions builds and tests run on JDK 25)
 2. Python 3.x
 
 These are the versions of the dependencies that have been tested with Storm. Storm may or may not work with different versions of Java and/or Python.
