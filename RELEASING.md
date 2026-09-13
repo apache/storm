@@ -277,9 +277,11 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
 
 8. Create a release on [GitHub](https://github.com/apache/storm/releases). Generate the release notes with the GitHub tooling.
 
-9. Create a new release for [Storm Docker](https://github.com/apache/storm-docker). Example of a version release [here](https://github.com/apache/storm-docker/commit/177a1534bf910c2271845f4eaedef7c040559fbc). After that is done, a PR to [docker-library](https://github.com/docker-library/official-images) must be submitted, so that the new docker-storm version is officially released. Example of such a PR is [here](https://github.com/docker-library/official-images/pull/21525#issuecomment-4526751672).
+9. Close the milestone for the released version in GitHub. Go to the [milestones page](https://github.com/apache/storm/milestones), open the milestone matching the released version (e.g. `3.1.0`), and click **Close milestone**. The milestone will already have no open issues at this point -- generating the release notes with `dev-tools/release_notes.py` refuses to run while any remain -- so this is simply the final housekeeping step.
 
-10. Post, promote, celebrate. ;) Announce the new release to dev@storm.apache.org, user@storm.apache.org, and announce@apache.org (you must use your @apache.org email to post to announce@apache.org), using the following template:
+10. Create a new release for [Storm Docker](https://github.com/apache/storm-docker). Example of a version release [here](https://github.com/apache/storm-docker/commit/177a1534bf910c2271845f4eaedef7c040559fbc). After that is done, a PR to [docker-library](https://github.com/docker-library/official-images) must be submitted, so that the new docker-storm version is officially released. Example of such a PR is [here](https://github.com/docker-library/official-images/pull/21525#issuecomment-4526751672).
+
+11. Post, promote, celebrate. ;) Announce the new release to dev@storm.apache.org, user@storm.apache.org, and announce@apache.org (you must use your @apache.org email to post to announce@apache.org), using the following template:
 
     ```text
     Subject: [ANNOUNCE] Apache Storm [VERSION] Released
