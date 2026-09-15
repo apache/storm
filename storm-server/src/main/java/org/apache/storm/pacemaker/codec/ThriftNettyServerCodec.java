@@ -21,7 +21,6 @@ import org.apache.storm.messaging.netty.ISaslServer;
 import org.apache.storm.messaging.netty.IServer;
 import org.apache.storm.messaging.netty.KerberosSaslServerHandler;
 import org.apache.storm.messaging.netty.SaslStormServerHandler;
-import org.apache.storm.messaging.netty.StormServerHandler;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.shade.io.netty.channel.Channel;
 import org.apache.storm.shade.io.netty.channel.ChannelInitializer;
@@ -29,6 +28,14 @@ import org.apache.storm.shade.io.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Builds the Pacemaker server pipeline.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 public class ThriftNettyServerCodec extends ChannelInitializer<Channel> {
 
     public static final String SASL_HANDLER = "sasl-handler";
@@ -54,7 +61,7 @@ public class ThriftNettyServerCodec extends ChannelInitializer<Channel> {
     protected void initChannel(Channel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
         pipeline.addLast("encoder", new ThriftEncoder());
-        pipeline.addLast("decoder", new ThriftDecoder(thriftMessageMaxSizeBytes));
+        pipeline.addLast("decoder", new ThriftDecoder(thriftMessageMaxSizeBytes, true));
         if (authMethod == AuthMethod.DIGEST) {
             try {
                 LOG.debug("Adding SaslStormServerHandler to pacemaker server pipeline.");
@@ -78,7 +85,7 @@ public class ThriftNettyServerCodec extends ChannelInitializer<Channel> {
             LOG.debug("Not authenticating any clients. AuthMethod is NONE");
         }
 
-        pipeline.addLast("handler", new StormServerHandler(server));
+        pipeline.addLast("handler", new PacemakerServerHandler(server));
     }
 
     public enum AuthMethod {

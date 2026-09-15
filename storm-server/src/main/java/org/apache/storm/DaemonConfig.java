@@ -682,15 +682,23 @@ public class DaemonConfig implements Validated {
     /**
      * The maximum number of threads that should be used by the Pacemaker. When Pacemaker gets loaded it will spawn new threads, up to this
      * many total, to handle the load.
+     *
+     * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+     *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @IsNumber
     @IsPositiveNumber
+    @Deprecated
     public static final String PACEMAKER_MAX_THREADS = "pacemaker.max.threads";
 
     /**
      * This parameter is used by the storm-deploy project to configure the jvm options for the pacemaker daemon.
+     *
+     * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+     *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @IsStringOrStringList
+    @Deprecated
     public static final String PACEMAKER_CHILDOPTS = "pacemaker.childopts";
 
 

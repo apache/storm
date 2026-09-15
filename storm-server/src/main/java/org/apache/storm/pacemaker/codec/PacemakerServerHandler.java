@@ -10,18 +10,41 @@
  * and limitations under the License.
  */
 
-package org.apache.storm.pacemaker;
+package org.apache.storm.pacemaker.codec;
+
+import org.apache.storm.messaging.netty.IServer;
+import org.apache.storm.messaging.netty.StormServerHandler;
+import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Thrown when no connection to a Pacemaker server is available.
+ * Pacemaker server handler. A failure while handling a request only affects the connection it arrived on: the
+ * connection is closed and the Pacemaker server keeps serving its other clients. Errors are still handled by
+ * {@link StormServerHandler}.
  *
  * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
  *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
 @Deprecated
-public class PacemakerConnectionException extends Exception {
-    public PacemakerConnectionException(String err) {
-        super(err);
+public class PacemakerServerHandler extends StormServerHandler {
+    private static final Logger LOG = LoggerFactory.getLogger(PacemakerServerHandler.class);
+
+    public PacemakerServerHandler(IServer server) {
+        super(server);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (!(cause instanceof Exception)) {
+            super.exceptionCaught(ctx, cause);
+            return;
+        }
+        try {
+            LOG.warn("Closing connection {} after failing to handle its request", ctx.channel(), cause);
+        } finally {
+            ctx.close();
+        }
     }
 }

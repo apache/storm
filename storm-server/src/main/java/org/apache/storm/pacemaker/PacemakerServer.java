@@ -38,6 +38,14 @@ import org.apache.storm.shade.io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Netty server of the Pacemaker daemon.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 class PacemakerServer implements ISaslServer {
 
     private static final int FIVE_MB_IN_BYTES = 5 * 1024 * 1024;
@@ -133,6 +141,12 @@ class PacemakerServer implements ISaslServer {
 
     @Override
     public void received(Object mesg, String remote, Channel channel) throws InterruptedException {
+        if (!(mesg instanceof HBMessage)) {
+            LOG.warn("Dropping unexpected message of type {} from {}; closing the connection",
+                     mesg == null ? null : mesg.getClass().getName(), remote);
+            channel.close();
+            return;
+        }
         cleanPipeline(channel);
 
         boolean authenticated = (authMethod == ThriftNettyServerCodec.AuthMethod.NONE) || authenticatedChannels.contains(channel);
@@ -146,6 +160,16 @@ class PacemakerServer implements ISaslServer {
         } else {
             LOG.info("Got null response from handler handling message: {}", m);
         }
+    }
+
+    /**
+     * Close all channels and stop the event loops of this server. The Pacemaker daemon itself runs until the JVM exits,
+     * so this exists for tests to shut a server down deterministically.
+     */
+    void close() {
+        allChannels.close().awaitUninterruptibly();
+        bossEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
+        workerEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
     }
 
     @Override

@@ -23,6 +23,14 @@ import org.apache.storm.generated.HBMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Pool of clients for the configured Pacemaker servers.
+ *
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
+ */
+@Deprecated
 public class PacemakerClientPool {
 
     private static final Logger LOG = LoggerFactory.getLogger(PacemakerClientPool.class);
