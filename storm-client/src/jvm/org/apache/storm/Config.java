@@ -1652,7 +1652,8 @@ public class Config extends HashMap<String, Object> {
      * Topology configuration to make tuple deserialization failures fatal instead of dropping the undecodable message.
      * By default a message that fails to decode on the receiving worker is dropped and counted, and the worker keeps
      * running. When set to {@code true}, any deserialization failure propagates and the worker exits, restoring the
-     * pre-3.1.0 behavior.
+     * pre-3.1.0 behavior. Be aware that a single corrupt frame from a peer then kills the worker, and the supervisor
+     * restarts it into the same failure, so a persistent bad frame results in a restart loop.
      * Default: {@code false}.
      */
     @IsBoolean
