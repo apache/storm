@@ -605,7 +605,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         msgId.incrementNumFails();
 
         if (!retryService.schedule(msgId)) {
-            LOG.error("Reached maximum number of retries. Giving up on message [{}]: the tuple will be acked and its offset and later "
+            LOG.error("The retry service will not retry message [{}]: the tuple will be acked and its offset and later "
                     + "offsets may be committed even though the record was not processed.", msgId);
             // this tuple should be removed from emitted only inside the ack() method. This is to ensure
             // that the OffsetManager for that TopicPartition is updated and allows commit progression
