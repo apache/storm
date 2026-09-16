@@ -156,7 +156,11 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
      * where failCount = 1, 2, 3, ... nextRetry = Min(nextRetry, currentTime + maxDelay).
      * <p/>
      * By specifying a value for maxRetries lower than Integer.MAX_VALUE, the user decides to sacrifice guarantee of delivery for the
-     * previous polled records in favor of processing more records.
+     * previous polled records in favor of processing more records. Setting a finite limit also stops the spout from retrying forever
+     * tuples that fail every time they are emitted, e.g. tuples the receiving worker drops because they cannot be deserialized:
+     * once the limit is reached, the tuple is acked and offsets past it can be committed. These tuples are reported to
+     * {@link KafkaTupleListener#onMaxRetryReached(KafkaSpoutMessageId)}, which receives the topic, partition and offset needed
+     * to fetch the record from Kafka again.
      *
      * @param initialDelay      initial delay of the first retry
      * @param delayPeriod       the time interval that is the ratio of the exponential backoff formula (geometric progression)
