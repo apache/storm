@@ -74,7 +74,9 @@ public interface KafkaTupleListener extends Serializable {
     void onRetry(KafkaSpoutMessageId msgId);
 
     /**
-     * Called when the maximum number of retries have been reached.
+     * Called when the maximum number of retries have been reached. The tuple is acked right after this callback and
+     * commits can then move past its offset; this is the last point at which the record can be retained. The msgId
+     * identifies the record by topic, partition and offset.
      *
      * @param msgId The id of the tuple in the spout.
      */
