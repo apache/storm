@@ -15,8 +15,12 @@ package org.apache.storm.serialization;
 /**
  * Thrown when a serialized tuple names a source task or stream that the receiving topology cannot resolve.
  */
-public class TupleDeserializationException extends RuntimeException {
+public class TupleDeserializationException extends IllegalArgumentException {
     public TupleDeserializationException(String message) {
         super(message);
+    }
+
+    public TupleDeserializationException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
