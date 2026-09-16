@@ -61,6 +61,7 @@ storm.compression.zstd.level: 3
 storm.compression.zstd.max.decompressed.bytes: 104857600
 storm.compression.gzip.max.decompressed.bytes: 104857600
 topology.tuple.compression.max.decompressed.bytes: 10485760
+topology.tuple.deserialization.strict.enable: false
 storm.codedistributor.class: "org.apache.storm.codedistributor.LocalFileSystemCodeDistributor"
 storm.workers.artifacts.dir: "workers-artifacts"
 storm.health.check.dir: "healthchecks"

@@ -28,6 +28,7 @@ import org.apache.storm.Config;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.serialization.KryoTupleDeserializer;
+import org.apache.storm.serialization.TupleDeserializationException;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Tuple;
@@ -43,8 +44,10 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
     private static final Logger LOG = LoggerFactory.getLogger(DeserializingConnectionCallback.class);
 
     // A tuple that cannot be decoded is dropped instead of killing the worker; anything outside this set keeps
-    // the fatal handling in StormServerHandler.
+    // the fatal handling in StormServerHandler. TupleDeserializationException is thrown by KryoTupleDeserializer
+    // for unknown task or stream ids.
     private static final Set<Class<?>> TOLERATED_DESERIALIZATION_FAILURES = new HashSet<>(Arrays.asList(
+        TupleDeserializationException.class,
         IOException.class,
         KryoException.class,
         IllegalArgumentException.class,
@@ -71,6 +74,8 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
             }
         };
 
+    private final boolean strictMode;
+
     // Track serialized size of messages.
     private final boolean sizeMetricsEnabled;
     private final ConcurrentHashMap<String, AtomicLong> byteCounts = new ConcurrentHashMap<>();
@@ -87,6 +92,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
         this.context = context;
         cb = callback;
         sizeMetricsEnabled = ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS), false);
+        strictMode = ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE), false);
 
     }
 
@@ -104,7 +110,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
             try {
                 tuple = des.deserialize(message.message());
             } catch (Exception e) {
-                if (!isToleratedDeserializationFailure(e)) {
+                if (strictMode || !isToleratedDeserializationFailure(e)) {
                     throw e;
                 }
                 deserializationFailures.incrementAndGet();
