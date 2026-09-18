@@ -4990,6 +4990,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 List<String> superTopologies = topologiesOnSupervisor(topoToAssignment, sid);
                 Set<String> userTopologies = filterAuthorized("getTopology", superTopologies);
                 for (String topoId : superTopologies) {
+                    // Placement of a topology's workers is only visible to callers who may read that topology,
+                    // matching getTopologyInfo/getTopologyPageInfo. The supervisor summary above still reports the
+                    // aggregate slot and resource usage of the node.
+                    if (!userTopologies.contains(topoId)) {
+                        continue;
+                    }
                     CommonTopoInfo common = getCommonTopoInfo(topoId, "getSupervisorPageInfo");
                     String topoName = common.topoName;
                     Assignment assignment = common.assignment;
@@ -5009,11 +5015,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                         nodeToHost = Collections.emptyMap();
                     }
                     Map<WorkerSlot, WorkerResources> workerResources = getWorkerResourcesForTopology(topoId);
-                    boolean isAllowed = userTopologies.contains(topoId);
                     String owner = (common.base == null) ? null : common.base.get_owner();
                     for (WorkerSummary workerSummary : StatsUtil.aggWorkerStats(topoId, topoName, taskToComp, beats,
                                                                                 exec2NodePort, nodeToHost, workerResources, includeSys,
-                                                                                isAllowed, sid, owner)) {
+                                                                                true, sid, owner)) {
                         pageInfo.add_to_worker_summaries(workerSummary);
                     }
                 }
