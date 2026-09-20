@@ -1112,6 +1112,41 @@ public class AsyncLocalizerTest {
         }
     }
 
+    @Test
+    public void downloadExecutorUsesVirtualThreadsWhenEnabled() throws Exception {
+        try (TmpPath stormLocal = new TmpPath(); TmpPath localizerRoot = new TmpPath()) {
+            Map<String, Object> conf = new HashMap<>();
+            conf.put(Config.STORM_LOCAL_DIR, stormLocal.getPath());
+            conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
+            AdvancedFSOps ops = AdvancedFSOps.make(conf);
+            AsyncLocalizer localizer = new AsyncLocalizer(conf, ops, localizerRoot.getPath(), new StormMetricsRegistry());
+            try {
+                boolean onVirtual = localizer.getDownloadExecService()
+                    .submit(() -> Thread.currentThread().isVirtual()).get(10, TimeUnit.SECONDS);
+                assertTrue(onVirtual);
+            } finally {
+                localizer.close();
+            }
+        }
+    }
+
+    @Test
+    public void downloadExecutorUsesPlatformThreadsByDefault() throws Exception {
+        try (TmpPath stormLocal = new TmpPath(); TmpPath localizerRoot = new TmpPath()) {
+            Map<String, Object> conf = new HashMap<>();
+            conf.put(Config.STORM_LOCAL_DIR, stormLocal.getPath());
+            AdvancedFSOps ops = AdvancedFSOps.make(conf);
+            AsyncLocalizer localizer = new AsyncLocalizer(conf, ops, localizerRoot.getPath(), new StormMetricsRegistry());
+            try {
+                boolean onVirtual = localizer.getDownloadExecService()
+                    .submit(() -> Thread.currentThread().isVirtual()).get(10, TimeUnit.SECONDS);
+                assertFalse(onVirtual);
+            } finally {
+                localizer.close();
+            }
+        }
+    }
+
     static class TestInputStreamWithMeta extends InputStreamWithMeta {
         private final long version;
         private final long fileLength;
