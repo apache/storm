@@ -16,6 +16,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -42,6 +43,7 @@ import org.apache.storm.thrift.transport.TTransport;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.thrift.transport.TTransportFactory;
 import org.apache.storm.utils.ExtendedThreadPoolExecutor;
+import org.apache.storm.utils.StormThreadFactory;
 
 /**
  * Base class for SASL authentication plugin.
@@ -86,7 +88,9 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
             workQueue = new ArrayBlockingQueue<>(queueSize);
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
-                                                                            60, TimeUnit.SECONDS, workQueue);
+                                                                            60, TimeUnit.SECONDS, workQueue,
+                                                                            StormThreadFactory.create(conf,
+                                                                                type.name().toLowerCase(Locale.ROOT) + "-handler"));
         serverArgs.executorService(executorService);
         return new TThreadPoolServer(serverArgs);
     }
