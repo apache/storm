@@ -247,7 +247,7 @@ Response fields:
 |Field  |Value|Description|
 |---	|---	|---
 |supervisors| Array| Array of supervisor summaries|
-|workers| Array| Array of worker summaries |
+|workers| Array| Array of worker summaries, limited to topologies the caller is allowed to read |
 |schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
 
 Each supervisor is defined by:

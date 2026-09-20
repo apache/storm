@@ -58,9 +58,11 @@ import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.generated.StormBase;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
+import org.apache.storm.generated.SupervisorPageInfo;
 import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.InMemoryTopologyActionNotifier;
@@ -1538,6 +1540,40 @@ public class NimbusClojurePortTest {
 
     @Test
     public void testCheckAuthorizationGetSupervisorPageInfo() throws Exception {
+        String expectedName = "test-nimbus-check-autho-params";
+        runSupervisorPageInfo(expectedName, (nimbus, pageInfo) -> {
+            Mockito.verify(nimbus).checkAuthorization(Mockito.eq(expectedName), Mockito.any(Map.class), Mockito.eq("getSupervisorPageInfo"));
+            Mockito.verify(nimbus).checkAuthorization(Mockito.isNull(), Mockito.isNull(), Mockito.eq("getClusterInfo"));
+            Mockito.verify(nimbus).checkAuthorization(Mockito.eq(expectedName), Mockito.any(Map.class), Mockito.eq("getTopology"));
+
+            assertEquals(1, pageInfo.get_supervisor_summaries_size());
+            assertEquals(1, pageInfo.get_worker_summaries_size());
+            WorkerSummary worker = pageInfo.get_worker_summaries().get(0);
+            assertEquals(expectedName, worker.get_topology_id());
+            assertEquals("super1", worker.get_supervisor_id());
+        });
+    }
+
+    @Test
+    public void testGetSupervisorPageInfoOmitsWorkersOfUnreadableTopologies() throws Exception {
+        String expectedName = "test-nimbus-unreadable-topo";
+        runSupervisorPageInfo(expectedName, nimbus ->
+                Mockito.doReturn(Set.of()).when(nimbus).filterAuthorized(Mockito.eq("getTopology"), Mockito.any()),
+            (nimbus, pageInfo) -> {
+                Mockito.verify(nimbus, Mockito.never())
+                    .checkAuthorization(Mockito.eq(expectedName), Mockito.any(Map.class), Mockito.eq("getSupervisorPageInfo"));
+
+                assertEquals(1, pageInfo.get_supervisor_summaries_size());
+                assertEquals(0, pageInfo.get_worker_summaries_size());
+            });
+    }
+
+    private void runSupervisorPageInfo(String topoId, PageInfoVerifier verifier) throws Exception {
+        runSupervisorPageInfo(topoId, nimbus -> { }, verifier);
+    }
+
+    private void runSupervisorPageInfo(String topoId, ThrowingConsumer<Nimbus> stubber,
+                                       PageInfoVerifier verifier) throws Exception {
         IStormClusterState clusterState = Mockito.mock(IStormClusterState.class);
         BlobStore blobStore = Mockito.mock(BlobStore.class);
         TopoCache tc = Mockito.mock(TopoCache.class);
@@ -1552,10 +1588,9 @@ public class NimbusClojurePortTest {
                     DaemonConfig.SUPERVISOR_AUTHORIZER, "org.apache.storm.security.auth.authorizer.NoopAuthorizer"))
                 .build()) {
             Nimbus nimbus = cluster.getNimbus();
-            String expectedName = "test-nimbus-check-autho-params";
 
             Map<String, Object> expectedConf = new HashMap<>();
-            expectedConf.put(Config.TOPOLOGY_NAME, expectedName);
+            expectedConf.put(Config.TOPOLOGY_NAME, topoId);
             expectedConf.put(Config.TOPOLOGY_WORKERS, 1);
             expectedConf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 30);
             expectedConf.put("foo", "bar");
@@ -1571,7 +1606,7 @@ public class NimbusClojurePortTest {
             topology.set_state_spouts(Map.of());
 
             Map<String, Assignment> topoAssignment = new HashMap<>();
-            topoAssignment.put(expectedName, assignment);
+            topoAssignment.put(topoId, assignment);
 
             HashMap<String, org.apache.storm.generated.SupervisorInfo> allSupervisors = new HashMap<>();
             org.apache.storm.generated.SupervisorInfo si1 = new org.apache.storm.generated.SupervisorInfo();
@@ -1591,16 +1626,26 @@ public class NimbusClojurePortTest {
             allSupervisors.put("super2", si2);
 
             Mockito.when(clusterState.allSupervisorInfo()).thenReturn(allSupervisors);
+            Mockito.when(clusterState.assignmentInfo(Mockito.eq(topoId), Mockito.any())).thenReturn(assignment);
             Mockito.when(tc.readTopoConf(Mockito.any(String.class), Mockito.any(Subject.class))).thenReturn(expectedConf);
             Mockito.when(tc.readTopology(Mockito.any(String.class), Mockito.any(Subject.class))).thenReturn(topology);
             Mockito.when(clusterState.assignmentsInfo()).thenReturn(topoAssignment);
+            stubber.accept(nimbus);
 
-            nimbus.getSupervisorPageInfo("super1", null, true);
+            SupervisorPageInfo pageInfo = nimbus.getSupervisorPageInfo("super1", null, true);
 
-            Mockito.verify(nimbus).checkAuthorization(Mockito.eq(expectedName), Mockito.any(Map.class), Mockito.eq("getSupervisorPageInfo"));
-            Mockito.verify(nimbus).checkAuthorization(Mockito.isNull(), Mockito.isNull(), Mockito.eq("getClusterInfo"));
-            Mockito.verify(nimbus).checkAuthorization(Mockito.eq(expectedName), Mockito.any(Map.class), Mockito.eq("getTopology"));
+            verifier.accept(nimbus, pageInfo);
         }
+    }
+
+    @FunctionalInterface
+    private interface ThrowingConsumer<T> {
+        void accept(T t) throws Exception;
+    }
+
+    @FunctionalInterface
+    private interface PageInfoVerifier {
+        void accept(Nimbus nimbus, SupervisorPageInfo pageInfo) throws Exception;
     }
 
     @Test
