@@ -77,6 +77,7 @@ public class TestUtilsForWorkerState {
         topologyConf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 30);
         topologyConf.put(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE, 1000);
         topologyConf.put(Config.TOPOLOGY_TRANSFER_BATCH_SIZE, 1);
+        topologyConf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 1);
 
         IStateStorage stateStorage = null;
         IStormClusterState stormClusterState = null;

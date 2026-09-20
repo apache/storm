@@ -68,6 +68,7 @@ import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.serialization.ITupleSerializer;
 import org.apache.storm.serialization.KryoTupleSerializer;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -77,6 +78,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.StormThreadFactory;
 import org.apache.storm.utils.SupervisorIfaceFactory;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.Utils;
@@ -780,8 +782,16 @@ public class WorkerState {
     }
 
     private Map<String, Object> makeDefaultResources() {
+        return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, makeSharedExecutor(topologyConf));
+    }
+
+    /**
+     * Builds the worker shared executor, honoring the thread pool size and virtual-threads flag from the given (merged) conf.
+     */
+    @VisibleForTesting
+    static ExecutorService makeSharedExecutor(Map<String, Object> conf) {
         int threadPoolSize = ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE));
-        return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, Executors.newFixedThreadPool(threadPoolSize));
+        return Executors.newFixedThreadPool(threadPoolSize, StormThreadFactory.create(conf, "worker-shared-executor"));
     }
 
     private Map<String, Object> makeUserResources() {
