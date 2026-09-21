@@ -647,4 +647,92 @@ public class AuthTest {
     public interface MyBiConsumer<T, U> {
         void accept(T t, U u) throws Exception;
     }
+
+    @Test
+    public void simpleTransportRunsHandlerOnVirtualThreadWhenEnabled() throws Exception {
+        Nimbus.Iface impl = mock(Nimbus.Iface.class);
+        final AtomicReference<Boolean> handlerOnVirtualThread = new AtomicReference<>();
+        doAnswer((invocation) -> {
+            handlerOnVirtualThread.set(Thread.currentThread().isVirtual());
+            return null;
+        }).when(impl).activate(anyString());
+
+        Map<String, Object> extra = new HashMap<>();
+        extra.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
+        withServer(null, SimpleTransportPlugin.class, impl, null, extra,
+            (ThriftServer server, Map<String, Object> conf) -> {
+                try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                        .buildWithNimbusHostPort("localhost", server.getPort())) {
+                    client.getClient().activate("virtual_thread_test_topology");
+                }
+                assertEquals(Boolean.TRUE, handlerOnVirtualThread.get());
+            });
+    }
+
+    @Test
+    public void simpleTransportWithQueueSizeRunsHandlerOnVirtualThreadWhenEnabled() throws Exception {
+        Nimbus.Iface impl = mock(Nimbus.Iface.class);
+        final AtomicReference<Boolean> handlerOnVirtualThread = new AtomicReference<>();
+        doAnswer((invocation) -> {
+            handlerOnVirtualThread.set(Thread.currentThread().isVirtual());
+            return null;
+        }).when(impl).activate(anyString());
+
+        Map<String, Object> extra = new HashMap<>();
+        extra.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
+        extra.put(Config.NIMBUS_QUEUE_SIZE, 8);
+        withServer(null, SimpleTransportPlugin.class, impl, null, extra,
+            (ThriftServer server, Map<String, Object> conf) -> {
+                try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                        .buildWithNimbusHostPort("localhost", server.getPort())) {
+                    client.getClient().activate("virtual_thread_test_topology");
+                }
+                assertEquals(Boolean.TRUE, handlerOnVirtualThread.get());
+            });
+    }
+
+    @Test
+    public void simpleTransportRunsHandlerOnPlatformThreadByDefault() throws Exception {
+        Nimbus.Iface impl = mock(Nimbus.Iface.class);
+        final AtomicReference<Boolean> handlerOnVirtualThread = new AtomicReference<>();
+        doAnswer((invocation) -> {
+            handlerOnVirtualThread.set(Thread.currentThread().isVirtual());
+            return null;
+        }).when(impl).activate(anyString());
+
+        withServer(SimpleTransportPlugin.class, impl,
+            (ThriftServer server, Map<String, Object> conf) -> {
+                try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                        .buildWithNimbusHostPort("localhost", server.getPort())) {
+                    client.getClient().activate("platform_thread_test_topology");
+                }
+                assertEquals(Boolean.FALSE, handlerOnVirtualThread.get());
+            });
+    }
+
+    @Test
+    public void digestTransportRunsHandlerOnVirtualThreadWhenEnabled() throws Exception {
+        Nimbus.Iface impl = mock(Nimbus.Iface.class);
+        final AtomicReference<Boolean> handlerOnVirtualThread = new AtomicReference<>();
+        final AtomicReference<ReqContext> user = new AtomicReference<>();
+        doAnswer((invocation) -> {
+            handlerOnVirtualThread.set(Thread.currentThread().isVirtual());
+            user.set(new ReqContext(ReqContext.context()));
+            return null;
+        }).when(impl).activate(anyString());
+
+        Map<String, Object> extra = new HashMap<>();
+        extra.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
+        withServer(DIGEST_JAAS_CONF, DigestSaslTransportPlugin.class, impl, null, extra,
+            (ThriftServer server, Map<String, Object> conf) -> {
+                try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                        .buildWithNimbusHostPort("localhost", server.getPort())) {
+                    client.getClient().activate("virtual_thread_digest_test_topology");
+                }
+                assertEquals(Boolean.TRUE, handlerOnVirtualThread.get());
+                // ReqContext is still populated per request on a virtual handler thread
+                assertNotNull(user.get());
+                assertEquals("bob", user.get().principal().getName());
+            });
+    }
 }
