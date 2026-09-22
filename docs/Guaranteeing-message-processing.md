@@ -179,3 +179,46 @@ There are three ways to remove reliability. The first is to set Config.TOPOLOGY_
 The second way is to remove reliability on a message by message basis. You can turn off tracking for an individual spout tuple by omitting a message id in the `SpoutOutputCollector.emit` method.
 
 Finally, if you don't care if a particular subset of the tuples downstream in the topology fail to be processed, you can emit them as unanchored tuples. Since they're not anchored to any spout tuples, they won't cause any spout tuples to fail if they aren't acked.
+
+
+### Progress-based timeout (STORM-2359)
+
+By default, `topology.message.timeout.secs` is wall-clock time measured from the moment a spout emits a tuple. This means a tuple sitting idle in a downstream bolt's receive queue under backpressure has its timeout clock running even before any bolt has touched it. Under sustained backpressure, a live and valid tuple can be failed purely because it waited too long in a queue — not because processing is stuck.
+
+This creates an inherent tradeoff:
+- **Short timeout**: orphaned tuple trees (from dead workers) are reclaimed quickly, but live tuples fail under load.
+- **Long timeout**: live tuples survive backpressure, but orphan reclamation takes longer after a worker failure.
+
+Storm 2.x introduces `topology.message.progress.timeout.secs` to address this. When set, a tuple tree is only expired if **no bolt has acked any tuple in the tree** for the configured number of seconds. A tuple tree with recent bolt activity — even one that is currently queued — will be rescued from timeout expiry as long as forward progress is being made.
+
+**Configuration:**
+
+```yaml
+# Standard wall-clock upper-bound timeout (default: 30s) — unchanged
+topology.message.timeout.secs: 120
+
+# Progress-based timeout: expire only after this many seconds of no bolt activity.
+# Set <= topology.message.timeout.secs to take effect.
+topology.message.progress.timeout.secs: 60
+```
+
+With the above, a tuple tree will be expired only if no bolt has acked any part of it for 60 seconds. The wall-clock limit of 120 seconds still applies as a hard upper bound.
+
+**What counts as progress?**
+
+Every time a bolt calls `ack()` on a tuple, the acker receives a partial-ack message for the tree. This resets the progress clock for that tree. No changes to bolt or spout code are required.
+
+**When to use this:**
+- Topologies where processing time varies significantly between tuples (e.g. calls to external services)
+- Pipelines that experience legitimate backpressure spikes
+- Cases where `collector.resetTimeout()` generates too much acker traffic
+
+**When NOT to use this:**
+- When orphan reclamation latency after worker failure is critical — a fixed wall-clock timeout is more predictable
+- Debugging sessions — use `topology.enable.message.timeouts: false` instead (but see the STORM-3514 warning below)
+
+**Backward compatibility:** `topology.message.progress.timeout.secs` is `null` by default. When unset, behavior is identical to prior versions with no change to existing topologies.
+
+### Warning: topology.enable.message.timeouts=false with max.spout.pending (STORM-3514)
+
+Setting `topology.enable.message.timeouts: false` while `topology.max.spout.pending` is a positive integer is a dangerous combination in production. When a worker dies, the orphaned tuple trees in the spout's pending map will never be reclaimed (no timeout fires), and once the pending map fills to `max.spout.pending`, `nextTuple()` will never be called again — permanently stalling the spout. Storm will log a `WARN` message at startup if this combination is detected. This setting is only safe in debugging sessions where no worker failures are expected.
