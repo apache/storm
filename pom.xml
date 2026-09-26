@@ -124,6 +124,7 @@
              above, so this is bumped explicitly rather than tracking the newest release. -->
         <iceberg.version>1.12.0</iceberg.version>
         <kryo.version>5.6.2</kryo.version>
+        <opentelemetry.version>1.66.0</opentelemetry.version>
         <objensis.version>3.6</objensis.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <thrift.version>0.24.0</thrift.version>
@@ -756,6 +757,13 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
                 <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

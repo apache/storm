@@ -12,6 +12,7 @@
 
 package org.apache.storm.tuple;
 
+import io.opentelemetry.context.Context;
 import java.util.Collections;
 import java.util.List;
 import org.apache.storm.generated.GlobalStreamId;
@@ -27,6 +28,7 @@ public class TupleImpl implements Tuple {
     private Long processSampleStartTime;
     private Long executeSampleStartTime;
     private long outAckVal = 0;
+    private Context traceContext;
 
     public TupleImpl(Tuple t) {
         this.values = t.getValues();
@@ -40,6 +42,7 @@ public class TupleImpl implements Tuple {
             this.processSampleStartTime = ti.processSampleStartTime;
             this.executeSampleStartTime = ti.executeSampleStartTime;
             this.outAckVal = ti.outAckVal;
+            this.traceContext = ti.traceContext;
         } catch (ClassCastException e) {
             // ignore ... if t is not a TupleImpl type .. faster than checking and then casting
         }
@@ -81,6 +84,20 @@ public class TupleImpl implements Tuple {
 
     public void setExecuteSampleStartTime(long ms) {
         executeSampleStartTime = ms;
+    }
+
+    /**
+     * Returns the OpenTelemetry context this tuple carries, or null. Internal to Storm.
+     */
+    public Context getTraceContext() {
+        return traceContext;
+    }
+
+    /**
+     * Sets the OpenTelemetry context this tuple carries; null removes it. Internal to Storm.
+     */
+    public void setTraceContext(Context traceContext) {
+        this.traceContext = traceContext;
     }
 
     public void updateAckVal(long val) {

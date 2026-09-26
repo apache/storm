@@ -13,6 +13,14 @@
 package org.apache.storm.serialization;
 
 import com.esotericsoftware.kryo.io.Input;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.SpanId;
+import io.opentelemetry.api.trace.TraceFlags;
+import io.opentelemetry.api.trace.TraceId;
+import io.opentelemetry.api.trace.TraceState;
+import io.opentelemetry.api.trace.TraceStateBuilder;
+import io.opentelemetry.context.Context;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +38,8 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
     private static final Integer DEFAULT_MAX_DECOMPRESSED_BYTES = 10 * 1024 * 1024; // 10MBytes
     public static final Logger LOG = LoggerFactory.getLogger(KryoTupleDeserializer.class);
     public static final String FAILED_TO_DESERIALIZE_TUPLE = "Failed to deserialize tuple";
+    private static final int TRACE_ID_BYTES = 16;
+    private static final int SPAN_ID_BYTES = 8;
     private final GeneralTopologyContext context;
     private final KryoValuesDeserializer kryo;
     private final SerializationFactory.IdDictionary ids;
@@ -84,9 +94,52 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
             String streamName = ids.getStreamName(componentName, streamId);
             MessageId id = MessageId.deserialize(kryoInput);
             List<Object> values = kryo.deserializeFrom(kryoInput);
-            return new TupleImpl(context, values, componentName, taskId, streamName, id);
+            TupleImpl tuple = new TupleImpl(context, values, componentName, taskId, streamName, id);
+            tuple.setTraceContext(readTraceContext(kryoInput));
+            return tuple;
         } catch (IOException e) {
             throw new RuntimeException(FAILED_TO_DESERIALIZE_TUPLE, e);
+        }
+    }
+
+    /**
+     * Reads the trace context written after the values. Null when absent, of an unknown version
+     * or unreadable, so a bad extension never fails the tuple. Invalid tracestate entries are
+     * dropped.
+     */
+    private static Context readTraceContext(Input in) {
+        if (in.position() == in.limit()) {
+            return null;
+        }
+        try {
+            int header = in.readByte() & 0xFF;
+            int version = header & ~KryoTupleSerializer.HAS_TRACE_STATE;
+            if (version != KryoTupleSerializer.TRACE_CONTEXT_VERSION) {
+                return null;
+            }
+            String traceId = TraceId.fromBytes(in.readBytes(TRACE_ID_BYTES));
+            String spanId = SpanId.fromBytes(in.readBytes(SPAN_ID_BYTES));
+            TraceFlags flags = TraceFlags.fromByte(in.readByte());
+            TraceState traceState = TraceState.getDefault();
+            if ((header & KryoTupleSerializer.HAS_TRACE_STATE) != 0) {
+                String[] entries = in.readString().split(",");
+                TraceStateBuilder builder = TraceState.builder();
+                // put() inserts in front of existing entries: add in reverse to keep the order
+                for (int i = entries.length - 1; i >= 0; i--) {
+                    String entry = entries[i];
+                    int separator = entry.indexOf('=');
+                    if (separator > 0) {
+                        builder.put(entry.substring(0, separator), entry.substring(separator + 1));
+                    }
+                }
+                traceState = builder.build();
+            }
+            SpanContext span =
+                SpanContext.createFromRemoteParent(traceId, spanId, flags, traceState);
+            return span.isValid() ? Context.root().with(Span.wrap(span)) : null;
+        } catch (RuntimeException malformed) {
+            LOG.debug("Ignoring a malformed trace context on a received tuple", malformed);
+            return null;
         }
     }
 
