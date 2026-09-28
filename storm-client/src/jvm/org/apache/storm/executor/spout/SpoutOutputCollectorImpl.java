@@ -12,9 +12,14 @@
 
 package org.apache.storm.executor.spout;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import org.apache.storm.Config;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.executor.TupleInfo;
@@ -25,6 +30,7 @@ import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.MutableLong;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -45,6 +51,9 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final Boolean isDebug;
     private final RotatingMap<Long, TupleInfo> pending;
     private final long spoutExecutorThdId;
+    private final boolean tracingEnabled;
+    private final String emitSpanName;
+    private Tracer tracer;
     private TupleInfo globalTupleInfo = new TupleInfo();
     // thread safety: assumes Collector.emit*() calls are externally synchronized (if needed).
 
@@ -62,6 +71,9 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
         this.isDebug = isDebug;
         this.pending = pending;
         this.spoutExecutorThdId = executor.getThreadId();
+        Object tracing = executor.getTopoConf().get(Config.TOPOLOGY_TRACING_ENABLED);
+        this.tracingEnabled = ObjectReader.getBoolean(tracing, false);
+        this.emitSpanName = executor.getComponentId() + " emit";
     }
 
     @Override
@@ -123,6 +135,8 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
         final long rootId = needAck ? MessageId.generateId(random) : 0;
 
+        final Context traceContext = tracingEnabled ? newRootContext() : null;
+
         for (int i = 0; i < outTasks.size(); i++) { // perf critical path. don't use iterators.
             Integer t = outTasks.get(i);
             MessageId msgId;
@@ -136,6 +150,9 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
             final TupleImpl tuple =
                 new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), this.taskId, stream, msgId);
+            if (traceContext != null) {
+                tuple.setTraceContext(traceContext);
+            }
             AddressedTuple adrTuple = new AddressedTuple(t, tuple);
             executor.getExecutorTransfer().tryTransfer(adrTuple, executor.getPendingEmits());
         }
@@ -178,5 +195,23 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             executor.ackSpoutMsg(executor, taskData, timeDelta, globalTupleInfo);
         }
         return outTasks;
+    }
+
+    /**
+     * Records the root span of one emit (started and ended at once) and returns a context holding
+     * it, or null when no OpenTelemetry SDK is registered as the global instance or the span is not
+     * valid. Until an SDK is registered the global instance is left unset, so an SDK registered
+     * later is still picked up.
+     */
+    private Context newRootContext() {
+        if (tracer == null) {
+            if (!GlobalOpenTelemetry.isSet()) {
+                return null;
+            }
+            tracer = GlobalOpenTelemetry.get().getTracer("org.apache.storm");
+        }
+        Span root = tracer.spanBuilder(emitSpanName).setNoParent().startSpan();
+        root.end();
+        return root.getSpanContext().isValid() ? Context.root().with(root) : null;
     }
 }

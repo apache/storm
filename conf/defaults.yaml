@@ -289,6 +289,7 @@ storm.group.mapping.service.cache.duration.secs: 120
 ### topology.* configs are for specific executing storms
 topology.enable.message.timeouts: true
 topology.debug: false
+topology.tracing.enabled: false
 topology.workers: 1
 topology.acker.executors: null
 topology.ras.acker.executors.per.worker: 1
