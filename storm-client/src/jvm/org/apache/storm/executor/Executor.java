@@ -19,6 +19,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
@@ -108,6 +110,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final CountDownLatch workerReady;
     protected final AtomicBoolean stormActive;
     protected final AtomicReference<Map<String, DebugOptions>> stormComponentDebug;
+    private volatile Tracer tracer;
     protected final Runnable suicideFn;
     protected final IStormClusterState stormClusterState;
     protected final Map<Integer, String> taskToComponent;
@@ -779,6 +782,20 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     public String getComponentId() {
         return componentId;
+    }
+
+    /**
+     * Returns the tracer, or null until an OpenTelemetry SDK is registered as the global instance.
+     * Checking isSet() instead of calling get() leaves the global unset, so an SDK registered later
+     * is still used. Safe to call from any thread.
+     */
+    public Tracer tracer() {
+        Tracer current = tracer;
+        if (current == null && GlobalOpenTelemetry.isSet()) {
+            current = GlobalOpenTelemetry.get().getTracer("org.apache.storm");
+            tracer = current;
+        }
+        return current;
     }
 
     public AtomicBoolean getOpenOrPrepareWasCalled() {

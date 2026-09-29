@@ -12,6 +12,10 @@
 
 package org.apache.storm.executor.bolt;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,12 +64,14 @@ public class BoltExecutor extends Executor {
     private final IWaitStrategy consumeWaitStrategy;       // employed when no incoming data
     private final IWaitStrategy backPressureWaitStrategy;  // employed when outbound path is congested
     private final BoltExecutorStats stats;
+    private final String executeSpanName;
     private BoltOutputCollectorImpl outputCollector;
 
     public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials, ClientStatsUtil.BOLT);
         this.executeSampler = ConfigUtils.mkStatsSampler(topoConf);
         this.isSystemBoltExecutor = (executorId == Constants.SYSTEM_EXECUTOR_ID);
+        this.executeSpanName = componentId + " execute";
         if (isSystemBoltExecutor) {
             this.consumeWaitStrategy = makeSystemBoltWaitStrategy();
         } else {
@@ -214,7 +220,6 @@ public class BoltExecutor extends Executor {
                 this.updateChildEwmaStats(idToTask.get(taskId - idToTaskBase), tuple);
             }
         } else {
-            IBolt boltObject = (IBolt) idToTask.get(taskId - idToTaskBase).getTaskObject();
             boolean isSampled = sampler.getAsBoolean();
             boolean isExecuteSampler = executeSampler.getAsBoolean();
             Long now = (isSampled || isExecuteSampler) ? Time.currentTimeMillis() : null;
@@ -224,7 +229,14 @@ public class BoltExecutor extends Executor {
             if (isExecuteSampler) {
                 tuple.setExecuteSampleStartTime(now);
             }
-            boltObject.execute(tuple);
+            IBolt boltObject = (IBolt) idToTask.get(taskId - idToTaskBase).getTaskObject();
+            Context received = tuple.getTraceContext();
+            Tracer tracer = received == null ? null : tracer();
+            if (tracer == null) {
+                boltObject.execute(tuple);
+            } else {
+                executeInSpan(tracer, boltObject, tuple, received);
+            }
 
             Long ms = tuple.getExecuteSampleStartTime();
             long delta = (ms != null) ? Time.deltaMs(ms) : -1;
@@ -243,6 +255,17 @@ public class BoltExecutor extends Executor {
                 Task currentTask = idToTask.get(taskId - idToTaskBase);
                 currentTask.getTaskMetrics().boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
             }
+        }
+    }
+
+    private void executeInSpan(Tracer tracer, IBolt bolt, TupleImpl tuple, Context received) {
+        Span span = tracer.spanBuilder(executeSpanName).setParent(received).startSpan();
+        // anchored emits take their parent from the tuple, also after execute() returns
+        tuple.setTraceContext(received.with(span));
+        try (Scope ignored = span.makeCurrent()) {
+            bolt.execute(tuple);
+        } finally {
+            span.end();
         }
     }
 }

@@ -12,7 +12,6 @@
 
 package org.apache.storm.executor.spout;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
@@ -53,7 +52,6 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final long spoutExecutorThdId;
     private final boolean tracingEnabled;
     private final String emitSpanName;
-    private Tracer tracer;
     private TupleInfo globalTupleInfo = new TupleInfo();
     // thread safety: assumes Collector.emit*() calls are externally synchronized (if needed).
 
@@ -199,16 +197,12 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
     /**
      * Records the root span of one emit (started and ended at once) and returns a context holding
-     * it, or null when no OpenTelemetry SDK is registered as the global instance or the span is not
-     * valid. Until an SDK is registered the global instance is left unset, so an SDK registered
-     * later is still picked up.
+     * it, or null when no OpenTelemetry SDK is registered yet or the span is not valid.
      */
     private Context newRootContext() {
+        Tracer tracer = executor.tracer();
         if (tracer == null) {
-            if (!GlobalOpenTelemetry.isSet()) {
-                return null;
-            }
-            tracer = GlobalOpenTelemetry.get().getTracer("org.apache.storm");
+            return null;
         }
         Span root = tracer.spanBuilder(emitSpanName).setNoParent().startSpan();
         root.end();

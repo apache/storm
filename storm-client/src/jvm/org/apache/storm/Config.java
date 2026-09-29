@@ -1651,9 +1651,10 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * Enables OpenTelemetry tracing for the topology. When {@code true}, every spout emit starts
-     * a root span, and tuples carry the trace context between components and workers. Spans are
-     * recorded and exported by the OpenTelemetry SDK registered as the global instance, usually by
-     * the OpenTelemetry Java agent; without one, Storm creates no spans. Default: {@code false}.
+     * a root span, every bolt execute() of a tuple that carries a trace context runs in a child
+     * span, and tuples carry the trace context between components and workers. Spans are recorded
+     * and exported by the OpenTelemetry SDK registered as the global instance, usually by the
+     * OpenTelemetry Java agent; without one, Storm creates no spans. Default: {@code false}.
      */
     @IsBoolean
     public static final String TOPOLOGY_TRACING_ENABLED = "topology.tracing.enabled";
