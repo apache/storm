@@ -12,8 +12,12 @@
 
 package org.apache.storm.executor.bolt;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.context.Context;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -37,6 +41,7 @@ import org.slf4j.LoggerFactory;
 public class BoltOutputCollectorImpl implements IOutputCollector {
 
     private static final Logger LOG = LoggerFactory.getLogger(BoltOutputCollectorImpl.class);
+    private static final long UNANCHORED_LOG_INTERVAL_MS = 60_000;
 
     private final BoltExecutor executor;
     private final Task task;
@@ -46,6 +51,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     private final ExecutorTransfer xsfer;
     private final boolean isDebug;
     private boolean ackingEnabled;
+    private final String emitSpanName;
+    private volatile long lastUnanchoredLogMs;
 
     public BoltOutputCollectorImpl(BoltExecutor executor, Task taskData, Random random,
                                    boolean isEventLoggers, boolean ackingEnabled, boolean isDebug) {
@@ -57,6 +64,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         this.ackingEnabled = ackingEnabled;
         this.isDebug = isDebug;
         this.xsfer = executor.getExecutorTransfer();
+        this.emitSpanName = executor.getComponentId() + " emit";
     }
 
     @Override
@@ -87,6 +95,14 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         } else {
             outTasks = task.getOutgoingTasks(streamId, values);
         }
+        Context traceContext = null;
+        if (executor.isTracingEnabled()) {
+            if (anchors == null || anchors.isEmpty()) {
+                logUnanchoredEmitUnderSpan(streamId);
+            } else {
+                traceContext = traceContextFor(anchors);
+            }
+        }
 
         for (int i = 0; i < outTasks.size(); ++i) {
             Integer t = outTasks.get(i);
@@ -109,12 +125,57 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             }
             TupleImpl tupleExt = new TupleImpl(
                 executor.getWorkerTopologyContext(), values, executor.getComponentId(), taskId, streamId, msgId);
+            if (traceContext != null) {
+                tupleExt.setTraceContext(traceContext);
+            }
             xsfer.tryTransfer(new AddressedTuple(t, tupleExt), executor.getPendingEmits());
         }
         if (isEventLoggers) {
             task.sendToEventLogger(executor, values, executor.getComponentId(), null, random, executor.getPendingEmits());
         }
         return outTasks;
+    }
+
+    /**
+     * Runs on the emitting thread. If the traced anchors share one span, returns their context. If
+     * they carry several, returns a new root linked to each (the SDK keeps up to 128 links by
+     * default), or null when no SDK is registered on this worker.
+     */
+    private Context traceContextFor(Collection<Tuple> anchors) {
+        Context first = null;
+        Set<SpanContext> linkedSpans = null;
+        for (Tuple anchor : anchors) {
+            Context context = anchor instanceof TupleImpl impl ? impl.getTraceContext() : null;
+            if (context == null) {
+                continue;
+            }
+            if (first == null) {
+                first = context;
+            } else {
+                if (linkedSpans == null) {
+                    linkedSpans = new LinkedHashSet<>();
+                    linkedSpans.add(Span.fromContext(first).getSpanContext());
+                }
+                linkedSpans.add(Span.fromContext(context).getSpanContext());
+            }
+        }
+        if (linkedSpans == null || linkedSpans.size() == 1) {
+            return first;
+        }
+        return executor.newRootContext(emitSpanName, linkedSpans);
+    }
+
+    private void logUnanchoredEmitUnderSpan(String streamId) {
+        if (!LOG.isDebugEnabled() || !Span.current().getSpanContext().isValid()) {
+            return;
+        }
+        long now = Time.currentTimeMillis();
+        if (now - lastUnanchoredLogMs < UNANCHORED_LOG_INTERVAL_MS) {
+            return;
+        }
+        lastUnanchoredLogMs = now;
+        LOG.debug("{} emitted on stream {} without anchors while a span was current; "
+            + "the emitted tuple carries no trace context", executor.getComponentId(), streamId);
     }
 
     @Override

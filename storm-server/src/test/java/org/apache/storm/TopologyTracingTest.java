@@ -16,6 +16,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension;
 import io.opentelemetry.sdk.trace.data.SpanData;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.storm.ILocalCluster.ILocalTopology;
@@ -59,13 +62,11 @@ public class TopologyTracingTest {
     @RegisterExtension
     static final OpenTelemetryExtension OTEL = OpenTelemetryExtension.create();
 
-    /** Trace ids of the contexts carried by the tuples the sink received. */
     private static final Set<String> RECEIVED_TRACE_IDS = ConcurrentHashMap.newKeySet();
-    /** Span ids that were current on the bolt thread while execute() ran. */
+    /** Span ids that were current on the sink's thread while its execute() ran. */
     private static final Set<String> CURRENT_IN_EXECUTE = ConcurrentHashMap.newKeySet();
-    /** Tick tuples the sink received. */
+    private static final AtomicInteger SINK_TUPLES_RECEIVED = new AtomicInteger();
     private static final AtomicInteger TICK_TUPLES_RECEIVED = new AtomicInteger();
-    /** Set when a span was still current on the bolt thread while a tick tuple was handled. */
     private static final AtomicBoolean SPAN_CURRENT_DURING_TICK = new AtomicBoolean();
 
     private static ILocalCluster cluster;
@@ -106,8 +107,7 @@ public class TopologyTracingTest {
         // two sink tasks with all grouping: on two workers, a copy of each tuple crosses workers
         List<SpanData> spans = runSpoutToSink(true, 2, 2, 0); // 2 tuples, 2 sink tasks, no ticks
 
-        Map<String, SpanData> emits = named(spans, "spout emit").stream()
-            .collect(Collectors.toMap(SpanData::getSpanId, Function.identity()));
+        Map<String, SpanData> emits = byId(named(spans, "spout emit"));
         List<SpanData> executes = named(spans, "sink execute");
         assertEquals(2, emits.size());
         assertEquals(4, executes.size());
@@ -131,33 +131,120 @@ public class TopologyTracingTest {
         assertFalse(SPAN_CURRENT_DURING_TICK.get(), "the execute span's scope was closed");
     }
 
+    @Test
+    public void testAnchoredEmitContinuesTheTrace() throws Exception {
+        // per tuple: spout emit, middle execute, sink execute
+        List<SpanData> spans = runThroughMiddle(EmitMode.ANCHORED, 2, 6, 2);
+
+        assertSinkExecutesAreChildrenOfMiddleExecutes(spans, 2);
+    }
+
+    @Test
+    public void testAnchorsCarryingTheSameSpanAddNoMergeSpan() throws Exception {
+        // per tuple: spout emit, middle execute, sink execute; the emit anchors the input twice
+        List<SpanData> spans = runThroughMiddle(EmitMode.ANCHORED_TWICE, 2, 6, 2);
+
+        assertTrue(named(spans, "middle emit").isEmpty());
+        assertSinkExecutesAreChildrenOfMiddleExecutes(spans, 2);
+    }
+
+    @Test
+    public void testEmitAnchoredToTwoTracedTuplesStartsARootWithTwoLinks() throws Exception {
+        // 2 spout emits, 2 middle executes, 1 merge span, 1 sink execute
+        List<SpanData> spans = runThroughMiddle(EmitMode.JOIN, 2, 6, 1);
+
+        List<SpanData> merges = named(spans, "middle emit");
+        assertEquals(1, merges.size());
+        SpanData merge = merges.get(0);
+        assertFalse(merge.getParentSpanContext().isValid(), "a merge starts a new trace");
+        Set<String> linked = merge.getLinks().stream()
+            .map(link -> link.getSpanContext().getSpanId()).collect(Collectors.toSet());
+        assertEquals(byId(named(spans, "middle execute")).keySet(), linked);
+        List<SpanData> sinks = named(spans, "sink execute");
+        assertEquals(1, sinks.size());
+        assertEquals(merge.getSpanId(), sinks.get(0).getParentSpanId());
+    }
+
+    @Test
+    public void testUnanchoredEmitCarriesNoContext() throws Exception {
+        // per tuple: spout emit, middle execute; the sink gets untraced tuples
+        List<SpanData> spans = runThroughMiddle(EmitMode.UNANCHORED, 2, 4, 2);
+
+        assertEquals(2, named(spans, "middle execute").size());
+        assertTrue(named(spans, "sink execute").isEmpty());
+        assertTrue(RECEIVED_TRACE_IDS.isEmpty(), "the sink's tuples carry no context");
+    }
+
+    private static void assertSinkExecutesAreChildrenOfMiddleExecutes(List<SpanData> spans,
+        int count) {
+        Map<String, SpanData> middles = byId(named(spans, "middle execute"));
+        List<SpanData> sinks = named(spans, "sink execute");
+        assertEquals(count, middles.size());
+        assertEquals(count, sinks.size());
+        for (SpanData sink : sinks) {
+            SpanData middle = middles.get(sink.getParentSpanId());
+            assertNotNull(middle, "the emit carries the middle execute span as parent");
+            assertEquals(middle.getTraceId(), sink.getTraceId());
+        }
+    }
+
     /**
-     * Feeds {@code count} tuples from spout "spout" to bolt "sink" (all grouping) on two workers,
-     * waits until all are acked, all expected spans are exported and, when {@code tickSecs} is
-     * positive, until the sink got two tick tuples. Returns the exported spans.
+     * Spout to sink (all grouping). With {@code tickSecs} positive, also waits for two ticks.
      */
     private List<SpanData> runSpoutToSink(boolean tracing, int count, int sinkTasks, int tickSecs)
         throws Exception {
+        Config conf = conf(tracing);
+        if (tickSecs > 0) {
+            conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, tickSecs);
+        }
+        // one emit span per tuple and one execute span per tuple and sink task
+        int expectedSpans = tracing ? count * (1 + sinkTasks) : 0;
+        return runTopology(conf, count,
+            builder -> builder.setBolt("sink", new SinkBolt(), sinkTasks).allGrouping("spout"),
+            () -> OTEL.getSpans().size() >= expectedSpans
+                && (tickSecs == 0 || TICK_TUPLES_RECEIVED.get() >= 2));
+    }
+
+    /**
+     * Spout to middle (one task, which JOIN needs; emitting as {@code mode} says) to sink.
+     */
+    private List<SpanData> runThroughMiddle(EmitMode mode, int count, int expectedSpans,
+        int sinkTuples) throws Exception {
+        return runTopology(conf(true), count,
+            builder -> {
+                builder.setBolt("middle", new MiddleBolt(mode)).shuffleGrouping("spout");
+                builder.setBolt("sink", new SinkBolt()).shuffleGrouping("middle");
+            },
+            () -> OTEL.getSpans().size() >= expectedSpans
+                && SINK_TUPLES_RECEIVED.get() >= sinkTuples);
+    }
+
+    private static Config conf(boolean tracing) {
+        Config conf = new Config();
+        conf.setNumWorkers(2);
+        conf.put(Config.TOPOLOGY_TRACING_ENABLED, tracing);
+        return conf;
+    }
+
+    /**
+     * Feeds {@code count} tuples to spout "spout", waits for the acks and {@code done}, and
+     * returns the exported spans.
+     */
+    private List<SpanData> runTopology(Config conf, int count, Consumer<TopologyBuilder> bolts,
+        BooleanSupplier done) throws Exception {
         FeederSpout spout = new FeederSpout(new Fields("value"));
         AckFailMapTracker tracker = new AckFailMapTracker();
         spout.setAckFailDelegate(tracker);
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", spout);
-        builder.setBolt("sink", new SinkBolt(), sinkTasks).allGrouping("spout");
+        bolts.accept(builder);
 
-        Config conf = new Config();
-        conf.setNumWorkers(2);
-        conf.put(Config.TOPOLOGY_TRACING_ENABLED, tracing);
-        if (tickSecs > 0) {
-            conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, tickSecs);
-        }
         OTEL.clearSpans();
         RECEIVED_TRACE_IDS.clear();
         CURRENT_IN_EXECUTE.clear();
+        SINK_TUPLES_RECEIVED.set(0);
         TICK_TUPLES_RECEIVED.set(0);
         SPAN_CURRENT_DURING_TICK.set(false);
-        // one emit span per tuple and one execute span per tuple and sink task
-        int expectedSpans = tracing ? count * (1 + sinkTasks) : 0;
         String name = "tracing-" + topologyCount++;
         StormTopology topology = builder.createTopology();
         try (ILocalTopology ignored = cluster.submitTopology(name, conf, topology)) {
@@ -167,19 +254,74 @@ public class TopologyTracingTest {
                 spout.feed(new Values("v" + i), i);
             }
             AssertLoop.assertAcked(tracker, ids);
-            // an execute span ends after the bolt acked, so the ack can arrive before the span
+            // spans end after the bolt acked, and unanchored tuples are not tracked by the acks
             Awaitility.await().atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .until(() -> OTEL.getSpans().size() >= expectedSpans);
-            if (tickSecs > 0) {
-                Awaitility.await().atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                    .until(() -> TICK_TUPLES_RECEIVED.get() >= 2);
-            }
+                .until(done::getAsBoolean);
             return OTEL.getSpans();
         }
     }
 
     private static List<SpanData> named(List<SpanData> spans, String name) {
         return spans.stream().filter(s -> s.getName().equals(name)).collect(Collectors.toList());
+    }
+
+    private static Map<String, SpanData> byId(List<SpanData> spans) {
+        return spans.stream().collect(Collectors.toMap(SpanData::getSpanId, Function.identity()));
+    }
+
+    private enum EmitMode {
+        ANCHORED,
+        /** Anchored to the input twice: both anchors carry the same span. */
+        ANCHORED_TWICE,
+        UNANCHORED,
+        /** Holds the first input, then emits anchored to both. */
+        JOIN
+    }
+
+    private static class MiddleBolt extends BaseRichBolt {
+        private final EmitMode mode;
+        private transient OutputCollector collector;
+        private transient Tuple held;
+
+        MiddleBolt(EmitMode mode) {
+            this.mode = mode;
+        }
+
+        @Override
+        public void prepare(Map<String, Object> conf, TopologyContext context,
+            OutputCollector collector) {
+            this.collector = collector;
+        }
+
+        @Override
+        public void execute(Tuple input) {
+            Values values = new Values(input.getValue(0));
+            switch (mode) {
+                case ANCHORED:
+                    collector.emit(input, values);
+                    break;
+                case ANCHORED_TWICE:
+                    collector.emit(Arrays.asList(input, input), values);
+                    break;
+                case UNANCHORED:
+                    collector.emit(values);
+                    break;
+                default:
+                    if (held == null) {
+                        held = input;
+                        return;
+                    }
+                    collector.emit(Arrays.asList(held, input), values);
+                    collector.ack(held);
+                    held = null;
+            }
+            collector.ack(input);
+        }
+
+        @Override
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+            declarer.declare(new Fields("value"));
+        }
     }
 
     private static class SinkBolt extends BaseRichBolt {
@@ -208,6 +350,7 @@ public class TopologyTracingTest {
             if (current.isValid()) {
                 CURRENT_IN_EXECUTE.add(current.getSpanId());
             }
+            SINK_TUPLES_RECEIVED.incrementAndGet();
             collector.ack(input);
         }
 

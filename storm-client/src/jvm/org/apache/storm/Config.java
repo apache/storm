@@ -1650,11 +1650,11 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES = "topology.tuple.compression.max.decompressed.bytes";
 
     /**
-     * Enables OpenTelemetry tracing for the topology. When {@code true}, every spout emit starts
-     * a root span, every bolt execute() of a tuple that carries a trace context runs in a child
-     * span, and tuples carry the trace context between components and workers. Spans are recorded
-     * and exported by the OpenTelemetry SDK registered as the global instance, usually by the
-     * OpenTelemetry Java agent; without one, Storm creates no spans. Default: {@code false}.
+     * Enables OpenTelemetry tracing. Each spout emit, except checkpoint tuples, starts a trace,
+     * each bolt execute() of a traced tuple runs in a child span, and bolt emits carry a context
+     * derived from their anchors. Spans are recorded by the OpenTelemetry SDK registered as the
+     * global instance, usually by the OpenTelemetry Java agent; without one, Storm records nothing.
+     * Default: {@code false}.
      */
     @IsBoolean
     public static final String TOPOLOGY_TRACING_ENABLED = "topology.tracing.enabled";

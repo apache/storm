@@ -20,11 +20,16 @@ import com.codahale.metrics.Metered;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -110,6 +115,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final CountDownLatch workerReady;
     protected final AtomicBoolean stormActive;
     protected final AtomicReference<Map<String, DebugOptions>> stormComponentDebug;
+    private final boolean tracingEnabled;
     private volatile Tracer tracer;
     protected final Runnable suicideFn;
     protected final IStormClusterState stormClusterState;
@@ -152,6 +158,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.componentId = workerTopologyContext.getComponentId(taskIds.get(0));
         this.openOrPrepareWasCalled = new AtomicBoolean(false);
         this.topoConf = normalizedComponentConf(workerData.getTopologyConf(), workerTopologyContext, componentId);
+        Object tracing = topoConf.get(Config.TOPOLOGY_TRACING_ENABLED);
+        this.tracingEnabled = ObjectReader.getBoolean(tracing, false);
         this.receiveQueue = (workerData.getExecutorReceiveQueueMap().get(executorId));
         this.stormId = workerData.getTopologyId();
         this.conf = workerData.getConf();
@@ -796,6 +804,26 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             tracer = current;
         }
         return current;
+    }
+
+    public boolean isTracingEnabled() {
+        return tracingEnabled;
+    }
+
+    /**
+     * Starts and immediately ends a root span linked to {@code links} and returns its context, or
+     * null when no SDK is registered or the span is not valid.
+     */
+    public Context newRootContext(String spanName, Collection<SpanContext> links) {
+        Tracer current = tracer();
+        if (current == null) {
+            return null;
+        }
+        SpanBuilder builder = current.spanBuilder(spanName).setNoParent();
+        links.forEach(builder::addLink);
+        Span span = builder.startSpan();
+        span.end();
+        return span.getSpanContext().isValid() ? Context.root().with(span) : null;
     }
 
     public AtomicBoolean getOpenOrPrepareWasCalled() {
