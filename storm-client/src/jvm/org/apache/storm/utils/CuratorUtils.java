@@ -21,6 +21,7 @@ package org.apache.storm.utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.naming.ConfigurationException;
 import org.apache.storm.Config;
 import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
@@ -58,6 +59,22 @@ public class CuratorUtils {
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
 
         setupBuilder(builder, zkStr, conf, auth);
+
+        // Wrap the retry policy set by setupBuilder() with a connection-aware policy.
+        // When the ZK connection is SUSPENDED or LOST, the policy yields to the ZK
+        // client's SendThread (which is already failovering to another ensemble
+        // member) by calling blockUntilConnected(), instead of blind sleep+retry.
+        AtomicReference<CuratorFramework> zkRef = new AtomicReference<>();
+        int sessionTimeoutMs = ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT));
+        ConnectionAwareRetryPolicy connectionAwarePolicy = new ConnectionAwareRetryPolicy(
+                new StormBoundedExponentialBackoffRetry(
+                        ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL)),
+                        ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING)),
+                        ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES))),
+                zkRef::get,
+                sessionTimeoutMs);
+        builder.retryPolicy(connectionAwarePolicy);
+
         if (defaultAcl != null) {
             builder.aclProvider(new ACLProvider() {
                 @Override
@@ -72,7 +89,10 @@ public class CuratorUtils {
             });
         }
 
-        return builder.build();
+        CuratorFramework framework = builder.build();
+        zkRef.set(framework);
+        connectionAwarePolicy.bind(framework);
+        return framework;
     }
 
     protected static void setupBuilder(CuratorFrameworkFactory.Builder builder, final String zkStr, Map<String, Object> conf,
