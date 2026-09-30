@@ -13,6 +13,8 @@
 package org.apache.storm;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.StatusCode;
@@ -52,6 +54,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.TupleUtils;
+import org.apache.storm.utils.Utils;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -91,6 +94,8 @@ public class TopologyTracingTest {
 
     private static ILocalCluster cluster;
     private static int topologyCount;
+    private static String topologyName;
+    private static volatile int sinkTaskId;
 
     @BeforeAll
     public static void startCluster() throws Exception {
@@ -150,6 +155,23 @@ public class TopologyTracingTest {
 
         assertEquals(1, named(spans, "sink execute").size());
         assertFalse(SPAN_CURRENT_DURING_TICK.get(), "the execute span's scope was closed");
+    }
+
+    @Test
+    public void testExecuteSpanCarriesStormAttributes() throws Exception {
+        List<SpanData> spans = runSpoutToSink(true, 1, 1, 0); // 1 tuple, 1 sink task, no ticks
+
+        Attributes attributes = named(spans, "sink execute").get(0).getAttributes();
+        assertEquals(topologyName, attributes.get(AttributeKey.stringKey("storm.topology.name")));
+        String topologyId = attributes.get(AttributeKey.stringKey("storm.topology.id"));
+        assertTrue(topologyId.startsWith(topologyName), topologyId);
+        assertEquals("sink", attributes.get(AttributeKey.stringKey("storm.component.id")));
+        assertEquals(sinkTaskId, attributes.get(AttributeKey.longKey("storm.task.id")));
+        assertEquals("spout", attributes.get(AttributeKey.stringKey("storm.source.component.id")));
+        assertEquals("default", attributes.get(AttributeKey.stringKey("storm.source.stream.id")));
+        assertEquals(Utils.hostname(), attributes.get(AttributeKey.stringKey("storm.worker.host")));
+        assertEquals(WORKER_PORT_BY_COMPONENT.get("sink").longValue(),
+            attributes.get(AttributeKey.longKey("storm.worker.port")));
     }
 
     @Test
@@ -374,9 +396,9 @@ public class TopologyTracingTest {
         EMITTER_THREAD_FAILURE.set(null);
         TICK_TUPLES_RECEIVED.set(0);
         SPAN_CURRENT_DURING_TICK.set(false);
-        String name = "tracing-" + topologyCount++;
+        topologyName = "tracing-" + topologyCount++;
         StormTopology topology = builder.createTopology();
-        try (ILocalTopology ignored = cluster.submitTopology(name, conf, topology)) {
+        try (ILocalTopology ignored = cluster.submitTopology(topologyName, conf, topology)) {
             Object[] ids = new Object[count];
             for (int i = 0; i < count; i++) {
                 ids[i] = i;
@@ -509,6 +531,7 @@ public class TopologyTracingTest {
             OutputCollector collector) {
             this.collector = collector;
             WORKER_PORT_BY_COMPONENT.put("sink", context.getThisWorkerPort());
+            sinkTaskId = context.getThisTaskId();
         }
 
         @Override
