@@ -12,6 +12,7 @@
 
 package org.apache.storm.executor;
 
+import io.opentelemetry.context.Context;
 import java.io.Serializable;
 import java.util.List;
 import org.apache.storm.shade.org.apache.commons.lang3.builder.ToStringBuilder;
@@ -27,6 +28,7 @@ public class TupleInfo implements Serializable {
     private List<Object> values;
     private long timestamp;
     private long rootId;
+    private transient Context traceContext;
 
     public Object getMessageId() {
         return messageId;
@@ -74,6 +76,14 @@ public class TupleInfo implements Serializable {
         this.rootId = rootId;
     }
 
+    public Context getTraceContext() {
+        return traceContext;
+    }
+
+    public void setTraceContext(Context traceContext) {
+        this.traceContext = traceContext;
+    }
+
     public int getTaskId() {
         return taskId;
     }
@@ -88,5 +98,6 @@ public class TupleInfo implements Serializable {
         values = null;
         timestamp = 0;
         rootId = 0;
+        traceContext = null;
     }
 }
