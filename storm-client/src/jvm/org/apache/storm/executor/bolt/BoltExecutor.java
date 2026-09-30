@@ -261,7 +261,7 @@ public class BoltExecutor extends Executor {
     private void executeInSpan(Tracer tracer, IBolt bolt, TupleImpl tuple, Context received) {
         Span span = tracer.spanBuilder(executeSpanName).setParent(received).startSpan();
         // anchored emits take their parent from the tuple, also after execute() returns
-        tuple.setTraceContext(received.with(span));
+        tuple.setTraceContext(received.with(Span.wrap(span.getSpanContext())));
         try (Scope ignored = span.makeCurrent()) {
             bolt.execute(tuple);
         } finally {

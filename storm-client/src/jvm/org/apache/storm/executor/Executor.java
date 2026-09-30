@@ -23,6 +23,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import java.io.IOException;
@@ -823,7 +824,25 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         links.forEach(builder::addLink);
         Span span = builder.startSpan();
         span.end();
-        return span.getSpanContext().isValid() ? Context.root().with(span) : null;
+        // keep only the ids: pending tuples hold this context until their tree completes
+        SpanContext ids = span.getSpanContext();
+        return ids.isValid() ? Context.root().with(Span.wrap(ids)) : null;
+    }
+
+    /**
+     * Records a span under {@code parent}, started and ended at once, with status ERROR when
+     * {@code error}. Nothing is recorded until an SDK is registered.
+     */
+    public void recordOutcome(Context parent, String spanName, boolean error) {
+        Tracer current = tracer();
+        if (current == null) {
+            return;
+        }
+        Span span = current.spanBuilder(spanName).setParent(parent).startSpan();
+        if (error) {
+            span.setStatus(StatusCode.ERROR);
+        }
+        span.end();
     }
 
     public AtomicBoolean getOpenOrPrepareWasCalled() {

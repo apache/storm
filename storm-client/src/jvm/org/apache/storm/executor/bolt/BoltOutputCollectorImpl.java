@@ -52,6 +52,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     private final boolean isDebug;
     private boolean ackingEnabled;
     private final String emitSpanName;
+    private final String failSpanName;
     private volatile long lastUnanchoredLogMs;
 
     public BoltOutputCollectorImpl(BoltExecutor executor, Task taskData, Random random,
@@ -65,6 +66,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         this.isDebug = isDebug;
         this.xsfer = executor.getExecutorTransfer();
         this.emitSpanName = executor.getComponentId() + " emit";
+        this.failSpanName = executor.getComponentId() + " fail";
     }
 
     @Override
@@ -207,6 +209,10 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
 
     @Override
     public void fail(Tuple input) {
+        Context traceContext = input instanceof TupleImpl impl ? impl.getTraceContext() : null;
+        if (traceContext != null) {
+            executor.recordOutcome(traceContext, failSpanName, true);
+        }
         if (!ackingEnabled) {
             return;
         }

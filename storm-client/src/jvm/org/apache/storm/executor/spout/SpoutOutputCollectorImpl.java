@@ -163,6 +163,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             info.setStream(stream);
             info.setMessageId(messageId);
             info.setRootId(rootId);
+            info.setTraceContext(traceContext);
             if (isDebug) {
                 info.setValues(values);
             }

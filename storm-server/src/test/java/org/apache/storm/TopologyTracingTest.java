@@ -15,6 +15,7 @@ package org.apache.storm;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -152,6 +153,59 @@ public class TopologyTracingTest {
     }
 
     @Test
+    public void testAckRecordsAnOutcomeSpanUnderTheRoot() throws Exception {
+        // spout emit, sink execute, spout ack
+        List<SpanData> spans = runWithSink(SinkOutcome.ACK, conf(true), 3);
+
+        SpanData emit = named(spans, "spout emit").get(0);
+        SpanData ack = named(spans, "spout ack").get(0);
+        assertEquals(emit.getSpanId(), ack.getParentSpanId());
+        assertEquals(StatusCode.UNSET, ack.getStatus().getStatusCode());
+    }
+
+    @Test
+    public void testFailRecordsErrorSpansInTheBoltAndAtTheSpout() throws Exception {
+        // spout emit, sink execute, sink fail, spout fail
+        List<SpanData> spans = runWithSink(SinkOutcome.FAIL, conf(true), 4);
+
+        SpanData emit = named(spans, "spout emit").get(0);
+        SpanData execute = named(spans, "sink execute").get(0);
+        assertEquals(1, named(spans, "sink fail").size());
+        SpanData sinkFail = named(spans, "sink fail").get(0);
+        SpanData spoutFail = named(spans, "spout fail").get(0);
+        assertEquals(execute.getSpanId(), sinkFail.getParentSpanId());
+        assertEquals(emit.getSpanId(), spoutFail.getParentSpanId());
+        assertEquals(StatusCode.ERROR, sinkFail.getStatus().getStatusCode());
+        assertEquals(StatusCode.ERROR, spoutFail.getStatus().getStatusCode());
+    }
+
+    @Test
+    public void testBoltFailIsRecordedWithoutAckers() throws Exception {
+        Config conf = conf(true);
+        conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 0);
+        // spout emit, sink execute, sink fail; without ackers the spout records no outcome
+        List<SpanData> spans = runWithSink(SinkOutcome.FAIL, conf, 3);
+
+        SpanData sinkFail = named(spans, "sink fail").get(0);
+        assertEquals(StatusCode.ERROR, sinkFail.getStatus().getStatusCode());
+        assertTrue(named(spans, "spout ack").isEmpty());
+    }
+
+    @Test
+    public void testTimeoutRecordsAnErrorSpanAtTheSpout() throws Exception {
+        Config conf = conf(true);
+        conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 2);
+        // spout emit, sink execute, spout timeout
+        List<SpanData> spans = runWithSink(SinkOutcome.HOLD, conf, 3);
+
+        SpanData emit = named(spans, "spout emit").get(0);
+        SpanData timeout = named(spans, "spout timeout").get(0);
+        assertEquals(emit.getSpanId(), timeout.getParentSpanId());
+        assertEquals(StatusCode.ERROR, timeout.getStatus().getStatusCode());
+        assertTrue(named(spans, "spout fail").isEmpty());
+    }
+
+    @Test
     public void testAnchoredEmitContinuesTheTrace() throws Exception {
         // per tuple: spout emit, middle execute, sink execute
         List<SpanData> spans = runThroughMiddle(EmitMode.ANCHORED, 2, 6, 2);
@@ -280,6 +334,14 @@ public class TopologyTracingTest {
                 && SINK_TUPLES_RECEIVED.get() >= sinkTuples);
     }
 
+    /** One tuple from spout "spout" to a sink that acks, fails or holds it. */
+    private List<SpanData> runWithSink(SinkOutcome outcome, Config conf, int expectedSpans)
+        throws Exception {
+        return runTopology(conf, 1,
+            builder -> builder.setBolt("sink", new SinkBolt(outcome)).shuffleGrouping("spout"),
+            () -> OTEL.getSpans().size() >= expectedSpans);
+    }
+
     private static Config conf(boolean tracing) {
         Config conf = new Config();
         conf.setNumWorkers(2);
@@ -288,8 +350,8 @@ public class TopologyTracingTest {
     }
 
     /**
-     * Feeds {@code count} tuples to spout "spout", waits for the acks and {@code done}, and
-     * returns the exported spans.
+     * Feeds {@code count} tuples to spout "spout", waits until each is acked or failed and
+     * {@code done} holds, and returns the exported spans.
      */
     private List<SpanData> runTopology(Config conf, int count, Consumer<TopologyBuilder> bolts,
         BooleanSupplier done) throws Exception {
@@ -320,7 +382,7 @@ public class TopologyTracingTest {
                 ids[i] = i;
                 spout.feed(new Values("v" + i), i);
             }
-            AssertLoop.assertAcked(tracker, ids);
+            AssertLoop.assertLoop(id -> tracker.isAcked(id) || tracker.isFailed(id), ids);
             // spans end after the bolt acked, and unanchored tuples are not tracked by the acks
             Awaitility.await().atMost(Testing.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .until(done::getAsBoolean);
@@ -423,8 +485,24 @@ public class TopologyTracingTest {
         }
     }
 
+    private enum SinkOutcome {
+        ACK,
+        FAIL,
+        /** Neither acks nor fails, so the tree times out. */
+        HOLD
+    }
+
     private static class SinkBolt extends BaseRichBolt {
+        private final SinkOutcome outcome;
         private OutputCollector collector;
+
+        SinkBolt() {
+            this(SinkOutcome.ACK);
+        }
+
+        SinkBolt(SinkOutcome outcome) {
+            this.outcome = outcome;
+        }
 
         @Override
         public void prepare(Map<String, Object> conf, TopologyContext context,
@@ -456,7 +534,11 @@ public class TopologyTracingTest {
                 SINK_SPAN_BY_VALUE.put(input.getValue(0), current.getSpanId());
             }
             SINK_TUPLES_RECEIVED.incrementAndGet();
-            collector.ack(input);
+            if (outcome == SinkOutcome.ACK) {
+                collector.ack(input);
+            } else if (outcome == SinkOutcome.FAIL) {
+                collector.fail(input);
+            }
         }
 
         @Override
