@@ -60,6 +60,12 @@ if [[ "${USER}" == "vagrant" ]]; then # install oracle jdk8 or openjdk11
     export MAVEN_OPTS="-Xmx3000m"
 else
     if [[ "${USER}" == "github" ]]; then
+        # The distribution takes public/ from storm-webapp/target/classes/WEB-INF, which this job
+        # does not build; it only has the storm-webapp jar from the build job.
+        webapp_jar=$(find ~/.m2/repository/org/apache/storm/storm-webapp -name 'storm-webapp-*.jar' \
+            -not -name '*-tests.jar' -not -name '*-sources.jar' -not -name '*-javadoc.jar' | head -1)
+        [[ -n "${webapp_jar}" ]] || die "storm-webapp jar not found in the local Maven repository"
+        unzip -q -o "${webapp_jar}" 'WEB-INF/*' -d "${STORM_SRC_DIR}/storm-webapp/target/classes"
         ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
     fi
     # The binary build also produces the lean "storm-lite" distribution; the integration
