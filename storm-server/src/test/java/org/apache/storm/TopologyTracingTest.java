@@ -51,7 +51,6 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.TupleUtils;
 import org.apache.storm.utils.Utils;
@@ -489,7 +488,7 @@ public class TopologyTracingTest {
 
         private void emitReversed(Tuple first, Tuple second) {
             try {
-                Context firstContext = ((TupleImpl) first).getTraceContext();
+                Context firstContext = TupleUtils.traceContext(first);
                 try (Scope ignored = firstContext.makeCurrent()) {
                     collector.emit(second, new Values(second.getValue(0)));
                     collector.emit(first, new Values(first.getValue(0)));
@@ -543,11 +542,10 @@ public class TopologyTracingTest {
                 TICK_TUPLES_RECEIVED.incrementAndGet();
                 return;
             }
-            if (((TupleImpl) input).getTraceContext() != null) {
-                SpanContext received = Span.fromContext(((TupleImpl) input).getTraceContext())
-                    .getSpanContext();
+            SpanContext received = Span.fromContext(TupleUtils.traceContext(input)).getSpanContext();
+            if (received.isValid()) {
                 RECEIVED_TRACE_IDS.add(received.getTraceId());
-                if (received.isValid() && !received.isSampled()) {
+                if (!received.isSampled()) {
                     UNSAMPLED_CONTEXTS_RECEIVED.incrementAndGet();
                 }
             }
