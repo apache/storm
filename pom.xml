@@ -122,7 +122,7 @@
         <hbase.version>2.6.6-hadoop3</hbase.version>
         <!-- Pinned deliberately: storm-iceberg must stay buildable against the Java baseline
              above, so this is bumped explicitly rather than tracking the newest release. -->
-        <iceberg.version>1.11.0</iceberg.version>
+        <iceberg.version>1.12.0</iceberg.version>
         <kryo.version>5.6.2</kryo.version>
         <objensis.version>3.6</objensis.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>

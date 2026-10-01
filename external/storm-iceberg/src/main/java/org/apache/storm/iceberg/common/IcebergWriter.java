@@ -32,7 +32,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.data.GenericAppenderFactory;
+import org.apache.iceberg.data.GenericFileWriterFactory;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.io.OutputFileFactory;
@@ -61,7 +61,7 @@ public class IcebergWriter implements Closeable {
     private Catalog catalog;
     private Table table;
     private TaskWriter<Record> writer;
-    private CountingAppenderFactory countingAppenderFactory;
+    private CountingFileWriterFactory countingWriterFactory;
 
     public IcebergWriter(IcebergOptions options, int taskId) {
         this.options = options;
@@ -146,7 +146,7 @@ public class IcebergWriter implements Closeable {
 
     /** Roughly how many bytes the open files hold, for size-based flushing. */
     public long bufferedBytes() {
-        return countingAppenderFactory == null ? 0L : countingAppenderFactory.estimatedBytes();
+        return countingWriterFactory == null ? 0L : countingWriterFactory.estimatedBytes();
     }
 
     /**
@@ -158,8 +158,8 @@ public class IcebergWriter implements Closeable {
     }
 
     private void resetBuffer() {
-        if (countingAppenderFactory != null) {
-            countingAppenderFactory.reset();
+        if (countingWriterFactory != null) {
+            countingWriterFactory.reset();
         }
     }
 
@@ -172,9 +172,9 @@ public class IcebergWriter implements Closeable {
             : PropertyUtil.propertyAsLong(table.properties(),
                 TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
                 TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-        CountingAppenderFactory appenderFactory =
-            new CountingAppenderFactory(new GenericAppenderFactory(schema, spec));
-        this.countingAppenderFactory = appenderFactory;
+        CountingFileWriterFactory writerFactory = new CountingFileWriterFactory(
+            new GenericFileWriterFactory.Builder(table).dataSchema(schema).dataFileFormat(format).build());
+        this.countingWriterFactory = writerFactory;
         // A fresh OutputFileFactory per file set: its random operation id keeps file names from
         // replayed tuples unique.
         OutputFileFactory fileFactory = OutputFileFactory
@@ -182,9 +182,9 @@ public class IcebergWriter implements Closeable {
             .format(format)
             .build();
         if (spec.isUnpartitioned()) {
-            return new UnpartitionedWriter<>(spec, format, appenderFactory, fileFactory, table.io(), targetFileSize);
+            return new UnpartitionedWriter<>(spec, format, writerFactory, fileFactory, table.io(), targetFileSize);
         }
-        return new PartitionedRecordWriter(spec, format, appenderFactory, fileFactory, table.io(), targetFileSize, schema);
+        return new PartitionedRecordWriter(spec, format, writerFactory, fileFactory, table.io(), targetFileSize, schema);
     }
 
     @Override
