@@ -101,16 +101,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- TestNG provider does not understand the JUnit 5 groups syntax used in the rest of the project, make sure to override it -->
+                    <!-- the TestNG tests carry no JUnit 5 tags, so drop the excluded groups inherited from the root pom -->
                     <excludedGroups>none</excludedGroups>
                     <skipTests>${skipTests}</skipTests>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                     <argLine>-Xmx1024m</argLine>
                     <properties>
-                        <property>
-                            <name>listener</name>
-                            <value>org.apache.storm.st.meta.TestngListener</value>
-                        </property>
+                        <configurationParameters>
+                            testng.listeners = org.apache.storm.st.meta.TestngListener
+                        </configurationParameters>
                     </properties>
                     <reuseForks>true</reuseForks>
                     <forkCount>1</forkCount>
