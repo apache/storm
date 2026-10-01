@@ -21,6 +21,7 @@ import org.apache.storm.st.utils.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.st.utils.StringDecorator;
 
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -34,7 +35,8 @@ public class DecoratedLogLine implements Comparable<DecoratedLogLine> {
     private final ZonedDateTime logDate;
     private final String data;
     private static final int DATE_LEN = "2016-05-04 23:38:10.702".length(); //format of date in worker logs
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+        .withZone(ZoneOffset.UTC);
 
     public DecoratedLogLine(String logLine) {
         final List<String> splitOnDecorator = Arrays.asList(StringDecorator.split2(StringUtils.strip(logLine)));
