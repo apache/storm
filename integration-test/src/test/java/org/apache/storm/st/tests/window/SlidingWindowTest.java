@@ -55,6 +55,7 @@ public final class SlidingWindowTest extends AbstractTest {
         final String topologyName = this.getClass().getSimpleName() + "-size-window" + windowSize + "-slide" + slideSize;
         if (windowSize <= 0 || slideSize <= 0) {
             assertThrows(IllegalArgumentException.class, () -> testable.newTopology());
+            return;
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
         windowVerifier.runAndVerifyCount(windowSize, slideSize, testable, topo);
@@ -83,6 +84,7 @@ public final class SlidingWindowTest extends AbstractTest {
         final String topologyName = this.getClass().getSimpleName() + "-sec-window" + windowSec + "-slide" + slideSec;
         if (windowSec <= 0 || slideSec <= 0) {
             assertThrows(IllegalArgumentException.class, () -> testable.newTopology());
+            return;
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
         windowVerifier.runAndVerifyTime(windowSec, slideSec, testable, topo);

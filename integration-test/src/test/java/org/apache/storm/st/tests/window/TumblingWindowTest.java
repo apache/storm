@@ -80,6 +80,7 @@ public final class TumblingWindowTest extends AbstractTest {
         final String topologyName = this.getClass().getSimpleName() + "-sec" + tumbleSec;
         if (tumbleSec <= 0) {
             assertThrows(IllegalArgumentException.class, () -> testable.newTopology());
+            return;
         }
         topo = new TopoWrap(cluster, topologyName, testable.newTopology());
         windowVerifier.runAndVerifyTime(tumbleSec, tumbleSec, testable, topo);
