@@ -163,7 +163,7 @@
         <provided.scope>provided</provided.scope>
         <asm.version>9.10.1</asm.version>
         <error_prone_annotations.version>2.50.0</error_prone_annotations.version>
-        <bouncycastle.version>1.85</bouncycastle.version>
+        <bouncycastle.version>1.86</bouncycastle.version>
     </properties>
 
     <modules>
