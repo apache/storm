@@ -65,6 +65,7 @@ else
         webapp_jar=$(find ~/.m2/repository/org/apache/storm/storm-webapp -name 'storm-webapp-*.jar' \
             -not -name '*-tests.jar' -not -name '*-sources.jar' -not -name '*-javadoc.jar' | head -1)
         [[ -n "${webapp_jar}" ]] || die "storm-webapp jar not found in the local Maven repository"
+        mkdir -p "${STORM_SRC_DIR}/storm-webapp/target/classes"
         unzip -q -o "${webapp_jar}" 'WEB-INF/*' -d "${STORM_SRC_DIR}/storm-webapp/target/classes"
         ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
     fi
