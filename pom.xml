@@ -107,7 +107,7 @@
              and dedup-libs.py refuses to assemble the tarball. -->
         <jspecify.version>1.0.1</jspecify.version>
         <auto-service.version>1.1.1</auto-service.version>
-        <netty-tcnative.version>2.0.82.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.84.Final</netty-tcnative.version>
         <netty.version>4.2.17.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.26.1</log4j.version>
