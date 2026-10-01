@@ -1,0 +1,82 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Runs the checkstyle auto-fix (storm-checkstyle/README.md) on one module and pushes the result to
+# the branch checkstyle-fix/<module>, from which a pull request against master can be opened.
+name: Checkstyle auto-fix
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Maven module to fix, as its path in the repository (e.g. storm-client or external/storm-hdfs)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      MODULE: ${{ inputs.module }}
+    steps:
+      - name: Validate the module input
+        run: |
+          if ! [[ "$MODULE" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$ ]] || [[ "$MODULE" == *..* ]]; then
+            echo "::error::'$MODULE' is not a valid module path"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check that the module exists
+        run: test -f "$MODULE/pom.xml" || { echo "::error::$MODULE/pom.xml not found"; exit 1; }
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Set up JDK 25
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 25
+      - name: Build the module and the modules it depends on (the Groovy stage resolves its classpath)
+        run: mvn --batch-mode install -DskipTests -Dcheckstyle.skip=true -pl "$MODULE" -am
+      - name: Auto-fix the module (OpenRewrite, Groovy, OpenRewrite re-indent)
+        run: |
+          mvn --batch-mode -pl "$MODULE" -Dcheckstyle.skip=true \
+              org.openrewrite.maven:rewrite-maven-plugin:run@checkstyle-autofix-openrewrite \
+              org.codehaus.gmavenplus:gmavenplus-plugin:execute@checkstyle-autofix \
+              org.openrewrite.maven:rewrite-maven-plugin:run@checkstyle-reindent-openrewrite
+      - name: Normalize the license headers
+        run: mvn --batch-mode -pl "$MODULE" -Dcheckstyle.skip=true org.codehaus.gmavenplus:gmavenplus-plugin:execute@normalize-license-headers
+      - name: Push the result to checkstyle-fix/<module>
+        run: |
+          BRANCH="checkstyle-fix/$MODULE"
+          # only the module itself (build output is git-ignored), never the tooling files
+          git add -A -- "$MODULE"
+          if git diff --cached --quiet; then
+            echo "Nothing to fix in $MODULE"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git commit -m "Checkstyle auto-fix of $MODULE"
+          git push --force origin "$BRANCH"
+          echo "Pushed $BRANCH; open a pull request against master from it." >> "$GITHUB_STEP_SUMMARY"
