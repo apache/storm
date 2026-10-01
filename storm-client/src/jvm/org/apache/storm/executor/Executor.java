@@ -798,7 +798,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      * Checking isSet() instead of calling get() leaves the global unset, so an SDK registered later
      * is still used. Safe to call from any thread.
      */
-    public Tracer tracer() {
+    protected Tracer tracer() {
         Tracer current = tracer;
         if (current == null && GlobalOpenTelemetry.isSet()) {
             current = GlobalOpenTelemetry.get().getTracer("org.apache.storm");
