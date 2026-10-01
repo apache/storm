@@ -108,7 +108,7 @@
         <jspecify.version>1.0.1</jspecify.version>
         <auto-service.version>1.1.1</auto-service.version>
         <netty-tcnative.version>2.0.84.Final</netty-tcnative.version>
-        <netty.version>4.2.17.Final</netty.version>
+        <netty.version>4.2.18.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j.version>2.26.1</log4j.version>
         <slf4j.version>2.0.20</slf4j.version>
