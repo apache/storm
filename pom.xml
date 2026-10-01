@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>39</version>
+        <version>40</version>
     </parent>
 
     <groupId>org.apache.storm</groupId>
@@ -256,7 +256,7 @@
 
                                 <!-- Used as part of GitHub action build -->
                                 <exclude>install.txt</exclude>
-                                <exclude>storm-shaded-deps/install-shade.txt</exclude>
+                                <exclude>**/install-shade.txt</exclude>
                                 <!-- storm-webapp static assets and frontend build artifacts -->
                                 <exclude>**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/images/*
                                 </exclude>
@@ -296,6 +296,9 @@
 
                                 <!-- Vagrant related files -->
                                 <exclude>integration-test/config/.vagrant/**</exclude>
+
+                                <!-- flagged since apache-rat-plugin 0.18 -->
+                                <exclude>flux/flux-core/src/main/resources/splash.txt</exclude>
 
                             </excludes>
                         </configuration>
