@@ -18,9 +18,20 @@
 package org.apache.storm.st.helper;
 
 import org.apache.storm.st.wrapper.StormCluster;
+import org.testng.annotations.BeforeClass;
 
 public abstract class AbstractTest {
-    protected final StormCluster cluster = new StormCluster();
+    protected StormCluster cluster;
+
+    /**
+     * Connect in a configuration method rather than a field initializer: the TestNG engine
+     * instantiates test classes during discovery, before the cluster is expected to be reachable.
+     */
+    @BeforeClass(alwaysRun = true)
+    public void connectToCluster() {
+        cluster = new StormCluster();
+    }
+
     static {
         System.setProperty("user.timezone", "UTC");
     }

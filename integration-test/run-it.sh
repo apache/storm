@@ -76,6 +76,8 @@ echo "Using storm version:" ${STORM_VERSION}
 list_storm_processes || true
 sudo bash "${SCRIPT_DIR}/config/common.sh"
 sudo bash "${SCRIPT_DIR}/config/install-storm.sh" "$storm_binary_zip"
+# storm.yaml points ZooKeeper, Nimbus and DRPC at node1; make it resolve when the host does not already
+grep -qw node1 /etc/hosts || echo "127.0.0.1 node1" | sudo tee -a /etc/hosts
 if [[ "$TRAVIS_JDK_VERSION" == "openjdk11" ]] || [[ "${JDK_VERSION}" == "11" ]]
 then
   cat "${SCRIPT_DIR}/config/storm-java9.yaml" | sudo tee -a /usr/share/storm/conf/storm.yaml
