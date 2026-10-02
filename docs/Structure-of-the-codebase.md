@@ -94,7 +94,7 @@ Here's a summary of the purpose of the main Java packages:
 
 [org.apache.storm.daemon.Acker]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/daemon/Acker.java): Implementation of the "acker" bolt, which is a key part of how Storm guarantees data processing.
 
-[org.apache.storm.daemon.DrpcServer]({{page.git-blob-base}}/storm-webapp/src/jvm/org/apache/storm/daemon/DrpcServer.java): Implementation of the DRPC server for use with DRPC topologies.
+[org.apache.storm.daemon.drpc.DRPCServer]({{page.git-blob-base}}/storm-webapp/src/main/java/org/apache/storm/daemon/drpc/DRPCServer.java): Implementation of the DRPC server for use with DRPC topologies.
 
 [org.apache.storm.event]({{page.git-blob-base}}/storm-server/src/jvm/org/apache/storm/event): Implements a simple asynchronous function executor. Used in various places in Nimbus and Supervisor to make functions execute in serial to avoid any race conditions.
 

@@ -84,13 +84,13 @@ CGroups can be used in conjunction with the Resource Aware Scheduler.  CGroups w
 
 CGroups not only can limit the amount of resources a worker has access to, but it can also help monitor the resource consumption of a worker.  There are several metrics enabled by default that will check if the worker is a part of a CGroup and report corresponding metrics.
 
-## CGroupCPU
+## CGroupCpu
 
-org.apache.storm.metrics2.cgroup.CGroupCPU reports metrics similar to org.apache.storm.metrics.sigar.CPUMetric, but for everything within the CGroup.  It reports both user and system CPU usage in ms. 
+org.apache.storm.metrics2.cgroup.CGroupCpu reports metrics similar to org.apache.storm.metrics.sigar.CPUMetric, but for everything within the CGroup.  It reports both user and system CPU usage in ms. 
 
 ```
-   "CGroupCPU.user-ms": number
-   "CGroupCPU.sys-ms": number
+   "CGroupCpu.user-ms": number
+   "CGroupCpu.sys-ms": number
 ```
 
 CGroup reports these as CLK_TCK counts, and not milliseconds so the accuracy is determined by what CLK_TCK is set to.  On most systems it is 100 times a second so at most the accuracy is 10 ms.
@@ -142,8 +142,8 @@ These metrics can be very helpful in debugging what has happened or is happening
 
 ### CPU
 
-CPU guarantees under storm are soft.  It means that a worker can ea sly go over their guarantee if there is free CPU available.  To detect that your worker is using more CPU then it requested you can sum up the values in CGroupCPU and compare them to CGroupCpuGuarantee.  
-If CGroupCPU is consistently higher then or equal to CGroupCpuGuarantee you probably want to look at requesting more CPU as your worker may be starved for CPU if more load is placed on the cluster.  Being equal to CGroupCpuGuarantee means your worker may already
+CPU guarantees under storm are soft.  It means that a worker can ea sly go over their guarantee if there is free CPU available.  To detect that your worker is using more CPU then it requested you can sum up the values in CGroupCpu and compare them to CGroupCpuGuarantee.  
+If CGroupCpu is consistently higher then or equal to CGroupCpuGuarantee you probably want to look at requesting more CPU as your worker may be starved for CPU if more load is placed on the cluster.  Being equal to CGroupCpuGuarantee means your worker may already
 be throttled.  If the used CPU is much smaller than CGroupCpuGuarantee then you are probably wasting resources and may want to reduce your CPU ask.
 
 If you do have high CPU you probably also want to check out the GC metrics and/or the GC log for your worker.  Memory pressure on the heap can result in increased CPU as garbage collection happens.
