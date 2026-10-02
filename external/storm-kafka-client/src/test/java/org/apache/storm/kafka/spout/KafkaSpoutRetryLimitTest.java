@@ -54,6 +54,7 @@ public class KafkaSpoutRetryLimitTest {
     private final long offsetCommitPeriodMs = 2_000;
     private final TopologyContext contextMock = mock(TopologyContext.class);
     private final SpoutOutputCollector collectorMock = mock(SpoutOutputCollector.class);
+    private final KafkaTupleListener tupleListener = mock(KafkaTupleListener.class);
     private final Map<String, Object> conf = new HashMap<>();
     private final TopicPartition partition = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 1);
     @Mock
@@ -72,6 +73,7 @@ public class KafkaSpoutRetryLimitTest {
         spoutConfig = createKafkaSpoutConfigBuilder(mock(TopicFilter.class), mock(ManualPartitioner.class), -1)
             .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
             .setRetry(ZERO_RETRIES_RETRY_SERVICE)
+            .setTupleListener(tupleListener)
             .build();
     }
     
@@ -97,6 +99,13 @@ public class KafkaSpoutRetryLimitTest {
             
             for (KafkaSpoutMessageId messageId : messageIds.getAllValues()) {
                 spout.fail(messageId);
+            }
+
+            // The give-up contract: onMaxRetryReached runs before the tuple is acked.
+            InOrder giveUpOrder = inOrder(tupleListener);
+            for (KafkaSpoutMessageId messageId : messageIds.getAllValues()) {
+                giveUpOrder.verify(tupleListener).onMaxRetryReached(messageId);
+                giveUpOrder.verify(tupleListener).onAck(messageId);
             }
 
             // Advance time and then trigger call to kafka consumer commit
