@@ -162,7 +162,13 @@ public class SupervisorHeartbeat implements Runnable {
         Map<String, Object> validatedNumaMap = SupervisorUtils.getNumaMap(conf);
         Map<String, SupervisorInfo> supervisorInfoList = buildSupervisorInfo(conf, supervisor, validatedNumaMap);
         for (Map.Entry<String, SupervisorInfo> supervisorInfoEntry : supervisorInfoList.entrySet()) {
-            stormClusterState.supervisorHeartbeat(supervisorInfoEntry.getKey(), supervisorInfoEntry.getValue());
+            try {
+                stormClusterState.supervisorHeartbeat(supervisorInfoEntry.getKey(), supervisorInfoEntry.getValue());
+            } catch (Exception e) {
+                // Liveness is tracked via ephemeral ZK nodes, not this write. Safe to skip.
+                LOG.warn("Supervisor ZK heartbeat failed for {}, will retry next cycle",
+                    supervisorInfoEntry.getKey(), e);
+            }
         }
     }
 }
