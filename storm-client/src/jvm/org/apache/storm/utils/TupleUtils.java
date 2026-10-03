@@ -12,12 +12,14 @@
 
 package org.apache.storm.utils;
 
+import io.opentelemetry.context.Context;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.TupleImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +34,18 @@ public final class TupleUtils {
         return tuple != null
                && Constants.SYSTEM_COMPONENT_ID.equals(tuple.getSourceComponent())
                && Constants.SYSTEM_TICK_STREAM_ID.equals(tuple.getSourceStreamId());
+    }
+
+    /**
+     * Returns the OpenTelemetry context to run work for this tuple under, so that spans created
+     * there join the tuple's trace, or {@link Context#root()} when the tuple carries none (see
+     * {@link Config#TOPOLOGY_TRACING_ENABLED}). Never null. The context holds span ids only: it
+     * parents new spans but gives no access to the execute span itself. Example:
+     * {@code pool.submit(TupleUtils.traceContext(input).wrap(task))}.
+     */
+    public static Context traceContext(Tuple tuple) {
+        Context context = tuple instanceof TupleImpl impl ? impl.getTraceContext() : null;
+        return context != null ? context : Context.root();
     }
 
     public static <T> int chooseTaskIndex(List<T> keys, int numTasks) {

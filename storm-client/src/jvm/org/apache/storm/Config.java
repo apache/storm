@@ -1648,6 +1648,18 @@ public class Config extends HashMap<String, Object> {
      */
     @IsPositiveNumber(includeZero = false)
     public static final String TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES = "topology.tuple.compression.max.decompressed.bytes";
+
+    /**
+     * Enables OpenTelemetry tracing. Each spout emit, except checkpoint tuples, starts a trace,
+     * each bolt execute() of a traced tuple runs in a child span, and bolt emits carry a context
+     * derived from their anchors. The spout records the ack, fail or timeout of each traced tuple
+     * tree, and a bolt its fail() calls, as short spans. Spans are recorded by the OpenTelemetry
+     * SDK registered as the global instance, usually by the OpenTelemetry Java agent; without one,
+     * Storm records nothing. Default: {@code false}.
+     */
+    @IsBoolean
+    public static final String TOPOLOGY_TRACING_ENABLED = "topology.tracing.enabled";
+
     /**
      * Configure the topology metrics reporters to be used on workers.
      */

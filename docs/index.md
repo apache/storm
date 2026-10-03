@@ -71,6 +71,7 @@ We're also notifying it via annotating classes with marker interface `@Interface
 * [Hooks](Hooks.html)
 * [Metrics (Deprecated)](Metrics.html)
 * [Metrics V2](metrics_v2.html)
+* [Tracing](Tracing.html)
 * [State Checkpointing](State-checkpointing.html)
 * [Windowing](Windowing.html)
 * [Joining Streams](Joins.html)

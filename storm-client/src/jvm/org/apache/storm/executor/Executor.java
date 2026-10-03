@@ -19,10 +19,18 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -108,6 +116,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final CountDownLatch workerReady;
     protected final AtomicBoolean stormActive;
     protected final AtomicReference<Map<String, DebugOptions>> stormComponentDebug;
+    private final boolean tracingEnabled;
+    private volatile Tracer tracer;
     protected final Runnable suicideFn;
     protected final IStormClusterState stormClusterState;
     protected final Map<Integer, String> taskToComponent;
@@ -149,6 +159,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.componentId = workerTopologyContext.getComponentId(taskIds.get(0));
         this.openOrPrepareWasCalled = new AtomicBoolean(false);
         this.topoConf = normalizedComponentConf(workerData.getTopologyConf(), workerTopologyContext, componentId);
+        Object tracing = topoConf.get(Config.TOPOLOGY_TRACING_ENABLED);
+        this.tracingEnabled = ObjectReader.getBoolean(tracing, false);
         this.receiveQueue = (workerData.getExecutorReceiveQueueMap().get(executorId));
         this.stormId = workerData.getTopologyId();
         this.conf = workerData.getConf();
@@ -779,6 +791,58 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     public String getComponentId() {
         return componentId;
+    }
+
+    /**
+     * Returns the tracer, or null until an OpenTelemetry SDK is registered as the global instance.
+     * Checking isSet() instead of calling get() leaves the global unset, so an SDK registered later
+     * is still used. Safe to call from any thread.
+     */
+    protected Tracer tracer() {
+        Tracer current = tracer;
+        if (current == null && GlobalOpenTelemetry.isSet()) {
+            current = GlobalOpenTelemetry.get().getTracer("org.apache.storm");
+            tracer = current;
+        }
+        return current;
+    }
+
+    public boolean isTracingEnabled() {
+        return tracingEnabled;
+    }
+
+    /**
+     * Starts and immediately ends a root span linked to {@code links} and returns its context, or
+     * null when no SDK is registered or the span is not valid.
+     */
+    public Context newRootContext(String spanName, Collection<SpanContext> links) {
+        Tracer current = tracer();
+        if (current == null) {
+            return null;
+        }
+        SpanBuilder builder = current.spanBuilder(spanName).setNoParent();
+        links.forEach(builder::addLink);
+        Span span = builder.startSpan();
+        span.end();
+        // keep only the ids: pending tuples hold this context until their tree completes
+        SpanContext ids = span.getSpanContext();
+        return ids.isValid() ? Context.root().with(Span.wrap(ids)) : null;
+    }
+
+    /**
+     * Records a span under {@code parent}, started and ended at once, with status ERROR when
+     * {@code error}. Nothing is recorded until an SDK is registered.
+     */
+    public void recordOutcome(Context parent, String spanName, boolean error) {
+        Tracer current = tracer();
+        if (current == null) {
+            return;
+        }
+        Span span = current.spanBuilder(spanName).setParent(parent).startSpan();
+        if (error) {
+            span.setStatus(StatusCode.ERROR);
+        }
+        span.end();
     }
 
     public AtomicBoolean getOpenOrPrepareWasCalled() {
