@@ -302,7 +302,7 @@ Be aware that the `__system` bolt is an actual bolt so regular bolt metrics desc
 
 `dequeuedMessages` is a throwback to older code where there was an internal queue between the server and the bolts/spouts.  That is no longer the case and the value can be ignored.
 `enqueued` is a map between the address of the remote worker and the number of tuples that were sent from it to this worker.
-`deserializationFailures` is the number of incoming messages that failed to deserialize and were dropped.
+`deserializationFailures` is the number of incoming messages that failed to deserialize and were dropped. When `topology.tuple.deserialization.strict.enable` is set, deserialization failures are not dropped or counted; they propagate and terminate the worker instead.
 
 ##### Send (Netty Client)
 

@@ -27,6 +27,7 @@ import org.apache.storm.Config;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.serialization.KryoTupleDeserializer;
 import org.apache.storm.serialization.KryoTupleSerializer;
+import org.apache.storm.serialization.TupleDeserializationException;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
@@ -132,14 +133,60 @@ public class DeserializingConnectionCallbackTest {
     @Test
     public void testUnknownSourceTaskDroppedAndBatchContinues() {
         Map<String, Object> conf = baseConf();
+
+        TupleDeserializationException thrown = assertThrows(TupleDeserializationException.class,
+                                                            () -> new KryoTupleDeserializer(conf, context).deserialize(unknownSourceTaskTuple()));
+        assertTrue(thrown.getMessage().contains("9999"),
+                   "expected the task id in the message but was: " + thrown.getMessage());
+
+        assertBatchDeliversOnlyValidMessages(conf, unknownSourceTaskTuple());
+    }
+
+    @Test
+    public void testUnknownStreamIdDroppedAndBatchContinues() {
+        Map<String, Object> conf = baseConf();
         Output out = new Output(16, 32);
-        out.writeInt(9999, true); // source task that does not exist in the topology
-        out.writeInt(1, true);    // default stream id
-        byte[] unknownTask = out.toBytes();
+        out.writeInt(SOURCE_TASK_ID, true); // source task that exists in the topology
+        out.writeInt(3, true);              // stream id the source component does not declare
+        byte[] unknownStream = out.toBytes();
 
-        assertThrows(IllegalArgumentException.class, () -> new KryoTupleDeserializer(conf, context).deserialize(unknownTask));
+        TupleDeserializationException thrown = assertThrows(TupleDeserializationException.class,
+                                                            () -> new KryoTupleDeserializer(conf, context).deserialize(unknownStream));
+        assertTrue(thrown.getMessage().contains(SOURCE_COMPONENT),
+                   "expected the component name in the message but was: " + thrown.getMessage());
 
-        assertBatchDeliversOnlyValidMessages(conf, unknownTask);
+        assertBatchDeliversOnlyValidMessages(conf, unknownStream);
+    }
+
+    @Test
+    public void testStrictModeMakesFailuresFatal() {
+        Map<String, Object> conf = baseConf();
+        conf.put(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE, true);
+        byte[] full = serializedTuple(conf, new Values("a-string-long-enough-to-survive-truncation", 7));
+        byte[] truncated = Arrays.copyOf(full, full.length - 10);
+
+        WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
+        DeserializingConnectionCallback callback = new DeserializingConnectionCallback(conf, context, transfer);
+
+        assertThrows(KryoException.class, () -> callback.recv(Collections.singletonList(taskMessage(truncated))));
+
+        verify(transfer, never()).transfer(any());
+        assertEquals(0L, callback.getAndResetDeserializationFailures());
+    }
+
+    @Test
+    public void testStrictModeMakesUnknownTaskFailureFatal() {
+        Map<String, Object> conf = baseConf();
+        conf.put(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE, true);
+
+        WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
+        DeserializingConnectionCallback callback = new DeserializingConnectionCallback(conf, context, transfer);
+
+        assertThrows(TupleDeserializationException.class,
+                     () -> callback.recv(Collections.singletonList(taskMessage(unknownSourceTaskTuple()))));
+
+        verify(transfer, never()).transfer(any());
+        assertEquals(0L, callback.getAndResetDeserializationFailures());
     }
 
     @Test
@@ -267,6 +314,13 @@ public class DeserializingConnectionCallbackTest {
 
         assertEquals(1L, callback.getAndResetDeserializationFailures());
         assertNull(callback.getValueAndReset());
+    }
+
+    private static byte[] unknownSourceTaskTuple() {
+        Output out = new Output(16, 32);
+        out.writeInt(9999, true); // source task that does not exist in the topology
+        out.writeInt(1, true);    // default stream id
+        return out.toBytes();
     }
 
     private Map<String, Object> baseConf() {

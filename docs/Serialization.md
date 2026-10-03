@@ -131,6 +131,7 @@ Be aware that the topology-wide form enables compression for *every* remote-boun
 | `topology.tuple.compression.threshold` | `1460` | Minimum serialized tuple size, in bytes, before compression is attempted. Tuples at or below this size are sent uncompressed. The default matches the typical Ethernet TCP MSS, so payloads that already fit in a single network frame are never compressed. |
 | `storm.compression.zstd.level` | `3` | Zstd compression level. Supported range is 1–19; levels 20–22 (ultra mode) are prohibited because of their memory requirements. |
 | `topology.tuple.compression.max.decompressed.bytes` | `10485760` (10 MB) | Upper bound on the decompressed size of a single tuple. Decompression that would exceed this limit fails, guarding against malicious or corrupt payloads. |
+| `topology.tuple.deserialization.strict.enable` | `false` | Makes tuple deserialization failures fatal: an incoming message that fails to decode kills the receiving worker instead of being dropped and counted. This restores the pre-3.1.0 behavior and is mainly useful for debugging, because a persistent bad frame will put the worker in a restart loop. |
 
 #### How decompression works
 

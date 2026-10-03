@@ -79,9 +79,12 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
             int streamId = kryoInput.readInt(true);
             String componentName = context.getComponentId(taskId);
             if (componentName == null) {
-                throw new IllegalArgumentException("Received a tuple from unknown task " + taskId);
+                throw new TupleDeserializationException("Received a tuple from unknown task " + taskId);
             }
             String streamName = ids.getStreamName(componentName, streamId);
+            if (streamName == null) {
+                throw new TupleDeserializationException("Component " + componentName + " has no stream with id " + streamId);
+            }
             MessageId id = MessageId.deserialize(kryoInput);
             List<Object> values = kryo.deserializeFrom(kryoInput);
             return new TupleImpl(context, values, componentName, taskId, streamName, id);
