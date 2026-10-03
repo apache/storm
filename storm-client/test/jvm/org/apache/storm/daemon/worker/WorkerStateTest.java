@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -136,6 +138,31 @@ public class WorkerStateTest {
                 workerState.transferLocalBatch(new ArrayList<>(Collections.singletonList(tupleForUnknownTask))));
         } finally {
             ConfigUtils.setInstance(previousConfigUtils);
+        }
+    }
+
+    @Test
+    public void sharedExecutorUsesVirtualThreadsWhenEnabled() throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 2);
+        conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
+        ExecutorService pool = WorkerState.makeSharedExecutor(conf);
+        try {
+            assertTrue(pool.submit(() -> Thread.currentThread().isVirtual()).get(10, TimeUnit.SECONDS));
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    @Test
+    public void sharedExecutorUsesPlatformThreadsByDefault() throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 2);
+        ExecutorService pool = WorkerState.makeSharedExecutor(conf);
+        try {
+            assertFalse(pool.submit(() -> Thread.currentThread().isVirtual()).get(10, TimeUnit.SECONDS));
+        } finally {
+            pool.shutdownNow();
         }
     }
 }

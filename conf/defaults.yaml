@@ -38,6 +38,7 @@ storm.zookeeper.auth.password: null
 storm.zookeeper.ssl.enable: false
 storm.zookeeper.ssl.hostnameVerification: false
 storm.cluster.mode: "distributed" # can be distributed or local
+storm.virtual.threads.enabled: false
 storm.local.mode.zmq: false
 storm.thrift.transport: "org.apache.storm.security.auth.SimpleTransportPlugin"
 storm.thrift.socket.timeout.ms: 600000

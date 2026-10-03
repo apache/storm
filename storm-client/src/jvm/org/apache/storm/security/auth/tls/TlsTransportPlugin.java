@@ -18,6 +18,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -42,6 +43,7 @@ import org.apache.storm.thrift.transport.TSocket;
 import org.apache.storm.thrift.transport.TTransport;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.ExtendedThreadPoolExecutor;
+import org.apache.storm.utils.StormThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +109,8 @@ public class TlsTransportPlugin implements ITransportPlugin {
             workQueue = new ArrayBlockingQueue<>(queueSize);
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
-                60, TimeUnit.SECONDS, workQueue);
+                60, TimeUnit.SECONDS, workQueue,
+                StormThreadFactory.create(conf, type.name().toLowerCase(Locale.ROOT) + "-handler"));
         serverArgs.executorService(executorService);
         tThreadPoolServer = new TThreadPoolServer(serverArgs);
         return tThreadPoolServer;
