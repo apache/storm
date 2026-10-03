@@ -159,18 +159,16 @@ public class SupervisorHeartbeat implements Runnable {
 
     @Override
     public void run() {
-        try {
-            Map<String, Object> validatedNumaMap = SupervisorUtils.getNumaMap(conf);
-            Map<String, SupervisorInfo> supervisorInfoList = buildSupervisorInfo(conf, supervisor, validatedNumaMap);
-            for (Map.Entry<String, SupervisorInfo> supervisorInfoEntry : supervisorInfoList.entrySet()) {
+        Map<String, Object> validatedNumaMap = SupervisorUtils.getNumaMap(conf);
+        Map<String, SupervisorInfo> supervisorInfoList = buildSupervisorInfo(conf, supervisor, validatedNumaMap);
+        for (Map.Entry<String, SupervisorInfo> supervisorInfoEntry : supervisorInfoList.entrySet()) {
+            try {
                 stormClusterState.supervisorHeartbeat(supervisorInfoEntry.getKey(), supervisorInfoEntry.getValue());
+            } catch (Exception e) {
+                // Liveness is tracked via ephemeral ZK nodes, not this write. Safe to skip.
+                LOG.warn("Supervisor ZK heartbeat failed for {}, will retry next cycle",
+                    supervisorInfoEntry.getKey(), e);
             }
-        } catch (Exception e) {
-            // A missed heartbeat is harmless: nimbus.supervisor.timeout.secs (default 30s)
-            // allows 6 missed beats before the supervisor is considered dead. The next
-            // heartbeat (5s later) will retry. Killing the entire supervisor process
-            // over one missed beat is not acceptable.
-            LOG.warn("Supervisor heartbeat failed, will retry next cycle", e);
         }
     }
 }

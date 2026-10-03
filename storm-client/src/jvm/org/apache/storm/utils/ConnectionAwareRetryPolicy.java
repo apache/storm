@@ -18,9 +18,11 @@
 
 package org.apache.storm.utils;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.org.apache.curator.RetryPolicy;
 import org.apache.storm.shade.org.apache.curator.RetrySleeper;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
@@ -48,6 +50,12 @@ import org.slf4j.LoggerFactory;
 public class ConnectionAwareRetryPolicy implements RetryPolicy {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionAwareRetryPolicy.class);
+
+    /**
+     * Maximum jitter (in ms) applied after a successful reconnection to avoid
+     * thundering-herd when many suspended clients retry in lockstep.
+     */
+    private static final long RECONNECT_JITTER_MS = 100;
 
     private final RetryPolicy delegate;
     private final Supplier<CuratorFramework> zkSupplier;
@@ -86,15 +94,25 @@ public class ConnectionAwareRetryPolicy implements RetryPolicy {
         });
     }
 
+    @VisibleForTesting
+    RetryPolicy getDelegate() {
+        return delegate;
+    }
+
     @Override
     public boolean allowRetry(int retryCount, long elapsedTimeMs, RetrySleeper sleepSleeper) {
         ConnectionState state = connectionState.get();
 
         if (state == ConnectionState.SUSPENDED || state == ConnectionState.LOST) {
+            // Honour the configured retry budget even while suspended.
+            if (!delegate.allowRetry(retryCount, elapsedTimeMs, sleepSleeper)) {
+                return false;
+            }
+
             CuratorFramework zk = zkSupplier.get();
             if (zk == null) {
-                // Framework not yet available; fall through to delegate
-                return delegate.allowRetry(retryCount, elapsedTimeMs, sleepSleeper);
+                // Framework not yet available; delegate already approved the retry
+                return true;
             }
 
             LOG.info("ZK connection is {} on retry {}, waiting for reconnection (timeout {}ms)",
@@ -104,8 +122,11 @@ public class ConnectionAwareRetryPolicy implements RetryPolicy {
                 if (reconnected) {
                     LOG.info("ZK connection re-established (state: {}), retrying operation",
                         connectionState.get());
-                    // Return true without sleeping — the SendThread has already
-                    // failedover to another ensemble member. Retry immediately.
+                    // Jitter to avoid thundering-herd on ensemble recovery.
+                    long jitterMs = ThreadLocalRandom.current().nextLong(RECONNECT_JITTER_MS);
+                    if (jitterMs > 0) {
+                        sleepSleeper.sleepFor(jitterMs, TimeUnit.MILLISECONDS);
+                    }
                     return true;
                 }
                 LOG.warn("ZK connection not re-established within {}ms, abandoning retry",

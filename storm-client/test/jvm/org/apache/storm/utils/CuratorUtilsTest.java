@@ -38,9 +38,15 @@ import org.apache.storm.shade.org.apache.zookeeper.ClientCnxnSocketNetty;
 import org.apache.storm.shade.org.apache.zookeeper.ZooKeeper;
 import org.apache.storm.shade.org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.storm.shade.org.apache.zookeeper.common.ClientX509Util;
+import org.apache.storm.shade.org.apache.curator.RetryPolicy;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CuratorUtilsTest {
     private static final Logger LOG = LoggerFactory.getLogger(CuratorUtilsTest.class);
@@ -68,10 +74,12 @@ public class CuratorUtilsTest {
         config.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING, expectedCeiling);
 
         CuratorFramework curator = CuratorUtils.newCurator(config,
-                Collections.singletonList("bogus_server"), 42, "", DaemonType.WORKER
-                .getDefaultZkAcls(config));
+            Collections.singletonList("bogus_server"), 42, "", DaemonType.WORKER.getDefaultZkAcls(config));
+        RetryPolicy retryPolicy = curator.getZookeeperClient().getRetryPolicy();
+        assertTrue(retryPolicy instanceof ConnectionAwareRetryPolicy,
+            "newCurator should wrap the retry policy in a ConnectionAwareRetryPolicy");
         StormBoundedExponentialBackoffRetry policy =
-                (StormBoundedExponentialBackoffRetry) curator.getZookeeperClient().getRetryPolicy();
+            (StormBoundedExponentialBackoffRetry) ((ConnectionAwareRetryPolicy) retryPolicy).getDelegate();
         assertEquals(policy.getBaseSleepTimeMs(), expectedInterval);
         assertEquals(policy.getN(), expectedRetries);
         assertEquals(policy.getSleepTimeMs(10, 0), expectedCeiling);
