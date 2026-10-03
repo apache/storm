@@ -60,10 +60,7 @@ public class CuratorUtils {
 
         setupBuilder(builder, zkStr, conf, auth);
 
-        // Wrap the retry policy set by setupBuilder() with a connection-aware policy.
-        // When the ZK connection is SUSPENDED or LOST, the policy yields to the ZK
-        // client's SendThread (which is already failovering to another ensemble
-        // member) by calling blockUntilConnected(), instead of blind sleep+retry.
+        // Wrap with a connection-aware policy that yields to SendThread on SUSPENDED/LOST.
         AtomicReference<CuratorFramework> zkRef = new AtomicReference<>();
         int sessionTimeoutMs = ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT));
         ConnectionAwareRetryPolicy connectionAwarePolicy = new ConnectionAwareRetryPolicy(
@@ -97,6 +94,7 @@ public class CuratorUtils {
 
     protected static void setupBuilder(CuratorFrameworkFactory.Builder builder, final String zkStr, Map<String, Object> conf,
                                        ZookeeperAuthInfo auth) {
+        // Default retry policy; overridden by newCurator() with ConnectionAwareRetryPolicy.
         builder.connectString(zkStr);
         builder
                 .connectionTimeoutMs(ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
