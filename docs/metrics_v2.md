@@ -118,7 +118,7 @@ is determined by the `report.period` and `report.period.units` parameters.
 
 Reporters can also be configured with an optional filter that determines which metrics get reported. Storm includes the
 `org.apache.storm.metrics2.filters.RegexFilter` filter which uses a regular expression to determine which metrics get
-reported. Custom filters can be created by implementing the `org.apache.storm.metrics2.filters.StormMetricFilter`
+reported. Custom filters can be created by implementing the `org.apache.storm.metrics2.filters.StormMetricsFilter`
 interface:
 
 ```java

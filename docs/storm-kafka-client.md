@@ -12,8 +12,8 @@ Apache Kafka versions 0.10.1.0 onwards. Please be aware that [KAFKA-7044](https:
 
 ## Writing to Kafka as part of your topology
 You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you
-are using trident you can use org.apache.storm.kafka.trident.TridentState, org.apache.storm.kafka.trident.TridentStateFactory and
-org.apache.storm.kafka.trident.TridentKafkaUpdater.
+are using trident you can use org.apache.storm.kafka.trident.TridentKafkaState, org.apache.storm.kafka.trident.TridentKafkaStateFactory and
+org.apache.storm.kafka.trident.TridentKafkaStateUpdater.
 
 You need to provide implementations for the following 2 interfaces
 
