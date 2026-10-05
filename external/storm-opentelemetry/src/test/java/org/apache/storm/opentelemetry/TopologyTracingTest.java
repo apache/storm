@@ -27,7 +27,9 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -48,6 +51,7 @@ import org.apache.storm.Testing;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.testing.AckFailDelegate;
 import org.apache.storm.testing.AckFailMapTracker;
 import org.apache.storm.testing.FeederSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -94,6 +98,15 @@ public class TopologyTracingTest {
         new AtomicReference<>();
     private static final AtomicInteger TICK_TUPLES_RECEIVED = new AtomicInteger();
     private static final AtomicBoolean SPAN_CURRENT_DURING_TICK = new AtomicBoolean();
+    /** How long the sink of {@link #runWithSink} waits before it acks or fails. */
+    private static final long SINK_DELAY_MS = 100;
+    /**
+     * Longer than {@link #SINK_DELAY_MS}, so an outcome span recorded after the spout's callback
+     * fails {@link #assertRunsFromEmitToOutcome}.
+     */
+    private static final long SPOUT_CALLBACK_DELAY_MS = 500;
+    /** Epoch nanos at which the spout's last ack() or fail() started. */
+    private static final AtomicLong SPOUT_CALLBACK_START_NANOS = new AtomicLong();
 
     private static ILocalCluster cluster;
     private static int topologyCount;
@@ -186,6 +199,7 @@ public class TopologyTracingTest {
         SpanData ack = named(spans, "spout ack").get(0);
         assertEquals(emit.getSpanId(), ack.getParentSpanId());
         assertEquals(StatusCode.UNSET, ack.getStatus().getStatusCode());
+        assertRunsFromEmitToOutcome(ack, emit);
     }
 
     @Test
@@ -202,6 +216,7 @@ public class TopologyTracingTest {
         assertEquals(emit.getSpanId(), spoutFail.getParentSpanId());
         assertEquals(StatusCode.ERROR, sinkFail.getStatus().getStatusCode());
         assertEquals(StatusCode.ERROR, spoutFail.getStatus().getStatusCode());
+        assertRunsFromEmitToOutcome(spoutFail, emit);
     }
 
     @Test
@@ -228,6 +243,7 @@ public class TopologyTracingTest {
         assertEquals(emit.getSpanId(), timeout.getParentSpanId());
         assertEquals(StatusCode.ERROR, timeout.getStatus().getStatusCode());
         assertTrue(named(spans, "spout fail").isEmpty());
+        assertRunsFromEmitToOutcome(timeout, emit);
     }
 
     @Test
@@ -262,6 +278,33 @@ public class TopologyTracingTest {
         List<SpanData> sinks = named(spans, "sink execute");
         assertEquals(1, sinks.size());
         assertEquals(merge.getSpanId(), sinks.get(0).getParentSpanId());
+    }
+
+    @Test
+    public void testEmitAnchoredToTwoSpansOfOneTraceIsAChildOfOneLinkedToTheOther() throws Exception {
+        // spout emit, split execute, 2 middle executes, 1 middle emit, 1 sink execute, spout ack
+        List<SpanData> spans = runTopology(conf(true), 1,
+            builder -> {
+                builder.setBolt("split", new SplitBolt()).shuffleGrouping("spout");
+                builder.setBolt("middle", new MiddleBolt(EmitMode.JOIN)).shuffleGrouping("split");
+                builder.setBolt("sink", new SinkBolt()).shuffleGrouping("middle");
+            },
+            () -> OTEL.getSpans().size() >= 7 && SINK_TUPLES_RECEIVED.get() >= 1);
+
+        List<SpanData> joins = named(spans, "middle emit");
+        assertEquals(1, joins.size());
+        SpanData join = joins.get(0);
+        assertEquals(named(spans, "spout emit").get(0).getTraceId(), join.getTraceId(),
+            "the join stays in the trace");
+        // one middle task runs both executes in turn: the first started is the held anchor's
+        List<SpanData> middles = named(spans, "middle execute").stream()
+            .sorted(Comparator.comparingLong(SpanData::getStartEpochNanos))
+            .collect(Collectors.toList());
+        assertEquals(2, middles.size());
+        assertEquals(middles.get(0).getSpanId(), join.getParentSpanId());
+        assertEquals(1, join.getLinks().size());
+        assertEquals(middles.get(1).getSpanId(), join.getLinks().get(0).getSpanContext().getSpanId());
+        assertEquals(join.getSpanId(), named(spans, "sink execute").get(0).getParentSpanId());
     }
 
     @Test
@@ -315,6 +358,23 @@ public class TopologyTracingTest {
             WORKER_PORT_BY_COMPONENT.get("sink"));
     }
 
+    /**
+     * The outcome span starts at the emit, ends before the spout's ack() or fail() runs, and lasts
+     * as long as its latency attribute, which covers the sink's delay.
+     */
+    private static void assertRunsFromEmitToOutcome(SpanData outcome, SpanData emit) {
+        Long latencyMs = outcome.getAttributes().get(AttributeKey.longKey("storm.tuple.latency_ms"));
+        assertNotNull(latencyMs);
+        assertTrue(latencyMs >= SINK_DELAY_MS, latencyMs + " ms");
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(latencyMs),
+            outcome.getEndEpochNanos() - outcome.getStartEpochNanos());
+        long startGapMs = TimeUnit.NANOSECONDS.toMillis(
+            Math.abs(outcome.getStartEpochNanos() - emit.getStartEpochNanos()));
+        assertTrue(startGapMs < SINK_DELAY_MS, "starts " + startGapMs + " ms away from the emit");
+        assertTrue(outcome.getEndEpochNanos() <= SPOUT_CALLBACK_START_NANOS.get(),
+            "ends before the spout's callback");
+    }
+
     private static void assertSinkExecutesAreChildrenOfMiddleExecutes(List<SpanData> spans,
         int count) {
         Map<String, SpanData> middles = byId(named(spans, "middle execute"));
@@ -359,12 +419,15 @@ public class TopologyTracingTest {
                 && SINK_TUPLES_RECEIVED.get() >= sinkTuples);
     }
 
-    /** One tuple from spout "spout" to a sink that acks, fails or holds it. */
+    /**
+     * One tuple from spout "spout" to a sink that acks or fails it after {@link #SINK_DELAY_MS},
+     * or holds it. The spout's ack() and fail() take {@link #SPOUT_CALLBACK_DELAY_MS}.
+     */
     private List<SpanData> runWithSink(SinkOutcome outcome, Config conf, int expectedSpans)
         throws Exception {
         return runTopology(conf, 1,
-            builder -> builder.setBolt("sink", new SinkBolt(outcome)).shuffleGrouping("spout"),
-            () -> OTEL.getSpans().size() >= expectedSpans);
+            builder -> builder.setBolt("sink", new SinkBolt(outcome, SINK_DELAY_MS)).shuffleGrouping("spout"),
+            () -> OTEL.getSpans().size() >= expectedSpans, SPOUT_CALLBACK_DELAY_MS);
     }
 
     private static Config conf(boolean tracing) {
@@ -382,9 +445,14 @@ public class TopologyTracingTest {
      */
     private List<SpanData> runTopology(Config conf, int count, Consumer<TopologyBuilder> bolts,
         BooleanSupplier done) throws Exception {
+        return runTopology(conf, count, bolts, done, 0);
+    }
+
+    private List<SpanData> runTopology(Config conf, int count, Consumer<TopologyBuilder> bolts,
+        BooleanSupplier done, long spoutCallbackDelayMs) throws Exception {
         FeederSpout spout = new FeederSpout(new Fields("value"));
         AckFailMapTracker tracker = new AckFailMapTracker();
-        spout.setAckFailDelegate(tracker);
+        spout.setAckFailDelegate(new SlowAckFailDelegate(tracker, spoutCallbackDelayMs));
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", spout);
         bolts.accept(builder);
@@ -393,6 +461,7 @@ public class TopologyTracingTest {
         RECEIVED_TRACE_IDS.clear();
         CURRENT_IN_EXECUTE.clear();
         SINK_TUPLES_RECEIVED.set(0);
+        SPOUT_CALLBACK_START_NANOS.set(0);
         UNSAMPLED_CONTEXTS_RECEIVED.set(0);
         MIDDLE_TRACE_IDS.clear();
         MIDDLE_SPAN_BY_VALUE.clear();
@@ -513,6 +582,58 @@ public class TopologyTracingTest {
         }
     }
 
+    /** Emits two tuples anchored to its input. */
+    private static class SplitBolt extends BaseRichBolt {
+        private transient OutputCollector collector;
+
+        @Override
+        public void prepare(Map<String, Object> conf, TopologyContext context,
+            OutputCollector collector) {
+            this.collector = collector;
+        }
+
+        @Override
+        public void execute(Tuple input) {
+            collector.emit(input, new Values(input.getValue(0)));
+            collector.emit(input, new Values(input.getValue(0)));
+            collector.ack(input);
+        }
+
+        @Override
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+            declarer.declare(new Fields("value"));
+        }
+    }
+
+    /** Records when each ack or fail starts, then passes it to the tracker after {@code delayMs}. */
+    private static class SlowAckFailDelegate implements AckFailDelegate {
+        private final AckFailMapTracker tracker;
+        private final long delayMs;
+
+        SlowAckFailDelegate(AckFailMapTracker tracker, long delayMs) {
+            this.tracker = tracker;
+            this.delayMs = delayMs;
+        }
+
+        @Override
+        public void ack(Object id) {
+            recordStartAndSleep();
+            tracker.ack(id);
+        }
+
+        @Override
+        public void fail(Object id) {
+            recordStartAndSleep();
+            tracker.fail(id);
+        }
+
+        private void recordStartAndSleep() {
+            Instant now = Instant.now();
+            SPOUT_CALLBACK_START_NANOS.set(TimeUnit.SECONDS.toNanos(now.getEpochSecond()) + now.getNano());
+            Utils.sleep(delayMs);
+        }
+    }
+
     private enum SinkOutcome {
         ACK,
         FAIL,
@@ -522,14 +643,16 @@ public class TopologyTracingTest {
 
     private static class SinkBolt extends BaseRichBolt {
         private final SinkOutcome outcome;
+        private final long delayMs;
         private OutputCollector collector;
 
         SinkBolt() {
-            this(SinkOutcome.ACK);
+            this(SinkOutcome.ACK, 0);
         }
 
-        SinkBolt(SinkOutcome outcome) {
+        SinkBolt(SinkOutcome outcome, long delayMs) {
             this.outcome = outcome;
+            this.delayMs = delayMs;
         }
 
         @Override
@@ -562,6 +685,7 @@ public class TopologyTracingTest {
                 SINK_SPAN_BY_VALUE.put(input.getValue(0), current.getSpanId());
             }
             SINK_TUPLES_RECEIVED.incrementAndGet();
+            Utils.sleep(delayMs);
             if (outcome == SinkOutcome.ACK) {
                 collector.ack(input);
             } else if (outcome == SinkOutcome.FAIL) {

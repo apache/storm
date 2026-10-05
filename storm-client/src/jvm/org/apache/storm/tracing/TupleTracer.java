@@ -58,10 +58,9 @@ public interface TupleTracer {
     ExecuteScope startExecute(int taskId, Tuple tuple, Object context);
 
     /**
-     * Called on the executor thread of spout task {@code taskId} after the tuple tree of {@code context} was acked, failed or timed
-     * out, and the spout's {@code ack()} or {@code fail()} returned. {@code latencyMs} is the time from the emit of the tree to
-     * its outcome, measured before the spout's {@code ack()} or {@code fail()} runs. Not called for trees that no acker tracks,
-     * such as all trees of a topology without ackers.
+     * Called on the executor thread of spout task {@code taskId} when the tuple tree of {@code context} was acked, failed or timed
+     * out, before the spout's {@code ack()} or {@code fail()} runs. {@code latencyMs} is the time from the emit of the tree to
+     * this call. Not called for trees that no acker tracks, such as all trees of a topology without ackers.
      */
     void spoutOutcome(int taskId, Object context, Outcome outcome, long latencyMs);
 

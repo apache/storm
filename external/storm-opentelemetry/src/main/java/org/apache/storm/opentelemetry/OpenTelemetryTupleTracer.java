@@ -24,8 +24,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.Collections;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +47,13 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Each spout emit starts a trace with a root span named "component emit", started and ended at once. Each bolt
  * {@code execute()} of a traced tuple runs in a child span named "component execute", current while {@code execute()} runs. A bolt
- * emit carries the context of its anchors: the anchor's context if they share one span, otherwise a new root span linked to each.
- * The spout records the ack, fail or timeout of each traced tuple tree, and a bolt each {@code fail()}, as spans started and ended
- * at once. Contexts with the sampled flag unset are propagated too.
+ * emit carries the context of its anchors: the anchor's context if they share one span. Otherwise it carries the context of a span
+ * named "component emit", started and ended at once: a child of the first anchor's span linked to the others if all anchors belong
+ * to one trace, else a new root span linked to each.
+ *
+ * <p>The spout records the ack, fail or timeout of each traced tuple tree as a span whose duration, also set as the
+ * {@code storm.tuple.latency_ms} attribute, is the time from the emit to the outcome. A bolt records each {@code fail()} as a span
+ * started and ended at once. Contexts with the sampled flag unset are propagated too.
  */
 public class OpenTelemetryTupleTracer implements TupleTracer {
 
@@ -67,6 +70,7 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
     private static final AttributeKey<String> SOURCE_STREAM_ID_KEY = AttributeKey.stringKey("storm.source.stream.id");
     private static final AttributeKey<String> WORKER_HOST_KEY = AttributeKey.stringKey("storm.worker.host");
     private static final AttributeKey<Long> WORKER_PORT_KEY = AttributeKey.longKey("storm.worker.port");
+    private static final AttributeKey<Long> TUPLE_LATENCY_KEY = AttributeKey.longKey("storm.tuple.latency_ms");
 
     private WorkerTopologyContext context;
     private Attributes workerAttributes;
@@ -102,7 +106,7 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
     @Override
     public Object spoutEmit(int taskId, String streamId) {
         Tracer current = tracer();
-        return current == null ? null : newRootContext(current, spans(taskId).emitName(), Collections.emptyList());
+        return current == null ? null : emitContext(current.spanBuilder(spans(taskId).emitName()).setNoParent());
     }
 
     @Override
@@ -115,16 +119,28 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
         if (anchorContexts.size() == 1) {
             return first;
         }
-        Set<SpanContext> linkedSpans = new LinkedHashSet<>();
+        SpanContext firstSpan = Span.fromContext(first).getSpanContext();
+        Set<SpanContext> otherSpans = new LinkedHashSet<>();
         for (Object anchorContext : anchorContexts) {
-            linkedSpans.add(Span.fromContext((Context) anchorContext).getSpanContext());
+            otherSpans.add(Span.fromContext((Context) anchorContext).getSpanContext());
         }
-        if (linkedSpans.size() == 1) {
+        otherSpans.remove(firstSpan);
+        if (otherSpans.isEmpty()) {
             return first;
         }
-        // the SDK keeps up to 128 links by default
         Tracer current = tracer();
-        return current == null ? null : newRootContext(current, spans(taskId).emitName(), linkedSpans);
+        if (current == null) {
+            return null;
+        }
+        // the SDK keeps up to 128 links by default
+        SpanBuilder builder = current.spanBuilder(spans(taskId).emitName());
+        if (otherSpans.stream().allMatch(span -> span.getTraceId().equals(firstSpan.getTraceId()))) {
+            builder.setParent(first);
+        } else {
+            builder.setNoParent().addLink(firstSpan);
+        }
+        otherSpans.forEach(builder::addLink);
+        return emitContext(builder);
     }
 
     @Override
@@ -148,18 +164,37 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
 
     @Override
     public void spoutOutcome(int taskId, Object context, Outcome outcome, long latencyMs) {
+        Tracer current = tracer();
+        if (current == null) {
+            return;
+        }
         TaskSpans spans = spans(taskId);
         String spanName = switch (outcome) {
             case ACK -> spans.ackName();
             case FAIL -> spans.failName();
             case TIMEOUT -> spans.timeoutName();
         };
-        recordOutcome((Context) context, spanName, outcome != Outcome.ACK);
+        Instant end = Instant.now();
+        Span span = current.spanBuilder(spanName)
+            .setParent((Context) context)
+            .setStartTimestamp(end.minusMillis(latencyMs))
+            .setAttribute(TUPLE_LATENCY_KEY, latencyMs)
+            .startSpan();
+        if (outcome != Outcome.ACK) {
+            span.setStatus(StatusCode.ERROR);
+        }
+        span.end(end);
     }
 
     @Override
     public void boltFail(int taskId, Object context) {
-        recordOutcome((Context) context, spans(taskId).failName(), true);
+        Tracer current = tracer();
+        if (current == null) {
+            return;
+        }
+        current.spanBuilder(spans(taskId).failName()).setParent((Context) context).startSpan()
+            .setStatus(StatusCode.ERROR)
+            .end();
     }
 
     @Override
@@ -199,28 +234,14 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
     }
 
     /**
-     * Starts and immediately ends a root span linked to {@code links}, and returns its context, or null when the span is not
-     * valid. The context keeps the span ids only: pending tuples hold it until their tree completes.
+     * Starts and immediately ends the emit span, and returns its context, or null when the span is not valid. The context keeps the
+     * span ids only: pending tuples hold it until their tree completes.
      */
-    private static Context newRootContext(Tracer tracer, String spanName, Collection<SpanContext> links) {
-        SpanBuilder builder = tracer.spanBuilder(spanName).setNoParent();
-        links.forEach(builder::addLink);
+    private static Context emitContext(SpanBuilder builder) {
         Span span = builder.startSpan();
         span.end();
         SpanContext ids = span.getSpanContext();
         return ids.isValid() ? Context.root().with(Span.wrap(ids)) : null;
-    }
-
-    private void recordOutcome(Context parent, String spanName, boolean error) {
-        Tracer current = tracer();
-        if (current == null) {
-            return;
-        }
-        Span span = current.spanBuilder(spanName).setParent(parent).startSpan();
-        if (error) {
-            span.setStatus(StatusCode.ERROR);
-        }
-        span.end();
     }
 
     private void logUntracedEmitUnderSpan(int taskId, String streamId) {
