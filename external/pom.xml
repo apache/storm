@@ -43,6 +43,7 @@
         <module>storm-kafka-monitor</module>
         <module>storm-metrics</module>
         <module>storm-metrics-prometheus</module>
+        <module>storm-opentelemetry</module>
         <module>storm-redis</module>
     </modules>
 </project>
