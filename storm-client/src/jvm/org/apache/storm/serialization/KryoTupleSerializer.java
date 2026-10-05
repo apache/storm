@@ -13,16 +13,12 @@
 package org.apache.storm.serialization;
 
 import com.esotericsoftware.kryo.io.Output;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanContext;
-import io.opentelemetry.api.trace.TraceState;
-import io.opentelemetry.context.Context;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.StringJoiner;
 import org.apache.storm.Config;
 import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ObjectReader;
@@ -31,10 +27,8 @@ import org.apache.storm.utils.Utils;
 public class KryoTupleSerializer implements ITupleSerializer {
     private static final int DEFAULT_COMPRESSION_THRESHOLD = 1460;
     private static final Integer DEFAULT_ZSTD_COMPRESSION_LEVEL = 3;
-    /** Below 0x80, the bit HAS_TRACE_STATE takes; bump it when the layout changes. */
-    static final int TRACE_CONTEXT_VERSION = 1;
-    /** Header bit: a W3C tracestate follows the trace flags. */
-    static final int HAS_TRACE_STATE = 0x80;
+    /** Tag of the entry that carries the trace context, see {@link #writeTraceContext}. */
+    static final int TRACE_CONTEXT_TAG = 1;
 
     private final KryoValuesSerializer kryo;
     private final SerializationFactory.IdDictionary ids;
@@ -42,9 +36,17 @@ public class KryoTupleSerializer implements ITupleSerializer {
     private final boolean isCompressionEnabled;
     private final int compressionThreshold;
     private final int zstdCompressionLevel;
+    private final TupleTracer tracer;
 
     public KryoTupleSerializer(final Map<String, Object> conf,
             final GeneralTopologyContext context) {
+        this(conf, context, null);
+    }
+
+    /**
+     * Creates a serializer that writes the trace context of each tuple, as encoded by {@code tracer}; a null tracer writes none.
+     */
+    public KryoTupleSerializer(final Map<String, Object> conf, final GeneralTopologyContext context, final TupleTracer tracer) {
         kryo = new KryoValuesSerializer(conf);
         kryoOut = new Output(2000, 2000000000);
         ids = new SerializationFactory.IdDictionary(context.getRawTopology());
@@ -54,6 +56,7 @@ public class KryoTupleSerializer implements ITupleSerializer {
                 .get(Config.TOPOLOGY_TUPLE_COMPRESSION_THRESHOLD), DEFAULT_COMPRESSION_THRESHOLD);
         zstdCompressionLevel = ObjectReader.getInt(conf.get(Config.STORM_COMPRESSION_ZSTD_LEVEL),
                 DEFAULT_ZSTD_COMPRESSION_LEVEL);
+        this.tracer = tracer;
     }
 
     @Override
@@ -66,8 +69,9 @@ public class KryoTupleSerializer implements ITupleSerializer {
                     true);
             tuple.getMessageId().serialize(kryoOut);
             kryo.serializeInto(tuple.getValues(), kryoOut);
-            if (tuple instanceof TupleImpl impl) {
-                writeTraceContext(kryoOut, impl.getTraceContext());
+            Object traceContext = tracer != null && tuple instanceof TupleImpl impl ? impl.getTraceContext() : null;
+            if (traceContext != null) {
+                writeTraceContext(traceContext);
             }
 
             byte[] rawBytes = kryoOut.getBuffer();
@@ -84,28 +88,16 @@ public class KryoTupleSerializer implements ITupleSerializer {
     }
 
     /**
-     * Appends the trace context after the values: header byte (version, tracestate bit), 16-byte
-     * trace id, 8-byte span id, trace flags byte, then the tracestate if not empty. Readers that
-     * stop after the values ignore these bytes.
+     * Appends an entry after the values: a tag byte, the payload length as a varint, then the payload. Readers skip entries with
+     * an unknown tag, and readers that stop after the values ignore all of them.
      */
-    private static void writeTraceContext(Output out, Context traceContext) {
-        if (traceContext == null) {
+    private void writeTraceContext(Object traceContext) {
+        byte[] payload = tracer.encode(traceContext);
+        if (payload == null) {
             return;
         }
-        SpanContext span = Span.fromContext(traceContext).getSpanContext();
-        // isValid() ignores the sampled flag: unsampled contexts propagate too
-        if (!span.isValid()) {
-            return;
-        }
-        TraceState traceState = span.getTraceState();
-        out.writeByte(TRACE_CONTEXT_VERSION | (traceState.isEmpty() ? 0 : HAS_TRACE_STATE));
-        out.writeBytes(span.getTraceIdBytes());
-        out.writeBytes(span.getSpanIdBytes());
-        out.writeByte(span.getTraceFlags().asByte());
-        if (!traceState.isEmpty()) {
-            StringJoiner entries = new StringJoiner(",");
-            traceState.forEach((key, value) -> entries.add(key + '=' + value));
-            out.writeString(entries.toString());
-        }
+        kryoOut.writeByte(TRACE_CONTEXT_TAG);
+        kryoOut.writeVarInt(payload.length, true);
+        kryoOut.writeBytes(payload);
     }
 }

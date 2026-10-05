@@ -13,20 +13,13 @@
 package org.apache.storm.serialization;
 
 import com.esotericsoftware.kryo.io.Input;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanContext;
-import io.opentelemetry.api.trace.SpanId;
-import io.opentelemetry.api.trace.TraceFlags;
-import io.opentelemetry.api.trace.TraceId;
-import io.opentelemetry.api.trace.TraceState;
-import io.opentelemetry.api.trace.TraceStateBuilder;
-import io.opentelemetry.context.Context;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ObjectReader;
@@ -38,17 +31,23 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
     private static final Integer DEFAULT_MAX_DECOMPRESSED_BYTES = 10 * 1024 * 1024; // 10MBytes
     public static final Logger LOG = LoggerFactory.getLogger(KryoTupleDeserializer.class);
     public static final String FAILED_TO_DESERIALIZE_TUPLE = "Failed to deserialize tuple";
-    private static final int TRACE_ID_BYTES = 16;
-    private static final int SPAN_ID_BYTES = 8;
     private final GeneralTopologyContext context;
     private final KryoValuesDeserializer kryo;
     private final SerializationFactory.IdDictionary ids;
     private final Input kryoInput;
     private final int maxZstdDecompressedBytes;
     private final boolean anyTupleCompressionEnabled;
+    private final TupleTracer tracer;
 
     public KryoTupleDeserializer(final Map<String, Object> conf,
             final GeneralTopologyContext context) {
+        this(conf, context, null);
+    }
+
+    /**
+     * Creates a deserializer that reads the trace context of each tuple with {@code tracer}; a null tracer skips it.
+     */
+    public KryoTupleDeserializer(final Map<String, Object> conf, final GeneralTopologyContext context, final TupleTracer tracer) {
         kryo = new KryoValuesDeserializer(conf);
         this.context = context;
         ids = new SerializationFactory.IdDictionary(context.getRawTopology());
@@ -57,6 +56,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
                 .get(Config.TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES),
                 DEFAULT_MAX_DECOMPRESSED_BYTES);
         anyTupleCompressionEnabled = isTupleCompressionEnabled(conf, context);
+        this.tracer = tracer;
     }
 
     @Override
@@ -109,7 +109,9 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
             MessageId id = MessageId.deserialize(kryoInput);
             List<Object> values = kryo.deserializeFrom(kryoInput);
             TupleImpl tuple = new TupleImpl(context, values, componentName, taskId, streamName, id);
-            tuple.setTraceContext(readTraceContext(kryoInput));
+            if (tracer != null) {
+                tuple.setTraceContext(readTraceContext());
+            }
             return tuple;
         } catch (IOException e) {
             throw new RuntimeException(FAILED_TO_DESERIALIZE_TUPLE, e);
@@ -117,44 +119,26 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
     }
 
     /**
-     * Reads the trace context written after the values. Null when absent, of an unknown version
-     * or unreadable, so a bad extension never fails the tuple. Invalid tracestate entries are
-     * dropped.
+     * Reads the entries after the values, see {@link KryoTupleSerializer}. Returns null when no trace context entry is present or
+     * it cannot be read, so that a bad entry never drops the tuple.
      */
-    private static Context readTraceContext(Input in) {
-        if (in.position() == in.limit()) {
-            return null;
-        }
+    private Object readTraceContext() {
         try {
-            int header = in.readByte() & 0xFF;
-            int version = header & ~KryoTupleSerializer.HAS_TRACE_STATE;
-            if (version != KryoTupleSerializer.TRACE_CONTEXT_VERSION) {
-                return null;
-            }
-            String traceId = TraceId.fromBytes(in.readBytes(TRACE_ID_BYTES));
-            String spanId = SpanId.fromBytes(in.readBytes(SPAN_ID_BYTES));
-            TraceFlags flags = TraceFlags.fromByte(in.readByte());
-            TraceState traceState = TraceState.getDefault();
-            if ((header & KryoTupleSerializer.HAS_TRACE_STATE) != 0) {
-                String[] entries = in.readString().split(",");
-                TraceStateBuilder builder = TraceState.builder();
-                // put() inserts in front of existing entries: add in reverse to keep the order
-                for (int i = entries.length - 1; i >= 0; i--) {
-                    String entry = entries[i];
-                    int separator = entry.indexOf('=');
-                    if (separator > 0) {
-                        builder.put(entry.substring(0, separator), entry.substring(separator + 1));
-                    }
+            while (kryoInput.position() < kryoInput.limit()) {
+                int tag = kryoInput.readByte();
+                int length = kryoInput.readVarInt(true);
+                if (length < 0 || length > kryoInput.limit() - kryoInput.position()) {
+                    return null;
                 }
-                traceState = builder.build();
+                if (tag == KryoTupleSerializer.TRACE_CONTEXT_TAG) {
+                    return tracer.decode(kryoInput.readBytes(length));
+                }
+                kryoInput.skip(length);
             }
-            SpanContext span =
-                SpanContext.createFromRemoteParent(traceId, spanId, flags, traceState);
-            return span.isValid() ? Context.root().with(Span.wrap(span)) : null;
         } catch (RuntimeException malformed) {
-            LOG.debug("Ignoring a malformed trace context on a received tuple", malformed);
-            return null;
+            LOG.debug("Ignoring an unreadable trace context on a received tuple", malformed);
         }
+        return null;
     }
 
     private static boolean isTupleCompressionEnabled(final Map<String, Object> conf,

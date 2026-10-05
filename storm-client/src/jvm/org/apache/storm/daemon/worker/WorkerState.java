@@ -74,11 +74,13 @@ import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.task.WorkerUserContext;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.SupervisorIfaceFactory;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.Utils;
@@ -150,6 +152,7 @@ public class WorkerState {
     private final WorkerTransfer workerTransfer;
     private final BackPressureTracker bpTracker;
     private final List<IWorkerHook> deserializedWorkerHooks;
+    private final TupleTracer tupleTracer;
     // global variables only used internally in class
     private final Set<Integer> outboundTasks;
     private final AtomicLong nextLoadUpdate = new AtomicLong(0);
@@ -246,9 +249,11 @@ public class WorkerState {
         this.bpTracker = new BackPressureTracker(workerId, taskToExecutorQueue, metricRegistry,
                 taskToComponent);
         this.deserializedWorkerHooks = deserializeWorkerHooks();
+        this.tupleTracer = mkTupleTracer();
         LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
         IConnectionCallback cb = new DeserializingConnectionCallback(topologyConf,
                 getWorkerTopologyContext(),
+                tupleTracer,
                 this::transferLocalBatch);
         Supplier<Object> newConnectionResponse = () -> {
             BackPressureStatus bpStatus = bpTracker.getCurrStatus();
@@ -275,6 +280,13 @@ public class WorkerState {
             }
         }
         return maxTaskId;
+    }
+
+    /**
+     * Returns the tracer of this worker, or null when {@link Config#TOPOLOGY_TRACING_TRACER} is unset.
+     */
+    public TupleTracer getTupleTracer() {
+        return tupleTracer;
     }
 
     public List<IWorkerHook> getDeserializedWorkerHooks() {
@@ -696,6 +708,17 @@ public class WorkerState {
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
+    }
+
+    private TupleTracer mkTupleTracer() {
+        String className = (String) topologyConf.get(Config.TOPOLOGY_TRACING_TRACER);
+        if (className == null) {
+            return null;
+        }
+        TupleTracer tracer = ReflectionUtils.newInstance(className);
+        tracer.prepare(topologyConf, getWorkerTopologyContext());
+        LOG.info("Tracing tuples with {}", className);
+        return tracer;
     }
 
     private List<IWorkerHook> deserializeWorkerHooks() {

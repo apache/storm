@@ -26,12 +26,8 @@ import static org.mockito.Mockito.when;
 
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanContext;
-import io.opentelemetry.api.trace.TraceFlags;
-import io.opentelemetry.api.trace.TraceState;
-import io.opentelemetry.context.Context;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,11 +38,14 @@ import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.MessageId;
+import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
@@ -405,84 +404,168 @@ public class KryoTupleSerializerDeserializerTest {
     }
 
     @Test
-    public void testTupleWithoutTraceContextSerializesAsBefore() throws IOException {
+    public void testTupleWithoutEncodedContextSerializesAsBefore() throws IOException {
         Map<String, Object> conf = baseConf();
-        KryoTupleSerializer serializer = new KryoTupleSerializer(conf, context);
+        KryoTupleSerializer serializer = new KryoTupleSerializer(conf, context, new StringTracer());
         TupleImpl plain = tuple(new Values("hello", 42), MessageId.makeRootId(7L, 99L));
-        TupleImpl rootOnly = tuple(new Values("hello", 42), MessageId.makeRootId(7L, 99L));
-        rootOnly.setTraceContext(Context.root());
+        TupleImpl notEncoded = tracedTuple(StringTracer.NOT_ENCODED);
 
         byte[] expected = serializeWithoutTraceContext(conf, plain);
         assertArrayEquals(expected, serializer.serialize(plain));
-        assertArrayEquals(expected, serializer.serialize(rootOnly), "a context without a valid span adds no bytes");
-        assertNull(new KryoTupleDeserializer(conf, context).deserialize(expected).getTraceContext());
+        assertArrayEquals(expected, serializer.serialize(notEncoded), "encode() returned null");
     }
 
     @Test
-    public void testPreviousReaderIgnoresTraceContext() throws IOException {
+    public void testSerializerWithoutTracerWritesNoContext() throws IOException {
         Map<String, Object> conf = baseConf();
-        TupleImpl original = tracedTuple((byte) 0x03, TraceState.builder().put("vendor", "v1").build());
-        byte[] bytes = new KryoTupleSerializer(conf, context).serialize(original);
+        TupleImpl traced = tracedTuple("trace-1");
 
-        assertSameTuple(original, deserializeWithoutTraceContext(conf, bytes));
+        assertArrayEquals(serializeWithoutTraceContext(conf, traced), new KryoTupleSerializer(conf, context).serialize(traced));
     }
 
     @Test
-    public void testTruncatedTraceContextReadsAsAbsent() throws IOException {
+    public void testDeserializerWithoutTracerSkipsTheContext() {
         Map<String, Object> conf = baseConf();
-        TupleImpl original = tracedTuple((byte) 0x03, TraceState.builder().put("vendor", "v1").build());
-        byte[] full = new KryoTupleSerializer(conf, context).serialize(original);
-        int valuesEnd = serializeWithoutTraceContext(conf, original).length;
-        KryoTupleDeserializer deserializer = new KryoTupleDeserializer(conf, context);
+        TupleImpl traced = tracedTuple("trace-1");
+        byte[] bytes = new KryoTupleSerializer(conf, context, new StringTracer()).serialize(traced);
+
+        TupleImpl read = new KryoTupleDeserializer(conf, context).deserialize(bytes);
+        assertSameTuple(traced, read);
+        assertNull(read.getTraceContext());
+    }
+
+    @Test
+    public void testPreviousReaderIgnoresTheContext() throws IOException {
+        Map<String, Object> conf = baseConf();
+        TupleImpl traced = tracedTuple("trace-1");
+        byte[] bytes = new KryoTupleSerializer(conf, context, new StringTracer()).serialize(traced);
+
+        assertSameTuple(traced, deserializeWithoutTraceContext(conf, bytes));
+    }
+
+    @Test
+    public void testUnknownTagIsSkipped() throws IOException {
+        Map<String, Object> conf = baseConf();
+        TupleImpl traced = tracedTuple("trace-1");
+        Output out = new Output(2000, -1);
+        out.writeBytes(serializeWithoutTraceContext(conf, traced));
+        writeEntry(out, 9, "from a later version");
+        writeEntry(out, KryoTupleSerializer.TRACE_CONTEXT_TAG, "trace-1");
+
+        TupleImpl read = new KryoTupleDeserializer(conf, context, new StringTracer()).deserialize(out.toBytes());
+        assertSameTuple(traced, read);
+        assertEquals("trace-1", read.getTraceContext());
+    }
+
+    @Test
+    public void testTruncatedContextReadsAsAbsent() throws IOException {
+        Map<String, Object> conf = baseConf();
+        TupleImpl traced = tracedTuple("trace-1");
+        byte[] full = new KryoTupleSerializer(conf, context, new StringTracer()).serialize(traced);
+        int valuesEnd = serializeWithoutTraceContext(conf, traced).length;
+        KryoTupleDeserializer deserializer = new KryoTupleDeserializer(conf, context, new StringTracer());
 
         for (int end = valuesEnd + 1; end < full.length; end++) {
             TupleImpl read = deserializer.deserialize(Arrays.copyOf(full, end));
-            assertSameTuple(original, read);
+            assertSameTuple(traced, read);
             assertNull(read.getTraceContext(), "truncated at byte " + end);
         }
     }
 
     @Test
-    public void testUnknownTraceContextVersionIsIgnored() throws IOException {
+    public void testLengthBeyondTheTupleReadsAsAbsent() throws IOException {
         Map<String, Object> conf = baseConf();
-        TupleImpl original = tracedTuple((byte) 0x03, TraceState.getDefault());
-        byte[] bytes = new KryoTupleSerializer(conf, context).serialize(original);
-        bytes[serializeWithoutTraceContext(conf, original).length] = 2;
+        TupleImpl traced = tracedTuple("trace-1");
+        Output out = new Output(2000, -1);
+        out.writeBytes(serializeWithoutTraceContext(conf, traced));
+        out.writeByte(KryoTupleSerializer.TRACE_CONTEXT_TAG);
+        out.writeVarInt(Integer.MAX_VALUE, true);
+        out.writeBytes(new byte[]{1, 2, 3});
 
-        TupleImpl read = new KryoTupleDeserializer(conf, context).deserialize(bytes);
-        assertSameTuple(original, read);
+        TupleImpl read = new KryoTupleDeserializer(conf, context, new StringTracer()).deserialize(out.toBytes());
+        assertSameTuple(traced, read);
+        assertNull(read.getTraceContext());
+    }
+
+    @Test
+    public void testFailingDecodeReadsAsAbsent() {
+        Map<String, Object> conf = baseConf();
+        TupleImpl traced = tracedTuple("trace-1");
+        byte[] bytes = new KryoTupleSerializer(conf, context, new StringTracer()).serialize(traced);
+        StringTracer failing = new StringTracer() {
+            @Override
+            public Object decode(byte[] bytes) {
+                throw new IllegalArgumentException("unreadable");
+            }
+        };
+
+        TupleImpl read = new KryoTupleDeserializer(conf, context, failing).deserialize(bytes);
+        assertSameTuple(traced, read);
         assertNull(read.getTraceContext());
     }
 
     private void assertTraceContextRoundTrip(Map<String, Object> conf) {
-        KryoTupleSerializer serializer = new KryoTupleSerializer(conf, context);
-        KryoTupleDeserializer deserializer = new KryoTupleDeserializer(conf, context);
-        TraceState twoEntries = TraceState.builder().put("vendor", "v1").put("ot", "th:8;rv:0123456789abcd").build();
-        // 0x03 = sampled plus the W3C random-trace-id bit; 0x00 = not sampled, which must propagate too
-        List<TupleImpl> originals = List.of(
-            tracedTuple((byte) 0x03, TraceState.getDefault()),
-            tracedTuple((byte) 0x03, twoEntries),
-            tracedTuple((byte) 0x00, TraceState.getDefault()));
+        TupleImpl traced = tracedTuple("trace-1");
+        byte[] bytes = new KryoTupleSerializer(conf, context, new StringTracer()).serialize(traced);
 
-        for (TupleImpl original : originals) {
-            TupleImpl read = deserializer.deserialize(serializer.serialize(original));
-            assertSameTuple(original, read);
-            SpanContext sent = Span.fromContext(original.getTraceContext()).getSpanContext();
-            SpanContext received = Span.fromContext(read.getTraceContext()).getSpanContext();
-            assertEquals(sent.getTraceId(), received.getTraceId());
-            assertEquals(sent.getSpanId(), received.getSpanId());
-            assertEquals(sent.getTraceFlags(), received.getTraceFlags());
-            assertEquals(sent.getTraceState(), received.getTraceState());
-            assertTrue(received.isRemote());
-        }
+        TupleImpl read = new KryoTupleDeserializer(conf, context, new StringTracer()).deserialize(bytes);
+        assertSameTuple(traced, read);
+        assertEquals("trace-1", read.getTraceContext());
     }
 
-    private TupleImpl tracedTuple(byte traceFlags, TraceState traceState) {
+    private TupleImpl tracedTuple(String traceContext) {
         TupleImpl tuple = tuple(new Values("hello", 42), MessageId.makeRootId(7L, 99L));
-        SpanContext span = SpanContext.create("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331",
-            TraceFlags.fromByte(traceFlags), traceState);
-        tuple.setTraceContext(Context.root().with(Span.wrap(span)));
+        tuple.setTraceContext(traceContext);
         return tuple;
+    }
+
+    private static void writeEntry(Output out, int tag, String payload) {
+        byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
+        out.writeByte(tag);
+        out.writeVarInt(bytes.length, true);
+        out.writeBytes(bytes);
+    }
+
+    /** Carries String contexts as their UTF-8 bytes; only encode and decode are used. */
+    private static class StringTracer implements TupleTracer {
+        static final String NOT_ENCODED = "not encoded";
+
+        @Override
+        public void prepare(Map<String, Object> topoConf, WorkerTopologyContext context) {
+        }
+
+        @Override
+        public Object spoutEmit(int taskId, String streamId) {
+            return null;
+        }
+
+        @Override
+        public Object boltEmit(int taskId, String streamId, List<Object> anchorContexts) {
+            return null;
+        }
+
+        @Override
+        public ExecuteScope startExecute(int taskId, Tuple tuple, Object context) {
+            return null;
+        }
+
+        @Override
+        public void spoutOutcome(int taskId, Object context, Outcome outcome, long latencyMs) {
+        }
+
+        @Override
+        public void boltFail(int taskId, Object context) {
+        }
+
+        @Override
+        public byte[] encode(Object context) {
+            return NOT_ENCODED.equals(context) ? null : ((String) context).getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public Object decode(byte[] bytes) {
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
     }
 
     /** The tuple format without the trace context extension: task, stream, message id, values. */

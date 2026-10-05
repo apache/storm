@@ -96,12 +96,6 @@
             <artifactId>kryo</artifactId>
         </dependency>
 
-        <!-- OpenTelemetry API only; recording and export come from the Java agent or an application-configured SDK -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
-        </dependency>
-
         <!-- below are transitive dependencies which are version managed in storm pom -->
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
