@@ -13,8 +13,15 @@
 package org.apache.storm.opentelemetry;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.data.LinkData;
+import io.opentelemetry.sdk.trace.samplers.Sampler;
+import io.opentelemetry.sdk.trace.samplers.SamplingResult;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -25,6 +32,7 @@ import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
@@ -57,6 +65,42 @@ public class OpenTelemetryTupleTracerTest {
             assertNotNull(tracer.spoutEmit(SPOUT_TASK, Utils.DEFAULT_STREAM_ID));
             assertNotNull(tracer.spoutEmit(SPOUT_TASK, Utils.DEFAULT_STREAM_ID));
             global.verify(GlobalOpenTelemetry::isSet, times(2));
+        }
+    }
+
+    @Test
+    public void testDroppedRootPropagatesNoContext() {
+        assertNull(spoutEmitSampledBy(Sampler.alwaysOff()));
+    }
+
+    @Test
+    public void testRecordedButUnsampledRootPropagatesItsContext() {
+        Sampler recordOnly = new Sampler() {
+            @Override
+            public SamplingResult shouldSample(Context parentContext, String traceId, String name, SpanKind spanKind,
+                                               Attributes attributes, List<LinkData> parentLinks) {
+                return SamplingResult.recordOnly();
+            }
+
+            @Override
+            public String getDescription() {
+                return "record only";
+            }
+        };
+        Context context = (Context) spoutEmitSampledBy(recordOnly);
+        assertNotNull(context);
+        assertFalse(Span.fromContext(context).getSpanContext().isSampled());
+    }
+
+    /** Returns the context of one spout emit, with an SDK that uses {@code sampler} registered as the global instance. */
+    private static Object spoutEmitSampledBy(Sampler sampler) {
+        OpenTelemetryTupleTracer tracer = preparedTracer();
+        try (MockedStatic<GlobalOpenTelemetry> global = mockStatic(GlobalOpenTelemetry.class);
+             OpenTelemetrySdk sdk = OpenTelemetrySdk.builder()
+                 .setTracerProvider(SdkTracerProvider.builder().setSampler(sampler).build()).build()) {
+            global.when(GlobalOpenTelemetry::isSet).thenReturn(true);
+            global.when(GlobalOpenTelemetry::get).thenReturn(sdk);
+            return tracer.spoutEmit(SPOUT_TASK, Utils.DEFAULT_STREAM_ID);
         }
     }
 

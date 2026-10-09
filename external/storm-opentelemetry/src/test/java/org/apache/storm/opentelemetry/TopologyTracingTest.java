@@ -17,6 +17,7 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
@@ -24,9 +25,11 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.data.LinkData;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
+import io.opentelemetry.sdk.trace.samplers.SamplingResult;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -42,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.ILocalCluster;
@@ -70,7 +74,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,8 +91,6 @@ public class TopologyTracingTest {
     /** Span ids that were current on the sink's thread while its execute() ran. */
     private static final Set<String> CURRENT_IN_EXECUTE = ConcurrentHashMap.newKeySet();
     private static final AtomicInteger SINK_TUPLES_RECEIVED = new AtomicInteger();
-    private static final AtomicInteger UNSAMPLED_CONTEXTS_RECEIVED = new AtomicInteger();
-    private static final Set<String> MIDDLE_TRACE_IDS = ConcurrentHashMap.newKeySet();
     /** Tuple value to the id of the span current while middle, then sink, handled it. */
     private static final Map<Object, String> MIDDLE_SPAN_BY_VALUE = new ConcurrentHashMap<>();
     private static final Map<Object, String> SINK_SPAN_BY_VALUE = new ConcurrentHashMap<>();
@@ -332,30 +333,43 @@ public class TopologyTracingTest {
     }
 
     @Test
-    public void testUnsampledContextsPropagateAndNothingIsExported() throws Exception {
-        // parent-based: a sampled flag flipped on the way would export the middle or sink span
-        InMemorySpanExporter exporter = InMemorySpanExporter.create();
-        SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-            .setSampler(Sampler.parentBased(Sampler.alwaysOff()))
-            .addSpanProcessor(SimpleSpanProcessor.create(exporter))
-            .build();
-        try (OpenTelemetrySdk sdk =
-                 OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build()) {
-            GlobalOpenTelemetry.resetForTest();
-            GlobalOpenTelemetry.set(sdk);
-            // spans go to this SDK, not OTEL: wait for the sink only
-            runThroughMiddle(EmitMode.ANCHORED, 2, 0, 2);
-        } finally {
-            GlobalOpenTelemetry.resetForTest();
-            GlobalOpenTelemetry.set(OTEL.getOpenTelemetry());
-        }
+    public void testTuplesOfADroppedRootCarryNoContext() throws Exception {
+        List<SpanData> spans =
+            runThroughMiddleSampledBy(Sampler.parentBased(Sampler.alwaysOff()), EmitMode.ANCHORED, 0, 2);
 
-        assertTrue(exporter.getFinishedSpanItems().isEmpty());
-        assertEquals(2, UNSAMPLED_CONTEXTS_RECEIVED.get(), "the sink got unsampled contexts");
-        assertEquals(MIDDLE_TRACE_IDS, RECEIVED_TRACE_IDS, "the traces continue to the sink");
-        // different workers: the contexts went through the serializer
-        assertNotEquals(WORKER_PORT_BY_COMPONENT.get("middle"),
-            WORKER_PORT_BY_COMPONENT.get("sink"));
+        assertTrue(spans.isEmpty());
+        assertTrue(RECEIVED_TRACE_IDS.isEmpty(), "the sink's tuples carry no context");
+    }
+
+    @Test
+    public void testEmitAnchoredToATracedAndAnUntracedTupleContinuesTheTracedTrace() throws Exception {
+        AtomicInteger spoutRoots = new AtomicInteger();
+        Sampler firstSpoutRootOnly = new Sampler() {
+            @Override
+            public SamplingResult shouldSample(Context parentContext, String traceId, String name,
+                SpanKind spanKind, Attributes attributes, List<LinkData> parentLinks) {
+                if (name.equals("spout emit") && spoutRoots.getAndIncrement() > 0) {
+                    return SamplingResult.drop();
+                }
+                return SamplingResult.recordAndSample();
+            }
+
+            @Override
+            public String getDescription() {
+                return "first spout root only";
+            }
+        };
+        // the sampled tuple's spout emit, middle execute, sink execute and spout ack
+        List<SpanData> spans =
+            runThroughMiddleSampledBy(Sampler.parentBased(firstSpoutRootOnly), EmitMode.JOIN, 4, 1);
+
+        assertTrue(named(spans, "middle emit").isEmpty(), "no new root for the join");
+        List<SpanData> middles = named(spans, "middle execute");
+        assertEquals(1, middles.size());
+        List<SpanData> sinks = named(spans, "sink execute");
+        assertEquals(1, sinks.size());
+        assertEquals(middles.get(0).getSpanId(), sinks.get(0).getParentSpanId());
+        assertEquals(named(spans, "spout emit").get(0).getTraceId(), sinks.get(0).getTraceId());
     }
 
     /**
@@ -410,13 +424,42 @@ public class TopologyTracingTest {
      */
     private List<SpanData> runThroughMiddle(EmitMode mode, int count, int expectedSpans,
         int sinkTuples) throws Exception {
-        return runTopology(conf(true), count,
+        return runThroughMiddle(mode, count, expectedSpans, sinkTuples, OTEL::getSpans);
+    }
+
+    private List<SpanData> runThroughMiddle(EmitMode mode, int count, int expectedSpans,
+        int sinkTuples, Supplier<List<SpanData>> exported) throws Exception {
+        runTopology(conf(true), count,
             builder -> {
                 builder.setBolt("middle", new MiddleBolt(mode)).shuffleGrouping("spout");
                 builder.setBolt("sink", new SinkBolt()).shuffleGrouping("middle");
             },
-            () -> OTEL.getSpans().size() >= expectedSpans
+            () -> exported.get().size() >= expectedSpans
                 && SINK_TUPLES_RECEIVED.get() >= sinkTuples);
+        return exported.get();
+    }
+
+    /**
+     * Two tuples through {@link #runThroughMiddle}, traced by an SDK that uses {@code sampler}
+     * in place of OTEL's. Returns the spans that SDK exported.
+     */
+    private List<SpanData> runThroughMiddleSampledBy(Sampler sampler, EmitMode mode,
+        int expectedSpans, int sinkTuples) throws Exception {
+        InMemorySpanExporter exporter = InMemorySpanExporter.create();
+        SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
+            .setSampler(sampler)
+            .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+            .build();
+        try (OpenTelemetrySdk sdk =
+                 OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build()) {
+            GlobalOpenTelemetry.resetForTest();
+            GlobalOpenTelemetry.set(sdk);
+            return runThroughMiddle(mode, 2, expectedSpans, sinkTuples,
+                exporter::getFinishedSpanItems);
+        } finally {
+            GlobalOpenTelemetry.resetForTest();
+            GlobalOpenTelemetry.set(OTEL.getOpenTelemetry());
+        }
     }
 
     /**
@@ -462,8 +505,6 @@ public class TopologyTracingTest {
         CURRENT_IN_EXECUTE.clear();
         SINK_TUPLES_RECEIVED.set(0);
         SPOUT_CALLBACK_START_NANOS.set(0);
-        UNSAMPLED_CONTEXTS_RECEIVED.set(0);
-        MIDDLE_TRACE_IDS.clear();
         MIDDLE_SPAN_BY_VALUE.clear();
         SINK_SPAN_BY_VALUE.clear();
         WORKER_PORT_BY_COMPONENT.clear();
@@ -523,14 +564,12 @@ public class TopologyTracingTest {
         public void prepare(Map<String, Object> conf, TopologyContext context,
             OutputCollector collector) {
             this.collector = collector;
-            WORKER_PORT_BY_COMPONENT.put("middle", context.getThisWorkerPort());
         }
 
         @Override
         public void execute(Tuple input) {
             SpanContext current = Span.current().getSpanContext();
             MIDDLE_SPAN_BY_VALUE.put(input.getValue(0), current.getSpanId());
-            MIDDLE_TRACE_IDS.add(current.getTraceId());
             if ((mode == EmitMode.JOIN || mode == EmitMode.ASYNC_REVERSED) && held == null) {
                 held = input;
                 return;
@@ -675,9 +714,6 @@ public class TopologyTracingTest {
             SpanContext received = Span.fromContext(StormTracing.context(input)).getSpanContext();
             if (received.isValid()) {
                 RECEIVED_TRACE_IDS.add(received.getTraceId());
-                if (!received.isSampled()) {
-                    UNSAMPLED_CONTEXTS_RECEIVED.incrementAndGet();
-                }
             }
             SpanContext current = Span.current().getSpanContext();
             if (current.isValid()) {

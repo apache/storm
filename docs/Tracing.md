@@ -85,10 +85,20 @@ bolts save in their state do not keep their context.
 
 ## Sampling
 
-The SDK's sampler decides whether the trace that a spout emit starts is sampled. The tracer passes every context on,
-sampled or not. With a parent-based sampler (the default), every span of a tuple tree therefore follows that decision,
-including the emit span of an emit whose anchors belong to one trace. The root sampler alone decides whether the new
-root of an emit with anchors from different traces is sampled, because the built-in samplers ignore links.
+The SDK's sampler decides whether the trace that a spout emit starts is sampled. When it drops the root span, the
+emitted tuple carries no context, so the rest of its tree is not traced: no execute, emit or outcome spans are started
+for it. A root span that the sampler records but does not sample (`RECORD_ONLY`) passes its context on. With a
+parent-based sampler (the default), every span of a tuple tree follows whether its root is sampled, including the emit
+span of an emit whose anchors belong to one trace. The root sampler alone decides whether the new root of an emit with
+anchors from different traces is sampled, because the built-in samplers ignore links; that root passes its context on
+even when the sampler drops it.
+
+A tree whose root span the sampler dropped is untraced, and its tuples carry no context:
+
+- an instrumented client called in `execute()` for such a tuple starts its own trace, which the root sampler decides
+  and which is not linked to the tuple tree;
+- an emit anchored to a tuple of a traced tree and to a tuple of an untraced one continues the traced tree, with no
+  link to the untraced tuple.
 
 ## Continuing a trace on other threads
 

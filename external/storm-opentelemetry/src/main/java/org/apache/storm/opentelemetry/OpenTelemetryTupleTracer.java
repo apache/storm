@@ -53,7 +53,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The spout records the ack, fail or timeout of each traced tuple tree as a span whose duration, also set as the
  * {@code storm.tuple.latency_ms} attribute, is the time from the emit to the outcome. A bolt records each {@code fail()} as a span
- * started and ended at once. Contexts with the sampled flag unset are propagated too.
+ * started and ended at once. When the sampler drops the root span of a spout emit, the tuple carries no context, so the rest of its
+ * tree is not traced; a root span that is recorded but not sampled passes its context on.
  */
 public class OpenTelemetryTupleTracer implements TupleTracer {
 
@@ -106,7 +107,16 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
     @Override
     public Object spoutEmit(int taskId, String streamId) {
         Tracer current = tracer();
-        return current == null ? null : emitContext(current.spanBuilder(spans(taskId).emitName()).setNoParent());
+        if (current == null) {
+            return null;
+        }
+        Span root = current.spanBuilder(spans(taskId).emitName()).setNoParent().startSpan();
+        // before end(): an ended SDK span is no longer recording
+        if (root.isRecording()) {
+            return emitContext(root);
+        }
+        root.end();
+        return null;
     }
 
     @Override
@@ -140,7 +150,7 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
             builder.setNoParent().addLink(firstSpan);
         }
         otherSpans.forEach(builder::addLink);
-        return emitContext(builder);
+        return emitContext(builder.startSpan());
     }
 
     @Override
@@ -234,11 +244,10 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
     }
 
     /**
-     * Starts and immediately ends the emit span, and returns its context, or null when the span is not valid. The context keeps the
-     * span ids only: pending tuples hold it until their tree completes.
+     * Ends the emit span and returns its context, or null when the span is not valid. The context keeps the span ids only: pending
+     * tuples hold it until their tree completes.
      */
-    private static Context emitContext(SpanBuilder builder) {
-        Span span = builder.startSpan();
+    private static Context emitContext(Span span) {
         span.end();
         SpanContext ids = span.getSpanContext();
         return ids.isValid() ? Context.root().with(Span.wrap(ids)) : null;
