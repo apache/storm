@@ -108,7 +108,11 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
             try {
                 tuple = des.deserialize(message.message());
             } catch (Exception e) {
-                if (strictMode || !isToleratedDeserializationFailure(e)) {
+                if (strictMode) {
+                    throw new FatalDeserializationException("Failed to deserialize a message of " + message.message().length
+                                                            + " bytes destined for task " + message.task(), e);
+                }
+                if (!isToleratedDeserializationFailure(e)) {
                     throw e;
                 }
                 deserializationFailures.incrementAndGet();

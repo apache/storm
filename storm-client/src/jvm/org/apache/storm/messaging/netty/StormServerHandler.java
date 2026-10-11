@@ -14,8 +14,10 @@ package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.storm.messaging.FatalDeserializationException;
 import org.apache.storm.shade.io.netty.channel.Channel;
 import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
 import org.apache.storm.shade.io.netty.channel.ChannelInboundHandlerAdapter;
@@ -59,12 +61,20 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
             // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException will handle it
         }
         try {
-            Utils.handleUncaughtException(cause, ALLOWED_EXCEPTIONS, false);
+            Utils.handleUncaughtException(cause, allowedExceptions(cause), false);
             ctx.close();
         } catch (Error error) {
             LOG.info("Received error in netty thread.. terminating server...");
             Runtime.getRuntime().exit(1);
         }
 
+    }
+
+    // A strict-mode deserialization failure must terminate the worker even if it wraps an IOException.
+    static Set<Class<?>> allowedExceptions(Throwable cause) {
+        if (Utils.exceptionCauseIsInstanceOf(FatalDeserializationException.class, cause)) {
+            return Collections.emptySet();
+        }
+        return ALLOWED_EXCEPTIONS;
     }
 }
