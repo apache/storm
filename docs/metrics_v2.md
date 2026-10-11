@@ -82,6 +82,8 @@ The following metric reporters are supported
     Reports metrics to a [Graphite](https://graphiteapp.org) server.
   * JMX Reporter (`org.apache.storm.metrics2.reporters.JmxStormReporter`):
     Exposes metrics via JMX.
+  * Prometheus Reporter (`org.apache.storm.metrics.prometheus.PrometheusStormReporter`, in the `storm-metrics-prometheus` module):
+    Serves the metrics of each worker over HTTP for [Prometheus](https://prometheus.io) to scrape, with the task dimensions as labels.
   
  Custom metrics reporters can be created by implementing `org.apache.storm.metrics2.reporters.StormReporter` interface 
  or extending `org.apache.storm.metrics2.reporters.ScheduledStormReporter` class.
