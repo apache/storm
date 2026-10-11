@@ -16,11 +16,14 @@ import com.esotericsoftware.kryo.Kryo;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.security.serialization.BlowfishTupleSerializer;
+import org.apache.storm.testing.TestWordSpout;
+import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.ListDelegate;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SerializationFactoryTest {
@@ -63,6 +66,15 @@ public class SerializationFactoryTest {
         Kryo kryo = SerializationFactory.getKryo(conf);
         assertEquals(com.esotericsoftware.kryo.serializers.DefaultSerializers.StringSerializer.class,
                 kryo.getSerializer(MockSerObject.class).getClass());
+    }
+
+    @Test
+    public void test_get_stream_name_null_for_unknown_component() {
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("spout", new TestWordSpout(true), 1);
+        SerializationFactory.IdDictionary ids = new SerializationFactory.IdDictionary(builder.createTopology());
+
+        assertNull(ids.getStreamName("no-such-component", 1));
     }
 
     public static class MockKryoDecorator implements IKryoDecorator {

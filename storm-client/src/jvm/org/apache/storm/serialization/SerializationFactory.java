@@ -259,7 +259,8 @@ public class SerializationFactory {
         }
 
         public String getStreamName(String component, int stream) {
-            return streamIdToName.get(component).get(stream);
+            Map<Integer, String> streamNames = streamIdToName.get(component);
+            return streamNames == null ? null : streamNames.get(stream);
         }
     }
 }
