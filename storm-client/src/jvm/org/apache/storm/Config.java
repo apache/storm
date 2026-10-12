@@ -890,8 +890,10 @@ public class Config extends HashMap<String, Object> {
      * its concurrency goes from 5 to {@code drpc.invocations.threads} (64 by default). It also applies to
      * any Nimbus, Supervisor or DRPC server whose {@code *.queue.size} was explicitly unset.
      *
-     * <p>Operational caveats. All virtual threads in a JVM share one carrier scheduler sized to the number of
-     * available processors. The scheduler compensates for blocking file I/O by temporarily adding carriers (up to
+     * <p>Operational caveats. Virtual threads are always daemon threads, while the platform threads these pools use
+     * otherwise are not; Storm's daemons and workers exit explicitly and do not depend on that, but an application
+     * embedding them (for example a local cluster) might. All virtual threads in a JVM share one carrier scheduler
+     * sized to the number of available processors. The scheduler compensates for blocking file I/O by temporarily adding carriers (up to
      * {@code jdk.virtualThreadScheduler.maxPoolSize}), and since JDK 24 {@code synchronized} no longer pins a
      * carrier; what still pins is a native frame on the stack, for example Hadoop native libraries used by a blob
      * store or JNI code run on the worker shared executor. Virtual threads are not time sliced, so a CPU-heavy

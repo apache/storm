@@ -29,7 +29,11 @@ import org.slf4j.LoggerFactory;
  *
  * <p>When {@link Config#STORM_VIRTUAL_THREADS_ENABLED} is true the factory creates virtual threads.
  * Otherwise it creates non-daemon platform threads with normal priority, matching
- * {@code Executors.defaultThreadFactory()}. In both modes threads are named
+ * {@code Executors.defaultThreadFactory()}. Note that virtual threads are always daemon threads, so with the
+ * flag on none of these pools keeps the JVM alive. Storm daemons and workers exit through explicit
+ * {@code System.exit} / {@code Runtime.halt} calls and their shutdown hooks do not join these pools, so this
+ * makes no difference to them, but it does to an embedding application that relies on non-daemon threads to
+ * keep running. In both modes threads are named
  * {@code <namePrefix><n>} with {@code n} starting at 0; the prefix is used verbatim, so callers include
  * their own separator.
  */
