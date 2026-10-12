@@ -98,6 +98,10 @@ function get_recording_timestamps {
 function jstack_record {
     FILENAME=jstack-$1-${NOW}.txt
     ${BINPATH}jstack $1 > "$2/${FILENAME}" 2>&1
+    # jstack does not list virtual threads (storm.virtual.threads.enabled); Thread.dump_to_file does.
+    if [ -x "${BINPATH}jcmd" ] || command -v "${BINPATH}jcmd" > /dev/null 2>&1; then
+        ${BINPATH}jcmd $1 Thread.dump_to_file -format=text "$2/threaddump-$1-${NOW}.txt" > /dev/null 2>&1
+    fi
 }
 
 function jmap_record {

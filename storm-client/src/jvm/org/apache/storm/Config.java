@@ -890,10 +890,19 @@ public class Config extends HashMap<String, Object> {
      * its concurrency goes from 5 to {@code drpc.invocations.threads} (64 by default). It also applies to
      * any Nimbus, Supervisor or DRPC server whose {@code *.queue.size} was explicitly unset.
      *
-     * <p>All virtual threads in a JVM share one carrier scheduler sized to the number of available processors;
-     * blocking file I/O (for example blob downloads in the supervisor localizer) occupies a carrier, so
-     * operators enabling this on I/O-heavy supervisors should size {@code jdk.virtualThreadScheduler.parallelism}
-     * / {@code jdk.virtualThreadScheduler.maxPoolSize} accordingly.
+     * <p>Operational caveats. All virtual threads in a JVM share one carrier scheduler sized to the number of
+     * available processors. The scheduler compensates for blocking file I/O by temporarily adding carriers (up to
+     * {@code jdk.virtualThreadScheduler.maxPoolSize}), and since JDK 24 {@code synchronized} no longer pins a
+     * carrier; what still pins is a native frame on the stack, for example Hadoop native libraries used by a blob
+     * store or JNI code run on the worker shared executor. Virtual threads are not time sliced, so a CPU-heavy
+     * Nimbus call such as {@code getTopologyPageInfo} or {@code submitTopology} on a large cluster can hold the
+     * carriers and delay cheap calls queued behind it.
+     *
+     * <p>Diagnostics. {@code jstack} and {@code Thread.getAllStackTraces()} do not report virtual threads, so with
+     * this flag on the thread dumps Storm logs itself (the stuck-slot dump in the supervisor and the dump before a
+     * forced halt in a shutdown hook) do not show these pools, and a hung handler or blob download is simply absent
+     * from them. Use {@code jcmd <pid> Thread.dump_to_file -format=text <file>} instead; {@code bin/flight.bash
+     * <pid> jstack <dir>} writes such a dump next to the jstack output when {@code jcmd} is available.
      *
      * <p>A topology may override this key in its own config to control its worker shared executor.
      */
