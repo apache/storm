@@ -57,16 +57,20 @@ import org.apache.storm.utils.Utils;
  * mvn -pl storm-client,examples/storm-perf -am install -DskipTests -Dcheckstyle.skip=true -q
  * mvn -pl examples/storm-perf dependency:build-classpath -Dmdep.outputFile=target/cp.txt -q
  * java -cp examples/storm-perf/target/classes:$(cat examples/storm-perf/target/cp.txt) \
- *     org.apache.storm.perf.ThriftHandlerVirtualThreadsBench --mode both --clients 200 --calls 50 --io-ms 10
+ *     org.apache.storm.perf.ThriftHandlerVirtualThreadsBench --mode off --clients 200 --calls 50 --io-ms 10
+ *     java -cp examples/storm-perf/target/classes:$(cat examples/storm-perf/target/cp.txt) \
+ *     org.apache.storm.perf.ThriftHandlerVirtualThreadsBench --mode on --clients 200 --calls 50 --io-ms 10
  * </pre>
  *
- * <p>Options: {@code --mode off|on|both}, {@code --clients N}, {@code --calls M} (per client),
+ * <p>Options: {@code --mode off|on|both} (default {@code off}; {@code both} runs the two modes in one JVM, which
+ * shares heap and JIT state between them and is only meant for a quick look), {@code --clients N}, {@code --calls M}
+ * (per client),
  * {@code --io-ms L} (simulated handler I/O), {@code --threads T} ({@code nimbus.thrift.threads}),
  * {@code --queue-size Q|none} ({@code nimbus.queue.size}; defaults to the shipped 100000, so both modes use a pool of
  * {@code --threads} handlers; {@code none} removes the key so the platform-thread run falls back to THsHaServer's own
  * pool, whose effective concurrency is 5), {@code --warmup W} (calls per client excluded from statistics).
  *
- * <p>For comparable RSS numbers run each mode in its own JVM ({@code --mode off} then {@code --mode on}).
+ * <p>For comparable numbers run each mode in its own JVM ({@code --mode off} then {@code --mode on}).
  */
 public final class ThriftHandlerVirtualThreadsBench {
 
@@ -77,7 +81,10 @@ public final class ThriftHandlerVirtualThreadsBench {
 
     public static void main(String[] args) throws Exception {
         Map<String, String> opts = parseArgs(args);
-        String mode = opts.getOrDefault("mode", "both").toLowerCase(Locale.ROOT);
+        String mode = opts.getOrDefault("mode", "off").toLowerCase(Locale.ROOT);
+        if (!mode.equals("off") && !mode.equals("on") && !mode.equals("both")) {
+            throw new IllegalArgumentException("Unknown --mode " + mode + ", expected off, on or both");
+        }
         int clients = Integer.parseInt(opts.getOrDefault("clients", "200"));
         int calls = Integer.parseInt(opts.getOrDefault("calls", "50"));
         long ioMs = Long.parseLong(opts.getOrDefault("io-ms", "10"));
