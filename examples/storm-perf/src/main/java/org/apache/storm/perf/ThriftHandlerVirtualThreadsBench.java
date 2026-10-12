@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -81,6 +82,7 @@ import org.apache.storm.utils.Utils;
 public final class ThriftHandlerVirtualThreadsBench {
 
     private static final String HOST = "localhost";
+    private static final int CONCURRENT_CONNECTS = 16;
 
     private ThriftHandlerVirtualThreadsBench() {
     }
@@ -191,11 +193,14 @@ public final class ThriftHandlerVirtualThreadsBench {
         CountDownLatch ready = new CountDownLatch(clients);
         CountDownLatch go = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(clients);
+        // The server socket uses the default listen backlog, so with hundreds of clients opening at once part of
+        // the connections would be reset before the run starts. Connection setup is not what is measured, so
+        // limit how many clients connect concurrently; calls are only issued once every client is connected.
+        Semaphore connecting = new Semaphore(CONCURRENT_CONNECTS);
         for (int c = 0; c < clients; c++) {
             final int clientIdx = c;
             Thread t = new Thread(() -> {
-                try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(60_000)
-                        .buildWithNimbusHostPort(HOST, port)) {
+                try (NimbusClient client = connect(conf, port, connecting)) {
                     Nimbus.Iface iface = client.getClient();
                     for (int i = 0; i < warmup; i++) {
                         iface.getNimbusConf();
@@ -283,6 +288,15 @@ public final class ThriftHandlerVirtualThreadsBench {
                           virtual, transport, clients, calls, ioMs, threads, queueSize, throughput, p50, p90, p99, max,
                           peakInFlight, peakThreads, threadsBefore, serverThreadsEstimate,
                           rssBeforeKb / 1024, rssAfterKb / 1024, completed, failures);
+    }
+
+    private static NimbusClient connect(Map<String, Object> conf, int port, Semaphore connecting) throws Exception {
+        connecting.acquire();
+        try {
+            return NimbusClient.Builder.withConf(conf).withTimeout(60_000).buildWithNimbusHostPort(HOST, port);
+        } finally {
+            connecting.release();
+        }
     }
 
     private static double pct(long[] sorted, double q) {
