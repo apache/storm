@@ -16,7 +16,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -90,7 +89,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
                                                                             60, TimeUnit.SECONDS, workQueue,
                                                                             StormThreadFactory.create(conf,
-                                                                                type.name().toLowerCase(Locale.ROOT) + "-handler-"));
+                                                                                type.getHandlerThreadNamePrefix()));
         serverArgs.executorService(executorService);
         return new TThreadPoolServer(serverArgs);
     }

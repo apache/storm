@@ -18,7 +18,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -110,7 +109,7 @@ public class TlsTransportPlugin implements ITransportPlugin {
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
                 60, TimeUnit.SECONDS, workQueue,
-                StormThreadFactory.create(conf, type.name().toLowerCase(Locale.ROOT) + "-handler-"));
+                StormThreadFactory.create(conf, type.getHandlerThreadNamePrefix()));
         serverArgs.executorService(executorService);
         tThreadPoolServer = new TThreadPoolServer(serverArgs);
         return tThreadPoolServer;

@@ -18,7 +18,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.Principal;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -92,7 +91,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             serverArgs.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
                                                                60, TimeUnit.SECONDS, workQueue,
                                                                StormThreadFactory.create(topoConf,
-                                                                   type.name().toLowerCase(Locale.ROOT) + "-handler-")));
+                                                                   type.getHandlerThreadNamePrefix())));
         }
 
         //construct THsHaServer
