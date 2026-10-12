@@ -82,7 +82,10 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             // THsHaServer builds its own platform-thread pool (core 5, unbounded LinkedBlockingQueue) when no
             // executor is supplied, so when virtual threads are requested we always supply an executor;
             // without a configured queue size we use the same unbounded queue so no request is rejected
-            // that would not be rejected today. The shipped defaults always configure a queue size.
+            // that would not be rejected today. Note that this raises the effective handler concurrency
+            // from THsHaServer's 5 to numWorkerThreads. That is always the case for DRPC_INVOCATIONS, which
+            // has no queue size key at all, and for any Nimbus, Supervisor or DRPC server whose
+            // *.queue.size was explicitly unset.
             BlockingQueue<Runnable> workQueue = queueSize != null
                 ? new ArrayBlockingQueue<>(queueSize)
                 : new LinkedBlockingQueue<>();

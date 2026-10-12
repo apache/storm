@@ -883,9 +883,12 @@ public class Config extends HashMap<String, Object> {
      *
      * <p>With the simple (non-authenticated) Thrift transport, Storm builds its own handler pool of
      * {@code *.threads} threads whenever a {@code *.queue.size} is configured, which the shipped defaults do
-     * for Nimbus, Supervisor and DRPC. Only when the queue size is explicitly unset does {@code THsHaServer}
-     * fall back to its own pool, whose effective concurrency is 5; enabling this flag in that case raises it to
-     * the configured {@code *.threads} value.
+     * for Nimbus, Supervisor and the DRPC client port. When no queue size is configured {@code THsHaServer}
+     * falls back to its own pool, whose effective concurrency is 5; enabling this flag in that case always
+     * supplies a pool of {@code *.threads} threads, so the handler concurrency rises from 5 to that value.
+     * This is unconditionally the case for the DRPC invocations port, which has no queue size setting, so
+     * its concurrency goes from 5 to {@code drpc.invocations.threads} (64 by default). It also applies to
+     * any Nimbus, Supervisor or DRPC server whose {@code *.queue.size} was explicitly unset.
      *
      * <p>All virtual threads in a JVM share one carrier scheduler sized to the number of available processors;
      * blocking file I/O (for example blob downloads in the supervisor localizer) occupies a carrier, so
