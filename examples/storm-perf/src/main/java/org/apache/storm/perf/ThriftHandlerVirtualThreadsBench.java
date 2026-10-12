@@ -275,7 +275,16 @@ public final class ThriftHandlerVirtualThreadsBench {
                 return "{}";
             }
             if (method.getDeclaringClass() == Object.class) {
-                return method.invoke(inFlight, margs);
+                switch (method.getName()) {
+                    case "hashCode":
+                        return System.identityHashCode(proxy);
+                    case "equals":
+                        return proxy == margs[0];
+                    case "toString":
+                        return "sleepingHandler(" + ioMs + "ms)";
+                    default:
+                        throw new UnsupportedOperationException(method.getName());
+                }
             }
             throw new UnsupportedOperationException(method.getName());
         };
