@@ -904,7 +904,8 @@ public class Config extends HashMap<String, Object> {
      * from them. Use {@code jcmd <pid> Thread.dump_to_file -format=text <file>} instead; {@code bin/flight.bash
      * <pid> jstack <dir>} writes such a dump next to the jstack output when {@code jcmd} is available.
      *
-     * <p>A topology may override this key in its own config to control its worker shared executor.
+     * <p>A topology may override this key in its own config to control the pools that are built from the
+     * topology conf: the worker shared executor and the {@code DRPCSpout} background executor.
      */
     @IsBoolean
     public static final String STORM_VIRTUAL_THREADS_ENABLED = "storm.virtual.threads.enabled";
