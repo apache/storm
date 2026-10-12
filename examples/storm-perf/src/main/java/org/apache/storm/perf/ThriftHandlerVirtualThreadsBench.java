@@ -209,9 +209,11 @@ public final class ThriftHandlerVirtualThreadsBench {
                                long[][] latenciesNs, long elapsedNs, int failures, int threadsBefore, int peakThreads,
                                int peakInFlight, long rssBeforeKb, long rssAfterKb) {
         long[] all = Arrays.stream(latenciesNs).flatMapToLong(Arrays::stream).filter(v -> v > 0).sorted().toArray();
-        int total = clients * calls;
+        int attempted = clients * calls;
+        int completed = all.length;
         double elapsedS = elapsedNs / 1e9;
-        double throughput = total / elapsedS;
+        // Throughput and latency percentiles are both computed over the calls that completed.
+        double throughput = completed / elapsedS;
         double p50 = pct(all, 0.50);
         double p90 = pct(all, 0.90);
         double p99 = pct(all, 0.99);
@@ -221,7 +223,8 @@ public final class ThriftHandlerVirtualThreadsBench {
         String label = virtual ? "virtual threads ON" : "virtual threads OFF";
         System.out.println();
         System.out.println("=== " + label + " ===");
-        System.out.printf(Locale.ROOT, "  calls              : %d (%d failed)%n", total, failures);
+        System.out.printf(Locale.ROOT, "  calls              : %d completed of %d attempted (%d clients failed)%n",
+                          completed, attempted, failures);
         System.out.printf(Locale.ROOT, "  elapsed            : %.2f s%n", elapsedS);
         System.out.printf(Locale.ROOT, "  throughput         : %.0f calls/s (ideal at %d concurrent handlers: %.0f)%n",
                           throughput, Math.min(clients, threads), idealThroughput);
@@ -236,9 +239,9 @@ public final class ThriftHandlerVirtualThreadsBench {
                           "JSON {\"virtual\":%b,\"clients\":%d,\"calls\":%d,\"ioMs\":%d,\"threads\":%d,\"queueSize\":%s,"
                           + "\"throughput\":%.1f,\"p50Ms\":%.2f,\"p90Ms\":%.2f,\"p99Ms\":%.2f,\"maxMs\":%.2f,"
                           + "\"peakHandlersBusy\":%d,\"platformThreadsPeak\":%d,\"platformThreadsBefore\":%d,"
-                          + "\"rssBeforeMb\":%d,\"rssAfterMb\":%d,\"failures\":%d}%n",
+                          + "\"rssBeforeMb\":%d,\"rssAfterMb\":%d,\"completedCalls\":%d,\"failedClients\":%d}%n",
                           virtual, clients, calls, ioMs, threads, queueSize, throughput, p50, p90, p99, max,
-                          peakInFlight, peakThreads, threadsBefore, rssBeforeKb / 1024, rssAfterKb / 1024, failures);
+                          peakInFlight, peakThreads, threadsBefore, rssBeforeKb / 1024, rssAfterKb / 1024, completed, failures);
     }
 
     private static double pct(long[] sorted, double q) {
