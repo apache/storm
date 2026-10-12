@@ -43,11 +43,11 @@ public final class StormThreadFactory {
     /**
      * Create a thread factory for a pool.
      *
-     * @param conf       cluster or topology configuration
+     * @param conf       cluster or topology configuration; a raw {@code Map} is accepted for callers that hold one
      * @param namePrefix prefix for the thread names, used verbatim, e.g. {@code "nimbus-handler-"}
      * @return a factory producing virtual or platform threads depending on the configuration
      */
-    public static ThreadFactory create(Map<String, Object> conf, String namePrefix) {
+    public static ThreadFactory create(Map<?, ?> conf, String namePrefix) {
         if (isVirtualEnabled(conf)) {
             return Thread.ofVirtual().name(namePrefix, 0).factory();
         }
@@ -66,7 +66,7 @@ public final class StormThreadFactory {
      * or {@code "false"} ignoring case; anything else, like any other type, is logged and treated as
      * disabled. This method never throws.
      */
-    public static boolean isVirtualEnabled(Map<String, Object> conf) {
+    public static boolean isVirtualEnabled(Map<?, ?> conf) {
         if (conf == null) {
             return false;
         }
