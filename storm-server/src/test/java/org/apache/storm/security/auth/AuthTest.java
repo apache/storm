@@ -649,7 +649,7 @@ public class AuthTest {
     }
 
     @Test
-    public void simpleTransportRunsHandlerOnVirtualThreadWhenEnabled() throws Exception {
+    public void simpleTransportWithoutQueueSizeRunsHandlerOnVirtualThreadWhenEnabled() throws Exception {
         Nimbus.Iface impl = mock(Nimbus.Iface.class);
         final AtomicReference<Boolean> handlerOnVirtualThread = new AtomicReference<>();
         doAnswer((invocation) -> {
@@ -659,6 +659,9 @@ public class AuthTest {
 
         Map<String, Object> extra = new HashMap<>();
         extra.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
+        // defaults.yaml ships nimbus.queue.size, so unset it explicitly to exercise the path where
+        // THsHaServer would otherwise build its own pool (the DRPC invocations case).
+        extra.put(Config.NIMBUS_QUEUE_SIZE, null);
         withServer(null, SimpleTransportPlugin.class, impl, null, extra,
             (ThriftServer server, Map<String, Object> conf) -> {
                 try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)

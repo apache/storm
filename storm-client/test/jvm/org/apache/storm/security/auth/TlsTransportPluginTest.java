@@ -22,6 +22,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -33,13 +34,18 @@ import org.apache.storm.Config;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.security.auth.tls.ReloadableTsslTransportFactory;
 import org.apache.storm.security.auth.tls.TlsTransportPlugin;
+import org.apache.storm.thrift.protocol.TBinaryProtocol;
 import org.apache.storm.thrift.transport.TServerSocket;
+import org.apache.storm.thrift.transport.TSocket;
+import org.apache.storm.utils.Utils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 class TlsTransportPluginTest {
@@ -144,6 +150,64 @@ class TlsTransportPluginTest {
                     "Server-side handshake must fail; got: " + serverError.get());
         } finally {
             serverTransport.close();
+        }
+    }
+
+    /**
+     * Round trip through a real {@link ThriftServer} over TLS, asserting from inside the handler that it runs on a
+     * virtual thread when {@code storm.virtual.threads.enabled} is set. The TLS transport uses
+     * {@code TThreadPoolServer}, so this covers the executor path that the simple transport does not. The client is
+     * a plain Thrift client over a trust-only SSL socket because the test certificate has no subject alternative
+     * name, which the hostname verification in {@code ThriftClient} requires.
+     */
+    @Test
+    void testHandlerRunsOnVirtualThreadWhenEnabled() throws Exception {
+        AtomicReference<Boolean> handlerOnVirtualThread = new AtomicReference<>();
+        doAnswer(invocation -> {
+            handlerOnVirtualThread.set(Thread.currentThread().isVirtual());
+            return null;
+        }).when(handler).activate(anyString());
+
+        Map<String, Object> serverConf = new HashMap<>(Utils.readDefaultConfig());
+        serverConf.put(Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN, TlsTransportPlugin.class.getName());
+        serverConf.put(Config.NIMBUS_THRIFT_TLS_PORT, 0);
+        serverConf.put(Config.STORM_THRIFT_TLS_SOCKET_TIMEOUT_MS, 5000);
+        serverConf.put(Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PATH, testDataPath + "testKeyStore.jks");
+        serverConf.put(Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD, "testpass");
+        serverConf.put(Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PATH, testDataPath + "testTrustStore.jks");
+        serverConf.put(Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD, "testpass");
+        serverConf.put(Config.NIMBUS_THRIFT_TLS_CLIENT_AUTH_REQUIRED, false);
+        serverConf.put(Config.NIMBUS_THRIFT_TLS_THREADS, 2);
+        serverConf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
+
+        ThriftServer server = new ThriftServer(serverConf, new Nimbus.Processor<>(handler), ThriftConnectionType.NIMBUS_TLS);
+        Thread serveThread = new Thread(server::serve, "tls-test-serve");
+        serveThread.setDaemon(true);
+        serveThread.start();
+        try {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+            while (!server.isServing()) {
+                assertTrue(System.nanoTime() < deadline, "TLS ThriftServer did not start serving");
+                Thread.sleep(100);
+            }
+            KeyStore ts = KeyStore.getInstance("JKS");
+            try (InputStream in = Files.newInputStream(Paths.get(testDataPath + "testTrustStore.jks"))) {
+                ts.load(in, "testpass".toCharArray());
+            }
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(ts);
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
+            try (SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory()
+                    .createSocket(InetAddress.getLocalHost(), server.getPort())) {
+                sslSocket.setSoTimeout(5000);
+                sslSocket.startHandshake();
+                TSocket transport = new TSocket(sslSocket);
+                new Nimbus.Client(new TBinaryProtocol(transport)).activate("virtual_thread_tls_test_topology");
+            }
+            assertEquals(Boolean.TRUE, handlerOnVirtualThread.get());
+        } finally {
+            server.stop();
         }
     }
 }
