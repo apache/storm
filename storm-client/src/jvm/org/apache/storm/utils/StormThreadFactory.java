@@ -61,8 +61,10 @@ public final class StormThreadFactory {
     /**
      * Whether virtual threads are enabled for blocking I/O pools.
      *
-     * <p>Boolean and String values are honoured (strings are parsed as boolean). Any other type
-     * is treated as disabled. This method never throws.
+     * <p>Boolean values are honoured. String values, which only reach here through {@code storm.options}
+     * since daemon and topology confs are validated as boolean, are accepted when they equal {@code "true"}
+     * or {@code "false"} ignoring case; anything else, like any other type, is logged and treated as
+     * disabled. This method never throws.
      */
     public static boolean isVirtualEnabled(Map<String, Object> conf) {
         if (conf == null) {
@@ -76,7 +78,15 @@ public final class StormThreadFactory {
             return (Boolean) value;
         }
         if (value instanceof String) {
-            return Boolean.parseBoolean((String) value);
+            String str = ((String) value).trim();
+            if (str.equalsIgnoreCase("true")) {
+                return true;
+            }
+            if (str.equalsIgnoreCase("false")) {
+                return false;
+            }
+            LOG.warn("Ignoring value '{}' for {}; expected true or false", value, Config.STORM_VIRTUAL_THREADS_ENABLED);
+            return false;
         }
         LOG.warn("Ignoring {} value of type {} for {}; expected a boolean", value, value.getClass().getName(),
             Config.STORM_VIRTUAL_THREADS_ENABLED);

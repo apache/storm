@@ -71,6 +71,15 @@ public class StormThreadFactoryTest {
     }
 
     @Test
+    public void unrecognizedStringValueBehavesAsOff() {
+        for (String value : new String[]{"yes", "1", "on", ""}) {
+            Map<String, Object> conf = new HashMap<>();
+            conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, value);
+            assertFalse(StormThreadFactory.isVirtualEnabled(conf), "value '" + value + "'");
+        }
+    }
+
+    @Test
     public void platformThreadForcesNormPriorityRegardlessOfCallerPriority() throws Exception {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, false);
