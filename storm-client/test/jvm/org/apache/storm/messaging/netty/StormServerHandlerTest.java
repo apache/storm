@@ -13,27 +13,55 @@
 package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import org.apache.storm.messaging.FatalDeserializationException;
-import org.apache.storm.utils.Utils;
+import org.apache.storm.shade.io.netty.channel.Channel;
+import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class StormServerHandlerTest {
 
-    @Test
-    public void testIoExceptionIsSwallowed() {
-        RuntimeException cause = new RuntimeException("Failed to decompress", new IOException("corrupt frame"));
+    private Runnable terminator;
+    private ChannelHandlerContext ctx;
+    private StormServerHandler handler;
 
-        assertDoesNotThrow(() -> Utils.handleUncaughtException(cause, StormServerHandler.allowedExceptions(cause), false));
+    @BeforeEach
+    public void setUp() {
+        terminator = mock(Runnable.class);
+        Channel channel = mock(Channel.class);
+        when(channel.remoteAddress()).thenReturn(new InetSocketAddress("localhost", 6700));
+        ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+        handler = new StormServerHandler(mock(IServer.class), terminator);
     }
 
     @Test
-    public void testFatalDeserializationWrappingIoExceptionIsNotSwallowed() {
-        RuntimeException cause = new FatalDeserializationException("strict",
-            new RuntimeException("Failed to decompress", new IOException("corrupt frame")));
+    public void testIoExceptionClosesConnection() {
+        handler.exceptionCaught(ctx, new RuntimeException("Failed to decompress", new IOException("corrupt frame")));
 
-        assertThrows(Error.class, () -> Utils.handleUncaughtException(cause, StormServerHandler.allowedExceptions(cause), false));
+        verify(ctx).close();
+        verify(terminator, never()).run();
+    }
+
+    @Test
+    public void testFatalDeserializationWrappingIoExceptionTerminates() {
+        handler.exceptionCaught(ctx, new FatalDeserializationException("strict",
+            new RuntimeException("Failed to decompress", new IOException("corrupt frame"))));
+
+        verify(terminator).run();
+    }
+
+    @Test
+    public void testOtherFailureTerminates() {
+        handler.exceptionCaught(ctx, new IllegalStateException("unexpected"));
+
+        verify(terminator).run();
+        verify(ctx, never()).close();
     }
 }

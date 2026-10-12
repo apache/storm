@@ -14,7 +14,6 @@ package org.apache.storm.messaging.netty;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.storm.messaging.FatalDeserializationException;
@@ -29,9 +28,16 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
     private static final Set<Class<?>> ALLOWED_EXCEPTIONS = new HashSet<>(Arrays.asList(new Class<?>[]{ IOException.class }));
     private final IServer server;
+    private final Runnable terminator;
 
     public StormServerHandler(IServer server) {
+        this(server, StormServerHandler::terminateWorker);
+    }
+
+    // Package-private for testing.
+    StormServerHandler(IServer server, Runnable terminator) {
         this.server = server;
+        this.terminator = terminator;
     }
 
     @Override
@@ -55,26 +61,32 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (cause instanceof FatalDeserializationException) {
+            // Strict deserialization mode: fatal even if the failure wraps an IOException.
+            LOG.error("Strict deserialization failure, terminating worker", cause);
+            terminator.run();
+            ctx.close();
+            return;
+        }
         try {
             LOG.error("server errors in handling the request from {}", ctx.channel().remoteAddress().toString(), cause);
         } catch (Throwable err) {
             // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException will handle it
         }
         try {
-            Utils.handleUncaughtException(cause, allowedExceptions(cause), false);
+            Utils.handleUncaughtException(cause, ALLOWED_EXCEPTIONS, false);
             ctx.close();
         } catch (Error error) {
             LOG.info("Received error in netty thread.. terminating server...");
-            Runtime.getRuntime().exit(1);
+            terminator.run();
         }
 
     }
 
-    // A strict-mode deserialization failure must terminate the worker even if it wraps an IOException.
-    static Set<Class<?>> allowedExceptions(Throwable cause) {
-        if (Utils.exceptionCauseIsInstanceOf(FatalDeserializationException.class, cause)) {
-            return Collections.emptySet();
-        }
-        return ALLOWED_EXCEPTIONS;
+    // Exit from a separate thread: the worker shutdown hook closes the netty server, which waits for this
+    // event loop to finish, so calling exit() on the event loop thread itself would never return.
+    private static void terminateWorker() {
+        Thread exitThread = new Thread(() -> Runtime.getRuntime().exit(1), "netty-server-exit");
+        exitThread.start();
     }
 }
