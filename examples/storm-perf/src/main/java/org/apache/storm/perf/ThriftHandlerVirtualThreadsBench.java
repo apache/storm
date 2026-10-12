@@ -25,6 +25,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,16 +42,21 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.security.auth.SimpleTransportPlugin;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
+import org.apache.storm.security.auth.digest.DigestSaslTransportPlugin;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 
 /**
  * Benchmark for {@code storm.virtual.threads.enabled} on the Nimbus Thrift handler pool.
  *
- * <p>Starts an in-process {@link ThriftServer} using {@link SimpleTransportPlugin} whose {@code getNimbusConf}
- * handler sleeps for a configurable time to simulate blocking I/O (ZooKeeper, blob store), then hammers it with
- * N client threads and reports throughput, latency percentiles, peak platform-thread count and RSS. Run it with
- * the flag off and on to compare.
+ * <p>Starts an in-process {@link ThriftServer} whose {@code getNimbusConf} handler sleeps for a configurable time
+ * to simulate blocking I/O (ZooKeeper, blob store), then hammers it with N client threads and reports throughput,
+ * latency percentiles, peak platform-thread count, an estimate of the server-side platform threads and RSS. Run it
+ * with the flag off and on to compare. The server can use either {@link SimpleTransportPlugin}
+ * ({@code THsHaServer}) or {@link DigestSaslTransportPlugin} ({@code TThreadPoolServer}, one handler thread per
+ * connection, as used by the SASL and TLS transports of secure clusters); the digest mode writes a throwaway JAAS
+ * file with a fixed user and needs {@code --threads >= --clients}, since every client holds its connection, and
+ * with it a handler thread, for the whole run.
  *
  * <p>Build and run (JDK 25, Maven 3.9):
  * <pre>
@@ -64,7 +70,7 @@ import org.apache.storm.utils.Utils;
  *
  * <p>Options: {@code --mode off|on|both} (default {@code off}; {@code both} runs the two modes in one JVM, which
  * shares heap and JIT state between them and is only meant for a quick look), {@code --clients N}, {@code --calls M}
- * (per client),
+ * (per client), {@code --transport simple|digest} (default {@code simple}),
  * {@code --io-ms L} (simulated handler I/O), {@code --threads T} ({@code nimbus.thrift.threads}),
  * {@code --queue-size Q|none} ({@code nimbus.queue.size}; defaults to the shipped 100000, so both modes use a pool of
  * {@code --threads} handlers; {@code none} removes the key so the platform-thread run falls back to THsHaServer's own
@@ -93,21 +99,37 @@ public final class ThriftHandlerVirtualThreadsBench {
         boolean noQueue = "none".equalsIgnoreCase(queueOpt);
         Integer queueSize = queueOpt == null || noQueue ? null : Integer.valueOf(queueOpt);
         int warmup = Integer.parseInt(opts.getOrDefault("warmup", "5"));
+        String transport = opts.getOrDefault("transport", "simple").toLowerCase(Locale.ROOT);
+        if (!transport.equals("simple") && !transport.equals("digest")) {
+            throw new IllegalArgumentException("Unknown --transport " + transport + ", expected simple or digest");
+        }
+        if (transport.equals("digest") && clients > threads) {
+            // TThreadPoolServer dedicates a handler thread to each connection for its lifetime, and every client
+            // keeps its connection open for the whole run, so connections beyond --threads would sit in the
+            // executor queue until their SASL handshake times out.
+            throw new IllegalArgumentException("--transport digest needs --threads >= --clients (one handler thread per"
+                                               + " open connection); got threads=" + threads + " clients=" + clients);
+        }
 
-        System.out.printf(Locale.ROOT, "clients=%d calls=%d io-ms=%d threads=%d queue-size=%s warmup=%d%n",
-                          clients, calls, ioMs, threads, noQueue ? "none" : queueSize, warmup);
+        System.out.printf(Locale.ROOT, "transport=%s clients=%d calls=%d io-ms=%d threads=%d queue-size=%s warmup=%d%n",
+                          transport, clients, calls, ioMs, threads, noQueue ? "none" : queueSize, warmup);
         if (mode.equals("off") || mode.equals("both")) {
-            runPhase(false, clients, calls, ioMs, threads, queueSize, noQueue, warmup);
+            runPhase(false, transport, clients, calls, ioMs, threads, queueSize, noQueue, warmup);
         }
         if (mode.equals("on") || mode.equals("both")) {
-            runPhase(true, clients, calls, ioMs, threads, queueSize, noQueue, warmup);
+            runPhase(true, transport, clients, calls, ioMs, threads, queueSize, noQueue, warmup);
         }
     }
 
-    private static void runPhase(boolean virtual, int clients, int calls, long ioMs, int threads,
+    private static void runPhase(boolean virtual, String transport, int clients, int calls, long ioMs, int threads,
                                  Integer queueSize, boolean noQueue, int warmup) throws Exception {
         Map<String, Object> conf = new HashMap<>(Utils.readDefaultConfig());
-        conf.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, SimpleTransportPlugin.class.getName());
+        if (transport.equals("digest")) {
+            conf.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, DigestSaslTransportPlugin.class.getName());
+            conf.put("java.security.auth.login.config", writeDigestJaasConf().toString());
+        } else {
+            conf.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, SimpleTransportPlugin.class.getName());
+        }
         conf.put(Config.NIMBUS_THRIFT_PORT, 0);
         conf.put(Config.NIMBUS_THRIFT_THREADS, threads);
         conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, virtual);
@@ -207,14 +229,18 @@ public final class ThriftHandlerVirtualThreadsBench {
         long rssAfterKb = rssKb();
         server.stop();
         serveThread.join(5000);
+        if (!failures.isEmpty()) {
+            System.err.println("First client failure (" + failures.size() + " in total):");
+            failures.get(0).printStackTrace();
+        }
 
-        report(virtual, clients, calls, ioMs, threads, queueSize, latenciesNs, elapsedNs, failures.size(),
+        report(virtual, transport, clients, calls, ioMs, threads, queueSize, latenciesNs, elapsedNs, failures.size(),
                threadsBefore, peakThreads.get(), peakInFlight.get(), rssBeforeKb, rssAfterKb);
     }
 
-    private static void report(boolean virtual, int clients, int calls, long ioMs, int threads, Integer queueSize,
-                               long[][] latenciesNs, long elapsedNs, int failures, int threadsBefore, int peakThreads,
-                               int peakInFlight, long rssBeforeKb, long rssAfterKb) {
+    private static void report(boolean virtual, String transport, int clients, int calls, long ioMs, int threads,
+                               Integer queueSize, long[][] latenciesNs, long elapsedNs, int failures, int threadsBefore,
+                               int peakThreads, int peakInFlight, long rssBeforeKb, long rssAfterKb) {
         long[] all = Arrays.stream(latenciesNs).flatMapToLong(Arrays::stream).filter(v -> v > 0).sorted().toArray();
         int attempted = clients * calls;
         int completed = all.length;
@@ -226,8 +252,11 @@ public final class ThriftHandlerVirtualThreadsBench {
         double p99 = pct(all, 0.99);
         double max = all.length == 0 ? 0 : all[all.length - 1] / 1e6;
         double idealThroughput = (double) Math.min(clients, threads) * 1000.0 / ioMs;
+        // Platform threads created after the "before" sample are the client threads plus whatever the server
+        // added (handlers, acceptor/selector threads). Subtracting the clients gives the server-side estimate.
+        int serverThreadsEstimate = Math.max(0, peakThreads - threadsBefore - clients);
 
-        String label = virtual ? "virtual threads ON" : "virtual threads OFF";
+        String label = (virtual ? "virtual threads ON" : "virtual threads OFF") + ", " + transport + " transport";
         System.out.println();
         System.out.println("=== " + label + " ===");
         System.out.printf(Locale.ROOT, "  calls              : %d completed of %d attempted (%d clients failed)%n",
@@ -240,15 +269,20 @@ public final class ThriftHandlerVirtualThreadsBench {
         System.out.printf(Locale.ROOT, "  peak handlers busy : %d%n", peakInFlight);
         System.out.printf(Locale.ROOT, "  platform threads   : %d before, %d peak (+%d)%n",
                           threadsBefore, peakThreads, peakThreads - threadsBefore);
+        System.out.printf(Locale.ROOT, "  server threads     : ~%d (peak minus before minus %d client threads)%n",
+                          serverThreadsEstimate, clients);
         System.out.printf(Locale.ROOT, "  RSS                : %d MB before, %d MB after%n",
                           rssBeforeKb / 1024, rssAfterKb / 1024);
         System.out.printf(Locale.ROOT,
-                          "JSON {\"virtual\":%b,\"clients\":%d,\"calls\":%d,\"ioMs\":%d,\"threads\":%d,\"queueSize\":%s,"
+                          "JSON {\"virtual\":%b,\"transport\":\"%s\",\"clients\":%d,\"calls\":%d,\"ioMs\":%d,"
+                          + "\"threads\":%d,\"queueSize\":%s,"
                           + "\"throughput\":%.1f,\"p50Ms\":%.2f,\"p90Ms\":%.2f,\"p99Ms\":%.2f,\"maxMs\":%.2f,"
                           + "\"peakHandlersBusy\":%d,\"platformThreadsPeak\":%d,\"platformThreadsBefore\":%d,"
+                          + "\"serverThreadsEstimate\":%d,"
                           + "\"rssBeforeMb\":%d,\"rssAfterMb\":%d,\"completedCalls\":%d,\"failedClients\":%d}%n",
-                          virtual, clients, calls, ioMs, threads, queueSize, throughput, p50, p90, p99, max,
-                          peakInFlight, peakThreads, threadsBefore, rssBeforeKb / 1024, rssAfterKb / 1024, completed, failures);
+                          virtual, transport, clients, calls, ioMs, threads, queueSize, throughput, p50, p90, p99, max,
+                          peakInFlight, peakThreads, threadsBefore, serverThreadsEstimate,
+                          rssBeforeKb / 1024, rssAfterKb / 1024, completed, failures);
     }
 
     private static double pct(long[] sorted, double q) {
@@ -290,6 +324,26 @@ public final class ThriftHandlerVirtualThreadsBench {
         };
         return (Nimbus.Iface) Proxy.newProxyInstance(Nimbus.Iface.class.getClassLoader(),
                                                      new Class<?>[]{ Nimbus.Iface.class }, h);
+    }
+
+    /**
+     * Writes a JAAS configuration with a fixed digest user for the server and client sides. The login module class
+     * is only named, never instantiated: Storm reads the user and password from the entry options.
+     */
+    private static Path writeDigestJaasConf() throws IOException {
+        Path file = Files.createTempFile("storm-bench-jaas", ".conf");
+        file.toFile().deleteOnExit();
+        Files.writeString(file,
+            "StormServer {\n"
+            + "    org.apache.zookeeper.server.auth.DigestLoginModule required\n"
+            + "    user_bench=\"benchsecret\";\n"
+            + "};\n"
+            + "StormClient {\n"
+            + "    org.apache.zookeeper.server.auth.DigestLoginModule required\n"
+            + "    username=\"bench\"\n"
+            + "    password=\"benchsecret\";\n"
+            + "};\n");
+        return file;
     }
 
     /** Resident set size from /proc/self/status, or -1 when unavailable. */
