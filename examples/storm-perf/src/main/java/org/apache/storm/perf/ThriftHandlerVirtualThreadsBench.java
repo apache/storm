@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.Config;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.security.auth.SimpleTransportPlugin;
@@ -114,10 +115,27 @@ public final class ThriftHandlerVirtualThreadsBench {
         AtomicInteger peakInFlight = new AtomicInteger();
         Nimbus.Iface handler = sleepingHandler(ioMs, inFlight, peakInFlight);
         ThriftServer server = new ThriftServer(conf, new Nimbus.Processor<>(handler), ThriftConnectionType.NIMBUS);
-        Thread serveThread = new Thread(server::serve, "bench-thrift-serve");
+        AtomicReference<Throwable> serveFailure = new AtomicReference<>();
+        Thread serveThread = new Thread(() -> {
+            try {
+                server.serve();
+            } catch (Throwable t) {
+                serveFailure.set(t);
+            }
+        }, "bench-thrift-serve");
         serveThread.setDaemon(true);
         serveThread.start();
+        long serveDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
         while (!server.isServing()) {
+            if (serveFailure.get() != null) {
+                throw new IllegalStateException("Thrift server failed to start", serveFailure.get());
+            }
+            if (!serveThread.isAlive()) {
+                throw new IllegalStateException("Thrift server thread exited before serving");
+            }
+            if (System.nanoTime() > serveDeadline) {
+                throw new IllegalStateException("Thrift server did not start serving within 30s");
+            }
             Thread.sleep(10);
         }
         int port = server.getPort();
