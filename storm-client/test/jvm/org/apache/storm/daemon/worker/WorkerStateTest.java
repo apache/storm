@@ -22,6 +22,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
@@ -141,28 +142,41 @@ public class WorkerStateTest {
         }
     }
 
+    /**
+     * Builds a real WorkerState with the flag only in the topology conf, so this fails if makeDefaultResources
+     * goes back to reading the daemon conf.
+     */
     @Test
-    public void sharedExecutorUsesVirtualThreadsWhenEnabled() throws Exception {
-        Map<String, Object> conf = new HashMap<>();
-        conf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 2);
-        conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
-        ExecutorService pool = WorkerState.makeSharedExecutor(conf);
-        try {
-            assertTrue(pool.submit(() -> Thread.currentThread().isVirtual()).get(10, TimeUnit.SECONDS));
-        } finally {
-            pool.shutdownNow();
-        }
+    public void sharedExecutorUsesVirtualThreadsWhenEnabledInTopologyConf() throws Exception {
+        assertEquals(Boolean.TRUE, sharedExecutorIsVirtual(Collections.singletonMap(Config.STORM_VIRTUAL_THREADS_ENABLED, true)));
     }
 
     @Test
     public void sharedExecutorUsesPlatformThreadsByDefault() throws Exception {
-        Map<String, Object> conf = new HashMap<>();
-        conf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 2);
-        ExecutorService pool = WorkerState.makeSharedExecutor(conf);
+        assertEquals(Boolean.FALSE, sharedExecutorIsVirtual(Collections.emptyMap()));
+    }
+
+    private static Boolean sharedExecutorIsVirtual(Map<String, Object> extraTopologyConf) throws Exception {
+        ConfigUtils mockedConfigUtils = mock(ConfigUtils.class);
+        ConfigUtils previousConfigUtils = ConfigUtils.setInstance(mockedConfigUtils);
         try {
-            assertFalse(pool.submit(() -> Thread.currentThread().isVirtual()).get(10, TimeUnit.SECONDS));
+            // daemon conf: pool size only, never the flag
+            Map<String, Object> conf = new HashMap<>();
+            conf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 1);
+            String topologyId = "1";
+            StormTopology topology = mock(StormTopology.class);
+            when(topology.deepCopy()).thenReturn(topology);
+            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId), any(AdvancedFSOps.class))).thenReturn(topology);
+
+            WorkerState workerState = TestUtilsForWorkerState.getWorkerState(conf, topologyId, extraTopologyConf);
+            ExecutorService pool = (ExecutorService) workerState.getDefaultSharedResources().get(WorkerTopologyContext.SHARED_EXECUTOR);
+            try {
+                return pool.submit(() -> Thread.currentThread().isVirtual()).get(10, TimeUnit.SECONDS);
+            } finally {
+                pool.shutdownNow();
+            }
         } finally {
-            pool.shutdownNow();
+            ConfigUtils.setInstance(previousConfigUtils);
         }
     }
 }

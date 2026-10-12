@@ -68,7 +68,6 @@ import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.serialization.ITupleSerializer;
 import org.apache.storm.serialization.KryoTupleSerializer;
-import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -788,8 +787,7 @@ public class WorkerState {
     /**
      * Builds the worker shared executor, honoring the thread pool size and virtual-threads flag from the given (merged) conf.
      */
-    @VisibleForTesting
-    static ExecutorService makeSharedExecutor(Map<String, Object> conf) {
+    private static ExecutorService makeSharedExecutor(Map<String, Object> conf) {
         int threadPoolSize = ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE));
         return Executors.newFixedThreadPool(threadPoolSize, StormThreadFactory.create(conf, "worker-shared-executor"));
     }

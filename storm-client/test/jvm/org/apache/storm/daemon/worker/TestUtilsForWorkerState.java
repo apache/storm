@@ -32,6 +32,7 @@ import org.apache.storm.utils.SupervisorIfaceFactory;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -46,6 +47,15 @@ public class TestUtilsForWorkerState {
     public static final String RESOURCE_VALUE = "resource-value";
 
     public static WorkerState getWorkerState(Map<String, Object> conf, String topologyId) throws IOException, TException {
+        return getWorkerState(conf, topologyId, Collections.emptyMap());
+    }
+
+    /**
+     * Builds a WorkerState whose topology conf is the test default plus {@code extraTopologyConf}, which is kept
+     * separate from the daemon {@code conf} so tests can check which of the two a setting is read from.
+     */
+    public static WorkerState getWorkerState(Map<String, Object> conf, String topologyId, Map<String, Object> extraTopologyConf)
+        throws IOException, TException {
         IContext context = mock(IContext.class);
 
         String assignmentId = null;
@@ -78,6 +88,7 @@ public class TestUtilsForWorkerState {
         topologyConf.put(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE, 1000);
         topologyConf.put(Config.TOPOLOGY_TRANSFER_BATCH_SIZE, 1);
         topologyConf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 1);
+        topologyConf.putAll(extraTopologyConf);
 
         IStateStorage stateStorage = null;
         IStormClusterState stormClusterState = null;
