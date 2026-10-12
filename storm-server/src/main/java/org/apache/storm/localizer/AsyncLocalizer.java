@@ -131,9 +131,9 @@ public class AsyncLocalizer implements AutoCloseable {
 
         int downloadThreadPoolSize = ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_THREAD_COUNT), 5);
         downloadExecService = Executors.newScheduledThreadPool(downloadThreadPoolSize,
-                StormThreadFactory.create(conf, "AsyncLocalizer-Download-Executor"));
+                StormThreadFactory.create(conf, "AsyncLocalizer Download Executor - "));
         taskExecService = Executors.newScheduledThreadPool(3,
-                StormThreadFactory.create(conf, "AsyncLocalizer-Task-Executor"));
+                StormThreadFactory.create(conf, "AsyncLocalizer Task Executor - "));
         reconstructLocalizedResources();
 
         symlinksDisabled = (boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false);

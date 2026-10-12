@@ -35,7 +35,7 @@ public class StormThreadFactoryTest {
     public void flagOffCreatesPlatformThreadsWithPrefix() throws Exception {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, false);
-        ThreadFactory factory = StormThreadFactory.create(conf, "test-pool");
+        ThreadFactory factory = StormThreadFactory.create(conf, "test-pool-");
 
         Thread t = factory.newThread(() -> { });
         assertFalse(t.isVirtual());
@@ -47,7 +47,7 @@ public class StormThreadFactoryTest {
 
     @Test
     public void missingFlagBehavesAsOff() {
-        ThreadFactory factory = StormThreadFactory.create(new HashMap<>(), "test-pool");
+        ThreadFactory factory = StormThreadFactory.create(new HashMap<>(), "test-pool-");
         assertFalse(factory.newThread(() -> { }).isVirtual());
     }
 
@@ -55,7 +55,7 @@ public class StormThreadFactoryTest {
     public void flagOnCreatesVirtualThreadsWithPrefix() throws Exception {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
-        ThreadFactory factory = StormThreadFactory.create(conf, "test-pool");
+        ThreadFactory factory = StormThreadFactory.create(conf, "test-pool-");
 
         Thread t = factory.newThread(() -> { });
         assertTrue(t.isVirtual());
@@ -67,7 +67,7 @@ public class StormThreadFactoryTest {
     public void flagOnAcceptsStringValue() {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, "true");
-        assertTrue(StormThreadFactory.create(conf, "test-pool").newThread(() -> { }).isVirtual());
+        assertTrue(StormThreadFactory.create(conf, "test-pool-").newThread(() -> { }).isVirtual());
     }
 
     @Test
@@ -83,7 +83,7 @@ public class StormThreadFactoryTest {
     public void platformThreadForcesNormPriorityRegardlessOfCallerPriority() throws Exception {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, false);
-        ThreadFactory factory = StormThreadFactory.create(conf, "test-pool");
+        ThreadFactory factory = StormThreadFactory.create(conf, "test-pool-");
 
         Thread callerThread = Thread.currentThread();
         int originalPriority = callerThread.getPriority();
@@ -100,7 +100,7 @@ public class StormThreadFactoryTest {
     public void unexpectedValueTypeBehavesAsOff() {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_VIRTUAL_THREADS_ENABLED, Integer.valueOf(1));
-        ThreadFactory factory = StormThreadFactory.create(conf, "test-pool");
+        ThreadFactory factory = StormThreadFactory.create(conf, "test-pool-");
         assertFalse(factory.newThread(() -> { }).isVirtual());
     }
 }

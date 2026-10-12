@@ -92,7 +92,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             serverArgs.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
                                                                60, TimeUnit.SECONDS, workQueue,
                                                                StormThreadFactory.create(topoConf,
-                                                                   type.name().toLowerCase(Locale.ROOT) + "-handler")));
+                                                                   type.name().toLowerCase(Locale.ROOT) + "-handler-")));
         }
 
         //construct THsHaServer

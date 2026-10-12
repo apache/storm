@@ -90,7 +90,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
                                                                             60, TimeUnit.SECONDS, workQueue,
                                                                             StormThreadFactory.create(conf,
-                                                                                type.name().toLowerCase(Locale.ROOT) + "-handler"));
+                                                                                type.name().toLowerCase(Locale.ROOT) + "-handler-"));
         serverArgs.executorService(executorService);
         return new TThreadPoolServer(serverArgs);
     }

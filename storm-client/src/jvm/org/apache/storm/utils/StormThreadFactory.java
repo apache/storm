@@ -30,7 +30,8 @@ import org.slf4j.LoggerFactory;
  * <p>When {@link Config#STORM_VIRTUAL_THREADS_ENABLED} is true the factory creates virtual threads.
  * Otherwise it creates non-daemon platform threads with normal priority, matching
  * {@code Executors.defaultThreadFactory()}. In both modes threads are named
- * {@code <namePrefix>-<n>} with {@code n} starting at 0.
+ * {@code <namePrefix><n>} with {@code n} starting at 0; the prefix is used verbatim, so callers include
+ * their own separator.
  */
 public final class StormThreadFactory {
 
@@ -43,16 +44,15 @@ public final class StormThreadFactory {
      * Create a thread factory for a pool.
      *
      * @param conf       cluster or topology configuration
-     * @param namePrefix prefix for the thread names, e.g. {@code "nimbus-thrift-handler"}
+     * @param namePrefix prefix for the thread names, used verbatim, e.g. {@code "nimbus-handler-"}
      * @return a factory producing virtual or platform threads depending on the configuration
      */
     public static ThreadFactory create(Map<String, Object> conf, String namePrefix) {
-        String prefix = namePrefix + "-";
         if (isVirtualEnabled(conf)) {
-            return Thread.ofVirtual().name(prefix, 0).factory();
+            return Thread.ofVirtual().name(namePrefix, 0).factory();
         }
         return Thread.ofPlatform()
-                .name(prefix, 0)
+                .name(namePrefix, 0)
                 .daemon(false)
                 .priority(Thread.NORM_PRIORITY)
                 .factory();

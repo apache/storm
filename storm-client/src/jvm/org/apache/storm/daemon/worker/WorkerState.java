@@ -789,7 +789,7 @@ public class WorkerState {
      */
     private static ExecutorService makeSharedExecutor(Map<String, Object> conf) {
         int threadPoolSize = ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE));
-        return Executors.newFixedThreadPool(threadPoolSize, StormThreadFactory.create(conf, "worker-shared-executor"));
+        return Executors.newFixedThreadPool(threadPoolSize, StormThreadFactory.create(conf, "worker-shared-executor-"));
     }
 
     private Map<String, Object> makeUserResources() {

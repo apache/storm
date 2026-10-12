@@ -125,7 +125,7 @@ public class AssignmentDistributionService implements Closeable {
         }
         //start the thread pool
         this.service = Executors.newFixedThreadPool(threadsNum,
-            StormThreadFactory.create(typedConf, "nimbus-assignment-distribution"));
+            StormThreadFactory.create(typedConf, "nimbus-assignment-distribution-"));
         this.active = true;
         //start the threads
         for (int i = 0; i < threadsNum; i++) {

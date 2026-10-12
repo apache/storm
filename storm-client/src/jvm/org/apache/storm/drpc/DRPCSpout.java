@@ -119,7 +119,7 @@ public class DRPCSpout extends BaseRichSpout {
                                                         60L, TimeUnit.SECONDS,
                                                         new SynchronousQueue<Runnable>(),
                                                         StormThreadFactory.create(conf,
-                                                            "drpc-spout-" + context.getThisTaskId() + "-background"));
+                                                            "drpc-spout-" + context.getThisTaskId() + "-background-"));
             futuresMap = new HashMap<>();
             int numTasks = context.getComponentTasks(context.getThisComponentId()).size();
             int index = context.getThisTaskIndex();

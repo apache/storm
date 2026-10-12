@@ -110,7 +110,7 @@ public class TlsTransportPlugin implements ITransportPlugin {
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
                 60, TimeUnit.SECONDS, workQueue,
-                StormThreadFactory.create(conf, type.name().toLowerCase(Locale.ROOT) + "-handler"));
+                StormThreadFactory.create(conf, type.name().toLowerCase(Locale.ROOT) + "-handler-"));
         serverArgs.executorService(executorService);
         tThreadPoolServer = new TThreadPoolServer(serverArgs);
         return tThreadPoolServer;
