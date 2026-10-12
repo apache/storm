@@ -31,13 +31,14 @@ topology.metrics.reporters:
 
 | Key | Default | Description |
 |---|---|---|
-| `port` | | Port to listen on, takes precedence over `port.offset`. Used as is in local mode, where it defaults to 9400. |
+| `port` | | Port to listen on, takes precedence over `port.offset`. Meant for local mode, where it defaults to 9400. On a cluster all workers of a host would get the same port and only the first one binds, so use `port.offset` there. |
 | `port.offset` | 1000 | Added to the worker port to get the port to listen on. |
 | `host` | all interfaces | Address to bind to. |
 | `jvm.metrics` | true | Also expose the JVM metrics (memory, GC, threads, `process_start_time_seconds`). |
 | `filter` | | Metrics filter, as for the other V2 reporters. |
 
-The workers of a local cluster share a single endpoint.
+The workers of a local cluster share a single endpoint. The `host` and `jvm.metrics` settings of the first reporter to
+start apply to it, a warning is logged if a later reporter uses different ones.
 
 ### Naming
 
@@ -46,10 +47,15 @@ The workers of a local cluster share a single endpoint.
 * Gauges whose value is a map become one family named after the whole metric (`status.count` becomes `status_count`) with a
   `key` label per entry.
 * Storm's built-in metrics (`__ack-count-spout:default`) become `storm_ack_count` with `source_component` and `stream` labels.
-  The `.m1_rate` gauges Storm registers next to its counters are skipped, use `rate()` on the counter instead.
+  The `.m1_rate` gauges registered next to rate counters are skipped, use `rate()` on the counter instead.
+* The Netty client gauges (`__send-iconnection-sent-worker2.example.com:6701`) become `storm_send_iconnection_sent`,
+  `storm_send_iconnection_pending`, `storm_send_iconnection_reconnects` and `storm_send_iconnection_lostOnSend` with
+  `remote_host` and `remote_port` labels.
 * Counters and meters are exposed as counters, so `rate()` gives their rate per second.
 * Histograms and timers are exposed as summaries plus a `_max` and a `_mean` gauge. Timers are in seconds. Dropwizard
   histograms do not track a sum, so the summaries have no `_sum`; use the `_mean` gauge instead.
+* A family can only have one type. If metrics of different types map to the same family (e.g. a counter `fetcher.pages`
+  and a gauge `fetcher.queue`), each type gets a suffix instead: `fetcher_counter`, `fetcher_gauge`, `fetcher_summary`.
 
 ### Prometheus
 

@@ -15,10 +15,12 @@ package org.apache.storm.metrics.prometheus;
 import com.codahale.metrics.MetricRegistry;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import io.prometheus.metrics.instrumentation.jvm.JvmMetrics;
+import io.prometheus.metrics.model.registry.MultiCollector;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.storm.Config;
 import org.apache.storm.metrics2.MetricRegistryProvider;
 import org.apache.storm.metrics2.reporters.ScheduledStormReporter;
@@ -96,6 +98,11 @@ public class PrometheusStormReporter implements StormReporter {
     static int resolvePort(Map<String, Object> reporterConf, String workerPort) {
         Integer port = ObjectReader.getInt(reporterConf.get(PORT_KEY), null);
         if (port != null) {
+            if (workerPort != null) {
+                LOG.warn("{} is set to {} for worker port {}, workers sharing this host "
+                        + "will fail to bind, use {} instead",
+                        PORT_KEY, port, workerPort, PORT_OFFSET_KEY);
+            }
             return port;
         }
         if (workerPort == null) {
@@ -112,13 +119,17 @@ public class PrometheusStormReporter implements StormReporter {
             if (endpoint == null) {
                 try {
                     endpoint = new Endpoint(port, host, jvmMetrics);
-                } catch (IOException e) {
+                } catch (IOException | IllegalArgumentException e) {
                     LOG.error("Could not serve the metrics on port {}", port, e);
                     return;
                 }
                 ENDPOINTS.put(port, endpoint);
                 LOG.info("Serving the metrics for Prometheus on port {}",
                         endpoint.server.getPort());
+            } else if (!Objects.equals(host, endpoint.host) || jvmMetrics != endpoint.jvmMetrics) {
+                LOG.warn("Endpoint on port {} already runs with host={} and jvm.metrics={}, "
+                        + "ignoring host={} and jvm.metrics={}",
+                        port, endpoint.host, endpoint.jvmMetrics, host, jvmMetrics);
             }
             endpoint.collector.add(source);
         }
@@ -156,18 +167,32 @@ public class PrometheusStormReporter implements StormReporter {
 
         private final StormMetricsCollector collector = new StormMetricsCollector();
         private final HTTPServer server;
+        private final String host;
+        private final boolean jvmMetrics;
 
         Endpoint(int port, String host, boolean jvmMetrics) throws IOException {
+            this.host = host;
+            this.jvmMetrics = jvmMetrics;
             PrometheusRegistry registry = new PrometheusRegistry();
             registry.register(collector);
             if (jvmMetrics) {
-                JvmMetrics.builder().register(registry);
+                registry.register((MultiCollector) JvmRegistry.INSTANCE::scrape);
             }
             HTTPServer.Builder builder = HTTPServer.builder().port(port).registry(registry);
             if (host != null) {
                 builder.hostname(host);
             }
             server = builder.buildAndStart();
+        }
+    }
+
+    /** JVM metrics registered once per JVM, as {@link JvmMetrics} never releases a registry. */
+    private static final class JvmRegistry {
+
+        static final PrometheusRegistry INSTANCE = new PrometheusRegistry();
+
+        static {
+            JvmMetrics.builder().register(INSTANCE);
         }
     }
 }

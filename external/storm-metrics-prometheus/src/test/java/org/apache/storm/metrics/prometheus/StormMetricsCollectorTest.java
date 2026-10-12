@@ -61,6 +61,16 @@ class StormMetricsCollectorTest {
     }
 
     @Test
+    void stormConnectionMetric() {
+        assertEquals(new Name("storm_send_iconnection_sent",
+                        Labels.of("remote_host", "worker-2.example.com", "remote_port", "6701")),
+                StormMetricsCollector.parse("__send-iconnection-sent-worker-2.example.com:6701", null));
+        assertEquals(new Name("storm_send_iconnection_lostOnSend",
+                        Labels.of("remote_host", "10.0.0.5", "remote_port", "6700")),
+                StormMetricsCollector.parse("__send-iconnection-lostOnSend-10.0.0.5:6700", null));
+    }
+
+    @Test
     void sanitize() {
         assertEquals("bytes_fetched_perSec", StormMetricsCollector.sanitize("bytes_fetched_perSec"));
         assertEquals("GC_G1_Young_Generation", StormMetricsCollector.sanitize("GC.G1-Young-Generation"));

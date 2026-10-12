@@ -38,8 +38,10 @@ import io.prometheus.metrics.model.snapshots.SummarySnapshot;
 import io.prometheus.metrics.model.snapshots.SummarySnapshot.SummaryDataPointSnapshot;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -82,6 +84,9 @@ class StormMetricsCollector implements MultiCollector {
 
     /** Prefix of the metrics Storm registers for each task. */
     private static final String STORM_PREFIX = "__";
+
+    /** Netty client gauges, suffixed with the remote host and port. */
+    private static final String ICONNECTION_PREFIX = "send-iconnection-";
 
     /**
      * Storm registers a gauge with this suffix next to each of its counters. Prometheus computes
@@ -190,6 +195,15 @@ class StormMetricsCollector implements MultiCollector {
                     labels = Labels.of("source_component", base.substring(dash + 1));
                     base = base.substring(0, dash);
                 }
+            } else if (stream == null && base.startsWith(ICONNECTION_PREFIX)) {
+                // e.g. __send-iconnection-sent-worker2.example.com:6701
+                int dash = base.indexOf('-', ICONNECTION_PREFIX.length());
+                int colon = base.lastIndexOf(':');
+                if (dash > 0 && colon > dash + 1) {
+                    labels = Labels.of("remote_host", base.substring(dash + 1, colon),
+                            "remote_port", base.substring(colon + 1));
+                    base = base.substring(0, dash);
+                }
             }
             return new Name("storm_" + sanitize(base), labels);
         }
@@ -241,7 +255,15 @@ class StormMetricsCollector implements MultiCollector {
         public void report(SortedMap<String, Gauge> gauges, SortedMap<String, Counter> counters,
                            SortedMap<String, Histogram> histograms, SortedMap<String, Meter> meters,
                            SortedMap<String, Timer> timers) {
+            // counters first so that they keep their family when a gauge has the same base name
+            counters.forEach((name, counter) -> counter(name, counter.getCount()));
+            meters.forEach((name, meter) -> counter(name, meter.getCount()));
             gauges.forEach((name, gauge) -> {
+                // the rate gauge of a RateCounter, the counter itself is exported
+                if (name.endsWith(RATE_SUFFIX) && counters.containsKey(
+                        name.substring(0, name.length() - RATE_SUFFIX.length()))) {
+                    return;
+                }
                 // gauges call arbitrary code, one failing must not break the scrape
                 try {
                     gauge(name, gauge.getValue());
@@ -249,8 +271,6 @@ class StormMetricsCollector implements MultiCollector {
                     LOG.debug("Could not read gauge {}", name, e);
                 }
             });
-            counters.forEach((name, counter) -> counter(name, counter.getCount()));
-            meters.forEach((name, meter) -> counter(name, meter.getCount()));
             histograms.forEach((name, histogram) ->
                     summary(name, "", histogram.getCount(), histogram.getSnapshot(), 1));
             timers.forEach((name, timer) ->
@@ -316,7 +336,7 @@ class StormMetricsCollector implements MultiCollector {
     /** Data points grouped by family. */
     private static final class Families {
 
-        private final Map<String, Family> byName = new TreeMap<>();
+        private final Map<String, Map<Type, Family>> byName = new TreeMap<>();
         private final Set<String> conflicts;
 
         Families(Set<String> conflicts) {
@@ -324,20 +344,33 @@ class StormMetricsCollector implements MultiCollector {
         }
 
         void add(String name, Type type, DataPointSnapshot point) {
-            Family family = byName.computeIfAbsent(name, n -> new Family(type));
-            if (family.type != type) {
-                if (conflicts.add(name)) {
-                    LOG.warn("Metric family {} is reported both as a {} and a {}, "
-                            + "ignoring the latter", name, family.type, type);
-                }
-                return;
-            }
-            family.points.putIfAbsent(point.getLabels(), point);
+            byName.computeIfAbsent(name, n -> new EnumMap<>(Type.class))
+                    .computeIfAbsent(type, Family::new)
+                    .points.putIfAbsent(point.getLabels(), point);
         }
 
         MetricSnapshots build() {
             MetricSnapshots.Builder builder = MetricSnapshots.builder();
-            byName.forEach((name, family) -> builder.metricSnapshot(family.snapshot(name)));
+            byName.forEach((name, types) -> {
+                if (types.size() == 1) {
+                    types.forEach((type, family) -> builder.metricSnapshot(family.snapshot(name)));
+                    return;
+                }
+                // a family has a single type in Prometheus, suffix all of them so that the result
+                // does not depend on the order in which the tasks are reported
+                if (conflicts.add(name)) {
+                    LOG.warn("Metric family {} is reported as {}, exposing it as {}_<type>", name,
+                            types.keySet(), name);
+                }
+                types.forEach((type, family) -> {
+                    String suffixed = name + "_" + type.name().toLowerCase(Locale.ROOT);
+                    if (byName.containsKey(suffixed)) {
+                        LOG.debug("Skipping {} as {} already exists", type, suffixed);
+                        return;
+                    }
+                    builder.metricSnapshot(family.snapshot(suffixed));
+                });
+            });
             return builder.build();
         }
     }

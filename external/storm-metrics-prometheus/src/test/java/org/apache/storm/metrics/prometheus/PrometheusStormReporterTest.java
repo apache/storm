@@ -12,8 +12,10 @@
 
 package org.apache.storm.metrics.prometheus;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -99,6 +101,59 @@ class PrometheusStormReporterTest {
         assertSample(body, "fetcher_average_persec_total", fetcher, "scope",
                 "bytes_fetched_perSec", 1000);
         assertSample(body, "query_time_seconds_max", fetcher, null, null, 2);
+    }
+
+    @Test
+    void counterSharingFamilyWithScopedGauge() throws Exception {
+        registry.counter("pages", "fetcher", 3).inc(4);
+        registry.gauge("pages.foo", (Gauge<Integer>) () -> 9, "fetcher", 3);
+        // the rate gauge of a RateCounter outside of Storm's namespace
+        registry.rateCounter("fetched", "fetcher", 3).inc(6);
+
+        String body = scrape();
+
+        Map<String, String> fetcher = Map.of("component", "fetcher", "task", "3");
+        assertSample(body, "pages_counter_total", fetcher, null, null, 4);
+        assertSample(body, "pages_gauge", fetcher, "scope", "foo", 9);
+        assertSample(body, "fetched_total", fetcher, null, null, 6);
+        assertFalse(body.contains("m1_rate"), body);
+    }
+
+    @Test
+    void familyWithDifferentTypesInTwoTasks() throws Exception {
+        registry.counter("fetcher.pages", "fetcher", 3).inc(5);
+        registry.gauge("fetcher.queue", (Gauge<Integer>) () -> 8, "parser", 4);
+
+        String body = scrape();
+
+        assertSample(body, "fetcher_counter_total", Map.of("component", "fetcher"), "scope",
+                "pages", 5);
+        assertSample(body, "fetcher_gauge", Map.of("component", "parser"), "scope", "queue", 8);
+    }
+
+    @Test
+    void portOutOfRangeDoesNotFailStart() {
+        PrometheusStormReporter outOfRange = new PrometheusStormReporter();
+        outOfRange.prepare(registry, Map.of(Config.TOPOLOGY_NAME, "wordcount"),
+                Map.of("port", 70000));
+        assertDoesNotThrow(outOfRange::start);
+        assertEquals(-1, outOfRange.getBoundPort());
+        outOfRange.stop();
+    }
+
+    @Test
+    void jvmMetricsAfterEndpointRestart() throws Exception {
+        // frees the endpoint on port 0 so that the reporters below create their own
+        reporter.stop();
+        for (int i = 0; i < 2; i++) {
+            reporter = new PrometheusStormReporter();
+            reporter.prepare(registry, Map.of(Config.TOPOLOGY_NAME, "wordcount"),
+                    Map.of("port", 0));
+            reporter.start();
+            String body = scrape();
+            assertTrue(body.contains("jvm_memory_used_bytes"), body);
+            reporter.stop();
+        }
     }
 
     @Test
