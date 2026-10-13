@@ -19,6 +19,10 @@ The values a fixer needs (`Indentation` `basicOffset`, `LineLength` `max`,
 module excludes from Checkstyle (`<excludes>` of `maven-checkstyle-plugin`, e.g. thrift
 generated code) are neither audited nor rewritten.
 
+The license comment at the top of a file is never touched, whatever Checkstyle reports in it
+(`LineLength` on a wide-wrapped header, `JavadocParagraph` on one opened with `/**`): both
+wrappings of the ASF header are accepted, see [License headers](#license-headers).
+
 Safety net, per file: a file that stops parsing after a fix is restored to the state
 before that round; a file that ends with more violations than it started with is
 restored to its original text.

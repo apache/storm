@@ -31,6 +31,11 @@
  * LineLength's max, CustomImportOrder's rule string) are read straight from the ruleset
  * XML; a fixer whose parameters aren't declared there is skipped rather than guessing.
  *
+ * The license comment at the top of a file is never touched, whatever Checkstyle reports in it
+ * (LineLength on a wide-wrapped header, JavadocParagraph on one opened with '/**'): both
+ * wrappings of the ASF header are accepted (see normalize-license-headers.groovy), and
+ * re-laying them out would touch most files of the code base for no gain.
+ *
  * Safety net, per file: a file that stops parsing after a fix is restored to its state
  * before the last round and left alone; a file that ends up with more violations than it
  * started with is restored to its original text.
@@ -1546,10 +1551,12 @@ while (!pending.isEmpty() && round < MAX_ROUNDS) {
         }
         int[] lineStarts = lineStartsOf(text)
         Src src = new Src(text)
+        int headerEnd = licenseHeaderEnd(text)
         List<Map> work = fixable.collect { Map v ->
             v + [off: v.line >= 1 && v.line <= lineStarts.length ? lineStarts[v.line - 1] + Math.max(0, v.col - 1) : -1]
         }.findAll {
-            it.off >= 0
+            // nothing reported inside the license header is fixed
+            it.off >= headerEnd
         }
         // last-to-first; on ties handle the token's trailing side first
         work.sort { a, b ->
@@ -1608,6 +1615,12 @@ auditor.destroy()
 println "[checkstyle-autofix] ${project.artifactId}: " +
         "fixes applied ${appliedByCheck.sort()} over ${round} round(s), ${filesChanged} file(s) changed, " +
         "ruleset=storm_checkstyle.xml." + (fixerErrors ? " Fixer errors (bug in the fixer, violation left as is): ${fixerErrors}" : '')
+
+/** End of the license comment at the top of the file, 0 if the file doesn't start with one. */
+static int licenseHeaderEnd(String text) {
+    Matcher m = text =~ /(?s)\A\s*\/\*.*?\*\//
+    m.find() && m.group().contains('License') ? m.end() : 0
+}
 
 static int[] lineStartsOf(String text) {
     List<Integer> starts = [0]
