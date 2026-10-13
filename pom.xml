@@ -1126,8 +1126,8 @@
                     <!--
                     OpenRewrite stages of the checkstyle auto-fix (see storm-checkstyle/README.md). Not bound to
                     any phase: run on demand. The recipes and the style mirroring storm_checkstyle.xml are in
-                    rewrite.yml at the repo root. Thrift-generated code is not checked by Checkstyle, so it is
-                    left alone.
+                    rewrite.yml at the repo root. Thrift-generated code and the Groovy scripts of
+                    storm-checkstyle are not checked by Checkstyle, so they are left alone.
                     -->
                     <groupId>org.openrewrite.maven</groupId>
                     <artifactId>rewrite-maven-plugin</artifactId>
@@ -1139,6 +1139,7 @@
                         </activeStyles>
                         <exclusions>
                             <exclusion>**/generated/**</exclusion>
+                            <exclusion>**/resources/storm/*.groovy</exclusion>
                         </exclusions>
                         <!-- Styles derived from the ruleset conflict with it (RightCurly 'alone' would push
                         catch/else onto their own line); the explicit style in rewrite.yml is used instead. -->
