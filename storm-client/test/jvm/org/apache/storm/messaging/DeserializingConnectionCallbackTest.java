@@ -179,6 +179,21 @@ public class DeserializingConnectionCallbackTest {
     }
 
     @Test
+    public void testStrictModeReportsNullPayloadAsFatal() {
+        Map<String, Object> conf = baseConf();
+        conf.put(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE, true);
+
+        WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
+        DeserializingConnectionCallback callback = new DeserializingConnectionCallback(conf, context, transfer);
+
+        FatalDeserializationException thrown = assertThrows(FatalDeserializationException.class,
+                                                            () -> callback.recv(Collections.singletonList(taskMessage(null))));
+        assertTrue(thrown.getMessage().contains("-1 bytes"), "unexpected message: " + thrown.getMessage());
+
+        verify(transfer, never()).transfer(any());
+    }
+
+    @Test
     public void testStrictModeMakesUnknownTaskFailureFatal() {
         Map<String, Object> conf = baseConf();
         conf.put(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE, true);

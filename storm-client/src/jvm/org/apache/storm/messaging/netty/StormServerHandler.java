@@ -61,10 +61,9 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (cause instanceof FatalDeserializationException) {
+        if (Utils.exceptionCauseIsInstanceOf(FatalDeserializationException.class, cause)) {
             // Strict deserialization mode: fatal even if the failure wraps an IOException.
-            LOG.error("Strict deserialization failure, terminating worker", cause);
-            terminator.run();
+            terminate(ctx, cause, "Strict deserialization failure from {}, terminating worker");
             ctx.close();
             return;
         }
@@ -77,16 +76,25 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
             Utils.handleUncaughtException(cause, ALLOWED_EXCEPTIONS, false);
             ctx.close();
         } catch (Error error) {
-            LOG.info("Received error in netty thread.. terminating server...");
-            terminator.run();
+            terminate(ctx, cause, "Received error in netty thread from {}, terminating server...");
         }
 
     }
 
-    // Exit from a separate thread: the worker shutdown hook closes the netty server, which waits for this
-    // event loop to finish, so calling exit() on the event loop thread itself would never return.
+    // Stops the server delivering further batches (the event loops run until the exit completes), then exits.
+    // Logging comes last and is guarded: a failure to log (e.g. an OOM) must not skip the termination.
+    private void terminate(ChannelHandlerContext ctx, Throwable cause, String message) {
+        server.terminating();
+        terminator.run();
+        try {
+            LOG.error(message, ctx.channel().remoteAddress(), cause);
+        } catch (Throwable err) {
+            // nop
+        }
+    }
+
+    // Not on this thread: the worker shutdown hook closes the netty server, which waits for this event loop.
     private static void terminateWorker() {
-        Thread exitThread = new Thread(() -> Runtime.getRuntime().exit(1), "netty-server-exit");
-        exitThread.start();
+        Utils.exitProcessFromNewThread(1, "Fatal error in the netty server");
     }
 }

@@ -28,22 +28,35 @@ import static org.mockito.Mockito.when;
 public class StormServerHandlerTest {
 
     private Runnable terminator;
+    private IServer server;
+    private Channel channel;
     private ChannelHandlerContext ctx;
     private StormServerHandler handler;
 
     @BeforeEach
     public void setUp() {
         terminator = mock(Runnable.class);
-        Channel channel = mock(Channel.class);
+        server = mock(IServer.class);
+        channel = mock(Channel.class);
         when(channel.remoteAddress()).thenReturn(new InetSocketAddress("localhost", 6700));
         ctx = mock(ChannelHandlerContext.class);
         when(ctx.channel()).thenReturn(channel);
-        handler = new StormServerHandler(mock(IServer.class), terminator);
+        handler = new StormServerHandler(server, terminator);
     }
 
     @Test
     public void testIoExceptionClosesConnection() {
         handler.exceptionCaught(ctx, new RuntimeException("Failed to decompress", new IOException("corrupt frame")));
+
+        verify(ctx).close();
+        verify(terminator, never()).run();
+        verify(server, never()).terminating();
+    }
+
+    @Test
+    public void testSocketIoExceptionClosesConnection() {
+        // what netty itself reports for a connection error: a bare IOException
+        handler.exceptionCaught(ctx, new IOException("Connection reset by peer"));
 
         verify(ctx).close();
         verify(terminator, never()).run();
@@ -54,13 +67,37 @@ public class StormServerHandlerTest {
         handler.exceptionCaught(ctx, new FatalDeserializationException("strict",
             new RuntimeException("Failed to decompress", new IOException("corrupt frame"))));
 
+        verify(server).terminating();
         verify(terminator).run();
+        verify(ctx).close();
+    }
+
+    @Test
+    public void testWrappedFatalDeserializationTerminates() {
+        handler.exceptionCaught(ctx, new RuntimeException("rethrown",
+            new FatalDeserializationException("strict", new IOException("corrupt frame"))));
+
+        verify(server).terminating();
+        verify(terminator).run();
+        verify(ctx).close();
+    }
+
+    @Test
+    public void testFatalDeserializationTerminatesEvenIfLoggingFails() {
+        when(channel.remoteAddress()).thenThrow(new OutOfMemoryError("no heap left to log"));
+
+        handler.exceptionCaught(ctx, new FatalDeserializationException("strict", new IOException("corrupt frame")));
+
+        verify(server).terminating();
+        verify(terminator).run();
+        verify(ctx).close();
     }
 
     @Test
     public void testOtherFailureTerminates() {
         handler.exceptionCaught(ctx, new IllegalStateException("unexpected"));
 
+        verify(server).terminating();
         verify(terminator).run();
         verify(ctx, never()).close();
     }

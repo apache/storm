@@ -105,11 +105,13 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
         ArrayList<AddressedTuple> ret = new ArrayList<>(batch.size());
         for (TaskMessage message : batch) {
             Tuple tuple;
+            byte[] payload = message.message();
             try {
-                tuple = des.deserialize(message.message());
+                tuple = des.deserialize(payload);
             } catch (Exception e) {
                 if (strictMode) {
-                    throw new FatalDeserializationException("Failed to deserialize a message of " + message.message().length
+                    int size = payload == null ? -1 : payload.length;
+                    throw new FatalDeserializationException("Failed to deserialize a message of " + size
                                                             + " bytes destined for task " + message.task(), e);
                 }
                 if (!isToleratedDeserializationFailure(e)) {
