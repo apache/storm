@@ -122,6 +122,8 @@ Emits themselves do not need this: an anchored emit takes its parent from the an
 
 ## Costs and limits
 
+- Configuring a tracer can reduce throughput even at a sampling ratio of 0, because Storm still calls it for every
+  spout emit and every bolt emit. To turn tracing off, leave `topology.tracing.tracer` unset.
 - The Java agent carries the current context into tasks submitted to `java.util.concurrent` executors, so while an
   execute span is current it wraps each task the bolt submits. When no code on those threads needs the context (spans,
   instrumented clients, correlated logs, baggage), or that code makes the context current itself,
@@ -131,7 +133,9 @@ Emits themselves do not need this: an anchored emit takes its parent from the an
 - At high tuple rates with a high sampling ratio, the SDK's batch span processor drops spans once its queue is full and
   logs how many it dropped. Lower the sampling ratio, or tune the processor with the `otel.bsp.*` settings.
 - Execute span attributes are set after the span starts, so a sampler cannot use them in its decision.
-- A span keeps up to 128 links by default, so an emit whose anchors carry more different spans keeps only part of them.
+- An emit anchored to many tuples, as in windowed bolts, collects the context of each anchor and adds a link for each
+  different span, so its tracing cost grows with the number of anchors. A span keeps up to 128 links by default, so
+  such an emit keeps only part of them.
 - On a worker without an SDK, a tuple with one traced anchor passes its context on, but an emit whose anchors carry
   different spans carries none.
 - Each spout emit starts a new trace, so a spout cannot continue a trace that arrives with its messages, for example
@@ -140,6 +144,11 @@ Emits themselves do not need this: an anchored emit takes its parent from the an
   spout emits, so each starts its own trace.
 - The trace shows how a tuple tree ended, not which bolt held a tuple that timed out.
 - An exception thrown by `execute()` is not recorded on the span.
+- If a tracer method throws a runtime exception or a linkage error, Storm logs a warning and carries on without that
+  call's result. A tuple whose context is lost that way is not traced further. Storm logs at most one warning a minute
+  for each method.
+- If Storm cannot create the class named in `topology.tracing.tracer`, or its `prepare()` throws, the worker exits
+  during startup and the supervisor keeps restarting it. The exception is in the worker log.
 
 ## Writing another tracer
 
