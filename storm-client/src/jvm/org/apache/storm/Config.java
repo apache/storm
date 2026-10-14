@@ -2019,14 +2019,6 @@ public class Config extends HashMap<String, Object> {
         "storm.topology.metrics.system.reporters";
 
     /**
-     * Configure the topology metrics reporters to be used on workers.
-     * Use {@link Config#TOPOLOGY_METRICS_REPORTERS} instead.
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    @IsListEntryCustom(entryValidatorClasses = {MetricReportersValidator.class})
-    public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
-
-    /**
      * What blobstore implementation the storm client should use.
      */
     @IsString
@@ -2048,25 +2040,6 @@ public class Config extends HashMap<String, Object> {
      */
     @IsBoolean
     public static final String BLOBSTORE_CLEANUP_ENABLE = "blobstore.cleanup.enable";
-    /**
-     * Principal for nimbus/supervisor to use to access secure hdfs for the blobstore.
-     * The format is generally "primary/instance@REALM", where "instance" field is optional.
-     * If the instance field of the principal is the string "_HOST", it will
-     * be replaced with the host name of the server the daemon is running on
-     * (by calling {@link #getBlobstoreHDFSPrincipal(Mapconf)} method).
-     * Note: Use {@link Config#STORM_HDFS_LOGIN_PRINCIPAL} instead.
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    @IsString
-    public static final String BLOBSTORE_HDFS_PRINCIPAL = "blobstore.hdfs.principal";
-    /**
-     * Keytab for nimbus/supervisor to use to access secure hdfs for the blobstore.
-     *
-     * @Deprecated Use {@link Config#STORM_HDFS_LOGIN_KEYTAB} instead.
-     */
-    @Deprecated
-    @IsString
-    public static final String BLOBSTORE_HDFS_KEYTAB = "blobstore.hdfs.keytab";
     /**
      * Set replication factor for a blob in HDFS Blobstore Implementation.
      */
@@ -3111,39 +3084,19 @@ public class Config extends HashMap<String, Object> {
         return principal;
     }
 
-    @Deprecated
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static String getBlobstoreHDFSPrincipal(Map conf) throws UnknownHostException {
-        return getHdfsPrincipal(conf);
-    }
-
     /**
      * Get the hostname substituted hdfs principal.
      *
      * @param conf the storm Configuration
      * @return the principal
-     * @throws UnknownHostException on UnknowHostException
+     * @throws UnknownHostException on UnknownHostException
      */
     public static String getHdfsPrincipal(Map<String, Object> conf) throws UnknownHostException {
-        String ret;
-
-        String blobstorePrincipal = (String) conf.get(Config.BLOBSTORE_HDFS_PRINCIPAL);
         String hdfsPrincipal = (String) conf.get(Config.STORM_HDFS_LOGIN_PRINCIPAL);
-        if (blobstorePrincipal == null && hdfsPrincipal == null) {
+        if (hdfsPrincipal == null) {
             return null;
-        } else if (blobstorePrincipal == null) {
-            ret = hdfsPrincipal;
-        } else if (hdfsPrincipal == null) {
-            LOG.warn("{} is used as the hdfs principal. Please use {} instead",
-                    Config.BLOBSTORE_HDFS_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL);
-            ret = blobstorePrincipal;
-        } else {
-            // both not null;
-            LOG.warn("Both {} and {} are set. Use {} only.",
-                    Config.BLOBSTORE_HDFS_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL, Config.STORM_HDFS_LOGIN_PRINCIPAL);
-            ret = hdfsPrincipal;
         }
-        return substituteHostnameInPrincipal(ret);
+        return substituteHostnameInPrincipal(hdfsPrincipal);
     }
 
     /**
@@ -3153,25 +3106,7 @@ public class Config extends HashMap<String, Object> {
      * @return the keytab
      */
     public static String getHdfsKeytab(Map<String, Object> conf) {
-        String ret;
-
-        String blobstoreKeyTab = (String) conf.get(Config.BLOBSTORE_HDFS_KEYTAB);
-        String hdfsKeyTab = (String) conf.get(Config.STORM_HDFS_LOGIN_KEYTAB);
-        if (blobstoreKeyTab == null && hdfsKeyTab == null) {
-            return null;
-        } else if (blobstoreKeyTab == null) {
-            ret = hdfsKeyTab;
-        } else if (hdfsKeyTab == null) {
-            LOG.warn("{} is used as the hdfs keytab. Please use {} instead",
-                    Config.BLOBSTORE_HDFS_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB);
-            ret = blobstoreKeyTab;
-        } else {
-            // both not null;
-            LOG.warn("Both {} and {} are set. Use {} only.",
-                    Config.BLOBSTORE_HDFS_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB, Config.STORM_HDFS_LOGIN_KEYTAB);
-            ret = hdfsKeyTab;
-        }
-        return ret;
+        return (String) conf.get(Config.STORM_HDFS_LOGIN_KEYTAB);
     }
 
 }
