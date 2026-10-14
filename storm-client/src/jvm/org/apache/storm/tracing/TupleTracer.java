@@ -27,8 +27,10 @@ import org.apache.storm.tuple.Tuple;
  * trees a spout starts, until the tree completes. Tuples sent to another worker carry the bytes {@link #encode} returns, and the
  * receiving worker turns them back into a context with {@link #decode}.
  *
- * <p>An exception from {@link #decode} leaves the tuple without a context. Exceptions from the other methods propagate to the
- * caller.
+ * <p>Storm catches runtime exceptions and linkage errors from the methods of this interface and of {@link ExecuteScope}, except
+ * {@link #prepare}, logs them at a limited rate and carries on as if the method had returned normally, with null as its result;
+ * when {@link ExecuteScope#context()} throws, the tuple keeps the context it arrived with. An exception from {@link #prepare}
+ * stops the worker from starting.
  */
 public interface TupleTracer {
 
