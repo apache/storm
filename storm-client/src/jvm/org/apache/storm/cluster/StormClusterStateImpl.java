@@ -12,7 +12,6 @@
 
 package org.apache.storm.cluster;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -64,8 +63,6 @@ public class StormClusterStateImpl implements IStormClusterState {
     private ConcurrentHashMap<String, Runnable> assignmentInfoWithVersionCallback;
     private ConcurrentHashMap<String, Runnable> assignmentVersionCallback;
     private AtomicReference<Runnable> supervisorsCallback;
-    // we want to register a topo directory getChildren callback for all workers of this dir
-    private ConcurrentHashMap<String, Runnable> backPressureCallback;
     private AtomicReference<Runnable> leaderInfoCallback;
     private AtomicReference<Runnable> assignmentsCallback;
     private ConcurrentHashMap<String, Runnable> stormBaseCallback;
@@ -86,7 +83,6 @@ public class StormClusterStateImpl implements IStormClusterState {
         assignmentInfoWithVersionCallback = new ConcurrentHashMap<>();
         assignmentVersionCallback = new ConcurrentHashMap<>();
         supervisorsCallback = new AtomicReference<>();
-        backPressureCallback = new ConcurrentHashMap<>();
         leaderInfoCallback = new AtomicReference<>();
         assignmentsCallback = new AtomicReference<>();
         stormBaseCallback = new ConcurrentHashMap<>();
@@ -122,8 +118,6 @@ public class StormClusterStateImpl implements IStormClusterState {
                         issueMapCallback(credentialsCallback, toks.get(1));
                     } else if (root.equals(ClusterUtils.LOGCONFIG_ROOT) && size > 1) {
                         issueMapCallback(logConfigCallback, toks.get(1));
-                    } else if (root.equals(ClusterUtils.BACKPRESSURE_ROOT) && size > 1) {
-                        issueMapCallback(backPressureCallback, toks.get(1));
                     } else if (root.equals(ClusterUtils.LEADERINFO_ROOT)) {
                         issueCallback(leaderInfoCallback);
                     } else {
@@ -147,8 +141,7 @@ public class StormClusterStateImpl implements IStormClusterState {
             ClusterUtils.ERRORS_SUBTREE,
             ClusterUtils.BLOBSTORE_SUBTREE,
             ClusterUtils.NIMBUSES_SUBTREE,
-            ClusterUtils.LOGCONFIG_SUBTREE,
-            ClusterUtils.BACKPRESSURE_SUBTREE
+            ClusterUtils.LOGCONFIG_SUBTREE
         };
         for (String path : pathlist) {
             this.stateStorage.mkdirs(path, defaultAcls);
@@ -505,11 +498,6 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public List<String> backpressureTopologies() {
-        return stateStorage.get_children(ClusterUtils.BACKPRESSURE_SUBTREE, false);
-    }
-
-    @Override
     public List<String> heartbeatStorms() {
         return stateStorage.get_worker_hb_children(ClusterUtils.WORKERBEATS_SUBTREE, false);
     }
@@ -556,72 +544,6 @@ public class StormClusterStateImpl implements IStormClusterState {
     public void supervisorHeartbeat(String supervisorId, SupervisorInfo info) {
         String path = ClusterUtils.supervisorPath(supervisorId);
         stateStorage.set_ephemeral_node(path, Utils.serialize(info), defaultAcls);
-    }
-
-    /**
-     * Check whether a topology is in throttle-on status or not: if the backpresure/storm-id dir is
-     * not empty, this topology has
-     * throttle-on, otherwise throttle-off. But if the backpresure/storm-id dir is not empty and has
-     * not been updated for more than
-     * timeoutMs, we treat it as throttle-off. This will prevent the spouts from getting stuck
-     * indefinitely if something wrong happens.
-     *
-     * @param stormId   The topology Id
-     * @param timeoutMs How long until the backpressure znode is invalid.
-     * @param callback  The callback function
-     * @return True is backpresure/storm-id dir is not empty and at least one of the backpressure
-     *     znodes has not timed out; false otherwise.
-     */
-    @Override
-    public boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback) {
-        if (callback != null) {
-            backPressureCallback.put(stormId, callback);
-        }
-        String path = ClusterUtils.backpressureStormRoot(stormId);
-        long mostRecentTimestamp = 0;
-        if (stateStorage.node_exists(path, false)) {
-            List<String> children = stateStorage.get_children(path, callback != null);
-            mostRecentTimestamp = children.stream()
-                    .map(childPath -> stateStorage.get_data(ClusterUtils.backpressurePath(stormId,
-                    childPath), false))
-                    .filter(data -> data != null)
-                    .mapToLong(data -> ByteBuffer.wrap(data).getLong())
-                    .max()
-                    .orElse(0);
-        }
-        boolean ret = ((System.currentTimeMillis() - mostRecentTimestamp) < timeoutMs);
-        LOG.debug("topology backpressure is {}", ret ? "on" : "off");
-        return ret;
-    }
-
-    @Override
-    public void setupBackpressure(String stormId, Map<String, Object> topoConf) {
-        stateStorage.mkdirs(ClusterUtils.BACKPRESSURE_SUBTREE, defaultAcls);
-        stateStorage.mkdirs(ClusterUtils.backpressureStormRoot(stormId), ClusterUtils
-                .mkTopoReadWriteAcls(topoConf));
-    }
-
-    @Override
-    public void removeBackpressure(String stormId) {
-        try {
-            stateStorage.delete_node(ClusterUtils.backpressureStormRoot(stormId));
-        } catch (Exception e) {
-            if (Utils.exceptionCauseIsInstanceOf(KeeperException.class, e)) {
-                // do nothing
-                LOG.warn("Could not teardown backpressure node for {}.", stormId);
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public void removeWorkerBackpressure(String stormId, String node, Long port) {
-        String path = ClusterUtils.backpressurePath(stormId, node, port);
-        boolean existed = stateStorage.node_exists(path, false);
-        if (existed) {
-            stateStorage.delete_node(path);
-        }
     }
 
     @Override
