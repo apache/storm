@@ -1138,7 +1138,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         cleanable.addAll(Utils.OR(state.heartbeatStorms(), EMPTY_STRING_LIST));
         cleanable.addAll(Utils.OR(state.errorTopologies(), EMPTY_STRING_LIST));
         cleanable.addAll(Utils.OR(store.storedTopoIds(), EMPTY_STRING_SET));
-        cleanable.addAll(Utils.OR(state.backpressureTopologies(), EMPTY_STRING_LIST));
         cleanable.addAll(Utils.OR(state.idsOfTopologiesWithPrivateWorkerKeys(), EMPTY_STRING_SET));
         Set<String> delayedCleanable = getExpiredTopologyIds(cleanable, conf);
         delayedCleanable.removeAll(Utils.OR(state.activeStorms(), EMPTY_STRING_LIST));
@@ -3177,7 +3176,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 state.teardownHeartbeats(topoId);
                 state.teardownTopologyErrors(topoId);
                 state.removeAllPrivateWorkerKeys(topoId);
-                state.removeBackpressure(topoId);
                 rmDependencyBlobsInTopology(topoId, stillReferenced);
                 forceDeleteTopoDistDir(topoId);
                 rmTopologyKeys(topoId);
@@ -3697,9 +3695,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 waitForDesiredCodeReplication(totalConf, topoId);
                 state.setupHeatbeats(topoId, topoConf);
                 state.setupErrors(topoId, topoConf);
-                if (ObjectReader.getBoolean(totalConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE), false)) {
-                    state.setupBackpressure(topoId, topoConf);
-                }
                 notifyTopologyActionListener(topoName, "submitTopology");
                 TopologyStatus status = null;
                 switch (options.get_initial_status()) {

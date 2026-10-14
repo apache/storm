@@ -132,13 +132,6 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber
     public static final String TASK_CREDENTIALS_POLL_SECS = "task.credentials.poll.secs";
     /**
-     * Whether to enable backpressure in for a certain topology.
-     * Note: Retained for enabling transition from 1.x. Will be removed soon.
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    @IsBoolean
-    public static final String TOPOLOGY_BACKPRESSURE_ENABLE = "topology.backpressure.enable";
-    /**
      * A list of users that are allowed to interact with the topology.  To use this set nimbus.authorizer to
      * org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */
