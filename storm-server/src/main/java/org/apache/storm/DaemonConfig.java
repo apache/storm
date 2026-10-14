@@ -279,19 +279,7 @@ public class DaemonConfig implements Validated {
     @IsInteger
     public static final String NIMBUS_INBOX_JAR_EXPIRATION_SECS = "nimbus.inbox.jar.expiration.secs";
 
-    /**
-     * How long before a supervisor can go without heartbeating before nimbus considers it dead and stops assigning new work to it.
-     *
-     * @deprecated Unused. Supervisor liveness is tracked via an ephemeral ZooKeeper node (see
-     *     {@code StormClusterState#supervisorHeartbeat}); when a supervisor dies its ZooKeeper session
-     *     expires and the node disappears, so Nimbus detects the loss directly rather than by timing out
-     *     heartbeats. No code reads this value. It is scheduled for removal; retained for now only for
-     *     backward compatibility.
-     */
-    @Deprecated(forRemoval = true, since = "3.1.0")
-    @IsInteger
-    @IsPositiveNumber
-    public static final String NIMBUS_SUPERVISOR_TIMEOUT_SECS = "nimbus.supervisor.timeout.secs";
+
 
     /**
      * A special timeout used when a task is initially launched. During launch, this is the timeout used until the first heartbeat,
