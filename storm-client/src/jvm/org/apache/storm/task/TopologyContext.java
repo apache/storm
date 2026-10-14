@@ -343,8 +343,9 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      *
      * You must call this during `IBolt.prepare()` or `ISpout.open()`.
      * @return The IMetric argument unchanged.
+     * @deprecated please use Metrics V2 (non-deprecated methods on this class) instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     @Override
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         if (openOrPrepareWasCalled.get()) {
@@ -385,19 +386,23 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         return metric;
     }
 
-    /*
+    /**
      * Convenience method for registering ReducedMetric.
+     *
+     * @deprecated please use Metrics V2 (non-deprecated methods on this class) instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     @Override
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
         return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
 
-    /*
+    /**
      * Convenience method for registering CombinedMetric.
+     *
+     * @deprecated please use Metrics V2 (non-deprecated methods on this class) instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     @Override
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
@@ -407,8 +412,10 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * Get component's metric from registered metrics by name. Notice: Normally, one component can only register one metric name once. But
      * now registerMetric has a bug(https://issues.apache.org/jira/browse/STORM-254) cause the same metric name can register twice. So we
      * just return the first metric we meet.
+     *
+     * @deprecated please use Metrics V2 (non-deprecated methods on this class) instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     public IMetric getRegisteredMetricByName(String name) {
         IMetric metric = null;
 

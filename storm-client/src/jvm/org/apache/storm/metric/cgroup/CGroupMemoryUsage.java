@@ -19,8 +19,10 @@ import org.apache.storm.container.cgroup.core.MemoryCore;
 
 /**
  * Reports the current memory usage of the cgroup for this worker.
+ *
+ * @deprecated please use Metrics V2 ({@link org.apache.storm.metrics2.StormMetricRegistry}) instead.
  */
-@Deprecated
+@Deprecated(since = "2.3.0", forRemoval = true)
 public class CGroupMemoryUsage extends CGroupMetricsBase<Long> {
 
     public CGroupMemoryUsage(Map<String, Object> conf) {
