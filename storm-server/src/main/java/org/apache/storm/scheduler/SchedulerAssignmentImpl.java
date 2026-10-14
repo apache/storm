@@ -138,7 +138,12 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         return new HashSet<>(executorToSlot.values());
     }
 
-    @Deprecated
+    /**
+     * Assign the slot to executors without worker resources.
+     *
+     * @deprecated use {@link #assign(WorkerSlot, Collection, WorkerResources)} instead.
+     */
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public void assign(WorkerSlot slot, Collection<ExecutorDetails> executors) {
         assign(slot, executors, null);
     }

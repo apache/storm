@@ -250,8 +250,9 @@ public class NodeSorter implements INodeSorter {
      * @param exec                 executor for which the sorting is done
      * @param existingScheduleFunc a function to get existing executors already scheduled on this object
      * @return a sorted list of ObjectResources
+     * @deprecated used by GenericResourceAwareStrategyOld only; use COMMON node sorting instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     private List<ObjectResourcesItem> sortObjectResourcesGeneric(
             final ObjectResourcesSummary allResources, ExecutorDetails exec,
             final ExistingScheduleFunc existingScheduleFunc) {
@@ -302,8 +303,9 @@ public class NodeSorter implements INodeSorter {
      * @param allResources         contains all individual ObjectResources as well as cumulative stats
      * @param existingScheduleFunc a function to get existing executors already scheduled on this object
      * @return a sorted list of ObjectResources
+     * @deprecated used by DefaultResourceAwareStrategyOld only; use COMMON node sorting instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     private List<ObjectResourcesItem> sortObjectResourcesDefault(
             final ObjectResourcesSummary allResources,
             final ExistingScheduleFunc existingScheduleFunc) {
