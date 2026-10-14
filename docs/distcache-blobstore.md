@@ -321,8 +321,8 @@ The default is 60 seconds, a value of -1 indicates to wait for ever.
 
 Additionally, if you want to access to secure hdfs blobstore, you also need to set the following configs.  
 ```
-storm.hdfs.login.keytab or blobstore.hdfs.keytab (deprecated)
-storm.hdfs.login.principal or blobstore.hdfs.principal (deprecated)
+storm.hdfs.login.keytab
+storm.hdfs.login.principal
 ```
 
 For example,
