@@ -1124,7 +1124,7 @@ public class Config extends HashMap<String, Object> {
      *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @IsStringList
-    @Deprecated
+    @Deprecated(since = "3.1.0", forRemoval = true)
     public static final String PACEMAKER_SERVERS = "pacemaker.servers";
     /**
      * The port Pacemaker should run on. Clients should connect to this port to submit or read heartbeats.
@@ -1134,7 +1134,7 @@ public class Config extends HashMap<String, Object> {
      */
     @IsNumber
     @IsPositiveNumber
-    @Deprecated
+    @Deprecated(since = "3.1.0", forRemoval = true)
     public static final String PACEMAKER_PORT = "pacemaker.port";
     /**
      * The maximum number of threads that should be used by the Pacemaker client.
@@ -1146,7 +1146,7 @@ public class Config extends HashMap<String, Object> {
      */
     @IsNumber
     @IsPositiveNumber
-    @Deprecated
+    @Deprecated(since = "3.1.0", forRemoval = true)
     public static final String PACEMAKER_CLIENT_MAX_THREADS = "pacemaker.client.max.threads";
     /**
      * This should be one of "DIGEST", "KERBEROS", or "NONE" Determines the mode of authentication the pacemaker server and client use. The
@@ -1158,7 +1158,7 @@ public class Config extends HashMap<String, Object> {
      *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @CustomValidator(validatorClass = ConfigValidation.PacemakerAuthTypeValidator.class)
-    @Deprecated
+    @Deprecated(since = "3.1.0", forRemoval = true)
     public static final String PACEMAKER_AUTH_METHOD = "pacemaker.auth.method";
     /**
      * Pacemaker Thrift Max Message Size (bytes).
@@ -1168,7 +1168,7 @@ public class Config extends HashMap<String, Object> {
      */
     @IsInteger
     @IsPositiveNumber
-    @Deprecated
+    @Deprecated(since = "3.1.0", forRemoval = true)
     public static final String PACEMAKER_THRIFT_MESSAGE_SIZE_MAX = "pacemaker.thrift.message.size.max";
     /**
      * Max no.of seconds group mapping service will cache user groups
