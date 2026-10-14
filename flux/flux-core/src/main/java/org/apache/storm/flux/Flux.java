@@ -53,18 +53,18 @@ import org.slf4j.LoggerFactory;
 public class Flux {
     private static final Logger LOG = LoggerFactory.getLogger(Flux.class);
 
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     private static final String OPTION_LOCAL = "local";
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     private static final String OPTION_REMOTE = "remote";
     private static final String OPTION_RESOURCE = "resource";
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     private static final String OPTION_SLEEP = "sleep";
     private static final String OPTION_DRY_RUN = "dry-run";
     private static final String OPTION_NO_DETAIL = "no-detail";
     private static final String OPTION_NO_SPLASH = "no-splash";
     private static final String OPTION_INACTIVE = "inactive";
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     private static final String OPTION_ZOOKEEPER = "zookeeper";
     private static final String OPTION_FILTER = "filter";
     private static final String OPTION_ENV_FILTER = "env-filter";

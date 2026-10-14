@@ -27,7 +27,7 @@ public class Configs implements Validated {
      * Required - chose the file type being consumed.
      * @deprecated please use {@link HdfsSpout#setReaderType(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsString
     @CustomValidator(validatorClass = ReaderTypeValidator.class)
     public static final String READER_TYPE = "hdfsspout.reader.type";
@@ -37,42 +37,42 @@ public class Configs implements Validated {
      * Required - HDFS name node.
      * @deprecated please use {@link HdfsSpout#setHdfsUri(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsString
     public static final String HDFS_URI = "hdfsspout.hdfs";
     /**
      * Required - dir from which to read files.
      * @deprecated please use {@link HdfsSpout#setSourceDir(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsString
     public static final String SOURCE_DIR = "hdfsspout.source.dir";
     /**
      * Required - completed files will be moved here.
      * @deprecated please use {@link HdfsSpout#setArchiveDir(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsString
     public static final String ARCHIVE_DIR = "hdfsspout.archive.dir";
     /**
      * Required - unparsable files will be moved here.
      * @deprecated please use {@link HdfsSpout#setBadFilesDir(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsString
     public static final String BAD_DIR = "hdfsspout.badfiles.dir";
     /**
      * Directory in which lock files will be created.
      * @deprecated please use {@link HdfsSpout#setLockDir(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsString
     public static final String LOCK_DIR = "hdfsspout.lock.dir";
     /**
      * Commit after N records. 0 disables this.
      * @deprecated please use {@link HdfsSpout#setCommitFrequencyCount(int)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsInteger
     @IsPositiveNumber(includeZero = true)
     public static final String COMMIT_FREQ_COUNT = "hdfsspout.commit.count";
@@ -80,7 +80,7 @@ public class Configs implements Validated {
      * Commit after N secs. cannot be disabled.
      * @deprecated please use {@link HdfsSpout#setCommitFrequencySec(int)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsInteger
     @IsPositiveNumber
     public static final String COMMIT_FREQ_SEC = "hdfsspout.commit.sec";
@@ -88,7 +88,7 @@ public class Configs implements Validated {
      * Max outstanding.
      * @deprecated please use {@link HdfsSpout#setMaxOutstanding(int)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsInteger
     @IsPositiveNumber(includeZero = true)
     public static final String MAX_OUTSTANDING = "hdfsspout.max.outstanding";
@@ -96,7 +96,7 @@ public class Configs implements Validated {
      * Lock timeout.
      * @deprecated please use {@link HdfsSpout#setLockTimeoutSec(int)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsInteger
     @IsPositiveNumber
     public static final String LOCK_TIMEOUT = "hdfsspout.lock.timeout.sec";
@@ -106,14 +106,14 @@ public class Configs implements Validated {
      *
      * @deprecated please use {@link HdfsSpout#setClocksInSync(boolean)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsBoolean
     public static final String CLOCKS_INSYNC = "hdfsspout.clocks.insync";
     /**
      * Ignore suffix.
      * @deprecated please use {@link HdfsSpout#setIgnoreSuffix(String)}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsString
     public static final String IGNORE_SUFFIX = "hdfsspout.ignore.suffix";
     /**
