@@ -29,6 +29,7 @@ import org.apache.storm.ILocalCluster.ILocalTopology;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.testing.AckTracker;
 import org.apache.storm.testing.FeederSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
@@ -58,6 +59,7 @@ public class TupleTracerTest {
     private static final AtomicInteger NEXT_TRACE = new AtomicInteger();
     private static final AtomicInteger DECODES = new AtomicInteger();
     private static final Map<String, Integer> WORKER_PORT_BY_COMPONENT = new ConcurrentHashMap<>();
+    private static final AckTracker SPOUT_ACKS = new AckTracker();
 
     private static ILocalCluster cluster;
     private static int topologyCount;
@@ -148,6 +150,24 @@ public class TupleTracerTest {
     }
 
     @Test
+    public void testTuplesAreProcessedAndAckedWhenTheTracerFails() throws Exception {
+        Config conf = new Config();
+        conf.put(Config.TOPOLOGY_TRACING_TRACER, FailingTracer.class.getName());
+        runThroughMiddle(EmitMode.ANCHORED, SinkOutcome.ACK, conf, 2, () -> SPOUT_ACKS.getNumAcks() == 2 && count("close ") == 2);
+
+        List<String> events = new ArrayList<>(EVENTS);
+        assertEquals(4, count("execute "), "each bolt executes each tuple once");
+        for (String trace : contexts(events, "spoutEmit ")) {
+            // the failed context() leaves the spout's context on the tuple, and the anchored emit passes it on
+            assertEquals(2, events.stream().filter(("execute " + trace)::equals).count(), trace);
+            assertInOrder(events, "start " + trace + ">middle", "context " + trace + ">middle", "execute " + trace,
+                "close " + trace + ">middle");
+            assertTrue(events.contains("start " + trace + ">sink"), trace);
+            assertTrue(events.contains("ACK " + trace), trace);
+        }
+    }
+
+    @Test
     public void testTuplesAreNotTracedWithoutATracerClass() throws Exception {
         runThroughMiddle(EmitMode.ANCHORED, SinkOutcome.ACK, new Config(), 2, () -> count("execute null") == 4);
 
@@ -180,6 +200,7 @@ public class TupleTracerTest {
         throws Exception {
         conf.setNumWorkers(2);
         FeederSpout spout = new FeederSpout(new Fields("value"));
+        spout.setAckFailDelegate(SPOUT_ACKS);
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", spout);
         bolts.accept(builder);
@@ -188,6 +209,7 @@ public class TupleTracerTest {
         LATENCY_BY_CONTEXT.clear();
         DECODES.set(0);
         WORKER_PORT_BY_COMPONENT.clear();
+        SPOUT_ACKS.resetNumAcks();
         String name = "tracer-" + topologyCount++;
         try (ILocalTopology ignored = cluster.submitTopology(name, conf, builder.createTopology())) {
             for (int i = 0; i < count; i++) {
@@ -278,6 +300,39 @@ public class TupleTracerTest {
         public Object decode(byte[] bytes) {
             DECODES.incrementAndGet();
             return new String(bytes, StandardCharsets.UTF_8);
+        }
+    }
+
+    /**
+     * Records like {@link RecordingTracer}, then throws from {@code context()} and {@code close()} of the middle bolt's
+     * scopes, from {@code startExecute()} for the sink and from {@code spoutOutcome()}.
+     */
+    public static class FailingTracer extends RecordingTracer {
+        @Override
+        public ExecuteScope startExecute(int taskId, Tuple tuple, Object received) {
+            ExecuteScope scope = super.startExecute(taskId, tuple, received);
+            if ("sink".equals(super.context.getComponentId(taskId))) {
+                throw new IllegalStateException("startExecute");
+            }
+            return new ExecuteScope() {
+                @Override
+                public Object context() {
+                    EVENTS.add("context " + scope.context());
+                    throw new IllegalStateException("context");
+                }
+
+                @Override
+                public void close() {
+                    scope.close();
+                    throw new IllegalStateException("close");
+                }
+            };
+        }
+
+        @Override
+        public void spoutOutcome(int taskId, Object context, Outcome outcome, long latencyMs) {
+            super.spoutOutcome(taskId, context, outcome, latencyMs);
+            throw new IllegalStateException("spoutOutcome");
         }
     }
 

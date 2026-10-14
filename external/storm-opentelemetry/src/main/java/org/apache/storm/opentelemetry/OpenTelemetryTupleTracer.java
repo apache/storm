@@ -292,8 +292,11 @@ public class OpenTelemetryTupleTracer implements TupleTracer {
     private record ExecuteSpan(Span span, Scope scope, Context context) implements ExecuteScope {
         @Override
         public void close() {
-            scope.close();
-            span.end();
+            try {
+                scope.close();
+            } finally {
+                span.end();
+            }
         }
     }
 }

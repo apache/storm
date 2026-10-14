@@ -715,7 +715,7 @@ public class WorkerState {
         if (className == null) {
             return null;
         }
-        TupleTracer tracer = ReflectionUtils.newInstance(className);
+        TupleTracer tracer = new SafeTupleTracer(ReflectionUtils.newInstance(className));
         tracer.prepare(topologyConf, getWorkerTopologyContext());
         LOG.info("Tracing tuples with {}", className);
         return tracer;
