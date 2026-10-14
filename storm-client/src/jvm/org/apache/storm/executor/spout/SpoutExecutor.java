@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
 public class SpoutExecutor extends Executor {
 
     private static final Logger LOG = LoggerFactory.getLogger(SpoutExecutor.class);
+    private static final String TIMEOUT_REASON = "TIMEOUT";
 
     private final IWaitStrategy spoutWaitStrategy;
     private final IWaitStrategy backPressureWaitStrategy;
@@ -129,7 +130,7 @@ public class SpoutExecutor extends Executor {
                     timeDelta = Time.deltaMs(tupleInfo.getTimestamp());
                 }
                 failSpoutMsg(SpoutExecutor.this, idToTask.get(tupleInfo.getTaskId() - idToTaskBase),
-                        timeDelta, tupleInfo, "TIMEOUT");
+                        timeDelta, tupleInfo, TIMEOUT_REASON);
             }
         });
 
@@ -408,7 +409,7 @@ public class SpoutExecutor extends Executor {
             }
             Object traceContext = tupleInfo.getTraceContext();
             if (traceContext != null) {
-                TupleTracer.Outcome outcome = "TIMEOUT".equals(reason) ? TupleTracer.Outcome.TIMEOUT : TupleTracer.Outcome.FAIL;
+                TupleTracer.Outcome outcome = TIMEOUT_REASON.equals(reason) ? TupleTracer.Outcome.TIMEOUT : TupleTracer.Outcome.FAIL;
                 long latencyMs = Time.deltaMs(tupleInfo.getTraceEmitTimeMs());
                 executor.getTupleTracer().spoutOutcome(taskId, traceContext, outcome, latencyMs);
             }
