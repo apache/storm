@@ -33,7 +33,6 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.TestSpout;
-import org.apache.storm.security.serialization.BlowfishTupleSerializer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -76,7 +75,7 @@ public class NimbusGetTopologyPageInfoTest {
         topoConf.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0);
         topoConf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 30);
         topoConf.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD, "topology-zk-secret");
-        topoConf.put(BlowfishTupleSerializer.SECRET_KEY, "0123456789abcdef");
+        topoConf.put(Nimbus.LEGACY_BLOWFISH_SECRET_KEY, "0123456789abcdef");
         return topoConf;
     }
 
@@ -137,7 +136,7 @@ public class NimbusGetTopologyPageInfoTest {
             // topology-side credentials, masked on getTopologyConf and equally reachable here
             assertEquals(MASKED, served.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD),
                 "the topology ZooKeeper auth payload should be masked");
-            assertEquals(MASKED, served.get(BlowfishTupleSerializer.SECRET_KEY),
+            assertEquals(MASKED, served.get(Nimbus.LEGACY_BLOWFISH_SECRET_KEY),
                 "the tuple serializer key should be masked");
 
             // values that carry no credential are served untouched

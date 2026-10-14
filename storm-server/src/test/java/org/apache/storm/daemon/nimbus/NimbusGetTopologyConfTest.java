@@ -29,7 +29,6 @@ import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.IStormClusterState;
 import net.minidev.json.JSONValue;
 
-import org.apache.storm.security.serialization.BlowfishTupleSerializer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
@@ -56,7 +55,7 @@ public class NimbusGetTopologyConfTest {
         Map<String, Object> storedConf = new HashMap<>();
         storedConf.put(Config.TOPOLOGY_NAME, TOPO_NAME);
         storedConf.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD, "topology-zk-secret");
-        storedConf.put(BlowfishTupleSerializer.SECRET_KEY, "0123456789abcdef");
+        storedConf.put(Nimbus.LEGACY_BLOWFISH_SECRET_KEY, "0123456789abcdef");
         storedConf.put(Config.TOPOLOGY_WORKERS, 3);
 
         try (LocalCluster cluster = new LocalCluster.Builder()
@@ -77,7 +76,7 @@ public class NimbusGetTopologyConfTest {
 
             assertEquals(MASKED, served.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD),
                 "the ZooKeeper auth payload should be masked");
-            assertEquals(MASKED, served.get(BlowfishTupleSerializer.SECRET_KEY),
+            assertEquals(MASKED, served.get(Nimbus.LEGACY_BLOWFISH_SECRET_KEY),
                 "the tuple serializer key should be masked");
 
             assertEquals(TOPO_NAME, served.get(Config.TOPOLOGY_NAME));
@@ -85,7 +84,7 @@ public class NimbusGetTopologyConfTest {
 
             assertEquals("topology-zk-secret", storedConf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD),
                 "the stored conf should keep its own values");
-            assertEquals("0123456789abcdef", storedConf.get(BlowfishTupleSerializer.SECRET_KEY),
+            assertEquals("0123456789abcdef", storedConf.get(Nimbus.LEGACY_BLOWFISH_SECRET_KEY),
                 "the stored conf should keep its own values");
         }
     }
