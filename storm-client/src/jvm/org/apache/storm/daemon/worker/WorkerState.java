@@ -814,7 +814,7 @@ public class WorkerState {
      * locally-hosted components. When upstream feedback is enabled, the source (upstream)
      * components of the locally-hosted components are also included: feedback tuples are routed
      * directly to those upstream tasks (bypassing stream grouping), so they must be reachable
-     * remote destinations and have connections established. Otherwise the feedback is silently
+     * remote destinations and have connections established. Otherwise the feedback is
      * dropped and {@code TransferDrainer} logs "No remote destination available for task".
      */
     @VisibleForTesting
