@@ -67,6 +67,7 @@ import java.util.Stack;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -121,6 +122,7 @@ import org.slf4j.LoggerFactory;
 
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    private static final AtomicBoolean EXIT_REQUESTED = new AtomicBoolean();
     public static final String DEFAULT_STREAM_ID = "default";
     private static final Set<Class<?>> defaultAllowedExceptions = Collections.emptySet();
     private static final List<String> LOCALHOST_ADDRESSES = Lists.newArrayList("localhost", "127.0.0.1", "0:0:0:0:0:0:0:1");
@@ -526,6 +528,22 @@ public class Utils {
         String combinedErrorMessage = "Halting process: " + msg;
         LOG.error(combinedErrorMessage, new RuntimeException(combinedErrorMessage));
         Runtime.getRuntime().exit(val);
+    }
+
+    /**
+     * Exits the process like {@link #exitProcess(int, String)}, but from a new thread. Needed when the caller runs on
+     * a thread that a shutdown hook waits for, such as a Netty event loop: the worker shutdown hook closes the Netty
+     * server, which awaits its event loops, while {@code Runtime.exit()} blocks the calling thread until the hooks
+     * complete. Idempotent: once an exit is in progress, further calls return immediately instead of starting another
+     * thread that would block in {@code Runtime.exit()} forever.
+     */
+    public static void exitProcessFromNewThread(int val, String msg) {
+        if (!EXIT_REQUESTED.compareAndSet(false, true)) {
+            return;
+        }
+        Thread exitThread = new Thread(() -> exitProcess(val, msg), "process-exit");
+        exitThread.setDaemon(false);
+        exitThread.start();
     }
 
     public static String uuid() {

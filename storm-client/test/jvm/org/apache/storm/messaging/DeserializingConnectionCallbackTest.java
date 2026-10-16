@@ -170,10 +170,27 @@ public class DeserializingConnectionCallbackTest {
         WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
         DeserializingConnectionCallback callback = new DeserializingConnectionCallback(conf, context, transfer);
 
-        assertThrows(KryoException.class, () -> callback.recv(Collections.singletonList(taskMessage(truncated))));
+        FatalDeserializationException thrown = assertThrows(FatalDeserializationException.class,
+                                                            () -> callback.recv(Collections.singletonList(taskMessage(truncated))));
+        assertTrue(thrown.getCause() instanceof KryoException, "expected a KryoException cause but was: " + thrown.getCause());
 
         verify(transfer, never()).transfer(any());
         assertEquals(0L, callback.getAndResetDeserializationFailures());
+    }
+
+    @Test
+    public void testStrictModeReportsNullPayloadAsFatal() {
+        Map<String, Object> conf = baseConf();
+        conf.put(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE, true);
+
+        WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
+        DeserializingConnectionCallback callback = new DeserializingConnectionCallback(conf, context, transfer);
+
+        FatalDeserializationException thrown = assertThrows(FatalDeserializationException.class,
+                                                            () -> callback.recv(Collections.singletonList(taskMessage(null))));
+        assertTrue(thrown.getMessage().contains("-1 bytes"), "unexpected message: " + thrown.getMessage());
+
+        verify(transfer, never()).transfer(any());
     }
 
     @Test
@@ -184,8 +201,29 @@ public class DeserializingConnectionCallbackTest {
         WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
         DeserializingConnectionCallback callback = new DeserializingConnectionCallback(conf, context, transfer);
 
-        assertThrows(TupleDeserializationException.class,
-                     () -> callback.recv(Collections.singletonList(taskMessage(unknownSourceTaskTuple()))));
+        FatalDeserializationException thrown = assertThrows(FatalDeserializationException.class,
+            () -> callback.recv(Collections.singletonList(taskMessage(unknownSourceTaskTuple()))));
+        assertTrue(thrown.getCause() instanceof TupleDeserializationException,
+                   "expected a TupleDeserializationException cause but was: " + thrown.getCause());
+
+        verify(transfer, never()).transfer(any());
+        assertEquals(0L, callback.getAndResetDeserializationFailures());
+    }
+
+    @Test
+    public void testStrictModeMakesIoExceptionFailureFatal() {
+        Map<String, Object> conf = baseConf();
+        conf.put(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE, true);
+        conf.put(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE, true);
+        byte[] fakeZstd = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00, 0x01, 0x02, 0x03};
+
+        WorkerState.ILocalTransferCallback transfer = mock(WorkerState.ILocalTransferCallback.class);
+        DeserializingConnectionCallback callback = new DeserializingConnectionCallback(conf, context, transfer);
+
+        FatalDeserializationException thrown = assertThrows(FatalDeserializationException.class,
+            () -> callback.recv(Collections.singletonList(taskMessage(fakeZstd))));
+        assertTrue(Utils.exceptionCauseIsInstanceOf(IOException.class, thrown),
+                   "expected an IOException in the cause chain but was: " + thrown);
 
         verify(transfer, never()).transfer(any());
         assertEquals(0L, callback.getAndResetDeserializationFailures());

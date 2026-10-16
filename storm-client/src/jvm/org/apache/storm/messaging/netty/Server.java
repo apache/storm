@@ -162,6 +162,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
      */
     @Override
     public void close() {
+        closing = true;
         allChannels.close().awaitUninterruptibly();
         workerEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
         bossEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
@@ -268,6 +269,11 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             authenticated(c);
         }
         allChannels.add(c);
+    }
+
+    @Override
+    public void terminating() {
+        closing = true;
     }
 
     @Override
