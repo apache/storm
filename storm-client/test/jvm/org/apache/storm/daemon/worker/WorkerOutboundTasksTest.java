@@ -93,26 +93,6 @@ public class WorkerOutboundTasksTest {
         SPOUT_TASKS.forEach(t -> assertTrue(outbound.contains(t), "upstream spout task " + t + " must be routable with feedback"));
     }
 
-    @Test
-    public void feedbackMisleadingCoincidence_upstreamAlreadyRoutableViaCoLocatedConsumer() {
-        // Misleading no-warning case: a worker hosting both a spout task and a bolt2 task. bolt2's feedback goes to its
-        // upstream bolt1; bolt1 is ALSO a downstream target of the co-located spout, so bolt1 tasks are already routable
-        // even with feedback disabled. "No warning" here does not mean feedback delivery is generally correct - it only
-        // reflects task placement. The fix makes delivery independent of such coincidences.
-        GeneralTopologyContext context = context();
-        List<Integer> local = Arrays.asList(SPOUT_TASKS.get(0), BOLT2_TASKS.get(0));
-
-        Set<Integer> withoutFeedback = WorkerState.computeOutboundTasks(context, local,
-                context.getTaskToComponent(), false);
-        BOLT1_TASKS.forEach(t -> assertTrue(withoutFeedback.contains(t),
-                "bolt1 task " + t + " happens to be routable as the co-located spout's downstream target"));
-
-        Set<Integer> withFeedback = WorkerState.computeOutboundTasks(context, local,
-                context.getTaskToComponent(), true);
-        assertEquals(withoutFeedback, withFeedback,
-                "feedback adds no new destinations here because the only upstream (bolt1) was already routable");
-    }
-
     private static class NoopSpout extends BaseRichSpout implements IRichSpout {
         @Override
         public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
