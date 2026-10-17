@@ -870,6 +870,33 @@ public class Config extends HashMap<String, Object> {
     @IsInteger
     public static final String TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE = "topology.worker.shared.thread.pool.size";
     /**
+     * When true, Storm's blocking I/O thread pools run on Java virtual threads instead of platform threads.
+     * Affected pools: the Nimbus and Supervisor Thrift server handlers (SASL, TLS and simple transports), the
+     * supervisor blob localizer download and task executors, the Nimbus assignment distribution service, the
+     * supervisor heartbeat executor, the DRPC spout background executor and the worker shared thread pool
+     * exposed through the TopologyContext. Pool sizes configured through the corresponding {@code *.threads}
+     * settings keep their meaning as a bound on concurrency. Spout/bolt executor threads, worker transfer
+     * threads and Netty event loops are never affected.
+     *
+     * <p>DRPC server handler pools ({@code drpc.worker.threads}, {@code drpc.invocations.threads}) are also
+     * affected, since the DRPC server uses the same transport plugins.
+     *
+     * <p>With the simple (non-authenticated) Thrift transport, Storm builds its own handler pool of
+     * {@code *.threads} threads whenever a {@code *.queue.size} is configured, which the shipped defaults do
+     * for Nimbus, Supervisor and DRPC. Only when the queue size is explicitly unset does {@code THsHaServer}
+     * fall back to its own pool, whose effective concurrency is 5; enabling this flag in that case raises it to
+     * the configured {@code *.threads} value.
+     *
+     * <p>All virtual threads in a JVM share one carrier scheduler sized to the number of available processors;
+     * blocking file I/O (for example blob downloads in the supervisor localizer) occupies a carrier, so
+     * operators enabling this on I/O-heavy supervisors should size {@code jdk.virtualThreadScheduler.parallelism}
+     * / {@code jdk.virtualThreadScheduler.maxPoolSize} accordingly.
+     *
+     * <p>A topology may override this key in its own config to control its worker shared executor.
+     */
+    @IsBoolean
+    public static final String STORM_VIRTUAL_THREADS_ENABLED = "storm.virtual.threads.enabled";
+    /**
      * The interval in seconds to use for determining whether to throttle error reported to Zookeeper. For example, an interval of 10
      * seconds with topology.max.error.report.per.interval set to 5 will only allow 5 errors to be reported to Zookeeper per task for every
      * 10 second interval of time.

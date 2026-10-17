@@ -44,6 +44,7 @@ import org.apache.storm.utils.DRPCClient;
 import org.apache.storm.utils.ExtendedThreadPoolExecutor;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServiceRegistry;
+import org.apache.storm.utils.StormThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +117,9 @@ public class DRPCSpout extends BaseRichSpout {
         if (localDrpcId == null) {
             background = new ExtendedThreadPoolExecutor(0, Integer.MAX_VALUE,
                                                         60L, TimeUnit.SECONDS,
-                                                        new SynchronousQueue<Runnable>());
+                                                        new SynchronousQueue<Runnable>(),
+                                                        StormThreadFactory.create(conf,
+                                                            "drpc-spout-" + context.getThisTaskId() + "-background"));
             futuresMap = new HashMap<>();
             int numTasks = context.getComponentTasks(context.getThisComponentId()).size();
             int index = context.getThisTaskIndex();
