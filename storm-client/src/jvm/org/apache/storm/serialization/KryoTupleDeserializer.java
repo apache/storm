@@ -19,6 +19,7 @@ import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ObjectReader;
@@ -36,8 +37,16 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
     private final Input kryoInput;
     private final int maxZstdDecompressedBytes;
     private final boolean anyTupleCompressionEnabled;
+    private final TupleTracer tracer;
 
     public KryoTupleDeserializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
+        this(conf, context, null);
+    }
+
+    /**
+     * Creates a deserializer that reads the trace context of each tuple with {@code tracer}; a null tracer skips it.
+     */
+    public KryoTupleDeserializer(final Map<String, Object> conf, final GeneralTopologyContext context, final TupleTracer tracer) {
         kryo = new KryoValuesDeserializer(conf);
         this.context = context;
         ids = new SerializationFactory.IdDictionary(context.getRawTopology());
@@ -45,6 +54,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
         maxZstdDecompressedBytes = ObjectReader.getInt(conf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES),
                 DEFAULT_MAX_DECOMPRESSED_BYTES);
         anyTupleCompressionEnabled = isTupleCompressionEnabled(conf, context);
+        this.tracer = tracer;
     }
 
     @Override
@@ -87,10 +97,37 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
             }
             MessageId id = MessageId.deserialize(kryoInput);
             List<Object> values = kryo.deserializeFrom(kryoInput);
-            return new TupleImpl(context, values, componentName, taskId, streamName, id);
+            TupleImpl tuple = new TupleImpl(context, values, componentName, taskId, streamName, id);
+            if (tracer != null) {
+                tuple.setTraceContext(readTraceContext());
+            }
+            return tuple;
         } catch (IOException e) {
             throw new RuntimeException(FAILED_TO_DESERIALIZE_TUPLE, e);
         }
+    }
+
+    /**
+     * Reads the entries after the values, see {@link KryoTupleSerializer}. Returns null when no trace context entry is present or
+     * it cannot be read, so that a bad entry never drops the tuple.
+     */
+    private Object readTraceContext() {
+        try {
+            while (kryoInput.position() < kryoInput.limit()) {
+                int tag = kryoInput.readByte();
+                int length = kryoInput.readVarInt(true);
+                if (length < 0 || length > kryoInput.limit() - kryoInput.position()) {
+                    return null;
+                }
+                if (tag == KryoTupleSerializer.TRACE_CONTEXT_TAG) {
+                    return tracer.decode(kryoInput.readBytes(length));
+                }
+                kryoInput.skip(length);
+            }
+        } catch (RuntimeException malformed) {
+            LOG.debug("Ignoring an unreadable trace context on a received tuple", malformed);
+        }
+        return null;
     }
 
     private static boolean isTupleCompressionEnabled(final Map<String, Object> conf, final GeneralTopologyContext context) {

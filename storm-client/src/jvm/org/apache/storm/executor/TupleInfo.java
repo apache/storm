@@ -27,6 +27,8 @@ public class TupleInfo implements Serializable {
     private List<Object> values;
     private long timestamp;
     private long rootId;
+    private transient Object traceContext;
+    private long traceEmitTimeMs;
 
     public Object getMessageId() {
         return messageId;
@@ -74,6 +76,25 @@ public class TupleInfo implements Serializable {
         this.rootId = rootId;
     }
 
+    public Object getTraceContext() {
+        return traceContext;
+    }
+
+    public void setTraceContext(Object traceContext) {
+        this.traceContext = traceContext;
+    }
+
+    /**
+     * Returns when the spout emitted the tuple tree, set for traced trees only.
+     */
+    public long getTraceEmitTimeMs() {
+        return traceEmitTimeMs;
+    }
+
+    public void setTraceEmitTimeMs(long traceEmitTimeMs) {
+        this.traceEmitTimeMs = traceEmitTimeMs;
+    }
+
     public int getTaskId() {
         return taskId;
     }
@@ -88,5 +109,7 @@ public class TupleInfo implements Serializable {
         values = null;
         timestamp = 0;
         rootId = 0;
+        traceContext = null;
+        traceEmitTimeMs = 0;
     }
 }

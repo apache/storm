@@ -35,6 +35,7 @@ import org.apache.storm.spout.ISpout;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.stats.SpoutExecutorStats;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
@@ -50,6 +51,7 @@ import org.slf4j.LoggerFactory;
 public class SpoutExecutor extends Executor {
 
     private static final Logger LOG = LoggerFactory.getLogger(SpoutExecutor.class);
+    private static final String TIMEOUT_REASON = "TIMEOUT";
 
     private final IWaitStrategy spoutWaitStrategy;
     private final IWaitStrategy backPressureWaitStrategy;
@@ -119,7 +121,7 @@ public class SpoutExecutor extends Executor {
                 if (tupleInfo.getTimestamp() != 0) {
                     timeDelta = Time.deltaMs(tupleInfo.getTimestamp());
                 }
-                failSpoutMsg(SpoutExecutor.this, idToTask.get(tupleInfo.getTaskId() - idToTaskBase), timeDelta, tupleInfo, "TIMEOUT");
+                failSpoutMsg(SpoutExecutor.this, idToTask.get(tupleInfo.getTaskId() - idToTaskBase), timeDelta, tupleInfo, TIMEOUT_REASON);
             }
         });
 
@@ -359,6 +361,11 @@ public class SpoutExecutor extends Executor {
             if (executor.getIsDebug()) {
                 LOG.info("SPOUT Acking message {} {}", tupleInfo.getRootId(), tupleInfo.getMessageId());
             }
+            Object traceContext = tupleInfo.getTraceContext();
+            if (traceContext != null) {
+                long latencyMs = Time.deltaMs(tupleInfo.getTraceEmitTimeMs());
+                executor.getTupleTracer().spoutOutcome(taskId, traceContext, TupleTracer.Outcome.ACK, latencyMs);
+            }
             spout.ack(tupleInfo.getMessageId());
             if (!taskData.getUserContext().getHooks().isEmpty()) { // avoid allocating SpoutAckInfo obj if not necessary
                 new SpoutAckInfo(tupleInfo.getMessageId(), taskId, timeDelta).applyOn(taskData.getUserContext());
@@ -378,6 +385,12 @@ public class SpoutExecutor extends Executor {
             int taskId = taskData.getTaskId();
             if (executor.getIsDebug()) {
                 LOG.info("SPOUT Failing {} : {} REASON: {}", tupleInfo.getRootId(), tupleInfo, reason);
+            }
+            Object traceContext = tupleInfo.getTraceContext();
+            if (traceContext != null) {
+                TupleTracer.Outcome outcome = TIMEOUT_REASON.equals(reason) ? TupleTracer.Outcome.TIMEOUT : TupleTracer.Outcome.FAIL;
+                long latencyMs = Time.deltaMs(tupleInfo.getTraceEmitTimeMs());
+                executor.getTupleTracer().spoutOutcome(taskId, traceContext, outcome, latencyMs);
             }
             spout.fail(tupleInfo.getMessageId());
             new SpoutFailInfo(tupleInfo.getMessageId(), taskId, timeDelta).applyOn(taskData.getUserContext());

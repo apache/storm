@@ -28,6 +28,13 @@ import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.spout.CheckPointState;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.testing.TestWordSpout;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.MessageId;
+import org.apache.storm.tuple.TupleImpl;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -35,6 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link DefaultStateSerializer}
@@ -78,6 +87,23 @@ public class DefaultStateSerializerTest {
         assertArrayEquals(value, encoder.decodeValue(encoder.encodeValue(value)));
         // the tombstone is produced by the same static serializer at class-init time
         assertNull(encoder.decodeValue(encoder.getTombstoneValue()));
+    }
+
+    @Test
+    public void testTupleRestoredFromStateCarriesNoTraceContext() {
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("spout", new TestWordSpout(), 1);
+        TopologyContext context = mock(TopologyContext.class);
+        when(context.getRawTopology()).thenReturn(builder.createTopology());
+        when(context.getComponentId(1)).thenReturn("spout");
+        Serializer<TupleImpl> serializer = new DefaultStateSerializer<>(Utils.readStormConfig(), context);
+        TupleImpl tuple = new TupleImpl(context, new Values("hello"), "spout", 1, Utils.DEFAULT_STREAM_ID,
+            MessageId.makeUnanchored());
+        tuple.setTraceContext("trace-1");
+
+        TupleImpl restored = serializer.deserialize(serializer.serialize(tuple));
+        assertEquals(tuple.getValues(), restored.getValues());
+        assertNull(restored.getTraceContext());
     }
 
     @Test

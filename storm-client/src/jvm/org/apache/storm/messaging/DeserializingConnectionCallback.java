@@ -29,6 +29,7 @@ import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.serialization.KryoTupleDeserializer;
 import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ObjectReader;
@@ -63,12 +64,13 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
     private final WorkerState.ILocalTransferCallback cb;
     private final Map<String, Object> conf;
     private final GeneralTopologyContext context;
+    private final TupleTracer tracer;
 
     private ThreadLocal<KryoTupleDeserializer> des =
         new ThreadLocal<KryoTupleDeserializer>() {
             @Override
             protected KryoTupleDeserializer initialValue() {
-                return new KryoTupleDeserializer(conf, context);
+                return new KryoTupleDeserializer(conf, context, tracer);
             }
         };
 
@@ -86,8 +88,14 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
 
     public DeserializingConnectionCallback(final Map<String, Object> conf, final GeneralTopologyContext context,
                                            WorkerState.ILocalTransferCallback callback) {
+        this(conf, context, null, callback);
+    }
+
+    public DeserializingConnectionCallback(final Map<String, Object> conf, final GeneralTopologyContext context,
+                                           final TupleTracer tracer, WorkerState.ILocalTransferCallback callback) {
         this.conf = conf;
         this.context = context;
+        this.tracer = tracer;
         cb = callback;
         sizeMetricsEnabled = ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS), false);
         strictMode = ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE), false);

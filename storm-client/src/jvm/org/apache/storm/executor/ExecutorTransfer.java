@@ -21,6 +21,7 @@ import org.apache.storm.Constants;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
@@ -44,7 +45,8 @@ public class ExecutorTransfer {
     public ExecutorTransfer(WorkerState workerData, Map<String, Object> topoConf) {
         this.workerData = workerData;
         WorkerTopologyContext workerTopologyContext = workerData.getWorkerTopologyContext();
-        this.threadLocalSerializer = ThreadLocal.withInitial(() -> new KryoTupleSerializer(topoConf, workerTopologyContext));
+        TupleTracer tracer = workerData.getTupleTracer();
+        this.threadLocalSerializer = ThreadLocal.withInitial(() -> new KryoTupleSerializer(topoConf, workerTopologyContext, tracer));
         this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
     }
 
