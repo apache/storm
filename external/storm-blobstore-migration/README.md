@@ -59,8 +59,8 @@ To migrate blobs from nimbus, the following steps are necessary:
 2. Backup storm config
 3. Change the following settings in Nimbus' storm config:
    * blobstore.dir
-   * blobstore.hdfs.principal
-   * blobstore.hdfs.keytab
+   * storm.hdfs.login.principal
+   * storm.hdfs.login.keytab
    * blobstore.replication.factor
    * nimbus.blobstore.class
 4. Configure server so that the environment variable `STORM_EXT_CLASSPATH` includes whatever `HADOOP_CLASSPATH` contains when `storm nimbus` is run.
@@ -76,8 +76,8 @@ Supervisors can be upgraded by performing the following steps:
 1. Shut down the supervisor.
 2. Putting the following blobstore settings in place:
    * blobstore.dir
-   * blobstore.hdfs.principal
-   * blobstore.hdfs.keytab
+   * storm.hdfs.login.principal
+   * storm.hdfs.login.keytab
    * blobstore.replication.factor
    * supervisor.blobstore.class
 3. Kill all remaining worker processes (this is ugly)
