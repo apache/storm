@@ -93,7 +93,21 @@ public class StormMetricRegistry implements MetricRegistryProvider {
         return gauge;
     }
 
-    @Deprecated
+    /**
+     * Registers a gauge metric.
+     *
+     * @param <T> the value type
+     * @param name metric name
+     * @param gauge gauge instance
+     * @param topologyId topology id
+     * @param componentId component id
+     * @param taskId task id
+     * @param port worker port
+     * @return registered gauge
+     * @deprecated please use {@link #gauge(String, Gauge, String, Integer)} or
+     *     {@link #gauge(String, Gauge, TopologyContext)} instead.
+     */
+    @Deprecated(since = "2.3.0", forRemoval = true)
     public <T> Gauge<T> gauge(String name, Gauge<T> gauge, String topologyId, String componentId, Integer taskId, Integer port) {
         MetricNames metricNames = workerMetricName(name, topologyId, componentId, taskId, port);
         gauge = registerGauge(metricNames, gauge, taskId, componentId, null);
