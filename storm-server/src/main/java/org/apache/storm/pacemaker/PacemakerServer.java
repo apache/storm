@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
-@Deprecated
+@Deprecated(since = "3.1.0", forRemoval = true)
 class PacemakerServer implements ISaslServer {
 
     private static final int FIVE_MB_IN_BYTES = 5 * 1024 * 1024;

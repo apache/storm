@@ -688,7 +688,7 @@ public class DaemonConfig implements Validated {
      */
     @IsNumber
     @IsPositiveNumber
-    @Deprecated
+    @Deprecated(since = "3.1.0", forRemoval = true)
     public static final String PACEMAKER_MAX_THREADS = "pacemaker.max.threads";
 
     /**
@@ -698,7 +698,7 @@ public class DaemonConfig implements Validated {
      *     Use the default heartbeat path (workers heartbeat to their supervisor, which reports them to Nimbus) instead.
      */
     @IsStringOrStringList
-    @Deprecated
+    @Deprecated(since = "3.1.0", forRemoval = true)
     public static final String PACEMAKER_CHILDOPTS = "pacemaker.childopts";
 
 
