@@ -64,6 +64,15 @@
         <property name="lineRange" value="$2"/>
     </module>
 
+    <!-- Both wrappings of the ASF license header are accepted; the Javadoc one ('/**') trips
+         JavadocParagraph on its blank lines, so the check is muted on the header only: from the
+         header's last text line (ending in 'under the License.') back to the top of the file. -->
+    <module name="SuppressWithNearbyTextFilter">
+        <property name="nearbyTextPattern" value="^ \* (.* )?under the License\.$"/>
+        <property name="checkPattern" value="JavadocParagraph"/>
+        <property name="lineRange" value="-20"/>
+    </module>
+
     <!-- Checks for whitespace                               -->
     <!-- See http://checkstyle.org/checks/whitespace/index.html -->
     <module name="FileTabCharacter">
