@@ -364,8 +364,10 @@ public class Config extends HashMap<String, Object> {
      * Array of components that scheduler should try to place on separate hosts when using the constraint solver strategy or the
      * multi-tenant scheduler. Note that this configuration can be specified in TOPOLOGY_RAS_CONSTRAINTS using the
      * "maxNodeCoLocationCnt" map entry with value of 1.
+     *
+     * @deprecated Please use {@link #TOPOLOGY_RAS_CONSTRAINTS} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @IsStringList
     public static final String TOPOLOGY_SPREAD_COMPONENTS = "topology.spread.components";
     /**

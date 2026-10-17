@@ -88,7 +88,7 @@ public class NimbusClient extends ThriftClient {
      * @throws TTransportException on any error.
      * @deprecated use {@link Builder #buildWithNimbusHostPort()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
         this(conf, host, port, timeout, null);
     }
@@ -103,12 +103,16 @@ public class NimbusClient extends ThriftClient {
      * @throws TTransportException on any error.
      * @deprecated use {@link Builder #buildWithNimbusHostPort()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
         this(conf, host, port, timeout, asUser, false);
     }
 
-    @Deprecated
+    /**
+     * Constructor.
+     * @deprecated use {@link Builder} instead.
+     */
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser, boolean useTls)
             throws TTransportException {
         super(conf, useTls ? ThriftConnectionType.NIMBUS_TLS : ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
@@ -123,7 +127,7 @@ public class NimbusClient extends ThriftClient {
      * @throws TTransportException on any error.
      * @deprecated use {@link Builder #buildWithNimbusHostPort()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public NimbusClient(Map<String, Object> conf, String host) throws TTransportException {
         this(conf, host, null, null, null);
     }
@@ -169,7 +173,7 @@ public class NimbusClient extends ThriftClient {
      * @return the client, don't forget to close it when done.
      * @deprecated use {@link Builder #build()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static NimbusClient getConfiguredClient(Map<String, Object> conf) {
         return getConfiguredClientAs(conf, null);
     }
@@ -181,7 +185,7 @@ public class NimbusClient extends ThriftClient {
      * @return the client, don't forget to close it when done.
      * @deprecated use {@link Builder #build()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static NimbusClient getConfiguredClient(Map<String, Object> conf, Integer timeout) {
         return getConfiguredClientAs(conf, null, timeout);
     }
@@ -214,7 +218,7 @@ public class NimbusClient extends ThriftClient {
      * @return the client, don't forget to close it when done.
      * @deprecated use {@link Builder #build()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser) {
         return getConfiguredClientAs(conf, asUser, null);
     }
@@ -227,7 +231,7 @@ public class NimbusClient extends ThriftClient {
      * @return the client, don't forget to close it when done.
      * @deprecated use {@link Builder #build()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser, Integer timeout) {
         return createNimbusClient(conf, asUser, timeout);
     }

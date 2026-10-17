@@ -29,8 +29,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Base class for checking if CGroups are enabled, etc.
+ *
+ * @deprecated please use Metrics V2 ({@link org.apache.storm.metrics2.StormMetricRegistry}) instead.
  */
-@Deprecated
+@Deprecated(since = "2.3.0", forRemoval = true)
 public abstract class CGroupMetricsBase<T> implements IMetric {
     private static final Logger LOG = LoggerFactory.getLogger(CGroupMetricsBase.class);
     private boolean enabled;
