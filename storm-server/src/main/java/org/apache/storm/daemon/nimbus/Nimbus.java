@@ -200,7 +200,6 @@ import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
 import org.apache.storm.security.auth.workertoken.WorkerTokenManager;
-import org.apache.storm.security.serialization.BlowfishTupleSerializer;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.base.Strings;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
@@ -806,20 +805,22 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return tc.readTopology(topoId, NIMBUS_SUBJECT);
     }
 
+    @VisibleForTesting
+    static final String LEGACY_BLOWFISH_SECRET_KEY = "topology.tuple.serializer.blowfish.key";
+
     /**
      * Mask the credential values in a config map that is about to be serialized to a client. Nimbus serves config over
      * several read-only operations, and a caller authorized for those is not necessarily authorized to hold the cluster's
-     * or the topology's secrets. This covers what {@link ConfigUtils#maskCredentials(Map)} covers, plus the Blowfish
-     * tuple-serializer key, whose constant lives outside the config classes so the annotation scan cannot see it and
-     * whose name matches no credential pattern.
+     * or the topology's secrets. This covers what {@link ConfigUtils#maskCredentials(Map)} covers, plus the legacy Blowfish
+     * tuple-serializer key, so that legacy stored configs do not leak the key.
      *
      * @param conf the config about to be served
      * @return a copy of the config with credential values replaced
      */
     private static Map<String, Object> maskCredentialsForApi(Map<String, Object> conf) {
         Map<String, Object> masked = new HashMap<>(ConfigUtils.maskCredentials(conf));
-        if (masked.get(BlowfishTupleSerializer.SECRET_KEY) instanceof String) {
-            masked.put(BlowfishTupleSerializer.SECRET_KEY, "*****");
+        if (masked.get(LEGACY_BLOWFISH_SECRET_KEY) instanceof String) {
+            masked.put(LEGACY_BLOWFISH_SECRET_KEY, "*****");
         }
         return masked;
     }
