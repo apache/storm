@@ -1,0 +1,202 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+# First stage of the checkstyle auto-fix, run on demand by the rewrite-maven-plugin
+# execution `checkstyle-autofix-openrewrite` in the root pom (bound to no phase), just before
+# checkstyle-autofix.groovy (which then fixes what is left, text-level, driven by
+# Checkstyle's own reports).
+#
+# Everything OpenRewrite has a recipe for lives here; the Groovy stage keeps only the rules
+# with no recipe (see storm-checkstyle/README.md for the split). The formatting recipes need
+# a style, which is declared below (org.apache.storm.checkstyle.Style) and mirrors
+# storm_checkstyle.xml instead of being derived from it: the derived styles conflict with the
+# ruleset (RightCurly 'alone' would push catch/else onto their own line).
+#
+# Deliberately NOT here:
+#   - org.openrewrite.java.format.AutoFormat: bundles formatters that do not follow the ruleset
+#     and introduces star imports (AvoidStarImport).
+#   - org.openrewrite.staticanalysis.TypecastParenPad: turns `(T) x` into `(T)x`, which
+#     violates WhitespaceAfter (the Spaces recipe below covers ParenPad on its own).
+type: specs.openrewrite.org/v1beta/recipe
+name: org.apache.storm.checkstyle.AutoFix
+displayName: Fix storm_checkstyle.xml violations that need a parsed AST
+description: >
+  NeedBraces, MultipleVariableDeclarations, ModifierOrder, UpperEll, ArrayTypeStyle,
+  FileTabCharacter, OperatorWrap, WhitespaceAround/After, NoWhitespaceBefore, ParenPad,
+  MethodParamPad, GenericWhitespace, Indentation, EmptyLineSeparator, CustomImportOrder,
+  AvoidStarImport and MissingSwitchDefault (only a misplaced default).
+recipeList:
+  - org.openrewrite.staticanalysis.NeedBraces
+  - org.openrewrite.staticanalysis.MultipleVariableDeclarations
+  - org.openrewrite.staticanalysis.ModifierOrder
+  - org.openrewrite.staticanalysis.UpperCaseLiteralSuffixes
+  - org.openrewrite.staticanalysis.UseJavaStyleArrayDeclarations
+  # OperatorWrap (option NL in the ruleset)
+  - org.openrewrite.staticanalysis.OperatorWrap:
+      wrapOption: NL
+  # FileTabCharacter
+  - org.openrewrite.java.format.NormalizeTabsOrSpaces
+  # WhitespaceAround, WhitespaceAfter, NoWhitespaceBefore, ParenPad, MethodParamPad, GenericWhitespace
+  - org.openrewrite.java.format.Spaces
+  # LeftCurly, RightCurly, NoLineWrap, AnnotationLocation (partial: see storm-checkstyle/README.md)
+  - org.openrewrite.java.format.WrappingAndBraces
+  # Indentation, CommentsIndentation
+  - org.openrewrite.java.format.TabsAndIndents
+  # EmptyLineSeparator
+  - org.openrewrite.java.format.BlankLines
+  # AvoidStarImport: unfolds star imports to the types actually used (needs type attribution)
+  - org.openrewrite.java.RemoveUnusedImports
+  # MissingSwitchDefault: only moves an existing `default` last
+  - org.openrewrite.staticanalysis.DefaultComesLast
+  # CustomImportOrder (STATIC###THIRD_PARTY_PACKAGE, sorted, one blank line between the groups)
+  - org.openrewrite.java.OrderImports:
+      removeUnused: false
+---
+# Second pass, run after checkstyle-autofix.groovy: its LineLength wraps leave continuation lines
+# at the wrong indent. Only TabsAndIndents runs here; Spaces would turn the `{}` the Groovy stage
+# writes for empty blocks back into `{ }`.
+type: specs.openrewrite.org/v1beta/recipe
+name: org.apache.storm.checkstyle.Reindent
+displayName: Re-indent after the Groovy stage
+description: Indentation only.
+recipeList:
+  - org.openrewrite.java.format.TabsAndIndents
+---
+type: specs.openrewrite.org/v1beta/style
+name: org.apache.storm.checkstyle.Style
+displayName: Style mirroring storm_checkstyle.xml
+styleConfigs:
+  - org.openrewrite.java.style.TabsAndIndentsStyle:
+      useTabCharacter: false
+      tabSize: 4
+      indentSize: 4
+      continuationIndent: 8
+      indentsRelativeToExpressionStart: false
+  - org.openrewrite.java.style.BlankLinesStyle:
+      keepMaximum:
+        inDeclarations: 1
+        inCode: 1
+        beforeEndOfBlock: 1
+        betweenHeaderAndPackage: 1
+      minimum:
+        beforePackage: 0
+        afterPackage: 1
+        beforeImports: 1
+        afterImports: 1
+        aroundClass: 1
+        afterClassHeader: 0
+        beforeClassEnd: 0
+        afterAnonymousClassHeader: 0
+        aroundFieldInInterface: 0
+        aroundField: 0
+        aroundMethodInInterface: 1
+        aroundMethod: 1
+        beforeMethodBody: 0
+        aroundInitializer: 1
+  - org.openrewrite.java.style.ImportLayoutStyle:
+      # static imports first, then everything else; never fold into a star import
+      classCountToUseStarImport: 2147483647
+      nameCountToUseStarImport: 2147483647
+      layout:
+        - import static all other imports
+        - <blank line>
+        - import all other imports
+  - org.openrewrite.java.style.WrappingAndBracesStyle:
+      # RightCurly 'same' for else/catch/finally; annotations of types and methods on their own line
+      ifStatement:
+        elseOnNewLine: false
+        specialElseIfTreatment: true
+      tryStatement:
+        catchOnNewLine: false
+        finallyOnNewLine: false
+      classAnnotations:
+        wrap: WrapAlways
+      methodAnnotations:
+        wrap: WrapAlways
+  - org.openrewrite.java.style.SpacesStyle:
+      beforeParentheses:
+        methodDeclaration: false
+        methodCall: false
+        ifParentheses: true
+        forParentheses: true
+        whileParentheses: true
+        switchParentheses: true
+        tryParentheses: true
+        catchParentheses: true
+        synchronizedParentheses: true
+        annotationParameters: false
+      aroundOperators:
+        assignment: true
+        logical: true
+        equality: true
+        relational: true
+        bitwise: true
+        additive: true
+        multiplicative: true
+        shift: true
+        unary: false
+        lambdaArrow: true
+        methodReferenceDoubleColon: false
+      beforeLeftBrace:
+        classLeftBrace: true
+        methodLeftBrace: true
+        ifLeftBrace: true
+        elseLeftBrace: true
+        forLeftBrace: true
+        whileLeftBrace: true
+        doLeftBrace: true
+        switchLeftBrace: true
+        tryLeftBrace: true
+        catchLeftBrace: true
+        finallyLeftBrace: true
+        synchronizedLeftBrace: true
+        arrayInitializerLeftBrace: true
+        annotationArrayInitializerLeftBrace: false
+      within:
+        codeBraces: true
+        brackets: false
+        arrayInitializerBraces: false
+        emptyArrayInitializerBraces: false
+        groupingParentheses: false
+        methodDeclarationParentheses: false
+        emptyMethodDeclarationParentheses: false
+        methodCallParentheses: false
+        emptyMethodCallParentheses: false
+        ifParentheses: false
+        forParentheses: false
+        whileParentheses: false
+        switchParentheses: false
+        tryParentheses: false
+        catchParentheses: false
+        synchronizedParentheses: false
+        typeCastParentheses: false
+        annotationParentheses: false
+        angleBrackets: false
+        recordHeader: false
+      other:
+        beforeComma: false
+        afterComma: true
+        beforeForSemicolon: false
+        afterForSemicolon: true
+        afterTypeCast: true
+        beforeColonInForEach: true
+        insideOneLineEnumBraces: false
+        aroundEqualInAnnotationValuePair: true
+      typeArguments:
+        afterComma: true
+        beforeOpeningAngleBracket: false
+        afterClosingAngleBracket: false

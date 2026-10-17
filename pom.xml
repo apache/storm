@@ -69,6 +69,15 @@
 
     <properties>
         <javaVersion>25</javaVersion>
+        <!-- checkstyle auto-fix tooling (run on demand, see storm-checkstyle/README.md) -->
+        <rewrite-maven-plugin.version>6.46.1</rewrite-maven-plugin.version>
+        <rewrite-static-analysis.version>2.41.1</rewrite-static-analysis.version>
+        <gmavenplus.version>5.1.0</gmavenplus.version>
+        <groovy.version>4.0.33</groovy.version>
+        <!-- Used by both the checkstyle check and checkstyle-autofix.groovy. If you change this, you should
+        also update the storm_checkstyle.xml file to be based on the google_checks.xml from the version
+        of checkstyle you are choosing. -->
+        <checkstyle.version>14.3.0</checkstyle.version>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
 
@@ -1114,6 +1123,137 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <!--
+                    OpenRewrite stages of the checkstyle auto-fix (see storm-checkstyle/README.md). Not bound to
+                    any phase: run on demand. The recipes and the style mirroring storm_checkstyle.xml are in
+                    rewrite.yml at the repo root. Thrift-generated code and the Groovy scripts of
+                    storm-checkstyle are not checked by Checkstyle, so they are left alone.
+                    -->
+                    <groupId>org.openrewrite.maven</groupId>
+                    <artifactId>rewrite-maven-plugin</artifactId>
+                    <version>${rewrite-maven-plugin.version}</version>
+                    <configuration>
+                        <configLocation>${maven.multiModuleProjectDirectory}/rewrite.yml</configLocation>
+                        <activeStyles>
+                            <style>org.apache.storm.checkstyle.Style</style>
+                        </activeStyles>
+                        <exclusions>
+                            <exclusion>**/generated/**</exclusion>
+                            <exclusion>**/resources/storm/*.groovy</exclusion>
+                        </exclusions>
+                        <!-- Styles derived from the ruleset conflict with it (RightCurly 'alone' would push
+                        catch/else onto their own line); the explicit style in rewrite.yml is used instead. -->
+                        <checkstyleDetectionEnabled>false</checkstyleDetectionEnabled>
+                        <exportDatatables>false</exportDatatables>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-static-analysis</artifactId>
+                            <version>${rewrite-static-analysis.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <!-- first pass, before checkstyle-autofix.groovy -->
+                            <id>checkstyle-autofix-openrewrite</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <activeRecipes>
+                                    <recipe>org.apache.storm.checkstyle.AutoFix</recipe>
+                                </activeRecipes>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!-- re-indent pass, after checkstyle-autofix.groovy -->
+                            <id>checkstyle-reindent-openrewrite</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <activeRecipes>
+                                    <recipe>org.apache.storm.checkstyle.Reindent</recipe>
+                                </activeRecipes>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <!--
+                    Groovy stages of the checkstyle auto-fix and license header normalization (see
+                    storm-checkstyle/README.md). Not bound to any phase: run on demand. gmavenplus interprets
+                    the scripts directly, so they need no prior `compile` phase.
+                    -->
+                    <groupId>org.codehaus.gmavenplus</groupId>
+                    <artifactId>gmavenplus-plugin</artifactId>
+                    <version>${gmavenplus.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy</artifactId>
+                            <version>${groovy.version}</version>
+                        </dependency>
+                        <dependency>
+                            <!-- XmlSlurper, used by checkstyle-autofix.groovy to parse the
+                            checkstyle ruleset itself - split out of Groovy core since Groovy 4. -->
+                            <groupId>org.apache.groovy</groupId>
+                            <artifactId>groovy-xml</artifactId>
+                            <version>${groovy.version}</version>
+                        </dependency>
+                        <dependency>
+                            <!-- checkstyle-autofix.groovy runs Checkstyle itself to find what to fix, so it
+                            must be the same version the checkstyle check uses. -->
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${checkstyle.version}</version>
+                            <exclusions>
+                                <!-- only needed for Checkstyle's site/XDoc output, not to run the checker -->
+                                <exclusion>
+                                    <groupId>org.apache.maven.doxia</groupId>
+                                    <artifactId>*</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                        <dependency>
+                            <!-- needed at run time by Checkstyle (commons-beanutils) -->
+                            <groupId>commons-logging</groupId>
+                            <artifactId>commons-logging</artifactId>
+                            <version>${commons-logging.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>checkstyle-autofix</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>execute</goal>
+                            </goals>
+                            <configuration>
+                                <scripts>
+                                    <script>file:///${maven.multiModuleProjectDirectory}/storm-checkstyle/src/main/resources/storm/checkstyle-autofix.groovy</script>
+                                </scripts>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!-- add -Dlicense.check=true to only report -->
+                            <id>normalize-license-headers</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>execute</goal>
+                            </goals>
+                            <configuration>
+                                <scripts>
+                                    <script>file:///${maven.multiModuleProjectDirectory}/storm-checkstyle/src/main/resources/storm/normalize-license-headers.groovy</script>
+                                </scripts>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <!--To support checkstyle goals. For example: "mvn checkstyle:checkstyle"-->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
@@ -1127,9 +1267,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <!-- If you change this, you should also update the storm_checkstyle.xml file to be
-                            based on the google_checks.xml from the version of checkstyle you are choosing. -->
-                            <version>14.3.0</version>
+                            <version>${checkstyle.version}</version>
                         </dependency>
                     </dependencies>
                     <executions>
