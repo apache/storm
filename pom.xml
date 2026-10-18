@@ -1167,19 +1167,6 @@
                                 </activeRecipes>
                             </configuration>
                         </execution>
-                        <execution>
-                            <!-- re-indent pass, after checkstyle-autofix.groovy -->
-                            <id>checkstyle-reindent-openrewrite</id>
-                            <phase>none</phase>
-                            <goals>
-                                <goal>run</goal>
-                            </goals>
-                            <configuration>
-                                <activeRecipes>
-                                    <recipe>org.apache.storm.checkstyle.Reindent</recipe>
-                                </activeRecipes>
-                            </configuration>
-                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
@@ -1236,6 +1223,25 @@
                                 <scripts>
                                     <script>file:///${maven.multiModuleProjectDirectory}/storm-checkstyle/src/main/resources/storm/checkstyle-autofix.groovy</script>
                                 </scripts>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <!-- third pass, indentation only, after checkstyle-autofix -->
+                            <id>checkstyle-autofix-indentation</id>
+                            <phase>none</phase>
+                            <goals>
+                                <goal>execute</goal>
+                            </goals>
+                            <configuration>
+                                <scripts>
+                                    <script>file:///${maven.multiModuleProjectDirectory}/storm-checkstyle/src/main/resources/storm/checkstyle-autofix.groovy</script>
+                                </scripts>
+                                <properties>
+                                    <property>
+                                        <name>autofixChecks</name>
+                                        <value>Indentation,CommentsIndentation</value>
+                                    </property>
+                                </properties>
                             </configuration>
                         </execution>
                         <execution>

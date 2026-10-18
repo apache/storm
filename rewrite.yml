@@ -66,16 +66,6 @@ recipeList:
   - org.openrewrite.java.OrderImports:
       removeUnused: false
 ---
-# Second pass, run after checkstyle-autofix.groovy: its LineLength wraps leave continuation lines
-# at the wrong indent. Only TabsAndIndents runs here; Spaces would turn the `{}` the Groovy stage
-# writes for empty blocks back into `{ }`.
-type: specs.openrewrite.org/v1beta/recipe
-name: org.apache.storm.checkstyle.Reindent
-displayName: Re-indent after the Groovy stage
-description: Indentation only.
-recipeList:
-  - org.openrewrite.java.format.TabsAndIndents
----
 type: specs.openrewrite.org/v1beta/style
 name: org.apache.storm.checkstyle.Style
 displayName: Style mirroring storm_checkstyle.xml
