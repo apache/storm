@@ -28,7 +28,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.LoggerFactory;
 
-
 public class DevNullBolt extends BaseRichBolt {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DevNullBolt.class);
     private OutputCollector collector;
@@ -36,7 +35,8 @@ public class DevNullBolt extends BaseRichBolt {
     private int count = 0;
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+                        OutputCollector collector) {
         this.collector = collector;
         this.sleepNanos = ObjectReader.getLong(topoConf.get("nullbolt.sleep.micros"), 0L) * 1_000;
     }

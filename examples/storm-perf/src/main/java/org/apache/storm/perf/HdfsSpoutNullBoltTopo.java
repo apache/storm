@@ -60,15 +60,14 @@ public class HdfsSpoutNullBoltTopo {
         final String archiveDir = Helper.getStr(config, ARCHIVE_DIR);
         final String badDir = Helper.getStr(config, BAD_DIR);
 
-
         // 1 -  Setup Hdfs Spout   --------
         HdfsSpout spout = new HdfsSpout()
-            .setReaderType(fileFormat)
-            .setHdfsUri(hdfsUri)
-            .setSourceDir(sourceDir)
-            .setArchiveDir(archiveDir)
-            .setBadFilesDir(badDir)
-            .withOutputFields(TextFileReader.defaultFields);
+                .setReaderType(fileFormat)
+                .setHdfsUri(hdfsUri)
+                .setSourceDir(sourceDir)
+                .setArchiveDir(archiveDir)
+                .setBadFilesDir(badDir)
+                .withOutputFields(TextFileReader.defaultFields);
 
         // 2 -   DevNull Bolt   --------
         DevNullBolt bolt = new DevNullBolt();
@@ -77,7 +76,7 @@ public class HdfsSpoutNullBoltTopo {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-               .localOrShuffleGrouping(SPOUT_ID);
+                .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }
@@ -92,13 +91,15 @@ public class HdfsSpoutNullBoltTopo {
         Config topoConf = new Config();
         topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY,
+                "org.apache.storm.policy.WaitStrategyPark");
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
 
         topoConf.putAll(Utils.readCommandLineOpts());
         // Submit to Storm cluster
-        Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
+        Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf,
+                getTopology(topoConf));
     }
 }

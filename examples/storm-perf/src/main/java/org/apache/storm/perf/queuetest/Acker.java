@@ -33,7 +33,6 @@ class Acker extends MyThread {
         this.spoutInQ = spoutInQ;
     }
 
-
     @Override
     public void run() {
         long start = System.currentTimeMillis();

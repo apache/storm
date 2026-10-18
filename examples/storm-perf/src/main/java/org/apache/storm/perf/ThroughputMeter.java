@@ -32,6 +32,7 @@ public class ThroughputMeter {
 
     /**
      * Calculate throughput.
+     *
      * @return events/sec
      */
     private static double calcThroughput(long count, long startTime, long endTime) {

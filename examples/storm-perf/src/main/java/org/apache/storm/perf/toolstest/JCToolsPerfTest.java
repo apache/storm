@@ -73,7 +73,6 @@ public class JCToolsPerfTest {
         runAllThds(prod1, prod2, prod3, cons1);
     }
 
-
     private static void oneProducer2Consumers() {
         MpscArrayQueue<Object> q1 = new MpscArrayQueue<Object>(50_000);
         MpscArrayQueue<Object> q2 = new MpscArrayQueue<Object>(50_000);
@@ -107,7 +106,8 @@ public class JCToolsPerfTest {
                 }
 
                 for (MyThd thread : threads) {
-                    System.err.printf("%s : %d,  Throughput: %,d \n", thread.getName(), thread.count, thread.throughput());
+                    System.err.printf("%s : %d,  Throughput: %,d \n", thread.getName(),
+                            thread.count, thread.throughput());
                 }
             } catch (InterruptedException e) {
                 return;

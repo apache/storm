@@ -28,7 +28,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-
 public class CountBolt extends BaseBasicBolt {
     public static final String FIELDS_WORD = "word";
     public static final String FIELDS_COUNT = "count";

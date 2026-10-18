@@ -109,7 +109,7 @@ public class BasicMetricsCollector implements AutoCloseable {
     }
 
     boolean updateStats(PrintWriter writer)
-        throws Exception {
+            throws Exception {
         if (collectTopologyStats) {
             updateTopologyStats();
         }
@@ -132,10 +132,12 @@ public class BasicMetricsCollector implements AutoCloseable {
 
     void updateExecutorStats() {
         long timeDiff = this.curSample.getSampleTime() - this.lastSample.getSampleTime();
-        long transferredDiff = this.curSample.getTotalTransferred() - this.lastSample.getTotalTransferred();
+        long transferredDiff = this.curSample.getTotalTransferred() - this.lastSample
+                .getTotalTransferred();
         long throughput = transferredDiff / (timeDiff / 1000);
 
-        long spoutDiff = this.curSample.getSpoutTransferred() - this.lastSample.getSpoutTransferred();
+        long spoutDiff = this.curSample.getSpoutTransferred() - this.lastSample
+                .getSpoutTransferred();
         long spoutAckedDiff = this.curSample.getTotalAcked() - this.lastSample.getTotalAcked();
         long spoutThroughput = spoutDiff / (timeDiff / 1000);
 
@@ -152,16 +154,15 @@ public class BasicMetricsCollector implements AutoCloseable {
             metrics.put(SPOUT_THROUGHPUT, Long.toString(spoutThroughput));
         }
 
-
         if (collectSpoutLatency) {
             double latency = this.curSample.getTotalLatency();
             if (latency > this.maxLatency) {
                 this.maxLatency = latency;
             }
             metrics.put(SPOUT_AVG_COMPLETE_LATENCY,
-                        String.format(SPOUT_AVG_LATENCY_FORMAT, latency));
+                    String.format(SPOUT_AVG_LATENCY_FORMAT, latency));
             metrics.put(SPOUT_MAX_COMPLETE_LATENCY,
-                        String.format(SPOUT_MAX_LATENCY_FORMAT, this.maxLatency));
+                    String.format(SPOUT_MAX_LATENCY_FORMAT, this.maxLatency));
 
         }
     }
@@ -192,11 +193,13 @@ public class BasicMetricsCollector implements AutoCloseable {
         }
 
         writer.println(
-            "\n------------------------------------------------------------------------------------------------------------------");
+                "\n-------------------------------------------------------------------------------"
+                        + "-----------------------------------");
         String str = Utils.join(header, ",");
         writer.println(str);
         writer
-            .println("------------------------------------------------------------------------------------------------------------------");
+                .println("------------------------------------------------------------------------"
+                        + "------------------------------------------");
         writer.flush();
     }
 
@@ -212,28 +215,28 @@ public class BasicMetricsCollector implements AutoCloseable {
 
     boolean collectTopologyStats(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-               || items.contains(MetricsItem.TOPOLOGY_STATS);
+                || items.contains(MetricsItem.TOPOLOGY_STATS);
     }
 
     boolean collectExecutorStats(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-               || items.contains(MetricsItem.XSFER_RATE)
-               || items.contains(MetricsItem.SPOUT_LATENCY);
+                || items.contains(MetricsItem.XSFER_RATE)
+                || items.contains(MetricsItem.SPOUT_LATENCY);
     }
 
     boolean collectThroughput(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-               || items.contains(MetricsItem.XSFER_RATE);
+                || items.contains(MetricsItem.XSFER_RATE);
     }
 
     boolean collectSpoutThroughput(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-               || items.contains(MetricsItem.SPOUT_THROUGHPUT);
+                || items.contains(MetricsItem.SPOUT_THROUGHPUT);
     }
 
     boolean collectSpoutLatency(Set<MetricsItem> items) {
         return items.contains(MetricsItem.ALL)
-               || items.contains(MetricsItem.SPOUT_LATENCY);
+                || items.contains(MetricsItem.SPOUT_LATENCY);
     }
 
     public enum MetricsItem {

@@ -42,7 +42,6 @@ public class SimplifiedWordCountTopo {
     public static final int DEFAULT_SPOUT_NUM = 1;
     public static final int DEFAULT_COUNT_BOLT_NUM = 1;
 
-
     static StormTopology getTopology(Map<String, Object> config) {
 
         final int spoutNum = Helper.getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
@@ -51,7 +50,8 @@ public class SimplifiedWordCountTopo {
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, new WordGenSpout(inputFile), spoutNum);
-        builder.setBolt(COUNT_ID, new CountBolt(), cntBoltNum).fieldsGrouping(SPOUT_ID, new Fields(WordGenSpout.FIELDS));
+        builder.setBolt(COUNT_ID, new CountBolt(), cntBoltNum).fieldsGrouping(SPOUT_ID,
+                new Fields(WordGenSpout.FIELDS));
 
         return builder.createTopology();
     }
@@ -74,7 +74,8 @@ public class SimplifiedWordCountTopo {
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY,
+                "org.apache.storm.policy.WaitStrategyPark");
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
 
         topoConf.putAll(Utils.readCommandLineOpts());

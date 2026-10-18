@@ -16,7 +16,6 @@
  * limitations under the License
  */
 
-
 package org.apache.storm.perf;
 
 import java.util.Map;
@@ -63,51 +62,49 @@ public class StrGenSpoutHdfsBoltTopo {
     public static final String SPOUT_ID = "GenSpout";
     public static final String BOLT_ID = "hdfsBolt";
 
-
     static StormTopology getTopology(Map<String, Object> topoConf) {
         final int hdfsBatch = Helper.getInt(topoConf, HDFS_BATCH, DEFAULT_HDFS_BATCH);
 
         // 1 -  Setup StringGen Spout   --------
         StringGenSpout spout = new StringGenSpout(100).withFieldName("str");
 
-
         // 2 -  Setup HFS Bolt   --------
         String hdfsUrl = Helper.getStr(topoConf, HDFS_URI);
         RecordFormat format = new LineWriter("str");
         SyncPolicy syncPolicy = new CountSyncPolicy(hdfsBatch);
-        FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(1.0f, FileSizeRotationPolicy.Units.GB);
+        FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(1.0f,
+                FileSizeRotationPolicy.Units.GB);
         final int spoutNum = Helper.getInt(topoConf, SPOUT_NUM, DEFAULT_SPOUT_NUM);
         final int boltNum = Helper.getInt(topoConf, BOLT_NUM, DEFAULT_BOLT_NUM);
 
         // Use default, Storm-generated file names
-        FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(Helper.getStr(topoConf, HDFS_PATH));
+        FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(Helper.getStr(topoConf,
+                HDFS_PATH));
 
         // Instantiate the HdfsBolt
         HdfsBolt bolt = new HdfsBolt()
-            .withFsUrl(hdfsUrl)
-            .withFileNameFormat(fileNameFormat)
-            .withRecordFormat(format)
-            .withRotationPolicy(rotationPolicy)
-            .withSyncPolicy(syncPolicy);
-
+                .withFsUrl(hdfsUrl)
+                .withFileNameFormat(fileNameFormat)
+                .withRecordFormat(format)
+                .withRotationPolicy(rotationPolicy)
+                .withSyncPolicy(syncPolicy);
 
         // 3 - Setup Topology  --------
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-               .localOrShuffleGrouping(SPOUT_ID);
+                .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }
-
 
     /**
      * Spout generates random strings and HDFS bolt writes them to a text file.
      */
     public static void main(String[] args) throws Exception {
         String confFile = "conf/HdfsSpoutTopo.yaml";
-        int runTime = -1; //Run until Ctrl-C
+        int runTime = -1; // Run until Ctrl-C
         if (args.length > 0) {
             runTime = Integer.parseInt(args[0]);
         }
@@ -124,7 +121,8 @@ public class StrGenSpoutHdfsBoltTopo {
 
         Map<String, Object> topoConf = Utils.findAndReadConfigFile(confFile);
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY,
+                "org.apache.storm.policy.WaitStrategyPark");
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
@@ -132,7 +130,6 @@ public class StrGenSpoutHdfsBoltTopo {
         topoConf.putAll(Utils.readCommandLineOpts());
         Helper.runOnClusterAndPrintMetrics(runTime, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }
-
 
     public static class LineWriter implements RecordFormat {
         private static final long serialVersionUID = 7524288317405514146L;

@@ -58,7 +58,6 @@ public class KafkaClientHdfsTopo {
     public static final String HDFS_PATH = "hdfs.dir";
     public static final String HDFS_BATCH = "hdfs.batch";
 
-
     public static final int DEFAULT_SPOUT_NUM = 1;
     public static final int DEFAULT_BOLT_NUM = 1;
     public static final int DEFAULT_HDFS_BATCH = 1000;
@@ -67,7 +66,6 @@ public class KafkaClientHdfsTopo {
     public static final String TOPOLOGY_NAME = "KafkaHdfsTopo";
     public static final String SPOUT_ID = "kafkaSpout";
     public static final String BOLT_ID = "hdfsBolt";
-
 
     static StormTopology getTopology(Map<String, Object> config) {
 
@@ -80,10 +78,11 @@ public class KafkaClientHdfsTopo {
         String bootstrapHosts = getStr(config, KAFKA_BOOTSTRAP_HOSTS);
         String topicName = getStr(config, KAFKA_TOPIC);
 
-        KafkaSpoutConfig<String, String> spoutConfig = KafkaSpoutConfig.builder(bootstrapHosts, topicName)
-                                                                       .setFirstPollOffsetStrategy(
-                                                                           FirstPollOffsetStrategy.EARLIEST)
-                                                                       .build();
+        KafkaSpoutConfig<String, String> spoutConfig = KafkaSpoutConfig.builder(bootstrapHosts,
+                topicName)
+                .setFirstPollOffsetStrategy(
+                        FirstPollOffsetStrategy.EARLIEST)
+                .build();
 
         KafkaSpout<String, String> spout = new KafkaSpout<>(spoutConfig);
 
@@ -91,28 +90,28 @@ public class KafkaClientHdfsTopo {
         String hdfsUrls = getStr(config, HDFS_URI);
         RecordFormat format = new LineWriter("value");
         SyncPolicy syncPolicy = new CountSyncPolicy(hdfsBatch);
-        FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(1.0f, FileSizeRotationPolicy.Units.GB);
+        FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(1.0f,
+                FileSizeRotationPolicy.Units.GB);
 
-        FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(getStr(config, HDFS_PATH));
+        FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(getStr(config,
+                HDFS_PATH));
 
         // Instantiate the HdfsBolt
         HdfsBolt bolt = new HdfsBolt()
-            .withFsUrl(hdfsUrls)
-            .withFileNameFormat(fileNameFormat)
-            .withRecordFormat(format)
-            .withRotationPolicy(rotationPolicy)
-            .withSyncPolicy(syncPolicy);
-
+                .withFsUrl(hdfsUrls)
+                .withFileNameFormat(fileNameFormat)
+                .withRecordFormat(format)
+                .withRotationPolicy(rotationPolicy)
+                .withSyncPolicy(syncPolicy);
 
         // 3 - Setup Topology  --------
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-               .localOrShuffleGrouping(SPOUT_ID);
+                .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }
-
 
     public static int getInt(Map map, Object key, int def) {
         return ObjectReader.getInt(Utils.get(map, key, def));
@@ -122,9 +121,9 @@ public class KafkaClientHdfsTopo {
         return (String) map.get(key);
     }
 
-
     /**
-     * Copies text file content from sourceDir to destinationDir. Moves source files into sourceDir after its done consuming.
+     * Copies text file content from sourceDir to destinationDir. Moves source files into sourceDir
+     * after its done consuming.
      */
     public static void main(String[] args) throws Exception {
 
@@ -138,13 +137,15 @@ public class KafkaClientHdfsTopo {
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY,
+                "org.apache.storm.policy.WaitStrategyPark");
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
 
         topoConf.putAll(Utils.readCommandLineOpts());
         //  Submit topology to Storm cluster
         Integer durationSec = Integer.parseInt(args[0]);
-        Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
+        Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf,
+                getTopology(topoConf));
     }
 
     public static class LineWriter implements RecordFormat {
