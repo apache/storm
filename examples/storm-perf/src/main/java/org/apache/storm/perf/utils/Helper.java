@@ -27,7 +27,6 @@ import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 
-
 public class Helper {
 
     public static void kill(Nimbus.Iface client, String topoName) throws Exception {
@@ -44,10 +43,12 @@ public class Helper {
         return (String) map.get(key);
     }
 
-    public static void collectMetricsAndKill(String topologyName, Integer pollInterval, int duration) throws Exception {
+    public static void collectMetricsAndKill(String topologyName, Integer pollInterval,
+                                             int duration) throws Exception {
         Map<String, Object> clusterConf = Utils.readStormConfig();
         Nimbus.Iface client = NimbusClient.Builder.withConf(clusterConf).build().getClient();
-        try (BasicMetricsCollector metricsCollector = new BasicMetricsCollector(topologyName, clusterConf)) {
+        try (BasicMetricsCollector metricsCollector = new BasicMetricsCollector(topologyName,
+                     clusterConf)) {
 
             if (duration > 0) {
                 int times = duration / pollInterval;
@@ -57,7 +58,7 @@ public class Helper {
                     metricsCollector.collect(client);
                 }
             } else {
-                while (true) { //until Ctrl-C
+                while (true) { // until Ctrl-C
                     metricsCollector.collect(client);
                     Thread.sleep(pollInterval * 1000);
                 }
@@ -87,8 +88,9 @@ public class Helper {
         });
     }
 
-    public static void runOnClusterAndPrintMetrics(int durationSec, String topoName, Map<String, Object> topoConf, StormTopology topology)
-        throws Exception {
+    public static void runOnClusterAndPrintMetrics(int durationSec, String topoName, Map<String,
+                                                           Object> topoConf, StormTopology topology)
+            throws Exception {
         // submit topology
         StormSubmitter.submitTopologyWithProgressBar(topoName, topoConf, topology);
         setupShutdownHook(topoName); // handle Ctrl-C

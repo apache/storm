@@ -52,7 +52,8 @@ public class ConstSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+                     SpoutOutputCollector collector) {
         this.collector = collector;
         this.sleep = ObjectReader.getLong(conf.get("spout.sleep"), 0L);
     }

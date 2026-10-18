@@ -50,7 +50,6 @@ public class FileReadWordCountTopo {
     public static final int DEFAULT_SPLIT_BOLT_NUM = 2;
     public static final int DEFAULT_COUNT_BOLT_NUM = 2;
 
-
     static StormTopology getTopology(Map<String, Object> config) {
 
         final int spoutNum = Helper.getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
@@ -60,8 +59,10 @@ public class FileReadWordCountTopo {
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, new FileReadSpout(inputFile), spoutNum);
-        builder.setBolt(SPLIT_ID, new SplitSentenceBolt(), spBoltNum).localOrShuffleGrouping(SPOUT_ID);
-        builder.setBolt(COUNT_ID, new CountBolt(), cntBoltNum).fieldsGrouping(SPLIT_ID, new Fields(SplitSentenceBolt.FIELDS));
+        builder.setBolt(SPLIT_ID, new SplitSentenceBolt(), spBoltNum)
+                .localOrShuffleGrouping(SPOUT_ID);
+        builder.setBolt(COUNT_ID, new CountBolt(), cntBoltNum).fieldsGrouping(SPLIT_ID,
+                new Fields(SplitSentenceBolt.FIELDS));
 
         return builder.createTopology();
     }
@@ -76,7 +77,8 @@ public class FileReadWordCountTopo {
             topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
         }
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY,
+                "org.apache.storm.policy.WaitStrategyPark");
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);

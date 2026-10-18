@@ -34,7 +34,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.slf4j.LoggerFactory;
 
-
 public class BackPressureTopo {
 
     private static final String SPOUT_ID = "ConstSpout";
@@ -51,7 +50,6 @@ public class BackPressureTopo {
 
         // 2 -  Setup DevNull Bolt   --------
         ThrottledBolt bolt = new ThrottledBolt(sleepMs);
-
 
         // 3 - Setup Topology  --------
         TopologyBuilder builder = new TopologyBuilder();
@@ -80,7 +78,8 @@ public class BackPressureTopo {
             return;
         }
         //  Submit topology to storm cluster
-        Helper.runOnClusterAndPrintMetrics(runTime, "BackPressureTopo", topoConf, getTopology(topoConf));
+        Helper.runOnClusterAndPrintMetrics(runTime, "BackPressureTopo", topoConf,
+                getTopology(topoConf));
     }
 
     private static class ThrottledBolt extends BaseRichBolt {
@@ -93,7 +92,8 @@ public class BackPressureTopo {
         }
 
         @Override
-        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+        public void prepare(Map<String, Object> topoConf, TopologyContext context,
+                            OutputCollector collector) {
             this.collector = collector;
         }
 
@@ -104,7 +104,7 @@ public class BackPressureTopo {
             try {
                 Thread.sleep(sleepMs);
             } catch (InterruptedException e) {
-                //.. ignore
+                // .. ignore
             }
         }
 

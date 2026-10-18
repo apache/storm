@@ -27,7 +27,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-
 public class SplitSentenceBolt extends BaseBasicBolt {
     public static final String FIELDS = "word";
 

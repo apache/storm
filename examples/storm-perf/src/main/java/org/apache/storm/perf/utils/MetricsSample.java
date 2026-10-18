@@ -20,7 +20,6 @@ package org.apache.storm.perf.utils;
 
 import java.util.List;
 import java.util.Map;
-import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.ExecutorSummary;
@@ -131,7 +130,7 @@ public class MetricsSample {
                     }
                 }
 
-                Double total = 0d;
+                Double total = 0D;
                 Map<String, Double> vals = spoutStats.get_complete_ms_avg().get(":all-time");
                 if (vals != null) {
                     for (String key : vals.keySet()) {
@@ -143,7 +142,6 @@ public class MetricsSample {
 
                 spoutExecCount++;
             }
-
 
         } // end executor summary
 

@@ -44,7 +44,6 @@ public class FileReadSpout extends BaseRichSpout {
 
     private long count = 0;
 
-
     public FileReadSpout(String file) {
         this.file = file;
     }

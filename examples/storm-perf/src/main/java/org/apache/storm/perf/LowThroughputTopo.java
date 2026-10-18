@@ -49,11 +49,11 @@ public class LowThroughputTopo {
 
         Long sleepMs = ObjectReader.getLong(conf.get(SLEEP_MS));
         // 1 -  Setup Spout   --------
-        ThrottledSpout spout = new ThrottledSpout(sleepMs).withOutputFields(ThrottledSpout.DEFAULT_FIELD_NAME);
+        ThrottledSpout spout = new ThrottledSpout(sleepMs)
+                .withOutputFields(ThrottledSpout.DEFAULT_FIELD_NAME);
 
         // 2 -  Setup DevNull Bolt   --------
         LatencyPrintBolt bolt = new LatencyPrintBolt();
-
 
         // 3 - Setup Topology  --------
         TopologyBuilder builder = new TopologyBuilder();
@@ -83,7 +83,8 @@ public class LowThroughputTopo {
         }
         topoConf.putAll(Utils.readCommandLineOpts());
         //  Submit topology to storm cluster
-        Helper.runOnClusterAndPrintMetrics(runTime, "LowThroughputTopo", topoConf, getTopology(topoConf));
+        Helper.runOnClusterAndPrintMetrics(runTime, "LowThroughputTopo", topoConf,
+                getTopology(topoConf));
     }
 
     private static class ThrottledSpout extends BaseRichSpout {

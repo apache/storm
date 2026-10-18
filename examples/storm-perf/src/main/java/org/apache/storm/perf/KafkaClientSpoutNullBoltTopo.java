@@ -30,7 +30,8 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
 /**
- * Benchmark topology for measuring spout read/emit/ack performance. The spout reads and emits tuples. The bolt acks and discards received
+ * Benchmark topology for measuring spout read/emit/ack performance. The spout reads and emits
+ * tuples. The bolt acks and discards received
  * tuples.
  */
 public class KafkaClientSpoutNullBoltTopo {
@@ -62,20 +63,23 @@ public class KafkaClientSpoutNullBoltTopo {
         final int boltNum = Helper.getInt(config, BOLT_NUM, DEFAULT_BOLT_NUM);
         // 1 -  Setup Kafka Spout   --------
 
-        String bootstrapServers = Optional.ofNullable(Helper.getStr(config, BOOTSTRAP_SERVERS)).orElse("127.0.0.1:9092");
-        String kafkaTopic = Optional.ofNullable(Helper.getStr(config, KAFKA_TOPIC)).orElse("storm-perf-null-bolt-topic");
+        String bootstrapServers = Optional.ofNullable(Helper.getStr(config, BOOTSTRAP_SERVERS))
+                .orElse("127.0.0.1:9092");
+        String kafkaTopic = Optional.ofNullable(Helper.getStr(config, KAFKA_TOPIC))
+                .orElse("storm-perf-null-bolt-topic");
         ProcessingGuarantee processingGuarantee = ProcessingGuarantee.valueOf(
-            Optional.ofNullable(Helper.getStr(config, PROCESSING_GUARANTEE))
-                    .orElse(ProcessingGuarantee.AT_LEAST_ONCE.name()));
+                Optional.ofNullable(Helper.getStr(config, PROCESSING_GUARANTEE))
+                        .orElse(ProcessingGuarantee.AT_LEAST_ONCE.name()));
         int offsetCommitPeriodMs = Helper.getInt(config, OFFSET_COMMIT_PERIOD_MS, 30_000);
 
-        KafkaSpoutConfig<String, String> kafkaSpoutConfig = KafkaSpoutConfig.builder(bootstrapServers, kafkaTopic)
-                                                                            .setProcessingGuarantee(processingGuarantee)
-                                                                            .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
-                                                                            .setFirstPollOffsetStrategy(
-                                                                                FirstPollOffsetStrategy.EARLIEST)
-                                                                            .setTupleTrackingEnforced(true)
-                                                                            .build();
+        KafkaSpoutConfig<String, String> kafkaSpoutConfig = KafkaSpoutConfig
+                .builder(bootstrapServers, kafkaTopic)
+                .setProcessingGuarantee(processingGuarantee)
+                .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
+                .setFirstPollOffsetStrategy(
+                        FirstPollOffsetStrategy.EARLIEST)
+                .setTupleTrackingEnforced(true)
+                .build();
 
         KafkaSpout<String, String> spout = new KafkaSpout<>(kafkaSpoutConfig);
 
@@ -86,7 +90,7 @@ public class KafkaClientSpoutNullBoltTopo {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-               .localOrShuffleGrouping(SPOUT_ID);
+                .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }
@@ -109,7 +113,8 @@ public class KafkaClientSpoutNullBoltTopo {
         }
 
         //  Submit to Storm cluster
-        Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
+        Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf,
+                getTopology(topoConf));
     }
 
 }

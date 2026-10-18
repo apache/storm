@@ -35,7 +35,6 @@ public class ConstSpoutOnlyTopo {
     public static final String TOPOLOGY_NAME = "ConstSpoutOnlyTopo";
     public static final String SPOUT_ID = "constSpout";
 
-
     static StormTopology getTopology() {
 
         // 1 -  Setup Const Spout   --------

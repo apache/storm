@@ -45,7 +45,6 @@ public class WordGenSpout extends BaseRichSpout {
     private ThroughputMeter emitMeter;
     private ArrayList<String> words;
 
-
     public WordGenSpout(String file) {
         this.file = file;
     }
