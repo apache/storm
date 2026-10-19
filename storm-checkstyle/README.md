@@ -34,6 +34,7 @@ restored to its original text.
 | `NeedBraces`, `MultipleVariableDeclarations`, `ModifierOrder`, `UpperEll`, `ArrayTypeStyle`, `FileTabCharacter`, `OperatorWrap` | OpenRewrite (dedicated recipes) |
 | `WhitespaceAround`, `WhitespaceAfter`, `NoWhitespaceBefore`, `ParenPad`, `MethodParamPad`, `GenericWhitespace` | OpenRewrite (`Spaces`, style `org.apache.storm.checkstyle.Style`) |
 | `Indentation`, `EmptyLineSeparator`, `CustomImportOrder` | OpenRewrite (`TabsAndIndents`, `BlankLines`, `OrderImports`, same style) |
+| `Indentation`, `CommentsIndentation` (what `TabsAndIndents` gets wrong: array initializer elements, bodies of some anonymous classes and enum constants) | Groovy, third pass only (`checkstyle-autofix-indentation`): each reported line is moved to the level Checkstyle's message expects |
 | `AvoidStarImport` | OpenRewrite (`RemoveUnusedImports`; needs type attribution, i.e. the module's dependencies resolvable) |
 | `MissingSwitchDefault` | OpenRewrite (`DefaultComesLast`: only moves an existing `default` last, it does not add a missing one) |
 | `LeftCurly`, `RightCurly`, `NoLineWrap`, `AnnotationLocation` | OpenRewrite (`WrappingAndBraces`), partial: it does not move `{`, `catch`/`finally` or every annotation; what is left is not chased in Groovy |
@@ -95,14 +96,16 @@ introduces star imports) and `TypecastParenPad` (turns `(T) x` into `(T)x`, viol
 
 ## Running it
 
-Three passes: OpenRewrite, the Groovy stage, then the OpenRewrite re-indent pass (the Groovy
-`LineLength` wraps leave continuation lines mis-indented; the pass runs `TabsAndIndents` only, since
-`Spaces` would turn the `{}` of empty blocks back into `{ }`). Review the result with `git diff`:
+Three passes: OpenRewrite, the Groovy stage, then the Groovy stage again with only the
+`Indentation`/`CommentsIndentation` fixers. The last pass re-indents what the Groovy `LineLength`
+wraps leave mis-indented and what `TabsAndIndents` gets wrong (array initializer elements, bodies of
+some anonymous classes and enum constants); an OpenRewrite re-indent there would bring the latter
+back. Review the result with `git diff`:
 
 ```sh
 mvn org.openrewrite.maven:rewrite-maven-plugin:run@checkstyle-autofix-openrewrite \
     org.codehaus.gmavenplus:gmavenplus-plugin:execute@checkstyle-autofix \
-    org.openrewrite.maven:rewrite-maven-plugin:run@checkstyle-reindent-openrewrite \
+    org.codehaus.gmavenplus:gmavenplus-plugin:execute@checkstyle-autofix-indentation \
     -pl '!storm-shaded-deps' -Dcheckstyle.skip=true
 ```
 

@@ -53,6 +53,8 @@
  *             JavadocContentLocation, JavadocParagraph, JavadocTagContinuationIndentation,
  *             RequireEmptyLineBeforeBlockTagGroup, AtclauseOrder, SummaryJavadoc
  *             (missing period, lowercase first word), InvalidJavadocPosition
+ *   Indentation  Indentation, CommentsIndentation - only in the `checkstyle-autofix-indentation`
+ *             execution (autofixChecks), the pass after this one
  *
  * Deliberately not fixed - each needs a decision or knowledge a text edit can't have:
  *   Naming rules and AbbreviationAsWordInName (renames need cross-file symbol resolution),
@@ -1120,6 +1122,79 @@ private static final Map<Integer, String> ESCAPES = [
     }
 
     // ---- indentation ------------------------------------------------------------
+    // Only run by the `checkstyle-autofix-indentation` execution, after the default run: it
+    // re-indents the continuation lines the LineLength wraps leave mis-indented, and what
+    // OpenRewrite's TabsAndIndents gets wrong (array initializer elements at the continuation
+    // indent, bodies of some anonymous classes and enum constants misplaced).
+    // Each fixer moves the reported line to the level Checkstyle's message asks for.
+
+    static int indentation(Src s, int off, String msg, int[] ls) {
+        Matcher m = msg =~ /incorrect indentation level (\d+), expected level should be (?:one of the following: )?(\d+(?:, \d+)*)/
+        if (!m.find()) {
+            return NONE
+        }
+        int lineStart = s.lineStart(off)
+        int current = m.group(1).toInteger()
+        // the reported token must open its line, at the level the message says
+        if (s.firstNonWs(lineStart) != off || off - lineStart != current) {
+            return NONE
+        }
+        // of the accepted levels, the one closest to where the line is
+        int target = m.group(2).split(', ').collect {
+            it.toInteger()
+        }.min { a, b ->
+            (Math.abs(a - current) <=> Math.abs(b - current)) ?: (a <=> b)
+        }
+        int end = s.lineEnd(off)
+        if (tokenOf(msg)?.endsWith(' modifier')) {
+            // only the first line of a declaration is reported (its annotation, say): the rest of
+            // its header, up to the `{` or `;`, moves with it
+            int depth = 0
+            int i = off
+            while (i < s.length() && !(depth == 0 && s.isCode(i) && (s.charAt(i) == '{' as char || s.charAt(i) == ';' as char))) {
+                if (s.isCode(i) && s.charAt(i) == '(' as char) {
+                    depth++
+                } else if (s.isCode(i) && s.charAt(i) == ')' as char) {
+                    depth--
+                }
+                i++
+            }
+            end = s.lineEnd(Math.min(i, s.length()))
+        }
+        s.replace(lineStart, end, shiftLines(s.slice(lineStart, end), target - current))
+        lineStart
+    }
+
+    static int commentsIndentation(Src s, int off, String msg, int[] ls) {
+        Matcher m = msg =~ /incorrect indentation level (\d+), expected is (\d+)/
+        if (!m.find()) {
+            return NONE
+        }
+        int lineStart = s.lineStart(off)
+        if (s.firstNonWs(lineStart) != off || off - lineStart != m.group(1).toInteger()) {
+            return NONE
+        }
+        int delta = m.group(2).toInteger() - m.group(1).toInteger()
+        int end = s.lineEnd(off)
+        if (s.has(off, '/*')) {
+            // a block comment moves as a whole, so its ' *' lines stay aligned
+            int close = s.indexOf('*/', off + 2)
+            if (close < 0) {
+                return NONE
+            }
+            end = s.lineEnd(close)
+        }
+        s.replace(lineStart, end, shiftLines(s.slice(lineStart, end), delta))
+        lineStart
+    }
+
+    /** Moves every line of text right (delta > 0) or left by delta columns, never past its indent. */
+    static String shiftLines(String text, int delta) {
+        text.split('\n', -1).collect { String l ->
+            int lead = l.length() - l.replaceFirst(/^[ \t]+/, '').length()
+            delta >= 0 ? spaces(delta) + l : l.substring(Math.min(lead, -delta))
+        }.join('\n')
+    }
 
     // ---- line length ------------------------------------------------------------
 
@@ -1460,7 +1535,17 @@ Map<String, Closure> fixers = [
         AtclauseOrder                     : Fixers.&atclauseOrder,
         SummaryJavadoc                    : Fixers.&summaryJavadoc,
         InvalidJavadocPosition            : Fixers.&invalidJavadocPosition,
+        Indentation                       : Fixers.&indentation,
+        CommentsIndentation               : Fixers.&commentsIndentation,
 ]
+// Indentation is left out of the default run so that it is fixed once the other fixers' edits
+// (LineLength wraps above all) are in: the `checkstyle-autofix-indentation` execution sets
+// `autofixChecks` to run only the indentation fixers, after the default run.
+Set<String> indentationChecks = ['Indentation', 'CommentsIndentation'] as Set
+Set<String> selectedChecks = binding.hasVariable('autofixChecks') && autofixChecks
+        ? (autofixChecks.toString().split(',')*.trim().findAll { it } as Set)
+        : fixers.keySet() - indentationChecks
+fixers = fixers.subMap(selectedChecks)
 
 final int MAX_ROUNDS = 25
 
@@ -1510,6 +1595,11 @@ Map<File, String> originalText = [:]
 Map<File, String> beforeRound = [:]
 Map<File, Integer> initialCount = [:]
 Map<File, Integer> latestCount = [:]
+// the safety net counts every violation, or only the selected checks' when autofixChecks is set
+// (re-indenting a line can push it past LineLength, which is not this pass's to judge)
+def counted = { List<Map> vs ->
+    binding.hasVariable('autofixChecks') && autofixChecks ? vs.count { selectedChecks.contains(it.check) } : vs.size()
+}
 Map<String, Integer> appliedByCheck = [:].withDefault {
     0
 }
@@ -1530,9 +1620,9 @@ while (!pending.isEmpty() && round < MAX_ROUNDS) {
     List<File> next = []
     pending.each { File f ->
         List<Map> vs = violations[f.absolutePath] ?: []
-        latestCount[f] = vs.size()
+        latestCount[f] = counted(vs)
         if (!initialCount.containsKey(f)) {
-            initialCount[f] = vs.size()
+            initialCount[f] = counted(vs)
         }
         if (unparsable.contains(f.absolutePath)) {
             if (beforeRound.containsKey(f)) {
@@ -1593,7 +1683,7 @@ while (!pending.isEmpty() && round < MAX_ROUNDS) {
 if (!pending.isEmpty()) {
     audit(pending)
     pending.each { File f ->
-        latestCount[f] = (violations[f.absolutePath] ?: []).size()
+        latestCount[f] = counted(violations[f.absolutePath] ?: [])
     }
 }
 

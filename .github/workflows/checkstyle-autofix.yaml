@@ -76,12 +76,12 @@ jobs:
         run: mvn --batch-mode install -DskipTests -Dcheckstyle.skip=true -pl "$MODULE" -am
       - name: Checkstyle report before the fix
         run: ./dev-tools/gitact/checkstyle-report.sh before
-      - name: Auto-fix the module (OpenRewrite, Groovy, OpenRewrite re-indent)
+      - name: Auto-fix the module (OpenRewrite, Groovy, Groovy indentation)
         run: |
           mvn --batch-mode -pl "$MODULE" -Dcheckstyle.skip=true \
               org.openrewrite.maven:rewrite-maven-plugin:run@checkstyle-autofix-openrewrite \
               org.codehaus.gmavenplus:gmavenplus-plugin:execute@checkstyle-autofix \
-              org.openrewrite.maven:rewrite-maven-plugin:run@checkstyle-reindent-openrewrite
+              org.codehaus.gmavenplus:gmavenplus-plugin:execute@checkstyle-autofix-indentation
       - name: Normalize the license headers
         run: mvn --batch-mode -pl "$MODULE" -Dcheckstyle.skip=true org.codehaus.gmavenplus:gmavenplus-plugin:execute@normalize-license-headers
       - name: Checkstyle report after the fix
