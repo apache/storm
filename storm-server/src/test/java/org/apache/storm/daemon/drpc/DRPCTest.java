@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.drpc;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCExceptionType;
 import org.apache.storm.generated.DRPCExecutionException;
@@ -43,9 +45,11 @@ import org.apache.storm.security.auth.SingleUserPrincipal;
 import org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer;
 import org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer.AclFunctionEntry;
 import org.apache.storm.security.auth.authorizer.DenyAuthorizer;
+import org.apache.storm.security.auth.authorizer.ImpersonationAuthorizer;
 import org.apache.storm.utils.Time;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -70,6 +74,11 @@ public class DRPCTest {
     @AfterAll
     public static void close() {
         exec.shutdownNow();
+    }
+
+    @AfterEach
+    public void resetContext() {
+        ReqContext.reset();
     }
 
     public static DRPCRequest getNextAvailableRequest(DRPC server, String func) {
@@ -357,6 +366,127 @@ public class DRPCTest {
         DRPC.checkAuthorization(jt, auth, "execute", "not_jump");
         DRPC.checkAuthorization(jc, auth, "execute", "not_jump");
         DRPC.checkAuthorization(other, auth, "execute", "not_jump");
+    }
+
+    /**
+     * Only "alice" may execute the function "sensitive".
+     */
+    public static class SensitiveFunctionAclAuthorizer extends DRPCSimpleACLAuthorizer {
+        @Override
+        protected Map<String, AclFunctionEntry> readAclFromConfig() {
+            Map<String, AclFunctionEntry> acl = new HashMap<>();
+            acl.put("sensitive", new AclFunctionEntry(Collections.singletonList("alice"), "sensitive_topo"));
+            return acl;
+        }
+    }
+
+    private static Map<String, Object> impersonationConf(boolean withImpersonationAuthorizer, boolean grantBob) {
+        return impersonationConf(withImpersonationAuthorizer, grantBob, "*");
+    }
+
+    private static Map<String, Object> impersonationConf(boolean withImpersonationAuthorizer, boolean grantBob, String bobHost) {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(DaemonConfig.DRPC_AUTHORIZER, SensitiveFunctionAclAuthorizer.class.getName());
+        conf.put(Config.DRPC_AUTHORIZER_ACL_STRICT, true);
+        conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
+        if (withImpersonationAuthorizer) {
+            conf.put(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER, ImpersonationAuthorizer.class.getName());
+            Map<String, Map<String, List<String>>> impersonationAcl = new HashMap<>();
+            if (grantBob) {
+                Map<String, List<String>> bobAcl = new HashMap<>();
+                bobAcl.put("groups", Collections.singletonList("*"));
+                bobAcl.put("hosts", Collections.singletonList(bobHost));
+                impersonationAcl.put("bob", bobAcl);
+            }
+            conf.put(Config.NIMBUS_IMPERSONATION_ACL, impersonationAcl);
+        }
+        return conf;
+    }
+
+    /**
+     * Sets up the current request context for {@code user}, optionally as {@code realUser} impersonating {@code user}.
+     */
+    private static void setCurrentUser(String user, String realUser) {
+        setCurrentUser(user, realUser, InetAddress.getLoopbackAddress());
+    }
+
+    private static void setCurrentUser(String user, String realUser, InetAddress remoteAddress) {
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new SingleUserPrincipal(user));
+        ReqContext context = ReqContext.context();
+        context.setSubject(subject);
+        context.setRealPrincipal(realUser == null ? null : new SingleUserPrincipal(realUser));
+        context.setRemoteAddress(remoteAddress);
+    }
+
+    private static void executeSensitive(DRPC server) throws Exception {
+        server.execute("sensitive", "args", BlockingOutstandingRequest.FACTORY);
+    }
+
+    @Test
+    public void testImpersonationDeniedByImpersonationAuthorizer() throws Exception {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, false))) {
+            setCurrentUser("alice", "bob");
+            assertTrue(ReqContext.context().isImpersonating());
+            assertThrows(() -> executeSensitive(server), AuthorizationException.class);
+            assertEquals(0, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testImpersonationPermittedByImpersonationAuthorizer() throws Exception {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, true))) {
+            setCurrentUser("alice", "bob");
+            executeSensitive(server);
+            assertEquals(1, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testNoImpersonationAllowedUser() throws Exception {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, false))) {
+            setCurrentUser("alice", null);
+            executeSensitive(server);
+            assertEquals(1, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testNoImpersonationOtherUserDenied() throws Exception {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, true))) {
+            setCurrentUser("bob", null);
+            assertThrows(() -> executeSensitive(server), AuthorizationException.class);
+            assertEquals(0, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testImpersonationFromListedHostPermitted() throws Exception {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, true, loopback.getHostAddress()))) {
+            setCurrentUser("alice", "bob", loopback);
+            executeSensitive(server);
+            assertEquals(1, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testImpersonationWithUnknownRemoteAddressDeniedForHostList() throws Exception {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, true, loopback.getHostAddress()))) {
+            setCurrentUser("alice", "bob", null);
+            assertThrows(() -> executeSensitive(server), AuthorizationException.class);
+            assertEquals(0, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testImpersonationWithoutImpersonationAuthorizer() throws Exception {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(false, false))) {
+            setCurrentUser("alice", "bob");
+            executeSensitive(server);
+            assertEquals(1, server.getNumTrackedFunctions());
+        }
     }
 
     public interface ThrowStuff {

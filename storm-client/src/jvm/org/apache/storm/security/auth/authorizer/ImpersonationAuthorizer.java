@@ -125,8 +125,13 @@ public class ImpersonationAuthorizer implements IAuthorizer {
     }
 
     private boolean isAllowedToImpersonateFromHost(Set<String> authorizedHosts, InetAddress remoteAddress) {
-        return authorizedHosts.contains(WILD_CARD)
-                || authorizedHosts.contains(remoteAddress.getCanonicalHostName())
+        if (authorizedHosts.contains(WILD_CARD)) {
+            return true;
+        }
+        if (remoteAddress == null) {
+            return false;
+        }
+        return authorizedHosts.contains(remoteAddress.getCanonicalHostName())
                 || authorizedHosts.contains(remoteAddress.getHostName())
                 || authorizedHosts.contains(remoteAddress.getHostAddress());
     }

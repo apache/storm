@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.generated.AuthorizationException;
@@ -76,14 +77,21 @@ public class DRPC implements AutoCloseable {
     private final Timer timer = new Timer("DRPC-CLEANUP-TIMER", true);
     private final AtomicLong ctr = new AtomicLong(0);
     private final IAuthorizer auth;
+    private final IAuthorizer impersonationAuth;
 
     public DRPC(StormMetricsRegistry metricsRegistry, Map<String, Object> conf) {
         this(metricsRegistry, mkAuthorizationHandler((String) conf.get(DaemonConfig.DRPC_AUTHORIZER), conf),
+             mkAuthorizationHandler((String) conf.get(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER), conf),
              ObjectReader.getInt(conf.get(DaemonConfig.DRPC_REQUEST_TIMEOUT_SECS), 600) * 1000);
     }
 
     public DRPC(StormMetricsRegistry metricsRegistry, IAuthorizer auth, long timeoutMs) {
+        this(metricsRegistry, auth, null, timeoutMs);
+    }
+
+    public DRPC(StormMetricsRegistry metricsRegistry, IAuthorizer auth, IAuthorizer impersonationAuth, long timeoutMs) {
         this.auth = auth;
+        this.impersonationAuth = impersonationAuth;
         this.meterServerTimedOut = metricsRegistry.registerMeter("drpc:num-server-timedout-requests");
         this.meterExecuteCalls = metricsRegistry.registerMeter("drpc:num-execute-calls");
         this.meterResultCalls = metricsRegistry.registerMeter("drpc:num-result-calls");
@@ -117,17 +125,36 @@ public class DRPC implements AutoCloseable {
     @VisibleForTesting
     static void checkAuthorization(ReqContext reqContext, IAuthorizer auth, String operation, String function)
         throws AuthorizationException {
-        checkAuthorization(reqContext, auth, operation, function, true);
+        checkAuthorization(reqContext, auth, null, operation, function, true);
     }
 
-    private static void checkAuthorization(ReqContext reqContext, IAuthorizer auth, String operation, String function, boolean log)
-        throws AuthorizationException {
+    private static void checkAuthorization(ReqContext reqContext, IAuthorizer auth, IAuthorizer impersonationAuth, String operation,
+                                           String function, boolean log) throws AuthorizationException {
         if (reqContext != null && log) {
             logAccess(reqContext, operation, function);
         }
+        Map<String, Object> map = new HashMap<>();
+        map.put(DRPCAuthorizerBase.FUNCTION_NAME, function);
+        if (reqContext != null && reqContext.isImpersonating()) {
+            if (log) {
+                LOG.info("principal: {} is trying to impersonate principal: {}", reqContext.realPrincipal(), reqContext.principal());
+            } else {
+                LOG.debug("principal: {} is trying to impersonate principal: {}", reqContext.realPrincipal(), reqContext.principal());
+            }
+            if (impersonationAuth == null) {
+                LOG.warn("impersonation attempt but {} has no authorizer configured, so it is not checked. "
+                         + "See the impersonation section of the documentation to learn how to configure it.",
+                         DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER);
+            } else if (!impersonationAuth.permit(reqContext, operation, map)) {
+                String fromHost = reqContext.remoteAddress() == null ? "" : " from host " + reqContext.remoteAddress();
+                throw new WrappedAuthorizationException("principal " + reqContext.realPrincipal()
+                                                        + " is not authorized to impersonate principal " + reqContext.principal()
+                                                        + fromHost
+                                                        + " for DRPC request '" + operation + "'."
+                                                        + " See " + Config.NIMBUS_IMPERSONATION_ACL + " to configure impersonation.");
+            }
+        }
         if (auth != null) {
-            Map<String, Object> map = new HashMap<>();
-            map.put(DRPCAuthorizerBase.FUNCTION_NAME, function);
             if (!auth.permit(reqContext, operation, map)) {
                 Principal principal = reqContext.principal();
                 String user = (principal != null) ? principal.getName() : "unknown";
@@ -137,11 +164,11 @@ public class DRPC implements AutoCloseable {
     }
 
     private void checkAuthorization(String operation, String function) throws AuthorizationException {
-        checkAuthorization(ReqContext.context(), auth, operation, function);
+        checkAuthorization(ReqContext.context(), auth, impersonationAuth, operation, function, true);
     }
 
     private void checkAuthorizationNoLog(String operation, String function) throws AuthorizationException {
-        checkAuthorization(ReqContext.context(), auth, operation, function, false);
+        checkAuthorization(ReqContext.context(), auth, impersonationAuth, operation, function, false);
     }
 
     private void cleanup(String id) {
