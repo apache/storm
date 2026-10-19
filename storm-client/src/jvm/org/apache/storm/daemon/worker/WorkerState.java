@@ -804,7 +804,7 @@ public class WorkerState {
      */
     private Set<Integer> workerOutboundTasks() {
         return computeOutboundTasks(getWorkerTopologyContext(), localTaskIds, taskToComponent,
-                ConfigUtils.upstreamFeedbackEnable(conf));
+                ConfigUtils.upstreamFeedbackEnable(topologyConf));
     }
 
     /**
@@ -826,7 +826,7 @@ public class WorkerState {
             for (Map<String, Grouping> value : context.getTargets(componentId).values()) {
                 components.addAll(value.keySet());
             }
-            if (feedbackEnabled) {
+            if (feedbackEnabled && !Utils.isSystemId(componentId)) {
                 for (GlobalStreamId source : context.getSources(componentId).keySet()) {
                     String sourceComponentId = source.get_componentId();
                     if (!Utils.isSystemId(sourceComponentId)) {
