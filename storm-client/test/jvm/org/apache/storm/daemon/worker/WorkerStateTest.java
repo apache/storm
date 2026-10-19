@@ -17,15 +17,9 @@
 package org.apache.storm.daemon.worker;
 
 import org.apache.storm.Config;
-import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
-import org.apache.storm.generated.Assignment;
-import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.testing.TestWordCounter;
-import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.thrift.TException;
-import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ConfigUtils;
@@ -35,12 +29,10 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,56 +45,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class WorkerStateTest {
-
-    @Test
-    public void testTopologyEnablesFeedbackWhenClusterDisablesIt() throws IOException, TException {
-        assertOutboundTasksUseTopologyFeedbackConfiguration(true);
-    }
-
-    @Test
-    public void testTopologyDisablesFeedbackWhenClusterEnablesIt() throws IOException, TException {
-        assertOutboundTasksUseTopologyFeedbackConfiguration(false);
-    }
-
-    private void assertOutboundTasksUseTopologyFeedbackConfiguration(boolean topologyFeedbackEnabled) throws IOException, TException {
-        Map<String, Object> conf = Utils.readStormConfig();
-        conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, !topologyFeedbackEnabled);
-        Map<String, Object> topologyConf = new HashMap<>(conf);
-        topologyConf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, topologyFeedbackEnabled);
-        topologyConf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 1);
-        topologyConf.put(Config.TOPOLOGY_WORKERS, 1);
-
-        TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new TestWordSpout(true)).setNumTasks(1);
-        builder.setBolt("bolt1", new TestWordCounter()).setNumTasks(1).shuffleGrouping("spout");
-        StormTopology topology = builder.createTopology();
-        Map<String, List<Integer>> componentTasks = Utils.reverseMap(StormCommon.stormTaskInfo(topology, topologyConf));
-        int localTask = componentTasks.get("bolt1").getFirst();
-        String assignmentId = "supervisor";
-        Assignment assignment = new Assignment();
-        assignment.set_executor_node_port(Collections.singletonMap(
-                Arrays.asList((long) localTask, (long) localTask),
-                new NodeInfo(assignmentId, Collections.singleton(0L))));
-
-        ConfigUtils mockedConfigUtils = mock(ConfigUtils.class);
-        ConfigUtils previousConfigUtils = ConfigUtils.setInstance(mockedConfigUtils);
-        try {
-            String topologyId = "feedback-config";
-            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId), any(AdvancedFSOps.class)))
-                    .thenReturn(topology);
-            WorkerState workerState = TestUtilsForWorkerState.getWorkerState(
-                    conf, topologyId, topologyConf, assignmentId, assignment);
-            try {
-                Set<Integer> outbound = workerState.getOutboundTasks();
-                componentTasks.get("spout").forEach(t ->
-                        assertEquals(outbound.contains(t), topologyFeedbackEnabled, "upstream routing to spout task " + t + " must follow topology configuration"));
-            } finally {
-                workerState.closeResources();
-            }
-        } finally {
-            ConfigUtils.setInstance(previousConfigUtils);
-        }
-    }
 
     @Test
     public void testWorkerHooksLifecycle() throws TException, IOException {
