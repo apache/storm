@@ -52,7 +52,7 @@ public class WorkerOutboundTasksTest {
     private static final List<Integer> SPOUT_TASKS = Arrays.asList(1, 2);
     private static final List<Integer> BOLT1_TASKS = Arrays.asList(3, 4);
     private static final List<Integer> BOLT2_TASKS = Arrays.asList(5, 6);
-    private static final List<Integer> ACKER_TASKS = Arrays.asList(7);
+    private static final List<Integer> ACKER_TASKS = List.of(7);
 
     private GeneralTopologyContext context() throws InvalidTopologyException {
         TopologyBuilder builder = new TopologyBuilder();
@@ -110,7 +110,7 @@ public class WorkerOutboundTasksTest {
     @Test
     public void feedbackDisabled_colocatedSpoutMasksMissingUpstreamRouting() throws InvalidTopologyException {
         GeneralTopologyContext context = context();
-        List<Integer> localTasks = Arrays.asList(SPOUT_TASKS.get(0), BOLT2_TASKS.get(0));
+        List<Integer> localTasks = Arrays.asList(SPOUT_TASKS.getFirst(), BOLT2_TASKS.getFirst());
         Set<Integer> withoutFeedback = WorkerState.computeOutboundTasks(context, localTasks,
                 context.getTaskToComponent(), false);
         Set<Integer> withFeedback = WorkerState.computeOutboundTasks(context, localTasks,
