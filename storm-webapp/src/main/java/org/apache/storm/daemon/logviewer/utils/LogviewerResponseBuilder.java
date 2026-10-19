@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 
 import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.ui.UIHelpers;
@@ -73,12 +74,14 @@ public class LogviewerResponseBuilder {
      *
      * @param contentDispositionName The name to set in the Content-Disposition header
      * @param file file to download
+     * @param numFileDownloadExceptions meter marked when the file can not be opened
+     * @param options options specifying how the file is opened, e.g. {@link java.nio.file.LinkOption#NOFOLLOW_LINKS}
      */
     public static Response buildDownloadFile(String contentDispositionName,
-        File file, Meter numFileDownloadExceptions) throws IOException {
+        File file, Meter numFileDownloadExceptions, OpenOption... options) throws IOException {
         try {
             // do not close this InputStream in method: it will be used from jetty server
-            InputStream is = Files.newInputStream(file.toPath());
+            InputStream is = Files.newInputStream(file.toPath(), options);
             return Response.status(jakarta.ws.rs.core.Response.Status.OK)
                     .entity(wrapWithStreamingOutput(is))
                     .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)

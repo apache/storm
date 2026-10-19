@@ -24,14 +24,21 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.net.HttpHeaders;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
@@ -139,6 +146,90 @@ public class LogviewerProfileHandlerTest {
 
             assertThat(topoAResponse.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
+    }
+
+    @Test
+    public void testDownloadDumpFileDoesNotFollowSymbolicLink() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.jfr"));
+            LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response response = handler.downloadDumpFile("topoA", "localhost:1111", "other.jfr", "user");
+            int status = response.getStatus();
+            String content = status == Response.Status.OK.getStatusCode() ? readEntity(response) : null;
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat("served content: " + content, status, is(Response.Status.NOT_FOUND.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testListDumpFilesDoesNotListSymbolicLinks() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.jfr"));
+            LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response response = handler.listDumpFiles("topoA", "localhost:1111", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            String content = (String) response.getEntity();
+            assertThat(content, containsString("worker.jfr"));
+            assertThat(content, not(containsString("other.jfr")));
+        }
+    }
+
+    @Test
+    public void testDownloadDumpFileUnderSymbolicLinkRoot() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path realWorkerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("real-workers-artifacts"));
+            Path linkedWorkerLogRoot = rootPath.getFile().toPath().resolve("workers-artifacts");
+            Files.createSymbolicLink(linkedWorkerLogRoot, realWorkerLogRoot);
+            LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(linkedWorkerLogRoot);
+
+            Response response = handler.downloadDumpFile("topoA", "localhost:1111", "worker.jfr", "user");
+            int status = response.getStatus();
+            String content = status == Response.Status.OK.getStatusCode() ? readEntity(response) : null;
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(status, is(Response.Status.OK.getStatusCode()));
+            assertThat(content, is("TopoA jfr"));
+        }
+    }
+
+    /**
+     * Creates topoA/1111/worker.jfr and topoB/1111/worker.jfr with distinct content below the worker log root.
+     *
+     * @return the worker log root
+     */
+    private Path createDumpFileTree(Path workerLogRoot) throws IOException {
+        Path topoAFile = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.jfr");
+        Path topoBFile = workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.jfr");
+        Files.createDirectories(topoAFile.getParent());
+        Files.createDirectories(topoBFile.getParent());
+        Files.writeString(topoAFile, "TopoA jfr");
+        Files.writeString(topoBFile, "TopoB jfr");
+        return workerLogRoot;
+    }
+
+    private LogviewerProfileHandler createHandlerAllowingOnlyTopoA(Path workerLogRoot) {
+        //Models per topology access: the user may only read the files of topoA.
+        ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+        when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+        return new LogviewerProfileHandler(workerLogRoot.toString(), resourceAuthorizer, new StormMetricsRegistry());
+    }
+
+    private String readEntity(Response response) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ((StreamingOutput) response.getEntity()).write(out);
+        return out.toString(StandardCharsets.UTF_8);
     }
 
     private LogviewerProfileHandler createHandlerTraversalTests(Path rootPath) throws IOException {

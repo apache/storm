@@ -35,6 +35,7 @@ import jakarta.ws.rs.core.Response;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -42,6 +43,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
+import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -120,11 +122,19 @@ public class LogviewerProfileHandler {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
 
-        if (absFile.toFile().exists()) {
+        if (Paths.get(fileName).getNameCount() != 1) {
+            //A dump file is a direct child of the port directory
+            return LogviewerResponseBuilder.buildResponsePageNotFound();
+        }
+
+        //A dump file must be a direct child of a port directory and must not be reached through a symbolic link,
+        //otherwise it is answered like a missing file
+        if (LogFilePaths.isServableWorkerFile(logRoot, absFile)) {
             String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
                 String downloadedFileName = host + "-" + topologyId + "-" + portStr + "-" + absFile.getFileName();
-                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, absFile.toFile(), numFileDownloadExceptions);
+                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, absFile.toFile(), numFileDownloadExceptions,
+                    LinkOption.NOFOLLOW_LINKS);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
@@ -154,6 +164,7 @@ public class LogviewerProfileHandler {
     private List<String> getProfilerDumpFiles(File dir) throws IOException {
         List<Path> filesForDir = directoryCleaner.getFilesForDir(dir.toPath());
         return filesForDir.stream()
+            .filter(LogFilePaths::isRegularFileNotLink)
             .map(path -> path.toFile())
             .filter(file -> {
                 String fileName = file.getName();

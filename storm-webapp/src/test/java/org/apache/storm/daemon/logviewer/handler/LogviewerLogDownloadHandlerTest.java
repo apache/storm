@@ -25,6 +25,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -240,6 +242,140 @@ public class LogviewerLogDownloadHandlerTest {
             assertThat(contentDisposition, containsString("host-nimbus.log"));
             verify(resourceAuthorizer).isUserAllowedToAccessDaemonFile("user");
         }
+    }
+
+    @Test
+    public void testDownloadLogFileDoesNotFollowSymbolicLinkToAnotherTopology() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
+            Path link = workerLogRoot.resolve("topoA").resolve("1111").resolve("other.log");
+            Files.createSymbolicLink(link, workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+            LogviewerLogDownloadHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"), workerLogs);
+
+            Response response = handler.downloadLogFile("host", "topoA/1111/other.log", "user");
+            int status = response.getStatus();
+            String content = status == Response.Status.OK.getStatusCode() ? readEntity(response) : null;
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat("served content: " + content, status, is(Response.Status.NOT_FOUND.getStatusCode()));
+            verify(workerLogs, never()).setLogFilePermission(anyString());
+        }
+    }
+
+    @Test
+    public void testDownloadLogFileDoesNotFollowSymbolicLinkOutsideLogRoot() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
+            Path outside = rootPath.getFile().toPath().resolve("outside.txt");
+            Files.writeString(outside, "content outside the log root");
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("outside.log"), outside);
+
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+            LogviewerLogDownloadHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"), workerLogs);
+
+            Response response = handler.downloadLogFile("host", "topoA/1111/outside.log", "user");
+            int status = response.getStatus();
+            String content = status == Response.Status.OK.getStatusCode() ? readEntity(response) : null;
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat("served content: " + content, status, is(Response.Status.NOT_FOUND.getStatusCode()));
+            verify(workerLogs, never()).setLogFilePermission(anyString());
+        }
+    }
+
+    @Test
+    public void testDownloadLogFileUnderSymbolicLinkRoot() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path realDaemonLogRoot = rootPath.getFile().toPath().resolve("real-logs");
+            createWorkerLogTree(realDaemonLogRoot);
+            Path linkedDaemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Files.createSymbolicLink(linkedDaemonLogRoot, realDaemonLogRoot);
+
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+            LogviewerLogDownloadHandler handler = createHandlerAllowingOnlyTopoA(linkedDaemonLogRoot, workerLogs);
+
+            Response response = handler.downloadLogFile("host", "topoA/1111/worker.log", "user");
+            int status = response.getStatus();
+            String content = status == Response.Status.OK.getStatusCode() ? readEntity(response) : null;
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(status, is(Response.Status.OK.getStatusCode()));
+            assertThat(content, is("topoA content"));
+            verify(workerLogs).setLogFilePermission("topoA/1111/worker.log");
+        }
+    }
+
+    @Test
+    public void testDownloadLogFileRejectsFileBelowSubdirectoryOfPortDir() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
+            Path nested = workerLogRoot.resolve("topoA").resolve("1111").resolve("sub").resolve("worker.log");
+            Files.createDirectories(nested.getParent());
+            Files.writeString(nested, "nested content");
+
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+            LogviewerLogDownloadHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"), workerLogs);
+
+            Response response = handler.downloadLogFile("host", "topoA/1111/sub/worker.log", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            verify(workerLogs, never()).setLogFilePermission(anyString());
+        }
+    }
+
+    @Test
+    public void testDownloadDaemonLogFileFollowsSymbolicLink() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            createWorkerLogTree(daemonLogRoot);
+            Path realLog = Files.writeString(daemonLogRoot.resolve("nimbus.log.real"), "nimbus content");
+            Files.createSymbolicLink(daemonLogRoot.resolve("nimbus.log"), realLog);
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            LogviewerLogDownloadHandler handler = new LogviewerLogDownloadHandler(daemonLogRoot.resolve("workers-artifacts").toString(),
+                daemonLogRoot.toString(), mock(WorkerLogs.class), resourceAuthorizer, new StormMetricsRegistry());
+
+            Response response = handler.downloadDaemonLogFile("host", "nimbus.log", "user");
+            int status = response.getStatus();
+            String content = status == Response.Status.OK.getStatusCode() ? readEntity(response) : null;
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(status, is(Response.Status.OK.getStatusCode()));
+            assertThat(content, is("nimbus content"));
+        }
+    }
+
+    /**
+     * Creates topoA/1111/worker.log and topoB/1111/worker.log with distinct content below the worker log root.
+     *
+     * @return the worker log root
+     */
+    private Path createWorkerLogTree(Path daemonLogRoot) throws IOException {
+        Path workerLogRoot = daemonLogRoot.resolve("workers-artifacts");
+        Path topoAFile = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log");
+        Path topoBFile = workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log");
+        Files.createDirectories(topoAFile.getParent());
+        Files.createDirectories(topoBFile.getParent());
+        Files.writeString(topoAFile, "topoA content");
+        Files.writeString(topoBFile, "topoB content");
+        return workerLogRoot;
+    }
+
+    private LogviewerLogDownloadHandler createHandlerAllowingOnlyTopoA(Path daemonLogRoot, WorkerLogs workerLogs) {
+        //Models per topology access: the user may only read the logs of topoA.
+        ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+        when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+        return new LogviewerLogDownloadHandler(daemonLogRoot.resolve("workers-artifacts").toString(),
+            daemonLogRoot.toString(), workerLogs, resourceAuthorizer, new StormMetricsRegistry());
     }
 
     private String readEntity(Response response) throws IOException {

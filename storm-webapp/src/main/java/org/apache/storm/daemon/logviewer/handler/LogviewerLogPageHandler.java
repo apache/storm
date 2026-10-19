@@ -50,7 +50,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -69,6 +70,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
+import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
@@ -221,13 +223,16 @@ public class LogviewerLogPageHandler {
         }
         
         if (resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
-            workerLogs.setLogFilePermission(fileName);
+            //A worker log must be a direct child of a port directory and must not be reached through a symbolic link,
+            //otherwise it is answered like a missing file
+            if (LogFilePaths.isServableWorkerFile(logRoot, absFile)) {
+                workerLogs.setLogFilePermission(fileName);
 
-            Path topoDir = absFile.getParent().getParent();
-            if (absFile.toFile().exists()) {
+                Path topoDir = absFile.getParent().getParent();
                 SortedSet<Path> logFiles;
                 try {
                     logFiles = Arrays.stream(topoDir.toFile().listFiles())
+                        .filter(portDir -> LogFilePaths.isDirectoryNotLink(portDir.toPath()))
                         .flatMap(portDir -> {
                             try {
                                 return directoryCleaner.getFilesForDir(portDir.toPath()).stream();
@@ -235,7 +240,7 @@ public class LogviewerLogPageHandler {
                                 throw new RuntimeException(e);
                             }
                         })
-                        .filter(Files::isRegularFile)
+                        .filter(LogFilePaths::isRegularFileNotLink)
                             .collect(toCollection(TreeSet::new));
                 } catch (UncheckedIOException e) {
                     throw e.getCause();
@@ -249,13 +254,19 @@ public class LogviewerLogPageHandler {
 
                 length = length != null ? Math.min(10485760, length) : LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
                 final boolean isZipFile = absFile.getFileName().toString().endsWith(".gz");
-                long fileLength = getFileLength(absFile.toFile(), isZipFile);
-                if (start == null) {
-                    start = Long.valueOf(fileLength - length).intValue();
-                }
+                long fileLength;
+                String logString;
+                //The length is taken from the opened file, so it always belongs to the content that is shown
+                try (SeekableByteChannel channel = openWorkerFile(absFile)) {
+                    fileLength = getOpenedFileLength(channel, isZipFile);
+                    if (start == null) {
+                        start = Long.valueOf(fileLength - length).intValue();
+                    }
 
-                String logString = isTxtFile(fileName) ? escapeHtml4(pageFile(absFile.toString(), isZipFile, fileLength, start, length)) :
-                    escapeHtml4("This is a binary file and cannot display! You may download the full file.");
+                    logString = isTxtFile(fileName)
+                        ? escapeHtml4(pageFile(Channels.newInputStream(channel), isZipFile, fileLength, start, length)) :
+                        escapeHtml4("This is a binary file and cannot display! You may download the full file.");
+                }
 
                 List<DomContent> bodyContents = new ArrayList<>();
                 if (StringUtils.isNotEmpty(grep)) {
@@ -485,9 +496,39 @@ public class LogviewerLogPageHandler {
         return a(text).withHref(url).withClass("btn btn-default " + (enabled ? "enabled" : "disabled"));
     }
 
+    private SeekableByteChannel openWorkerFile(Path file) throws IOException {
+        try {
+            return LogFilePaths.openForReading(file, false);
+        } catch (IOException e) {
+            numFileOpenExceptions.mark();
+            throw e;
+        }
+    }
+
+    private long getOpenedFileLength(SeekableByteChannel channel, boolean isZipFile) throws IOException {
+        try {
+            return LogFilePaths.fileLength(channel, isZipFile);
+        } catch (IOException e) {
+            numFileReadExceptions.mark();
+            throw e;
+        }
+    }
+
     private String pageFile(String path, boolean isZipFile, long fileLength, Integer start, Integer readLength)
         throws IOException, InvalidRequestException {
-        try (InputStream input = isZipFile ? new GZIPInputStream(new FileInputStream(path)) : new FileInputStream(path);
+        InputStream fileInput;
+        try {
+            fileInput = new FileInputStream(path);
+        } catch (FileNotFoundException e) {
+            numFileOpenExceptions.mark();
+            throw e;
+        }
+        return pageFile(fileInput, isZipFile, fileLength, start, readLength);
+    }
+
+    private String pageFile(InputStream fileInput, boolean isZipFile, long fileLength, Integer start, Integer readLength)
+        throws IOException, InvalidRequestException {
+        try (InputStream input = isZipFile ? new GZIPInputStream(fileInput) : fileInput;
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             if (start >= fileLength) {
                 throw new InvalidRequestException("Cannot start past the end of the file");
@@ -508,9 +549,6 @@ public class LogviewerLogPageHandler {
 
             numPageRead.mark();
             return output.toString();
-        } catch (FileNotFoundException e) {
-            numFileOpenExceptions.mark();
-            throw e;
         } catch (IOException e) {
             numFileReadExceptions.mark();
             throw e;

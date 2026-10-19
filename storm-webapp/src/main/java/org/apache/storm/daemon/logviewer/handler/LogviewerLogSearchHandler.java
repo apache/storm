@@ -40,6 +40,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,6 +68,7 @@ import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
+import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
@@ -75,7 +78,6 @@ import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.UrlBuilder;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 
 import org.slf4j.Logger;
@@ -164,7 +166,10 @@ public class LogviewerLogSearchHandler {
             return searchLogFileNotFound(callback);
         }
         Response response;
-        if (absFile.toFile().exists()) {
+        //A worker log must be a direct child of a port directory and must not be reached through a symbolic link,
+        //otherwise it is answered like a missing file
+        boolean exists = isDaemon ? absFile.toFile().exists() : LogFilePaths.isServableWorkerFile(rootDir, absFile);
+        if (exists) {
             if (isDaemon ? resourceAuthorizer.isUserAllowedToAccessDaemonFile(user)
                     : resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 Integer numMatchesInt = numMatchesStr != null ? tryParseIntParam("num-matches", numMatchesStr) : null;
@@ -331,12 +336,19 @@ public class LogviewerLogSearchHandler {
         }
 
         boolean isZipFile = file.toString().endsWith(".gz");
-        try (InputStream fis = Files.newInputStream(file)) {
-            try (InputStream gzippedInputStream = isZipFile ? new GZIPInputStream(fis) : fis;
+        //A worker log is opened without following a symbolic link, its length is taken from the opened file
+        try (SeekableByteChannel channel = LogFilePaths.openForReading(file, isDaemon)) {
+            //It's more likely to be a file read exception here, so we don't differentiate
+            int fileLength;
+            try {
+                fileLength = (int) LogFilePaths.fileLength(channel, isZipFile);
+            } catch (IOException e) {
+                numFileReadExceptions.mark();
+                throw new RuntimeException(e);
+            }
+            try (InputStream fis = Channels.newInputStream(channel);
+                InputStream gzippedInputStream = isZipFile ? new GZIPInputStream(fis) : fis;
                 BufferedInputStream stream = new BufferedInputStream(gzippedInputStream)) {
-
-                //It's more likely to be a file read exception here, so we don't differentiate
-                int fileLength = isZipFile ? (int) ServerUtils.zipFileSize(file.toFile()) : (int) Files.size(file);
 
                 ByteBuffer buf = ByteBuffer.allocate(GREP_BUF_SIZE);
                 final byte[] bufArray = buf.array();
@@ -428,6 +440,7 @@ public class LogviewerLogSearchHandler {
     List<Path> logsForPort(String user, Path portDir) {
         try {
             List<Path> workerLogs = directoryCleaner.getFilesForDir(portDir).stream()
+                .filter(LogFilePaths::isRegularFileNotLink)
                 .filter(file -> WORKER_LOG_FILENAME_PATTERN.asPredicate().test(file.getFileName().toString()))
                 .collect(toList());
 

@@ -20,12 +20,14 @@ package org.apache.storm.daemon.logviewer.handler;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,11 +36,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 import jakarta.ws.rs.core.Response;
 
@@ -248,6 +253,158 @@ public class LogviewerLogPageHandlerTest {
             assertThat((String) returned.getEntity(), containsString("nimbus log content"));
             verify(resourceAuthorizer).isUserAllowedToAccessDaemonFile("user");
         }
+    }
+
+    @Test
+    public void testLogPageDoesNotFollowSymbolicLinkToAnotherTopology() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+            LogviewerLogPageHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"), workerLogs);
+
+            final Response returned = handler.logPage("topoA/1111/worker.log.1", 0, 100, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat("rendered page: " + returned.getEntity(), returned.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            verify(workerLogs, never()).setLogFilePermission(anyString());
+        }
+    }
+
+    @Test
+    public void testLogPageDoesNotListSymbolicLinks() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+
+            LogviewerLogPageHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"),
+                mock(WorkerLogs.class));
+
+            final Response returned = handler.logPage("topoA/1111/worker.log", 0, 100, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.OK.getStatusCode()));
+            String page = (String) returned.getEntity();
+            assertThat(page, containsString("topoA content"));
+            assertThat(page, not(containsString("worker.log.1")));
+        }
+    }
+
+    @Test
+    public void testLogPageUnderSymbolicLinkRoot() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path realDaemonLogRoot = rootPath.getFile().toPath().resolve("real-logs");
+            createWorkerLogTree(realDaemonLogRoot);
+            Path linkedDaemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Files.createSymbolicLink(linkedDaemonLogRoot, realDaemonLogRoot);
+
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+            LogviewerLogPageHandler handler = createHandlerAllowingOnlyTopoA(linkedDaemonLogRoot, workerLogs);
+
+            final Response returned = handler.logPage("topoA/1111/worker.log", 0, 100, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat((String) returned.getEntity(), containsString("topoA content"));
+            verify(workerLogs).setLogFilePermission("topoA/1111/worker.log");
+        }
+    }
+
+    @Test
+    public void testLogPageRejectsFileBelowSubdirectoryOfPortDir() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
+            Path nested = workerLogRoot.resolve("topoA").resolve("1111").resolve("sub").resolve("worker.log");
+            Files.createDirectories(nested.getParent());
+            Files.writeString(nested, "nested content");
+
+            WorkerLogs workerLogs = mock(WorkerLogs.class);
+            LogviewerLogPageHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"), workerLogs);
+
+            final Response returned = handler.logPage("topoA/1111/sub/worker.log", 0, 100, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            verify(workerLogs, never()).setLogFilePermission(anyString());
+        }
+    }
+
+    @Test
+    public void testLogPageServesRotatedAndCompressedWorkerLogs() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
+            Path portDir = workerLogRoot.resolve("topoA").resolve("1111");
+            Files.writeString(portDir.resolve("worker.log.1"), "rotated content");
+            try (OutputStream out = new GZIPOutputStream(Files.newOutputStream(portDir.resolve("worker.log.2.gz")))) {
+                out.write("compressed content".getBytes(StandardCharsets.UTF_8));
+            }
+
+            LogviewerLogPageHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"),
+                mock(WorkerLogs.class));
+
+            final Response rotated = handler.logPage("topoA/1111/worker.log.1", null, 100, null, "user");
+            final Response compressed = handler.logPage("topoA/1111/worker.log.2.gz", null, 100, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(rotated.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat((String) rotated.getEntity(), containsString("rotated content"));
+            assertThat(compressed.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat((String) compressed.getEntity(), containsString("compressed content"));
+        }
+    }
+
+    @Test
+    public void testDaemonLogPageFollowsSymbolicLink() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            createWorkerLogTree(daemonLogRoot);
+            Path realLog = Files.writeString(daemonLogRoot.resolve("nimbus.log.real"), "nimbus content");
+            Files.createSymbolicLink(daemonLogRoot.resolve("nimbus.log"), realLog);
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            LogviewerLogPageHandler handler = new LogviewerLogPageHandler(daemonLogRoot.resolve("workers-artifacts").toString(),
+                daemonLogRoot.toString(), mock(WorkerLogs.class), resourceAuthorizer, new StormMetricsRegistry());
+
+            final Response returned = handler.daemonLogPage("nimbus.log", 0, 100, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat((String) returned.getEntity(), containsString("nimbus content"));
+        }
+    }
+
+    /**
+     * Creates topoA/1111/worker.log and topoB/1111/worker.log with distinct content below the worker log root.
+     *
+     * @return the worker log root
+     */
+    private Path createWorkerLogTree(Path daemonLogRoot) throws IOException {
+        Path workerLogRoot = daemonLogRoot.resolve("workers-artifacts");
+        Path topoAFile = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log");
+        Path topoBFile = workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log");
+        Files.createDirectories(topoAFile.getParent());
+        Files.createDirectories(topoBFile.getParent());
+        Files.writeString(topoAFile, "topoA content");
+        Files.writeString(topoBFile, "topoB content");
+        return workerLogRoot;
+    }
+
+    private LogviewerLogPageHandler createHandlerAllowingOnlyTopoA(Path daemonLogRoot, WorkerLogs workerLogs) {
+        //Models per topology access: the user may only read the logs of topoA.
+        ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+        when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+        return new LogviewerLogPageHandler(daemonLogRoot.resolve("workers-artifacts").toString(), daemonLogRoot.toString(),
+            workerLogs, resourceAuthorizer, new StormMetricsRegistry());
     }
 
     private LogviewerLogPageHandler createHandlerForTraversalTests(Path rootPath) throws IOException {

@@ -24,6 +24,7 @@ import com.codahale.metrics.Meter;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -79,8 +80,11 @@ public class LogFileDownloader {
             //Prevent daemon log reads from pathing into worker logs
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
-        
-        if (file.toFile().exists()) {
+
+        //A worker log must be a direct child of a port directory and must not be reached through a symbolic link,
+        //otherwise it is answered like a missing file
+        boolean exists = isDaemon ? file.toFile().exists() : LogFilePaths.isServableWorkerFile(rootDir, file);
+        if (exists) {
             if (isDaemon ? resourceAuthorizer.isUserAllowedToAccessDaemonFile(user)
                     : resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 if (!isDaemon) {
@@ -89,17 +93,21 @@ public class LogFileDownloader {
                 }
                 fileDownloadSizeDistMb.update(Math.round((double) file.toFile().length() / FileUtils.ONE_MB));
                 String downloadedFileName;
-                Path pathRelativeToRootDir = rootDir.relativize(file);
-                if (isDaemon || pathRelativeToRootDir.getNameCount() != 3) {
+                if (isDaemon) {
                     downloadedFileName = host + "-" + rawFile.getFileName();
                 } else {
                     //host-topoId-port-fileName
+                    Path pathRelativeToRootDir = rootDir.relativize(file);
                     downloadedFileName = host + "-"
                         + pathRelativeToRootDir.getName(0) + "-"
                         + pathRelativeToRootDir.getName(1) + "-"
                         + pathRelativeToRootDir.getName(2);
                 }
-                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, file.toFile(), numFileDownloadExceptions);
+                if (isDaemon) {
+                    return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, file.toFile(), numFileDownloadExceptions);
+                }
+                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, file.toFile(), numFileDownloadExceptions,
+                    LinkOption.NOFOLLOW_LINKS);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }

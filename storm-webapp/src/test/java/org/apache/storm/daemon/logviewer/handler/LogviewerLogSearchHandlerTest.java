@@ -19,12 +19,15 @@
 package org.apache.storm.daemon.logviewer.handler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -912,6 +915,108 @@ public class LogviewerLogSearchHandlerTest {
             assertEquals("needle", ((Map<?, ?>) matches.get(0)).get("matchString"));
             verify(resourceAuthorizer).isUserAllowedToAccessDaemonFile("user");
         }
+    }
+
+    @Test
+    public void testSearchLogFileDoesNotFollowSymbolicLink() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response response = handler.searchLogFile("topoA/1111/worker.log.1", "user", false, "needle", null, null, null, null);
+
+            assertEquals(404, response.getStatus(), "response: " + response.getEntity());
+        }
+    }
+
+    @Test
+    public void testSearchLogFileRejectsFileBelowSubdirectoryOfPortDir() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Path nested = workerLogRoot.resolve("topoA").resolve("1111").resolve("sub").resolve("worker.log");
+            Files.createDirectories(nested.getParent());
+            Files.writeString(nested, "needle from nested\n");
+            LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response response = handler.searchLogFile("topoA/1111/sub/worker.log", "user", false, "needle", null, null, null, null);
+
+            assertEquals(404, response.getStatus(), "response: " + response.getEntity());
+        }
+    }
+
+    @Test
+    public void testSearchLogFileUnderSymbolicLinkRoot() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path realWorkerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("real-workers-artifacts"));
+            Path linkedWorkerLogRoot = rootPath.getFile().toPath().resolve("workers-artifacts");
+            Files.createSymbolicLink(linkedWorkerLogRoot, realWorkerLogRoot);
+            LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(linkedWorkerLogRoot);
+
+            Response response = handler.searchLogFile("topoA/1111/worker.log", "user", false, "needle", null, null, null, null);
+
+            assertEquals(200, response.getStatus());
+            Map<?, ?> entity = new ObjectMapper().readValue((String) response.getEntity(), Map.class);
+            List<?> matches = (List<?>) entity.get("matches");
+            assertEquals(1, matches.size());
+            String afterString = (String) ((Map<?, ?>) matches.get(0)).get("afterString");
+            assertTrue(afterString.startsWith(" from topoA"), afterString);
+        }
+    }
+
+    @Test
+    public void testLogsForPortSkipsSymbolicLinks() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Path portDir = workerLogRoot.resolve("topoA").resolve("1111");
+            Files.createSymbolicLink(portDir.resolve("worker.log.1"), workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            List<Path> logs = handler.logsForPort("user", portDir);
+
+            assertEquals(List.of(portDir.resolve("worker.log")), logs);
+        }
+    }
+
+    @Test
+    public void testDeepSearchLogsForTopologyDoesNotFollowSymbolicLinks() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response response = handler.deepSearchLogsForTopology("topoA", "user", "needle", "10", "*", "0", "0", true, null, null);
+
+            assertEquals(200, response.getStatus());
+            String entity = (String) response.getEntity();
+            assertTrue(entity.contains("from topoA"), entity);
+            assertFalse(entity.contains("from topoB"), entity);
+        }
+    }
+
+    /**
+     * Creates topoA/1111/worker.log and topoB/1111/worker.log, each with one distinct match for "needle".
+     *
+     * @return the worker log root
+     */
+    private static Path createWorkerLogTree(Path workerLogRoot) throws IOException {
+        Path topoAFile = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log");
+        Path topoBFile = workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log");
+        Files.createDirectories(topoAFile.getParent());
+        Files.createDirectories(topoBFile.getParent());
+        Files.writeString(topoAFile, "needle from topoA\n");
+        Files.writeString(topoBFile, "needle from topoB\n");
+        return workerLogRoot;
+    }
+
+    private static LogviewerLogSearchHandler createHandlerAllowingOnlyTopoA(Path workerLogRoot) {
+        //Models per topology access: the user may only read the logs of topoA.
+        ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+        when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+        return new LogviewerLogSearchHandler(Utils.readStormConfig(), workerLogRoot, Paths.get(""),
+            resourceAuthorizer, new StormMetricsRegistry());
     }
 
     private static LogviewerLogSearchHandler getSearchHandler() {
