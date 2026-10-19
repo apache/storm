@@ -143,8 +143,9 @@ public class WorkerStateTest {
     }
 
     /**
-     * Builds a real WorkerState with the flag only in the topology conf, so this fails if makeDefaultResources
-     * goes back to reading the daemon conf.
+     * Builds a real WorkerState with the flag only in the topology conf (and the pool size only in the daemon
+     * conf), so this fails if makeDefaultResources reads the flag from the daemon conf or the size from the
+     * topology conf.
      */
     @Test
     public void sharedExecutorUsesVirtualThreadsWhenEnabledInTopologyConf() throws Exception {

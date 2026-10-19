@@ -781,15 +781,12 @@ public class WorkerState {
     }
 
     private Map<String, Object> makeDefaultResources() {
-        return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, makeSharedExecutor(topologyConf));
-    }
-
-    /**
-     * Builds the worker shared executor, honoring the thread pool size and virtual-threads flag from the given (merged) conf.
-     */
-    private static ExecutorService makeSharedExecutor(Map<String, Object> conf) {
+        // The pool size is read from the daemon conf, as it always was; only the thread type comes from the
+        // topology conf so that a topology can opt in or out of virtual threads for its shared executor.
         int threadPoolSize = ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE));
-        return Executors.newFixedThreadPool(threadPoolSize, StormThreadFactory.create(conf, "worker-shared-executor-"));
+        ExecutorService sharedExecutor = Executors.newFixedThreadPool(threadPoolSize,
+            StormThreadFactory.create(topologyConf, "worker-shared-executor-"));
+        return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, sharedExecutor);
     }
 
     private Map<String, Object> makeUserResources() {

@@ -75,7 +75,8 @@ import org.apache.storm.utils.Utils;
  * {@code --io-ms L} (simulated handler I/O), {@code --threads T} ({@code nimbus.thrift.threads}),
  * {@code --queue-size Q|none} ({@code nimbus.queue.size}; defaults to the shipped 100000, so both modes use a pool of
  * {@code --threads} handlers; {@code none} removes the key so the platform-thread run falls back to THsHaServer's own
- * pool, whose effective concurrency is 5), {@code --warmup W} (calls per client excluded from statistics).
+ * pool, whose effective concurrency is 5), {@code --warmup W} (calls per client excluded from statistics). The report
+ * and its JSON line carry the queue size the server actually ran with ({@code null} only for {@code none}).
  *
  * <p>For comparable numbers run each mode in its own JVM ({@code --mode off} then {@code --mode on}).
  */
@@ -113,8 +114,11 @@ public final class ThriftHandlerVirtualThreadsBench {
                                                + " open connection); got threads=" + threads + " clients=" + clients);
         }
 
+        if (ioMs < 0) {
+            throw new IllegalArgumentException("--io-ms must be >= 0, got " + ioMs);
+        }
         System.out.printf(Locale.ROOT, "transport=%s clients=%d calls=%d io-ms=%d threads=%d queue-size=%s warmup=%d%n",
-                          transport, clients, calls, ioMs, threads, noQueue ? "none" : queueSize, warmup);
+                          transport, clients, calls, ioMs, threads, queueSizeLabel(queueSize, noQueue), warmup);
         if (mode.equals("off") || mode.equals("both")) {
             runPhase(false, transport, clients, calls, ioMs, threads, queueSize, noQueue, warmup);
         }
@@ -141,11 +145,17 @@ public final class ThriftHandlerVirtualThreadsBench {
         } else if (queueSize != null) {
             conf.put(Config.NIMBUS_QUEUE_SIZE, queueSize);
         }
+        // What the server actually runs with: the explicit value, the shipped default, or none.
+        Integer effectiveQueueSize = ThriftConnectionType.NIMBUS.getQueueSize(conf);
 
         AtomicInteger inFlight = new AtomicInteger();
         AtomicInteger peakInFlight = new AtomicInteger();
         Nimbus.Iface handler = sleepingHandler(ioMs, inFlight, peakInFlight);
         ThriftServer server = new ThriftServer(conf, new Nimbus.Processor<>(handler), ThriftConnectionType.NIMBUS);
+        // Note: a transport failure inside serve() is handled by ThriftServer itself, which logs it and halts the
+        // JVM with exit code 1 (ThriftServer.handleServerException), so it never reaches serveFailure; only an
+        // Error thrown by serve() does. A silent exit code 1 before any result line means the server failed to
+        // start (bad JAAS file, unbindable port, ...).
         AtomicReference<Throwable> serveFailure = new AtomicReference<>();
         Thread serveThread = new Thread(() -> {
             try {
@@ -239,8 +249,12 @@ public final class ThriftHandlerVirtualThreadsBench {
             failures.get(0).printStackTrace();
         }
 
-        report(virtual, transport, clients, calls, ioMs, threads, queueSize, latenciesNs, elapsedNs, failures.size(),
-               threadsBefore, peakThreads.get(), peakInFlight.get(), rssBeforeKb, rssAfterKb);
+        report(virtual, transport, clients, calls, ioMs, threads, effectiveQueueSize, latenciesNs, elapsedNs,
+               failures.size(), threadsBefore, peakThreads.get(), peakInFlight.get(), rssBeforeKb, rssAfterKb);
+    }
+
+    private static String queueSizeLabel(Integer queueSize, boolean noQueue) {
+        return noQueue ? "none" : queueSize == null ? "default" : queueSize.toString();
     }
 
     private static void report(boolean virtual, String transport, int clients, int calls, long ioMs, int threads,
@@ -256,7 +270,13 @@ public final class ThriftHandlerVirtualThreadsBench {
         double p90 = pct(all, 0.90);
         double p99 = pct(all, 0.99);
         double max = all.length == 0 ? 0 : all[all.length - 1] / 1e6;
-        double idealThroughput = (double) Math.min(clients, threads) * 1000.0 / ioMs;
+        // Handler concurrency: the configured pool with virtual threads or a queue size (simple transport), or with
+        // TThreadPoolServer (digest); the platform-thread simple transport without a queue size falls back to
+        // THsHaServer's own pool, whose effective concurrency is 5 (see SimpleTransportPlugin).
+        int handlerConcurrency = virtual || queueSize != null || !transport.equals("simple") ? threads : 5;
+        int concurrent = Math.min(clients, handlerConcurrency);
+        // With io-ms 0 there is no I/O floor and the ideal is unbounded, so it is not reported.
+        String ideal = ioMs == 0 ? "n/a" : String.format(Locale.ROOT, "%.0f", concurrent * 1000.0 / ioMs);
         // Platform threads created after the "before" sample are the client threads plus whatever the server
         // added (handlers, acceptor/selector threads). Subtracting the clients gives the server-side estimate.
         int serverThreadsEstimate = Math.max(0, peakThreads - threadsBefore - clients);
@@ -267,8 +287,8 @@ public final class ThriftHandlerVirtualThreadsBench {
         System.out.printf(Locale.ROOT, "  calls              : %d completed of %d attempted (%d clients failed)%n",
                           completed, attempted, failures);
         System.out.printf(Locale.ROOT, "  elapsed            : %.2f s%n", elapsedS);
-        System.out.printf(Locale.ROOT, "  throughput         : %.0f calls/s (ideal at %d concurrent handlers: %.0f)%n",
-                          throughput, Math.min(clients, threads), idealThroughput);
+        System.out.printf(Locale.ROOT, "  throughput         : %.0f calls/s (ideal at %d concurrent handlers: %s)%n",
+                          throughput, concurrent, ideal);
         System.out.printf(Locale.ROOT, "  latency p50/p90/p99: %.1f / %.1f / %.1f ms (max %.1f, floor %d)%n",
                           p50, p90, p99, max, ioMs);
         System.out.printf(Locale.ROOT, "  peak handlers busy : %d%n", peakInFlight);
