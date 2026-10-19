@@ -59,15 +59,18 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     private double lowerBound;
 
     @Override
-    public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+    public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+        List<Integer> targetTasks) {
         random = new Random();
-        sourceNodeInfo = new NodeInfo(context.getAssignmentId(), Sets.newHashSet((long) context.getThisWorkerPort()));
+        sourceNodeInfo = new NodeInfo(context.getAssignmentId(), Sets.newHashSet((long) context
+                .getThisWorkerPort()));
         taskToNodePort = context.getTaskToNodePort();
         nodeToHost = context.getNodeToHost();
         this.targetTasks = targetTasks;
         capacity = targetTasks.size() == 1 ? 1 : Math.max(1000, targetTasks.size() * 5);
         conf = context.getConf();
-        dnsToSwitchMapping = ReflectionUtils.newInstance((String) conf.get(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN));
+        dnsToSwitchMapping = ReflectionUtils.newInstance((String) conf
+                .get(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN));
         localityGroup = new HashMap<>();
         currentScope = LocalityScope.WORKER_LOCAL;
         higherBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND));
@@ -101,7 +104,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
                 current.set(0);
                 return rets[choices[0]];
             }
-            //race condition with another thread, and we lost
+            // race condition with another thread, and we lost
             // try again
         }
     }
@@ -117,12 +120,14 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         Map<Integer, NodeInfo> cachedTaskToNodePort = taskToNodePort.get();
         Map<String, String> cachedNodeToHost = nodeToHost.get();
 
-        Map<String, String> hostToRack = getHostToRackMapping(cachedTaskToNodePort, cachedNodeToHost);
+        Map<String, String> hostToRack = getHostToRackMapping(cachedTaskToNodePort,
+                cachedNodeToHost);
 
         localityGroup.values().stream().forEach(v -> v.clear());
 
         for (int target : targetTasks) {
-            LocalityScope scope = calculateScope(cachedTaskToNodePort, cachedNodeToHost, hostToRack, target);
+            LocalityScope scope = calculateScope(cachedTaskToNodePort, cachedNodeToHost, hostToRack,
+                    target);
             LOG.debug("targetTask {} is in LocalityScope {}", target, scope);
             if (!localityGroup.containsKey(scope)) {
                 localityGroup.put(scope, new ArrayList<>());
@@ -149,7 +154,8 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         if (targetInScope.isEmpty()) {
             LocalityScope upScope = LocalityScope.upgrade(currentScope);
             if (upScope == currentScope) {
-                throw new RuntimeException("The current scope " + currentScope + " has no target tasks.");
+                throw new RuntimeException("The current scope " + currentScope
+                        + " has no target tasks.");
             }
             currentScope = upScope;
             return transition(load);
@@ -159,7 +165,8 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
             return currentScope;
         }
 
-        double avg = targetInScope.stream().mapToDouble((key) -> load.get(key)).average().getAsDouble();
+        double avg = targetInScope.stream().mapToDouble((key) -> load.get(key)).average()
+                .getAsDouble();
 
         LocalityScope nextScope = currentScope;
         if (avg > higherBound) {
@@ -168,7 +175,8 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
             LocalityScope lowerScope = LocalityScope.downgrade(currentScope);
             List<Integer> lowerTargets = getTargetsInScope(lowerScope);
             if (!lowerTargets.isEmpty()) {
-                double lowerAvg = lowerTargets.stream().mapToDouble((key) -> load.get(key)).average().getAsDouble();
+                double lowerAvg = lowerTargets.stream().mapToDouble((key) -> load.get(key))
+                        .average().getAsDouble();
                 if (lowerAvg < lowerBound) {
                     nextScope = lowerScope;
                 }
@@ -183,29 +191,31 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         LocalityScope prevScope = currentScope;
         currentScope = transition(load);
         if (currentScope != prevScope) {
-            //reset all the weights
+            // reset all the weights
             orig.values().stream().forEach(o -> o.resetWeight());
         }
 
         List<Integer> targetsInScope = getTargetsInScope(currentScope);
 
-        //We will adjust weights based off of the minimum load
-        double min = load == null ? 0 : targetsInScope.stream().mapToDouble((key) -> load.get(key)).min().getAsDouble();
+        // We will adjust weights based off of the minimum load
+        double min = load == null ? 0 : targetsInScope.stream().mapToDouble((key) -> load.get(key))
+                .min().getAsDouble();
         for (int target : targetsInScope) {
             IndexAndWeights val = orig.get(target);
             double l = load == null ? 0.0 : load.get(target);
             if (l <= min + (0.05)) {
-                //We assume that within 5% of the minimum congestion is still fine.
-                //Not congested we grow (but slowly)
+                // We assume that within 5% of the minimum congestion is still fine.
+                // Not congested we grow (but slowly)
                 val.weight = Math.min(MAX_WEIGHT, val.weight + 1);
             } else {
-                //Congested we contract much more quickly
+                // Congested we contract much more quickly
                 val.weight = Math.max(0, val.weight - 10);
             }
         }
-        //Now we need to build the array
-        long weightSum = targetsInScope.stream().mapToLong((target) -> orig.get(target).weight).sum();
-        //Now we can calculate a percentage
+        // Now we need to build the array
+        long weightSum = targetsInScope.stream().mapToLong((target) -> orig.get(target).weight)
+                .sum();
+        // Now we can calculate a percentage
 
         int currentIdx = 0;
         if (weightSum > 0) {
@@ -219,14 +229,15 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
             }
 
             if (currentIdx > 0) {
-                //in case we didn't fill in enough
+                // in case we didn't fill in enough
                 for (; currentIdx < capacity; currentIdx++) {
                     prepareChoices[currentIdx] = prepareChoices[random.nextInt(currentIdx)];
                 }
             }
         }
         if (currentIdx == 0) {
-            //This really should be impossible, because we go off of the min load, and inc anything within 5% of it.
+            // This really should be impossible, because we go off of the min load, and inc anything
+            // within 5% of it.
             // But just to be sure it is never an issue, especially with float rounding etc.
             for (; currentIdx < capacity; currentIdx++) {
                 prepareChoices[currentIdx] = currentIdx % rets.length;
@@ -256,7 +267,8 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         arr[j] = tmp;
     }
 
-    private LocalityScope calculateScope(Map<Integer, NodeInfo> taskToNodePort, Map<String, String> nodeToHost,
+    private LocalityScope calculateScope(Map<Integer, NodeInfo> taskToNodePort, Map<String,
+            String> nodeToHost,
                                          Map<String, String> hostToRack, int target) {
         NodeInfo targetNodeInfo = taskToNodePort.get(target);
 
@@ -284,11 +296,12 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         }
     }
 
-    private Map<String, String> getHostToRackMapping(Map<Integer, NodeInfo> taskToNodePort, Map<String, String> nodeToHost) {
+    private Map<String, String> getHostToRackMapping(Map<Integer, NodeInfo> taskToNodePort,
+            Map<String, String> nodeToHost) {
         Set<String> hosts = new HashSet<>();
         for (int task : targetTasks) {
-            //if this task containing worker will be killed by a assignments sync,
-            //taskToNodePort will be an empty map which is refreshed by WorkerState
+            // if this task containing worker will be killed by a assignments sync,
+            // taskToNodePort will be an empty map which is refreshed by WorkerState
             if (taskToNodePort.containsKey(task)) {
                 String node = taskToNodePort.get(task).get_node();
                 String hostname = nodeToHost.get(node);
@@ -308,7 +321,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         return dnsToSwitchMapping.resolve(new ArrayList<>(hosts));
     }
 
-    //only for test
+    // only for test
     public int getCapacity() {
         return capacity;
     }

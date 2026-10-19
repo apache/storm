@@ -26,6 +26,7 @@ public class ObjectReader {
 
     /**
      * Convert the input into a list of string; ignore null members.
+     *
      * @param o the input object
      * @return a list of string
      */

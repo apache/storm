@@ -27,9 +27,10 @@ public class ShellCommandRunnerImpl implements ShellCommandRunner {
     }
 
     @Override
-    public String execCommand(Map<String, String> env, String[] cmd, long timeout) throws IOException {
+    public String execCommand(Map<String, String> env, String[] cmd,
+        long timeout) throws IOException {
         ShellUtils.ShellCommandExecutor exec = new ShellUtils.ShellCommandExecutor(cmd, null, env,
-                                                                                   timeout);
+                timeout);
         exec.execute();
         return exec.getOutput();
     }

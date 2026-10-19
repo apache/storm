@@ -12,6 +12,10 @@
 
 package org.apache.storm.state;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -20,10 +24,6 @@ import java.util.TreeMap;
 import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link BaseBinaryStateIterator}.
@@ -48,7 +48,7 @@ public class BaseBinaryStateIteratorTest {
         NavigableMap<byte[], byte[]> pendingCommit = getBinaryTreeMap();
 
         MockBinaryStateIterator kvIterator = new MockBinaryStateIterator(
-            pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator());
+                pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator());
 
         assertNextEntry(kvIterator, "key0".getBytes(), "value0".getBytes());
 
@@ -69,7 +69,7 @@ public class BaseBinaryStateIteratorTest {
         putEncodedKeyValueToMap(pendingCommit, "key2".getBytes(), "value2".getBytes());
 
         MockBinaryStateIterator kvIterator = new MockBinaryStateIterator(
-            pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator());
+                pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator());
 
         assertNextEntry(kvIterator, "key0".getBytes(), "value0".getBytes());
 
@@ -91,7 +91,7 @@ public class BaseBinaryStateIteratorTest {
         putEncodedKeyValueToMap(pendingCommit, "key2".getBytes(), "value2".getBytes());
 
         MockBinaryStateIterator kvIterator = new MockBinaryStateIterator(
-            pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator());
+                pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator());
 
         // keys shouldn't appear twice
 
@@ -111,12 +111,13 @@ public class BaseBinaryStateIteratorTest {
         NavigableMap<byte[], byte[]> pendingCommit = getBinaryTreeMap();
 
         MockBinaryStateIterator kvIterator = new MockBinaryStateIterator(
-            pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator());
+                pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator());
 
         assertFalse(kvIterator.hasNext());
     }
 
-    private void assertNextEntry(BaseBinaryStateIterator<byte[], byte[]> kvIterator, byte[] expectedKey,
+    private void assertNextEntry(BaseBinaryStateIterator<byte[], byte[]> kvIterator,
+            byte[] expectedKey,
                                  byte[] expectedValue) {
         assertTrue(kvIterator.hasNext());
         Map.Entry<byte[], byte[]> entry = kvIterator.next();
@@ -124,7 +125,8 @@ public class BaseBinaryStateIteratorTest {
         assertArrayEquals(expectedValue, entry.getValue());
     }
 
-    private void putEncodedKeyValueToMap(NavigableMap<byte[], byte[]> map, byte[] key, byte[] value) {
+    private void putEncodedKeyValueToMap(NavigableMap<byte[], byte[]> map, byte[] key,
+            byte[] value) {
         map.put(encoder.encodeKey(key), encoder.encodeValue(value));
     }
 

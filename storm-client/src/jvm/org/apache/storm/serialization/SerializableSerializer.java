@@ -24,14 +24,16 @@ import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-
 public class SerializableSerializer extends Serializer<Object> {
 
     /**
-     * Optional JEP-290 filter applied to each ObjectInputStream used for deserialization (null means unfiltered,
+     * Optional JEP-290 filter applied to each ObjectInputStream used for deserialization (null
+     * means unfiltered,
      * as before). The filter itself is created once from
-     * {@link org.apache.storm.Config#TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER} by {@link DefaultKryoFactory};
-     * instances returned by {@link ObjectInputFilter.Config#createFilter} are immutable and safe to share across streams.
+     * {@link org.apache.storm.Config#TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER} by {@link
+     * DefaultKryoFactory};
+     * instances returned by {@link ObjectInputFilter.Config#createFilter} are immutable and safe to
+     * share across streams.
      */
     private final ObjectInputFilter serialFilter;
 
@@ -64,13 +66,16 @@ public class SerializableSerializer extends Serializer<Object> {
         if (len < 0) {
             throw new KryoException("Invalid java-serialized value length: " + len);
         }
-        // For a buffer-backed Input the remaining bytes are known (position/limit), so a declared length larger than the
-        // bytes actually left is refused before the new byte[len] allocation; a stream-backed Input may still deliver the
+        // For a buffer-backed Input the remaining bytes are known (position/limit), so a declared
+        // length larger than the
+        // bytes actually left is refused before the new byte[len] allocation; a stream-backed Input
+        // may still deliver the
         // declared bytes later, so the upper bound is not checked there.
         if (input.getInputStream() == null) {
             int remaining = input.limit() - input.position();
             if (len > remaining) {
-                throw new KryoException("Declared java-serialized value length exceeds the input's remaining bytes "
+                throw new KryoException("Declared java-serialized value length exceeds the "
+                        + "input's remaining bytes "
                         + "(declared: " + len + ", remaining: " + remaining + ")");
             }
         }
@@ -80,7 +85,8 @@ public class SerializableSerializer extends Serializer<Object> {
         try {
             ObjectInputStream ois = new ObjectInputStream(bis);
             if (serialFilter != null) {
-                ois.setObjectInputFilter(mergeWithExisting(serialFilter, ois.getObjectInputFilter()));
+                ois.setObjectInputFilter(mergeWithExisting(serialFilter, ois
+                        .getObjectInputFilter()));
             }
             return ois.readObject();
         } catch (Exception e) {
@@ -91,9 +97,11 @@ public class SerializableSerializer extends Serializer<Object> {
     /**
      * Combines the configured filter with the stream's existing filter (a JVM-wide {@code jdk.serialFilter}, if any), so both
      * the configured pattern and any process-wide filter apply to the stream: per JEP-290,
-     * {@link ObjectInputStream#setObjectInputFilter} overrides the process-wide filter for that stream unless the two are merged.
+     * {@link ObjectInputStream#setObjectInputFilter} overrides the process-wide filter for that
+     * stream unless the two are merged.
      */
-    static ObjectInputFilter mergeWithExisting(ObjectInputFilter configured, ObjectInputFilter existing) {
+    static ObjectInputFilter mergeWithExisting(ObjectInputFilter configured,
+            ObjectInputFilter existing) {
         return existing != null ? ObjectInputFilter.merge(configured, existing) : configured;
     }
 }

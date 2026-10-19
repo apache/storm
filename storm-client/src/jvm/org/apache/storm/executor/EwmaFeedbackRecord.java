@@ -26,7 +26,8 @@ import org.apache.storm.metrics2.TaskMetrics;
  * @param completeJitter The {@code __complete-jitter} gauge value, or {@link #VOID} if absent.
  * @param executeJitter  The {@code __execute-jitter} gauge value, or {@link #VOID} if absent.
  */
-public record EwmaFeedbackRecord(double processJitter, double completeJitter, double executeJitter) {
+public record EwmaFeedbackRecord(double processJitter, double completeJitter,
+        double executeJitter) {
 
     // Sentinel for an absent metric. Jitter values are always >= 0, so a negative value can never
     // collide with a real measurement and unambiguously marks "gauge missing / not a Number".

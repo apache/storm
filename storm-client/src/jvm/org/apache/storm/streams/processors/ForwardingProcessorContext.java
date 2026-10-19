@@ -29,7 +29,8 @@ public class ForwardingProcessorContext<T> implements ProcessorContext<T> {
     private final Multimap<String, ProcessorNode> streamToChildren;
     private final Set<String> streams;
 
-    public ForwardingProcessorContext(ProcessorNode processorNode, Multimap<String, ProcessorNode> streamToChildren) {
+    public ForwardingProcessorContext(ProcessorNode processorNode, Multimap<String,
+            ProcessorNode> streamToChildren) {
         this.processorNode = processorNode;
         this.streamToChildren = streamToChildren;
         this.streams = streamToChildren.keySet();

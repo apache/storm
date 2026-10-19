@@ -17,7 +17,6 @@ import java.util.List;
 import org.apache.storm.trident.state.OpaqueValue;
 import org.apache.storm.trident.state.ValueUpdater;
 
-
 public class OpaqueMap<T> implements MapState<T> {
     CachedBatchReadsMap<OpaqueValue> backing;
     Long currTx;

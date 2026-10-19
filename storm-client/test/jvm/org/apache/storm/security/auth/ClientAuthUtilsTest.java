@@ -18,6 +18,13 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -32,13 +39,6 @@ import org.apache.storm.Config;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClientAuthUtilsTest {
 
@@ -62,9 +62,9 @@ public class ClientAuthUtilsTest {
         String section = "bogus-section";
         Configuration mockConfig = Mockito.mock(Configuration.class);
         Mockito.when(mockConfig.getAppConfigurationEntry(section))
-               .thenReturn(new AppConfigurationEntry[]{ entry });
+                .thenReturn(new AppConfigurationEntry[] {entry});
         assertNull(
-            ClientAuthUtils.get(mockConfig, section, "nonexistent-key"));
+                ClientAuthUtils.get(mockConfig, section, "nonexistent-key"));
     }
 
     @Test
@@ -82,17 +82,18 @@ public class ClientAuthUtilsTest {
         AppConfigurationEntry badEntry = Mockito.mock(AppConfigurationEntry.class);
         AppConfigurationEntry goodEntry = Mockito.mock(AppConfigurationEntry.class);
 
-        Mockito.<Map<String, ?>>when(emptyEntry.getOptions()).thenReturn(new HashMap<String, String>());
+        Mockito.<Map<String, ?>>when(emptyEntry.getOptions()).thenReturn(new HashMap<String,
+                String>());
         Mockito.<Map<String, ?>>when(badEntry.getOptions()).thenReturn(badOptionMap);
         Mockito.<Map<String, ?>>when(goodEntry.getOptions()).thenReturn(optionMap);
 
         String section = "bogus-section";
         Configuration mockConfig = Mockito.mock(Configuration.class);
         Mockito.when(mockConfig.getAppConfigurationEntry(section))
-               .thenReturn(new AppConfigurationEntry[]{ emptyEntry, goodEntry, badEntry });
+                .thenReturn(new AppConfigurationEntry[] {emptyEntry, goodEntry, badEntry});
 
         assertEquals(
-            ClientAuthUtils.get(mockConfig, section, k), expected);
+                ClientAuthUtils.get(mockConfig, section, k), expected);
     }
 
     @Test
@@ -108,7 +109,7 @@ public class ClientAuthUtilsTest {
     public void getAutoCredentialsTest() {
         Map<String, Object> map = new HashMap<>();
         map.put(Config.TOPOLOGY_AUTO_CREDENTIALS,
-            Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
+                Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
 
         assertTrue(ClientAuthUtils.getAutoCredentials(Collections.emptyMap()).isEmpty());
         assertEquals(ClientAuthUtils.getAutoCredentials(map).size(), 1);
@@ -118,7 +119,7 @@ public class ClientAuthUtilsTest {
     public void getNimbusAutoCredPluginTest() {
         Map<String, Object> map = new HashMap<>();
         map.put(Config.NIMBUS_AUTO_CRED_PLUGINS,
-            Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
+                Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
 
         assertTrue(ClientAuthUtils.getNimbusAutoCredPlugins(Collections.emptyMap()).isEmpty());
         assertEquals(ClientAuthUtils.getNimbusAutoCredPlugins(map).size(), 1);
@@ -128,7 +129,7 @@ public class ClientAuthUtilsTest {
     public void GetCredentialRenewersTest() {
         Map<String, Object> map = new HashMap<>();
         map.put(Config.NIMBUS_CREDENTIAL_RENEWERS,
-            Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
+                Collections.singletonList("org.apache.storm.security.auth.AuthUtilsTestMock"));
 
         assertTrue(ClientAuthUtils.getCredentialRenewers(Collections.emptyMap()).isEmpty());
         assertEquals(ClientAuthUtils.getCredentialRenewers(map).size(), 1);
@@ -139,7 +140,7 @@ public class ClientAuthUtilsTest {
         AuthUtilsTestMock autoCred = Mockito.mock(AuthUtilsTestMock.class);
         Subject subject = new Subject();
         Map<String, String> cred = new HashMap<>();
-        Collection<IAutoCredentials> autos = Arrays.asList(new IAutoCredentials[]{ autoCred });
+        Collection<IAutoCredentials> autos = Arrays.asList(new IAutoCredentials[] {autoCred});
         ClientAuthUtils.populateSubject(subject, autos, cred);
         Mockito.verify(autoCred, Mockito.times(1)).populateSubject(subject, cred);
     }
@@ -148,7 +149,8 @@ public class ClientAuthUtilsTest {
     public void invalidConfigResultsInIOException() throws RuntimeException {
         HashMap<String, Object> conf = new HashMap<>();
         conf.put("java.security.auth.login.config", "__FAKE_FILE__");
-        assertThrows(RuntimeException.class, () -> assertNotNull(ClientAuthUtils.getConfiguration(conf)));
+        assertThrows(RuntimeException.class, () -> assertNotNull(ClientAuthUtils
+                .getConfiguration(conf)));
     }
 
     @Test
@@ -167,13 +169,14 @@ public class ClientAuthUtilsTest {
 
     @Test
     public void updateSubjectWithNullAutosThrowsTest() {
-        assertThrows(RuntimeException.class, () -> ClientAuthUtils.updateSubject(new Subject(), null, null));
+        assertThrows(RuntimeException.class, () -> ClientAuthUtils.updateSubject(new Subject(),
+                null, null));
     }
 
     @Test
     public void updateSubjectWithNullAutosTest() {
         AuthUtilsTestMock mock = Mockito.mock(AuthUtilsTestMock.class);
-        Collection<IAutoCredentials> autos = Arrays.asList(new IAutoCredentials[]{ mock });
+        Collection<IAutoCredentials> autos = Arrays.asList(new IAutoCredentials[] {mock});
         Subject s = new Subject();
         ClientAuthUtils.updateSubject(s, autos, null);
         Mockito.verify(mock, Mockito.times(1)).updateSubject(s, null);
@@ -183,12 +186,15 @@ public class ClientAuthUtilsTest {
     public void pluginCreationTest() {
         Map<String, Object> conf = new HashMap<>();
         conf.put(
-            Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, AuthUtilsTestMock.class.getName());
+                Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, AuthUtilsTestMock.class.getName());
         conf.put(
-            Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN, AuthUtilsTestMock.class.getName());
+                Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN, AuthUtilsTestMock.class
+                .getName());
 
         assertTrue(
-            ClientAuthUtils.getPrincipalToLocalPlugin(conf).getClass() == AuthUtilsTestMock.class);
-        assertSame(ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf).getClass(), AuthUtilsTestMock.class);
+                ClientAuthUtils.getPrincipalToLocalPlugin(conf)
+                .getClass() == AuthUtilsTestMock.class);
+        assertSame(ClientAuthUtils.getGroupMappingServiceProviderPlugin(conf).getClass(),
+                AuthUtilsTestMock.class);
     }
 }

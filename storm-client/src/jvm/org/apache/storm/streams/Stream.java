@@ -83,11 +83,13 @@ public class Stream<T> {
      * @return the new stream
      */
     public Stream<T> filter(Predicate<? super T> predicate) {
-        return new Stream<>(streamBuilder, addProcessorNode(new FilterProcessor<>(predicate), VALUE, true));
+        return new Stream<>(streamBuilder, addProcessorNode(new FilterProcessor<>(predicate), VALUE,
+                true));
     }
 
     /**
-     * Returns a stream consisting of the result of applying the given mapping function to the values of this stream.
+     * Returns a stream consisting of the result of applying the given mapping function to the
+     * values of this stream.
      *
      * @param function a mapping function to be applied to each value in this stream.
      * @return the new stream
@@ -97,34 +99,43 @@ public class Stream<T> {
     }
 
     /**
-     * Returns a stream of key-value pairs by applying a {@link PairFunction} on each value of this stream.
+     * Returns a stream of key-value pairs by applying a {@link PairFunction} on each value of this
+     * stream.
      *
      * @param function the mapping function to be applied to each value in this stream
      * @param <K>      the key type
      * @param <V>      the value type
      * @return the new stream of key-value pairs
      */
-    public <K, V> PairStream<K, V> mapToPair(PairFunction<? super T, ? extends K, ? extends V> function) {
-        return new PairStream<>(streamBuilder, addProcessorNode(new MapProcessor<>(function), KEY_VALUE));
+    public <K, V> PairStream<K, V> mapToPair(PairFunction<? super T, ? extends K,
+            ? extends V> function) {
+        return new PairStream<>(streamBuilder, addProcessorNode(new MapProcessor<>(function),
+                KEY_VALUE));
     }
 
     /**
-     * Returns a stream consisting of the results of replacing each value of this stream with the contents produced by applying the provided
-     * mapping function to each value. This has the effect of applying a one-to-many transformation to the values of the stream, and then
+     * Returns a stream consisting of the results of replacing each value of this stream with the
+     * contents produced by applying the provided
+     * mapping function to each value. This has the effect of applying a one-to-many transformation
+     * to the values of the stream, and then
      * flattening the resulting elements into a new stream.
      *
-     * @param function a mapping function to be applied to each value in this stream which produces new values.
+     * @param function a mapping function to be applied to each value in this stream which produces
+     *     new values.
      * @return the new stream
      */
     public <R> Stream<R> flatMap(FlatMapFunction<? super T, ? extends R> function) {
-        return new Stream<>(streamBuilder, addProcessorNode(new FlatMapProcessor<>(function), VALUE));
+        return new Stream<>(streamBuilder, addProcessorNode(new FlatMapProcessor<>(function),
+                VALUE));
     }
 
     /**
-     * Returns a stream consisting of the results of replacing each value of this stream with the key-value pairs produced by applying the
+     * Returns a stream consisting of the results of replacing each value of this stream with the
+     * key-value pairs produced by applying the
      * provided mapping function to each value.
      *
-     * @param function the mapping function to be applied to each value in this stream which produces new key-value pairs.
+     * @param function the mapping function to be applied to each value in this stream which
+     *     produces new key-value pairs.
      * @param <K>      the key type
      * @param <V>      the value type
      * @return the new stream of key-value pairs
@@ -132,13 +143,17 @@ public class Stream<T> {
      * @see #flatMap(FlatMapFunction)
      * @see #mapToPair(PairFunction)
      */
-    public <K, V> PairStream<K, V> flatMapToPair(PairFlatMapFunction<? super T, ? extends K, ? extends V> function) {
-        return new PairStream<>(streamBuilder, addProcessorNode(new FlatMapProcessor<>(function), KEY_VALUE));
+    public <K, V> PairStream<K, V> flatMapToPair(PairFlatMapFunction<? super T, ? extends K,
+            ? extends V> function) {
+        return new PairStream<>(streamBuilder, addProcessorNode(new FlatMapProcessor<>(function),
+                KEY_VALUE));
     }
 
     /**
-     * Returns a new stream consisting of the elements that fall within the window as specified by the window parameter. The {@link Window}
-     * specification could be used to specify sliding or tumbling windows based on time duration or event count. For example,
+     * Returns a new stream consisting of the elements that fall within the window as specified by
+     * the window parameter. The {@link Window}
+     * specification could be used to specify sliding or tumbling windows based on time duration or
+     * event count. For example,
      * <pre>
      * // time duration based sliding window
      * stream.window(SlidingWindows.of(Duration.minutes(10), Duration.minutes(1));
@@ -156,7 +171,8 @@ public class Stream<T> {
      * @return the new stream
      */
     public Stream<T> window(Window<?, ?> window) {
-        return new Stream<>(streamBuilder, addNode(new WindowNode(window, stream, node.getOutputFields())));
+        return new Stream<>(streamBuilder, addNode(new WindowNode(window, stream, node
+                .getOutputFields())));
     }
 
     /**
@@ -169,21 +185,27 @@ public class Stream<T> {
     }
 
     /**
-     * Returns a stream consisting of the elements of this stream, additionally performing the provided action on each element as they are
+     * Returns a stream consisting of the elements of this stream, additionally performing the
+     * provided action on each element as they are
      * consumed from the resulting stream.
      *
      * @param action the action to perform on the element as they are consumed from the stream
      * @return the new stream
      */
     public Stream<T> peek(Consumer<? super T> action) {
-        return new Stream<>(streamBuilder, addProcessorNode(new PeekProcessor<>(action), node.getOutputFields(), true));
+        return new Stream<>(streamBuilder, addProcessorNode(new PeekProcessor<>(action), node
+                .getOutputFields(), true));
     }
 
     /**
-     * Aggregates the values in this stream using the aggregator. This does a global aggregation of values across all partitions.
-     * <p>
-     * If the stream is windowed, the aggregate result is emitted after each window activation and represents the aggregate of elements that
-     * fall within that window. If the stream is not windowed, the aggregate result is emitted as each new element in the stream is
+     * Aggregates the values in this stream using the aggregator. This does a global aggregation of
+     * values across all partitions.
+     *
+     * <p>If the stream is windowed, the aggregate result is emitted after each window activation
+     * and
+     * represents the aggregate of elements that
+     * fall within that window. If the stream is not windowed, the aggregate result is emitted as
+     * each new element in the stream is
      * processed.
      * </p>
      *
@@ -197,11 +219,15 @@ public class Stream<T> {
     }
 
     /**
-     * Aggregates the values in this stream using the given initial value, accumulator and combiner. This does a global aggregation of
+     * Aggregates the values in this stream using the given initial value, accumulator and combiner.
+     * This does a global aggregation of
      * values across all partitions.
-     * <p>
-     * If the stream is windowed, the aggregate result is emitted after each window activation and represents the aggregate of elements that
-     * fall within that window. If the stream is not windowed, the aggregate result is emitted as each new element in the stream is
+     *
+     * <p>If the stream is windowed, the aggregate result is emitted after each window activation
+     * and
+     * represents the aggregate of elements that
+     * fall within that window. If the stream is not windowed, the aggregate result is emitted as
+     * each new element in the stream is
      * processed.
      * </p>
      *
@@ -218,10 +244,14 @@ public class Stream<T> {
     }
 
     /**
-     * Counts the number of values in this stream. This does a global count of values across all partitions.
-     * <p>
-     * If the stream is windowed, the counts are emitted after each window activation and represents the count of elements that fall within
-     * that window. If the stream is not windowed, the count is emitted as each new element in the stream is processed.
+     * Counts the number of values in this stream. This does a global count of values across all
+     * partitions.
+     *
+     * <p>If the stream is windowed, the counts are emitted after each window activation and
+     * represents
+     * the count of elements that fall within
+     * that window. If the stream is not windowed, the count is emitted as each new element in the
+     * stream is processed.
      * </p>
      *
      * @return the new stream
@@ -231,11 +261,15 @@ public class Stream<T> {
     }
 
     /**
-     * Performs a reduction on the elements of this stream, by repeatedly applying the reducer. This does a global reduction of values
+     * Performs a reduction on the elements of this stream, by repeatedly applying the reducer. This
+     * does a global reduction of values
      * across all partitions.
-     * <p>
-     * If the stream is windowed, the result is emitted after each window activation and represents the reduction of elements that fall
-     * within that window. If the stream is not windowed, the result is emitted as each new element in the stream is processed.
+     *
+     * <p>If the stream is windowed, the result is emitted after each window activation and
+     * represents
+     * the reduction of elements that fall
+     * within that window. If the stream is not windowed, the result is emitted as each new element
+     * in the stream is processed.
      * </p>
      *
      * @param reducer the reducer
@@ -246,7 +280,8 @@ public class Stream<T> {
     }
 
     /**
-     * Returns a new stream with the given value of parallelism. Further operations on this stream would execute at this level of
+     * Returns a new stream with the given value of parallelism. Further operations on this stream
+     * would execute at this level of
      * parallelism.
      *
      * @param parallelism the parallelism value
@@ -257,19 +292,23 @@ public class Stream<T> {
             throw new IllegalArgumentException("Parallelism should be >= 1");
         }
         if (node.getParallelism() == parallelism) {
-            LOG.debug("Node's current parallelism {}, new parallelism {}", node.getParallelism(), parallelism);
+            LOG.debug("Node's current parallelism {}, new parallelism {}", node.getParallelism(),
+                    parallelism);
             return this;
         }
-        Node partitionNode = addNode(node, new PartitionNode(stream, node.getOutputFields()), parallelism);
+        Node partitionNode = addNode(node, new PartitionNode(stream, node.getOutputFields()),
+                parallelism);
         return new Stream<>(streamBuilder, partitionNode);
     }
 
     /**
-     * Returns an array of streams by splitting the given stream into multiple branches based on the given predicates. The predicates are
-     * applied in the given order to the values of this stream and the result is forwarded to the corresponding (index based) result stream
+     * Returns an array of streams by splitting the given stream into multiple branches based on the
+     * given predicates. The predicates are
+     * applied in the given order to the values of this stream and the result is forwarded to the
+     * corresponding (index based) result stream
      * based on the (index of) predicate that matches.
-     * <p>
-     * <b>Note:</b> If none of the predicates match a value, that value is dropped.
+     *
+     * <p><b>Note:</b> If none of the predicates match a value, that value is dropped.
      * </p>
      *
      * @param predicates the predicates
@@ -283,7 +322,9 @@ public class Stream<T> {
             Node branchNode = addProcessorNode(branchProcessor, VALUE);
             for (Predicate<? super T> predicate : predicates) {
                 // create a child node (identity) per branch
-                ProcessorNode child = makeProcessorNode(new MapProcessor<>(new IdentityFunction<>()), node.getOutputFields());
+                ProcessorNode child =
+                        makeProcessorNode(new MapProcessor<>(new IdentityFunction<>()), node
+                        .getOutputFields());
                 String branchStream = child.getOutputStreams().iterator().next() + "-branch";
                 // branchStream is the parent stream that connects branch processor to this child
                 branchNode.addOutputStream(branchStream);
@@ -305,8 +346,8 @@ public class Stream<T> {
     /**
      * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as sinks in the stream, for e.g. a {@code
      * RedisStoreBolt}. The bolt would have a parallelism of 1.
-     * <p>
-     * <b>Note:</b> This would provide guarantees only based on what the bolt provides.
+     *
+     * <p><b>Note:</b> This would provide guarantees only based on what the bolt provides.
      * </p>
      *
      * @param bolt the bolt
@@ -318,8 +359,8 @@ public class Stream<T> {
     /**
      * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as sinks in the stream, for e.g. a {@code
      * RedisStoreBolt}.
-     * <p>
-     * <b>Note:</b> This would provide guarantees only based on what the bolt provides.
+     *
+     * <p><b>Note:</b> This would provide guarantees only based on what the bolt provides.
      * </p>
      *
      * @param bolt        the bolt
@@ -332,8 +373,8 @@ public class Stream<T> {
     /**
      * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as sinks in the stream, for e.g. a {@code
      * RedisStoreBolt}. The bolt would have a parallelism of 1.
-     * <p>
-     * <b>Note:</b> This would provide guarantees only based on what the bolt provides.
+     *
+     * <p><b>Note:</b> This would provide guarantees only based on what the bolt provides.
      * </p>
      *
      * @param bolt the bolt
@@ -345,8 +386,8 @@ public class Stream<T> {
     /**
      * Sends the elements of this stream to a bolt. This could be used to plug in existing bolts as sinks in the stream, for e.g. a {@code
      * RedisStoreBolt}.
-     * <p>
-     * <b>Note:</b> This would provide guarantees only based on what the bolt provides.
+     *
+     * <p><b>Note:</b> This would provide guarantees only based on what the bolt provides.
      * </p>
      *
      * @param bolt        the bolt
@@ -365,7 +406,8 @@ public class Stream<T> {
      */
     public <V> PairStream<T, V> stateQuery(StreamState<T, V> streamState) {
         // need field grouping for state query so that the query is routed to the correct task
-        Node newNode = partitionBy(VALUE, node.getParallelism()).addProcessorNode(new StateQueryProcessor<>(streamState), KEY_VALUE);
+        Node newNode = partitionBy(VALUE, node.getParallelism())
+                .addProcessorNode(new StateQueryProcessor<>(streamState), KEY_VALUE);
         return new PairStream<>(streamBuilder, newNode);
     }
 
@@ -409,8 +451,10 @@ public class Stream<T> {
         return makeProcessorNode(processor, outputFields, false);
     }
 
-    ProcessorNode makeProcessorNode(Processor<?> processor, Fields outputFields, boolean preservesKey) {
-        return new ProcessorNode(processor, UniqueIdGen.getInstance().getUniqueStreamId(), outputFields, preservesKey);
+    ProcessorNode makeProcessorNode(Processor<?> processor, Fields outputFields,
+            boolean preservesKey) {
+        return new ProcessorNode(processor, UniqueIdGen.getInstance().getUniqueStreamId(),
+                outputFields, preservesKey);
     }
 
     private void addSinkNode(SinkNode sinkNode, int parallelism) {
@@ -425,14 +469,16 @@ public class Stream<T> {
     }
 
     private Stream<T> global() {
-        Node partitionNode = addNode(new PartitionNode(stream, node.getOutputFields(), GroupingInfo.global()));
+        Node partitionNode = addNode(new PartitionNode(stream, node.getOutputFields(), GroupingInfo
+                .global()));
         return new Stream<>(streamBuilder, partitionNode);
     }
 
     protected Stream<T> partitionBy(Fields fields, int parallelism) {
         return new Stream<>(
-            streamBuilder,
-            addNode(node, new PartitionNode(stream, node.getOutputFields(), GroupingInfo.fields(fields)), parallelism));
+                streamBuilder,
+                addNode(node, new PartitionNode(stream, node.getOutputFields(), GroupingInfo
+                .fields(fields)), parallelism));
     }
 
     private boolean shouldPartition() {
@@ -441,23 +487,26 @@ public class Stream<T> {
 
     private <A> Stream<A> combinePartition(CombinerAggregator<? super T, A, ?> aggregator) {
         return new Stream<>(streamBuilder,
-                            addProcessorNode(new AggregateProcessor<>(aggregator, true), VALUE, true));
+                addProcessorNode(new AggregateProcessor<>(aggregator, true), VALUE, true));
     }
 
     private <R> Stream<R> merge(CombinerAggregator<?, T, ? extends R> aggregator) {
         return new Stream<>(streamBuilder,
-                            addProcessorNode(new MergeAggregateProcessor<>(aggregator), VALUE));
+                addProcessorNode(new MergeAggregateProcessor<>(aggregator), VALUE));
     }
 
-    private <A, R> Stream<R> aggregatePartition(CombinerAggregator<? super T, A, ? extends R> aggregator) {
-        return new Stream<>(streamBuilder, addProcessorNode(new AggregateProcessor<>(aggregator), VALUE));
+    private <A, R> Stream<R> aggregatePartition(CombinerAggregator<? super T, A,
+            ? extends R> aggregator) {
+        return new Stream<>(streamBuilder, addProcessorNode(new AggregateProcessor<>(aggregator),
+                VALUE));
     }
 
     private Stream<T> reducePartition(Reducer<T> reducer) {
         return new Stream<>(streamBuilder, addProcessorNode(new ReduceProcessor<>(reducer), VALUE));
     }
 
-    // if re-partitioning is involved, does a per-partition aggregate before emitting the results downstream
+    // if re-partitioning is involved, does a per-partition aggregate before emitting the results
+    // downstream
     private <A, R> Stream<R> combine(CombinerAggregator<? super T, A, ? extends R> aggregator) {
         if (shouldPartition()) {
             if (node instanceof ProcessorNode) {
@@ -466,11 +515,12 @@ public class Stream<T> {
                 }
             } else if (node instanceof WindowNode) {
                 Set<Node> parents = node.getParents();
-                Optional<Node> nonWindowed = parents.stream().filter(p -> !p.isWindowed()).findAny();
+                Optional<Node> nonWindowed = parents.stream().filter(p -> !p.isWindowed())
+                        .findAny();
                 if (!nonWindowed.isPresent()) {
                     parents.forEach(p -> {
                         Node localAggregateNode = makeProcessorNode(
-                            new AggregateProcessor<>(aggregator, true), VALUE, true);
+                                new AggregateProcessor<>(aggregator, true), VALUE, true);
                         streamBuilder.insert(p, localAggregateNode);
                     });
                     return ((Stream<A>) global()).merge(aggregator);
@@ -482,7 +532,8 @@ public class Stream<T> {
         }
     }
 
-    // if re-partitioning is involved, does a per-partition reduce before emitting the results downstream
+    // if re-partitioning is involved, does a per-partition reduce before emitting the results
+    // downstream
     private Stream<T> combine(Reducer<T> reducer) {
         if (shouldPartition()) {
             if (node instanceof ProcessorNode) {
@@ -492,7 +543,8 @@ public class Stream<T> {
             } else if (node instanceof WindowNode) {
                 for (Node p : node.getParents()) {
                     if (p.isWindowed()) {
-                        Node localReduceNode = makeProcessorNode(new ReduceProcessor<>(reducer), VALUE);
+                        Node localReduceNode = makeProcessorNode(new ReduceProcessor<>(reducer),
+                                VALUE);
                         streamBuilder.insert(p, localReduceNode);
                     }
                 }

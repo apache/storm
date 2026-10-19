@@ -23,17 +23,23 @@ public interface DNSToSwitchMapping {
     String DEFAULT_RACK = "/default-rack";
 
     /**
-     * Resolves a list of DNS-names/IP-address and returns back a map of DNS-name->switch information ( network paths).
-     * Consider an element in the argument list - x.y.com. The switch information that is returned must be a network
-     * path of the form /foo/rack, where / is the root, and 'foo' is the switch where 'rack' is connected. Note the
-     * hostname/ip-address is not part of the returned path. The network topology of the cluster would determine the
+     * Resolves a list of DNS-names/IP-address and returns back a map of DNS-name->switch
+     * information ( network paths).
+     * Consider an element in the argument list - x.y.com. The switch information that is returned
+     * must be a network
+     * path of the form /foo/rack, where / is the root, and 'foo' is the switch where 'rack' is
+     * connected. Note the
+     * hostname/ip-address is not part of the returned path. The network topology of the cluster
+     * would determine the
      * number of components in the network path.
      *
-     * <p>If a name cannot be resolved to a rack, the implementation should return {DEFAULT_RACK}. This is what the
+     * <p>If a name cannot be resolved to a rack, the implementation should return {DEFAULT_RACK}.
+     * This is what the
      * bundled implementations do, though it is not a formal requirement.
      *
      * @param names the list of hosts to resolve (can be empty)
-     * @return Map of hosts to resolved network paths. If <i>names</i> is empty, then return empty Map
+     * @return Map of hosts to resolved network paths. If <i>names</i> is empty, then return empty
+     *     Map
      */
     Map<String, String> resolve(List<String> names);
 }

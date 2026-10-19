@@ -22,14 +22,20 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * A {@link Random} that returns slices of an AES counter mode key stream, keyed from {@link SecureRandom} when the instance is
- * created and buffered a block at a time. It is meant for values that other parties must not be able to guess, such as the tuple
- * tree ids handed out by {@link org.apache.storm.tuple.MessageId#generateId(Random)}: unlike {@link Random},
- * {@link java.util.SplittableRandom} and {@link java.util.concurrent.ThreadLocalRandom}, whose internal state is recoverable from
+ * A {@link Random} that returns slices of an AES counter mode key stream, keyed from {@link
+ * SecureRandom} when the instance is
+ * created and buffered a block at a time. It is meant for values that other parties must not be
+ * able to guess, such as the tuple
+ * tree ids handed out by {@link org.apache.storm.tuple.MessageId#generateId(Random)}: unlike {@link
+ * Random},
+ * {@link java.util.SplittableRandom} and {@link java.util.concurrent.ThreadLocalRandom}, whose
+ * internal state is recoverable from
  * a couple of returned values, the values returned here say nothing about the values returned next.
  *
- * <p>The buffering keeps it cheap enough for the emit path; it is measurably faster than {@link Random}, whose seed update is a
- * contended compare and set per value. It is not a drop in replacement for a seeded {@link Random} though, because it cannot be
+ * <p>The buffering keeps it cheap enough for the emit path; it is measurably faster than {@link
+ * Random}, whose seed update is a
+ * contended compare and set per value. It is not a drop in replacement for a seeded {@link Random}
+ * though, because it cannot be
  * reseeded and so cannot produce a repeatable sequence.</p>
  */
 public class KeyStreamRandom extends Random {
@@ -65,7 +71,8 @@ public class KeyStreamRandom extends Random {
         source.nextBytes(iv);
         try {
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv));
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"),
+                    new IvParameterSpec(iv));
             return cipher;
         } catch (GeneralSecurityException e) {
             // no AES here, fall back to taking the values from the SecureRandom itself
@@ -88,7 +95,8 @@ public class KeyStreamRandom extends Random {
 
     @Override
     public void setSeed(long seed) {
-        // there is nothing to seed, and Random's constructor calls this before this class' fields exist
+        // there is nothing to seed, and Random's constructor calls this before this class' fields
+        // exist
     }
 
     private void fill() {

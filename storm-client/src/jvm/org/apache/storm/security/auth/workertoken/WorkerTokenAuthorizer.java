@@ -58,11 +58,12 @@ public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
     }
 
     @VisibleForTesting
-    WorkerTokenAuthorizer(final WorkerTokenServiceType serviceType, final IStormClusterState state) {
+    WorkerTokenAuthorizer(final WorkerTokenServiceType serviceType,
+        final IStormClusterState state) {
         LoadingCache<WorkerTokenInfo, PrivateWorkerKey> tmpKeyCache = null;
         if (state != null) {
             tmpKeyCache =
-                CacheBuilder.newBuilder()
+                    CacheBuilder.newBuilder()
                             .maximumSize(2_000)
                             .expireAfterWrite(2, TimeUnit.HOURS)
                             .build(new CacheLoader<WorkerTokenInfo, PrivateWorkerKey>() {
@@ -70,8 +71,8 @@ public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
                                 @Override
                                 public PrivateWorkerKey load(WorkerTokenInfo wtInfo) {
                                     return state.getPrivateWorkerKey(serviceType,
-                                                                     wtInfo.get_topologyId(),
-                                                                     wtInfo.get_secretVersion());
+                                            wtInfo.get_topologyId(),
+                                            wtInfo.get_secretVersion());
                                 }
                             });
         }
@@ -79,12 +80,14 @@ public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
         this.state = state;
     }
 
-    private static IStormClusterState buildStateIfNeeded(Map<String, Object> conf, ThriftConnectionType connectionType) {
+    private static IStormClusterState buildStateIfNeeded(Map<String, Object> conf,
+            ThriftConnectionType connectionType) {
         IStormClusterState state = null;
 
         if (ClientAuthUtils.areWorkerTokensEnabledServer(connectionType, conf)) {
             try {
-                state = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.UNKNOWN, conf));
+                state = ClusterUtils.mkStormClusterState(conf,
+                        new ClusterStateContext(DaemonType.UNKNOWN, conf));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -96,7 +99,8 @@ public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
     byte[] getSignedPasswordFor(byte[] user, WorkerTokenInfo deser) {
         assert keyCache != null;
 
-        if (deser.is_set_expirationTimeMillis() && deser.get_expirationTimeMillis() <= Time.currentTimeMillis()) {
+        if (deser.is_set_expirationTimeMillis() && deser.get_expirationTimeMillis() <= Time
+                .currentTimeMillis()) {
             throw new IllegalArgumentException("Token is not valid, token has expired.");
         }
 
@@ -104,16 +108,19 @@ public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
         try {
             key = keyCache.getUnchecked(deser);
         } catch (CacheLoader.InvalidCacheLoadException e) {
-            //This happens when the key is not found, the cache loader returns a null and this exception is thrown.
+            // This happens when the key is not found, the cache loader returns a null and this
+            // exception is thrown.
             // because the cache cannot store a null.
             throw new IllegalArgumentException("Token is not valid, private key not found.", e);
         }
 
-        if (key.is_set_expirationTimeMillis() && key.get_expirationTimeMillis() <= Time.currentTimeMillis()) {
+        if (key.is_set_expirationTimeMillis() && key.get_expirationTimeMillis() <= Time
+                .currentTimeMillis()) {
             throw new IllegalArgumentException("Token is not valid, key has expired.");
         }
 
-        return WorkerTokenSigner.createPassword(user, new SecretKeySpec(key.get_key(), WorkerTokenSigner.DEFAULT_HMAC_ALGORITHM));
+        return WorkerTokenSigner.createPassword(user, new SecretKeySpec(key.get_key(),
+                WorkerTokenSigner.DEFAULT_HMAC_ALGORITHM));
     }
 
     @Override
@@ -136,7 +143,8 @@ public class WorkerTokenAuthorizer implements PasswordProvider, Closeable {
             return Optional.of(Base64.getEncoder().encodeToString(password).toCharArray());
         } catch (Exception e) {
             passwordFailures.mark();
-            LOG.error("Could not get password for token {}/{}", deser.get_userName(), deser.get_topologyId(), e);
+            LOG.error("Could not get password for token {}/{}", deser.get_userName(), deser
+                    .get_topologyId(), e);
             return Optional.empty();
         }
     }

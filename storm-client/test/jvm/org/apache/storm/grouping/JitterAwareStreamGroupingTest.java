@@ -12,6 +12,11 @@
 
 package org.apache.storm.grouping;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,17 +31,15 @@ import org.apache.storm.shade.com.google.common.collect.Sets;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 /**
- * Unit tests for {@link JitterAwareStreamGrouping}: power-of-two-choices steering toward the lower-jitter
+ * Unit tests for {@link JitterAwareStreamGrouping}: power-of-two-choices steering toward the
+ * lower-jitter
  * child once {@link ChildEwmaStats} is populated, and delegation to the embedded
- * {@link LoadAwareShuffleGrouping} whenever jitter cannot pick a winner (no feedback, or a tied pair).
+ * {@link LoadAwareShuffleGrouping} whenever jitter cannot pick a winner (no feedback, or a tied
+ * pair).
  *
- * <p>With exactly two targets, P2C deterministically samples both, so the lower-jitter target always wins
+ * <p>With exactly two targets, P2C deterministically samples both, so the lower-jitter target
+ * always wins
  * those tests without needing to control the random source.
  */
 public class JitterAwareStreamGroupingTest {
@@ -46,7 +49,8 @@ public class JitterAwareStreamGroupingTest {
 
     private Map<String, Object> createConf() {
         Map<String, Object> conf = new HashMap<>();
-        conf.put(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN, "org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping");
+        conf.put(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN,
+                "org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping");
         conf.put(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND, 0.8);
         conf.put(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND, 0.2);
         return conf;
@@ -62,7 +66,8 @@ public class JitterAwareStreamGroupingTest {
         when(context.getTaskToNodePort()).thenReturn(new AtomicReference<>(taskNodeToPort));
         when(context.getAssignmentId()).thenReturn("node-id");
         when(context.getThisWorkerPort()).thenReturn(6700);
-        when(context.getNodeToHost()).thenReturn(new AtomicReference<>(Collections.singletonMap("node-id", "hostname1")));
+        when(context.getNodeToHost()).thenReturn(new AtomicReference<>(Collections
+                .singletonMap("node-id", "hostname1")));
         return context;
     }
 
@@ -83,7 +88,8 @@ public class JitterAwareStreamGroupingTest {
 
     @Test
     public void chooseTasks_singleTargetAlwaysReturnsIt() {
-        JitterAwareStreamGrouping grouping = prepared(Collections.singletonList(42), new ChildEwmaStats(true));
+        JitterAwareStreamGrouping grouping = prepared(Collections.singletonList(42),
+                new ChildEwmaStats(true));
         for (int i = 0; i < 5; i++) {
             assertEquals(Collections.singletonList(42), grouping.chooseTasks(SOURCE_TASK, VALUES));
         }
@@ -119,7 +125,8 @@ public class JitterAwareStreamGroupingTest {
 
     @Test
     public void chooseTasks_prefersReportedOverUnreported() {
-        // Only 11 has reported; with two targets it is always in the pair and beats the unreported 10.
+        // Only 11 has reported; with two targets it is always in the pair and beats the unreported
+        // 10.
         List<Integer> targets = Arrays.asList(10, 11);
         ChildEwmaStats stats = new ChildEwmaStats(true);
         stats.update(SOURCE_TASK, 11, new EwmaFeedbackRecord(7.0, 7.0, 7.0));
@@ -132,7 +139,8 @@ public class JitterAwareStreamGroupingTest {
 
     @Test
     public void chooseTasks_tiedJitter_delegatesToFallback() {
-        // Equal jitter on both targets => every pair ties => the load-aware fallback decides and spreads.
+        // Equal jitter on both targets => every pair ties => the load-aware fallback decides and
+        // spreads.
         List<Integer> targets = Arrays.asList(10, 11);
         ChildEwmaStats stats = new ChildEwmaStats(true);
         stats.update(SOURCE_TASK, 10, new EwmaFeedbackRecord(5.0, 5.0, 5.0));
@@ -143,7 +151,8 @@ public class JitterAwareStreamGroupingTest {
 
     @Test
     public void chooseTasks_isPerSourceTask() {
-        // Two targets, source 1 only: child 10 is best; the grouping must not consult another source's stats.
+        // Two targets, source 1 only: child 10 is best; the grouping must not consult another
+        // source's stats.
         List<Integer> targets = Arrays.asList(10, 11);
         ChildEwmaStats stats = new ChildEwmaStats(true);
         stats.update(1, 10, new EwmaFeedbackRecord(1, 1, 1.0));
@@ -157,7 +166,8 @@ public class JitterAwareStreamGroupingTest {
 
     @Test
     public void chooseTasks_p2cAvoidsHerd() {
-        // Three strictly-ordered targets, real randomness: the best (10) takes the plurality but NOT 100%
+        // Three strictly-ordered targets, real randomness: the best (10) takes the plurality but
+        // NOT 100%
         // (herd avoided), the worst (12) never wins a pair, and 11 takes the remainder.
         List<Integer> targets = Arrays.asList(10, 11, 12);
         ChildEwmaStats stats = new ChildEwmaStats(true);
@@ -176,10 +186,13 @@ public class JitterAwareStreamGroupingTest {
         int best = hits.getOrDefault(10, 0);
         int mid = hits.getOrDefault(11, 0);
         int worst = hits.getOrDefault(12, 0);
-        assertTrue(best > 0 && best < total, "best target should take a share but not the whole herd: " + best);
-        assertTrue(best > mid, "best target should outweigh the middle one: " + best + " vs " + mid);
+        assertTrue(best > 0 && best < total,
+                "best target should take a share but not the whole herd: " + best);
+        assertTrue(best > mid, "best target should outweigh the middle one: " + best + " vs "
+                + mid);
         assertTrue(mid > 0, "middle target should still receive traffic: " + mid);
-        // The worst target is never the lower-jitter of any sampled pair, and there are no ties to delegate.
+        // The worst target is never the lower-jitter of any sampled pair, and there are no ties to
+        // delegate.
         assertEquals(0, worst, "worst target should never win a P2C comparison");
     }
 
@@ -193,7 +206,8 @@ public class JitterAwareStreamGroupingTest {
             hits.merge(chosen.get(0), 1, Integer::sum);
         }
         for (Integer target : targets) {
-            assertTrue(hits.getOrDefault(target, 0) > 0, "target " + target + " should receive some traffic");
+            assertTrue(hits.getOrDefault(target, 0) > 0, "target " + target
+                    + " should receive some traffic");
         }
     }
 }

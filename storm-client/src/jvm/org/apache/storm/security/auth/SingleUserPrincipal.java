@@ -27,7 +27,8 @@ public class SingleUserPrincipal implements Principal {
 
     @Override
     public boolean equals(Object another) {
-        return another instanceof SingleUserPrincipal && userName.equals(((SingleUserPrincipal) another).userName);
+        return another instanceof SingleUserPrincipal && userName
+                .equals(((SingleUserPrincipal) another).userName);
     }
 
     @Override

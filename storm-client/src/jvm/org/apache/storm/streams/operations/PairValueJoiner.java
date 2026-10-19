@@ -15,7 +15,8 @@ package org.apache.storm.streams.operations;
 import org.apache.storm.streams.Pair;
 
 /**
- * A {@link ValueJoiner} that joins two values to produce a {@link Pair} of the two values as the result.
+ * A {@link ValueJoiner} that joins two values to produce a {@link Pair} of the two values as the
+ * result.
  *
  * @param <V1> the type of the first value
  * @param <V2> the type of the second value

@@ -47,11 +47,12 @@ public class MessageDecoder extends ByteToMessageDecoder {
      *  payload ... byte[]     *
      */
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf buf,
+        List<Object> out) throws Exception {
         // Make sure that we have received at least a short 
         long available = buf.readableBytes();
         if (available < 2) {
-            //need more data
+            // need more data
             return;
         }
 
@@ -82,11 +83,11 @@ public class MessageDecoder extends ByteToMessageDecoder {
                 }
             }
 
-            //case 2: SaslTokenMessageRequest
+            // case 2: SaslTokenMessageRequest
             if (code == SaslMessageToken.IDENTIFIER) {
                 // Make sure that we have received at least an integer (length)
                 if (buf.readableBytes() < 4) {
-                    //need more data
+                    // need more data
                     buf.resetReaderIndex();
                     return;
                 }
@@ -126,7 +127,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
                 }
                 available = buf.readableBytes();
                 if (available < 4) {
-                    //Need  more data
+                    // Need  more data
                     buf.resetReaderIndex();
                     return;
                 }
@@ -192,7 +193,8 @@ public class MessageDecoder extends ByteToMessageDecoder {
         if (!serverAuthRequired) {
             return false;
         }
-        SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
+        SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER)
+                .get();
         return saslNettyServer == null || !saslNettyServer.isComplete();
     }
 
@@ -204,7 +206,8 @@ public class MessageDecoder extends ByteToMessageDecoder {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        LOG.error("Exception thrown while decoding messages in channel {}; exception: ", ctx.channel(), cause);
+        LOG.error("Exception thrown while decoding messages in channel {}; exception: ", ctx
+                .channel(), cause);
         ctx.close();
     }
 }

@@ -14,11 +14,9 @@ package org.apache.storm.trident.topology;
 
 import org.apache.storm.trident.spout.IBatchID;
 
-
 public class TransactionAttempt implements IBatchID {
     Long txid;
     int attemptId;
-
 
     // for kryo compatibility
     public TransactionAttempt() {

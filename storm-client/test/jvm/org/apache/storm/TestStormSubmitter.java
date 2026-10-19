@@ -18,6 +18,8 @@
 
 package org.apache.storm;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.Map;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.StormTopology;
@@ -26,8 +28,6 @@ import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestStormSubmitter {
 
@@ -43,11 +43,14 @@ public class TestStormSubmitter {
         SubmitOptions opts = new SubmitOptions(TopologyInitialStatus.INACTIVE);
 
         try {
-            StormSubmitter.submitTopologyAs("test-topo-without-spout", topoConf, topology, opts, null, "none");
+            StormSubmitter.submitTopologyAs("test-topo-without-spout", topoConf, topology, opts,
+                    null, "none");
             fail("Topology without spout should fail in submission");
         } catch (InvalidTopologyException ex) {
             if (!ex.getMessage().contains(expectedExceptionMsgFragment)) {
-                String err = String.format("Topology submit failure should contain string \"%s\", but is \"%s\"",
+                String err = String
+                        .format("Topology submit failure should contain string \"%s\", but is "
+                        + "\"%s\"",
                         expectedExceptionMsgFragment, ex.getMessage());
                 fail(err);
             }

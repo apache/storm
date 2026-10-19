@@ -50,6 +50,7 @@ public class ClientStatsUtil {
 
     /**
      * Make an map of executors to empty stats, in preparation for doing a heartbeat.
+     *
      * @param executors the executors as keys of the map
      * @return and empty map of executors to stats
      */
@@ -65,7 +66,8 @@ public class ClientStatsUtil {
     /**
      * Convert Long Executor Ids in ZkHbs to Integer ones structure to java maps.
      */
-    public static Map<List<Integer>, ExecutorStats> convertExecutorZkHbs(Map<List<Long>, ExecutorStats> executorBeats) {
+    public static Map<List<Integer>, ExecutorStats> convertExecutorZkHbs(Map<List<Long>,
+            ExecutorStats> executorBeats) {
         Map<List<Integer>, ExecutorStats> ret = new HashMap<>();
         for (Map.Entry<List<Long>, ExecutorStats> entry : executorBeats.entrySet()) {
             ret.put(convertExecutor(entry.getKey()), entry.getValue());
@@ -75,12 +77,14 @@ public class ClientStatsUtil {
 
     /**
      * Create a new worker heartbeat for zookeeper.
+     *
      * @param topoId the topology id
      * @param executorStats the stats for the executors
      * @param uptime the uptime for the worker
      * @return the heartbeat map
      */
-    public static Map<String, Object> mkZkWorkerHb(String topoId, Map<List<Integer>, ExecutorStats> executorStats, Integer uptime) {
+    public static Map<String, Object> mkZkWorkerHb(String topoId, Map<List<Integer>,
+            ExecutorStats> executorStats, Integer uptime) {
         Map<String, Object> ret = new HashMap<>();
         ret.put("storm-id", topoId);
         ret.put(EXECUTOR_STATS, executorStats);
@@ -104,6 +108,7 @@ public class ClientStatsUtil {
 
     /**
      * Get a sub-map by a given key.
+     *
      * @param map the original map
      * @param key the key to get it from
      * @return the map stored under key
@@ -140,12 +145,13 @@ public class ClientStatsUtil {
 
     /**
      * Converts stats to be over given windows of time.
+     *
      * @param stats the stats
      * @param secKeyFunc transform the sub-key
      * @param firstKeyFunc transform the main key
      */
     public static <K1, K2> Map windowSetConverter(
-        Map stats, KeyTransformer<K2> secKeyFunc, KeyTransformer<K1> firstKeyFunc) {
+            Map stats, KeyTransformer<K2> secKeyFunc, KeyTransformer<K1> firstKeyFunc) {
         Map ret = new HashMap();
 
         for (Object o : stats.entrySet()) {

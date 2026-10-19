@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class StormClusterStateImplTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(StormClusterStateImplTest.class);
-    private final String[] pathlist = {
+    private final String[] pathlist =  {
         ClusterUtils.ASSIGNMENTS_SUBTREE,
         ClusterUtils.STORMS_SUBTREE,
         ClusterUtils.SUPERVISORS_SUBTREE,
@@ -43,9 +43,9 @@ public class StormClusterStateImplTest {
     public void init() throws Exception {
         storage = Mockito.mock(IStateStorage.class);
         context = new ClusterStateContext();
-        state = new StormClusterStateImpl(storage, LocalAssignmentsBackendFactory.getDefault(), context, false /*solo*/);
+        state = new StormClusterStateImpl(storage, LocalAssignmentsBackendFactory.getDefault(),
+                context, false /*solo*/);
     }
-
 
     @Test
     public void registeredCallback() {

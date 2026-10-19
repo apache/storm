@@ -38,23 +38,30 @@ public class WindowsStateUpdater implements StateUpdater<WindowsState> {
     }
 
     @Override
-    public void updateState(WindowsState state, List<TridentTuple> tuples, TridentCollector collector) {
+    public void updateState(WindowsState state, List<TridentTuple> tuples,
+        TridentCollector collector) {
         Long currentTxId = state.getCurrentTxId();
         LOG.debug("Removing triggers using WindowStateUpdater, txnId: [{}] ", currentTxId);
         for (TridentTuple tuple : tuples) {
             try {
-                Object fieldValue = tuple.getValueByField(WindowTridentProcessor.TRIGGER_FIELD_NAME);
+                Object fieldValue = tuple
+                        .getValueByField(WindowTridentProcessor.TRIGGER_FIELD_NAME);
                 if (!(fieldValue instanceof WindowTridentProcessor.TriggerInfo)) {
-                    throw new ClassCastException("Expected WindowTridentProcessor.TriggerInfo but found " + fieldValue.getClass());
+                    throw new ClassCastException("Expected WindowTridentProcessor.TriggerInfo but "
+                            + "found " + fieldValue.getClass());
                 }
-                WindowTridentProcessor.TriggerInfo triggerInfo = (WindowTridentProcessor.TriggerInfo) fieldValue;
+                WindowTridentProcessor.TriggerInfo triggerInfo =
+                        (WindowTridentProcessor.TriggerInfo) fieldValue;
                 String triggerCompletedKey =
-                    WindowTridentProcessor.getWindowTriggerInprocessIdPrefix(triggerInfo.windowTaskId) + currentTxId;
+                        WindowTridentProcessor
+                        .getWindowTriggerInprocessIdPrefix(triggerInfo.windowTaskId) + currentTxId;
 
-                LOG.debug("Removing trigger key [{}] and trigger completed key [{}] from store: [{}]", triggerInfo, triggerCompletedKey,
-                          windowsStore);
+                LOG.debug("Removing trigger key [{}] and trigger completed key [{}] from store: "
+                        + "[{}]", triggerInfo, triggerCompletedKey,
+                        windowsStore);
 
-                windowsStore.removeAll(Lists.newArrayList(triggerInfo.generateTriggerKey(), triggerCompletedKey));
+                windowsStore.removeAll(Lists.newArrayList(triggerInfo.generateTriggerKey(),
+                        triggerCompletedKey));
             } catch (Exception ex) {
                 LOG.warn(ex.getMessage());
                 collector.reportError(ex);

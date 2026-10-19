@@ -15,7 +15,6 @@ package org.apache.storm.messaging;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.function.Supplier;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.netty.BackPressureStatus;
 
@@ -34,7 +33,7 @@ public interface IConnection extends AutoCloseable {
     void sendBackPressureStatus(BackPressureStatus bpStatus);
 
     /**
-     * send batch messages.
+     * Send batch messages.
      */
 
     void send(Iterator<TaskMessage> msgs);
@@ -55,7 +54,7 @@ public interface IConnection extends AutoCloseable {
     int getPort();
 
     /**
-     * close this connection.
+     * Close this connection.
      */
     @Override
     void close();

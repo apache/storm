@@ -17,7 +17,8 @@ import static org.apache.storm.spout.CheckPointState.State.COMMITTING;
 import static org.apache.storm.spout.CheckPointState.State.PREPARING;
 
 /**
- * Captures the current state of the transaction in {@link CheckpointSpout}. The state transitions are as follows.
+ * Captures the current state of the transaction in {@link CheckpointSpout}. The state transitions
+ * are as follows.
  * <pre>
  *                  ROLLBACK(tx2)
  *               <-------------                  PREPARE(tx2)                     COMMIT(tx2)
@@ -25,11 +26,14 @@ import static org.apache.storm.spout.CheckPointState.State.PREPARING;
  *
  * </pre>
  *
- * <p>During recovery, if a previous transaction is in PREPARING state, it is rolled back since all bolts in the topology might not have
- * prepared (saved) the data for commit. If the previous transaction is in COMMITTING state, it is rolled forward (committed) since some
+ * <p>During recovery, if a previous transaction is in PREPARING state, it is rolled back since all
+ * bolts in the topology might not have
+ * prepared (saved) the data for commit. If the previous transaction is in COMMITTING state, it is
+ * rolled forward (committed) since some
  * bolts might have already committed the data.
  *
- * <p>During normal flow, the state transitions from PREPARING to COMMITTING to COMMITTED. In case of failures the
+ * <p>During normal flow, the state transitions from PREPARING to COMMITTING to COMMITTED. In case
+ * of failures the
  * prepare/commit operation is retried.
  */
 public class CheckPointState {
@@ -63,7 +67,8 @@ public class CheckPointState {
         CheckPointState nextState;
         switch (state) {
             case PREPARING:
-                nextState = recovering ? new CheckPointState(txid - 1, COMMITTED) : new CheckPointState(txid, COMMITTING);
+                nextState = recovering ? new CheckPointState(txid - 1,
+                COMMITTED) : new CheckPointState(txid, COMMITTING);
                 break;
             case COMMITTING:
                 nextState = new CheckPointState(txid, COMMITTED);
@@ -140,30 +145,32 @@ public class CheckPointState {
          */
         COMMITTED,
         /**
-         * The checkpoint spout has started committing the transaction and the commit is in progress.
+         * The checkpoint spout has started committing the transaction and the commit is in
+         * progress.
          */
         COMMITTING,
         /**
-         * The checkpoint spout has started preparing the transaction for commit and the prepare is in progress.
+         * The checkpoint spout has started preparing the transaction for commit and the prepare is
+         * in progress.
          */
         PREPARING
     }
 
     public enum Action {
         /**
-         * prepare transaction for commit.
+         * Prepare transaction for commit.
          */
         PREPARE,
         /**
-         * commit the previously prepared transaction.
+         * Commit the previously prepared transaction.
          */
         COMMIT,
         /**
-         * rollback the previously prepared transaction.
+         * Rollback the previously prepared transaction.
          */
         ROLLBACK,
         /**
-         * initialize the state.
+         * Initialize the state.
          */
         INITSTATE
     }

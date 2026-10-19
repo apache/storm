@@ -24,36 +24,42 @@ package org.apache.storm.utils;
 public interface IVersionInfo {
     /**
      * Get the version number of the build.
+     *
      * @return the version number of the build.
      */
     String getVersion();
 
     /**
      * Get the SCM revision number of the build.
+     *
      * @return the SCM revision number of the build.
      */
     String getRevision();
 
     /**
      * Get the SCM branch of the build.
+     *
      * @return the SCM branch of the build.
      */
     String getBranch();
 
     /**
      * Get the date/time the build happened.
+     *
      * @return the date/time of the build.
      */
     String getDate();
 
     /**
      * Get the checksum of the source.
+     *
      * @return the checksum of the source.
      */
     String getSrcChecksum();
 
     /**
      * Get a descriptive representation of the build meant for human consumption.
+     *
      * @return a descriptive representation of the build.
      */
     String getBuildVersion();

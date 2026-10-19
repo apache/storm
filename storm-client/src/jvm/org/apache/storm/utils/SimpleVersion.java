@@ -16,7 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Take a version string and parse out a Major.Minor version
+ * Take a version string and parse out a Major.Minor version.
  */
 public class SimpleVersion implements Comparable<SimpleVersion> {
     private static final Pattern VERSION_PATTERN = Pattern.compile("^(\\d+)[\\.\\-\\_]+(\\d+).*$");
@@ -28,7 +28,7 @@ public class SimpleVersion implements Comparable<SimpleVersion> {
         int maj = -1;
         int min = -1;
         if (!m.matches()) {
-            //Unknown should only happen during compilation or some unit tests.
+            // Unknown should only happen during compilation or some unit tests.
             if (!"Unknown".equals(version)) {
                 throw new IllegalArgumentException("Cannot parse '" + version + "'");
             }

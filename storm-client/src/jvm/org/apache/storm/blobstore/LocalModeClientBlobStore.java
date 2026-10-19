@@ -39,12 +39,13 @@ public class LocalModeClientBlobStore extends ClientBlobStore {
 
     @Override
     public void prepare(Map<String, Object> conf) {
-        //NOOP prepare should have already been called
+        // NOOP prepare should have already been called
     }
 
     @Override
-    protected AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta) throws AuthorizationException,
-        KeyAlreadyExistsException {
+    protected AtomicOutputStream createBlobToExtend(String key,
+        SettableBlobMeta meta) throws AuthorizationException,
+            KeyAlreadyExistsException {
         return wrapped.createBlob(key, meta, null);
     }
 
@@ -69,7 +70,8 @@ public class LocalModeClientBlobStore extends ClientBlobStore {
     }
 
     @Override
-    protected void setBlobMetaToExtend(String key, SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException {
+    protected void setBlobMetaToExtend(String key,
+        SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException {
         wrapped.setBlobMeta(key, meta, null);
     }
 
@@ -100,7 +102,8 @@ public class LocalModeClientBlobStore extends ClientBlobStore {
     }
 
     @Override
-    public int updateBlobReplication(String key, int replication) throws AuthorizationException, KeyNotFoundException {
+    public int updateBlobReplication(String key,
+        int replication) throws AuthorizationException, KeyNotFoundException {
         try {
             return wrapped.updateBlobReplication(key, replication, null);
         } catch (AuthorizationException | KeyNotFoundException rethrow) {
@@ -117,7 +120,7 @@ public class LocalModeClientBlobStore extends ClientBlobStore {
 
     @Override
     public void createStateInZookeeper(String key) {
-        //NOOP
+        // NOOP
     }
 
     @Override

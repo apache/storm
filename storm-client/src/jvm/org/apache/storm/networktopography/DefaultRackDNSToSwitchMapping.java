@@ -18,7 +18,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class implements the {@link DNSToSwitchMapping} interface It returns the DEFAULT_RACK for every host.
+ * This class implements the {@link DNSToSwitchMapping} interface It returns the DEFAULT_RACK for
+ * every host.
  */
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public final class DefaultRackDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
@@ -30,7 +31,7 @@ public final class DefaultRackDNSToSwitchMapping extends AbstractDNSToSwitchMapp
 
         Map<String, String> m = new HashMap<>();
         if (names.isEmpty()) {
-            //name list is empty, return an empty map
+            // name list is empty, return an empty map
             return m;
         }
         for (String name : names) {
@@ -42,6 +43,7 @@ public final class DefaultRackDNSToSwitchMapping extends AbstractDNSToSwitchMapp
 
     @Override
     public String toString() {
-        return "DefaultRackDNSToSwitchMapping (" + mappingCache.size() + " mappings cached)" + dumpTopology();
+        return "DefaultRackDNSToSwitchMapping (" + mappingCache.size() + " mappings cached)"
+                + dumpTopology();
     }
 }

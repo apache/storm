@@ -20,7 +20,8 @@ import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
 
 /**
- * An authorization implementation that simply checks a whitelist of users that are allowed to use the cluster.
+ * An authorization implementation that simply checks a whitelist of users that are allowed to use
+ * the cluster.
  */
 public class SimpleWhitelistAuthorizer implements IAuthorizer {
     public static final String WHITELIST_USERS_CONF = "storm.auth.simple-white-list.users";

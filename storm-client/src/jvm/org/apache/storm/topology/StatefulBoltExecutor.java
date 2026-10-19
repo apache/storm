@@ -51,14 +51,16 @@ public class StatefulBoltExecutor<T extends State> extends BaseStatefulBoltExecu
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         // get the last successfully committed state from state store
         String namespace = context.getThisComponentId() + "-" + context.getThisTaskId();
         prepare(topoConf, context, collector, StateFactory.getState(namespace, topoConf, context));
     }
 
     // package access for unit tests
-    void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector, State state) {
+    void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector,
+            State state) {
         init(context, collector);
         this.collector = new AckTrackingOutputCollector(collector);
         bolt.prepare(topoConf, context, this.collector);
@@ -81,10 +83,10 @@ public class StatefulBoltExecutor<T extends State> extends BaseStatefulBoltExecu
         return bolt.getComponentConfiguration();
     }
 
-
     @Override
     protected void handleCheckpoint(Tuple checkpointTuple, Action action, long txid) {
-        LOG.debug("handleCheckPoint with tuple {}, action {}, txid {}", checkpointTuple, action, txid);
+        LOG.debug("handleCheckPoint with tuple {}, action {}, txid {}", checkpointTuple, action,
+                txid);
         if (action == PREPARE) {
             if (boltInitialized) {
                 bolt.prePrepare(txid);
@@ -95,7 +97,8 @@ public class StatefulBoltExecutor<T extends State> extends BaseStatefulBoltExecu
                  * May be the task restarted in the middle and the state needs be initialized.
                  * Fail fast and trigger recovery.
                  */
-                LOG.debug("Failing checkpointTuple, PREPARE received when bolt state is not initialized.");
+                LOG.debug("Failing checkpointTuple, PREPARE received when bolt state is not "
+                        + "initialized.");
                 collector.fail(checkpointTuple);
                 return;
             }
@@ -119,15 +122,18 @@ public class StatefulBoltExecutor<T extends State> extends BaseStatefulBoltExecu
                 pendingTuples.clear();
             } else {
                 /*
-                 * If a worker crashes, the states of all workers are rolled back and an initState message is sent across
+                 * If a worker crashes, the states of all workers are rolled back and an initState
+                 * message is sent across
                  * the topology so that crashed workers can initialize their state.
                  * The bolts that have their state already initialized need not be re-initialized.
                  */
-                LOG.debug("Bolt state is already initialized, ignoring tuple {}, action {}, txid {}",
-                          checkpointTuple, action, txid);
+                LOG.debug("Bolt state is already initialized, ignoring tuple {}, action {}, txid "
+                        + "{}",
+                        checkpointTuple, action, txid);
             }
         }
-        collector.emit(CheckpointSpout.CHECKPOINT_STREAM_ID, checkpointTuple, new Values(txid, action));
+        collector.emit(CheckpointSpout.CHECKPOINT_STREAM_ID, checkpointTuple, new Values(txid,
+                action));
         collector.delegate.ack(checkpointTuple);
     }
 

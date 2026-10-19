@@ -13,7 +13,8 @@
 package org.apache.storm.trident.operation.builtin;
 
 /**
- * This aggregator computes the maximum of aggregated tuples in a stream. It assumes that the tuple has one value and it is an instance of
+ * This aggregator computes the maximum of aggregated tuples in a stream. It assumes that the tuple
+ * has one value and it is an instance of
  * {@code Comparable}.
  */
 public class Max extends ComparisonAggregator<Comparable<Object>> {

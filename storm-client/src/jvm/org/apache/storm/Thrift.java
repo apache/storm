@@ -57,7 +57,7 @@ public class Thrift {
 
     private static StormTopology._Fields[] STORM_TOPOLOGY_FIELDS = null;
     private static StormTopology._Fields[] SPOUT_FIELDS =
-        { StormTopology._Fields.SPOUTS, StormTopology._Fields.STATE_SPOUTS };
+        {StormTopology._Fields.SPOUTS, StormTopology._Fields.STATE_SPOUTS};
 
     static {
         Set<_Fields> keys = StormTopology.metaDataMap.keySet();
@@ -160,7 +160,8 @@ public class Thrift {
 
     public static List<String> fieldGrouping(Grouping grouping) {
         if (!Grouping._Fields.FIELDS.equals(groupingType(grouping))) {
-            throw new IllegalArgumentException("Tried to get grouping fields from non fields grouping");
+            throw new IllegalArgumentException("Tried to get grouping fields from non fields "
+                    + "grouping");
         }
         return grouping.get_fields();
     }
@@ -192,12 +193,14 @@ public class Thrift {
         return Utils.javaDeserialize(obj.get_serialized_java(), Serializable.class);
     }
 
-    public static ComponentCommon prepareComponentCommon(Map<GlobalStreamId, Grouping> inputs, Map<String,
-        StreamInfo> outputs, Integer parallelismHint) {
+    public static ComponentCommon prepareComponentCommon(Map<GlobalStreamId, Grouping> inputs,
+            Map<String,
+                                                                 StreamInfo> outputs, Integer parallelismHint) {
         return prepareComponentCommon(inputs, outputs, parallelismHint, null);
     }
 
-    public static ComponentCommon prepareComponentCommon(Map<GlobalStreamId, Grouping> inputs, Map<String, StreamInfo> outputs,
+    public static ComponentCommon prepareComponentCommon(Map<GlobalStreamId, Grouping> inputs,
+            Map<String, StreamInfo> outputs,
                                                          Integer parallelismHint, Map<String, Object> conf) {
         Map<GlobalStreamId, Grouping> mappedInputs = new HashMap<>();
         Map<String, StreamInfo> mappedOutputs = new HashMap<>();
@@ -217,18 +220,21 @@ public class Thrift {
         return component;
     }
 
-    public static SpoutSpec prepareSerializedSpoutDetails(IRichSpout spout, Map<String, StreamInfo> outputs) {
+    public static SpoutSpec prepareSerializedSpoutDetails(IRichSpout spout, Map<String,
+            StreamInfo> outputs) {
         return new SpoutSpec(ComponentObject.serialized_java(Utils.javaSerialize(spout)),
                 prepareComponentCommon(new HashMap<>(), outputs, null, null));
     }
 
-    public static Bolt prepareSerializedBoltDetails(Map<GlobalStreamId, Grouping> inputs, IBolt bolt, Map<String, StreamInfo> outputs,
+    public static Bolt prepareSerializedBoltDetails(Map<GlobalStreamId, Grouping> inputs,
+            IBolt bolt, Map<String, StreamInfo> outputs,
                                                     Integer parallelismHint, Map<String, Object> conf) {
         ComponentCommon common = prepareComponentCommon(inputs, outputs, parallelismHint, conf);
         return new Bolt(ComponentObject.serialized_java(Utils.javaSerialize(bolt)), common);
     }
 
-    public static BoltDetails prepareBoltDetails(Map<GlobalStreamId, Grouping> inputs, Object bolt) {
+    public static BoltDetails prepareBoltDetails(Map<GlobalStreamId, Grouping> inputs,
+            Object bolt) {
         return prepareBoltDetails(inputs, bolt, null, null);
     }
 
@@ -251,7 +257,8 @@ public class Thrift {
         return prepareSpoutDetails(spout, parallelismHint, null);
     }
 
-    public static SpoutDetails prepareSpoutDetails(IRichSpout spout, Integer parallelismHint, Map<String, Object> conf) {
+    public static SpoutDetails prepareSpoutDetails(IRichSpout spout, Integer parallelismHint,
+            Map<String, Object> conf) {
         SpoutDetails details = new SpoutDetails(spout, parallelismHint, conf);
         return details;
     }
@@ -267,12 +274,14 @@ public class Thrift {
         return buildTopology(spoutMap, boltMap);
     }
 
-    public static StormTopology buildTopology(Map<String, SpoutDetails> spoutMap, Map<String, BoltDetails> boltMap) {
+    public static StormTopology buildTopology(Map<String, SpoutDetails> spoutMap, Map<String,
+            BoltDetails> boltMap) {
         TopologyBuilder builder = new TopologyBuilder();
         for (Entry<String, SpoutDetails> entry : spoutMap.entrySet()) {
             String spoutId = entry.getKey();
             SpoutDetails spec = entry.getValue();
-            SpoutDeclarer spoutDeclarer = builder.setSpout(spoutId, spec.getSpout(), spec.getParallelism());
+            SpoutDeclarer spoutDeclarer = builder.setSpout(spoutId, spec.getSpout(), spec
+                    .getParallelism());
             spoutDeclarer.addConfigurations(spec.getConf());
         }
         for (Entry<String, BoltDetails> entry : boltMap.entrySet()) {
@@ -280,9 +289,11 @@ public class Thrift {
             BoltDetails spec = entry.getValue();
             BoltDeclarer boltDeclarer = null;
             if (spec.bolt instanceof IRichBolt) {
-                boltDeclarer = builder.setBolt(spoutId, (IRichBolt) spec.getBolt(), spec.getParallelism());
+                boltDeclarer = builder.setBolt(spoutId, (IRichBolt) spec.getBolt(), spec
+                        .getParallelism());
             } else {
-                boltDeclarer = builder.setBolt(spoutId, (IBasicBolt) spec.getBolt(), spec.getParallelism());
+                boltDeclarer = builder.setBolt(spoutId, (IBasicBolt) spec.getBolt(), spec
+                        .getParallelism());
             }
             boltDeclarer.addConfigurations(spec.getConf());
             addInputs(boltDeclarer, spec.getInputs());

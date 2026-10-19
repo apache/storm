@@ -39,15 +39,18 @@ public class ReportError implements IReportError {
     private AtomicInteger intervalStartTime;
     private AtomicInteger intervalErrors;
 
-    public ReportError(Map<String, Object> topoConf, IStormClusterState stormClusterState, String stormId, String componentId,
+    public ReportError(Map<String, Object> topoConf, IStormClusterState stormClusterState,
+            String stormId, String componentId,
                        WorkerTopologyContext workerTopologyContext) {
         this.topoConf = topoConf;
         this.stormClusterState = stormClusterState;
         this.stormId = stormId;
         this.componentId = componentId;
         this.workerTopologyContext = workerTopologyContext;
-        this.errorIntervalSecs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_ERROR_THROTTLE_INTERVAL_SECS));
-        this.maxPerInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_MAX_ERROR_REPORT_PER_INTERVAL));
+        this.errorIntervalSecs = ObjectReader.getInt(topoConf
+                .get(Config.TOPOLOGY_ERROR_THROTTLE_INTERVAL_SECS));
+        this.maxPerInterval = ObjectReader.getInt(topoConf
+                .get(Config.TOPOLOGY_MAX_ERROR_REPORT_PER_INTERVAL));
         this.intervalStartTime = new AtomicInteger(Time.currentTimeSecs());
         this.intervalErrors = new AtomicInteger(0);
     }
@@ -62,7 +65,7 @@ public class ReportError implements IReportError {
         if (intervalErrors.incrementAndGet() <= maxPerInterval) {
             try {
                 stormClusterState.reportError(stormId, componentId, Utils.hostname(),
-                                              workerTopologyContext.getThisWorkerPort().longValue(), error);
+                        workerTopologyContext.getThisWorkerPort().longValue(), error);
             } catch (UnknownHostException e) {
                 throw Utils.wrapInRuntime(e);
             }

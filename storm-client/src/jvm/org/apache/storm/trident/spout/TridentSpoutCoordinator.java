@@ -28,7 +28,6 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class TridentSpoutCoordinator implements IBasicBolt {
     public static final Logger LOG = LoggerFactory.getLogger(TridentSpoutCoordinator.class);
     private static final String META_DIR = "meta";
@@ -38,7 +37,6 @@ public class TridentSpoutCoordinator implements IBasicBolt {
     RotatingTransactionalState state;
     TransactionalState underlyingState;
     String id;
-
 
     public TridentSpoutCoordinator(String id, ITridentSpout<Object> spout) {
         this.spout = spout;
@@ -77,7 +75,8 @@ public class TridentSpoutCoordinator implements IBasicBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(MasterBatchCoordinator.BATCH_STREAM_ID, new Fields("tx", "metadata"));
+        declarer.declareStream(MasterBatchCoordinator.BATCH_STREAM_ID, new Fields("tx",
+                "metadata"));
     }
 
     @Override

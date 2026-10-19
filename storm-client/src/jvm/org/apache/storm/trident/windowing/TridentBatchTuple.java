@@ -24,7 +24,8 @@ public class TridentBatchTuple {
         this(effectiveBatchId, timeStamp, tupleIndex, null);
     }
 
-    public TridentBatchTuple(String effectiveBatchId, long timeStamp, int tupleIndex, TridentTuple tridentTuple) {
+    public TridentBatchTuple(String effectiveBatchId, long timeStamp, int tupleIndex,
+            TridentTuple tridentTuple) {
         this.effectiveBatchId = effectiveBatchId;
         this.timeStamp = timeStamp;
         this.tupleIndex = tupleIndex;

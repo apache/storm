@@ -36,7 +36,8 @@ public class ServerCallbackHandler implements CallbackHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ServerCallbackHandler.class);
     private final boolean impersonationAllowed;
 
-    public ServerCallbackHandler(Map<String, Object> topoConf, boolean impersonationAllowed) throws IOException {
+    public ServerCallbackHandler(Map<String, Object> topoConf,
+            boolean impersonationAllowed) throws IOException {
         this.impersonationAllowed = impersonationAllowed;
 
         Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
@@ -44,10 +45,11 @@ public class ServerCallbackHandler implements CallbackHandler {
             return;
         }
 
-        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
+        AppConfigurationEntry[] configurationEntries = configuration
+                .getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
             String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_SERVER
-                                  + "' entry in this configuration: Server cannot start.";
+                    + "' entry in this configuration: Server cannot start.";
             LOG.error(errorMessage);
             throw new IOException(errorMessage);
         }
@@ -66,10 +68,10 @@ public class ServerCallbackHandler implements CallbackHandler {
             } else if (callback instanceof PasswordCallback) {
                 pc = (PasswordCallback) callback;
             } else if (callback instanceof RealmCallback) {
-                //Ignored...
+                // Ignored...
             } else {
                 throw new UnsupportedCallbackException(callback,
-                                                       "Unrecognized SASL Callback");
+                        "Unrecognized SASL Callback");
             }
         }
 
@@ -86,22 +88,27 @@ public class ServerCallbackHandler implements CallbackHandler {
 
         if (ac != null) {
             String authenticationId = ac.getAuthenticationID();
-            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationId,
-                      ac.getAuthorizationID());
+            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}",
+                    authenticationId,
+                    ac.getAuthorizationID());
 
-            //if authorizationId is not set, set it to authenticationId.
+            // if authorizationId is not set, set it to authenticationId.
             if (ac.getAuthorizationID() == null) {
                 ac.setAuthorizedID(authenticationId);
             }
 
-            //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We
-            //add the authNid as the real user in reqContext's subject which will be used during authorization.
+            // When authNid and authZid are not equal , authNId is attempting to impersonate
+            // authZid, We
+            // add the authNid as the real user in reqContext's subject which will be used during
+            // authorization.
             if (!ac.getAuthenticationID().equals(ac.getAuthorizationID())) {
                 if (!impersonationAllowed) {
-                    throw new IllegalArgumentException(ac.getAuthenticationID() + " attempting to impersonate " + ac.getAuthorizationID()
-                                                       + ".  This is not allowed by this server.");
+                    throw new IllegalArgumentException(ac.getAuthenticationID()
+                            + " attempting to impersonate " + ac.getAuthorizationID()
+                            + ".  This is not allowed by this server.");
                 }
-                ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(ac.getAuthenticationID()));
+                ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(ac
+                        .getAuthenticationID()));
             } else {
                 ReqContext.context().setRealPrincipal(null);
             }

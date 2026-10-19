@@ -42,13 +42,13 @@ public class Context implements IContext {
     private static String getNodeKey(String nodeId, int port) {
         return nodeId + "-" + port;
     }
-    
+
     private LocalServer createLocalServer(String nodeId, int port, IConnectionCallback cb) {
         String key = getNodeKey(nodeId, port);
         LocalServer ret = new LocalServer(port, cb);
         LocalServer existing = registry.put(key, ret);
         if (existing != null) {
-            //Can happen if worker is restarted in the same topology, e.g. due to blob update
+            // Can happen if worker is restarted in the same topology, e.g. due to blob update
             LOG.info("Replacing existing server for key {}", existing, ret, key);
         }
         return ret;
@@ -56,22 +56,24 @@ public class Context implements IContext {
 
     @Override
     public void prepare(Map<String, Object> topoConf) {
-        //NOOP
+        // NOOP
     }
 
     @Override
-    public IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
+    public IConnection bind(String stormId, int port, IConnectionCallback cb,
+        Supplier<Object> newConnectionResponse) {
         return createLocalServer(stormId, port, cb);
     }
 
     @Override
-    public IConnection connect(String stormId, String host, int port, AtomicBoolean[] remoteBpStatus) {
+    public IConnection connect(String stormId, String host, int port,
+        AtomicBoolean[] remoteBpStatus) {
         return new LocalClient(stormId, port);
     }
 
     @Override
     public void term() {
-        //NOOP
+        // NOOP
     }
 
     private class LocalServer implements IConnection {
@@ -83,7 +85,7 @@ public class Context implements IContext {
             this.port = port;
             this.cb = cb;
         }
-        
+
         @Override
         public void send(Iterator<TaskMessage> msgs) {
             throw new IllegalArgumentException("SHOULD NOT HAPPEN");
@@ -108,7 +110,8 @@ public class Context implements IContext {
 
         @Override
         public void sendBackPressureStatus(BackPressureStatus bpStatus) {
-            throw new RuntimeException("Local Server connection should not send BackPressure status");
+            throw new RuntimeException("Local Server connection should not send BackPressure "
+                    + "status");
         }
 
         @Override
@@ -118,12 +121,12 @@ public class Context implements IContext {
 
         @Override
         public void close() {
-            //NOOP
+            // NOOP
         }
     }
 
     private class LocalClient implements IConnection {
-        //Messages sent before the server registered a callback
+        // Messages sent before the server registered a callback
         private final LinkedBlockingQueue<TaskMessage> pendingDueToUnregisteredServer;
         private final ScheduledExecutorService pendingFlusher;
         private final int port;
@@ -146,10 +149,11 @@ public class Context implements IContext {
                 @Override
                 public void run() {
                     try {
-                        //Ensure messages are flushed even if no more sends are performed
+                        // Ensure messages are flushed even if no more sends are performed
                         flushPending();
                     } catch (Throwable t) {
-                        LOG.error("Uncaught throwable in pending message flusher thread, messages may be lost", t);
+                        LOG.error("Uncaught throwable in pending message flusher thread, messages "
+                                + "may be lost", t);
                         throw new RuntimeException(t);
                     }
                 }
@@ -157,7 +161,7 @@ public class Context implements IContext {
         }
 
         private void flushPending() {
-            //Can't cache server in client, server can change when workers restart.
+            // Can't cache server in client, server can change when workers restart.
             LocalServer server = registry.get(registryKey);
             if (server != null && !pendingDueToUnregisteredServer.isEmpty()) {
                 ArrayList<TaskMessage> ret = new ArrayList<>();
@@ -202,7 +206,8 @@ public class Context implements IContext {
 
         @Override
         public void sendBackPressureStatus(BackPressureStatus bpStatus) {
-            throw new RuntimeException("Local Client connection should not send BackPressure status");
+            throw new RuntimeException("Local Client connection should not send BackPressure "
+                    + "status");
         }
 
         @Override

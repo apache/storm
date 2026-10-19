@@ -40,11 +40,13 @@ public class EventLoggerBolt implements IBolt {
     private List<IEventLogger> eventLoggers;
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         LOG.info("EventLoggerBolt prepare called");
 
         eventLoggers = new ArrayList<>();
-        List<Map<String, Object>> registerInfo = (List<Map<String, Object>>) topoConf.get(Config.TOPOLOGY_EVENT_LOGGER_REGISTER);
+        List<Map<String, Object>> registerInfo = (List<Map<String, Object>>) topoConf
+                .get(Config.TOPOLOGY_EVENT_LOGGER_REGISTER);
         if (registerInfo != null && !registerInfo.isEmpty()) {
             initializeEventLoggers(topoConf, context, registerInfo);
         } else {
@@ -54,11 +56,13 @@ public class EventLoggerBolt implements IBolt {
 
     @Override
     public void execute(Tuple input) {
-        LOG.debug("** EventLoggerBolt got tuple from sourceComponent {}, with values {}", input.getSourceComponent(), input.getValues());
+        LOG.debug("** EventLoggerBolt got tuple from sourceComponent {}, with values {}", input
+                .getSourceComponent(), input.getValues());
 
         Object msgId = input.getValueByField(FIELD_MESSAGE_ID);
-        EventInfo eventInfo = new EventInfo(input.getLongByField(FIELD_TS), input.getSourceComponent(),
-                                            input.getSourceTask(), msgId, (List<Object>) input.getValueByField(FIELD_VALUES));
+        EventInfo eventInfo = new EventInfo(input.getLongByField(FIELD_TS), input
+                .getSourceComponent(),
+                input.getSourceTask(), msgId, (List<Object>) input.getValueByField(FIELD_VALUES));
 
         for (IEventLogger eventLogger : eventLoggers) {
             eventLogger.log(eventInfo);
@@ -72,17 +76,21 @@ public class EventLoggerBolt implements IBolt {
         }
     }
 
-    private void initializeEventLoggers(Map<String, Object> topoConf, TopologyContext context, List<Map<String, Object>> registerInfo) {
+    private void initializeEventLoggers(Map<String, Object> topoConf, TopologyContext context,
+            List<Map<String, Object>> registerInfo) {
         for (Map<String, Object> info : registerInfo) {
             String className = (String) info.get(TOPOLOGY_EVENT_LOGGER_CLASS);
-            Map<String, Object> arguments = (Map<String, Object>) info.get(TOPOLOGY_EVENT_LOGGER_ARGUMENTS);
+            Map<String, Object> arguments = (Map<String, Object>) info
+                    .get(TOPOLOGY_EVENT_LOGGER_ARGUMENTS);
 
             IEventLogger eventLogger;
             try {
                 eventLogger = (IEventLogger) Class.forName(className).newInstance();
             } catch (Exception e) {
-                throw new RuntimeException("Could not instantiate a class listed in config under section "
-                                           + Config.TOPOLOGY_EVENT_LOGGER_REGISTER + " with fully qualified name " + className, e);
+                throw new RuntimeException("Could not instantiate a class listed in config under "
+                        + "section "
+                        + Config.TOPOLOGY_EVENT_LOGGER_REGISTER + " with fully qualified name "
+                        + className, e);
             }
 
             eventLogger.prepare(topoConf, arguments, context);
@@ -90,7 +98,8 @@ public class EventLoggerBolt implements IBolt {
         }
     }
 
-    private void initializeDefaultEventLogger(Map<String, Object> topoConf, TopologyContext context) {
+    private void initializeDefaultEventLogger(Map<String, Object> topoConf,
+            TopologyContext context) {
         FileBasedEventLogger eventLogger = new FileBasedEventLogger();
         eventLogger.prepare(topoConf, null, context);
         eventLoggers.add(eventLogger);

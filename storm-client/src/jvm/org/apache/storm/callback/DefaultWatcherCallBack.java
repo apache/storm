@@ -23,8 +23,10 @@ public class DefaultWatcherCallBack implements WatcherCallBack {
     private static Logger LOG = LoggerFactory.getLogger(DefaultWatcherCallBack.class);
 
     @Override
-    public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path) {
-        LOG.debug("Zookeeper state update:  {}, {}, {}", ZkKeeperStates.getStateName(state), ZkEventTypes.getTypeName(type), path);
+    public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type,
+        String path) {
+        LOG.debug("Zookeeper state update:  {}, {}, {}", ZkKeeperStates.getStateName(state),
+                ZkEventTypes.getTypeName(type), path);
     }
 
 }

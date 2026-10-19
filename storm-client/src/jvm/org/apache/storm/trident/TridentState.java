@@ -16,7 +16,6 @@ import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.topology.ResourceDeclarer;
 import org.apache.storm.trident.planner.Node;
 
-
 public class TridentState implements ResourceDeclarer<TridentState> {
     TridentTopology topology;
     Node node;

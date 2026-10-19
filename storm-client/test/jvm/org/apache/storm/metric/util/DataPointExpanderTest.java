@@ -12,6 +12,9 @@
 
 package org.apache.storm.metric.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,9 +22,6 @@ import java.util.Map;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DataPointExpanderTest {
 
@@ -31,7 +31,8 @@ public class DataPointExpanderTest {
         Map<String, Object> value = getDummyMetricMapValue();
         IMetricsConsumer.DataPoint point = new IMetricsConsumer.DataPoint("test", value);
 
-        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = populator.expandDataPoint(point);
+        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = populator
+                .expandDataPoint(point);
         assertEquals(1, expandedDataPoints.size());
         assertEquals(point, expandedDataPoints.iterator().next());
     }
@@ -43,7 +44,7 @@ public class DataPointExpanderTest {
         IMetricsConsumer.DataPoint point = new IMetricsConsumer.DataPoint("test", value);
 
         Collection<IMetricsConsumer.DataPoint> expandedDataPoints =
-            populator.expandDataPoints(Collections.singletonList(point));
+                populator.expandDataPoints(Collections.singletonList(point));
         assertEquals(1, expandedDataPoints.size());
         assertEquals(point, expandedDataPoints.iterator().next());
     }
@@ -52,10 +53,11 @@ public class DataPointExpanderTest {
     public void testExpandDataPointWithVariousKindOfMetrics() {
         DataPointExpander populator = new DataPointExpander(true, ".");
 
-        IMetricsConsumer.DataPoint point = new IMetricsConsumer.DataPoint("point", getDummyMetricMapValue());
+        IMetricsConsumer.DataPoint point = new IMetricsConsumer.DataPoint("point",
+                getDummyMetricMapValue());
 
         Collection<IMetricsConsumer.DataPoint> expandedDataPoints =
-            populator.expandDataPoints(Collections.singletonList(point));
+                populator.expandDataPoints(Collections.singletonList(point));
         assertEquals(4, expandedDataPoints.size());
         assertTrue(expandedDataPoints.contains(new IMetricsConsumer.DataPoint("point.a", 1.0)));
         assertTrue(expandedDataPoints.contains(new IMetricsConsumer.DataPoint("point.b", 2.5)));
@@ -68,17 +70,19 @@ public class DataPointExpanderTest {
         DataPointExpander populator = new DataPointExpander(true, ":");
 
         IMetricsConsumer.DataPoint point1 = new IMetricsConsumer.DataPoint("point1", 2.5);
-        IMetricsConsumer.DataPoint point2 = new IMetricsConsumer.DataPoint("point2", getDummyMetricMapValue());
+        IMetricsConsumer.DataPoint point2 = new IMetricsConsumer.DataPoint("point2",
+                getDummyMetricMapValue());
 
         Collection<IMetricsConsumer.DataPoint> expandedDataPoints =
-            populator.expandDataPoints(Lists.newArrayList(point1, point2));
+                populator.expandDataPoints(Lists.newArrayList(point1, point2));
         // 1 for point1, 4 for point2
         assertEquals(5, expandedDataPoints.size());
         assertTrue(expandedDataPoints.contains(new IMetricsConsumer.DataPoint("point1", 2.5)));
         assertTrue(expandedDataPoints.contains(new IMetricsConsumer.DataPoint("point2:a", 1.0)));
         assertTrue(expandedDataPoints.contains(new IMetricsConsumer.DataPoint("point2:b", 2.5)));
         assertTrue(expandedDataPoints.contains(new IMetricsConsumer.DataPoint("point2:c", null)));
-        assertTrue(expandedDataPoints.contains(new IMetricsConsumer.DataPoint("point2:d", "hello")));
+        assertTrue(expandedDataPoints.contains(new IMetricsConsumer.DataPoint("point2:d",
+                "hello")));
     }
 
     @Test
@@ -86,7 +90,8 @@ public class DataPointExpanderTest {
         DataPointExpander populator = new DataPointExpander(true, ".");
 
         IMetricsConsumer.DataPoint point = new IMetricsConsumer.DataPoint("point", null);
-        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = populator.expandDataPoint(point);
+        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = populator
+                .expandDataPoint(point);
 
         assertEquals(0, expandedDataPoints.size());
     }

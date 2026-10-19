@@ -28,11 +28,13 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCInvocationsClient extends ThriftClient implements DistributedRPCInvocations.Iface {
     public static final Logger LOG = LoggerFactory.getLogger(DRPCInvocationsClient.class);
-    private final AtomicReference<DistributedRPCInvocations.Client> client = new AtomicReference<>();
+    private final AtomicReference<DistributedRPCInvocations.Client> client =
+            new AtomicReference<>();
     private String host;
     private int port;
 
-    public DRPCInvocationsClient(Map<String, Object> conf, String host, int port) throws TTransportException {
+    public DRPCInvocationsClient(Map<String, Object> conf, String host,
+            int port) throws TTransportException {
         super(conf, ThriftConnectionType.DRPC_INVOCATIONS, host, port, null);
         this.host = host;
         this.port = port;
@@ -111,7 +113,8 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
     }
 
     @Override
-    public void failRequestV2(String id, DRPCExecutionException ex) throws AuthorizationException, TException {
+    public void failRequestV2(String id,
+        DRPCExecutionException ex) throws AuthorizationException, TException {
         DistributedRPCInvocations.Client c = client.get();
         try {
             if (c == null) {

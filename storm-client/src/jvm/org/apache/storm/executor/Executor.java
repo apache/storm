@@ -124,7 +124,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final Boolean isDebug;
     protected final Boolean hasEventLoggers;
     protected final boolean ackingEnabled;
-    protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits = new MpscChunkedArrayQueue<>(1024, (int) Math.pow(2, 30));
+    protected final MpscChunkedArrayQueue<AddressedTuple> pendingEmits =
+            new MpscChunkedArrayQueue<>(1024, (int) Math.pow(2, 30));
     private final AddressedTuple flushTuple;
     protected ExecutorTransfer executorTransfer;
     protected ArrayList<Task> idToTask;
@@ -140,7 +141,9 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     // task ids of all upstream (source component) tasks, recipients of the periodic feedback tick
     protected final List<Integer> upstreamTaskIds;
     protected final ChildEwmaStats childEwmaStats;
-    protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials, String type) {
+
+    protected Executor(WorkerState workerData, List<Long> executorId, Map<String,
+            String> credentials, String type) {
         this.workerData = workerData;
         this.executorId = executorId;
         this.type = type;
@@ -148,7 +151,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.taskIds = StormCommon.executorIdToTasks(executorId);
         this.componentId = workerTopologyContext.getComponentId(taskIds.get(0));
         this.openOrPrepareWasCalled = new AtomicBoolean(false);
-        this.topoConf = normalizedComponentConf(workerData.getTopologyConf(), workerTopologyContext, componentId);
+        this.topoConf = normalizedComponentConf(workerData.getTopologyConf(), workerTopologyContext,
+                componentId);
         this.receiveQueue = (workerData.getExecutorReceiveQueueMap().get(executorId));
         this.stormId = workerData.getTopologyId();
         this.conf = workerData.getConf();
@@ -162,22 +166,24 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.suicideFn = workerData.getSuicideCallback();
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(),
-                                                                      new ClusterStateContext(DaemonType.WORKER, topoConf));
+                    new ClusterStateContext(DaemonType.WORKER, topoConf));
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
 
         this.intervalToTaskToMetricToRegistry = new HashMap<>();
         this.taskToComponent = workerData.getTaskToComponent();
-        this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, topoConf);
+        this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId,
+                topoConf);
         if (this.streamToComponentToGrouper != null) {
             this.groupers = streamToComponentToGrouper.values().stream()
-                                                      .filter(Objects::nonNull)
-                                                      .flatMap(m -> m.values().stream()).collect(Collectors.toList());
+                    .filter(Objects::nonNull)
+                    .flatMap(m -> m.values().stream()).collect(Collectors.toList());
         } else {
             this.groupers = Collections.emptyList();
         }
-        this.reportError = new ReportError(topoConf, stormClusterState, stormId, componentId, workerTopologyContext);
+        this.reportError = new ReportError(topoConf, stormClusterState, stormId, componentId,
+                workerTopologyContext);
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
         this.sampler = ConfigUtils.mkStatsSampler(topoConf);
         this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
@@ -193,11 +199,14 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             this.hostname = "";
         }
         flushTuple = AddressedTuple.createFlushTuple(workerTopologyContext);
-        this.reportedErrorCount = workerData.getMetricRegistry().rateCounter("__reported-error-count", componentId,
+        this.reportedErrorCount = workerData.getMetricRegistry()
+                .rateCounter("__reported-error-count", componentId,
                 taskIds.get(0));
 
-        enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
-        v2MetricsTickInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
+        enableV2MetricsDataPoints = ObjectReader.getBoolean(topoConf
+                .get(Config.TOPOLOGY_ENABLE_V2_METRICS_TICK), false);
+        v2MetricsTickInterval = ObjectReader.getInt(topoConf
+                .get(Config.TOPOLOGY_V2_METRICS_TICK_INTERVAL_SECONDS), 60);
         this.childEwmaStats = new ChildEwmaStats(this.upstreamFeedbackEnabled);
         if (this.upstreamFeedbackEnabled) {
             this.upstreamFeedbackFreqSecs = ConfigUtils.upstreamFeedbackFreqSecs(topoConf);
@@ -210,7 +219,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         }
     }
 
-    public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
+    public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String,
+            String> credentials) {
         Executor executor;
 
         WorkerTopologyContext workerTopologyContext = workerState.getWorkerTopologyContext();
@@ -241,7 +251,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         return executor;
     }
 
-    private static String getExecutorType(WorkerTopologyContext workerTopologyContext, String componentId) {
+    private static String getExecutorType(WorkerTopologyContext workerTopologyContext,
+            String componentId) {
         StormTopology topology = workerTopologyContext.getRawTopology();
         Map<String, SpoutSpec> spouts = topology.get_spouts();
         Map<String, Bolt> bolts = topology.get_bolts();
@@ -255,7 +266,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     /**
-     * Retrieves all values of all static fields of {@link Config} which represent all available configuration keys through reflection. The
+     * Retrieves all values of all static fields of {@link Config} which represent all available
+     * configuration keys through reflection. The
      * method assumes that they are {@code String}s through reflection.
      *
      * @return the list of retrieved field values
@@ -283,14 +295,15 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     /**
-     * separated from mkExecutor in order to replace executor transfer in executor data for testing.
+     * Separated from mkExecutor in order to replace executor transfer in executor data for testing.
      */
     public ExecutorShutdown execute() throws Exception {
         LOG.info("Loading executor tasks " + componentId + ":" + executorId);
 
         String handlerName = componentId + "-executor" + executorId;
         Utils.SmartThread handler =
-            Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, true, true, handlerName);
+                Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, true, true,
+                handlerName);
 
         LOG.info("Finished loading executor " + componentId + ":" + executorId);
         return new ExecutorShutdown(this, Lists.newArrayList(handler), idToTask, receiveQueue);
@@ -334,9 +347,11 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             this.needToRefreshCreds.set(false);
             LOG.info("The credentials are being updated {}.", executorId);
             Credentials creds = this.workerData.getCredentials();
-            idToTask.stream().map(Task::getTaskObject).filter(taskObject -> taskObject instanceof ICredentialsListener)
+            idToTask.stream().map(Task::getTaskObject)
+                    .filter(taskObject -> taskObject instanceof ICredentialsListener)
                     .forEach(taskObject -> {
-                        ((ICredentialsListener) taskObject).setCredentials(creds == null ? null : creds.get_creds());
+                        ((ICredentialsListener) taskObject).setCredentials(creds == null
+                                ? null : creds.get_creds());
                     });
         }
     }
@@ -350,7 +365,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         try {
             Integer interval = tuple.getInteger(0);
             int taskId = task.getTaskId();
-            Map<Integer, Map<String, IMetric>> taskToMetricToRegistry = intervalToTaskToMetricToRegistry.get(interval);
+            Map<Integer, Map<String, IMetric>> taskToMetricToRegistry =
+                    intervalToTaskToMetricToRegistry.get(interval);
             Map<String, IMetric> nameToRegistry = null;
             if (taskToMetricToRegistry != null) {
                 nameToRegistry = taskToMetricToRegistry.get(taskId);
@@ -363,7 +379,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                     Object value = metric.getValueAndReset();
                     Map<String, String> dimensions = metric.getDimensions();
                     if (value != null) {
-                        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(name, value, dimensions);
+                        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(name,
+                                value, dimensions);
                         dataPoints.add(dataPoint);
                     }
                 }
@@ -391,7 +408,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      * and a default interval of -1 (indicating an on-demand, non-periodic-metrics tick),
      * followed by the {@link EwmaFeedbackRecord} snapshot. The snapshot is emitted on every tick:
      * the tick frequency ({@code topology.upstream.feedback.freq.secs}) is the rate limit, and an
-     * unconditional resend keeps a restarted/reassigned upstream task from being stranded with stale
+     * unconditional resend keeps a restarted/reassigned upstream task from being stranded with
+     * stale
      * or empty stats when the metric value happens to be stable.</p>
      *
      * @param taskId  The ID of the task for which metrics are being collected.
@@ -399,10 +417,11 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      *         feedback stream schema declared by {@link StormCommon#upstreamFeedbackFields()}).
      */
     public Values buildUpstreamFeedbackTuple(int taskId) {
-        EwmaFeedbackRecord statsRecord = EwmaFeedbackRecord.fromWorkerState(this.workerData, taskId);
+        EwmaFeedbackRecord statsRecord = EwmaFeedbackRecord.fromWorkerState(this.workerData,
+                taskId);
         IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
-            hostname, workerTopologyContext.getThisWorkerPort(),
-            componentId, taskId, Time.currentTimeSecs(), -1);
+                hostname, workerTopologyContext.getThisWorkerPort(),
+                componentId, taskId, Time.currentTimeSecs(), -1);
         return new Values(taskInfo, statsRecord);
     }
 
@@ -431,20 +450,22 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         List<Object> values = tuple.getValues();
         if (values == null || values.size() < 2) {
             LOG.warn("Feedback tuple for task {} has insufficient elements (size={})",
-                task.getTaskId(), values == null ? 0 : values.size());
+                    task.getTaskId(), values == null ? 0 : values.size());
             return;
         }
 
         // Safe type check replaces unchecked cast and suppression
         if (!(values.get(0) instanceof IMetricsConsumer.TaskInfo taskInfo)) {
             LOG.warn("Unexpected type at index 0 in feedbackTuple for task {}: {}",
-                task.getTaskId(), values.get(0) == null ? "null" : values.get(0).getClass().getName());
+                    task.getTaskId(), values.get(0) == null ? "null" : values.get(0).getClass()
+                    .getName());
             return;
         }
 
         if (!(values.get(1) instanceof EwmaFeedbackRecord feedback)) {
             LOG.warn("Unexpected type at index 1 in feedbackTuple for task {}: {}",
-                task.getTaskId(), values.get(1) == null ? "null" : values.get(1).getClass().getName());
+                    task.getTaskId(), values.get(1) == null ? "null" : values.get(1).getClass()
+                    .getName());
             return;
         }
 
@@ -452,7 +473,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     // updates v1 metric dataPoints with v2 metric API data
-    private void addV2Metrics(int taskId, List<IMetricsConsumer.DataPoint> dataPoints, int interval) {
+    private void addV2Metrics(int taskId, List<IMetricsConsumer.DataPoint> dataPoints,
+            int interval) {
         if (!enableV2MetricsDataPoints) {
             return;
         }
@@ -480,7 +502,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                 v = gauge.getValue();
             }
             if (v instanceof Number) {
-                IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), v);
+                IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry
+                        .getKey(), v);
                 dataPoints.add(dataPoint);
             }
         }
@@ -490,17 +513,20 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         Map<String, Counter> counters = workerData.getMetricRegistry().getTaskCounters(taskId);
         for (Map.Entry<String, Counter> entry : counters.entrySet()) {
             Object value = entry.getValue().getCount();
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), value);
+            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(),
+                    value);
             dataPoints.add(dataPoint);
         }
     }
 
     private void processHistograms(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
-        Map<String, Histogram> histograms = workerData.getMetricRegistry().getTaskHistograms(taskId);
+        Map<String, Histogram> histograms = workerData.getMetricRegistry()
+                .getTaskHistograms(taskId);
         for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
-            Snapshot snapshot =  entry.getValue().getSnapshot();
+            Snapshot snapshot = entry.getValue().getSnapshot();
             addSnapshotDatapoints(entry.getKey(), snapshot, dataPoints);
-            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey() + ".count", entry.getValue().getCount());
+            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey()
+                    + ".count", entry.getValue().getCount());
             dataPoints.add(dataPoint);
         }
     }
@@ -515,22 +541,26 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private void processTimers(int taskId, List<IMetricsConsumer.DataPoint> dataPoints) {
         Map<String, Timer> timers = workerData.getMetricRegistry().getTaskTimers(taskId);
         for (Map.Entry<String, Timer> entry : timers.entrySet()) {
-            Snapshot snapshot =  entry.getValue().getSnapshot();
+            Snapshot snapshot = entry.getValue().getSnapshot();
             addSnapshotDatapoints(entry.getKey(), snapshot, dataPoints);
             addMeteredDatapoints(entry.getKey(), entry.getValue(), dataPoints);
         }
     }
 
-    private void addMeteredDatapoints(String baseName, Metered metered, List<IMetricsConsumer.DataPoint> dataPoints) {
-        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + ".count", metered.getCount());
+    private void addMeteredDatapoints(String baseName, Metered metered,
+            List<IMetricsConsumer.DataPoint> dataPoints) {
+        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(baseName + ".count",
+                metered.getCount());
         dataPoints.add(dataPoint);
         addConvertedMetric(baseName, ".m1_rate", metered.getOneMinuteRate(), dataPoints, false);
         addConvertedMetric(baseName, ".m5_rate", metered.getFiveMinuteRate(), dataPoints, false);
-        addConvertedMetric(baseName, ".m15_rate", metered.getFifteenMinuteRate(), dataPoints, false);
+        addConvertedMetric(baseName, ".m15_rate", metered.getFifteenMinuteRate(), dataPoints,
+                false);
         addConvertedMetric(baseName, ".mean_rate", metered.getMeanRate(), dataPoints, false);
     }
 
-    private void addSnapshotDatapoints(String baseName, Snapshot snapshot, List<IMetricsConsumer.DataPoint> dataPoints) {
+    private void addSnapshotDatapoints(String baseName, Snapshot snapshot,
+            List<IMetricsConsumer.DataPoint> dataPoints) {
         addConvertedMetric(baseName, ".max", snapshot.getMax(), dataPoints, true);
         addConvertedMetric(baseName, ".mean", snapshot.getMean(), dataPoints, true);
         addConvertedMetric(baseName, ".min", snapshot.getMin(), dataPoints, true);
@@ -546,7 +576,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private void addConvertedMetric(String baseName, String suffix, double value,
                                     List<IMetricsConsumer.DataPoint> dataPoints, boolean needConversion) {
         IMetricsConsumer.DataPoint dataPoint
-            = new IMetricsConsumer.DataPoint(baseName + suffix, needConversion ? convertDuration(value) : value);
+                = new IMetricsConsumer.DataPoint(baseName + suffix, needConversion
+                ? convertDuration(value) : value);
         dataPoints.add(dataPoint);
     }
 
@@ -573,16 +604,18 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private void scheduleMetricsTick(int interval) {
         StormTimer timerTask = workerData.getUserTimer();
         timerTask.scheduleRecurring(interval, interval,
-            () -> {
-                TupleImpl tuple =
-                        new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
-                                (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                publishTimerTuple(metricsTickTuple, "metrics tick tuple");
-            }
+                () -> {
+                    TupleImpl tuple =
+                            new TupleImpl(workerTopologyContext, new Values(interval),
+                            Constants.SYSTEM_COMPONENT_ID,
+                                    (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
+                    AddressedTuple metricsTickTuple =
+                            new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                    publishTimerTuple(metricsTickTuple, "metrics tick tuple");
+                }
         );
     }
-    
+
     private void publishTimerTuple(AddressedTuple timerTuple, String logContext) {
         if (receiveQueue.isControlLaneEnabled()) {
             receiveQueue.tryPublishControl(timerTuple);
@@ -614,20 +647,23 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     /**
-     * Schedules a recurring internal tick on {@link Constants#FEEDBACK_TICK_STREAM_ID}. Handling the
+     * Schedules a recurring internal tick on {@link Constants#FEEDBACK_TICK_STREAM_ID}. Handling
+     * the
      * tick (see BoltExecutor.tupleActionFn) triggers {@link #sendUpstreamFeedback(Task)}, replacing
      * the former probabilistic per-emit trigger with a deterministic periodic one.
      */
     protected void scheduleUpstreamFeedbackTick(int interval) {
         StormTimer timerTask = workerData.getUserTimer();
         timerTask.scheduleRecurring(interval, interval,
-            () -> {
-                TupleImpl tuple =
-                        new TupleImpl(workerTopologyContext, new Values(interval), Constants.SYSTEM_COMPONENT_ID,
-                                (int) Constants.SYSTEM_TASK_ID, Constants.FEEDBACK_TICK_STREAM_ID);
-                AddressedTuple feedbackTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                publishTimerTuple(feedbackTickTuple, "upstream feedback tick tuple");
-            }
+                () -> {
+                    TupleImpl tuple =
+                            new TupleImpl(workerTopologyContext, new Values(interval),
+                            Constants.SYSTEM_COMPONENT_ID,
+                                    (int) Constants.SYSTEM_TASK_ID, Constants.FEEDBACK_TICK_STREAM_ID);
+                    AddressedTuple feedbackTickTuple =
+                            new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                    publishTimerTuple(feedbackTickTuple, "upstream feedback tick tuple");
+                }
         );
     }
 
@@ -647,25 +683,29 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     protected void setupTicks(boolean isSpout) {
-        final Integer tickTimeSecs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
+        final Integer tickTimeSecs = ObjectReader.getInt(topoConf
+                .get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
         if (tickTimeSecs != null) {
-            boolean enableMessageTimeout = (Boolean) topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
+            boolean enableMessageTimeout = (Boolean) topoConf
+                    .get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
             boolean isAcker = Acker.ACKER_COMPONENT_ID.equals(componentId);
             if ((!isAcker && Utils.isSystemId(componentId))
-                || (!enableMessageTimeout && isSpout)
-                || (!enableMessageTimeout && isAcker)) {
+                    || (!enableMessageTimeout && isSpout)
+                    || (!enableMessageTimeout && isAcker)) {
                 LOG.info("Timeouts disabled for executor {}:{}", componentId, executorId);
             } else {
                 StormTimer timerTask = workerData.getUserTimer();
                 timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs,
-                    () -> {
-                        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
-                                                        Constants.SYSTEM_COMPONENT_ID,
-                                                        (int) Constants.SYSTEM_TASK_ID,
-                                                        Constants.SYSTEM_TICK_STREAM_ID);
-                        AddressedTuple tickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                        publishTimerTuple(tickTuple, "tick tuple");
-                    }
+                        () -> {
+                            TupleImpl tuple = new TupleImpl(workerTopologyContext,
+                                    new Values(tickTimeSecs),
+                                    Constants.SYSTEM_COMPONENT_ID,
+                                    (int) Constants.SYSTEM_TASK_ID,
+                                    Constants.SYSTEM_TICK_STREAM_ID);
+                            AddressedTuple tickTuple =
+                                    new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+                            publishTimerTuple(tickTuple, "tick tuple");
+                        }
                 );
             }
         }
@@ -677,15 +717,18 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         }
     }
 
-    // Called by flush-tuple-timer thread. Publishes to the control lane when enabled (insulating the flush signal
-    // from the data backlog); otherwise falls back to an un-batched write to the recvQueue as before.
+    // Called by flush-tuple-timer thread. Publishes to the control lane when enabled (insulating
+    // the flush signal
+    // from the data backlog); otherwise falls back to an un-batched write to the recvQueue as
+    // before.
     public boolean publishFlushTuple() {
         if (receiveQueue.tryPublishControl(flushTuple)) {
             LOG.debug("Published Flush tuple to: {} ", getComponentId());
             return true;
         } else {
-            LOG.debug("Target queue (control lane or RecvQ) is currently full, will retry publishing Flush Tuple later to : {}",
-                getComponentId());
+            LOG.debug("Target queue (control lane or RecvQ) is currently full, will retry "
+                    + "publishing Flush Tuple later to : {}",
+                    getComponentId());
             return false;
         }
     }
@@ -694,21 +737,24 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      * Returns map of stream id to component id to grouper.
      */
     private Map<String, Map<String, LoadAwareCustomStreamGrouping>> outboundComponents(
-        WorkerTopologyContext workerTopologyContext, String componentId, Map<String, Object> topoConf) {
+            WorkerTopologyContext workerTopologyContext, String componentId, Map<String, Object> topoConf) {
         Map<String, Map<String, LoadAwareCustomStreamGrouping>> ret = new HashMap<>();
 
-        Map<String, Map<String, Grouping>> outputGroupings = workerTopologyContext.getTargets(componentId);
+        Map<String, Map<String, Grouping>> outputGroupings = workerTopologyContext
+                .getTargets(componentId);
         for (Map.Entry<String, Map<String, Grouping>> entry : outputGroupings.entrySet()) {
             String streamId = entry.getKey();
             Map<String, Grouping> componentGrouping = entry.getValue();
-            Fields outFields = workerTopologyContext.getComponentOutputFields(componentId, streamId);
-            Map<String, LoadAwareCustomStreamGrouping> componentGrouper = new HashMap<String, LoadAwareCustomStreamGrouping>();
+            Fields outFields = workerTopologyContext.getComponentOutputFields(componentId,
+                    streamId);
+            Map<String, LoadAwareCustomStreamGrouping> componentGrouper =
+                    new HashMap<String, LoadAwareCustomStreamGrouping>();
             for (Map.Entry<String, Grouping> cg : componentGrouping.entrySet()) {
                 String component = cg.getKey();
                 Grouping grouping = cg.getValue();
                 List<Integer> outTasks = workerTopologyContext.getComponentTasks(component);
                 LoadAwareCustomStreamGrouping grouper = GrouperFactory.mkGrouper(
-                    workerTopologyContext, componentId, streamId, outFields, grouping, outTasks, topoConf);
+                        workerTopologyContext, componentId, streamId, outFields, grouping, outTasks, topoConf);
                 componentGrouper.put(component, grouper);
             }
             if (componentGrouper.size() > 0) {
@@ -716,7 +762,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             }
         }
 
-        for (String stream : workerTopologyContext.getComponentCommon(componentId).get_streams().keySet()) {
+        for (String stream : workerTopologyContext.getComponentCommon(componentId).get_streams()
+                .keySet()) {
             if (!ret.containsKey(stream)) {
                 ret.put(stream, null);
             }
@@ -728,7 +775,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     // getter methods
 
     private Map<String, Object> normalizedComponentConf(
-        Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
+            Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
         List<String> keysToRemove = retrieveAllConfigKeys();
         keysToRemove.remove(Config.TOPOLOGY_DEBUG);
         keysToRemove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);

@@ -17,18 +17,21 @@ import java.util.Set;
 import org.apache.storm.generated.SharedMemory;
 
 /**
- * This interface is implemented by various Trident classes in order to gather and propogate resources that have been set on them.
+ * This interface is implemented by various Trident classes in order to gather and propogate
+ * resources that have been set on them.
  * See {@link org.apache.storm.topology.ResourceDeclarer}
  */
 public interface ITridentResource {
     /**
      * Get resource.
+     *
      * @return a name of resource name -> amount of that resource. *Return should never be null!*
      */
     Map<String, Number> getResources();
 
     /**
      * Get shared memory.
+     *
      * @return the shared memory region requests
      */
     Set<SharedMemory> getSharedMemory();

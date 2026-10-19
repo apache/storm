@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.storm.trident.state.ValueUpdater;
 
-
 public class NonTransactionalMap<T> implements MapState<T> {
     IBackingMap<T> backing;
 

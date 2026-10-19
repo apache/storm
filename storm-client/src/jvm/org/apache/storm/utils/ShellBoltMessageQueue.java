@@ -22,7 +22,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.storm.multilang.BoltMsg;
 
 /**
- * A data structure for ShellBolt which includes two queues (FIFO), which one is for task ids (unbounded), another one is for bolt msg
+ * A data structure for ShellBolt which includes two queues (FIFO), which one is for task ids
+ * (unbounded), another one is for bolt msg
  * (bounded).
  */
 public class ShellBoltMessageQueue implements Serializable {
@@ -44,7 +45,7 @@ public class ShellBoltMessageQueue implements Serializable {
     }
 
     /**
-     * put list of task id to its queue.
+     * Put list of task id to its queue.
      *
      * @param taskIds task ids that received the tuples
      */
@@ -59,7 +60,7 @@ public class ShellBoltMessageQueue implements Serializable {
     }
 
     /**
-     * put bolt message to its queue.
+     * Put bolt message to its queue.
      *
      * @param boltMsg BoltMsg to pass to subprocess
      */
@@ -74,8 +75,10 @@ public class ShellBoltMessageQueue implements Serializable {
     }
 
     /**
-     * poll() is a core feature of ShellBoltMessageQueue. It retrieves and removes the head of one queues, waiting up to the specified wait
-     * time if necessary for an element to become available. There's priority that what queue it retrieves first, taskIds is higher than
+     * poll() is a core feature of ShellBoltMessageQueue. It retrieves and removes the head of one
+     * queues, waiting up to the specified wait
+     * time if necessary for an element to become available. There's priority that what queue it
+     * retrieves first, taskIds is higher than
      * boltMsgQueue.
      *
      * @param timeout how long to wait before giving up, in units of unit

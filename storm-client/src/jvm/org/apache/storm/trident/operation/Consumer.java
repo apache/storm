@@ -16,7 +16,8 @@ import java.io.Serializable;
 import org.apache.storm.trident.tuple.TridentTuple;
 
 /**
- * Represents an operation that accepts a single input argument and returns no result. This is similar to the Consumer interface in Java 8.
+ * Represents an operation that accepts a single input argument and returns no result. This is
+ * similar to the Consumer interface in Java 8.
  */
 public interface Consumer extends Serializable {
     /**

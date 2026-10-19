@@ -44,7 +44,8 @@ public class FileWatcher implements Runnable {
         this(watchedFile, callback, Collections.singletonList(ENTRY_MODIFY));
     }
 
-    public FileWatcher(final Path watchedFile, Callback callback, List<WatchEvent.Kind<Path>> kinds) throws IOException {
+    public FileWatcher(final Path watchedFile, Callback callback,
+            List<WatchEvent.Kind<Path>> kinds) throws IOException {
         this.watchedFile = watchedFile;
         this.callback = callback;
         Path parent = watchedFile.getParent();
@@ -77,7 +78,8 @@ public class FileWatcher implements Runnable {
                 return;
             }
             for (WatchEvent<?> event : watchKey.pollEvents()) {
-                if (this.kinds.contains(event.kind()) && event.context().equals(watchedFile.getFileName())) {
+                if (this.kinds.contains(event.kind()) && event.context().equals(watchedFile
+                        .getFileName())) {
                     try {
                         LOG.info("Event {} on {}; invoking callback", event.kind(), watchedFile);
                         callback.run();

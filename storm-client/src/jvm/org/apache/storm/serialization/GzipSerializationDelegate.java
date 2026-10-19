@@ -25,7 +25,8 @@ import org.apache.storm.shade.org.apache.commons.io.input.BoundedInputStream;
 import org.apache.storm.utils.ObjectReader;
 
 /**
- * Note, this assumes it's deserializing a gzip byte stream, and will err if it encounters any other serialization.
+ * Note, this assumes it's deserializing a gzip byte stream, and will err if it encounters any other
+ * serialization.
  */
 public class GzipSerializationDelegate implements SerializationDelegate {
 
@@ -34,7 +35,8 @@ public class GzipSerializationDelegate implements SerializationDelegate {
 
     @Override
     public void prepare(Map<String, Object> topoConf) {
-        this.maxDecompressedBytes = ObjectReader.getInt(topoConf.getOrDefault(Config.STORM_COMPRESSION_GZIP_MAX_DECOMPRESSED_BYTES,
+        this.maxDecompressedBytes = ObjectReader.getInt(topoConf
+                .getOrDefault(Config.STORM_COMPRESSION_GZIP_MAX_DECOMPRESSED_BYTES,
                 DEFAULT_MAX_DECOMPRESSED_BYTES));
     }
 
@@ -64,7 +66,8 @@ public class GzipSerializationDelegate implements SerializationDelegate {
              ObjectInputStream ois = new ObjectInputStream(lis)) {
             Object ret = ois.readObject();
             if (gis.read() != -1) {
-                throw new IOException("Decompression threshold exceeded! Possible security risk or invalid data size.");
+                throw new IOException("Decompression threshold exceeded! Possible security risk "
+                        + "or invalid data size.");
             }
             return clazz.cast(ret);
         } catch (IOException | ClassNotFoundException e) {

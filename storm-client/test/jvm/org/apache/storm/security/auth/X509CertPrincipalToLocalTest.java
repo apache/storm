@@ -12,30 +12,33 @@
 
 package org.apache.storm.security.auth;
 
-import java.security.AccessControlException;
-import java.util.HashMap;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.security.AccessControlException;
+import java.util.HashMap;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 public class X509CertPrincipalToLocalTest {
     private static X509CertPrincipalToLocal x509CertPrincipalToLocal;
+
     @BeforeAll
-    static public void setup() {
+    public static void setup() {
         x509CertPrincipalToLocal = new X509CertPrincipalToLocal();
-        x509CertPrincipalToLocal.prepare(new HashMap<String, Object>() {{
-            put(X509CertPrincipalToLocal.X509_CERT_PRINCIPAL_TO_LOCAL_REGEX, "test:test_role\\.uid\\.(.+)");
-        }});
+        x509CertPrincipalToLocal.prepare(new HashMap<String, Object>() {
+            {
+                put(X509CertPrincipalToLocal.X509_CERT_PRINCIPAL_TO_LOCAL_REGEX,
+                        "test:test_role\\.uid\\.(.+)");
+            }
+        });
     }
 
     @Test
     public void toLocalTest() {
         assertEquals("xyz", x509CertPrincipalToLocal.toLocal("CN=test:test_role.uid.xyz"));
     }
+
     @Test
     public void toLocalTestNegative() {
         try {

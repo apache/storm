@@ -21,7 +21,6 @@ public class RegexFilter implements StormMetricsFilter {
 
     private Pattern pattern;
 
-
     @Override
     public void prepare(Map<String, Object> config) {
         String expression = (String) config.get("expression");

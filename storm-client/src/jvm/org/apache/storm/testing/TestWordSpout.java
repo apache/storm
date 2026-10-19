@@ -26,7 +26,6 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class TestWordSpout extends BaseRichSpout {
     public static Logger LOG = LoggerFactory.getLogger(TestWordSpout.class);
     boolean isDistributed;
@@ -41,7 +40,8 @@ public class TestWordSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
         this.collector = collector;
     }
 
@@ -53,7 +53,7 @@ public class TestWordSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         Utils.sleep(100);
-        final String[] words = new String[]{ "nathan", "mike", "jackson", "golda", "bertels" };
+        final String[] words = new String[] {"nathan", "mike", "jackson", "golda", "bertels"};
         final Random rand = new Random();
         final String word = words[rand.nextInt(words.length)];
         collector.emit(new Values(word));

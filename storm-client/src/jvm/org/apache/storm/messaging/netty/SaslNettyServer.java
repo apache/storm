@@ -29,21 +29,21 @@ import org.slf4j.LoggerFactory;
 class SaslNettyServer {
 
     private static final Logger LOG = LoggerFactory
-        .getLogger(SaslNettyServer.class);
+            .getLogger(SaslNettyServer.class);
 
     private SaslServer saslServer;
 
     SaslNettyServer(String topologyName, byte[] token) throws IOException {
         LOG.debug("SaslNettyServer: Topology token is: {} with authmethod {}",
-                  topologyName, SaslUtils.AUTH_DIGEST_MD5);
+                topologyName, SaslUtils.AUTH_DIGEST_MD5);
 
         try {
             SaslDigestCallbackHandler ch = new SaslNettyServer.SaslDigestCallbackHandler(
-                topologyName, token);
+                    topologyName, token);
 
             saslServer = Sasl.createSaslServer(SaslUtils.AUTH_DIGEST_MD5, null,
-                                               SaslUtils.DEFAULT_REALM,
-                                               SaslUtils.getSaslProps(), ch);
+                    SaslUtils.DEFAULT_REALM,
+                    SaslUtils.getSaslProps(), ch);
         } catch (SaslException e) {
             LOG.error("SaslNettyServer: Could not create SaslServer: ", e);
         }
@@ -66,13 +66,13 @@ class SaslNettyServer {
     public byte[] response(byte[] token) {
         try {
             LOG.debug("response: Responding to input token of length: {}",
-                      token.length);
+                    token.length);
             byte[] retval = saslServer.evaluateResponse(token);
             LOG.debug("response: Response token length: {}", retval.length);
             return retval;
         } catch (SaslException e) {
             LOG.error("response: Failed to evaluate client token of length: {} : {}",
-                      token.length, e);
+                    token.length, e);
             return null;
         }
     }
@@ -89,14 +89,15 @@ class SaslNettyServer {
         private String userName;
 
         SaslDigestCallbackHandler(String topologyName, byte[] token) {
-            LOG.debug("SaslDigestCallback: Creating SaslDigestCallback handler with topology token: {}", topologyName);
+            LOG.debug("SaslDigestCallback: Creating SaslDigestCallback handler with topology "
+                    + "token: {}", topologyName);
             this.userName = topologyName;
             this.userPassword = token;
         }
 
         @Override
         public void handle(Callback[] callbacks) throws IOException,
-            UnsupportedCallbackException {
+                UnsupportedCallbackException {
             NameCallback nc = null;
             PasswordCallback pc = null;
             AuthorizeCallback ac = null;
@@ -112,13 +113,14 @@ class SaslNettyServer {
                     continue; // realm is ignored
                 } else {
                     throw new UnsupportedCallbackException(callback,
-                                                           "handle: Unrecognized SASL DIGEST-MD5 Callback");
+                            "handle: Unrecognized SASL DIGEST-MD5 Callback");
                 }
             }
 
             if (nc != null) {
-                LOG.debug("handle: SASL server DIGEST-MD5 callback: setting username for client: {}",
-                          userName);
+                LOG.debug("handle: SASL server DIGEST-MD5 callback: setting username for client: "
+                        + "{}",
+                        userName);
                 nc.setName(userName);
             }
 
@@ -141,8 +143,9 @@ class SaslNettyServer {
                 }
 
                 if (ac.isAuthorized()) {
-                    LOG.debug("handle: SASL server DIGEST-MD5 callback: setting canonicalized client ID: ",
-                              userName);
+                    LOG.debug("handle: SASL server DIGEST-MD5 callback: setting canonicalized "
+                            + "client ID: ",
+                            userName);
                     ac.setAuthorizedID(authzid);
                 }
             }

@@ -36,10 +36,11 @@ import org.slf4j.LoggerFactory;
 public class KerberosSaslNettyClient {
 
     private static final Logger LOG = LoggerFactory
-        .getLogger(KerberosSaslNettyClient.class);
+            .getLogger(KerberosSaslNettyClient.class);
 
     /**
-     * Used to respond to server's counterpart, SaslServer with SASL tokens represented as byte arrays.
+     * Used to respond to server's counterpart, SaslServer with SASL tokens represented as byte
+     * arrays.
      */
     private SaslClient saslClient;
     private Subject subject;
@@ -50,7 +51,7 @@ public class KerberosSaslNettyClient {
      */
     public KerberosSaslNettyClient(Map<String, Object> topoConf, String jaasSection, String host) {
         LOG.debug("KerberosSaslNettyClient: Creating SASL {} client to authenticate to server ",
-                  SaslUtils.KERBEROS);
+                SaslUtils.KERBEROS);
 
         LOG.info("Creating Kerberos Client.");
         LOG.debug("KerberosSaslNettyClient: authmethod {}", SaslUtils.KERBEROS);
@@ -70,7 +71,7 @@ public class KerberosSaslNettyClient {
             throw new RuntimeException(ex);
         }
 
-        //check the credential of our principal
+        // check the credential of our principal
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) {
             LOG.error("Failed to verify user principal.");
             throw new RuntimeException("Fail to verify user principal with section \""
@@ -100,11 +101,11 @@ public class KerberosSaslNettyClient {
                     props.put(Sasl.QOP, "auth");
                     props.put(Sasl.SERVER_AUTH, "false");
                     return Sasl.createSaslClient(
-                        new String[]{ SaslUtils.KERBEROS },
-                        fPrincipalName,
-                        fServiceName,
-                        fHost,
-                        props, fch);
+                            new String[] {SaslUtils.KERBEROS},
+                            fPrincipalName,
+                            fServiceName,
+                            fHost,
+                            props, fch);
                 } catch (Exception e) {
                     LOG.error("Subject failed to create sasl client.", e);
                     return null;
@@ -147,14 +148,16 @@ public class KerberosSaslNettyClient {
     }
 
     /**
-     * Implementation of javax.security.auth.callback.CallbackHandler that works with Storm topology tokens.
+     * Implementation of javax.security.auth.callback.CallbackHandler that works with Storm topology
+     * tokens.
      */
     private static class SaslClientCallbackHandler implements CallbackHandler {
 
         /**
          * Implementation used to respond to SASL tokens from server.
          *
-         * @param callbacks objects that indicate what credential information the server's SaslServer requires from the client.
+         * @param callbacks objects that indicate what credential information the server's
+         *     SaslServer requires from the client.
          */
         @Override
         public void handle(Callback[] callbacks) throws UnsupportedCallbackException {

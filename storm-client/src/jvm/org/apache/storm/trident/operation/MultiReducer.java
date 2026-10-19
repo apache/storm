@@ -16,7 +16,6 @@ import java.io.Serializable;
 import java.util.Map;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-
 public interface MultiReducer<T> extends Serializable {
     void prepare(Map<String, Object> conf, TridentMultiReducerContext context);
 

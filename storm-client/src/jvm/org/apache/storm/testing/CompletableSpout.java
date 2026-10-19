@@ -15,6 +15,7 @@ package org.apache.storm.testing;
 public interface CompletableSpout {
     /**
      * Check whether spout is exhausted.
+     *
      * @return true if all the tuples have been completed else false.
      */
     boolean isExhausted();
@@ -23,13 +24,13 @@ public interface CompletableSpout {
      * Cleanup any global state kept.
      */
     default void clean() {
-        //NOOP
+        // NOOP
     }
 
     /**
      * Prepare the spout (globally) before starting the topology.
      */
     default void startup() {
-        //NOOP
+        // NOOP
     }
 }

@@ -12,6 +12,8 @@
 
 package org.apache.storm.streams.processors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,8 +21,6 @@ import java.util.Set;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.operations.PairValueJoiner;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JoinProcessorTest {
     JoinProcessor<Integer, Pair<Integer, Integer>, Integer, Integer> joinProcessor;
@@ -50,16 +50,16 @@ public class JoinProcessorTest {
     };
 
     List<Pair<Integer, Integer>> leftKeyValues = Arrays.asList(
-        Pair.of(2, 4),
-        Pair.of(5, 25),
-        Pair.of(7, 49)
+            Pair.of(2, 4),
+            Pair.of(5, 25),
+            Pair.of(7, 49)
     );
 
     List<Pair<Integer, Integer>> rightKeyValues = Arrays.asList(
-        Pair.of(1, 1),
-        Pair.of(2, 8),
-        Pair.of(5, 125),
-        Pair.of(6, 216)
+            Pair.of(1, 1),
+            Pair.of(2, 8),
+            Pair.of(5, 125),
+            Pair.of(6, 216)
     );
 
     @Test
@@ -73,7 +73,7 @@ public class JoinProcessorTest {
     @Test
     public void testLeftOuterJoin() {
         joinProcessor = new JoinProcessor<>(leftStream, rightStream, new PairValueJoiner<>(),
-                                            JoinProcessor.JoinType.OUTER, JoinProcessor.JoinType.INNER);
+                JoinProcessor.JoinType.OUTER, JoinProcessor.JoinType.INNER);
         processValues();
         assertEquals(Pair.of(2, Pair.of(4, 8)), res.get(0));
         assertEquals(Pair.of(5, Pair.of(25, 125)), res.get(1));
@@ -83,7 +83,7 @@ public class JoinProcessorTest {
     @Test
     public void testRightOuterJoin() {
         joinProcessor = new JoinProcessor<>(leftStream, rightStream, new PairValueJoiner<>(),
-                                            JoinProcessor.JoinType.INNER, JoinProcessor.JoinType.OUTER);
+                JoinProcessor.JoinType.INNER, JoinProcessor.JoinType.OUTER);
         processValues();
         assertEquals(Pair.of(1, Pair.of(null, 1)), res.get(0));
         assertEquals(Pair.of(2, Pair.of(4, 8)), res.get(1));
@@ -94,7 +94,7 @@ public class JoinProcessorTest {
     @Test
     public void testFullOuterJoin() {
         joinProcessor = new JoinProcessor<>(leftStream, rightStream, new PairValueJoiner<>(),
-                                            JoinProcessor.JoinType.OUTER, JoinProcessor.JoinType.OUTER);
+                JoinProcessor.JoinType.OUTER, JoinProcessor.JoinType.OUTER);
         processValues();
         assertEquals(Pair.of(1, Pair.of(null, 1)), res.get(0));
         assertEquals(Pair.of(2, Pair.of(4, 8)), res.get(1));

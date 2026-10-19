@@ -12,6 +12,10 @@
 
 package org.apache.storm.topology;
 
+import static org.apache.storm.topology.StatefulWindowedBoltExecutor.TaskStream;
+import static org.apache.storm.topology.StatefulWindowedBoltExecutor.WindowState;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,12 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.apache.storm.topology.StatefulWindowedBoltExecutor.TaskStream;
-import static org.apache.storm.topology.StatefulWindowedBoltExecutor.WindowState;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 /**
- * Unit tests for {@link StatefulWindowedBoltExecutor}
+ * Unit tests for {@link StatefulWindowedBoltExecutor}.
  */
 public class StatefulWindowedBoltExecutorTest {
     StatefulWindowedBoltExecutor<KeyValueState<String, String>> executor;
@@ -56,9 +56,8 @@ public class StatefulWindowedBoltExecutorTest {
     @Test
     public void testPrepare() {
         assertThrows(IllegalArgumentException.class,
-            () -> executor.prepare(mockStormConf, mockTopologyContext, mockOutputCollector));
+                () -> executor.prepare(mockStormConf, mockTopologyContext, mockOutputCollector));
     }
-
 
     @Test
     public void testPrepareWithMsgid() {
@@ -83,7 +82,8 @@ public class StatefulWindowedBoltExecutorTest {
         }
         Mockito.verify(mockBolt, Mockito.times(1)).execute(getTupleWindow(tuples));
         WindowState expectedState = new WindowState(Long.MIN_VALUE, 4);
-        Mockito.verify(mockState, Mockito.times(1)).put(Mockito.any(TaskStream.class), Mockito.eq(expectedState));
+        Mockito.verify(mockState, Mockito.times(1)).put(Mockito.any(TaskStream.class), Mockito
+                .eq(expectedState));
     }
 
     @Test
@@ -95,8 +95,10 @@ public class StatefulWindowedBoltExecutorTest {
         mockState = Mockito.mock(KeyValueState.class);
         Map<GlobalStreamId, Grouping> mockMap = Mockito.mock(Map.class);
         Mockito.when(mockTopologyContext.getThisSources()).thenReturn(mockMap);
-        Mockito.when(mockTopologyContext.getComponentTasks(Mockito.anyString())).thenReturn(Collections.singletonList(1));
-        Mockito.when(mockMap.keySet()).thenReturn(Collections.singleton(new GlobalStreamId("a", "s")));
+        Mockito.when(mockTopologyContext.getComponentTasks(Mockito.anyString()))
+                .thenReturn(Collections.singletonList(1));
+        Mockito.when(mockMap.keySet()).thenReturn(Collections.singleton(new GlobalStreamId("a",
+                "s")));
         WindowState mockWindowState = new WindowState(4, 4);
         Mockito.when(mockState.get(Mockito.any(TaskStream.class))).thenReturn(mockWindowState);
         executor.prepare(mockStormConf, mockTopologyContext, mockOutputCollector, mockState);
@@ -106,7 +108,8 @@ public class StatefulWindowedBoltExecutorTest {
             executor.execute(tuple);
         }
         WindowState expectedState = new WindowState(4, 9);
-        Mockito.verify(mockState, Mockito.times(1)).put(Mockito.any(TaskStream.class), Mockito.eq(expectedState));
+        Mockito.verify(mockState, Mockito.times(1)).put(Mockito.any(TaskStream.class), Mockito
+                .eq(expectedState));
     }
 
     private TupleWindow getTupleWindow(List<Tuple> tuples) {
@@ -119,7 +122,8 @@ public class StatefulWindowedBoltExecutorTest {
             Tuple mockTuple = Mockito.mock(Tuple.class);
             Mockito.when(mockTuple.getLongByField("msgid")).thenReturn(i);
             Mockito.when(mockTuple.getSourceTask()).thenReturn(1);
-            Mockito.when(mockTuple.getSourceGlobalStreamId()).thenReturn(new GlobalStreamId("a", "s"));
+            Mockito.when(mockTuple.getSourceGlobalStreamId()).thenReturn(new GlobalStreamId("a",
+                    "s"));
             mockTuples.add(mockTuple);
         }
         return mockTuples;

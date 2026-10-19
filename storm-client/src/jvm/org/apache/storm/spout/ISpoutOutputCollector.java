@@ -16,7 +16,8 @@ import java.util.List;
 import org.apache.storm.task.IErrorReporter;
 
 /**
- * Methods are not expected to be thread safe. Each thread expected to have a separate instance of this type of object, or else externally
+ * Methods are not expected to be thread safe. Each thread expected to have a separate instance of
+ * this type of object, or else externally
  * synchronize any shared instance.
  */
 

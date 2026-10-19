@@ -28,7 +28,6 @@ import org.apache.storm.trident.state.map.MapReducerAggStateUpdater;
 import org.apache.storm.trident.util.TridentUtils;
 import org.apache.storm.tuple.Fields;
 
-
 public class GroupedStream implements IAggregatableStream, GlobalAggregationScheme<GroupedStream> {
     Fields groupFields;
     Stream stream;
@@ -52,8 +51,8 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
 
     public Stream aggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
         return new ChainedAggregatorDeclarer(this, this)
-            .aggregate(inputFields, agg, functionFields)
-            .chainEnd();
+                .aggregate(inputFields, agg, functionFields)
+                .chainEnd();
     }
 
     public Stream aggregate(CombinerAggregator agg, Fields functionFields) {
@@ -62,8 +61,8 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
 
     public Stream aggregate(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
         return new ChainedAggregatorDeclarer(this, this)
-            .aggregate(inputFields, agg, functionFields)
-            .chainEnd();
+                .aggregate(inputFields, agg, functionFields)
+                .chainEnd();
     }
 
     public Stream aggregate(ReducerAggregator agg, Fields functionFields) {
@@ -72,56 +71,65 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
 
     public Stream aggregate(Fields inputFields, ReducerAggregator agg, Fields functionFields) {
         return new ChainedAggregatorDeclarer(this, this)
-            .aggregate(inputFields, agg, functionFields)
-            .chainEnd();
+                .aggregate(inputFields, agg, functionFields)
+                .chainEnd();
     }
 
-    public TridentState persistentAggregate(StateFactory stateFactory, CombinerAggregator agg, Fields functionFields) {
+    public TridentState persistentAggregate(StateFactory stateFactory, CombinerAggregator agg,
+            Fields functionFields) {
         return persistentAggregate(new StateSpec(stateFactory), agg, functionFields);
     }
 
-    public TridentState persistentAggregate(StateSpec spec, CombinerAggregator agg, Fields functionFields) {
+    public TridentState persistentAggregate(StateSpec spec, CombinerAggregator agg,
+            Fields functionFields) {
         return persistentAggregate(spec, null, agg, functionFields);
     }
 
-    public TridentState persistentAggregate(StateFactory stateFactory, Fields inputFields, CombinerAggregator agg, Fields functionFields) {
+    public TridentState persistentAggregate(StateFactory stateFactory, Fields inputFields,
+            CombinerAggregator agg, Fields functionFields) {
         return persistentAggregate(new StateSpec(stateFactory), inputFields, agg, functionFields);
     }
 
-    public TridentState persistentAggregate(StateSpec spec, Fields inputFields, CombinerAggregator agg, Fields functionFields) {
+    public TridentState persistentAggregate(StateSpec spec, Fields inputFields,
+            CombinerAggregator agg, Fields functionFields) {
         return aggregate(inputFields, agg, functionFields)
-            .partitionPersist(spec,
-                              TridentUtils.fieldsUnion(groupFields, functionFields),
-                              new MapCombinerAggStateUpdater(agg, groupFields, functionFields),
-                              TridentUtils.fieldsConcat(groupFields, functionFields));
+                .partitionPersist(spec,
+                        TridentUtils.fieldsUnion(groupFields, functionFields),
+                        new MapCombinerAggStateUpdater(agg, groupFields, functionFields),
+                        TridentUtils.fieldsConcat(groupFields, functionFields));
     }
 
-    public TridentState persistentAggregate(StateFactory stateFactory, Fields inputFields, ReducerAggregator agg, Fields functionFields) {
+    public TridentState persistentAggregate(StateFactory stateFactory, Fields inputFields,
+            ReducerAggregator agg, Fields functionFields) {
         return persistentAggregate(new StateSpec(stateFactory), inputFields, agg, functionFields);
     }
 
-    public TridentState persistentAggregate(StateSpec spec, Fields inputFields, ReducerAggregator agg, Fields functionFields) {
+    public TridentState persistentAggregate(StateSpec spec, Fields inputFields,
+            ReducerAggregator agg, Fields functionFields) {
         return stream.partitionBy(groupFields)
-                      .partitionPersist(spec,
-                                        TridentUtils.fieldsUnion(groupFields, inputFields),
-                                        new MapReducerAggStateUpdater(agg, groupFields, inputFields),
-                                        TridentUtils.fieldsConcat(groupFields, functionFields));
+                .partitionPersist(spec,
+                        TridentUtils.fieldsUnion(groupFields, inputFields),
+                        new MapReducerAggStateUpdater(agg, groupFields, inputFields),
+                        TridentUtils.fieldsConcat(groupFields, functionFields));
     }
 
-    public TridentState persistentAggregate(StateFactory stateFactory, ReducerAggregator agg, Fields functionFields) {
+    public TridentState persistentAggregate(StateFactory stateFactory, ReducerAggregator agg,
+            Fields functionFields) {
         return persistentAggregate(new StateSpec(stateFactory), agg, functionFields);
     }
 
-    public TridentState persistentAggregate(StateSpec spec, ReducerAggregator agg, Fields functionFields) {
+    public TridentState persistentAggregate(StateSpec spec, ReducerAggregator agg,
+            Fields functionFields) {
         return persistentAggregate(spec, null, agg, functionFields);
     }
 
-    public Stream stateQuery(TridentState state, Fields inputFields, QueryFunction function, Fields functionFields) {
+    public Stream stateQuery(TridentState state, Fields inputFields, QueryFunction function,
+            Fields functionFields) {
         return stream.partitionBy(groupFields)
-                      .stateQuery(state,
-                                  inputFields,
-                                  function,
-                                  functionFields);
+                .stateQuery(state,
+                        inputFields,
+                        function,
+                        functionFields);
     }
 
     public Stream stateQuery(TridentState state, QueryFunction function, Fields functionFields) {
@@ -135,8 +143,10 @@ public class GroupedStream implements IAggregatableStream, GlobalAggregationSche
     }
 
     @Override
-    public IAggregatableStream partitionAggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
-        Aggregator groupedAgg = new GroupedAggregator(agg, groupFields, inputFields, functionFields.size());
+    public IAggregatableStream partitionAggregate(Fields inputFields, Aggregator agg,
+        Fields functionFields) {
+        Aggregator groupedAgg = new GroupedAggregator(agg, groupFields, inputFields, functionFields
+                .size());
         Fields allInFields = TridentUtils.fieldsUnion(groupFields, inputFields);
         Fields allOutFields = TridentUtils.fieldsConcat(groupFields, functionFields);
         Stream s = stream.partitionAggregate(allInFields, groupedAgg, allOutFields);

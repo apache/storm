@@ -38,7 +38,8 @@ public class PythonShellMetricsBolt extends ShellBolt implements IRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         super.prepare(topoConf, context, collector);
 
         CountShellMetric countShellMetric = new CountShellMetric();

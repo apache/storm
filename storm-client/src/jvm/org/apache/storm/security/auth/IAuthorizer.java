@@ -15,7 +15,8 @@ package org.apache.storm.security.auth;
 import java.util.Map;
 
 /**
- * Nimbus could be configured with an authorization plugin. If not specified, all requests are authorized.
+ * Nimbus could be configured with an authorization plugin. If not specified, all requests are
+ * authorized.
  *
  * <p>You could specify the authorization plugin via storm parameter. For example:
  *

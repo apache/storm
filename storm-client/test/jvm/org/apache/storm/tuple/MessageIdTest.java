@@ -12,15 +12,15 @@
 
 package org.apache.storm.tuple;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import org.apache.storm.utils.KeyStreamRandom;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class MessageIdTest {
 
@@ -49,8 +49,10 @@ public class MessageIdTest {
     }
 
     /**
-     * Guards the test above: the same prediction does work against a java.util.Random, so a failure of
-     * generatedIdsDoNotRevealTheFollowingIds means the ids really are predictable rather than the prediction being broken.
+     * Guards the test above: the same prediction does work against a java.util.Random, so a failure
+     * of
+     * generatedIdsDoNotRevealTheFollowingIds means the ids really are predictable rather than the
+     * prediction being broken.
      */
     @Test
     public void lcgPredictionWorksAgainstJavaUtilRandom() {
@@ -73,7 +75,8 @@ public class MessageIdTest {
     }
 
     /**
-     * Recovers the 48 bit state of a java.util.Random from a single nextLong output and returns the nextLong it would produce
+     * Recovers the 48 bit state of a java.util.Random from a single nextLong output and returns the
+     * nextLong it would produce
      * afterwards, or 0 if the state could not be recovered.
      */
     private static long predictNextFromLcgState(long observed) {

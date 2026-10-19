@@ -12,14 +12,15 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class StormBoundedExponentialBackoffRetryTest {
-    private static final Logger LOG = LoggerFactory.getLogger(StormBoundedExponentialBackoffRetryTest.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(StormBoundedExponentialBackoffRetryTest.class);
 
     @Test
     public void testExponentialSleepLargeRetries() {
@@ -63,35 +64,36 @@ public class StormBoundedExponentialBackoffRetryTest {
     }
 
     private void validateSleepTimes(int baseSleepMs, int maxSleepMs, int maxRetries) {
-        StormBoundedExponentialBackoffRetry retryPolicy = new StormBoundedExponentialBackoffRetry(baseSleepMs, maxSleepMs, maxRetries);
+        StormBoundedExponentialBackoffRetry retryPolicy =
+                new StormBoundedExponentialBackoffRetry(baseSleepMs, maxSleepMs, maxRetries);
         int retryCount = 0;
         long prevSleepMs = 0;
-        LOG.info("The baseSleepMs [" + baseSleepMs + "] the maxSleepMs [" + maxSleepMs +
-                 "] the maxRetries [" + maxRetries + "]");
+        LOG.info("The baseSleepMs [" + baseSleepMs + "] the maxSleepMs [" + maxSleepMs
+                + "] the maxRetries [" + maxRetries + "]");
         while (retryCount <= maxRetries) {
             long currSleepMs = retryPolicy.getSleepTimeMs(retryCount, 0);
-            LOG.info("For retryCount [" + retryCount + "] the previousSleepMs [" + prevSleepMs +
-                     "] the currentSleepMs [" + currSleepMs + "]");
+            LOG.info("For retryCount [" + retryCount + "] the previousSleepMs [" + prevSleepMs
+                    + "] the currentSleepMs [" + currSleepMs + "]");
             assertTrue((prevSleepMs < currSleepMs) || (currSleepMs == maxSleepMs),
-                "For retryCount [" + retryCount + "] the previousSleepMs [" + prevSleepMs +
-                "] is not less than currentSleepMs [" + currSleepMs + "]");
+                    "For retryCount [" + retryCount + "] the previousSleepMs [" + prevSleepMs
+                            + "] is not less than currentSleepMs [" + currSleepMs + "]");
             assertTrue((baseSleepMs <= currSleepMs) || (currSleepMs == maxSleepMs),
-                "For retryCount [" + retryCount + "] the currentSleepMs [" + currSleepMs +
-                    "] is less than baseSleepMs [" + baseSleepMs + "].");
+                    "For retryCount [" + retryCount + "] the currentSleepMs [" + currSleepMs
+                            + "] is less than baseSleepMs [" + baseSleepMs + "].");
             assertTrue(maxSleepMs >= currSleepMs,
-                "For retryCount [" + retryCount + "] the currentSleepMs [" + currSleepMs +
-                    "] is greater than maxSleepMs [" + maxSleepMs + "]");
+                    "For retryCount [" + retryCount + "] the currentSleepMs [" + currSleepMs
+                            + "] is greater than maxSleepMs [" + maxSleepMs + "]");
             prevSleepMs = currSleepMs;
             retryCount++;
         }
         int badRetryCount = maxRetries + 10;
         long currSleepMs = retryPolicy.getSleepTimeMs(badRetryCount, 0);
-        LOG.info("For badRetryCount [" + badRetryCount + "] the previousSleepMs [" + prevSleepMs +
-                 "] the currentSleepMs [" + currSleepMs + "]");
+        LOG.info("For badRetryCount [" + badRetryCount + "] the previousSleepMs [" + prevSleepMs
+                + "] the currentSleepMs [" + currSleepMs + "]");
         assertTrue(maxSleepMs >= currSleepMs,
-            "For the badRetryCount [" + badRetryCount + "] that's greater than maxRetries [" +
-                maxRetries + "]the currentSleepMs [" + currSleepMs + "] " +
-                "is greater than maxSleepMs [" + maxSleepMs + "]");
+                "For the badRetryCount [" + badRetryCount + "] that's greater than maxRetries ["
+                        + maxRetries + "]the currentSleepMs [" + currSleepMs + "] "
+                        + "is greater than maxSleepMs [" + maxSleepMs + "]");
     }
 }
 

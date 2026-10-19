@@ -20,7 +20,6 @@ import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.operation.impl.SingleEmitAggregator.SingleEmitState;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-
 public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
     Aggregator agg;
     BatchToPartition batchToPartition;
@@ -31,7 +30,6 @@ public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
         this.agg = agg;
         this.batchToPartition = batchToPartition;
     }
-
 
     @Override
     public SingleEmitState init(Object batchId, TridentCollector collector) {
@@ -50,7 +48,8 @@ public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
     @Override
     public void complete(SingleEmitState val, TridentCollector collector) {
         if (!val.received) {
-            if (this.myPartitionIndex == batchToPartition.partitionIndex(val.batchId, this.totalPartitions)) {
+            if (this.myPartitionIndex == batchToPartition.partitionIndex(val.batchId,
+                    this.totalPartitions)) {
                 val.state = agg.init(val.batchId, collector);
                 agg.complete(val.state, collector);
             }
@@ -84,6 +83,5 @@ public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
             this.batchId = batchId;
         }
     }
-
 
 }

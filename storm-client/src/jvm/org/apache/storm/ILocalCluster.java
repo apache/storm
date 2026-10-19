@@ -15,7 +15,6 @@ package org.apache.storm;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.cluster.IStormClusterState;
-import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.GetInfoOptions;
@@ -40,7 +39,8 @@ public interface ILocalCluster extends AutoCloseable {
      * @return an AutoCloseable that will kill the topology.
      * @throws TException on any error from nimbus
      */
-    ILocalTopology submitTopology(String topologyName, Map<String, Object> conf, StormTopology topology) throws TException;
+    ILocalTopology submitTopology(String topologyName, Map<String, Object> conf,
+            StormTopology topology) throws TException;
 
     /**
      * Submit a topology to be run in local mode.
@@ -52,7 +52,8 @@ public interface ILocalCluster extends AutoCloseable {
      * @return an AutoCloseable that will kill the topology.
      * @throws TException on any error from nimbus
      */
-    ILocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf, StormTopology topology,
+    ILocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf,
+            StormTopology topology,
                                           SubmitOptions submitOpts) throws TException;
 
     /**
@@ -134,6 +135,7 @@ public interface ILocalCluster extends AutoCloseable {
 
     /**
      * Get cluster information.
+     *
      * @return a summary of the current state of the cluster
      * @throws TException on any error from nimbus
      */
@@ -181,7 +183,8 @@ public interface ILocalCluster extends AutoCloseable {
      * @return the state of a topology
      * @throws TException on any error from nimbus
      */
-    TopologyInfo getTopologyInfoByNameWithOpts(String name, GetInfoOptions options) throws TException;
+    TopologyInfo getTopologyInfoByNameWithOpts(String name,
+            GetInfoOptions options) throws TException;
 
     /**
      * This is intended for internal testing only.
@@ -191,14 +194,16 @@ public interface ILocalCluster extends AutoCloseable {
     IStormClusterState getClusterState();
 
     /**
-     * Advance the cluster time when the cluster is using SimulatedTime. This is intended for internal testing only.
+     * Advance the cluster time when the cluster is using SimulatedTime. This is intended for
+     * internal testing only.
      *
      * @param secs the number of seconds to advance time
      */
     void advanceClusterTime(int secs) throws InterruptedException;
 
     /**
-     * Advance the cluster time when the cluster is using SimulatedTime. This is intended for internal testing only.
+     * Advance the cluster time when the cluster is using SimulatedTime. This is intended for
+     * internal testing only.
      *
      * @param secs  the number of seconds to advance time
      * @param steps the number of steps we should take when advancing simulated time
@@ -206,7 +211,8 @@ public interface ILocalCluster extends AutoCloseable {
     void advanceClusterTime(int secs, int steps) throws InterruptedException;
 
     /**
-     * If the cluster is tracked get the id for the tracked cluster. This is intended for internal testing only.
+     * If the cluster is tracked get the id for the tracked cluster. This is intended for internal
+     * testing only.
      *
      * @return the id of the tracked cluster
      */

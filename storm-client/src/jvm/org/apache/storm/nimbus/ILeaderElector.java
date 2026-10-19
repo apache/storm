@@ -24,39 +24,46 @@ public interface ILeaderElector extends AutoCloseable {
 
     /**
      * Method guaranteed to be called as part of initialization of leader elector instance.
+     *
      * @param conf configuration
      */
     void prepare(Map<String, Object> conf);
 
     /**
-     * queue up for leadership lock. The call returns immediately and the caller must
+     * Queue up for leadership lock. The call returns immediately and the caller must
      * check isLeader() to perform any leadership action. This method can be called
      * multiple times so it needs to be idempotent.
      */
     void addToLeaderLockQueue() throws Exception;
 
     /**
-     * Removes the caller from leadership election, relinquishing leadership if acquired, then requeues for leadership after the specified
+     * Removes the caller from leadership election, relinquishing leadership if acquired, then
+     * requeues for leadership after the specified
      * delay.
+     *
      * @param delayMs The delay to wait before re-entering the election
      */
     void quitElectionFor(int delayMs) throws Exception;
 
     /**
      * Decide if the caller currently has the leader lock.
+     *
      * @return true if the caller currently has the leader lock.
      */
     boolean isLeader() throws Exception;
 
     /**
      * Get the current leader's address.
+     *
      * @return the current leader's address, may return null if no one has the lock.
      */
     NimbusInfo getLeader();
-    
+
     /**
-     * Wait for the caller to gain leadership. This should only be used in single-Nimbus clusters, and is only useful to allow testing
-     * code to wait for a LocalCluster's Nimbus to gain leadership before trying to submit topologies.
+     * Wait for the caller to gain leadership. This should only be used in single-Nimbus clusters,
+     * and is only useful to allow testing
+     * code to wait for a LocalCluster's Nimbus to gain leadership before trying to submit
+     * topologies.
      *
      * @return true is leadership was acquired, false otherwise
      */
@@ -65,6 +72,7 @@ public interface ILeaderElector extends AutoCloseable {
 
     /**
      * Get list of current nimbus addresses.
+     *
      * @return list of current nimbus addresses, includes leader.
      */
     List<NimbusInfo> getAllNimbuses() throws Exception;

@@ -125,7 +125,8 @@ public class Utils {
     private static final AtomicBoolean EXIT_REQUESTED = new AtomicBoolean();
     public static final String DEFAULT_STREAM_ID = "default";
     private static final Set<Class<?>> defaultAllowedExceptions = Collections.emptySet();
-    private static final List<String> LOCALHOST_ADDRESSES = Lists.newArrayList("localhost", "127.0.0.1", "0:0:0:0:0:0:0:1");
+    private static final List<String> LOCALHOST_ADDRESSES = Lists.newArrayList("localhost",
+            "127.0.0.1", "0:0:0:0:0:0:0:1");
     static SerializationDelegate serializationDelegate;
     private static ThreadLocal<TSerializer> threadSer = new ThreadLocal<TSerializer>();
     private static ThreadLocal<TDeserializer> threadDes = new ThreadLocal<TDeserializer>();
@@ -145,7 +146,8 @@ public class Utils {
     }
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * Provide an instance of this class for delegates to use. To mock out delegated methods,
+     * provide an instance of a subclass that
      * overrides the implementation of the delegated method.
      *
      * @param u a Utils instance
@@ -169,7 +171,8 @@ public class Utils {
 
     public static List<URL> findResources(String name) {
         try {
-            Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(name);
+            Enumeration<URL> resources = Thread.currentThread().getContextClassLoader()
+                    .getResources(name);
             List<URL> ret = new ArrayList<URL>();
             while (resources.hasMoreElements()) {
                 ret.add(resources.nextElement());
@@ -188,7 +191,8 @@ public class Utils {
             if (null != in) {
                 Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
                 @SuppressWarnings("unchecked")
-                Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(in));
+                Map<String, Object> ret = (Map<String, Object>) yaml
+                    .load(new InputStreamReader(in));
                 if (null != ret) {
                     return new HashMap<>(ret);
                 } else {
@@ -198,7 +202,8 @@ public class Utils {
 
             if (mustExist) {
                 if (confFileEmpty) {
-                    throw new RuntimeException("Config file " + name + " doesn't have any valid storm configs");
+                    throw new RuntimeException("Config file " + name
+                            + " doesn't have any valid storm configs");
                 } else {
                     throw new RuntimeException("Could not find config file on classpath " + name);
                 }
@@ -223,10 +228,10 @@ public class Utils {
     }
 
     private static InputStream getConfigFileInputStream(String configFilePath)
-        throws IOException {
+            throws IOException {
         if (null == configFilePath) {
             throw new IOException(
-                "Could not find config file, name not specified");
+                    "Could not find config file, name not specified");
         }
 
         HashSet<URL> resources = new HashSet<URL>(findResources(configFilePath));
@@ -237,9 +242,10 @@ public class Utils {
             }
         } else if (resources.size() > 1) {
             throw new IOException(
-                "Found multiple " + configFilePath
-                + " resources. You're probably bundling the Storm jars with your topology jar. "
-                + resources);
+                    "Found multiple " + configFilePath
+                            + " resources. You're probably bundling the Storm jars with your "
+                            + "topology jar. "
+                            + resources);
         } else {
             LOG.debug("Using " + configFilePath + " from resources");
             URL resource = resources.iterator().next();
@@ -253,32 +259,35 @@ public class Utils {
     }
 
     /**
-     * URL encode the given string using the UTF-8 charset. Once Storm is baselined to Java 11, we can use URLEncoder.encode(String,
+     * URL encode the given string using the UTF-8 charset. Once Storm is baselined to Java 11, we
+     * can use URLEncoder.encode(String,
      * Charset) instead, which obsoletes this method.
      */
     public static String urlEncodeUtf8(String s) {
         try {
             return URLEncoder.encode(s, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
-            //This cannot happen since we're using a standard charset
+            // This cannot happen since we're using a standard charset
             throw Utils.wrapInRuntime(e);
         }
     }
-    
+
     /**
-     * URL decode the given string using the UTF-8 charset. Once Storm is baselined to Java 11, we can use URLDecoder.decode(String,
+     * URL decode the given string using the UTF-8 charset. Once Storm is baselined to Java 11, we
+     * can use URLDecoder.decode(String,
      * Charset) instead, which obsoletes this method.
      */
     public static String urlDecodeUtf8(String s) {
         try {
-            //Once Storm is baselined to Java 11, we can use URLDecoder.decode(String, Charset) instead, which obsoletes this method.
+            // Once Storm is baselined to Java 11, we can use URLDecoder.decode(String, Charset)
+            // instead, which obsoletes this method.
             return URLDecoder.decode(s, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
-            //This cannot happen since we're using a standard charset
+            // This cannot happen since we're using a standard charset
             throw Utils.wrapInRuntime(e);
         }
     }
-    
+
     public static Map<String, Object> readCommandLineOpts() {
         Map<String, Object> ret = new HashMap<>();
         String commandOptions = System.getProperty("storm.options");
@@ -302,7 +311,7 @@ public class Utils {
                     try {
                         val = JSONValue.parseWithException(options[1]);
                     } catch (ParseException ignored) {
-                        //fall back to string, which is already set
+                        // fall back to string, which is already set
                     }
                     ret.put(options[0], val);
                 }
@@ -338,7 +347,8 @@ public class Utils {
     }
 
     /**
-     * Adds the user supplied function as a shutdown hook for cleanup. Also adds a function that sleeps for a second and then halts the
+     * Adds the user supplied function as a shutdown hook for cleanup. Also adds a function that
+     * sleeps for a second and then halts the
      * runtime to avoid any zombie process in case cleanup function hangs.
      */
     public static void addShutdownHookWithForceKillIn1Sec(Runnable func) {
@@ -346,7 +356,8 @@ public class Utils {
     }
 
     /**
-     * Adds the user supplied function as a shutdown hook for cleanup. Also adds a function that sleeps for numSecs and then halts the
+     * Adds the user supplied function as a shutdown hook for cleanup. Also adds a function that
+     * sleeps for numSecs and then halts the
      * runtime to avoid any zombie process in case cleanup function hangs.
      */
     public static void addShutdownHookWithDelayedForceKill(Runnable func, int numSecs) {
@@ -357,7 +368,7 @@ public class Utils {
                 LOG.warn("Forcing Halt... {}", Utils.threadDump());
                 Runtime.getRuntime().halt(20);
             } catch (InterruptedException ie) {
-                //Ignored/expected...
+                // Ignored/expected...
             } catch (Exception e) {
                 LOG.warn("Exception in the ShutDownHook", e);
             }
@@ -376,10 +387,12 @@ public class Utils {
     }
 
     /**
-     * Creates a thread that calls the given code repeatedly, sleeping for an interval of seconds equal to the return value of the previous
+     * Creates a thread that calls the given code repeatedly, sleeping for an interval of seconds
+     * equal to the return value of the previous
      * call.
      *
-     * <p>The given afn may be a callable that returns the number of seconds to sleep, or it may be a Callable that returns another Callable
+     * <p>The given afn may be a callable that returns the number of seconds to sleep, or it may be
+     * a Callable that returns another Callable
      * that in turn returns the number of seconds to sleep. In the latter case isFactory.
      *
      * @param afn              the code to call on each iteration
@@ -393,7 +406,8 @@ public class Utils {
      *
      * @see Thread
      */
-    public static SmartThread asyncLoop(final Callable afn, boolean isDaemon, final Thread.UncaughtExceptionHandler eh,
+    public static SmartThread asyncLoop(final Callable afn, boolean isDaemon,
+            final Thread.UncaughtExceptionHandler eh,
                                         int priority, final boolean isFactory, boolean startImmediately,
                                         String threadName) {
         SmartThread thread = new SmartThread(new Runnable() {
@@ -415,7 +429,7 @@ public class Utils {
                     }
                 } catch (Throwable t) {
                     if (Utils.exceptionCauseIsInstanceOf(
-                        InterruptedException.class, t)) {
+                            InterruptedException.class, t)) {
                         LOG.info("Async loop interrupted!");
                         return;
                     }
@@ -455,9 +469,10 @@ public class Utils {
      *
      * @see Thread
      */
-    public static SmartThread asyncLoop(final Callable afn, String threadName, final Thread.UncaughtExceptionHandler eh) {
+    public static SmartThread asyncLoop(final Callable afn, String threadName,
+            final Thread.UncaughtExceptionHandler eh) {
         return asyncLoop(afn, false, eh, Thread.NORM_PRIORITY, false, true,
-                         threadName);
+                threadName);
     }
 
     /**
@@ -468,7 +483,7 @@ public class Utils {
      */
     public static SmartThread asyncLoop(final Callable afn) {
         return asyncLoop(afn, false, null, Thread.NORM_PRIORITY, false, true,
-                         null);
+                null);
     }
 
     /**
@@ -512,7 +527,8 @@ public class Utils {
     }
 
     /**
-     * Gets the storm.local.hostname value, or tries to figure out the local hostname if it is not set in the config.
+     * Gets the storm.local.hostname value, or tries to figure out the local hostname if it is not
+     * set in the config.
      *
      * @return a string representation of the hostname.
      */
@@ -531,10 +547,13 @@ public class Utils {
     }
 
     /**
-     * Exits the process like {@link #exitProcess(int, String)}, but from a new thread. Needed when the caller runs on
-     * a thread that a shutdown hook waits for, such as a Netty event loop: the worker shutdown hook closes the Netty
+     * Exits the process like {@link #exitProcess(int, String)}, but from a new thread. Needed when
+     * the caller runs on
+     * a thread that a shutdown hook waits for, such as a Netty event loop: the worker shutdown hook
+     * closes the Netty
      * server, which awaits its event loops, while {@code Runtime.exit()} blocks the calling thread until the hooks
-     * complete. Idempotent: once an exit is in progress, further calls return immediately instead of starting another
+     * complete. Idempotent: once an exit is in progress, further calls return immediately instead
+     * of starting another
      * thread that would block in {@code Runtime.exit()} forever.
      */
     public static void exitProcessFromNewThread(int val, String msg) {
@@ -564,7 +583,8 @@ public class Utils {
 
     public static <T> T javaDeserialize(byte[] serialized, Class<T> clazz) {
         if ("true".equalsIgnoreCase(System.getProperty("java.deserialization.disabled"))) {
-            throw new AssertionError("java deserialization has been disabled and is only safe from within a worker process");
+            throw new AssertionError("java deserialization has been disabled and is only safe "
+                    + "from within a worker process");
         }
 
         try {
@@ -613,7 +633,8 @@ public class Utils {
     public static Id parseZkId(String id, String configName) {
         String[] split = id.split(":", 2);
         if (split.length != 2) {
-            throw new IllegalArgumentException(configName + " does not appear to be in the form scheme:acl, i.e. sasl:storm-user");
+            throw new IllegalArgumentException(configName
+                    + " does not appear to be in the form scheme:acl, i.e. sasl:storm-user");
         }
         return new Id(split[0], split[1]);
     }
@@ -628,7 +649,8 @@ public class Utils {
     public static ACL getSuperUserAcl(Map<String, Object> conf) {
         String stormZKUser = (String) conf.get(Config.STORM_ZOOKEEPER_SUPERACL);
         if (stormZKUser == null) {
-            throw new IllegalArgumentException("Authentication is enabled but " + Config.STORM_ZOOKEEPER_SUPERACL + " is not set");
+            throw new IllegalArgumentException("Authentication is enabled but "
+                    + Config.STORM_ZOOKEEPER_SUPERACL + " is not set");
         }
         return new ACL(ZooDefs.Perms.ALL, parseZkId(stormZKUser, Config.STORM_ZOOKEEPER_SUPERACL));
     }
@@ -666,13 +688,15 @@ public class Utils {
      *
      * @param worker true if this is for handling worker exceptions
      */
-    public static void handleUncaughtException(Throwable t, Set<Class<?>> allowedExceptions, boolean worker) {
+    public static void handleUncaughtException(Throwable t, Set<Class<?>> allowedExceptions,
+            boolean worker) {
         if (t != null) {
             if (t instanceof OutOfMemoryError) {
                 try {
-                    System.err.println("Halting due to Out Of Memory Error..." + Thread.currentThread().getName());
+                    System.err.println("Halting due to Out Of Memory Error..." + Thread
+                            .currentThread().getName());
                 } catch (Throwable err) {
-                    //Again we don't want to exit because of logging issues.
+                    // Again we don't want to exit because of logging issues.
                 }
                 Runtime.getRuntime().halt(-1);
             }
@@ -690,7 +714,7 @@ public class Utils {
             return;
         }
 
-        //Running in daemon mode, we would pass Error to calling thread.
+        // Running in daemon mode, we would pass Error to calling thread.
         throw new Error(t);
     }
 
@@ -702,13 +726,15 @@ public class Utils {
         handleUncaughtException(t, defaultAllowedExceptions, true);
     }
 
-    // Hadoop UserGroupInformation can launch an autorenewal thread that can cause a NullPointerException
+    // Hadoop UserGroupInformation can launch an autorenewal thread that can cause a
+    // NullPointerException
     // for workers.  See STORM-3606 for an explanation.
     private static boolean isAllowedWorkerException(Throwable t) {
         if (t instanceof NullPointerException) {
             StackTraceElement[] stackTrace = t.getStackTrace();
             for (StackTraceElement trace : stackTrace) {
-                if (trace.getClassName().startsWith("org.apache.hadoop.security.UserGroupInformation")
+                if (trace.getClassName()
+                        .startsWith("org.apache.hadoop.security.UserGroupInformation")
                         && trace.getMethodName().equals("run")) {
                     return true;
                 }
@@ -771,7 +797,7 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static void sleep(long millis) {
         try {
             Time.sleep(millis);
@@ -789,10 +815,13 @@ public class Utils {
      * <code>"{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"</code>.
      *
      * <p>Example usage in java:
-     * <code>Map&lt;Integer, String&gt; tasks; Map&lt;String, List&lt;Integer&gt;&gt; componentTasks = Utils.reverse_map(tasks);</code>
+     * <code>Map&lt;Integer, String&gt; tasks; Map&lt;String, List&lt;Integer&gt;&gt; componentTasks
+     * = Utils.reverse_map(tasks);</code>
      *
-     * <p>The order of he resulting list values depends on the ordering properties of the Map passed in. The caller is
-     * responsible for passing an ordered map if they expect the result to be consistently ordered as well.
+     * <p>The order of he resulting list values depends on the ordering properties of the Map passed
+     * in. The caller is
+     * responsible for passing an ordered map if they expect the result to be consistently ordered
+     * as well.
      *
      * @param map to reverse
      * @return a reversed map
@@ -816,7 +845,8 @@ public class Utils {
     }
 
     /**
-     * "[[:a 1] [:b 1] [:c 2]} -> {1 [:a :b] 2 :c}" Reverses an assoc-list style Map like reverseMap(Map...)
+     * "[[:a 1] [:b 1] [:c 2]} -> {1 [:a :b] 2 :c}" Reverses an assoc-list style Map like
+     * reverseMap(Map...).
      *
      * @param listSeq to reverse
      * @return a reversed map
@@ -851,7 +881,8 @@ public class Utils {
     }
 
     /**
-     * Deletes a file or directory and its contents if it exists. Does not complain if the input is null or does not exist.
+     * Deletes a file or directory and its contents if it exists. Does not complain if the input is
+     * null or does not exist.
      *
      * @param path the path to the file or directory
      */
@@ -868,7 +899,8 @@ public class Utils {
     }
 
     /**
-     * Serialize an object using the configured serialization and then base64 encode it into a string.
+     * Serialize an object using the configured serialization and then base64 encode it into a
+     * string.
      *
      * @param obj the object to encode
      * @return a string with the encoded object in it.
@@ -878,7 +910,8 @@ public class Utils {
     }
 
     /**
-     * Deserialize an object stored in a string. The String is assumed to be a base64 encoded string containing the bytes to actually
+     * Deserialize an object stored in a string. The String is assumed to be a base64 encoded string
+     * containing the bytes to actually
      * deserialize.
      *
      * @param str   the encoded string.
@@ -917,7 +950,8 @@ public class Utils {
     }
 
     /**
-     * Creates an instance of the pluggable SerializationDelegate or falls back to DefaultSerializationDelegate if something goes wrong.
+     * Creates an instance of the pluggable SerializationDelegate or falls back to
+     * DefaultSerializationDelegate if something goes wrong.
      *
      * @param topoConf The config from which to pull the name of the pluggable class.
      * @return an instance of the class specified by storm.meta.serialization.delegate
@@ -929,7 +963,8 @@ public class Utils {
             Class delegateClass = Class.forName(delegateClassName);
             delegate = (SerializationDelegate) delegateClass.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException("Failed to construct serialization delegate class " + delegateClassName, e);
+            throw new RuntimeException("Failed to construct serialization delegate class "
+                    + delegateClassName, e);
         }
         delegate.prepare(topoConf);
         return delegate;
@@ -969,6 +1004,7 @@ public class Utils {
 
         /**
          * Private constructor to prevent instantiation.
+         *
          * @throws UnsupportedOperationException if an attempt is made to instantiate this class.
          */
         private GzipUtils() {
@@ -1020,7 +1056,8 @@ public class Utils {
                  ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                 IOUtils.copy(limitedIn, bos);
                 if (gzipIn.read() != -1) {
-                    throw new IOException("Decompression threshold exceeded! Possible security risk or invalid data size.");
+                    throw new IOException("Decompression threshold exceeded! Possible security "
+                            + "risk or invalid data size.");
                 }
                 return bos.toByteArray();
             } catch (IOException e) {
@@ -1051,11 +1088,13 @@ public class Utils {
          * Zstandard magic number 0xFD2FB528.
          */
         private static final int ZSTD_MAGIC_INT = 0xFD2FB528;
-        private static final VarHandle INT_HANDLE = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
+        private static final VarHandle INT_HANDLE = MethodHandles
+                .byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
         private static final int BUFFER_SIZE = 64 * 1024;
 
         /**
          * Private constructor to prevent instantiation.
+         *
          * @throws UnsupportedOperationException if an attempt is made to instantiate this class.
          */
         private ZstdUtils() {
@@ -1091,10 +1130,10 @@ public class Utils {
 
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream(length)) {
                 try (ZstdCompressorOutputStream zstdOut = ZstdCompressorOutputStream.builder()
-                        .setOutputStream(bos)
-                        .setBufferSize(BUFFER_SIZE) // impacts on compression ratio
-                        .setLevel(compressionLevel)
-                        .get()) {
+                             .setOutputStream(bos)
+                             .setBufferSize(BUFFER_SIZE) // impacts on compression ratio
+                             .setLevel(compressionLevel)
+                             .get()) {
                     zstdOut.write(data, offset, length); // Write the slice directly
                     zstdOut.finish();
                 }
@@ -1137,11 +1176,13 @@ public class Utils {
 
             try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
                  ZstdCompressorInputStream zstdIn = new ZstdCompressorInputStream(bis);
-                 BoundedInputStream limitedIn = BoundedInputStream.builder().setInputStream(zstdIn).setMaxCount(maxDecompressedBytes).get();
+                 BoundedInputStream limitedIn = BoundedInputStream.builder().setInputStream(zstdIn)
+                         .setMaxCount(maxDecompressedBytes).get();
                  ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                 IOUtils.copy(limitedIn, bos);
                 if (zstdIn.read() != -1) {
-                    throw new IOException("Decompression threshold exceeded! Possible security risk or invalid data size.");
+                    throw new IOException("Decompression threshold exceeded! Possible security "
+                            + "risk or invalid data size.");
                 }
                 return bos.toByteArray();
             } catch (IOException e) {
@@ -1196,8 +1237,10 @@ public class Utils {
     }
 
     /**
-     * A cheap way to deterministically convert a number to a positive value. When the input is positive, the original value is returned.
-     * When the input number is negative, the returned positive value is the original value bit AND against Integer.MAX_VALUE(0x7fffffff)
+     * A cheap way to deterministically convert a number to a positive value. When the input is
+     * positive, the original value is returned.
+     * When the input number is negative, the returned positive value is the original value bit AND
+     * against Integer.MAX_VALUE(0x7fffffff)
      * which is not its absolutely value.
      *
      * @param number a given number
@@ -1209,6 +1252,7 @@ public class Utils {
 
     /**
      * Get process PID.
+     *
      * @return the pid of this JVM, because Java doesn't provide a real way to do this.
      */
     public static String processPid() {
@@ -1233,7 +1277,8 @@ public class Utils {
     }
 
     /**
-     * Creates a new map with a string value in the map replaced with an equivalently-lengthed string of '#'.  (If the object is not a
+     * Creates a new map with a string value in the map replaced with an equivalently-lengthed
+     * string of '#'. (If the object is not a
      * string to string will be called on it and replaced)
      *
      * @param m   The map that a value will be redacted from
@@ -1257,7 +1302,8 @@ public class Utils {
             try {
                 handleUncaughtException(thrown);
             } catch (Error err) {
-                LOG.error("Received error in thread {}.. terminating server...", thread.getName(), err);
+                LOG.error("Received error in thread {}.. terminating server...", thread.getName(),
+                        err);
                 Runtime.getRuntime().exit(-2);
             }
         };
@@ -1268,7 +1314,8 @@ public class Utils {
             try {
                 handleWorkerUncaughtException(thrown);
             } catch (Error err) {
-                LOG.error("Received error in thread {}.. terminating worker...", thread.getName(), err);
+                LOG.error("Received error in thread {}.. terminating worker...", thread.getName(),
+                        err);
                 Runtime.getRuntime().exit(-2);
             }
         };
@@ -1283,7 +1330,7 @@ public class Utils {
     }
 
     /**
-     * parses the arguments to extract jvm heap memory size in MB.
+     * Parses the arguments to extract jvm heap memory size in MB.
      *
      * @return the value of the JVM heap memory setting (in MB) in a java command.
      */
@@ -1323,7 +1370,8 @@ public class Utils {
     }
 
     public static ClientBlobStore getClientBlobStore(Map<String, Object> conf) {
-        ClientBlobStore store = (ClientBlobStore) ReflectionUtils.newInstance((String) conf.get(Config.CLIENT_BLOBSTORE));
+        ClientBlobStore store = (ClientBlobStore) ReflectionUtils.newInstance((String) conf
+                .get(Config.CLIENT_BLOBSTORE));
         store.prepare(conf);
         return store;
     }
@@ -1364,7 +1412,8 @@ public class Utils {
         Map<String, Object> origTopoConf = normalizeConf(topoConfIn);
         try {
             Map<String, Object> deserTopoConf = normalizeConf(
-                (Map<String, Object>) JSONValue.parseWithException(JSONValue.toJSONString(topoConfIn)));
+                    (Map<String, Object>) JSONValue.parseWithException(JSONValue
+                    .toJSONString(topoConfIn)));
             return isValidConf(origTopoConf, deserTopoConf);
         } catch (ParseException e) {
             LOG.error("Json serialized config could not be deserialized", e);
@@ -1380,26 +1429,29 @@ public class Utils {
         }
         for (Map.Entry<String, Object> entryOnLeft : diff.entriesOnlyOnLeft().entrySet()) {
             LOG.warn("Config property ({}) is found in original config, but missing from the "
-                     + "serialized-deserialized config. This is due to an internal error in "
-                     + "serialization. Name: {} - Value: {}",
-                     entryOnLeft.getKey(), entryOnLeft.getKey(), entryOnLeft.getValue());
+                    + "serialized-deserialized config. This is due to an internal error in "
+                    + "serialization. Name: {} - Value: {}",
+                    entryOnLeft.getKey(), entryOnLeft.getKey(), entryOnLeft.getValue());
         }
         for (Map.Entry<String, Object> entryOnRight : diff.entriesOnlyOnRight().entrySet()) {
             LOG.warn("Config property ({}) is not found in original config, but present in "
-                     + "serialized-deserialized config. This is due to an internal error in "
-                     + "serialization. Name: {} - Value: {}",
-                     entryOnRight.getKey(), entryOnRight.getKey(), entryOnRight.getValue());
+                    + "serialized-deserialized config. This is due to an internal error in "
+                    + "serialization. Name: {} - Value: {}",
+                    entryOnRight.getKey(), entryOnRight.getKey(), entryOnRight.getValue());
         }
-        for (Map.Entry<String, MapDifference.ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
+        for (Map.Entry<String, MapDifference.ValueDifference<Object>> entryDiffers : diff
+                .entriesDiffering().entrySet()) {
             Object leftValue = entryDiffers.getValue().leftValue();
             Object rightValue = entryDiffers.getValue().rightValue();
-            LOG.warn("Config value differs after json serialization. Name: {} - Original Value: {} - DeSer. Value: {}",
-                     entryDiffers.getKey(), leftValue, rightValue);
+            LOG.warn("Config value differs after json serialization. Name: {} - Original Value: "
+                    + "{} - DeSer. Value: {}",
+                    entryDiffers.getKey(), leftValue, rightValue);
         }
         return false;
     }
 
-    public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
+    public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String,
+            Object> topoConf) {
         NimbusClient.Builder builder = NimbusClient.Builder.withConf(topoConf).asUser(asUser);
         try (NimbusClient client = builder.build()) {
             return client.getClient().getTopologyInfoByName(name);
@@ -1429,7 +1481,8 @@ public class Utils {
      *
      * @param topoConf Topology configuration
      */
-    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf) throws InvalidTopologyException, AuthorizationException {
+    public static void validateTopologyBlobStoreMap(Map<String,
+            Object> topoConf) throws InvalidTopologyException, AuthorizationException {
         try (NimbusBlobStore client = new NimbusBlobStore()) {
             client.prepare(topoConf);
             validateTopologyBlobStoreMap(topoConf, client);
@@ -1442,9 +1495,11 @@ public class Utils {
      * @param topoConf Topology configuration
      * @param client   The NimbusBlobStore client. It must call prepare() before being used here.
      */
-    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, NimbusBlobStore client)
-        throws InvalidTopologyException, AuthorizationException {
-        Map<String, Map<String, Object>> blobStoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf,
+            NimbusBlobStore client)
+            throws InvalidTopologyException, AuthorizationException {
+        Map<String, Map<String, Object>> blobStoreMap = (Map<String, Map<String, Object>>) topoConf
+                .get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
             for (String key : blobStoreMap.keySet()) {
 
@@ -1453,7 +1508,8 @@ public class Utils {
                     ObjectReader.getBoolean(blobConf.get("uncompress"), false);
                     ObjectReader.getBoolean(blobConf.get("workerRestart"), false);
                 } catch (IllegalArgumentException e) {
-                    throw new WrappedInvalidTopologyException("Invalid blob conf option: " + e.getMessage());
+                    throw new WrappedInvalidTopologyException("Invalid blob conf option: " + e
+                            .getMessage());
                 }
 
                 // try to get BlobMeta
@@ -1462,7 +1518,8 @@ public class Utils {
                     client.getBlobMeta(key);
                 } catch (KeyNotFoundException keyNotFound) {
                     // wrap KeyNotFoundException in an InvalidTopologyException
-                    throw new WrappedInvalidTopologyException("Key not found: " + keyNotFound.get_msg());
+                    throw new WrappedInvalidTopologyException("Key not found: " + keyNotFound
+                            .get_msg());
                 }
             }
         }
@@ -1471,9 +1528,11 @@ public class Utils {
     /**
      * Validate topology blobstore map.
      */
-    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, BlobStore blobStore)
-        throws InvalidTopologyException, AuthorizationException {
-        Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf,
+            BlobStore blobStore)
+            throws InvalidTopologyException, AuthorizationException {
+        Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf
+                .get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
             Subject subject = ReqContext.context().subject();
             for (String key : blobStoreMap.keySet()) {
@@ -1481,7 +1540,8 @@ public class Utils {
                     blobStore.getBlobMeta(key, subject);
                 } catch (KeyNotFoundException keyNotFound) {
                     // wrap KeyNotFoundException in an InvalidTopologyException
-                    throw new WrappedInvalidTopologyException("Key not found: " + keyNotFound.get_msg());
+                    throw new WrappedInvalidTopologyException("Key not found: " + keyNotFound
+                            .get_msg());
                 }
             }
         }
@@ -1495,12 +1555,13 @@ public class Utils {
     public static String threadDump() {
         final StringBuilder dump = new StringBuilder();
         final java.lang.management.ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
-        final java.lang.management.ThreadInfo[] threadInfos = threadMxBean.getThreadInfo(threadMxBean.getAllThreadIds(), 100);
+        final java.lang.management.ThreadInfo[] threadInfos = threadMxBean
+                .getThreadInfo(threadMxBean.getAllThreadIds(), 100);
         for (Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
             Thread t = entry.getKey();
             ThreadInfo threadInfo = threadMxBean.getThreadInfo(t.getId());
             if (threadInfo == null) {
-                //Thread died before we could get the info, skip
+                // Thread died before we could get the info, skip
                 continue;
             }
             dump.append('"');
@@ -1545,7 +1606,8 @@ public class Utils {
     }
 
     /**
-     * Is the cluster configured to interact with ZooKeeper in a secure way? This only works when called from within Nimbus or a Supervisor
+     * Is the cluster configured to interact with ZooKeeper in a secure way? This only works when
+     * called from within Nimbus or a Supervisor
      * process.
      *
      * @param conf the storm configuration, not the topology configuration
@@ -1553,9 +1615,9 @@ public class Utils {
      */
     public static boolean isZkAuthenticationConfiguredStormServer(Map<String, Object> conf) {
         return null != System.getProperty("java.security.auth.login.config")
-               || (conf != null
-                   && conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME) != null
-                   && !((String) conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME)).isEmpty());
+                || (conf != null
+                && conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME) != null
+                && !((String) conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME)).isEmpty());
     }
 
     public static byte[] toCompressedJsonConf(Map<String, Object> topoConf) {
@@ -1575,7 +1637,7 @@ public class Utils {
     }
 
     /**
-     * a or b the first one that is not null.
+     * A or b the first one that is not null.
      *
      * @param a something
      * @param b something else
@@ -1601,7 +1663,8 @@ public class Utils {
     /**
      * Fills up chunks out of a collection (given a maximum amount of chunks).
      *
-     * <p>i.e. partitionFixed(5, [1,2,3]) -> [[1,2,3]] partitionFixed(5, [1..9]) -> [[1,2], [3,4], [5,6], [7,8], [9]] partitionFixed(3,
+     * <p>i.e. partitionFixed(5, [1,2,3]) -> [[1,2,3]] partitionFixed(5, [1..9]) -> [[1,2], [3,4],
+     * [5,6], [7,8], [9]] partitionFixed(3,
      * [1..10]) -> [[1,2,3,4], [5,6,7], [8,9,10]]
      *
      * @param maxNumChunks the maximum number of chunks to return
@@ -1620,7 +1683,6 @@ public class Utils {
         // Keys sorted in descending order
         List<Integer> sortedKeys = new ArrayList<Integer>(parts.keySet());
         Collections.sort(sortedKeys, Collections.reverseOrder());
-
 
         Iterator<T> it = coll.iterator();
         for (Integer chunkSize : sortedKeys) {
@@ -1656,7 +1718,8 @@ public class Utils {
     }
 
     /**
-     * Gets an available port. Consider if it is possible to pass port 0 to the server instead of using this method, since there is no
+     * Gets an available port. Consider if it is possible to pass port 0 to the server instead of
+     * using this method, since there is no
      * guarantee that the port returned by this method will remain free.
      *
      * @return The preferred port if available, or a random available port
@@ -1736,8 +1799,8 @@ public class Utils {
     public static StormTopology addVersions(StormTopology topology) {
         String stormVersion = VersionInfo.getVersion();
         if (stormVersion != null
-            && !"Unknown".equalsIgnoreCase(stormVersion)
-            && !topology.is_set_storm_version()) {
+                && !"Unknown".equalsIgnoreCase(stormVersion)
+                && !topology.is_set_storm_version()) {
             topology.set_storm_version(stormVersion);
         }
 
@@ -1749,19 +1812,24 @@ public class Utils {
     }
 
     /**
-     * Get a map of version to classpath from the conf Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP
+     * Get a map of version to classpath from the conf
+     * Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP.
      *
      * @param conf      what to read it out of
-     * @param currentClassPath the current classpath for this version of storm (not included in the conf, but returned by this)
+     * @param currentClassPath the current classpath for this version of storm (not included in the
+     *     conf, but returned by this)
      * @return the map
      */
     public static NavigableMap<SimpleVersion, List<String>> getConfiguredClasspathVersions(Map<String, Object> conf,
                                                                                            List<String> currentClassPath) {
         TreeMap<SimpleVersion, List<String>> ret = new TreeMap<>();
         Map<String, String> fromConf =
-            (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections.emptyMap());
+                (Map<String, String>) conf
+                .getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections
+                .emptyMap());
         for (Map.Entry<String, String> entry : fromConf.entrySet()) {
-            ret.put(new SimpleVersion(entry.getKey()), Arrays.asList(entry.getValue().split(File.pathSeparator)));
+            ret.put(new SimpleVersion(entry.getKey()), Arrays.asList(entry.getValue()
+                    .split(File.pathSeparator)));
         }
         ret.put(VersionInfo.OUR_VERSION, currentClassPath);
         return ret;
@@ -1769,19 +1837,24 @@ public class Utils {
 
     /**
      * Get a mapping of the configured supported versions of storm to their actual versions.
+     *
      * @param conf what to read the configuration out of.
      * @return the map.
      */
-    public static NavigableMap<String, IVersionInfo> getAlternativeVersionsMap(Map<String, Object> conf) {
+    public static NavigableMap<String, IVersionInfo> getAlternativeVersionsMap(Map<String,
+            Object> conf) {
         TreeMap<String, IVersionInfo> ret = new TreeMap<>();
         Map<String, String> fromConf =
-            (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections.emptyMap());
+                (Map<String, String>) conf
+                .getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections
+                .emptyMap());
         for (Map.Entry<String, String> entry : fromConf.entrySet()) {
             IVersionInfo version = VersionInfo.getFromClasspath(entry.getValue());
             if (version != null) {
                 ret.put(entry.getKey(), version);
             } else {
-                LOG.error("Could not find the real version of {} from CP {}", entry.getKey(), entry.getValue());
+                LOG.error("Could not find the real version of {} from CP {}", entry.getKey(), entry
+                        .getValue());
                 ret.put(entry.getKey(), new IVersionInfo() {
                     @Override
                     public String getVersion() {
@@ -1819,15 +1892,17 @@ public class Utils {
     }
 
     /**
-     * Get a map of version to worker main from the conf Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP
+     * Get a map of version to worker main from the conf Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP.
      *
      * @param conf what to read it out of
      * @return the map
      */
-    public static NavigableMap<SimpleVersion, String> getConfiguredWorkerMainVersions(Map<String, Object> conf) {
+    public static NavigableMap<SimpleVersion, String> getConfiguredWorkerMainVersions(Map<String,
+            Object> conf) {
         TreeMap<SimpleVersion, String> ret = new TreeMap<>();
         Map<String, String> fromConf =
-            (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP, Collections.emptyMap());
+                (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP,
+                Collections.emptyMap());
         for (Map.Entry<String, String> entry : fromConf.entrySet()) {
             ret.put(new SimpleVersion(entry.getKey()), entry.getValue());
         }
@@ -1837,7 +1912,8 @@ public class Utils {
     }
 
     /**
-     * Get a map of version to worker log writer from the conf Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP
+     * Get a map of version to worker log writer from the conf
+     * Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP.
      *
      * @param conf what to read it out of
      * @return the map
@@ -1845,7 +1921,9 @@ public class Utils {
     public static NavigableMap<SimpleVersion, String> getConfiguredWorkerLogWriterVersions(Map<String, Object> conf) {
         TreeMap<SimpleVersion, String> ret = new TreeMap<>();
         Map<String, String> fromConf =
-            (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP, Collections.emptyMap());
+                (Map<String, String>) conf
+                .getOrDefault(Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP, Collections
+                .emptyMap());
         for (Map.Entry<String, String> entry : fromConf.entrySet()) {
             ret.put(new SimpleVersion(entry.getKey()), entry.getValue());
         }
@@ -1854,25 +1932,30 @@ public class Utils {
         return ret;
     }
 
-    public static <T> T getCompatibleVersion(NavigableMap<SimpleVersion, T> versionedMap, SimpleVersion desiredVersion, String what,
+    public static <T> T getCompatibleVersion(NavigableMap<SimpleVersion, T> versionedMap,
+            SimpleVersion desiredVersion, String what,
                                              T defaultValue) {
         Entry<SimpleVersion, T> ret = versionedMap.ceilingEntry(desiredVersion);
         if (ret == null || ret.getKey().getMajor() != desiredVersion.getMajor()) {
-            //Could not find a "fully" compatible version.  Look to see if there is a possibly compatible version right below it
+            // Could not find a "fully" compatible version. Look to see if there is a possibly
+            // compatible version right below it
             ret = versionedMap.floorEntry(desiredVersion);
             if (ret == null || ret.getKey().getMajor() != desiredVersion.getMajor()) {
                 if (defaultValue != null) {
-                    LOG.warn("Could not find any compatible {} falling back to using {}", what, defaultValue);
+                    LOG.warn("Could not find any compatible {} falling back to using {}", what,
+                            defaultValue);
                 }
                 return defaultValue;
             }
-            LOG.warn("Could not find a higer compatible version for {} {}, using {} instead", what, desiredVersion, ret.getKey());
+            LOG.warn("Could not find a higer compatible version for {} {}, using {} instead", what,
+                    desiredVersion, ret.getKey());
         }
         return ret.getValue();
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> readConfIgnoreNotFound(Yaml yaml, File f) throws IOException {
+    private static Map<String, Object> readConfIgnoreNotFound(Yaml yaml,
+        File f) throws IOException {
         Map<String, Object> ret = null;
         if (f.exists()) {
             try (FileReader fr = new FileReader(f)) {
@@ -1882,7 +1965,8 @@ public class Utils {
         return ret;
     }
 
-    public static Map<String, Object> getConfigFromClasspath(List<String> cp, Map<String, Object> conf) throws IOException {
+    public static Map<String, Object> getConfigFromClasspath(List<String> cp, Map<String,
+            Object> conf) throws IOException {
         if (cp == null || cp.isEmpty()) {
             return conf;
         }
@@ -1904,17 +1988,20 @@ public class Utils {
                     dir = new File(".");
                 }
 
-                File[] jarFiles = dir.listFiles((dir1, name) -> name.endsWith(".jar") || name.endsWith(".JAR"));
+                File[] jarFiles = dir.listFiles((dir1, name) -> name.endsWith(".jar") || name
+                        .endsWith(".JAR"));
 
                 // Quoting Javadoc in File.listFiles(FilenameFilter filter):
-                // Returns {@code null} if this abstract pathname does not denote a directory, or if an I/O error occurs.
+                // Returns {@code null} if this abstract pathname does not denote a directory, or if
+                // an I/O error occurs.
                 // Both things are not expected and should not happen.
                 if (jarFiles == null) {
                     throw new IOException("Fail to list jar files in directory: " + dir);
                 }
 
                 for (File jarFile : jarFiles) {
-                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, jarFile).readJar();
+                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf,
+                            stormConf, jarFile).readJar();
                     defaultsConf = jarConfigReader.getDefaultsConf();
                     stormConf = jarConfigReader.getStormConf();
                 }
@@ -1931,11 +2018,13 @@ public class Utils {
                 // no wildcard, file
                 String fileName = f.getName();
                 if (fileName.endsWith(".zip") || fileName.endsWith(".ZIP")) {
-                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, f).readZip();
+                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf,
+                            stormConf, f).readZip();
                     defaultsConf = jarConfigReader.getDefaultsConf();
                     stormConf = jarConfigReader.getStormConf();
                 } else if (fileName.endsWith(".jar") || fileName.endsWith(".JAR")) {
-                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, f).readJar();
+                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf,
+                            stormConf, f).readJar();
                     defaultsConf = jarConfigReader.getDefaultsConf();
                     stormConf = jarConfigReader.getStormConf();
                 }
@@ -1953,7 +2042,8 @@ public class Utils {
         return LOCALHOST_ADDRESSES.contains(address);
     }
 
-    public static <K, V> Map<K, V> merge(Map<? extends K, ? extends V> first, Map<? extends K, ? extends V> other) {
+    public static <K, V> Map<K, V> merge(Map<? extends K, ? extends V> first, Map<? extends K,
+            ? extends V> other) {
         Map<K, V> ret = new HashMap<>(first);
         if (other != null) {
             ret.putAll(other);
@@ -1965,7 +2055,8 @@ public class Utils {
         Set<Integer> ids = srcMap.keySet();
         Integer largestId = ids.stream().max(Integer::compareTo).get();
         int end = largestId - start;
-        ArrayList<V> result = new ArrayList<>(Collections.nCopies(end + 1, null)); // creates array[largestId+1] filled with nulls
+        ArrayList<V> result = new ArrayList<>(Collections.nCopies(end + 1,
+                null)); // creates array[largestId+1] filled with nulls
         for (Map.Entry<Integer, V> entry : srcMap.entrySet()) {
             int id = entry.getKey();
             if (id < start) {
@@ -1984,7 +2075,7 @@ public class Utils {
             try {
                 FileUtils.forceDelete(new File(path));
             } catch (FileNotFoundException ignored) {
-                //ignore
+                // ignore
             }
         }
     }
@@ -2017,9 +2108,11 @@ public class Utils {
      * @param key Key for the blob.
      */
     public static boolean isValidKey(String key) {
-        if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !BLOB_KEY_PATTERN.matcher(key).matches()) {
-            LOG.error("'{}' does not appear to be valid. It must match {}. And it can't be \".\", \"..\", null or empty string.", key,
-                BLOB_KEY_PATTERN);
+        if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !BLOB_KEY_PATTERN
+                .matcher(key).matches()) {
+            LOG.error("'{}' does not appear to be valid. It must match {}. And it can't be \".\", "
+                    + "\"..\", null or empty string.", key,
+                    BLOB_KEY_PATTERN);
             return false;
         }
         return true;
@@ -2027,18 +2120,21 @@ public class Utils {
 
     /**
      * Validates topology name.
+     *
      * @param name the topology name
      * @throws IllegalArgumentException if the topology name is not valid
      */
     public static void validateTopologyName(String name) throws IllegalArgumentException {
         if (name == null || !TOPOLOGY_NAME_REGEX.matcher(name).matches()) {
-            String message = "Topology name '" + name + "' is not valid. It can't be null and it must match " + TOPOLOGY_NAME_REGEX;
+            String message = "Topology name '" + name
+                    + "' is not valid. It can't be null and it must match " + TOPOLOGY_NAME_REGEX;
             throw new IllegalArgumentException(message);
         }
     }
 
     /**
-     * A thread that can answer if it is sleeping in the case of simulated time. This class is not useful when simulated time is not being
+     * A thread that can answer if it is sleeping in the case of simulated time. This class is not
+     * useful when simulated time is not being
      * used.
      */
     public static class SmartThread extends Thread {
@@ -2069,7 +2165,8 @@ public class Utils {
         private Map<String, Object> stormConf;
         private File file;
 
-        JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, File file) {
+        JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf,
+                File file) {
             this.yaml = yaml;
             this.defaultsConf = defaultsConf;
             this.stormConf = stormConf;
@@ -2104,13 +2201,15 @@ public class Utils {
                 ZipEntry entry = zipEnums.nextElement();
                 if (!entry.isDirectory()) {
                     if (defaultsConf == null && entry.getName().equals("defaults.yaml")) {
-                        try (InputStreamReader isr = new InputStreamReader(zipFile.getInputStream(entry))) {
+                        try (InputStreamReader isr = new InputStreamReader(zipFile
+                                .getInputStream(entry))) {
                             defaultsConf = (Map<String, Object>) yaml.load(isr);
                         }
                     }
 
                     if (stormConf == null && entry.getName().equals("storm.yaml")) {
-                        try (InputStreamReader isr = new InputStreamReader(zipFile.getInputStream(entry))) {
+                        try (InputStreamReader isr = new InputStreamReader(zipFile
+                                .getInputStream(entry))) {
                             stormConf = (Map<String, Object>) yaml.load(isr);
                         }
                     }
@@ -2120,7 +2219,8 @@ public class Utils {
     }
 
     /**
-     * Create a map of forward edges for bolts in a topology. Note that spouts can be source but not a target in
+     * Create a map of forward edges for bolts in a topology. Note that spouts can be source but not
+     * a target in
      * the edge. The mapping contains ids of spouts and bolts.
      *
      * @param topology StormTopology to examine.
@@ -2133,7 +2233,8 @@ public class Utils {
             topology.get_bolts().entrySet().forEach(entry -> {
                 if (!Utils.isSystemId(entry.getKey())) {
                     entry.getValue().get_common().get_inputs().forEach((k, v) -> {
-                        edgesOut.computeIfAbsent(k.get_componentId(), x -> new HashSet<>()).add(entry.getKey());
+                        edgesOut.computeIfAbsent(k.get_componentId(), x -> new HashSet<>())
+                                .add(entry.getKey());
                     });
                 }
             });
@@ -2142,7 +2243,8 @@ public class Utils {
     }
 
     /**
-     * Use recursive descent to detect cycles. This is a Depth First recursion. Component Cycle is recorded when encountered.
+     * Use recursive descent to detect cycles. This is a Depth First recursion. Component Cycle is
+     * recorded when encountered.
      * In addition, the last link in the cycle is removed to avoid re-detecting same cycle/subcycle.
      *
      * @param stack used for recursion.
@@ -2167,7 +2269,8 @@ public class Utils {
                 List<String> possibleCycle = new ArrayList<>();
                 if (compId1.equals(compId2)) {
                     possibleCycle.add(compId2);
-                } else if (edgesOut.get(compId2) != null && edgesOut.get(compId2).contains(compId1)) {
+                } else if (edgesOut.get(compId2) != null && edgesOut.get(compId2)
+                        .contains(compId1)) {
                     possibleCycle.addAll(Arrays.asList(compId1, compId2));
                 } else {
                     List<String> tmp = Collections.list(stack.elements());
@@ -2211,12 +2314,13 @@ public class Utils {
         });
 
         if (topology.get_spouts_size() == 0) {
-            LOG.error("Topology {} does not contain any spouts, cannot traverse graph to determine cycles", topoId);
+            LOG.error("Topology {} does not contain any spouts, cannot traverse graph to "
+                    + "determine cycles", topoId);
             return ret;
         }
 
         Set<String> unreachable = new HashSet<>(edgesOut.keySet());
-        topology.get_spouts().forEach((spoutId, spout)  -> {
+        topology.get_spouts().forEach((spoutId, spout) -> {
             Stack<String> dfsStack = new Stack<>();
             dfsStack.push(spoutId);
             Set<String> seen = new HashSet<>();
@@ -2227,23 +2331,28 @@ public class Utils {
 
         // warning about unreachable components
         if (!unreachable.isEmpty()) {
-            LOG.warn("Topology {} contains unreachable components \"{}\"", topoId, String.join(",", unreachable));
+            LOG.warn("Topology {} contains unreachable components \"{}\"", topoId, String.join(",",
+                    unreachable));
         }
         return ret;
     }
 
     /**
-     * Validate that the topology is cycle free. If not, then throw an InvalidTopologyException describing the cycle(s).
+     * Validate that the topology is cycle free. If not, then throw an InvalidTopologyException
+     * describing the cycle(s).
      *
      * @param topology StormTopology instance to examine.
      * @param name Name of the topology, used in exception error message.
-     * @throws InvalidTopologyException if there are cycles, with message describing the cycles encountered.
+     * @throws InvalidTopologyException if there are cycles, with message describing the cycles
+     *     encountered.
      */
-    public static void validateCycleFree(StormTopology topology, String name) throws InvalidTopologyException {
+    public static void validateCycleFree(StormTopology topology,
+            String name) throws InvalidTopologyException {
         List<List<String>> cycles = Utils.findComponentCycles(topology, name);
         if (!cycles.isEmpty()) {
             String err = String.format("Topology %s contains cycles in components \"%s\"", name,
-                    cycles.stream().map(x -> String.join(",", x)).collect(Collectors.joining(" ; ")));
+                    cycles.stream().map(x -> String.join(",", x)).collect(Collectors
+                    .joining(" ; ")));
             throw new WrappedInvalidTopologyException(err);
         }
     }

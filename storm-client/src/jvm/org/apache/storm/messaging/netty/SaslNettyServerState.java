@@ -16,5 +16,6 @@ import org.apache.storm.shade.io.netty.util.AttributeKey;
 
 final class SaslNettyServerState {
 
-    public static final AttributeKey<SaslNettyServer> SASL_NETTY_SERVER = AttributeKey.valueOf("sasl.netty.server");
+    public static final AttributeKey<SaslNettyServer> SASL_NETTY_SERVER = AttributeKey
+            .valueOf("sasl.netty.server");
 }

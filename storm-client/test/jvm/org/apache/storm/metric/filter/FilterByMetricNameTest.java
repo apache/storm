@@ -12,6 +12,9 @@
 
 package org.apache.storm.metric.filter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.metric.api.IMetricsConsumer;
@@ -19,9 +22,6 @@ import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.shade.com.google.common.collect.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FilterByMetricNameTest {
     @BeforeEach
@@ -62,7 +62,8 @@ public class FilterByMetricNameTest {
     @Test
     public void testBothWhitelistAndBlacklistAreSpecified() {
         assertThrows(IllegalArgumentException.class, () -> {
-            List<String> whitelistPattern = Lists.newArrayList("^metric\\.", "test\\.hello\\.[0-9]+");
+            List<String> whitelistPattern = Lists.newArrayList("^metric\\.",
+                    "test\\.hello\\.[0-9]+");
             List<String> blacklistPattern = Lists.newArrayList("^__", "test\\.");
             new FilterByMetricName(whitelistPattern, blacklistPattern);
         });
@@ -82,10 +83,12 @@ public class FilterByMetricNameTest {
         assertTests(sut, testMetricNamesAndExpected);
     }
 
-    private void assertTests(FilterByMetricName sut, Map<String, Boolean> testMetricNamesAndExpected) {
+    private void assertTests(FilterByMetricName sut, Map<String,
+            Boolean> testMetricNamesAndExpected) {
         for (Map.Entry<String, Boolean> testEntry : testMetricNamesAndExpected.entrySet()) {
-            assertEquals(testEntry.getValue(), sut.apply(new IMetricsConsumer.DataPoint(testEntry.getKey(), 1)),
-                "actual filter result is not same: " + testEntry.getKey());
+            assertEquals(testEntry.getValue(), sut.apply(new IMetricsConsumer.DataPoint(testEntry
+                    .getKey(), 1)),
+                    "actual filter result is not same: " + testEntry.getKey());
         }
     }
 }

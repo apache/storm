@@ -19,7 +19,6 @@ import org.apache.storm.trident.state.map.ReadOnlyMapState;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
 
-
 public class MapGet extends BaseQueryFunction<ReadOnlyMapState, Object> {
     @Override
     public List<Object> batchRetrieve(ReadOnlyMapState map, List<TridentTuple> keys) {

@@ -30,7 +30,8 @@ import java.util.Map;
 public interface IAdvancedFSOps {
 
     /**
-     * Set directory permissions to (OWNER)RWX (GROUP)R-X (OTHER)--- On some systems that do not support this, it may become a noop.
+     * Set directory permissions to (OWNER)RWX (GROUP)R-X (OTHER)--- On some systems that do not
+     * support this, it may become a noop.
      *
      * @param dir the directory to change permissions on
      * @throws IOException on any error
@@ -46,7 +47,6 @@ public interface IAdvancedFSOps {
      */
     void moveDirectoryPreferAtomic(File fromDir, File toDir) throws IOException;
 
-
     /**
      * Moves a file to a given destination.
      *
@@ -58,6 +58,7 @@ public interface IAdvancedFSOps {
 
     /**
      * Check whether supports atomic directory move.
+     *
      * @return true if an atomic directory move works, else false
      */
     boolean supportsAtomicDirectoryMove();
@@ -85,7 +86,8 @@ public interface IAdvancedFSOps {
      *
      * @param path      what to delete
      * @param user      who to delete it as if doing it as someone else is supported
-     * @param logPrefix if an external process needs to be launched to delete the object what prefix to include in the logs
+     * @param logPrefix if an external process needs to be launched to delete the object what prefix
+     *     to include in the logs
      * @throws IOException on any error.
      */
     void deleteIfExists(File path, String user, String logPrefix) throws IOException;
@@ -125,7 +127,8 @@ public interface IAdvancedFSOps {
      *
      * @throws IOException on any error
      */
-    boolean doRequiredTopoFilesExist(Map<String, Object> conf, String topologyId) throws IOException;
+    boolean doRequiredTopoFilesExist(Map<String, Object> conf,
+            String topologyId) throws IOException;
 
     /**
      * Makes a directory, including any necessary but nonexistent parent directories.
@@ -152,7 +155,8 @@ public interface IAdvancedFSOps {
      *
      * @throws IOException on any error
      */
-    DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException;
+    DirectoryStream<Path> newDirectoryStream(Path dir,
+            DirectoryStream.Filter<? super Path> filter) throws IOException;
 
     /**
      * List the contents of a directory.

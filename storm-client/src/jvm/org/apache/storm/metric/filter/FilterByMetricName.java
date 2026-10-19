@@ -46,12 +46,13 @@ public class FilterByMetricName implements MetricsFilter {
         if (this.whitelistPattern.isEmpty() && this.blacklistPattern.isEmpty()) {
             noneSpecified = true;
         } else if (!this.whitelistPattern.isEmpty() && !this.blacklistPattern.isEmpty()) {
-            throw new IllegalArgumentException("You have to specify either includes or excludes, or none.");
+            throw new IllegalArgumentException("You have to specify either includes or excludes, "
+                    + "or none.");
         }
 
         filterCache = CacheBuilder.newBuilder()
-                                  .maximumSize(1000)
-                                  .build();
+                .maximumSize(1000)
+                .build();
     }
 
     @Override
@@ -73,7 +74,8 @@ public class FilterByMetricName implements MetricsFilter {
     }
 
     private ArrayList<Pattern> convertPatternStringsToPatternInstances(List<String> patterns) {
-        return Lists.newArrayList(Iterators.transform(patterns.iterator(), s -> Pattern.compile(s)));
+        return Lists.newArrayList(Iterators.transform(patterns.iterator(), s -> Pattern
+                .compile(s)));
     }
 
     private boolean isFilteredIn(String metricName) {
@@ -86,7 +88,8 @@ public class FilterByMetricName implements MetricsFilter {
         throw new IllegalStateException("Shouldn't reach here");
     }
 
-    private boolean checkMatching(String metricName, List<Pattern> patterns, boolean valueWhenMatched) {
+    private boolean checkMatching(String metricName, List<Pattern> patterns,
+            boolean valueWhenMatched) {
         for (Pattern pattern : patterns) {
             if (pattern.matcher(metricName).find()) {
                 return valueWhenMatched;

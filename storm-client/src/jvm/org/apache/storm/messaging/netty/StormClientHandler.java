@@ -38,7 +38,7 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object message) throws Exception {
-        //examine the response message from server
+        // examine the response message from server
         if (message instanceof ControlMessage) {
             ControlMessage msg = (ControlMessage) message;
             if (msg == ControlMessage.FAILURE_RESPONSE) {
@@ -51,7 +51,7 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
                     try {
                         remoteBpStatus[bpTask].set(true);
                     } catch (ArrayIndexOutOfBoundsException e) {
-                        //Just in case we get something we are confused about
+                        // Just in case we get something we are confused about
                         // we can continue processing the rest of the tasks
                         LOG.error("BP index out of bounds {}", e);
                     }
@@ -62,7 +62,7 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
                     try {
                         remoteBpStatus[bpTask].set(false);
                     } catch (ArrayIndexOutOfBoundsException e) {
-                        //Just in case we get something we are confused about
+                        // Just in case we get something we are confused about
                         // we can continue processing the rest of the tasks
                         LOG.error("BP index out of bounds {}", e);
                     }
@@ -70,27 +70,32 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
             }
             LOG.debug("Received BackPressure status update : {}", status);
         } else if (message instanceof List) {
-            //This should be the load metrics. 
-            //There will usually only be one message, but if there are multiple we only process the latest one.
+            // This should be the load metrics. 
+            // There will usually only be one message, but if there are multiple we only process the
+            // latest one.
             List<TaskMessage> list = (List<TaskMessage>) message;
             if (list.size() < 1) {
-                throw new RuntimeException("Didn't see enough load metrics (" + client.getDstAddress() + ") " + list);
+                throw new RuntimeException("Didn't see enough load metrics (" + client
+                        .getDstAddress() + ") " + list);
             }
             TaskMessage tm = list.get(list.size() - 1);
             if (tm.task() != Server.LOAD_METRICS_TASK_ID) {
-                throw new RuntimeException("Metrics messages are sent to the system task (" + client.getDstAddress() + ") " + tm);
+                throw new RuntimeException("Metrics messages are sent to the system task (" + client
+                        .getDstAddress() + ") " + tm);
             }
             List<Object> metrics = des.deserialize(tm.message());
             if (metrics.size() < 1) {
-                throw new RuntimeException("No metrics data in the metrics message (" + client.getDstAddress() + ") " + metrics);
+                throw new RuntimeException("No metrics data in the metrics message (" + client
+                        .getDstAddress() + ") " + metrics);
             }
             if (!(metrics.get(0) instanceof Map)) {
-                throw new RuntimeException("The metrics did not have a map in the first slot (" + client.getDstAddress() + ") " + metrics);
+                throw new RuntimeException("The metrics did not have a map in the first slot ("
+                        + client.getDstAddress() + ") " + metrics);
             }
             client.setLoadMetrics((Map<Integer, Double>) metrics.get(0));
         } else {
             throw new RuntimeException("Don't know how to handle a message of type "
-                                       + message + " (" + client.getDstAddress() + ")");
+                    + message + " (" + client.getDstAddress() + ")");
         }
     }
 

@@ -15,11 +15,14 @@ package org.apache.storm.trident;
 /**
  * This enum defines how the output fields of JOIN is constructed.
  *
- * <p>If user specifies COMPACT while calling JOIN, the tuples emitted from the join will contain: First, the list of
- * join fields. Please note that joining fields are exposed only once from emitted tuples. Next, a list of all non-join
+ * <p>If user specifies COMPACT while calling JOIN, the tuples emitted from the join will contain:
+ * First, the list of
+ * join fields. Please note that joining fields are exposed only once from emitted tuples. Next, a
+ * list of all non-join
  * fields from all streams, in order of how the streams were passed to the join method.
  *
- * <p>If user specifies PRESERVE while calling JOIN, the tuples emitted from the join will contain: a list of all fields
+ * <p>If user specifies PRESERVE while calling JOIN, the tuples emitted from the join will contain:
+ * a list of all fields
  * from all streams, in order of how the streams were passed to the join method.
  */
 public enum JoinOutFieldsMode {

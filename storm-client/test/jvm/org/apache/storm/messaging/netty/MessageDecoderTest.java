@@ -12,14 +12,6 @@
 
 package org.apache.storm.messaging.netty;
 
-import java.util.List;
-import org.apache.storm.messaging.TaskMessage;
-import org.apache.storm.serialization.KryoValuesDeserializer;
-import org.apache.storm.shade.io.netty.buffer.ByteBuf;
-import org.apache.storm.shade.io.netty.buffer.Unpooled;
-import org.apache.storm.shade.io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,6 +23,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import org.apache.storm.messaging.TaskMessage;
+import org.apache.storm.serialization.KryoValuesDeserializer;
+import org.apache.storm.shade.io.netty.buffer.ByteBuf;
+import org.apache.storm.shade.io.netty.buffer.Unpooled;
+import org.apache.storm.shade.io.netty.channel.embedded.EmbeddedChannel;
+import org.junit.jupiter.api.Test;
+
 public class MessageDecoderTest {
 
     private static final short TASK_ID = 1;
@@ -39,7 +39,7 @@ public class MessageDecoderTest {
     private static ByteBuf backPressureFrame() {
         ByteBuf buf = Unpooled.buffer();
         buf.writeShort(BackPressureStatus.IDENTIFIER);
-        byte[] payload = { 1, 2, 3, 4 };
+        byte[] payload =  {1, 2, 3, 4};
         buf.writeInt(payload.length);
         buf.writeBytes(payload);
         return buf;
@@ -116,7 +116,7 @@ public class MessageDecoderTest {
         channel.writeInbound(request);
         assertSame(ControlMessage.SASL_TOKEN_MESSAGE_REQUEST, channel.readInbound());
 
-        byte[] token = { 9, 8, 7 };
+        byte[] token =  {9, 8, 7};
         channel.writeInbound(saslTokenFrame(token));
 
         SaslMessageToken decoded = channel.readInbound();
@@ -142,7 +142,7 @@ public class MessageDecoderTest {
     public void taskMessageFrameIsDecodedAfterAuthentication() {
         KryoValuesDeserializer deser = mock(KryoValuesDeserializer.class);
         EmbeddedChannel channel = authenticatedChannel(deser);
-        byte[] payload = { 4, 5, 6 };
+        byte[] payload =  {4, 5, 6};
 
         channel.writeInbound(taskMessageFrame(payload));
 

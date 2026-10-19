@@ -32,10 +32,11 @@ import org.slf4j.LoggerFactory;
 public class SaslNettyClient {
 
     private static final Logger LOG = LoggerFactory
-        .getLogger(SaslNettyClient.class);
+            .getLogger(SaslNettyClient.class);
 
     /**
-     * Used to respond to server's counterpart, SaslServer with SASL tokens represented as byte arrays.
+     * Used to respond to server's counterpart, SaslServer with SASL tokens represented as byte
+     * arrays.
      */
     private SaslClient saslClient;
 
@@ -45,16 +46,16 @@ public class SaslNettyClient {
     public SaslNettyClient(String topologyName, byte[] token) {
         try {
             LOG.debug("SaslNettyClient: Creating SASL {} client to authenticate to server ",
-                      SaslUtils.AUTH_DIGEST_MD5);
+                    SaslUtils.AUTH_DIGEST_MD5);
 
             saslClient = Sasl.createSaslClient(
-                new String[]{ SaslUtils.AUTH_DIGEST_MD5 }, null, null,
-                SaslUtils.DEFAULT_REALM, SaslUtils.getSaslProps(),
-                new SaslClientCallbackHandler(topologyName, token));
+                    new String[] {SaslUtils.AUTH_DIGEST_MD5}, null, null,
+                    SaslUtils.DEFAULT_REALM, SaslUtils.getSaslProps(),
+                    new SaslClientCallbackHandler(topologyName, token));
 
         } catch (IOException e) {
             LOG.error("SaslNettyClient: Could not obtain topology token for Netty "
-                      + "Client to use to authenticate with a Netty Server.");
+                    + "Client to use to authenticate with a Netty Server.");
             saslClient = null;
         }
     }
@@ -74,14 +75,15 @@ public class SaslNettyClient {
             return saslClient.evaluateChallenge(saslTokenMessage.getSaslToken());
         } catch (SaslException e) {
             LOG.error(
-                "saslResponse: Failed to respond to SASL server's token:",
-                e);
+                    "saslResponse: Failed to respond to SASL server's token:",
+                    e);
             return null;
         }
     }
 
     /**
-     * Implementation of javax.security.auth.callback.CallbackHandler that works with Storm topology tokens.
+     * Implementation of javax.security.auth.callback.CallbackHandler that works with Storm topology
+     * tokens.
      */
     private static class SaslClientCallbackHandler implements CallbackHandler {
         /**
@@ -98,18 +100,19 @@ public class SaslNettyClient {
          */
         SaslClientCallbackHandler(String topologyToken, byte[] token) {
             this.userName = SaslUtils
-                .encodeIdentifier(topologyToken.getBytes());
+                    .encodeIdentifier(topologyToken.getBytes());
             this.userPassword = SaslUtils.encodePassword(token);
         }
 
         /**
          * Implementation used to respond to SASL tokens from server.
          *
-         * @param callbacks objects that indicate what credential information the server's SaslServer requires from the client.
+         * @param callbacks objects that indicate what credential information the server's
+         *     SaslServer requires from the client.
          */
         @Override
         public void handle(Callback[] callbacks)
-            throws UnsupportedCallbackException {
+                throws UnsupportedCallbackException {
             NameCallback nc = null;
             PasswordCallback pc = null;
             RealmCallback rc = null;
@@ -124,12 +127,12 @@ public class SaslNettyClient {
                     rc = (RealmCallback) callback;
                 } else {
                     throw new UnsupportedCallbackException(callback,
-                                                           "handle: Unrecognized SASL client callback");
+                            "handle: Unrecognized SASL client callback");
                 }
             }
             if (nc != null) {
                 LOG.debug("handle: SASL client callback: setting username: {}",
-                          userName);
+                        userName);
                 nc.setName(userName);
             }
             if (pc != null) {
@@ -138,7 +141,7 @@ public class SaslNettyClient {
             }
             if (rc != null) {
                 LOG.debug("handle: SASL client callback: setting realm: {}",
-                          rc.getDefaultText());
+                        rc.getDefaultText());
                 rc.setText(rc.getDefaultText());
             }
         }

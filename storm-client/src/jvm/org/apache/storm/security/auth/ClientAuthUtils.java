@@ -74,7 +74,7 @@ public class ClientAuthUtils {
     public static Configuration getConfiguration(Map<String, Object> topoConf) {
         Configuration loginConf = null;
 
-        //find login file configuration from Storm configuration
+        // find login file configuration from Storm configuration
         String loginConfigurationFile = getJaasConf(topoConf);
         if ((loginConfigurationFile != null) && (loginConfigurationFile.length() > 0)) {
             File configFile = new File(loginConfigurationFile);
@@ -83,7 +83,8 @@ public class ClientAuthUtils {
             }
             try {
                 URI configUri = configFile.toURI();
-                loginConf = Configuration.getInstance("JavaLoginConfig", new URIParameter(configUri));
+                loginConf = Configuration.getInstance("JavaLoginConfig",
+                        new URIParameter(configUri));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -105,7 +106,8 @@ public class ClientAuthUtils {
             return null;
         }
 
-        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(section);
+        AppConfigurationEntry[] configurationEntries = configuration
+                .getAppConfigurationEntry(section);
         if (configurationEntries == null) {
             String errorMessage = "Could not find a '" + section + "' entry in this configuration.";
             throw new IOException(errorMessage);
@@ -123,7 +125,8 @@ public class ClientAuthUtils {
     public static SortedMap<String, ?> pullConfig(Map<String, Object> topoConf,
                                                   String section) throws IOException {
         Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
-        AppConfigurationEntry[] configurationEntries = ClientAuthUtils.getEntries(configuration, section);
+        AppConfigurationEntry[] configurationEntries = ClientAuthUtils.getEntries(configuration,
+                section);
 
         if (configurationEntries == null) {
             return null;
@@ -149,13 +152,15 @@ public class ClientAuthUtils {
      * @param key           The key to look up inside of the section
      * @return Return a the String value of the configuration value
      */
-    public static String get(Map<String, Object> topoConf, String section, String key) throws IOException {
+    public static String get(Map<String, Object> topoConf, String section,
+            String key) throws IOException {
         Configuration configuration = ClientAuthUtils.getConfiguration(topoConf);
         return get(configuration, section, key);
     }
 
     static String get(Configuration configuration, String section, String key) throws IOException {
-        AppConfigurationEntry[] configurationEntries = ClientAuthUtils.getEntries(configuration, section);
+        AppConfigurationEntry[] configurationEntries = ClientAuthUtils.getEntries(configuration,
+                section);
 
         if (configurationEntries == null) {
             return null;
@@ -184,7 +189,7 @@ public class ClientAuthUtils {
                 LOG.warn("No principal to local given {}", Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
             } else {
                 ptol = ReflectionUtils.newInstance(ptolClassname);
-                //TODO: this can only ever be null if someone is doing something odd with mocking
+                // TODO: this can only ever be null if someone is doing something odd with mocking
                 // We should really fix the mocking and remove this
                 if (ptol != null) {
                     ptol.prepare(topoConf);
@@ -202,12 +207,15 @@ public class ClientAuthUtils {
      * @param conf daemon configuration
      * @return the plugin
      */
-    public static IGroupMappingServiceProvider getGroupMappingServiceProviderPlugin(Map<String, Object> conf) {
+    public static IGroupMappingServiceProvider getGroupMappingServiceProviderPlugin(Map<String,
+            Object> conf) {
         IGroupMappingServiceProvider gmsp = null;
         try {
-            String gmspClassName = (String) conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
+            String gmspClassName = (String) conf
+                    .get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
             if (gmspClassName == null) {
-                LOG.warn("No group mapper given {}", Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
+                LOG.warn("No group mapper given {}",
+                        Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
             } else {
                 gmsp = ReflectionUtils.newInstance(gmspClassName);
                 if (gmsp != null) {
@@ -229,7 +237,8 @@ public class ClientAuthUtils {
     public static Collection<ICredentialsRenewer> getCredentialRenewers(Map<String, Object> conf) {
         try {
             Set<ICredentialsRenewer> ret = new HashSet<>();
-            Collection<String> clazzes = (Collection<String>) conf.get(Config.NIMBUS_CREDENTIAL_RENEWERS);
+            Collection<String> clazzes = (Collection<String>) conf
+                    .get(Config.NIMBUS_CREDENTIAL_RENEWERS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
                     ICredentialsRenewer inst = ReflectionUtils.newInstance(clazz);
@@ -249,10 +258,12 @@ public class ClientAuthUtils {
      * @param conf nimbus configuration to use.
      * @return nimbus auto credential plugins.
      */
-    public static Collection<INimbusCredentialPlugin> getNimbusAutoCredPlugins(Map<String, Object> conf) {
+    public static Collection<INimbusCredentialPlugin> getNimbusAutoCredPlugins(Map<String,
+            Object> conf) {
         try {
             Set<INimbusCredentialPlugin> ret = new HashSet<>();
-            Collection<String> clazzes = (Collection<String>) conf.get(Config.NIMBUS_AUTO_CRED_PLUGINS);
+            Collection<String> clazzes = (Collection<String>) conf
+                    .get(Config.NIMBUS_AUTO_CRED_PLUGINS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
                     INimbusCredentialPlugin inst = ReflectionUtils.newInstance(clazz);
@@ -275,7 +286,8 @@ public class ClientAuthUtils {
     public static Collection<IAutoCredentials> getAutoCredentials(Map<String, Object> topoConf) {
         try {
             Set<IAutoCredentials> autos = new HashSet<>();
-            Collection<String> clazzes = (Collection<String>) topoConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+            Collection<String> clazzes = (Collection<String>) topoConf
+                    .get(Config.TOPOLOGY_AUTO_CREDENTIALS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
                     IAutoCredentials a = ReflectionUtils.newInstance(clazz);
@@ -307,7 +319,8 @@ public class ClientAuthUtils {
      * @param type        the type of service we are looking for.
      * @return the deserialized WorkerToken or null if none could be found.
      */
-    public static WorkerToken readWorkerToken(Map<String, String> credentials, WorkerTokenServiceType type) {
+    public static WorkerToken readWorkerToken(Map<String, String> credentials,
+            WorkerTokenServiceType type) {
         WorkerToken ret = null;
         String key = workerTokenCredentialsKey(type);
         String tokenStr = credentials.get(key);
@@ -318,7 +331,8 @@ public class ClientAuthUtils {
     }
 
     /**
-     * Store a worker token in some credentials. It can be pulled back out by calling readWorkerToken.
+     * Store a worker token in some credentials. It can be pulled back out by calling
+     * readWorkerToken.
      *
      * @param credentials the credentials map.
      * @param token       the token you want to store.
@@ -339,18 +353,20 @@ public class ClientAuthUtils {
         Set<WorkerToken> creds = subject.getPrivateCredentials(WorkerToken.class);
         synchronized (creds) {
             return creds.stream()
-                        .filter((wt) ->
-                                    wt.get_serviceType() == type)
-                        .findAny().orElse(null);
+                    .filter((wt) ->
+                            wt.get_serviceType() == type)
+                    .findAny().orElse(null);
         }
     }
 
     private static boolean willWorkerTokensBeStoredSecurely(Map<String, Object> conf) {
-        boolean overrideZkAuth = ObjectReader.getBoolean(conf.get("TESTING.ONLY.ENABLE.INSECURE.WORKER.TOKENS"), false);
+        boolean overrideZkAuth = ObjectReader.getBoolean(conf
+                .get("TESTING.ONLY.ENABLE.INSECURE.WORKER.TOKENS"), false);
         if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
             return true;
         } else if (overrideZkAuth) {
-            LOG.error("\n\n\t\tYOU HAVE ENABLED INSECURE WORKER TOKENS.  IF THIS IS NOT A UNIT TEST PLEASE STOP NOW!!!\n\n");
+            LOG.error("\n\n\t\tYOU HAVE ENABLED INSECURE WORKER TOKENS.  IF THIS IS NOT A UNIT "
+                    + "TEST PLEASE STOP NOW!!!\n\n");
             return true;
         }
         return false;
@@ -359,12 +375,14 @@ public class ClientAuthUtils {
     /**
      * Check if worker tokens should be enabled on the server side or not.
      *
-     * @param multiThriftServer a collection of Thrift servers to know if the transport support tokens or not.
+     * @param multiThriftServer a collection of Thrift servers to know if the transport support
+     *     tokens or not.
      *                          No need to create a token if the transport does not support it.
      * @param conf the daemon configuration to be sure the tokens are secure.
      * @return true if we can enable them, else false.
      */
-    public static boolean areWorkerTokensEnabledServer(MultiThriftServer<?> multiThriftServer, Map<String, Object> conf) {
+    public static boolean areWorkerTokensEnabledServer(MultiThriftServer<?> multiThriftServer,
+            Map<String, Object> conf) {
         return multiThriftServer.supportsWorkerTokens() && willWorkerTokensBeStoredSecurely(conf);
     }
 
@@ -375,7 +393,8 @@ public class ClientAuthUtils {
      * @param conf           the daemon configuration to be sure the tokens are secure.
      * @return true if we can enable them, else false.
      */
-    public static boolean areWorkerTokensEnabledServer(ThriftConnectionType connectionType, Map<String, Object> conf) {
+    public static boolean areWorkerTokensEnabledServer(ThriftConnectionType connectionType,
+            Map<String, Object> conf) {
         return connectionType.getWtType() != null && willWorkerTokensBeStoredSecurely(conf);
     }
 
@@ -399,7 +418,7 @@ public class ClientAuthUtils {
         return Utils.deserialize(wt.get_info(), WorkerTokenInfo.class);
     }
 
-    //Support for worker tokens Similar to an IAutoCredentials implementation
+    // Support for worker tokens Similar to an IAutoCredentials implementation
     private static Subject insertWorkerTokens(Subject subject, Map<String, String> credentials) {
         if (credentials == null) {
             return subject;
@@ -413,14 +432,16 @@ public class ClientAuthUtils {
                     boolean notAlreadyContained = creds.add(token);
                     if (notAlreadyContained) {
                         if (previous != null) {
-                            //this means token is not equal to previous so we should remove previous
+                            // this means token is not equal to previous so we should remove
+                            // previous
                             creds.remove(previous);
                             LOG.info("Replaced WorkerToken for service type {}", type);
                         } else {
                             LOG.info("Added new WorkerToken for service type {}", type);
                         }
                     } else {
-                        LOG.info("The new WorkerToken for service type {} is the same as the previous token", type);
+                        LOG.info("The new WorkerToken for service type {} is the same as the "
+                                + "previous token", type);
                     }
                 }
             }
@@ -436,7 +457,8 @@ public class ClientAuthUtils {
      * @param credentials the credentials to pull from
      * @return the populated subject.
      */
-    public static Subject populateSubject(Subject subject, Collection<IAutoCredentials> autos, Map<String, String> credentials) {
+    public static Subject populateSubject(Subject subject, Collection<IAutoCredentials> autos,
+            Map<String, String> credentials) {
         try {
             if (subject == null) {
                 subject = new Subject();
@@ -457,9 +479,11 @@ public class ClientAuthUtils {
      * @param autos       the IAutoCredentials to call to update the subject.
      * @param credentials the credentials to pull from
      */
-    public static void updateSubject(Subject subject, Collection<IAutoCredentials> autos, Map<String, String> credentials) {
+    public static void updateSubject(Subject subject, Collection<IAutoCredentials> autos,
+            Map<String, String> credentials) {
         if (subject == null || autos == null) {
-            throw new RuntimeException("The subject or auto credentials cannot be null when updating a subject with credentials");
+            throw new RuntimeException("The subject or auto credentials cannot be null when "
+                    + "updating a subject with credentials");
         }
 
         try {
@@ -475,10 +499,12 @@ public class ClientAuthUtils {
     /**
      * Construct a transport plugin per storm configuration.
      */
-    public static ITransportPlugin getTransportPlugin(ThriftConnectionType type, Map<String, Object> topoConf) {
+    public static ITransportPlugin getTransportPlugin(ThriftConnectionType type, Map<String,
+            Object> topoConf) {
         try {
             String transportPluginClassName = type.getTransportPlugin(topoConf);
-            ITransportPlugin transportPlugin = ReflectionUtils.newInstance(transportPluginClassName);
+            ITransportPlugin transportPlugin = ReflectionUtils
+                    .newInstance(transportPluginClassName);
             transportPlugin.prepare(type, topoConf);
             return transportPlugin;
         } catch (Exception e) {
@@ -510,8 +536,6 @@ public class ClientAuthUtils {
             throw new RuntimeException(e);
         }
     }
-
-
 
     public static byte[] serializeKerberosTicket(final KerberosTicket tgt) throws Exception {
         if (tgt == null) {

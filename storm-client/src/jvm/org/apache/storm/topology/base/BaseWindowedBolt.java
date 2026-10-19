@@ -75,7 +75,8 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
             throw new IllegalArgumentException("Sliding interval duration cannot be set null");
         }
         if (duration.value <= 0) {
-            throw new IllegalArgumentException("Sliding interval must be positive [" + duration + "]");
+            throw new IllegalArgumentException("Sliding interval must be positive [" + duration
+                    + "]");
         }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, duration.value);
         return this;
@@ -158,8 +159,10 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
-     * Specify a field in the tuple that represents the timestamp as a long value. If this field is not present in the incoming tuple, an
-     * {@link IllegalArgumentException} will be thrown. The field MUST contain a timestamp in milliseconds
+     * Specify a field in the tuple that represents the timestamp as a long value. If this field is
+     * not present in the incoming tuple, an
+     * {@link IllegalArgumentException} will be thrown. The field MUST contain a timestamp in
+     * milliseconds
      *
      * @param fieldName the name of the field that contains the timestamp
      */
@@ -177,7 +180,8 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
             throw new IllegalArgumentException("Timestamp extractor cannot be set to null");
         }
         if (this.timestampExtractor != null) {
-            throw new IllegalArgumentException("Window is already configured with a timestamp extractor: " + timestampExtractor);
+            throw new IllegalArgumentException("Window is already configured with a timestamp "
+                    + "extractor: " + timestampExtractor);
         }
         this.timestampExtractor = timestampExtractor;
         return this;
@@ -189,12 +193,17 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
-     * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the {@link
-     * org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field. It must be defined on a per-component basis, and in
-     * conjunction with the {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
+     * Specify a stream id on which late tuples are going to be emitted. They are going to be
+     * accessible via the {@link
+     * org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field. It must be defined on
+     * a per-component basis, and in
+     * conjunction with the {@link BaseWindowedBolt#withTimestampField}, otherwise {@link
+     * IllegalArgumentException} will be thrown.
      *
-     * <p>The late tuple is emitted as a {@link org.apache.storm.tuple.DetachedTuple}, a serializable copy of the original
-     * tuple detached from the topology context, so it can be consumed by bolts running in other workers.
+     * <p>The late tuple is emitted as a {@link org.apache.storm.tuple.DetachedTuple}, a
+     * serializable copy of the original
+     * tuple detached from the topology context, so it can be consumed by bolts running in other
+     * workers.
      *
      * @param streamId the name of the stream used to emit late tuples on
      */
@@ -207,7 +216,8 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
-     * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps cannot be out of order by
+     * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple
+     * timestamps cannot be out of order by
      * more than this amount.
      *
      * @param duration the max lag duration
@@ -218,7 +228,8 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
-     * Specify the watermark event generation interval. For tuple based timestamps, watermark events are used to track the progress of time
+     * Specify the watermark event generation interval. For tuple based timestamps, watermark events
+     * are used to track the progress of time
      *
      * @param interval the interval at which watermark events are generated
      */
@@ -231,7 +242,8 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         // NOOP
     }
 

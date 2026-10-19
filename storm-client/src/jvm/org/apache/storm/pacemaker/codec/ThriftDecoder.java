@@ -28,8 +28,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Decodes length-prefixed thrift {@link HBMessage} frames of the Pacemaker protocol.
  *
- * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
- *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed
+ *     in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports
+ *     them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
 @Deprecated(since = "3.1.0", forRemoval = true)
@@ -44,8 +46,10 @@ public class ThriftDecoder extends ByteToMessageDecoder {
     private final int maxLength;
 
     /**
-     * Whether this decoder sits in a Pacemaker server pipeline. A server only accepts the control message a client
-     * sends to start the SASL handshake; any other control frame is dropped and the connection closed.
+     * Whether this decoder sits in a Pacemaker server pipeline. A server only accepts the control
+     * message a client
+     * sends to start the SASL handshake; any other control frame is dropped and the connection
+     * closed.
      */
     private final boolean serverSide;
 
@@ -60,7 +64,8 @@ public class ThriftDecoder extends ByteToMessageDecoder {
      * Instantiate a ThriftDecoder that accepts serialized messages of at most maxLength bytes.
      *
      * @param maxLengthBytes the maximum length of a serialized thrift message
-     * @param serverSide true if the decoder is used by a Pacemaker server, which restricts the control messages it accepts
+     * @param serverSide true if the decoder is used by a Pacemaker server, which restricts the
+     *     control messages it accepts
      */
     public ThriftDecoder(final int maxLengthBytes, final boolean serverSide) {
         maxLength = maxLengthBytes;
@@ -68,7 +73,8 @@ public class ThriftDecoder extends ByteToMessageDecoder {
     }
 
     @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf buf, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf buf,
+        List<Object> out) throws Exception {
         long available = buf.readableBytes();
         if (available < INTEGER_SIZE) {
             return;
@@ -79,8 +85,8 @@ public class ThriftDecoder extends ByteToMessageDecoder {
         int thriftLen = buf.readInt();
         if (thriftLen < 0 || thriftLen > maxLength) {
             throw new IOException("Thrift message of length " + Integer.toString(thriftLen)
-                                  + " is greater than allowed " + maxLength
-                                  + " or less than 0.");
+                    + " is greater than allowed " + maxLength
+                    + " or less than 0.");
         }
 
         available -= INTEGER_SIZE;

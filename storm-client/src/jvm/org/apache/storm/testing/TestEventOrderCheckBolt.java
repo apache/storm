@@ -31,7 +31,8 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
     private int count;
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         this.collector = collector;
         count = 0;
     }
@@ -44,7 +45,8 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
 
         if (null != recentEvent && eventId <= recentEvent) {
             String error = "Error: event id is not in strict order! event source Id: "
-                           + sourceId + ", last event Id: " + recentEvent + ", current event Id: " + eventId;
+                    + sourceId + ", last event Id: " + recentEvent + ", current event Id: "
+                    + eventId;
 
             collector.emit(input, new Values(error));
         }

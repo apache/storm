@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
     public static final Logger LOG =
-        LoggerFactory.getLogger(DRPCSimpleACLAuthorizer.class);
+            LoggerFactory.getLogger(DRPCSimpleACLAuthorizer.class);
 
     public static final String CLIENT_USERS_KEY = "client.users";
     public static final String INVOCATION_USER_KEY = "invocation.user";
@@ -44,15 +44,16 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
     private volatile long lastUpdate = 0;
 
     protected Map<String, AclFunctionEntry> readAclFromConfig() {
-        //Thread safety is mostly around acl.  If acl needs to be updated it is changed atomically
-        //More then one thread may be trying to update it at a time, but that is OK, because the
-        //change is atomic
+        // Thread safety is mostly around acl.  If acl needs to be updated it is changed atomically
+        // More then one thread may be trying to update it at a time, but that is OK, because the
+        // change is atomic
         long now = System.currentTimeMillis();
         if ((now - 5000) > lastUpdate || acl == null) {
             Map<String, AclFunctionEntry> acl = new HashMap<>();
             Map<String, Object> conf = Utils.findAndReadConfigFile(aclFileName);
             if (conf.containsKey(Config.DRPC_AUTHORIZER_ACL)) {
-                Map<String, Map<String, ?>> confAcl = (Map<String, Map<String, ?>>) conf.get(Config.DRPC_AUTHORIZER_ACL);
+                Map<String, Map<String, ?>> confAcl = (Map<String, Map<String, ?>>) conf
+                        .get(Config.DRPC_AUTHORIZER_ACL);
 
                 if (confAcl != null) {
                     for (Map.Entry<String, Map<String, ?>> entry : confAcl.entrySet()) {
@@ -71,7 +72,8 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
 
             this.acl = acl;
             if (this.acl.isEmpty() && !permitWhenMissingFunctionEntry) {
-                LOG.warn("Requiring explicit ACL entries, but none given. Therefore, all operations will be denied.");
+                LOG.warn("Requiring explicit ACL entries, but none given. Therefore, all "
+                        + "operations will be denied.");
             }
 
             lastUpdate = System.currentTimeMillis();
@@ -82,9 +84,9 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
     @Override
     public void prepare(Map<String, Object> conf) {
         Boolean isStrict =
-            (Boolean) conf.get(Config.DRPC_AUTHORIZER_ACL_STRICT);
+                (Boolean) conf.get(Config.DRPC_AUTHORIZER_ACL_STRICT);
         permitWhenMissingFunctionEntry =
-            (isStrict != null && !isStrict);
+                (isStrict != null && !isStrict);
         aclFileName = (String) conf.get(Config.DRPC_AUTHORIZER_ACL_FILENAME);
         ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
     }
@@ -106,7 +108,8 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
         return null;
     }
 
-    protected boolean permitClientOrInvocationRequest(ReqContext context, Map<String, Object> params,
+    protected boolean permitClientOrInvocationRequest(ReqContext context, Map<String,
+            Object> params,
                                                       String fieldName) {
         Map<String, AclFunctionEntry> acl = readAclFromConfig();
         String function = (String) params.get(FUNCTION_KEY);
@@ -128,7 +131,8 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
                 String user = getLocalUserFromContext(context);
                 if (value == null) {
                     LOG.warn("Configuration for function '" + function + "' is "
-                            + "invalid: it should have both an invocation user and a list of client users defined.");
+                            + "invalid: it should have both an invocation user and a list of "
+                            + "client users defined.");
                 } else if (value instanceof Set && (((Set<String>) value).contains(principal)
                         || ((Set<String>) value).contains(user))) {
                     return true;

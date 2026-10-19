@@ -26,12 +26,14 @@ public class BatchSpoutExecutor implements ITridentSpout<Object> {
     }
 
     @Override
-    public BatchCoordinator<Object> getCoordinator(String txStateId, Map<String, Object> conf, TopologyContext context) {
+    public BatchCoordinator<Object> getCoordinator(String txStateId, Map<String, Object> conf,
+        TopologyContext context) {
         return new EmptyCoordinator();
     }
 
     @Override
-    public Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
+    public Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf,
+        TopologyContext context) {
         spout.open(conf, context);
         return new BatchSpoutEmitter();
     }
@@ -69,7 +71,8 @@ public class BatchSpoutExecutor implements ITridentSpout<Object> {
     public class BatchSpoutEmitter implements Emitter<Object> {
 
         @Override
-        public void emitBatch(TransactionAttempt tx, Object coordinatorMeta, TridentCollector collector) {
+        public void emitBatch(TransactionAttempt tx, Object coordinatorMeta,
+            TridentCollector collector) {
             spout.emitBatch(tx.getTransactionId(), collector);
         }
 

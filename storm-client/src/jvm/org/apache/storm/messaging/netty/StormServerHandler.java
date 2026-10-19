@@ -26,7 +26,8 @@ import org.slf4j.LoggerFactory;
 
 public class StormServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
-    private static final Set<Class<?>> ALLOWED_EXCEPTIONS = new HashSet<>(Arrays.asList(new Class<?>[]{ IOException.class }));
+    private static final Set<Class<?>> ALLOWED_EXCEPTIONS = new HashSet<>(Arrays
+            .asList(new Class<?>[] {IOException.class}));
     private final IServer server;
     private final Runnable terminator;
 
@@ -68,9 +69,11 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
             return;
         }
         try {
-            LOG.error("server errors in handling the request from {}", ctx.channel().remoteAddress().toString(), cause);
+            LOG.error("server errors in handling the request from {}", ctx.channel().remoteAddress()
+                    .toString(), cause);
         } catch (Throwable err) {
-            // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException will handle it
+            // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException
+            // will handle it
         }
         try {
             Utils.handleUncaughtException(cause, ALLOWED_EXCEPTIONS, false);
@@ -81,8 +84,10 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
 
     }
 
-    // Stops the server delivering further batches (the event loops run until the exit completes), then exits.
-    // Logging comes last and is guarded: a failure to log (e.g. an OOM) must not skip the termination.
+    // Stops the server delivering further batches (the event loops run until the exit completes),
+    // then exits.
+    // Logging comes last and is guarded: a failure to log (e.g. an OOM) must not skip the
+    // termination.
     private void terminate(ChannelHandlerContext ctx, Throwable cause, String message) {
         server.terminating();
         terminator.run();
@@ -93,7 +98,8 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    // Not on this thread: the worker shutdown hook closes the netty server, which waits for this event loop.
+    // Not on this thread: the worker shutdown hook closes the netty server, which waits for this
+    // event loop.
     private static void terminateWorker() {
         Utils.exitProcessFromNewThread(1, "Fatal error in the netty server");
     }

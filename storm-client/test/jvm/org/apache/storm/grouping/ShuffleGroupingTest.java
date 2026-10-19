@@ -12,6 +12,11 @@
 
 package org.apache.storm.grouping;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -21,11 +26,6 @@ import java.util.concurrent.Future;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 public class ShuffleGroupingTest {
 
@@ -70,7 +70,8 @@ public class ShuffleGroupingTest {
     }
 
     /**
-     * Tests that we round robbin correctly with multiple threads using ShuffleGrouping implementation.
+     * Tests that we round robbin correctly with multiple threads using ShuffleGrouping
+     * implementation.
      */
     @Test
     public void testShuffleGroupMultiThreaded() throws InterruptedException, ExecutionException {
@@ -106,7 +107,8 @@ public class ShuffleGroupingTest {
 
                     int taskId = taskIds.get(0);
 
-                    assertTrue(taskId >= 0 && taskId < availableTaskIds.size(), "TaskId should exist");
+                    assertTrue(taskId >= 0 && taskId < availableTaskIds.size(),
+                            "TaskId should exist");
                     taskCounts[taskId]++;
                 }
                 return taskCounts;

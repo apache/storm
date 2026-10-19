@@ -35,12 +35,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ClientSupervisorUtils {
-    //Worker launched through external commands, hence we count their exceptions toward shell exceptions
+    // Worker launched through external commands, hence we count their exceptions toward shell
+    // exceptions
     public static final Meter numWorkerLaunchExceptions = ShellUtils.numShellExceptions;
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientSupervisorUtils.class);
 
-    static boolean doRequiredTopoFilesExist(Map<String, Object> conf, String stormId) throws IOException {
+    static boolean doRequiredTopoFilesExist(Map<String, Object> conf,
+            String stormId) throws IOException {
         String stormroot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
         String stormcodepath = ConfigUtils.supervisorStormCodePath(stormroot);
         String stormconfpath = ConfigUtils.supervisorStormConfPath(stormroot);
@@ -60,14 +62,16 @@ public class ClientSupervisorUtils {
         return false;
     }
 
-    public static int processLauncherAndWait(Map<String, Object> conf, String user, List<String> args,
+    public static int processLauncherAndWait(Map<String, Object> conf, String user,
+            List<String> args,
                                              final Map<String, String> environment, final String logPreFix) throws IOException {
         return processLauncherAndWait(conf, user, args, environment, logPreFix, null);
     }
 
-    public static int processLauncherAndWait(Map<String, Object> conf, String user, List<String> args,
+    public static int processLauncherAndWait(Map<String, Object> conf, String user,
+            List<String> args,
                                              final Map<String, String> environment, final String logPreFix, File dir)
-        throws IOException {
+            throws IOException {
         int ret = 0;
         Process process = processLauncher(conf, user, null, args, environment, null, null, dir);
         if (StringUtils.isNotBlank(logPreFix)) {
@@ -85,9 +89,10 @@ public class ClientSupervisorUtils {
         return ret;
     }
 
-    public static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args,
-                                   Map<String, String> environment, final String logPreFix,
-                                   final ExitCodeCallback exitCodeCallback, File dir) throws IOException {
+    public static Process processLauncher(Map<String, Object> conf, String user,
+            List<String> commandPrefix, List<String> args,
+                                          Map<String, String> environment, final String logPreFix,
+                                          final ExitCodeCallback exitCodeCallback, File dir) throws IOException {
         if (StringUtils.isBlank(user)) {
             throw new IllegalArgumentException("User cannot be blank when calling processLauncher.");
         }
@@ -116,7 +121,8 @@ public class ClientSupervisorUtils {
      * @param command          the command to be executed in the new process
      * @param environment      the environment to be applied to the process. Can be null.
      * @param logPrefix        a prefix for log entries from the output of the process. Can be null.
-     * @param exitCodeCallback code to be called passing the exit code value when the process completes
+     * @param exitCodeCallback code to be called passing the exit code value when the process
+     *     completes
      * @param dir              the working directory of the new process
      * @return the new process
      */
@@ -125,7 +131,7 @@ public class ClientSupervisorUtils {
                                         final String logPrefix,
                                         final ExitCodeCallback exitCodeCallback,
                                         File dir)
-        throws IOException {
+            throws IOException {
         ProcessBuilder builder = new ProcessBuilder(command);
         Map<String, String> procEnv = builder.environment();
         if (dir != null) {
@@ -148,7 +154,7 @@ public class ClientSupervisorUtils {
                 public Long call() {
                     if (logPrefix != null) {
                         Utils.readAndLogStream(logPrefix,
-                                               process.getInputStream());
+                                process.getInputStream());
                     }
                     if (exitCodeCallback != null) {
                         try {
@@ -166,7 +172,8 @@ public class ClientSupervisorUtils {
         return process;
     }
 
-    public static void setupStormCodeDir(Map<String, Object> conf, String user, String dir) throws IOException {
+    public static void setupStormCodeDir(Map<String, Object> conf, String user,
+            String dir) throws IOException {
         if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             String logPrefix = "Storm Code Dir Setup for " + dir;
             List<String> commands = new ArrayList<>();
@@ -176,7 +183,8 @@ public class ClientSupervisorUtils {
         }
     }
 
-    public static void setupWorkerArtifactsDir(Map<String, Object> conf, String user, String dir) throws IOException {
+    public static void setupWorkerArtifactsDir(Map<String, Object> conf, String user,
+            String dir) throws IOException {
         if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             String logPrefix = "Worker Artifacts Setup for " + dir;
             List<String> commands = new ArrayList<>();

@@ -23,7 +23,6 @@ import org.apache.storm.security.auth.ClientAuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * Custom LoginModule to enable Auto Login based on cached ticket.
  */
@@ -75,7 +74,8 @@ public class AutoTGTKrb5LoginModule implements LoginModule {
             throw new LoginException("Authentication failed because the Subject is invalid.");
         }
         // Let us add the kerbClientPrinc and kerbTicket
-        // We need to clone the ticket because java.security.auth.kerberos assumes TGT is unique for each subject
+        // We need to clone the ticket because java.security.auth.kerberos assumes TGT is unique for
+        // each subject
         // So, sharing TGT with multiple subjects can cause expired TGT to never refresh.
         KerberosTicket kerbTicketCopy = ClientAuthUtils.cloneKerberosTicket(kerbTicket);
         subject.getPrivateCredentials().add(kerbTicketCopy);

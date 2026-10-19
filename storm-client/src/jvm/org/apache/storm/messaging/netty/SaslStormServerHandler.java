@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory
-        .getLogger(SaslStormServerHandler.class);
+            .getLogger(SaslStormServerHandler.class);
     private final ISaslServer server;
     /**
      * Used for client or server's token to send or receive from each other.
@@ -44,39 +44,41 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
 
         if (msg instanceof ControlMessage
-            && msg == ControlMessage.SASL_TOKEN_MESSAGE_REQUEST) {
+                && msg == ControlMessage.SASL_TOKEN_MESSAGE_REQUEST) {
             // initialize server-side SASL functionality, if we haven't yet
             // (in which case we are looking at the first SASL message from the
             // client).
-            SaslNettyServer saslNettyServer = channel.attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
+            SaslNettyServer saslNettyServer = channel.attr(SaslNettyServerState.SASL_NETTY_SERVER)
+                    .get();
             if (saslNettyServer == null) {
                 LOG.debug("No saslNettyServer for " + channel
-                          + " yet; creating now, with topology token: " + topologyName);
+                        + " yet; creating now, with topology token: " + topologyName);
                 try {
                     saslNettyServer = new SaslNettyServer(topologyName, token);
                     LOG.debug("SaslNettyServer for " + channel
-                        + "created with topology token: " + topologyName);
+                            + "created with topology token: " + topologyName);
                 } catch (IOException e) {
                     LOG.error("Error occurred while creating saslNettyServer on server "
-                              + channel.localAddress()
-                              + " for client "
-                              + channel.remoteAddress());
-                    throw new IllegalStateException("Failed to set SaslNettyServerState.SASL_NETTY_SERVER");
+                            + channel.localAddress()
+                            + " for client "
+                            + channel.remoteAddress());
+                    throw new IllegalStateException("Failed to set "
+                            + "SaslNettyServerState.SASL_NETTY_SERVER");
                 }
 
                 channel.attr(SaslNettyServerState.SASL_NETTY_SERVER).set(saslNettyServer);
             } else {
                 LOG.debug("Found existing saslNettyServer on server:"
-                          + channel.localAddress() + " for client "
-                          + channel.remoteAddress());
+                        + channel.localAddress() + " for client "
+                        + channel.remoteAddress());
             }
 
             LOG.debug("processToken:  With nettyServer: " + saslNettyServer
-                      + " and token length: " + token.length);
+                    + " and token length: " + token.length);
 
             SaslMessageToken saslTokenMessageRequest;
             saslTokenMessageRequest = new SaslMessageToken(
-                saslNettyServer.response(new byte[0]));
+                    saslNettyServer.response(new byte[0]));
             // Send response to client.
             channel.writeAndFlush(saslTokenMessageRequest, channel.voidPromise());
             // do not send upstream to other handlers: no further action needs
@@ -88,14 +90,15 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
             // initialize server-side SASL functionality, if we haven't yet
             // (in which case we are looking at the first SASL message from the
             // client).
-            SaslNettyServer saslNettyServer = channel.attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
+            SaslNettyServer saslNettyServer = channel.attr(SaslNettyServerState.SASL_NETTY_SERVER)
+                    .get();
             if (saslNettyServer == null) {
                 throw new Exception("saslNettyServer was unexpectedly "
-                                    + "null for channel: " + channel);
+                        + "null for channel: " + channel);
             }
             SaslMessageToken saslTokenMessageRequest = new SaslMessageToken(
-                saslNettyServer.response(((SaslMessageToken) msg)
-                                             .getSaslToken()));
+                    saslNettyServer.response(((SaslMessageToken) msg)
+                            .getSaslToken()));
 
             // Send response to client.
             channel.writeAndFlush(saslTokenMessageRequest, channel.voidPromise());
@@ -104,10 +107,10 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
                 // If authentication of client is complete, we will also send a
                 // SASL-Complete message to the client.
                 LOG.debug("SASL authentication is complete for client with "
-                          + "username: " + saslNettyServer.getUserName());
+                        + "username: " + saslNettyServer.getUserName());
                 channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST, channel.voidPromise());
                 LOG.debug("Removing SaslServerHandler from pipeline since SASL "
-                          + "authentication is complete.");
+                        + "authentication is complete.");
                 ctx.pipeline().remove(this);
                 server.authenticated(channel);
             }
@@ -118,7 +121,7 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
             // (the next handler upstream in the server pipeline) if SASL
             // authentication has not completed.
             LOG.warn("Sending upstream an unexpected non-SASL message :  "
-                     + msg);
+                    + msg);
             ctx.fireChannelRead(msg);
         }
     }

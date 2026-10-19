@@ -26,12 +26,13 @@ public interface TriggerPolicy<T, S> {
     void track(Event<T> event);
 
     /**
-     * resets the trigger policy.
+     * Resets the trigger policy.
      */
     void reset();
 
     /**
-     * Starts the trigger policy. This can be used during recovery to start the triggers after recovery is complete.
+     * Starts the trigger policy. This can be used during recovery to start the triggers after
+     * recovery is complete.
      */
     void start();
 
@@ -41,7 +42,8 @@ public interface TriggerPolicy<T, S> {
     void shutdown();
 
     /**
-     * Return runtime state to be checkpointed by the framework for restoring the trigger policy in case of failures.
+     * Return runtime state to be checkpointed by the framework for restoring the trigger policy in
+     * case of failures.
      *
      * @return the state
      */

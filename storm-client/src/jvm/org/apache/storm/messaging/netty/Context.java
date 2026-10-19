@@ -36,7 +36,7 @@ public class Context implements IContext {
     private StormMetricRegistry metricRegistry = null;
 
     /**
-     * initialization per Storm configuration.
+     * Initialization per Storm configuration.
      */
     @Override
     public void prepare(Map<String, Object> topoConf) {
@@ -48,38 +48,43 @@ public class Context implements IContext {
         this.topoConf = topoConf;
         serverConnections = new ArrayList<>();
 
-        //each context will have a single client channel worker event loop group
-        int maxWorkers = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
+        // each context will have a single client channel worker event loop group
+        int maxWorkers = ObjectReader.getInt(topoConf
+                .get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
         ThreadFactory workerFactory = new NettyRenameThreadFactory("client" + "-worker");
         // 0 means DEFAULT_EVENT_LOOP_THREADS
         // https://github.com/netty/netty/blob/netty-4.1.24.Final/transport/src/main/java/io/netty/channel/MultithreadEventLoopGroup.java#L40
-        this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0, workerFactory);
+        this.workerEventLoopGroup = new NioEventLoopGroup(maxWorkers > 0 ? maxWorkers : 0,
+                workerFactory);
 
-        clientScheduleService = new HashedWheelTimer(new NettyRenameThreadFactory("client-schedule-service"));
+        clientScheduleService =
+                new HashedWheelTimer(new NettyRenameThreadFactory("client-schedule-service"));
         this.metricRegistry = metricRegistry;
     }
 
     /**
-     * establish a server with a binding port.
+     * Establish a server with a binding port.
      */
     @Override
-    public synchronized IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse) {
+    public synchronized IConnection bind(String stormId, int port, IConnectionCallback cb,
+        Supplier<Object> newConnectionResponse) {
         Server server = new Server(topoConf, port, cb, newConnectionResponse);
         serverConnections.add(server);
         return server;
     }
 
     /**
-     * establish a connection to a remote server.
+     * Establish a connection to a remote server.
      */
     @Override
-    public IConnection connect(String stormId, String host, int port, AtomicBoolean[] remoteBpStatus) {
+    public IConnection connect(String stormId, String host, int port,
+        AtomicBoolean[] remoteBpStatus) {
         return new Client(topoConf, remoteBpStatus, workerEventLoopGroup,
-                                        clientScheduleService, host, port, metricRegistry);
+                clientScheduleService, host, port, metricRegistry);
     }
 
     /**
-     * terminate this context.
+     * Terminate this context.
      */
     @Override
     public synchronized void term() {
@@ -90,7 +95,7 @@ public class Context implements IContext {
         }
         serverConnections = null;
 
-        //we need to release resources associated with the worker event loop group
+        // we need to release resources associated with the worker event loop group
         workerEventLoopGroup.shutdownGracefully().awaitUninterruptibly();
 
     }

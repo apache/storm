@@ -12,23 +12,24 @@
 
 package org.apache.storm.metric.internal;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Test;
+
 /**
- * Unit test for RateTracker
+ * Unit test for RateTracker.
  */
 public class RateTrackerTest {
 
     @Test
     public void testExactRate() {
-        //This test is in two phases.  The first phase fills up the 10 buckets with 10 tuples each
+        // This test is in two phases.  The first phase fills up the 10 buckets with 10 tuples each
         // We purposely simulate a 1 second bucket size so the rate will always be 10 per second.
         final long interval = 1000L;
         long time = 0L;
         RateTracker rt = new RateTracker(10000, 10, time);
-        double[] expected = new double[]{ 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0 };
+        double[] expected =
+                new double[] {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0};
         for (int i = 0; i < expected.length; i++) {
             double exp = expected[i];
             rt.notify(10);
@@ -37,10 +38,11 @@ public class RateTrackerTest {
             rt.forceRotate(1, interval);
             assertEquals(exp, actual, 0.00001, "Expected rate on iteration " + i + " is wrong.");
         }
-        //In the second part of the test the rate doubles to 20 per second but the rate tracker
-        // increases its result slowly as we push the 10 tuples per second buckets out and replace them
+        // In the second part of the test the rate doubles to 20 per second but the rate tracker
+        // increases its result slowly as we push the 10 tuples per second buckets out and replace
+        // them
         // with 20 tuples per second. 
-        expected = new double[]{ 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0 };
+        expected = new double[] {11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0};
         for (int i = 0; i < expected.length; i++) {
             double exp = expected[i];
             rt.notify(20);

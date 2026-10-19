@@ -36,7 +36,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-
 @ExtendWith(MockitoExtension.class)
 class ZstdBridgeThriftSerializationDelegateTest {
 
@@ -50,20 +49,22 @@ class ZstdBridgeThriftSerializationDelegateTest {
 
     private static final Map<String, Object> TOPO_CONF = Collections.emptyMap();
 
-    private static final byte[] ZSTD_BYTES  = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00};
-    private static final byte[] PLAIN_BYTES  = {0x00, 0x01, 0x02, 0x03, 0x04};
-    private static final byte[] RESULT_BYTES = {(byte) 0xAA, (byte) 0xBB};
-
+    private static final byte[] ZSTD_BYTES =
+        {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00};
+    private static final byte[] PLAIN_BYTES =  {0x00, 0x01, 0x02, 0x03, 0x04};
+    private static final byte[] RESULT_BYTES =  {(byte) 0xAA, (byte) 0xBB};
 
     @BeforeEach
     void setUp() throws Exception {
         delegate = new ZstdBridgeThriftSerializationDelegate();
 
-        Field defaultField = ZstdBridgeThriftSerializationDelegate.class.getDeclaredField("defaultDelegate");
+        Field defaultField = ZstdBridgeThriftSerializationDelegate.class
+                .getDeclaredField("defaultDelegate");
         defaultField.setAccessible(true);
         defaultField.set(delegate, defaultDelegate);
 
-        Field zstdField = ZstdBridgeThriftSerializationDelegate.class.getDeclaredField("zstdDelegate");
+        Field zstdField = ZstdBridgeThriftSerializationDelegate.class
+                .getDeclaredField("zstdDelegate");
         zstdField.setAccessible(true);
         zstdField.set(delegate, zstdDelegate);
     }

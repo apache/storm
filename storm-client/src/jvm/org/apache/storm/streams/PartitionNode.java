@@ -15,7 +15,8 @@ package org.apache.storm.streams;
 import org.apache.storm.tuple.Fields;
 
 /**
- * Node that holds partitioning/grouping information. This is used for operations like groupBy (fields grouping), global aggregate/reduce
+ * Node that holds partitioning/grouping information. This is used for operations like groupBy
+ * (fields grouping), global aggregate/reduce
  * (global grouping), state query (all grouping).
  */
 class PartitionNode extends Node {

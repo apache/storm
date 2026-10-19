@@ -12,6 +12,8 @@
 
 package org.apache.storm.trident;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.Bolt;
@@ -25,21 +27,19 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class TestTridentTopology {
 
     private StormTopology buildTopology() {
         FixedBatchSpout spout = new FixedBatchSpout(new Fields("sentence"), 3,
-                                                    new Values("the cow jumped over the moon"),
-                                                    new Values("the man went to the store and bought some candy"),
-                                                    new Values("four score and seven years ago"),
-                                                    new Values("how many apples can you eat"));
+                new Values("the cow jumped over the moon"),
+                new Values("the man went to the store and bought some candy"),
+                new Values("four score and seven years ago"),
+                new Values("how many apples can you eat"));
         spout.setCycle(true);
 
         TridentTopology topology = new TridentTopology();
         topology.newStream("spout", spout)
-                //no name
+                // no name
                 .each(new Fields("sentence"), new Split(), new Fields("word"))
                 .partitionBy(new Fields("word"))
                 .name("abc")

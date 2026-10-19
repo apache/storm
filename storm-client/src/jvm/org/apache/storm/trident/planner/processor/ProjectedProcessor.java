@@ -22,7 +22,6 @@ import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
-
 public class ProjectedProcessor implements TridentProcessor {
     Fields projectFields;
     ProjectionFactory factory;
@@ -33,12 +32,14 @@ public class ProjectedProcessor implements TridentProcessor {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        TridentContext tridentContext) {
         if (tridentContext.getParentTupleFactories().size() != 1) {
             throw new RuntimeException("Projection processor can only have one parent");
         }
         this.context = tridentContext;
-        factory = new ProjectionFactory(tridentContext.getParentTupleFactories().get(0), projectFields);
+        factory = new ProjectionFactory(tridentContext.getParentTupleFactories().get(0),
+                projectFields);
     }
 
     @Override

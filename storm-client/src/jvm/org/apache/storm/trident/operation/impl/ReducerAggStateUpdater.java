@@ -30,9 +30,9 @@ public class ReducerAggStateUpdater implements StateUpdater<Snapshottable> {
         this.agg = agg;
     }
 
-
     @Override
-    public void updateState(Snapshottable state, List<TridentTuple> tuples, TridentCollector collector) {
+    public void updateState(Snapshottable state, List<TridentTuple> tuples,
+        TridentCollector collector) {
         Object newVal = state.update(new ReducerValueUpdater(agg, tuples));
         collector.emit(new Values(newVal));
     }

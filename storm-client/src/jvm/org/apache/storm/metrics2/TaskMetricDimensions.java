@@ -24,7 +24,8 @@ public class TaskMetricDimensions {
     private String streamId;
     private Map<String, String> dimensions = new HashMap<>();
 
-    public TaskMetricDimensions(int taskId, String componentId, String streamId, StormMetricRegistry metricRegistry) {
+    public TaskMetricDimensions(int taskId, String componentId, String streamId,
+            StormMetricRegistry metricRegistry) {
         this.taskId = taskId;
         dimensions.put("taskid", Integer.toString(this.taskId));
 

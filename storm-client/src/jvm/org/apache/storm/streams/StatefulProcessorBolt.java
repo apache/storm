@@ -41,7 +41,8 @@ class StatefulProcessorBolt<K, V> extends BaseStatefulBolt<KeyValueState<K, V>> 
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         delegate.prepare(topoConf, context, collector);
     }
 
@@ -98,7 +99,8 @@ class StatefulProcessorBolt<K, V> extends BaseStatefulBolt<KeyValueState<K, V>> 
                 statefulProcessors.add((StatefulProcessor<K, V>) node.getProcessor());
                 if (node.getProcessor() instanceof UpdateStateByKeyProcessor) {
                     if (++updateStateByKeyCount > 1) {
-                        throw new IllegalArgumentException("Cannot have more than one updateStateByKey processor "
+                        throw new IllegalArgumentException("Cannot have more than one "
+                                + "updateStateByKey processor "
                                 + "in a StatefulProcessorBolt");
                     }
                 }

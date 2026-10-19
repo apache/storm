@@ -12,6 +12,9 @@
 
 package org.apache.storm.trident;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.trident.windowing.InMemoryWindowsStore;
@@ -26,9 +29,6 @@ import org.apache.storm.trident.windowing.strategy.TumblingDurationWindowStrateg
 import org.apache.storm.trident.windowing.strategy.WindowStrategy;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 /**
  *
  */
@@ -37,21 +37,23 @@ public class TridentWindowingTest {
     @Test
     public void testWindowStrategyInstances() {
 
-        WindowStrategy<Object> tumblingCountStrategy = TumblingCountWindow.of(10).getWindowStrategy();
+        WindowStrategy<Object> tumblingCountStrategy = TumblingCountWindow.of(10)
+                .getWindowStrategy();
         assertTrue(tumblingCountStrategy instanceof TumblingCountWindowStrategy);
 
-        WindowStrategy<Object> slidingCountStrategy = SlidingCountWindow.of(100, 10).getWindowStrategy();
+        WindowStrategy<Object> slidingCountStrategy = SlidingCountWindow.of(100, 10)
+                .getWindowStrategy();
         assertTrue(slidingCountStrategy instanceof SlidingCountWindowStrategy);
 
         WindowStrategy<Object> tumblingDurationStrategy = TumblingDurationWindow.of(
-            new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS))
-                                                                                .getWindowStrategy();
+                new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS))
+                .getWindowStrategy();
         assertTrue(tumblingDurationStrategy instanceof TumblingDurationWindowStrategy);
 
         WindowStrategy<Object> slidingDurationStrategy = SlidingDurationWindow.of(
-            new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS),
-            new BaseWindowedBolt.Duration(2, TimeUnit.SECONDS))
-                                                                              .getWindowStrategy();
+                new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS),
+                new BaseWindowedBolt.Duration(2, TimeUnit.SECONDS))
+                .getWindowStrategy();
         assertTrue(slidingDurationStrategy instanceof SlidingDurationWindowStrategy);
     }
 
@@ -70,15 +72,17 @@ public class TridentWindowingTest {
 
         windowLength = 20;
         TumblingDurationWindow tumblingDurationWindow =
-            TumblingDurationWindow.of(new BaseWindowedBolt.Duration(windowLength, TimeUnit.SECONDS));
+                TumblingDurationWindow.of(new BaseWindowedBolt.Duration(windowLength,
+                TimeUnit.SECONDS));
         assertTrue(tumblingDurationWindow.getWindowLength() == windowLength * 1000);
         assertTrue(tumblingDurationWindow.getSlidingLength() == windowLength * 1000);
 
         windowLength = 50;
         slidingLength = 10;
         SlidingDurationWindow slidingDurationWindow =
-            SlidingDurationWindow.of(new BaseWindowedBolt.Duration(windowLength, TimeUnit.SECONDS),
-                                     new BaseWindowedBolt.Duration(slidingLength, TimeUnit.SECONDS));
+                SlidingDurationWindow.of(new BaseWindowedBolt.Duration(windowLength,
+                TimeUnit.SECONDS),
+                        new BaseWindowedBolt.Duration(slidingLength, TimeUnit.SECONDS));
         assertTrue(slidingDurationWindow.getWindowLength() == windowLength * 1000);
         assertTrue(slidingDurationWindow.getSlidingLength() == slidingLength * 1000);
     }

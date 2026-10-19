@@ -26,7 +26,6 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class JoinResult extends BaseRichBolt {
     public static final Logger LOG = LoggerFactory.getLogger(JoinResult.class);
 
@@ -40,7 +39,8 @@ public class JoinResult extends BaseRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> map, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> map, TopologyContext context,
+        OutputCollector collector) {
         this.collector = collector;
     }
 

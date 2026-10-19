@@ -14,7 +14,6 @@ package org.apache.storm.security.auth;
 
 import java.io.IOException;
 import java.util.Map;
-import javax.security.auth.login.Configuration;
 import org.apache.storm.thrift.TProcessor;
 import org.apache.storm.thrift.server.TServer;
 import org.apache.storm.thrift.transport.TTransport;
@@ -45,13 +44,17 @@ public interface ITransportPlugin {
      *
      * @param transport  The underlying Thrift transport.
      * @param serverHost server host
-     * @param asUser     the user as which the connection should be established, and all the subsequent actions should be executed. Only
-     *                   applicable when using secure storm cluster. A null/blank value here will just indicate to use the logged in user.
+     * @param asUser the user as which the connection should be established, and all the subsequent
+     *     actions should be executed. Only
+     *     applicable when using secure storm cluster. A null/blank value here will just indicate to
+     *     use the logged in user.
      */
-    TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException;
+    TTransport connect(TTransport transport, String serverHost,
+            String asUser) throws IOException, TTransportException;
 
     /**
      * Get port.
+     *
      * @return The port this transport is using. This is not known until
      *     {@link #getServer(org.apache.storm.thrift.TProcessor)} has been called
      */

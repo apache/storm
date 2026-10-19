@@ -60,8 +60,10 @@ public class DataPointExpander implements Serializable {
             Map<Object, Object> dataMap = (Map<Object, Object>) dataPoint.value;
 
             for (Map.Entry<Object, Object> entry : dataMap.entrySet()) {
-                String expandedDataPointName = dataPoint.name + metricNameSeparator + String.valueOf(entry.getKey());
-                dataPoints.add(new IMetricsConsumer.DataPoint(expandedDataPointName, entry.getValue()));
+                String expandedDataPointName = dataPoint.name + metricNameSeparator + String
+                        .valueOf(entry.getKey());
+                dataPoints.add(new IMetricsConsumer.DataPoint(expandedDataPointName, entry
+                        .getValue()));
             }
         } else {
             dataPoints.add(dataPoint);

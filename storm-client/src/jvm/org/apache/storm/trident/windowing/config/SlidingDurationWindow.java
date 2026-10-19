@@ -26,7 +26,8 @@ public final class SlidingDurationWindow extends BaseWindowConfig {
         super(windowLength, slideLength);
     }
 
-    public static SlidingDurationWindow of(BaseWindowedBolt.Duration windowDuration, BaseWindowedBolt.Duration slidingDuration) {
+    public static SlidingDurationWindow of(BaseWindowedBolt.Duration windowDuration,
+            BaseWindowedBolt.Duration slidingDuration) {
         return new SlidingDurationWindow(windowDuration.value, slidingDuration.value);
     }
 
