@@ -37,6 +37,7 @@ import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.testing.TestWordCounter;
 import org.apache.storm.testing.TestWordSpout;
@@ -205,7 +206,7 @@ public class WorkerOutboundTasksTest {
         }
     }
 
-    private static class NoopSpout extends BaseRichSpout implements IRichSpout {
+    private static class NoopSpout extends BaseRichSpout {
         @Override
         public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         }
@@ -220,10 +221,9 @@ public class WorkerOutboundTasksTest {
         }
     }
 
-    private static class NoopBolt extends BaseRichBolt implements IRichBolt {
+    private static class NoopBolt extends BaseRichBolt {
         @Override
-        public void prepare(Map<String, Object> topoConf, TopologyContext context,
-                            org.apache.storm.task.OutputCollector collector) {
+        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         }
 
         @Override
