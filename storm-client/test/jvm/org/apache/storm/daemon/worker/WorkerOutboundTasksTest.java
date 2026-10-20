@@ -164,6 +164,9 @@ public class WorkerOutboundTasksTest {
 
     private void assertOutboundTasksUseTopologyFeedbackConfiguration(boolean topologyFeedbackEnabled) throws IOException, TException {
         Map<String, Object> conf = Utils.readStormConfig();
+        // set opposite to topology config to verify topology config is used
+        conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, !topologyFeedbackEnabled);
+
         Map<String, Object> topologyConf = new HashMap<>(conf);
         topologyConf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, topologyFeedbackEnabled);
         topologyConf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 1);
