@@ -615,6 +615,12 @@ public class Config extends HashMap<String, Object> {
      * Flag to enable or disable the feedback channel for upstream communication.
      * When true, components can send unanchored tuples back to their source tasks.
      *
+     * <p><b>Connection overhead:</b> when enabled, each worker hosting a user bolt establishes
+     * an outbound Netty client connection to every remote worker hosting a task of that bolt's
+     * immediate upstream components, regardless of stream grouping. Connections are shared
+     * across tasks targeting the same worker, and existing outbound connections are reused;
+     * same-worker feedback requires no network connection.</p>
+     *
      * <p><b>Security:</b> feedback tuples carry a routing control signal (e.g. per-task EWMA jitter
      * used by grouping decisions), so a peer that can inject messages on the worker transport could
      * forge feedback and deterministically steer a topology's traffic to a chosen task. This stays
