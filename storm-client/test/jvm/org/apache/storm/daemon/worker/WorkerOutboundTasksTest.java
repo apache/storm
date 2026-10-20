@@ -98,7 +98,7 @@ public class WorkerOutboundTasksTest {
     }
 
     @Test
-    public void feedbackDisabled_onlyDownstreamTargets() throws InvalidTopologyException {
+    public void testFeedbackDisabledOnlyDownstreamTargets() throws InvalidTopologyException {
         // Worker hosts a bolt1 task. Its only downstream target is bolt2, so the upstream spout tasks are not routable.
         GeneralTopologyContext context = context();
         Set<Integer> outbound = WorkerState.computeOutboundTasks(context, BOLT1_TASKS.subList(0, 1),
@@ -110,7 +110,7 @@ public class WorkerOutboundTasksTest {
     }
 
     @Test
-    public void feedbackEnabled_includesUpstreamSourceTasks() throws InvalidTopologyException {
+    public void testFeedbackEnabledIncludesUpstreamSourceTasks() throws InvalidTopologyException {
         // Worker hosts a bolt1 task. With feedback on, bolt1's upstream spout tasks must also be routable so feedback
         // tuples reach them instead of being dropped.
         GeneralTopologyContext context = context();
@@ -123,7 +123,7 @@ public class WorkerOutboundTasksTest {
     }
 
     @Test
-    public void feedbackDisabled_colocatedSpoutMasksMissingUpstreamRouting() throws InvalidTopologyException {
+    public void testFeedbackDisabledColocatedSpoutMasksMissingUpstreamRouting() throws InvalidTopologyException {
         GeneralTopologyContext context = context();
         List<Integer> localTasks = Arrays.asList(SPOUT_TASKS.getFirst(), BOLT2_TASKS.getFirst());
         Set<Integer> withoutFeedback = WorkerState.computeOutboundTasks(context, localTasks,
@@ -142,7 +142,7 @@ public class WorkerOutboundTasksTest {
     }
 
     @Test
-    public void feedbackEnabled_systemComponentsUpstreamNotAddedAsFeedbackTasks() throws InvalidTopologyException {
+    public void testFeedbackEnabledSystemComponentsUpstreamNotAddedAsFeedbackTasks() throws InvalidTopologyException {
         GeneralTopologyContext context = context();
         Set<Integer> outbound = WorkerState.computeOutboundTasks(context, ACKER_TASKS,
                 context.getTaskToComponent(), true);
