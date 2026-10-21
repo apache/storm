@@ -276,6 +276,7 @@ public class TCKTest {
         topology.validate();
     }
 
+    @Test
     public void testInvalidTopologySource() throws Exception {
         TopologyDef topologyDef = FluxParser.parseResource("/configs/invalid-existing-topology.yaml", false, true, null, false);
         assertFalse(topologyDef.validate(), "Topology config is invalid.");
