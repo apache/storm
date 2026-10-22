@@ -520,9 +520,9 @@ int main(int argc, char **argv) {
   ERRORFILE = stderr;
   int my_username = 0;
 
-  // clean up any junk from previous run, there may be nothing to clean up
+  // clean up any junk from previous run
   if (system("chmod -R u=rwx " TEST_ROOT "; rm -fr " TEST_ROOT) != 0) {
-    printf("No previous test directory to clean up\n");
+    printf("WARNING: could not clean up previous test directory\n");
   }
   
   if (mkdirs(TEST_ROOT "/logs/userlogs", 0755) != 0) {

@@ -125,12 +125,15 @@ int main(int argc, char **argv) {
   // if we are running from a setuid executable, make the real uid root
   if (setuid(0) != 0) {
     fprintf(ERRORFILE, "ERROR: unable to set user to root - %s\n", strerror(errno));
+    fprintf(ERRORFILE, "The worker-launcher binary must be owned by root, group-owned by the"
+            " worker-launcher group, with mode 6550 (setuid/setgid)"
+            " (see \"Run worker processes as user who submitted the topology\" in SECURITY.md).\n");
     fflush(ERRORFILE);
     exit(SETUID_OPER_FAILED);
   }
   // set the real and effective group id to the node manager group
   if (setgid(group_info->gr_gid) != 0) {
-    fprintf(ERRORFILE, "ERROR: unable to set group to %d - %s\n", group_info->gr_gid,
+    fprintf(ERRORFILE, "ERROR: unable to set group to %u - %s\n", group_info->gr_gid,
             strerror(errno));
     fflush(ERRORFILE);
     exit(SETUID_OPER_FAILED);
