@@ -520,8 +520,10 @@ int main(int argc, char **argv) {
   ERRORFILE = stderr;
   int my_username = 0;
 
-  // clean up any junk from previous run
-  system("chmod -R u=rwx " TEST_ROOT "; rm -fr " TEST_ROOT);
+  // clean up any junk from previous run, there may be nothing to clean up
+  if (system("chmod -R u=rwx " TEST_ROOT "; rm -fr " TEST_ROOT) != 0) {
+    printf("No previous test directory to clean up\n");
+  }
   
   if (mkdirs(TEST_ROOT "/logs/userlogs", 0755) != 0) {
     exit(1);
@@ -580,7 +582,9 @@ int main(int argc, char **argv) {
   run_test_in_child("test_signal_container_group", test_signal_container_group);
   run_test_in_child("test_get_values_degenerate", test_get_values_degenerate);
 
-  seteuid(0);
+  if (seteuid(0) != 0) {
+    printf("WARNING: unable to reacquire root - %s\n", strerror(errno));
+  }
   run("rm -fr " TEST_ROOT);
   printf("\nFinished tests\n");
 

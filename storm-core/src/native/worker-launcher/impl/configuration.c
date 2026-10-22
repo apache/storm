@@ -206,7 +206,7 @@ void read_config(const char* file_name) {
       goto cleanup;
     }
     memset((void*)config.confdetails[config.size]->key, '\0', key_tok_len+1);
-    strncpy((char *)config.confdetails[config.size]->key, equaltok, key_tok_len);
+    memcpy((char *)config.confdetails[config.size]->key, equaltok, key_tok_len);
     equaltok = strtok_r(NULL, "=", &temp_equaltok);
     if (equaltok == NULL) {
       fprintf(LOGFILE, "configuration tokenization failed \n");
@@ -236,7 +236,7 @@ void read_config(const char* file_name) {
       goto cleanup;
     }
     memset((void *)config.confdetails[config.size]->value, '\0', val_tok_len+1);
-    strncpy((char *)config.confdetails[config.size]->value, equaltok, val_tok_len);
+    memcpy((char *)config.confdetails[config.size]->value, equaltok, val_tok_len);
     if((config.size + 1) % MAX_SIZE  == 0) {
       config.confdetails = (struct confentry **) realloc(config.confdetails,
           sizeof(struct confentry **) * (MAX_SIZE + config.size));

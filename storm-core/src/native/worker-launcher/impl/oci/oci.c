@@ -708,7 +708,7 @@ static void exec_runc(const char* container_id, const char* runc_config_path,
     }
   }
 
-  char* dir_end = strrchr(runc_config_path, '/');
+  const char* dir_end = strrchr(runc_config_path, '/');
   if (dir_end == NULL) {
     fprintf(ERRORFILE, "ERROR: Error getting bundle path from config path %s\n",
         runc_config_path);
