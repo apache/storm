@@ -3094,6 +3094,10 @@ public class Config extends HashMap<String, Object> {
     public static String getHdfsPrincipal(Map<String, Object> conf) throws UnknownHostException {
         String hdfsPrincipal = (String) conf.get(Config.STORM_HDFS_LOGIN_PRINCIPAL);
         if (hdfsPrincipal == null) {
+            if (conf.get("blobstore.hdfs.principal") != null) {
+                LOG.warn("blobstore.hdfs.principal was removed and is ignored; "
+                    + "use storm.hdfs.login.principal instead");
+            }
             return null;
         }
         return substituteHostnameInPrincipal(hdfsPrincipal);
@@ -3106,7 +3110,12 @@ public class Config extends HashMap<String, Object> {
      * @return the keytab
      */
     public static String getHdfsKeytab(Map<String, Object> conf) {
-        return (String) conf.get(Config.STORM_HDFS_LOGIN_KEYTAB);
+        String hdfsKeytab = (String) conf.get(Config.STORM_HDFS_LOGIN_KEYTAB);
+        if (hdfsKeytab == null && conf.get("blobstore.hdfs.keytab") != null) {
+            LOG.warn("blobstore.hdfs.keytab was removed and is ignored; "
+                + "use storm.hdfs.login.keytab instead");
+        }
+        return hdfsKeytab;
     }
 
 }
