@@ -3695,6 +3695,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 waitForDesiredCodeReplication(totalConf, topoId);
                 state.setupHeatbeats(topoId, topoConf);
                 state.setupErrors(topoId, topoConf);
+                if (totalConf.containsKey("topology.backpressure.enable")) {
+                    LOG.warn("topology.backpressure.enable was removed and is ignored; "
+                        + "worker backpressure is handled automatically");
+                }
                 notifyTopologyActionListener(topoName, "submitTopology");
                 TopologyStatus status = null;
                 switch (options.get_initial_status()) {
