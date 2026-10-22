@@ -634,6 +634,7 @@ int reap_oci_layer_mounts(int num_preserve) {
 
 int cleanup_oci_container_by_id(const char* container_id, int num_reap_layers_keep) {
   char* run_root = get_value(OCI_RUN_ROOT_CONFIG_KEY);
+  oci_overlay_desc* desc = NULL;
   int rc = 0;
   if (run_root == NULL) {
     run_root = strdup(DEFAULT_OCI_RUN_ROOT);
@@ -643,7 +644,7 @@ int cleanup_oci_container_by_id(const char* container_id, int num_reap_layers_ke
     }
   }
 
-  oci_overlay_desc* desc = malloc(sizeof(oci_overlay_desc));
+  desc = malloc(sizeof(oci_overlay_desc));
   if (desc == NULL) {
     fputs("ERROR: Unable to allocate memory in cleanup_oci_container_by_id - malloc", ERRORFILE);
     goto mem_fail;

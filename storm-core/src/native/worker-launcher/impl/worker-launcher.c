@@ -936,7 +936,7 @@ char **tokenize_docker_command(const char *input, int *split_counter) {
   char **linesplit = (char **)malloc(sizeof(char *));
   char *p = NULL;
   *split_counter = 0;
-  strncpy(line, input, strlen(input));
+  memcpy(line, input, strlen(input));
 
   p = strtok(line, " ");
   while (p != NULL) {

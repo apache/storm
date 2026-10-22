@@ -123,9 +123,21 @@ int main(int argc, char **argv) {
 
   set_launcher_uid(getuid(), group_info->gr_gid);
   // if we are running from a setuid executable, make the real uid root
-  setuid(0);
+  if (setuid(0) != 0) {
+    fprintf(ERRORFILE, "ERROR: unable to set user to root - %s\n", strerror(errno));
+    fprintf(ERRORFILE, "The worker-launcher binary must be owned by root, group-owned by the"
+            " worker-launcher group, with mode 6550 (setuid/setgid)"
+            " (see \"Run worker processes as user who submitted the topology\" in SECURITY.md).\n");
+    fflush(ERRORFILE);
+    exit(SETUID_OPER_FAILED);
+  }
   // set the real and effective group id to the node manager group
-  setgid(group_info->gr_gid);
+  if (setgid(group_info->gr_gid) != 0) {
+    fprintf(ERRORFILE, "ERROR: unable to set group to %u - %s\n", group_info->gr_gid,
+            strerror(errno));
+    fflush(ERRORFILE);
+    exit(SETUID_OPER_FAILED);
+  }
 
   if (check_executor_permissions(executable_file) != 0) {
     fprintf(LOGFILE, "worker-launcher config file: %s \n", conf_file);
@@ -321,8 +333,13 @@ int main(int argc, char **argv) {
           exit_code = setup_worker_tmp_permissions(working_dir);
           if (exit_code == 0) {
             //becomes root.
-            setuid(0);
-            exit_code = run_oci_container(olc, worker_artifacts_dir);
+            if (setuid(0) != 0) {
+              fprintf(ERRORFILE, "ERROR: unable to set user to root - %s\n", strerror(errno));
+              fflush(ERRORFILE);
+              exit_code = SETUID_OPER_FAILED;
+            } else {
+              exit_code = run_oci_container(olc, worker_artifacts_dir);
+            }
           }
         }
       }
@@ -345,8 +362,13 @@ int main(int argc, char **argv) {
         exit_code = INVALID_ARGUMENT_NUMBER;
       } else {
         //becomes root.
-        setuid(0);
-        exit_code = cleanup_oci_container_by_id(container_id, num_reap_layers_keep);
+        if (setuid(0) != 0) {
+          fprintf(ERRORFILE, "ERROR: unable to set user to root - %s\n", strerror(errno));
+          fflush(ERRORFILE);
+          exit_code = SETUID_OPER_FAILED;
+        } else {
+          exit_code = cleanup_oci_container_by_id(container_id, num_reap_layers_keep);
+        }
       }
     }
   } else if (strcasecmp("profile-oci-container", command) == 0) {
