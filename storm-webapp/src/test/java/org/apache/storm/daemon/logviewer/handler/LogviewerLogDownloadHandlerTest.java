@@ -384,12 +384,98 @@ public class LogviewerLogDownloadHandlerTest {
         }
     }
 
+    @Test
+    public void testDownloadLogFileRemovedAfterCheckIsNotFound() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogDownloadHandler handler = new LogviewerLogDownloadHandler(workerLogRoot.toString(),
+                daemonLogRoot.toString(), mock(WorkerLogs.class), resourceAuthorizer, metricsRegistry);
+
+            Response response;
+            try (MockedStatic<LogFilePaths> ignored = removeFileBeforeOpen()) {
+                response = handler.downloadLogFile("host", "topoA/1111/worker.log", "user");
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS).getCount(), is(0L));
+            assertThat(metricsRegistry.registerHistogram("logviewer:download-file-size-rounded-MB").getCount(), is(0L));
+        }
+    }
+
+    @Test
+    public void testDownloadDaemonLogFileRemovedAfterCheckIsNotFound() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
+            Files.writeString(daemonLogRoot.resolve("nimbus.log"), "nimbus content");
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogDownloadHandler handler = new LogviewerLogDownloadHandler(workerLogRoot.toString(),
+                daemonLogRoot.toString(), mock(WorkerLogs.class), resourceAuthorizer, metricsRegistry);
+
+            Response response;
+            try (MockedStatic<LogFilePaths> ignored = removeFileBeforeOpen()) {
+                response = handler.downloadDaemonLogFile("host", "nimbus.log", "user");
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS).getCount(), is(0L));
+        }
+    }
+
+    @Test
+    public void testDownloadLogFileRecordsSize() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogDownloadHandler handler = new LogviewerLogDownloadHandler(workerLogRoot.toString(),
+                daemonLogRoot.toString(), mock(WorkerLogs.class), resourceAuthorizer, metricsRegistry);
+
+            Response response = handler.downloadLogFile("host", "topoA/1111/worker.log", "user");
+            String content = readEntity(response);
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat(content, is("topoA content"));
+            assertThat(metricsRegistry.registerHistogram("logviewer:download-file-size-rounded-MB").getCount(), is(1L));
+        }
+    }
+
     /**
-     * Lets every worker file pass the check, so the open sees a file that was replaced by a symbolic link after the check.
+     * Lets every worker file pass the check, so the open sees a file that was removed or replaced by a symbolic link after the
+     * check.
      */
     static MockedStatic<LogFilePaths> passWorkerFileCheck() {
         return mockStatic(LogFilePaths.class, invocation -> "isServableWorkerFile".equals(invocation.getMethod().getName())
             ? Boolean.TRUE : invocation.callRealMethod());
+    }
+
+    /**
+     * Removes each file right before it is opened, as the log cleaner or log rotation may do between the check and the open.
+     */
+    static MockedStatic<LogFilePaths> removeFileBeforeOpen() {
+        return mockStatic(LogFilePaths.class, invocation -> {
+            if ("openForReading".equals(invocation.getMethod().getName())) {
+                Files.deleteIfExists(invocation.getArgument(0));
+            }
+            return invocation.callRealMethod();
+        });
     }
 
     /**

@@ -250,6 +250,75 @@ public class LogviewerProfileHandlerTest {
         }
     }
 
+    @Test
+    public void testDownloadDumpFileRemovedAfterCheckIsNotFound() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerProfileHandler handler = new LogviewerProfileHandler(workerLogRoot.toString(), resourceAuthorizer, metricsRegistry);
+
+            Response response;
+            try (MockedStatic<LogFilePaths> ignored = LogviewerLogDownloadHandlerTest.removeFileBeforeOpen()) {
+                response = handler.downloadDumpFile("topoA", "localhost:1111", "worker.jfr", "user");
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS).getCount(), is(0L));
+        }
+    }
+
+    @Test
+    public void testDumpEndpointsRejectPortThatIsNotANumber() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Files.createDirectories(workerLogRoot.resolve("topoA").resolve("abc"));
+            Files.writeString(workerLogRoot.resolve("topoA").resolve("abc").resolve("worker.jfr"), "abc jfr");
+            Files.createDirectories(workerLogRoot.resolve("topoA").resolve("-1111"));
+            Files.writeString(workerLogRoot.resolve("topoA").resolve("-1111").resolve("worker.jfr"), "negative jfr");
+            LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response listNonNumeric = handler.listDumpFiles("topoA", "localhost:abc", "user");
+            Response downloadNonNumeric = handler.downloadDumpFile("topoA", "localhost:abc", "worker.jfr", "user");
+            Response listNegative = handler.listDumpFiles("topoA", "localhost:-1111", "user");
+            Response downloadNegative = handler.downloadDumpFile("topoA", "localhost:-1111", "worker.jfr", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(listNonNumeric.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(downloadNonNumeric.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(listNegative.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(downloadNegative.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testDumpEndpointsRejectEmptyPort() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response listEmpty = handler.listDumpFiles("topoA", "localhost:", "user");
+            Response downloadEmpty = handler.downloadDumpFile("topoA", "localhost:", "worker.jfr", "user");
+            Response listEmptyWithSuffix = handler.listDumpFiles("topoA", "localhost::1111", "user");
+            Response downloadEmptyWithSuffix = handler.downloadDumpFile("topoA", "localhost::1111", "worker.jfr", "user");
+            Response listNoPort = handler.listDumpFiles("topoA", "localhost", "user");
+            Response downloadNoPort = handler.downloadDumpFile("topoA", "localhost", "worker.jfr", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(listEmpty.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(downloadEmpty.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(listEmptyWithSuffix.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(downloadEmptyWithSuffix.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(listNoPort.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(downloadNoPort.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+        }
+    }
+
     /**
      * Creates topoA/1111/worker.jfr and topoB/1111/worker.jfr with distinct content below the worker log root.
      *

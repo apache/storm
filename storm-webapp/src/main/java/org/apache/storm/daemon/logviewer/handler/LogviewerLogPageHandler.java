@@ -263,7 +263,7 @@ public class LogviewerLogPageHandler {
                 //The length is taken from the opened file, so it always belongs to the content that is shown
                 try (SeekableByteChannel channel = openFile(absFile, false)) {
                     if (channel == null) {
-                        //The worker log was replaced by a symbolic link after the check
+                        //The worker log was removed or replaced by a symbolic link after the check
                         return LogviewerResponseBuilder.buildResponsePageNotFound();
                     }
                     fileLength = getOpenedFileLength(channel, isZipFile);
@@ -354,6 +354,10 @@ public class LogviewerLogPageHandler {
             String logString;
             //A daemon log may be a symbolic link, so it is opened following links
             try (SeekableByteChannel channel = openFile(file, true)) {
+                if (channel == null) {
+                    //The daemon log was removed after the check
+                    return LogviewerResponseBuilder.buildResponsePageNotFound();
+                }
                 fileLength = getOpenedFileLength(channel, isZipFile);
                 if (start == null) {
                     start = Long.valueOf(fileLength - length).intValue();

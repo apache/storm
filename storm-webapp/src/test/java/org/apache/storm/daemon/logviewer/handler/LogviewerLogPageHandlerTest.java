@@ -442,6 +442,56 @@ public class LogviewerLogPageHandlerTest {
     }
 
     @Test
+    public void testLogPageRemovedAfterCheckIsNotFound() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogPageHandler handler = new LogviewerLogPageHandler(workerLogRoot.toString(), daemonLogRoot.toString(),
+                mock(WorkerLogs.class), resourceAuthorizer, metricsRegistry);
+
+            final Response returned;
+            try (MockedStatic<LogFilePaths> ignored = LogviewerLogDownloadHandlerTest.removeFileBeforeOpen()) {
+                returned = handler.logPage("topoA/1111/worker.log", 0, 100, null, "user");
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS).getCount());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_READ_EXCEPTIONS).getCount());
+        }
+    }
+
+    @Test
+    public void testDaemonLogPageRemovedAfterCheckIsNotFound() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            createWorkerLogTree(daemonLogRoot);
+            Files.writeString(daemonLogRoot.resolve("nimbus.log"), "nimbus content");
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogPageHandler handler = new LogviewerLogPageHandler(daemonLogRoot.resolve("workers-artifacts").toString(),
+                daemonLogRoot.toString(), mock(WorkerLogs.class), resourceAuthorizer, metricsRegistry);
+
+            final Response returned;
+            try (MockedStatic<LogFilePaths> ignored = LogviewerLogDownloadHandlerTest.removeFileBeforeOpen()) {
+                returned = handler.daemonLogPage("nimbus.log", 0, 100, null, "user");
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS).getCount());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_READ_EXCEPTIONS).getCount());
+        }
+    }
+
+    @Test
     public void testListLogFilesLeavesOutSymbolicLinks() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
             Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");

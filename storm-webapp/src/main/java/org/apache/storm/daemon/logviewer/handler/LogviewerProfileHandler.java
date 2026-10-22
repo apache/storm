@@ -40,6 +40,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
@@ -52,6 +53,8 @@ import org.apache.storm.metric.StormMetricsRegistry;
 public class LogviewerProfileHandler {
 
     public static final String WORKER_LOG_FILENAME = "worker.log";
+
+    private static final Pattern PORT_PATTERN = Pattern.compile("[0-9]+");
 
     private final Meter numFileDownloadExceptions;
 
@@ -82,7 +85,10 @@ public class LogviewerProfileHandler {
      * @return The HTML page representing list page of dump files
      */
     public Response listDumpFiles(String topologyId, String hostPort, String user) throws IOException {
-        String portStr = hostPort.split(":")[1];
+        String portStr = getPort(hostPort);
+        if (portStr == null) {
+            return LogviewerResponseBuilder.buildResponsePageNotFound();
+        }
         Path rawDir = logRoot.resolve(topologyId).resolve(portStr);
         Path absDir = rawDir.toAbsolutePath().normalize();
         if (!absDir.startsWith(logRoot) || !rawDir.normalize().toString().equals(rawDir.toString())) {
@@ -113,9 +119,11 @@ public class LogviewerProfileHandler {
      * @return a Response which lets browsers download that file.
      */
     public Response downloadDumpFile(String topologyId, String hostPort, String fileName, String user) throws IOException {
-        String[] hostPortSplit = hostPort.split(":");
-        String host = hostPortSplit[0];
-        String portStr = hostPortSplit[1];
+        String portStr = getPort(hostPort);
+        if (portStr == null) {
+            return LogviewerResponseBuilder.buildResponsePageNotFound();
+        }
+        String host = hostPort.split(":")[0];
         Path rawFile = logRoot.resolve(topologyId).resolve(portStr).resolve(fileName);
         Path absFile = rawFile.toAbsolutePath().normalize();
         if (!absFile.startsWith(logRoot) || !rawFile.normalize().toString().equals(rawFile.toString())) {
@@ -124,8 +132,7 @@ public class LogviewerProfileHandler {
         }
 
         if (Paths.get(fileName).getNameCount() != 1) {
-            //A dump file is a direct child of the port directory. The depth check below does not cover this on its own:
-            //an empty port (e.g. "host::1111") would let a two element fileName reach a different port directory
+            //A dump file is a direct child of the port directory
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
 
@@ -143,7 +150,7 @@ public class LogviewerProfileHandler {
                     throw e;
                 }
                 if (channel == null) {
-                    //The dump file was replaced by a symbolic link after the check
+                    //The dump file was removed or replaced by a symbolic link after the check
                     return LogviewerResponseBuilder.buildResponsePageNotFound();
                 }
                 // do not close this channel in method: it will be used from jetty server
@@ -154,6 +161,18 @@ public class LogviewerProfileHandler {
         } else {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
+    }
+
+    /**
+     * Get the port part of "host:port". Returns null if the port is missing or not a number, so it can not name anything other
+     * than a port directory.
+     */
+    private static String getPort(String hostPort) {
+        String[] hostPortSplit = hostPort.split(":");
+        if (hostPortSplit.length < 2 || !PORT_PATTERN.matcher(hostPortSplit[1]).matches()) {
+            return null;
+        }
+        return hostPortSplit[1];
     }
 
     private String buildDumpFileListPage(String topologyId, String hostPort, File dir) throws IOException {

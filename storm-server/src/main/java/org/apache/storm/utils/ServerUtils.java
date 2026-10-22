@@ -659,7 +659,9 @@ public class ServerUtils {
      *
      * @param myFile The zip file as input
      * @return zip file size as a long
+     * @deprecated no longer used by Storm, it will be removed in a future release
      */
+    @Deprecated
     public static long zipFileSize(File myFile) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(myFile, "r")) {
             raf.seek(raf.length() - 4);

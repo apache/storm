@@ -25,6 +25,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
@@ -130,22 +131,26 @@ public final class LogFilePaths {
     /**
      * Open a file for reading.
      *
-     * <p>When symbolic links are not followed and the file has been replaced by a symbolic link since it was checked, the open
-     * fails. That case is reported by returning null, so callers can answer it like a missing file instead of a read error.
+     * <p>A file may be removed (e.g. by the log cleaner or by log rotation) after it was checked. When symbolic links are not
+     * followed, the file may also have been replaced by a symbolic link since it was checked, which makes the open fail. Both
+     * cases are reported by returning null, so callers can answer them like a missing file instead of a read error.
      *
      * @param file the file to open
      * @param followLinks whether a symbolic link at the last path element is followed; only the last path element is affected
-     * @return a channel for reading the file, or null if followLinks is false and the file is a symbolic link
+     * @return a channel for reading the file, or null if the file does not exist or if followLinks is false and the file is a
+     *     symbolic link
      * @throws IOException if the file can not be opened for any other reason
      */
     public static SeekableByteChannel openForReading(Path file, boolean followLinks) throws IOException {
-        if (followLinks) {
-            return Files.newByteChannel(file, StandardOpenOption.READ);
-        }
         try {
+            if (followLinks) {
+                return Files.newByteChannel(file, StandardOpenOption.READ);
+            }
             return Files.newByteChannel(file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS);
+        } catch (NoSuchFileException e) {
+            return null;
         } catch (IOException e) {
-            if (Files.isSymbolicLink(file)) {
+            if (!followLinks && Files.isSymbolicLink(file)) {
                 return null;
             }
             throw e;

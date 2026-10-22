@@ -181,7 +181,7 @@ public class LogviewerLogSearchHandler {
                         entity.put("isDaemon", isDaemon ? "yes" : "no");
                         Map<String, Object> res = substringSearch(absFile, search, isDaemon, numMatchesInt, offsetInt);
                         if (res == null) {
-                            //The worker log was replaced by a symbolic link after the check
+                            //The log file was removed or replaced by a symbolic link after the check
                             response = searchLogFileNotFound(callback);
                         } else {
                             entity.putAll(res);
@@ -331,7 +331,8 @@ public class LogviewerLogSearchHandler {
     }
 
     /**
-     * Search the file for the search string. Returns null if a worker log has been replaced by a symbolic link since it was checked.
+     * Search the file for the search string. Returns null if the file has been removed, or a worker log has been replaced by a
+     * symbolic link, since it was checked.
      */
     private Map<String, Object> substringSearch(Path file, String searchString, boolean isDaemon, Integer numMatches,
         Integer startByteOffset) throws InvalidRequestException {
@@ -347,7 +348,7 @@ public class LogviewerLogSearchHandler {
         //A worker log is opened without following a symbolic link, its length is taken from the opened file
         try (SeekableByteChannel channel = LogFilePaths.openForReading(file, isDaemon)) {
             if (channel == null) {
-                //The worker log was replaced by a symbolic link after the check, it is treated like a missing file
+                //The log file was removed or replaced by a symbolic link after the check, it is treated like a missing file
                 return null;
             }
             //It's more likely to be a file read exception here, so we don't differentiate
@@ -504,10 +505,11 @@ public class LogviewerLogSearchHandler {
                 LOG.debug("Looking through {}", firstLog);
                 matchInLog = substringSearch(firstLog, targetStr, numMatches - matchCount, startByteOffset);
                 if (matchInLog == null) {
-                    //The worker log was replaced by a symbolic link after it was listed, it has no matches
+                    //The worker log was removed or replaced by a symbolic link after it was listed, it is not scanned
                     matchInLog = new HashMap<>();
+                } else {
+                    scannedFiles++;
                 }
-                scannedFiles++;
             } catch (InvalidRequestException e) {
                 LOG.error("Can't search past end of file.", e);
                 matchInLog = new HashMap<>();
@@ -817,6 +819,11 @@ public class LogviewerLogSearchHandler {
 
         public List<Map<String, Object>> getMatches() {
             return matches;
+        }
+
+        @VisibleForTesting
+        int getOpenedFiles() {
+            return openedFiles;
         }
 
         @Override

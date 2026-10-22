@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,9 +32,11 @@ import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -143,11 +147,43 @@ public class LogFilePathsTest {
     }
 
     @Test
-    public void testOpenOfMissingFileFails() {
+    public void testOpenOfMissingFileReturnsNull() throws IOException {
         Path missing = tempDir.resolve("missing.log");
 
-        assertThrows(NoSuchFileException.class, () -> LogFilePaths.openForReading(missing, false));
-        assertThrows(NoSuchFileException.class, () -> LogFilePaths.openForReading(missing, true));
+        assertNull(LogFilePaths.openForReading(missing, false));
+        assertNull(LogFilePaths.openForReading(missing, true));
+    }
+
+    @Test
+    public void testOpenReportsFileRemovedAfterCheck() throws IOException {
+        Path root = normalized(Files.createDirectories(tempDir.resolve("logs")));
+        Path file = createWorkerLog(root, "topoA", "topoA content");
+        assertTrue(LogFilePaths.isServableWorkerFile(root, normalized(file)));
+
+        //The file is removed (e.g. by the log cleaner) between the check and the open
+        Files.delete(file);
+
+        assertNull(LogFilePaths.openForReading(file, false));
+    }
+
+    @Test
+    public void testOpenOfDanglingSymbolicLinkReturnsNull() throws IOException {
+        Path link = Files.createSymbolicLink(tempDir.resolve("nimbus.log"), tempDir.resolve("missing.log"));
+
+        assertNull(LogFilePaths.openForReading(link, true));
+        assertNull(LogFilePaths.openForReading(link, false));
+    }
+
+    @Test
+    public void testOpenOfUnreadableFileFails() throws IOException {
+        assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+        assumeFalse("root".equals(System.getProperty("user.name")));
+        Path file = Files.writeString(tempDir.resolve("unreadable.log"), "content");
+        Files.setPosixFilePermissions(file, Collections.emptySet());
+
+        //Errors other than a missing file or a symbolic link are still thrown
+        assertThrows(AccessDeniedException.class, () -> LogFilePaths.openForReading(file, false));
+        assertThrows(AccessDeniedException.class, () -> LogFilePaths.openForReading(file, true));
     }
 
     @Test

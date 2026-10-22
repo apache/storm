@@ -92,7 +92,6 @@ public class LogFileDownloader {
                     //Only widen the permission of a worker log once the request is known to be served
                     workerLogs.setLogFilePermission(fileName);
                 }
-                fileDownloadSizeDistMb.update(Math.round((double) file.toFile().length() / FileUtils.ONE_MB));
                 String downloadedFileName;
                 if (isDaemon) {
                     downloadedFileName = host + "-" + rawFile.getFileName();
@@ -113,9 +112,18 @@ public class LogFileDownloader {
                     throw e;
                 }
                 if (channel == null) {
-                    //The worker log was replaced by a symbolic link after the check
+                    //The log file was removed or replaced by a symbolic link after the check
                     return LogviewerResponseBuilder.buildResponsePageNotFound();
                 }
+                long size;
+                try {
+                    size = channel.size();
+                } catch (IOException e) {
+                    channel.close();
+                    numFileDownloadExceptions.mark();
+                    throw e;
+                }
+                fileDownloadSizeDistMb.update(Math.round((double) size / FileUtils.ONE_MB));
                 // do not close this channel in method: it will be used from jetty server
                 return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, Channels.newInputStream(channel));
             } else {

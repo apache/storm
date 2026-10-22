@@ -1030,13 +1030,79 @@ public class LogviewerLogSearchHandlerTest {
             Files.createSymbolicLink(linkedLog, workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
             List<Path> files = List.of(linkedLog, workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log"));
 
-            final List<Map<String, Object>> matches = getSearchHandler().findNMatches(files, 20, 0, 0, "needle").getMatches();
+            final LogviewerLogSearchHandler.Matched matched = getSearchHandler().findNMatches(files, 20, 0, 0, "needle");
+            final List<Map<String, Object>> matches = matched.getMatches();
 
+            //Only the regular file is counted as scanned
+            assertEquals(1, matched.getOpenedFiles());
             assertEquals(1, matches.size());
             assertEquals(String.join(File.separator, "topoA", "1111", "worker.log"), matches.get(0).get("fileName"));
             List<?> fileMatches = (List<?>) matches.get(0).get("matches");
             assertEquals(1, fileMatches.size());
             assertTrue(((Map<?, ?>) fileMatches.get(0)).get("afterString").toString().contains("from topoA"));
+        }
+    }
+
+    @Test
+    public void testSearchLogFileRemovedAfterCheckIsNotFound() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogSearchHandler handler = new LogviewerLogSearchHandler(Utils.readStormConfig(), workerLogRoot, Paths.get(""),
+                resourceAuthorizer, metricsRegistry);
+
+            Response response;
+            try (MockedStatic<LogFilePaths> ignored = LogviewerLogDownloadHandlerTest.removeFileBeforeOpen()) {
+                response = handler.searchLogFile("topoA/1111/worker.log", "user", false, "needle", null, null, null, null);
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertEquals(404, response.getStatus(), "response: " + response.getEntity());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS).getCount());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_READ_EXCEPTIONS).getCount());
+        }
+    }
+
+    @Test
+    public void testSearchDaemonLogFileRemovedAfterCheckIsNotFound() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Files.createDirectories(daemonLogRoot);
+            Files.writeString(daemonLogRoot.resolve("nimbus.log"), "a needle in the daemon log\n");
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogSearchHandler handler = new LogviewerLogSearchHandler(Utils.readStormConfig(), Paths.get(""), daemonLogRoot,
+                resourceAuthorizer, metricsRegistry);
+
+            Response response;
+            try (MockedStatic<LogFilePaths> ignored = LogviewerLogDownloadHandlerTest.removeFileBeforeOpen()) {
+                response = handler.searchLogFile("nimbus.log", "user", true, "needle", null, null, null, null);
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertEquals(404, response.getStatus(), "response: " + response.getEntity());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS).getCount());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_READ_EXCEPTIONS).getCount());
+        }
+    }
+
+    @Test
+    public void testFindNMatchesSkipsRemovedLog() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Path removedLog = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1");
+            List<Path> files = List.of(removedLog, workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log"));
+
+            final LogviewerLogSearchHandler.Matched matched = getSearchHandler().findNMatches(files, 20, 0, 0, "needle");
+
+            assertEquals(1, matched.getOpenedFiles());
+            assertEquals(1, matched.getMatches().size());
+            assertEquals(String.join(File.separator, "topoA", "1111", "worker.log"), matched.getMatches().get(0).get("fileName"));
         }
     }
 
