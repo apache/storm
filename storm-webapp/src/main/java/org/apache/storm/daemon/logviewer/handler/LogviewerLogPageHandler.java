@@ -45,13 +45,12 @@ import jakarta.ws.rs.core.Response;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -80,7 +79,6 @@ import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.UrlBuilder;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.ServerUtils;
 
 public class LogviewerLogPageHandler {
     private final Meter numPageRead;
@@ -139,7 +137,8 @@ public class LogviewerLogPageHandler {
                         File[] topoDirFiles = topoDir.listFiles();
                         if (topoDirFiles != null) {
                             for (File portDir : topoDirFiles) {
-                                if (portDir.getName().equals(port.toString())) {
+                                if (portDir.getName().equals(port.toString())
+                                    && LogFilePaths.isWorkerDirWithoutSymbolicLink(logRoot, portDir.toPath())) {
                                     fileResults.addAll(directoryCleaner.getFilesForDir(portDir.toPath()));
                                 }
                             }
@@ -159,18 +158,20 @@ public class LogviewerLogPageHandler {
                     File[] topoDirFiles = topoDir.toFile().listFiles();
                     if (topoDirFiles != null) {
                         for (File portDir : topoDirFiles) {
-                            fileResults.addAll(directoryCleaner.getFilesForDir(portDir.toPath()));
+                            if (LogFilePaths.isWorkerDirWithoutSymbolicLink(logRoot, portDir.toPath())) {
+                                fileResults.addAll(directoryCleaner.getFilesForDir(portDir.toPath()));
+                            }
                         }
                     }
                 }
 
             } else {
-                File portDir = ConfigUtils.getWorkerDirFromRoot(logRoot.toString(), topologyId, port).getCanonicalFile();
-                if (!portDir.getPath().startsWith(logRoot.toString())) {
+                Path portDir = ConfigUtils.getWorkerDirFromRoot(logRoot.toString(), topologyId, port).toPath().toAbsolutePath().normalize();
+                if (!portDir.startsWith(logRoot)) {
                     return LogviewerResponseBuilder.buildSuccessJsonResponse(Collections.emptyList(), callback, origin);
                 }
-                if (portDir.exists()) {
-                    fileResults = directoryCleaner.getFilesForDir(portDir.toPath());
+                if (LogFilePaths.isWorkerDirWithoutSymbolicLink(logRoot, portDir)) {
+                    fileResults = directoryCleaner.getFilesForDir(portDir);
                 }
             }
         }
@@ -178,7 +179,10 @@ public class LogviewerLogPageHandler {
         List<String> files;
         if (fileResults != null) {
             Map<String, Boolean> authorizedPortDirs = new HashMap<>();
+            //Symbolic links are left out of the listing, they are not served either. Only links are left out, the listing is
+            //otherwise unchanged (other entries such as subdirectories are still listed as before)
             files = fileResults.stream()
+                    .filter(file -> !Files.isSymbolicLink(file))
                     .map(WorkerLogs::getTopologyPortWorkerLog)
                     .filter(fileStr -> isUserAllowedToAccessLog(user, fileStr, authorizedPortDirs))
                     .sorted().collect(toList());
@@ -257,7 +261,11 @@ public class LogviewerLogPageHandler {
                 long fileLength;
                 String logString;
                 //The length is taken from the opened file, so it always belongs to the content that is shown
-                try (SeekableByteChannel channel = openWorkerFile(absFile)) {
+                try (SeekableByteChannel channel = openFile(absFile, false)) {
+                    if (channel == null) {
+                        //The worker log was replaced by a symbolic link after the check
+                        return LogviewerResponseBuilder.buildResponsePageNotFound();
+                    }
                     fileLength = getOpenedFileLength(channel, isZipFile);
                     if (start == null) {
                         start = Long.valueOf(fileLength - length).intValue();
@@ -342,13 +350,19 @@ public class LogviewerLogPageHandler {
 
             length = length != null ? Math.min(10485760, length) : LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
             final boolean isZipFile = file.getFileName().toString().endsWith(".gz");
-            long fileLength = getFileLength(file.toFile(), isZipFile);
-            if (start == null) {
-                start = Long.valueOf(fileLength - length).intValue();
-            }
+            long fileLength;
+            String logString;
+            //A daemon log may be a symbolic link, so it is opened following links
+            try (SeekableByteChannel channel = openFile(file, true)) {
+                fileLength = getOpenedFileLength(channel, isZipFile);
+                if (start == null) {
+                    start = Long.valueOf(fileLength - length).intValue();
+                }
 
-            String logString = isTxtFile(fileName) ? escapeHtml4(pageFile(file.toString(), isZipFile, fileLength, start, length)) :
+                logString = isTxtFile(fileName)
+                    ? escapeHtml4(pageFile(Channels.newInputStream(channel), isZipFile, fileLength, start, length)) :
                     escapeHtml4("This is a binary file and cannot display! You may download the full file.");
+            }
 
             List<DomContent> bodyContents = new ArrayList<>();
             if (StringUtils.isNotEmpty(grep)) {
@@ -378,18 +392,6 @@ public class LogviewerLogPageHandler {
             return LogviewerResponseBuilder.buildSuccessHtmlResponse(content);
         } else {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
-        }
-    }
-
-    private long getFileLength(File file, boolean isZipFile) throws IOException {
-        try {
-            return isZipFile ? ServerUtils.zipFileSize(file) : file.length();
-        } catch (FileNotFoundException e) {
-            numFileOpenExceptions.mark();
-            throw e;
-        } catch (IOException e) {
-            numFileReadExceptions.mark();
-            throw e;
         }
     }
 
@@ -496,9 +498,9 @@ public class LogviewerLogPageHandler {
         return a(text).withHref(url).withClass("btn btn-default " + (enabled ? "enabled" : "disabled"));
     }
 
-    private SeekableByteChannel openWorkerFile(Path file) throws IOException {
+    private SeekableByteChannel openFile(Path file, boolean followLinks) throws IOException {
         try {
-            return LogFilePaths.openForReading(file, false);
+            return LogFilePaths.openForReading(file, followLinks);
         } catch (IOException e) {
             numFileOpenExceptions.mark();
             throw e;
@@ -512,18 +514,6 @@ public class LogviewerLogPageHandler {
             numFileReadExceptions.mark();
             throw e;
         }
-    }
-
-    private String pageFile(String path, boolean isZipFile, long fileLength, Integer start, Integer readLength)
-        throws IOException, InvalidRequestException {
-        InputStream fileInput;
-        try {
-            fileInput = new FileInputStream(path);
-        } catch (FileNotFoundException e) {
-            numFileOpenExceptions.mark();
-            throw e;
-        }
-        return pageFile(fileInput, isZipFile, fileLength, start, readLength);
     }
 
     private String pageFile(InputStream fileInput, boolean isZipFile, long fileLength, Integer start, Integer readLength)

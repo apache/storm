@@ -47,6 +47,8 @@ import java.util.zip.GZIPOutputStream;
 
 import jakarta.ws.rs.core.Response;
 
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
+import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
@@ -54,6 +56,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 public class LogviewerLogPageHandlerTest {
 
@@ -256,6 +259,35 @@ public class LogviewerLogPageHandlerTest {
     }
 
     @Test
+    public void testDaemonLogPageWithoutStartShowsLastPage() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
+            LogviewerLogPageHandler handler = createHandlerForTraversalTests(rootPath.getFile().toPath(), resourceAuthorizer);
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            String content = "first part " + "x".repeat(200) + " last part";
+            Files.writeString(daemonLogRoot.resolve("nimbus.log"), content);
+            try (OutputStream out = new GZIPOutputStream(Files.newOutputStream(daemonLogRoot.resolve("nimbus.log.gz")))) {
+                out.write(content.getBytes(StandardCharsets.UTF_8));
+            }
+
+            final Response plain = handler.daemonLogPage("nimbus.log", null, 50, null, "user");
+            final Response compressed = handler.daemonLogPage("nimbus.log.gz", null, 50, null, "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            for (Response returned : List.of(plain, compressed)) {
+                assertThat(returned.getStatus(), is(Response.Status.OK.getStatusCode()));
+                String page = (String) returned.getEntity();
+                assertThat(page, containsString("last part"));
+                assertThat(page, not(containsString("first part")));
+                assertThat(page, containsString("Prev"));
+                assertThat(page, containsString("First"));
+            }
+        }
+    }
+
+    @Test
     public void testLogPageDoesNotFollowSymbolicLinkToAnotherTopology() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
@@ -380,6 +412,79 @@ public class LogviewerLogPageHandlerTest {
 
             assertThat(returned.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat((String) returned.getEntity(), containsString("nimbus content"));
+        }
+    }
+
+    @Test
+    public void testLogPageReplacedBySymbolicLinkAfterCheckIsNotFound() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogPageHandler handler = new LogviewerLogPageHandler(workerLogRoot.toString(), daemonLogRoot.toString(),
+                mock(WorkerLogs.class), resourceAuthorizer, metricsRegistry);
+
+            final Response returned;
+            try (MockedStatic<LogFilePaths> ignored = LogviewerLogDownloadHandlerTest.passWorkerFileCheck()) {
+                returned = handler.logPage("topoA/1111/worker.log.1", 0, 100, null, "user");
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(returned.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS).getCount());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_READ_EXCEPTIONS).getCount());
+        }
+    }
+
+    @Test
+    public void testListLogFilesLeavesOutSymbolicLinks() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
+            Path topoBFile = workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log");
+            //A file link, a port directory link and a topology directory link
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"), topoBFile);
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("2222"), topoBFile.getParent());
+            Files.createSymbolicLink(workerLogRoot.resolve("topoC"), workerLogRoot.resolve("topoB"));
+
+            Map<String, Object> stormConf = Utils.readStormConfig();
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), anyString())).thenReturn(true);
+            LogviewerLogPageHandler handler = new LogviewerLogPageHandler(workerLogRoot.toString(), daemonLogRoot.toString(),
+                new WorkerLogs(stormConf, workerLogRoot, metricsRegistry), resourceAuthorizer, metricsRegistry);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<?> all = objectMapper.readValue((String) handler.listLogFiles("user", null, null, null, null).getEntity(), List.class);
+            List<?> byPort = objectMapper.readValue((String) handler.listLogFiles("user", 1111, null, null, null).getEntity(),
+                List.class);
+            List<?> byTopology = objectMapper.readValue((String) handler.listLogFiles("user", null, "topoA", null, null).getEntity(),
+                List.class);
+            List<?> byLinkedTopology = objectMapper.readValue(
+                (String) handler.listLogFiles("user", null, "topoC", null, null).getEntity(), List.class);
+            List<?> byLinkedPort = objectMapper.readValue((String) handler.listLogFiles("user", 2222, "topoA", null, null).getEntity(),
+                List.class);
+            List<?> byLinkedPortOnly = objectMapper.readValue((String) handler.listLogFiles("user", 2222, null, null, null).getEntity(),
+                List.class);
+            List<?> byTopologyAndPort = objectMapper.readValue(
+                (String) handler.listLogFiles("user", 1111, "topoA", null, null).getEntity(), List.class);
+
+            Utils.forceDelete(rootPath.toString());
+
+            String topoALog = String.join(File.separator, "topoA", "1111", "worker.log");
+            String topoBLog = String.join(File.separator, "topoB", "1111", "worker.log");
+            assertEquals(List.of(topoALog, topoBLog), all);
+            assertEquals(List.of(topoALog, topoBLog), byPort);
+            assertEquals(List.of(topoALog), byTopology);
+            assertEquals(List.of(), byLinkedTopology);
+            assertEquals(List.of(), byLinkedPort);
+            assertEquals(List.of(), byLinkedPortOnly);
+            assertEquals(List.of(topoALog), byTopologyAndPort);
         }
     }
 

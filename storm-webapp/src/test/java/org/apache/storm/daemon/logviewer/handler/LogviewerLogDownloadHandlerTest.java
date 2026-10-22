@@ -27,6 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,12 +42,15 @@ import java.nio.file.Path;
 import java.util.Map;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
+import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 public class LogviewerLogDownloadHandlerTest {
 
@@ -352,6 +356,40 @@ public class LogviewerLogDownloadHandlerTest {
             assertThat(status, is(Response.Status.OK.getStatusCode()));
             assertThat(content, is("nimbus content"));
         }
+    }
+
+    @Test
+    public void testDownloadLogFileReplacedBySymbolicLinkAfterCheckIsNotFound() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
+            Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.log"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogDownloadHandler handler = new LogviewerLogDownloadHandler(workerLogRoot.toString(),
+                daemonLogRoot.toString(), mock(WorkerLogs.class), resourceAuthorizer, metricsRegistry);
+
+            Response response;
+            try (MockedStatic<LogFilePaths> ignored = passWorkerFileCheck()) {
+                response = handler.downloadLogFile("host", "topoA/1111/other.log", "user");
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS).getCount(), is(0L));
+        }
+    }
+
+    /**
+     * Lets every worker file pass the check, so the open sees a file that was replaced by a symbolic link after the check.
+     */
+    static MockedStatic<LogFilePaths> passWorkerFileCheck() {
+        return mockStatic(LogFilePaths.class, invocation -> "isServableWorkerFile".equals(invocation.getMethod().getName())
+            ? Boolean.TRUE : invocation.callRealMethod());
     }
 
     /**

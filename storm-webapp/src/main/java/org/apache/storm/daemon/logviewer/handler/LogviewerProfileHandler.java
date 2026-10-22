@@ -35,7 +35,8 @@ import jakarta.ws.rs.core.Response;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.LinkOption;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -123,7 +124,8 @@ public class LogviewerProfileHandler {
         }
 
         if (Paths.get(fileName).getNameCount() != 1) {
-            //A dump file is a direct child of the port directory
+            //A dump file is a direct child of the port directory. The depth check below does not cover this on its own:
+            //an empty port (e.g. "host::1111") would let a two element fileName reach a different port directory
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
 
@@ -133,8 +135,19 @@ public class LogviewerProfileHandler {
             String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
                 String downloadedFileName = host + "-" + topologyId + "-" + portStr + "-" + absFile.getFileName();
-                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, absFile.toFile(), numFileDownloadExceptions,
-                    LinkOption.NOFOLLOW_LINKS);
+                SeekableByteChannel channel;
+                try {
+                    channel = LogFilePaths.openForReading(absFile, false);
+                } catch (IOException e) {
+                    numFileDownloadExceptions.mark();
+                    throw e;
+                }
+                if (channel == null) {
+                    //The dump file was replaced by a symbolic link after the check
+                    return LogviewerResponseBuilder.buildResponsePageNotFound();
+                }
+                // do not close this channel in method: it will be used from jetty server
+                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, Channels.newInputStream(channel));
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }

@@ -39,11 +39,14 @@ import java.nio.file.Path;
 import java.util.Map;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
+import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 public class LogviewerProfileHandlerTest {
 
@@ -201,6 +204,49 @@ public class LogviewerProfileHandlerTest {
 
             assertThat(status, is(Response.Status.OK.getStatusCode()));
             assertThat(content, is("TopoA jfr"));
+        }
+    }
+
+    @Test
+    public void testDownloadDumpFileReplacedBySymbolicLinkAfterCheckIsNotFound() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.jfr"));
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerProfileHandler handler = new LogviewerProfileHandler(workerLogRoot.toString(), resourceAuthorizer, metricsRegistry);
+
+            Response response;
+            try (MockedStatic<LogFilePaths> ignored = LogviewerLogDownloadHandlerTest.passWorkerFileCheck()) {
+                response = handler.downloadDumpFile("topoA", "localhost:1111", "other.jfr", "user");
+            }
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_DOWNLOAD_EXCEPTIONS).getCount(), is(0L));
+        }
+    }
+
+    @Test
+    public void testDownloadDumpFileRejectsFileNameWithSeveralElements() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Path nested = workerLogRoot.resolve("topoA").resolve("1111").resolve("sub").resolve("worker.jfr");
+            Files.createDirectories(nested.getParent());
+            Files.writeString(nested, "nested jfr");
+            LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response nestedResponse = handler.downloadDumpFile("topoA", "localhost:1111", "sub/worker.jfr", "user");
+            //With an empty port, a two element file name would point at a direct child of another port directory
+            Response emptyPortResponse = handler.downloadDumpFile("topoA", "localhost::1111", "1111/worker.jfr", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(nestedResponse.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat(emptyPortResponse.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
         }
     }
 

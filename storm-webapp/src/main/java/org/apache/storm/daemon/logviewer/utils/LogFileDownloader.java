@@ -24,7 +24,8 @@ import com.codahale.metrics.Meter;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
-import java.nio.file.LinkOption;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -103,11 +104,20 @@ public class LogFileDownloader {
                         + pathRelativeToRootDir.getName(1) + "-"
                         + pathRelativeToRootDir.getName(2);
                 }
-                if (isDaemon) {
-                    return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, file.toFile(), numFileDownloadExceptions);
+                //A daemon log may be a symbolic link, a worker log is opened without following one
+                SeekableByteChannel channel;
+                try {
+                    channel = LogFilePaths.openForReading(file, isDaemon);
+                } catch (IOException e) {
+                    numFileDownloadExceptions.mark();
+                    throw e;
                 }
-                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, file.toFile(), numFileDownloadExceptions,
-                    LinkOption.NOFOLLOW_LINKS);
+                if (channel == null) {
+                    //The worker log was replaced by a symbolic link after the check
+                    return LogviewerResponseBuilder.buildResponsePageNotFound();
+                }
+                // do not close this channel in method: it will be used from jetty server
+                return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, Channels.newInputStream(channel));
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }

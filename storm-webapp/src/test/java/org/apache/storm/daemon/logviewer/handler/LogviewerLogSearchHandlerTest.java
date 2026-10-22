@@ -56,6 +56,8 @@ import jakarta.ws.rs.core.Response;
 
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
+import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
+import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.ui.InvalidRequestException;
 import org.apache.storm.metric.StormMetricsRegistry;
@@ -67,6 +69,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 
 public class LogviewerLogSearchHandlerTest {
 
@@ -993,6 +996,47 @@ public class LogviewerLogSearchHandlerTest {
             String entity = (String) response.getEntity();
             assertTrue(entity.contains("from topoA"), entity);
             assertFalse(entity.contains("from topoB"), entity);
+        }
+    }
+
+    @Test
+    public void testSearchLogFileReplacedBySymbolicLinkAfterCheckIsNotFound() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+                workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
+            when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
+            StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();
+            LogviewerLogSearchHandler handler = new LogviewerLogSearchHandler(Utils.readStormConfig(), workerLogRoot, Paths.get(""),
+                resourceAuthorizer, metricsRegistry);
+
+            Response response;
+            try (MockedStatic<LogFilePaths> ignored = LogviewerLogDownloadHandlerTest.passWorkerFileCheck()) {
+                response = handler.searchLogFile("topoA/1111/worker.log.1", "user", false, "needle", null, null, null, null);
+            }
+
+            assertEquals(404, response.getStatus(), "response: " + response.getEntity());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_OPEN_EXCEPTIONS).getCount());
+            assertEquals(0L, metricsRegistry.registerMeter(ExceptionMeterNames.NUM_FILE_READ_EXCEPTIONS).getCount());
+        }
+    }
+
+    @Test
+    public void testFindNMatchesSkipsLogReplacedBySymbolicLink() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Path linkedLog = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1");
+            Files.createSymbolicLink(linkedLog, workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            List<Path> files = List.of(linkedLog, workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log"));
+
+            final List<Map<String, Object>> matches = getSearchHandler().findNMatches(files, 20, 0, 0, "needle").getMatches();
+
+            assertEquals(1, matches.size());
+            assertEquals(String.join(File.separator, "topoA", "1111", "worker.log"), matches.get(0).get("fileName"));
+            List<?> fileMatches = (List<?>) matches.get(0).get("matches");
+            assertEquals(1, fileMatches.size());
+            assertTrue(((Map<?, ?>) fileMatches.get(0)).get("afterString").toString().contains("from topoA"));
         }
     }
 

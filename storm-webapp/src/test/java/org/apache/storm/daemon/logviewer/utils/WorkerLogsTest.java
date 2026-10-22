@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -72,6 +73,28 @@ public class WorkerLogsTest {
             assertEquals(expected, workerLogs.getLogDirs(Collections.singleton(port1Dir), (wid) -> true));
         } finally {
             SupervisorUtils.resetInstance();
+        }
+    }
+
+    @Test
+    public void testGetAllLogsForRootDirLeavesOutSymbolicLinks() throws Exception {
+        try (TmpPath testDir = new TmpPath()) {
+            Path logRoot = testDir.getFile().toPath().resolve("workers-artifacts");
+            Path topoAPortDir = Files.createDirectories(logRoot.resolve("topoA").resolve("6700"));
+            Path topoBPortDir = Files.createDirectories(logRoot.resolve("topoB").resolve("6700"));
+            Path topoALog = Files.writeString(topoAPortDir.resolve("worker.log"), "topoA");
+            Path topoBLog = Files.writeString(topoBPortDir.resolve("worker.log"), "topoB");
+            //A file link, a port directory link and a topology directory link
+            Files.createSymbolicLink(topoAPortDir.resolve("worker.log.1"), topoBLog);
+            Files.createSymbolicLink(logRoot.resolve("topoA").resolve("6701"), topoBPortDir);
+            Files.createSymbolicLink(logRoot.resolve("topoC"), logRoot.resolve("topoB"));
+
+            WorkerLogs workerLogs = new WorkerLogs(Utils.readStormConfig(), logRoot, new StormMetricsRegistry());
+
+            List<Path> logs = workerLogs.getAllLogsForRootDir();
+            Collections.sort(logs);
+
+            assertEquals(List.of(topoALog, topoBLog), logs);
         }
     }
 

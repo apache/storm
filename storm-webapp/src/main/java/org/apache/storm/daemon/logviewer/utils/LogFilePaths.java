@@ -36,8 +36,12 @@ import java.nio.file.StandardOpenOption;
  * The log root itself may still be a symbolic link (or lie below one).
  *
  * <p>Worker files are limited to direct children of a port directory ("topologyId/port/fileName"). The topology and port
- * directories are created by the supervisor, so only the last path element can change between the check and the open, and the
- * open does not follow a symbolic link at the last path element.
+ * directories are created by the supervisor, and only the port directory is handed to the topology owner (see
+ * {@code Container.setupWorkerArtifactsDir}); the topology directory stays owned by the supervisor user. So only the last path
+ * element can change between the check and the open, and the open does not follow a symbolic link at the last path element.
+ *
+ * <p>Hard links can not be told apart from regular files by resolving the real path. Creating a hard link to a file of another
+ * user is expected to be prevented by the operating system (e.g. {@code fs.protected_hardlinks=1} on Linux).
  */
 public final class LogFilePaths {
 
@@ -67,6 +71,19 @@ public final class LogFilePaths {
      */
     public static boolean isServableWorkerFile(Path logRoot, Path file) {
         return isWorkerFilePath(logRoot, file) && isRegularFileWithoutSymbolicLink(logRoot, file);
+    }
+
+    /**
+     * Check that a directory is a worker port directory ("topologyId/port" below the log root) and that neither the port
+     * directory nor the topology directory is a symbolic link.
+     *
+     * @param logRoot the absolute, normalized worker log root; it may itself be or lie below a symbolic link
+     * @param portDir the absolute, normalized directory path
+     * @return true if the directory is a port directory reached without passing through a symbolic link below the log root
+     */
+    public static boolean isWorkerDirWithoutSymbolicLink(Path logRoot, Path portDir) {
+        return portDir.startsWith(logRoot) && logRoot.relativize(portDir).getNameCount() == 2
+            && isDirectoryNotLink(portDir.getParent()) && isDirectoryNotLink(portDir);
     }
 
     /**
@@ -113,15 +130,26 @@ public final class LogFilePaths {
     /**
      * Open a file for reading.
      *
+     * <p>When symbolic links are not followed and the file has been replaced by a symbolic link since it was checked, the open
+     * fails. That case is reported by returning null, so callers can answer it like a missing file instead of a read error.
+     *
      * @param file the file to open
      * @param followLinks whether a symbolic link at the last path element is followed; only the last path element is affected
-     * @return a channel for reading the file
-     * @throws IOException if the file can not be opened, including when it is a symbolic link and followLinks is false
+     * @return a channel for reading the file, or null if followLinks is false and the file is a symbolic link
+     * @throws IOException if the file can not be opened for any other reason
      */
     public static SeekableByteChannel openForReading(Path file, boolean followLinks) throws IOException {
-        return followLinks
-            ? Files.newByteChannel(file, StandardOpenOption.READ)
-            : Files.newByteChannel(file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS);
+        if (followLinks) {
+            return Files.newByteChannel(file, StandardOpenOption.READ);
+        }
+        try {
+            return Files.newByteChannel(file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS);
+        } catch (IOException e) {
+            if (Files.isSymbolicLink(file)) {
+                return null;
+            }
+            throw e;
+        }
     }
 
     /**

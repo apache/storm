@@ -20,6 +20,7 @@ package org.apache.storm.daemon.logviewer.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,6 +31,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -120,10 +122,32 @@ public class LogFilePathsTest {
         assertFalse(LogFilePaths.isServableWorkerFile(root, normalized(link)));
         assertFalse(LogFilePaths.isServableWorkerFile(root, normalized(outsideLink)));
         assertFalse(LogFilePaths.isRegularFileNotLink(link));
-        assertThrows(IOException.class, () -> LogFilePaths.openForReading(link, false).close());
+        assertNull(LogFilePaths.openForReading(link, false));
         try (SeekableByteChannel channel = LogFilePaths.openForReading(link, true)) {
             assertEquals("topoB content", readAll(channel));
         }
+    }
+
+    @Test
+    public void testOpenReportsFileReplacedBySymbolicLinkAfterCheck() throws IOException {
+        Path root = normalized(Files.createDirectories(tempDir.resolve("logs")));
+        Path file = createWorkerLog(root, "topoA", "topoA content");
+        Path target = createWorkerLog(root, "topoB", "topoB content");
+        assertTrue(LogFilePaths.isServableWorkerFile(root, normalized(file)));
+
+        //The file is replaced by a symbolic link between the check and the open
+        Files.delete(file);
+        Files.createSymbolicLink(file, target);
+
+        assertNull(LogFilePaths.openForReading(file, false));
+    }
+
+    @Test
+    public void testOpenOfMissingFileFails() {
+        Path missing = tempDir.resolve("missing.log");
+
+        assertThrows(NoSuchFileException.class, () -> LogFilePaths.openForReading(missing, false));
+        assertThrows(NoSuchFileException.class, () -> LogFilePaths.openForReading(missing, true));
     }
 
     @Test

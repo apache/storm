@@ -180,10 +180,15 @@ public class LogviewerLogSearchHandler {
                         Map<String, Object> entity = new HashMap<>();
                         entity.put("isDaemon", isDaemon ? "yes" : "no");
                         Map<String, Object> res = substringSearch(absFile, search, isDaemon, numMatchesInt, offsetInt);
-                        entity.putAll(res);
-                        noResult = ((List) res.get("matches")).isEmpty();
+                        if (res == null) {
+                            //The worker log was replaced by a symbolic link after the check
+                            response = searchLogFileNotFound(callback);
+                        } else {
+                            entity.putAll(res);
+                            noResult = ((List) res.get("matches")).isEmpty();
 
-                        response = LogviewerResponseBuilder.buildSuccessJsonResponse(entity, callback, origin);
+                            response = LogviewerResponseBuilder.buildSuccessJsonResponse(entity, callback, origin);
+                        }
                     } else {
                         throw new InvalidRequestException("Search substring must be between 1 and 1024 "
                             + "UTF-8 bytes in size (inclusive)");
@@ -325,6 +330,9 @@ public class LogviewerLogSearchHandler {
         return substringSearch(file, searchString, false, numMatches, startByteOffset);
     }
 
+    /**
+     * Search the file for the search string. Returns null if a worker log has been replaced by a symbolic link since it was checked.
+     */
     private Map<String, Object> substringSearch(Path file, String searchString, boolean isDaemon, Integer numMatches,
         Integer startByteOffset) throws InvalidRequestException {
         if (StringUtils.isEmpty(searchString)) {
@@ -338,6 +346,10 @@ public class LogviewerLogSearchHandler {
         boolean isZipFile = file.toString().endsWith(".gz");
         //A worker log is opened without following a symbolic link, its length is taken from the opened file
         try (SeekableByteChannel channel = LogFilePaths.openForReading(file, isDaemon)) {
+            if (channel == null) {
+                //The worker log was replaced by a symbolic link after the check, it is treated like a missing file
+                return null;
+            }
             //It's more likely to be a file read exception here, so we don't differentiate
             int fileLength;
             try {
@@ -491,6 +503,10 @@ public class LogviewerLogSearchHandler {
             try {
                 LOG.debug("Looking through {}", firstLog);
                 matchInLog = substringSearch(firstLog, targetStr, numMatches - matchCount, startByteOffset);
+                if (matchInLog == null) {
+                    //The worker log was replaced by a symbolic link after it was listed, it has no matches
+                    matchInLog = new HashMap<>();
+                }
                 scannedFiles++;
             } catch (InvalidRequestException e) {
                 LOG.error("Can't search past end of file.", e);
