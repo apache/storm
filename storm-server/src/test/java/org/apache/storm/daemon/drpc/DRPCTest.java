@@ -489,6 +489,47 @@ public class DRPCTest {
         }
     }
 
+    @Test
+    public void testImpersonationDenialNamesFunction() throws Exception {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, false))) {
+            setCurrentUser("alice", "bob");
+            try {
+                executeSensitive(server);
+                fail("Expected an AuthorizationException");
+            } catch (AuthorizationException e) {
+                assertTrue(e.get_msg().contains("function 'sensitive'"), e.get_msg());
+            }
+        }
+    }
+
+    /**
+     * Sets up the current request context for an unauthenticated request asking to run as {@code user}.
+     */
+    private static void setUnauthenticatedImpersonation(String user) {
+        setCurrentUser(user, null);
+        ReqContext.context().setRealPrincipal(new SingleUserPrincipal(null));
+    }
+
+    @Test
+    public void testUnauthenticatedImpersonationWithoutImpersonationAuthorizer() throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), conf)) {
+            setUnauthenticatedImpersonation("alice");
+            assertTrue(ReqContext.context().isImpersonating());
+            executeSensitive(server);
+            assertEquals(1, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testUnauthenticatedImpersonationDeniedByImpersonationAuthorizer() throws Exception {
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, true))) {
+            setUnauthenticatedImpersonation("alice");
+            assertThrows(() -> executeSensitive(server), AuthorizationException.class);
+            assertEquals(0, server.getNumTrackedFunctions());
+        }
+    }
+
     public interface ThrowStuff {
         void run() throws Exception;
     }

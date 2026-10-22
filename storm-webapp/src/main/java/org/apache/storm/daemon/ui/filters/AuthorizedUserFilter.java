@@ -147,6 +147,18 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
         ReqContext reqContext = ReqContext.context();
 
         if (reqContext.isImpersonating()) {
+            String realUserName = reqContext.realPrincipal().getName();
+            if (realUserName == null || realUserName.isEmpty()) {
+                Principal principal = reqContext.principal();
+                containerRequestContext.abortWith(
+                        makeResponse(new AuthorizationException(
+                                "A request without an authenticated user is not allowed to act as user '"
+                                        + (principal == null ? "unknown" : principal.getName()) + "'. Please "
+                                        + "see SECURITY.MD to learn how to configure UI authentication."
+                        ), containerRequestContext, 401)
+                );
+                return;
+            }
             if (uiImpersonationHandler != null) {
                 if (!uiImpersonationHandler.permit(reqContext, op, topoConf)) {
                     Principal realPrincipal = reqContext.realPrincipal();
@@ -164,7 +176,7 @@ public class AuthorizedUserFilter implements ContainerRequestFilter {
                     containerRequestContext.abortWith(
                             makeResponse(new AuthorizationException(
                                     "user '" + realUser +  "' is not authorized to impersonate user '"
-                                            + user + "' from host '" + remoteAddress.toString() + "'. Please"
+                                            + user + "' from host '" + remoteAddress + "'. Please "
                                             + "see SECURITY.MD to learn how to configure impersonation ACL."
                             ), containerRequestContext, 401)
                     );

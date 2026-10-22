@@ -24,10 +24,13 @@ import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
+import javax.security.auth.Subject;
 import org.apache.storm.daemon.ui.resources.AuthNimbusOp;
 import org.apache.storm.daemon.ui.resources.UnauthenticatedNimbusOp;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.security.auth.SingleUserPrincipal;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -77,6 +80,71 @@ public class AuthorizedUserFilterTest {
         ArgumentCaptor<Response> response = ArgumentCaptor.forClass(Response.class);
         verify(request).abortWith(response.capture());
         return response.getValue().getStatus();
+    }
+
+    @AfterEach
+    public void resetContext() {
+        ReqContext.context().setSubject(null);
+        ReqContext.context().setRealPrincipal(null);
+        ReqContext.context().setRemoteAddress(null);
+        AuthorizedUserFilter.uiImpersonationHandler = null;
+    }
+
+    /**
+     * Sets up the current request context for a request by {@code realUser} asking to act as {@code user}.
+     */
+    private static void setImpersonation(String realUser, String user) {
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new SingleUserPrincipal(user));
+        ReqContext.context().setSubject(subject);
+        ReqContext.context().setRealPrincipal(new SingleUserPrincipal(realUser));
+    }
+
+    @Test
+    public void doAsUserWithoutAuthenticatedUserIsDeniedWithoutImpersonationAuthorizer() throws Exception {
+        IAuthorizer aclHandler = mock(IAuthorizer.class);
+        when(aclHandler.permit(any(), any(), any())).thenReturn(true);
+        AuthorizedUserFilter filter = filterFor("gated", aclHandler);
+        setImpersonation(null, "alice");
+        ContainerRequestContext request = mock(ContainerRequestContext.class);
+
+        filter.filter(request);
+
+        assertEquals(401, statusOfAbort(request));
+        verify(aclHandler, never()).permit(any(), any(), any());
+    }
+
+    @Test
+    public void doAsUserWithoutAuthenticatedUserIsDeniedWithImpersonationAuthorizer() throws Exception {
+        IAuthorizer aclHandler = mock(IAuthorizer.class);
+        when(aclHandler.permit(any(), any(), any())).thenReturn(true);
+        AuthorizedUserFilter filter = filterFor("gated", aclHandler);
+        IAuthorizer impersonationHandler = mock(IAuthorizer.class);
+        AuthorizedUserFilter.uiImpersonationHandler = impersonationHandler;
+        setImpersonation(null, "alice");
+        ContainerRequestContext request = mock(ContainerRequestContext.class);
+
+        filter.filter(request);
+
+        assertEquals(401, statusOfAbort(request));
+        verify(aclHandler, never()).permit(any(), any(), any());
+    }
+
+    @Test
+    public void deniedImpersonationWithoutRemoteAddressIsRejected() throws Exception {
+        IAuthorizer aclHandler = mock(IAuthorizer.class);
+        when(aclHandler.permit(any(), any(), any())).thenReturn(true);
+        AuthorizedUserFilter filter = filterFor("gated", aclHandler);
+        IAuthorizer impersonationHandler = mock(IAuthorizer.class);
+        when(impersonationHandler.permit(any(), any(), any())).thenReturn(false);
+        AuthorizedUserFilter.uiImpersonationHandler = impersonationHandler;
+        setImpersonation("bob", "alice");
+        ContainerRequestContext request = mock(ContainerRequestContext.class);
+
+        filter.filter(request);
+
+        assertEquals(401, statusOfAbort(request));
+        verify(aclHandler, never()).permit(any(), any(), any());
     }
 
     @Test

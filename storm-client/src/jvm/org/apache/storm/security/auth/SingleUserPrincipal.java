@@ -13,6 +13,7 @@
 package org.apache.storm.security.auth;
 
 import java.security.Principal;
+import java.util.Objects;
 
 /**
  * A Principal that represents a user.
@@ -27,7 +28,7 @@ public class SingleUserPrincipal implements Principal {
 
     @Override
     public boolean equals(Object another) {
-        return another instanceof SingleUserPrincipal && userName.equals(((SingleUserPrincipal) another).userName);
+        return another instanceof SingleUserPrincipal && Objects.equals(userName, ((SingleUserPrincipal) another).userName);
     }
 
     @Override
@@ -42,6 +43,6 @@ public class SingleUserPrincipal implements Principal {
 
     @Override
     public int hashCode() {
-        return userName.hashCode();
+        return Objects.hashCode(userName);
     }
 }

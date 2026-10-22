@@ -66,9 +66,16 @@ public class ImpersonationAuthorizer implements IAuthorizer {
         }
 
         String impersonatingPrincipal = context.realPrincipal().getName();
-        String impersonatingUser = ptol.toLocal(context.realPrincipal());
         String userBeingImpersonated = ptol.toLocal(context.principal());
         InetAddress remoteAddress = context.remoteAddress();
+
+        if (impersonatingPrincipal == null || impersonatingPrincipal.isEmpty()) {
+            LOG.info("An unauthenticated request is trying to impersonate user {} for operation = {} from host = {}, "
+                     + "which is not permitted.", userBeingImpersonated, operation, remoteAddress);
+            return false;
+        }
+
+        String impersonatingUser = ptol.toLocal(context.realPrincipal());
 
         LOG.info("user = {}, principal = {} is attempting to impersonate user = {} for operation = {} from host = {}",
                  impersonatingUser, impersonatingPrincipal, userBeingImpersonated, operation, remoteAddress);
@@ -120,7 +127,7 @@ public class ImpersonationAuthorizer implements IAuthorizer {
             return false;
         }
 
-        LOG.info("Allowing impersonation of user {} by user {}", userBeingImpersonated, impersonatingUser);
+        LOG.debug("Allowing impersonation of user {} by user {}", userBeingImpersonated, impersonatingUser);
         return true;
     }
 
@@ -131,9 +138,10 @@ public class ImpersonationAuthorizer implements IAuthorizer {
         if (remoteAddress == null) {
             return false;
         }
-        return authorizedHosts.contains(remoteAddress.getCanonicalHostName())
-                || authorizedHosts.contains(remoteAddress.getHostName())
-                || authorizedHosts.contains(remoteAddress.getHostAddress());
+        // Check the address first, so that no reverse name lookup is needed when the ACL lists IP addresses.
+        return authorizedHosts.contains(remoteAddress.getHostAddress())
+                || authorizedHosts.contains(remoteAddress.getCanonicalHostName())
+                || authorizedHosts.contains(remoteAddress.getHostName());
     }
 
     private boolean isAllowedToImpersonateUser(Set<String> authorizedGroups, String userBeingImpersonated) {

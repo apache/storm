@@ -136,11 +136,7 @@ public class DRPC implements AutoCloseable {
         Map<String, Object> map = new HashMap<>();
         map.put(DRPCAuthorizerBase.FUNCTION_NAME, function);
         if (reqContext != null && reqContext.isImpersonating()) {
-            if (log) {
-                LOG.info("principal: {} is trying to impersonate principal: {}", reqContext.realPrincipal(), reqContext.principal());
-            } else {
-                LOG.debug("principal: {} is trying to impersonate principal: {}", reqContext.realPrincipal(), reqContext.principal());
-            }
+            LOG.debug("principal: {} is trying to impersonate principal: {}", reqContext.realPrincipal(), reqContext.principal());
             if (impersonationAuth == null) {
                 LOG.warn("impersonation attempt but {} has no authorizer configured, so it is not checked. "
                          + "See the impersonation section of the documentation to learn how to configure it.",
@@ -150,7 +146,8 @@ public class DRPC implements AutoCloseable {
                 throw new WrappedAuthorizationException("principal " + reqContext.realPrincipal()
                                                         + " is not authorized to impersonate principal " + reqContext.principal()
                                                         + fromHost
-                                                        + " for DRPC request '" + operation + "'."
+                                                        + " for DRPC request '" + operation + "'"
+                                                        + " on function '" + function + "'."
                                                         + " See " + Config.NIMBUS_IMPERSONATION_ACL + " to configure impersonation.");
             }
         }

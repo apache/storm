@@ -452,6 +452,7 @@ nimbus.impersonation.acl:
 ```
 
 The DRPC server applies the same `nimbus.impersonation.authorizer` and `nimbus.impersonation.acl` to requests that impersonate another user (for example through the `doAsUser` HTTP header or query parameter), so the DRPC server should be configured with the same settings (including `storm.group.mapping.service`).
+For HTTP requests the host is the address the DRPC server sees the connection come from, so when the DRPC HTTP endpoint is behind a reverse proxy, the hosts listed in `nimbus.impersonation.acl` match the proxy rather than the original client.
 
 To support the oozie use-case, the following config can be supplied:
 ```yaml

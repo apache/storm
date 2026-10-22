@@ -390,4 +390,32 @@ public class DRPCServerTest {
         assertEquals(401, result.status);
         assertNotEquals("sensitive-result", result.body);
     }
+
+    /**
+     * No {@code drpc.http.filter} is configured, so the HTTP requests carry no authenticated user.
+     */
+    private Map<String, Object> getUnauthenticatedConf() {
+        Map<String, Object> conf = getConf(0, 0, 0);
+        conf.put(DaemonConfig.DRPC_HTTP_CREDS_PLUGIN, DefaultHttpCredentialsPlugin.class.getName());
+        conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
+        conf.put(DaemonConfig.DRPC_REQUEST_TIMEOUT_SECS, 30);
+        return conf;
+    }
+
+    @Test
+    public void testHttpUnauthenticatedImpersonationWithoutImpersonationAuthorizer() throws Exception {
+        HttpResult result = runSensitiveRequest(getUnauthenticatedConf(), "?doAsUser=alice");
+        assertEquals(200, result.status);
+        assertEquals("sensitive-result", result.body);
+    }
+
+    @Test
+    public void testHttpUnauthenticatedImpersonationDeniedByImpersonationAuthorizer() throws Exception {
+        Map<String, Object> conf = getUnauthenticatedConf();
+        conf.put(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER, ImpersonationAuthorizer.class.getName());
+        conf.put(Config.NIMBUS_IMPERSONATION_ACL, impersonationAclFor("bob", Collections.singletonList("*")));
+        HttpResult result = runSensitiveRequest(conf, "?doAsUser=alice");
+        assertEquals(401, result.status);
+        assertNotEquals("sensitive-result", result.body);
+    }
 }
