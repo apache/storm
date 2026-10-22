@@ -137,6 +137,13 @@ public class DRPC implements AutoCloseable {
         map.put(DRPCAuthorizerBase.FUNCTION_NAME, function);
         if (reqContext != null && reqContext.isImpersonating()) {
             LOG.debug("principal: {} is trying to impersonate principal: {}", reqContext.realPrincipal(), reqContext.principal());
+            String realUserName = reqContext.realPrincipal().getName();
+            if (realUserName == null || realUserName.isEmpty()) {
+                Principal principal = reqContext.principal();
+                throw new WrappedAuthorizationException("DRPC request '" + operation + "' on function '" + function + "'"
+                                                        + " gives doAsUser '" + (principal == null ? "unknown" : principal.getName())
+                                                        + "' without an authenticated user.");
+            }
             if (impersonationAuth == null) {
                 LOG.warn("impersonation attempt but {} has no authorizer configured, so it is not checked. "
                          + "See the impersonation section of the documentation to learn how to configure it.",

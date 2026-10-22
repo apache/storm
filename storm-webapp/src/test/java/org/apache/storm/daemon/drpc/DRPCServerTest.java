@@ -403,14 +403,21 @@ public class DRPCServerTest {
     }
 
     @Test
-    public void testHttpUnauthenticatedImpersonationWithoutImpersonationAuthorizer() throws Exception {
+    public void testHttpUnauthenticatedImpersonationWithoutImpersonationAuthorizerDenied() throws Exception {
         HttpResult result = runSensitiveRequest(getUnauthenticatedConf(), "?doAsUser=alice");
+        assertEquals(401, result.status);
+        assertNotEquals("sensitive-result", result.body);
+    }
+
+    @Test
+    public void testHttpUnauthenticatedWithoutImpersonation() throws Exception {
+        HttpResult result = runSensitiveRequest(getUnauthenticatedConf(), "");
         assertEquals(200, result.status);
         assertEquals("sensitive-result", result.body);
     }
 
     @Test
-    public void testHttpUnauthenticatedImpersonationDeniedByImpersonationAuthorizer() throws Exception {
+    public void testHttpUnauthenticatedImpersonationWithImpersonationAuthorizerDenied() throws Exception {
         Map<String, Object> conf = getUnauthenticatedConf();
         conf.put(DaemonConfig.NIMBUS_IMPERSONATION_AUTHORIZER, ImpersonationAuthorizer.class.getName());
         conf.put(Config.NIMBUS_IMPERSONATION_ACL, impersonationAclFor("bob", Collections.singletonList("*")));

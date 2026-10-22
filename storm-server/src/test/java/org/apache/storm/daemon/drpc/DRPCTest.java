@@ -53,6 +53,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -511,21 +512,56 @@ public class DRPCTest {
     }
 
     @Test
-    public void testUnauthenticatedImpersonationWithoutImpersonationAuthorizer() throws Exception {
+    public void testUnauthenticatedImpersonationWithoutImpersonationAuthorizerDenied() throws Exception {
         Map<String, Object> conf = new HashMap<>();
         try (DRPC server = new DRPC(new StormMetricsRegistry(), conf)) {
             setUnauthenticatedImpersonation("alice");
             assertTrue(ReqContext.context().isImpersonating());
+            try {
+                executeSensitive(server);
+                fail("Expected an AuthorizationException");
+            } catch (AuthorizationException e) {
+                assertTrue(e.get_msg().contains("function 'sensitive'"), e.get_msg());
+                assertTrue(e.get_msg().contains("doAsUser 'alice'"), e.get_msg());
+            }
+            assertEquals(0, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testUnauthenticatedImpersonationWithEmptyNameDenied() throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), conf)) {
+            setCurrentUser("alice", "");
+            assertTrue(ReqContext.context().isImpersonating());
+            assertThrows(() -> executeSensitive(server), AuthorizationException.class);
+            assertEquals(0, server.getNumTrackedFunctions());
+        }
+    }
+
+    @Test
+    public void testUnauthenticatedRequestWithoutImpersonation() throws Exception {
+        Map<String, Object> conf = new HashMap<>();
+        try (DRPC server = new DRPC(new StormMetricsRegistry(), conf)) {
+            ReqContext context = ReqContext.context();
+            context.setSubject(null);
+            context.setRealPrincipal(null);
+            assertFalse(context.isImpersonating());
             executeSensitive(server);
             assertEquals(1, server.getNumTrackedFunctions());
         }
     }
 
     @Test
-    public void testUnauthenticatedImpersonationDeniedByImpersonationAuthorizer() throws Exception {
+    public void testUnauthenticatedImpersonationWithImpersonationAuthorizerDenied() throws Exception {
         try (DRPC server = new DRPC(new StormMetricsRegistry(), impersonationConf(true, true))) {
             setUnauthenticatedImpersonation("alice");
-            assertThrows(() -> executeSensitive(server), AuthorizationException.class);
+            try {
+                executeSensitive(server);
+                fail("Expected an AuthorizationException");
+            } catch (AuthorizationException e) {
+                assertTrue(e.get_msg().contains("without an authenticated user"), e.get_msg());
+            }
             assertEquals(0, server.getNumTrackedFunctions());
         }
     }
