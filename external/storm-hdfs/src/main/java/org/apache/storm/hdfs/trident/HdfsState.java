@@ -353,7 +353,7 @@ public class HdfsState implements State {
          * @return {@link HdfsFileOptions}
          * @deprecated This method is marked for removal.
          */
-        @Deprecated(since = "2.0.0", forRemoval = true)
+        @Deprecated(since = "1.0.0", forRemoval = true)
         public HdfsFileOptions addRotationAction(RotationAction action) {
             this.rotationActions.add(action);
             return this;
