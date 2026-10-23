@@ -44,6 +44,7 @@ import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.serialization.SerializationFactory;
 import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
+import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
@@ -372,6 +373,24 @@ public class StormCommon {
 
     public static List<String> upstreamFeedbackFields() {
         return Arrays.asList("task-info", "feedback");
+    }
+
+    /**
+     * Returns the distinct upstream source component ids eligible to receive feedback, excluding system components.
+     * System components do not send upstream feedback and therefore have no eligible sources.
+     */
+    public static Set<String> upstreamFeedbackSourceComponents(GeneralTopologyContext context, String componentId) {
+        Set<String> components = new HashSet<>();
+        if (Utils.isSystemId(componentId)) {
+            return components;
+        }
+        for (GlobalStreamId source : context.getSources(componentId).keySet()) {
+            String sourceComponentId = source.get_componentId();
+            if (!Utils.isSystemId(sourceComponentId)) {
+                components.add(sourceComponentId);
+            }
+        }
+        return components;
     }
 
     @SuppressWarnings("unchecked")
