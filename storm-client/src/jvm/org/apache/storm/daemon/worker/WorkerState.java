@@ -46,7 +46,6 @@ import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.DebugOptions;
-import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.NodeInfo;
@@ -826,13 +825,8 @@ public class WorkerState {
             for (Map<String, Grouping> value : context.getTargets(componentId).values()) {
                 components.addAll(value.keySet());
             }
-            if (feedbackEnabled && !Utils.isSystemId(componentId)) {
-                for (GlobalStreamId source : context.getSources(componentId).keySet()) {
-                    String sourceComponentId = source.get_componentId();
-                    if (!Utils.isSystemId(sourceComponentId)) {
-                        components.add(sourceComponentId);
-                    }
-                }
+            if (feedbackEnabled) {
+                components.addAll(StormCommon.upstreamFeedbackSourceComponents(context, componentId));
             }
         }
 
