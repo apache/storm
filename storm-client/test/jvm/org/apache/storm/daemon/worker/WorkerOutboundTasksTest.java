@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
@@ -155,22 +156,33 @@ public class WorkerOutboundTasksTest {
 
     @Test
     public void testTopologyConfigEnabledFeedback() throws IOException, TException {
-        assertOutboundTasksUseTopologyFeedbackConfiguration(true);
+        assertOutboundTasksUseTopologyFeedbackConfiguration(true, 1);
     }
 
     @Test
     public void testTopologyConfigDisabledFeedback() throws IOException, TException {
-        assertOutboundTasksUseTopologyFeedbackConfiguration(false);
+        assertOutboundTasksUseTopologyFeedbackConfiguration(false, 1);
     }
 
-    private void assertOutboundTasksUseTopologyFeedbackConfiguration(boolean topologyFeedbackEnabled) throws IOException, TException {
+    @Test
+    public void testSinkOnlyWorkerHasRemoteOutboundTasksWithFeedbackAndNoAckers() throws IOException, TException {
+        assertOutboundTasksUseTopologyFeedbackConfiguration(true, 0);
+    }
+
+    @Test
+    public void testSinkOnlyWorkerHasNoRemoteOutboundTasksWhenNoFeedbackAndNoAckers() throws IOException, TException {
+        assertOutboundTasksUseTopologyFeedbackConfiguration(false, 0);
+    }
+
+    private void assertOutboundTasksUseTopologyFeedbackConfiguration(boolean topologyFeedbackEnabled, int ackerExecutors)
+            throws IOException, TException {
         Map<String, Object> conf = Utils.readStormConfig();
         // set opposite to topology config to verify topology config is used
         conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, !topologyFeedbackEnabled);
 
         Map<String, Object> topologyConf = new HashMap<>(conf);
         topologyConf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, topologyFeedbackEnabled);
-        topologyConf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 1);
+        topologyConf.put(Config.TOPOLOGY_ACKER_EXECUTORS, ackerExecutors);
         topologyConf.put(Config.TOPOLOGY_WORKERS, 1);
 
         TopologyBuilder builder = new TopologyBuilder();
@@ -194,6 +206,10 @@ public class WorkerOutboundTasksTest {
             WorkerState workerState = TestUtilsForWorkerState.getWorkerState(
                     conf, topologyId, topologyConf, assignmentId, assignment);
             try {
+                assertEquals(Set.of((int) Constants.SYSTEM_TASK_ID, localTask), Set.copyOf(workerState.getLocalTaskIds()),
+                        "worker must host only the sink bolt and the system task");
+                assertEquals(topologyFeedbackEnabled || ackerExecutors > 0, workerState.hasRemoteOutboundTasks(),
+                        "sink-only worker must have remote outbound tasks only if feedback or acking is enabled");
                 Set<Integer> outbound = workerState.getOutboundTasks();
                 componentTasks.get("spout").forEach(t ->
                         assertEquals(topologyFeedbackEnabled, outbound.contains(t),
