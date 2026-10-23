@@ -27,7 +27,7 @@ public interface ILocalDRPC extends DistributedRPC.Iface, DistributedRPCInvocati
      * Shutdown.
      * @deprecated use {@link #close()} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     @Override
     void shutdown();
 }

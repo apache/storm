@@ -15,9 +15,11 @@ package org.apache.storm.transactional;
 import java.math.BigInteger;
 
 /**
- * This is dead code. It is retained to avoid breaking Kryo registration order. 
+ * This is dead code. It is retained to avoid breaking Kryo registration order.
+ *
+ * @deprecated this class is retained only to avoid breaking Kryo registration order and is not intended for active use.
  */
-@Deprecated
+@Deprecated(since = "0.8.0", forRemoval = false)
 public class TransactionAttempt {
     BigInteger txid;
     long attemptId;

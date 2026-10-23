@@ -22,8 +22,10 @@ import org.apache.storm.container.cgroup.core.CpuCore;
  * Report the guaranteed number of ms this worker has requested.
  * It gets the result from cpu.shares.
  * Use this when org.apache.storm.container.cgroup.CgroupManager is used as the storm.resource.isolation.plugin.
+ *
+ * @deprecated please use Metrics V2 ({@link org.apache.storm.metrics2.StormMetricRegistry}) instead.
  */
-@Deprecated
+@Deprecated(since = "2.3.0", forRemoval = true)
 public class CGroupCpuGuarantee extends CGroupMetricsBase<Long> {
     long previousTime = -1;
 

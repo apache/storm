@@ -20,7 +20,7 @@ public interface IKryoDecorator {
      * Decorate the Kryo instance with custom serializations.
      * @deprecated use {@link #decorate(Kryo, Map)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.8.6", forRemoval = true)
     default void decorate(Kryo k) {
     }
 
