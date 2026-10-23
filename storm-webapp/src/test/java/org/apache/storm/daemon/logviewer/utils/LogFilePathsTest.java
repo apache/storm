@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.storm.daemon.logviewer.testsupport.SymbolicLinks;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -119,9 +120,9 @@ public class LogFilePathsTest {
         Path root = normalized(Files.createDirectories(tempDir.resolve("logs")));
         Path target = createWorkerLog(root, "topoB", "topoB content");
         Path portDir = Files.createDirectories(root.resolve("topoA").resolve("6700"));
-        Path link = Files.createSymbolicLink(portDir.resolve("worker.log"), target);
+        Path link = SymbolicLinks.create(portDir.resolve("worker.log"), target);
         Path outside = Files.write(tempDir.resolve("outside.txt"), "outside".getBytes(StandardCharsets.UTF_8));
-        Path outsideLink = Files.createSymbolicLink(portDir.resolve("outside.log"), outside);
+        Path outsideLink = SymbolicLinks.create(portDir.resolve("outside.log"), outside);
 
         assertFalse(LogFilePaths.isServableWorkerFile(root, normalized(link)));
         assertFalse(LogFilePaths.isServableWorkerFile(root, normalized(outsideLink)));
@@ -141,7 +142,7 @@ public class LogFilePathsTest {
 
         //The file is replaced by a symbolic link between the check and the open
         Files.delete(file);
-        Files.createSymbolicLink(file, target);
+        SymbolicLinks.create(file, target);
 
         assertNull(LogFilePaths.openForReading(file, false));
     }
@@ -168,7 +169,7 @@ public class LogFilePathsTest {
 
     @Test
     public void testOpenOfDanglingSymbolicLinkReturnsNull() throws IOException {
-        Path link = Files.createSymbolicLink(tempDir.resolve("nimbus.log"), tempDir.resolve("missing.log"));
+        Path link = SymbolicLinks.create(tempDir.resolve("nimbus.log"), tempDir.resolve("missing.log"));
 
         assertNull(LogFilePaths.openForReading(link, true));
         assertNull(LogFilePaths.openForReading(link, false));
@@ -191,7 +192,7 @@ public class LogFilePathsTest {
         Path root = normalized(Files.createDirectories(tempDir.resolve("logs")));
         createWorkerLog(root, "topoB", "topoB content");
         Path topoDir = Files.createDirectories(root.resolve("topoA"));
-        Files.createSymbolicLink(topoDir.resolve("6700"), root.resolve("topoB").resolve("6700"));
+        SymbolicLinks.create(topoDir.resolve("6700"), root.resolve("topoB").resolve("6700"));
 
         assertFalse(LogFilePaths.isServableWorkerFile(root, topoDir.resolve("6700").resolve("worker.log")));
         assertFalse(LogFilePaths.isDirectoryNotLink(topoDir.resolve("6700")));
@@ -199,10 +200,27 @@ public class LogFilePathsTest {
     }
 
     @Test
+    public void testOpenWorkerFileOpensOnlyServableFiles() throws IOException {
+        Path root = normalized(Files.createDirectories(tempDir.resolve("logs")));
+        Path file = normalized(createWorkerLog(root, "topoA", "topoA content"));
+        createWorkerLog(root, "topoB", "topoB content");
+        SymbolicLinks.create(root.resolve("topoA").resolve("6701"), root.resolve("topoB").resolve("6700"));
+        Path nested = Files.createDirectories(root.resolve("topoA").resolve("6700").resolve("sub")).resolve("worker.log");
+        Files.writeString(nested, "nested content");
+
+        try (SeekableByteChannel channel = LogFilePaths.openWorkerFile(root, file)) {
+            assertEquals("topoA content", readAll(channel));
+        }
+        assertNull(LogFilePaths.openWorkerFile(root, root.resolve("topoA").resolve("6701").resolve("worker.log")));
+        assertNull(LogFilePaths.openWorkerFile(root, nested));
+        assertNull(LogFilePaths.openWorkerFile(root, root.resolve("topoA").resolve("6700").resolve("missing.log")));
+    }
+
+    @Test
     public void testSymbolicLinkAsRootIsAccepted() throws IOException {
         Path realRoot = Files.createDirectories(tempDir.resolve("real-logs"));
         createWorkerLog(realRoot, "topoA", "content");
-        Path linkRoot = normalized(Files.createSymbolicLink(tempDir.resolve("logs"), realRoot));
+        Path linkRoot = normalized(SymbolicLinks.create(tempDir.resolve("logs"), realRoot));
 
         Path file = linkRoot.resolve("topoA").resolve("6700").resolve("worker.log");
         assertTrue(LogFilePaths.isServableWorkerFile(linkRoot, file));

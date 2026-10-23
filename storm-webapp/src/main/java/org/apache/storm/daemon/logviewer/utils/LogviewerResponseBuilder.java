@@ -68,7 +68,7 @@ public class LogviewerResponseBuilder {
      * Build a Response object representing download of an already opened file.
      *
      * @param contentDispositionName The name to set in the Content-Disposition header
-     * @param is the opened file; it is not closed here, it is read when the response is written
+     * @param is the opened file; it is read and then closed when the response is written
      */
     public static Response buildDownloadFile(String contentDispositionName, InputStream is) {
         return Response.status(jakarta.ws.rs.core.Response.Status.OK)
@@ -130,15 +130,18 @@ public class LogviewerResponseBuilder {
     }
 
     private static StreamingOutput wrapWithStreamingOutput(final InputStream inputStream) {
+        //The input is closed once it has been written (or the write failed), Jersey does not close it for a StreamingOutput
         return os -> {
-            OutputStream wrappedOutputStream = os;
-            if (!(os instanceof BufferedOutputStream)) {
-                wrappedOutputStream = new BufferedOutputStream(os);
+            try (InputStream is = inputStream) {
+                OutputStream wrappedOutputStream = os;
+                if (!(os instanceof BufferedOutputStream)) {
+                    wrappedOutputStream = new BufferedOutputStream(os);
+                }
+
+                ByteStreams.copy(is, wrappedOutputStream);
+
+                wrappedOutputStream.flush();
             }
-
-            ByteStreams.copy(inputStream, wrappedOutputStream);
-
-            wrappedOutputStream.flush();
         };
     }
 

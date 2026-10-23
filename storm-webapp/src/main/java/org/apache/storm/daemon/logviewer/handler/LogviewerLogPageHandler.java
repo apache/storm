@@ -502,9 +502,10 @@ public class LogviewerLogPageHandler {
         return a(text).withHref(url).withClass("btn btn-default " + (enabled ? "enabled" : "disabled"));
     }
 
-    private SeekableByteChannel openFile(Path file, boolean followLinks) throws IOException {
+    private SeekableByteChannel openFile(Path file, boolean isDaemon) throws IOException {
         try {
-            return LogFilePaths.openForReading(file, followLinks);
+            //A daemon log may be a symbolic link, a worker log is opened only if it may be served
+            return isDaemon ? LogFilePaths.openForReading(file, true) : LogFilePaths.openWorkerFile(logRoot, file);
         } catch (IOException e) {
             numFileOpenExceptions.mark();
             throw e;

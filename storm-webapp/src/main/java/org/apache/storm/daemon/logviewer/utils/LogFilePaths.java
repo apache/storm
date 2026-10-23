@@ -43,6 +43,11 @@ import java.nio.file.StandardOpenOption;
  *
  * <p>Hard links can not be told apart from regular files by resolving the real path. Creating a hard link to a file of another
  * user is expected to be prevented by the operating system (e.g. {@code fs.protected_hardlinks=1} on Linux).
+ *
+ * <p>The worker may also replace a checked file by a named pipe before the open. Opening a named pipe blocks until a writer
+ * appears, and Java offers no non-blocking open to detect this, so the request thread waits until the worker writes to or
+ * removes the pipe. This lets a topology owner tie up Logviewer request threads, a denial of service by a trusted submitter that
+ * is not guarded against here.
  */
 public final class LogFilePaths {
 
@@ -155,6 +160,23 @@ public final class LogFilePaths {
             }
             throw e;
         }
+    }
+
+    /**
+     * Open a worker file ("topologyId/port/fileName") for reading, if it may be served. This is the only way a worker file should
+     * be opened, so the checks of {@link #isServableWorkerFile(Path, Path)} can not be left out.
+     *
+     * @param logRoot the absolute, normalized worker log root; it may itself be or lie below a symbolic link
+     * @param file the absolute, normalized file path below logRoot
+     * @return a channel for reading the file, or null if the file may not be served, does not exist (any more) or has been
+     *     replaced by a symbolic link since it was checked
+     * @throws IOException if the file can not be opened for any other reason
+     */
+    public static SeekableByteChannel openWorkerFile(Path logRoot, Path file) throws IOException {
+        if (!isServableWorkerFile(logRoot, file)) {
+            return null;
+        }
+        return openForReading(file, false);
     }
 
     /**

@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.apache.storm.daemon.logviewer.testsupport.SymbolicLinks;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
@@ -253,7 +254,7 @@ public class LogviewerLogDownloadHandlerTest {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
             Path link = workerLogRoot.resolve("topoA").resolve("1111").resolve("other.log");
-            Files.createSymbolicLink(link, workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            SymbolicLinks.create(link, workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
 
             WorkerLogs workerLogs = mock(WorkerLogs.class);
             LogviewerLogDownloadHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"), workerLogs);
@@ -275,7 +276,7 @@ public class LogviewerLogDownloadHandlerTest {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
             Path outside = rootPath.getFile().toPath().resolve("outside.txt");
             Files.writeString(outside, "content outside the log root");
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("outside.log"), outside);
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("outside.log"), outside);
 
             WorkerLogs workerLogs = mock(WorkerLogs.class);
             LogviewerLogDownloadHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"), workerLogs);
@@ -297,7 +298,7 @@ public class LogviewerLogDownloadHandlerTest {
             Path realDaemonLogRoot = rootPath.getFile().toPath().resolve("real-logs");
             createWorkerLogTree(realDaemonLogRoot);
             Path linkedDaemonLogRoot = rootPath.getFile().toPath().resolve("logs");
-            Files.createSymbolicLink(linkedDaemonLogRoot, realDaemonLogRoot);
+            SymbolicLinks.create(linkedDaemonLogRoot, realDaemonLogRoot);
 
             WorkerLogs workerLogs = mock(WorkerLogs.class);
             LogviewerLogDownloadHandler handler = createHandlerAllowingOnlyTopoA(linkedDaemonLogRoot, workerLogs);
@@ -340,7 +341,7 @@ public class LogviewerLogDownloadHandlerTest {
             Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
             createWorkerLogTree(daemonLogRoot);
             Path realLog = Files.writeString(daemonLogRoot.resolve("nimbus.log.real"), "nimbus content");
-            Files.createSymbolicLink(daemonLogRoot.resolve("nimbus.log"), realLog);
+            SymbolicLinks.create(daemonLogRoot.resolve("nimbus.log"), realLog);
 
             ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
             when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
@@ -363,7 +364,7 @@ public class LogviewerLogDownloadHandlerTest {
         try (TmpPath rootPath = new TmpPath()) {
             Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
             Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.log"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.log"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
 
             ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);

@@ -47,6 +47,7 @@ import java.util.zip.GZIPOutputStream;
 
 import jakarta.ws.rs.core.Response;
 
+import org.apache.storm.daemon.logviewer.testsupport.SymbolicLinks;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
@@ -291,7 +292,7 @@ public class LogviewerLogPageHandlerTest {
     public void testLogPageDoesNotFollowSymbolicLinkToAnotherTopology() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
 
             WorkerLogs workerLogs = mock(WorkerLogs.class);
@@ -310,7 +311,7 @@ public class LogviewerLogPageHandlerTest {
     public void testLogPageDoesNotListSymbolicLinks() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("logs"));
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
 
             LogviewerLogPageHandler handler = createHandlerAllowingOnlyTopoA(rootPath.getFile().toPath().resolve("logs"),
@@ -333,7 +334,7 @@ public class LogviewerLogPageHandlerTest {
             Path realDaemonLogRoot = rootPath.getFile().toPath().resolve("real-logs");
             createWorkerLogTree(realDaemonLogRoot);
             Path linkedDaemonLogRoot = rootPath.getFile().toPath().resolve("logs");
-            Files.createSymbolicLink(linkedDaemonLogRoot, realDaemonLogRoot);
+            SymbolicLinks.create(linkedDaemonLogRoot, realDaemonLogRoot);
 
             WorkerLogs workerLogs = mock(WorkerLogs.class);
             LogviewerLogPageHandler handler = createHandlerAllowingOnlyTopoA(linkedDaemonLogRoot, workerLogs);
@@ -399,7 +400,7 @@ public class LogviewerLogPageHandlerTest {
             Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
             createWorkerLogTree(daemonLogRoot);
             Path realLog = Files.writeString(daemonLogRoot.resolve("nimbus.log.real"), "nimbus content");
-            Files.createSymbolicLink(daemonLogRoot.resolve("nimbus.log"), realLog);
+            SymbolicLinks.create(daemonLogRoot.resolve("nimbus.log"), realLog);
 
             ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
             when(resourceAuthorizer.isUserAllowedToAccessDaemonFile(anyString())).thenReturn(true);
@@ -420,7 +421,7 @@ public class LogviewerLogPageHandlerTest {
         try (TmpPath rootPath = new TmpPath()) {
             Path daemonLogRoot = rootPath.getFile().toPath().resolve("logs");
             Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
             ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
             when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
@@ -498,9 +499,9 @@ public class LogviewerLogPageHandlerTest {
             Path workerLogRoot = createWorkerLogTree(daemonLogRoot);
             Path topoBFile = workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log");
             //A file link, a port directory link and a topology directory link
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"), topoBFile);
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("2222"), topoBFile.getParent());
-            Files.createSymbolicLink(workerLogRoot.resolve("topoC"), workerLogRoot.resolve("topoB"));
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"), topoBFile);
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("2222"), topoBFile.getParent());
+            SymbolicLinks.create(workerLogRoot.resolve("topoC"), workerLogRoot.resolve("topoB"));
 
             Map<String, Object> stormConf = Utils.readStormConfig();
             StormMetricsRegistry metricsRegistry = new StormMetricsRegistry();

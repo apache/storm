@@ -106,7 +106,7 @@ public class LogFileDownloader {
                 //A daemon log may be a symbolic link, a worker log is opened without following one
                 SeekableByteChannel channel;
                 try {
-                    channel = LogFilePaths.openForReading(file, isDaemon);
+                    channel = isDaemon ? LogFilePaths.openForReading(file, true) : LogFilePaths.openWorkerFile(rootDir, file);
                 } catch (IOException e) {
                     numFileDownloadExceptions.mark();
                     throw e;
@@ -124,7 +124,6 @@ public class LogFileDownloader {
                     throw e;
                 }
                 fileDownloadSizeDistMb.update(Math.round((double) size / FileUtils.ONE_MB));
-                // do not close this channel in method: it will be used from jetty server
                 return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, Channels.newInputStream(channel));
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);

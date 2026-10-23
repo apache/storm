@@ -252,8 +252,9 @@ public class LogviewerLogSearchHandler {
 
             if (StringUtils.isEmpty(portStr) || portStr.equals("*")) {
                 try (Stream<Path> topoDir = Files.list(absTopoDir)) {
-                    // check for all ports
+                    // check for all ports, a port directory reached through a symbolic link is left out
                     Stream<List<Path>> portsOfLogs = topoDir
+                        .filter(portDir -> LogFilePaths.isWorkerDirWithoutSymbolicLink(rootDir, portDir))
                         .map(portDir -> logsForPort(user, portDir))
                         .filter(logs -> logs != null && !logs.isEmpty());
 
@@ -280,8 +281,8 @@ public class LogviewerLogSearchHandler {
                 } else {
                     Path absPortDir = absTopoDir.resolve(Integer.toString(port)).toAbsolutePath().normalize();
 
-                    if (!absPortDir.toFile().exists()
-                        || !absPortDir.startsWith(absTopoDir)) {
+                    if (!absPortDir.startsWith(absTopoDir)
+                        || !LogFilePaths.isWorkerDirWithoutSymbolicLink(rootDir, absPortDir)) {
                         returnValue = new ArrayList<>();
                     } else {
                         List<Path> filteredLogs = logsForPort(user, absPortDir);
@@ -345,7 +346,8 @@ public class LogviewerLogSearchHandler {
         }
 
         boolean isZipFile = file.toString().endsWith(".gz");
-        //A worker log is opened without following a symbolic link, its length is taken from the opened file
+        //A worker log is opened without following a symbolic link, its length is taken from the opened file. The callers check that
+        //a worker log may be served: searchLogFile checks the file, deep search only lists port directories that may be served
         try (SeekableByteChannel channel = LogFilePaths.openForReading(file, isDaemon)) {
             if (channel == null) {
                 //The log file was removed or replaced by a symbolic link after the check, it is treated like a missing file

@@ -96,7 +96,8 @@ public class LogviewerProfileHandler {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
 
-        if (absDir.toFile().exists()) {
+        //A port directory must not be reached through a symbolic link, otherwise it is answered like a missing directory
+        if (LogFilePaths.isWorkerDirWithoutSymbolicLink(logRoot, absDir)) {
             String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
                 String content = buildDumpFileListPage(topologyId, hostPort, absDir.toFile());
@@ -123,7 +124,7 @@ public class LogviewerProfileHandler {
         if (portStr == null) {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
         }
-        String host = hostPort.split(":")[0];
+        String host = hostPort.substring(0, hostPort.lastIndexOf(':'));
         Path rawFile = logRoot.resolve(topologyId).resolve(portStr).resolve(fileName);
         Path absFile = rawFile.toAbsolutePath().normalize();
         if (!absFile.startsWith(logRoot) || !rawFile.normalize().toString().equals(rawFile.toString())) {
@@ -144,7 +145,7 @@ public class LogviewerProfileHandler {
                 String downloadedFileName = host + "-" + topologyId + "-" + portStr + "-" + absFile.getFileName();
                 SeekableByteChannel channel;
                 try {
-                    channel = LogFilePaths.openForReading(absFile, false);
+                    channel = LogFilePaths.openWorkerFile(logRoot, absFile);
                 } catch (IOException e) {
                     numFileDownloadExceptions.mark();
                     throw e;
@@ -153,7 +154,6 @@ public class LogviewerProfileHandler {
                     //The dump file was removed or replaced by a symbolic link after the check
                     return LogviewerResponseBuilder.buildResponsePageNotFound();
                 }
-                // do not close this channel in method: it will be used from jetty server
                 return LogviewerResponseBuilder.buildDownloadFile(downloadedFileName, Channels.newInputStream(channel));
             } else {
                 return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
@@ -164,15 +164,15 @@ public class LogviewerProfileHandler {
     }
 
     /**
-     * Get the port part of "host:port". Returns null if the port is missing or not a number, so it can not name anything other
-     * than a port directory.
+     * Get the port part of "host:port", the host may contain ':' itself (e.g. "[::1]:6700"). Returns null if the port is missing or
+     * not a number, so it can not name anything other than a port directory.
      */
     private static String getPort(String hostPort) {
-        String[] hostPortSplit = hostPort.split(":");
-        if (hostPortSplit.length < 2 || !PORT_PATTERN.matcher(hostPortSplit[1]).matches()) {
+        String portStr = hostPort.substring(hostPort.lastIndexOf(':') + 1);
+        if (hostPort.indexOf(':') < 0 || !PORT_PATTERN.matcher(portStr).matches()) {
             return null;
         }
-        return hostPortSplit[1];
+        return portStr;
     }
 
     private String buildDumpFileListPage(String topologyId, String hostPort, File dir) throws IOException {

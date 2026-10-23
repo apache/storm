@@ -56,6 +56,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
+import org.apache.storm.daemon.logviewer.testsupport.SymbolicLinks;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
@@ -924,7 +925,7 @@ public class LogviewerLogSearchHandlerTest {
     public void testSearchLogFileDoesNotFollowSymbolicLink() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
             LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
 
@@ -954,7 +955,7 @@ public class LogviewerLogSearchHandlerTest {
         try (TmpPath rootPath = new TmpPath()) {
             Path realWorkerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("real-workers-artifacts"));
             Path linkedWorkerLogRoot = rootPath.getFile().toPath().resolve("workers-artifacts");
-            Files.createSymbolicLink(linkedWorkerLogRoot, realWorkerLogRoot);
+            SymbolicLinks.create(linkedWorkerLogRoot, realWorkerLogRoot);
             LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(linkedWorkerLogRoot);
 
             Response response = handler.searchLogFile("topoA/1111/worker.log", "user", false, "needle", null, null, null, null);
@@ -973,7 +974,7 @@ public class LogviewerLogSearchHandlerTest {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
             Path portDir = workerLogRoot.resolve("topoA").resolve("1111");
-            Files.createSymbolicLink(portDir.resolve("worker.log.1"), workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            SymbolicLinks.create(portDir.resolve("worker.log.1"), workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
             LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
 
             List<Path> logs = handler.logsForPort("user", portDir);
@@ -986,7 +987,7 @@ public class LogviewerLogSearchHandlerTest {
     public void testDeepSearchLogsForTopologyDoesNotFollowSymbolicLinks() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
             LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
 
@@ -1000,10 +1001,32 @@ public class LogviewerLogSearchHandlerTest {
     }
 
     @Test
+    public void testDeepSearchLogsForTopologyDoesNotFollowSymbolicPortDir() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            //6700 is one of the default supervisor slot ports, so the single port search looks at it
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("6700"), workerLogRoot.resolve("topoB").resolve("1111"));
+            LogviewerLogSearchHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response allPorts = handler.deepSearchLogsForTopology("topoA", "user", "needle", "10", "*", "0", "0", true, null, null);
+            Response singlePort = handler.deepSearchLogsForTopology("topoA", "user", "needle", "10", "6700", "0", "0", true, null,
+                null);
+
+            assertEquals(200, allPorts.getStatus());
+            String allPortsEntity = (String) allPorts.getEntity();
+            assertTrue(allPortsEntity.contains("from topoA"), allPortsEntity);
+            assertFalse(allPortsEntity.contains("from topoB"), allPortsEntity);
+            assertEquals(200, singlePort.getStatus());
+            String singlePortEntity = (String) singlePort.getEntity();
+            assertFalse(singlePortEntity.contains("from topoB"), singlePortEntity);
+        }
+    }
+
+    @Test
     public void testSearchLogFileReplacedBySymbolicLinkAfterCheckIsNotFound() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
             ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
             when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
@@ -1027,7 +1050,7 @@ public class LogviewerLogSearchHandlerTest {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createWorkerLogTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
             Path linkedLog = workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log.1");
-            Files.createSymbolicLink(linkedLog, workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
+            SymbolicLinks.create(linkedLog, workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.log"));
             List<Path> files = List.of(linkedLog, workerLogRoot.resolve("topoA").resolve("1111").resolve("worker.log"));
 
             final LogviewerLogSearchHandler.Matched matched = getSearchHandler().findNMatches(files, 20, 0, 0, "needle");

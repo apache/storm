@@ -33,6 +33,7 @@ import java.util.Optional;
 
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.apache.storm.daemon.logviewer.testsupport.SymbolicLinks;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.testing.TmpPath;
@@ -85,9 +86,9 @@ public class WorkerLogsTest {
             Path topoALog = Files.writeString(topoAPortDir.resolve("worker.log"), "topoA");
             Path topoBLog = Files.writeString(topoBPortDir.resolve("worker.log"), "topoB");
             //A file link, a port directory link and a topology directory link
-            Files.createSymbolicLink(topoAPortDir.resolve("worker.log.1"), topoBLog);
-            Files.createSymbolicLink(logRoot.resolve("topoA").resolve("6701"), topoBPortDir);
-            Files.createSymbolicLink(logRoot.resolve("topoC"), logRoot.resolve("topoB"));
+            SymbolicLinks.create(topoAPortDir.resolve("worker.log.1"), topoBLog);
+            SymbolicLinks.create(logRoot.resolve("topoA").resolve("6701"), topoBPortDir);
+            SymbolicLinks.create(logRoot.resolve("topoC"), logRoot.resolve("topoB"));
 
             WorkerLogs workerLogs = new WorkerLogs(Utils.readStormConfig(), logRoot, new StormMetricsRegistry());
 

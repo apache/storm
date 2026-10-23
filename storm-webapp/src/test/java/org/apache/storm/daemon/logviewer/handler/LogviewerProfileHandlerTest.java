@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.apache.storm.daemon.logviewer.testsupport.SymbolicLinks;
 import org.apache.storm.daemon.logviewer.utils.ExceptionMeterNames;
 import org.apache.storm.daemon.logviewer.utils.LogFilePaths;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
@@ -155,7 +156,7 @@ public class LogviewerProfileHandlerTest {
     public void testDownloadDumpFileDoesNotFollowSymbolicLink() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.jfr"));
             LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
 
@@ -173,7 +174,7 @@ public class LogviewerProfileHandlerTest {
     public void testListDumpFilesDoesNotListSymbolicLinks() throws Exception {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.jfr"));
             LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
 
@@ -189,11 +190,53 @@ public class LogviewerProfileHandlerTest {
     }
 
     @Test
+    public void testListDumpFilesDoesNotFollowSymbolicPortDir() throws Exception {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            Path outside = rootPath.getFile().toPath().resolve("outside");
+            Files.createDirectories(outside);
+            Files.writeString(outside.resolve("secret.jfr"), "outside jfr");
+            //A topology id containing a separator would name a directory below the port directory, which the worker controls
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("123"), outside);
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("2222"), workerLogRoot.resolve("topoB").resolve("1111"));
+            LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response belowPortDir = handler.listDumpFiles("topoA" + File.separator + "1111", "localhost:123", "user");
+            Response linkedPortDir = handler.listDumpFiles("topoA", "localhost:2222", "user");
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat((String) belowPortDir.getEntity(), belowPortDir.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+            assertThat((String) linkedPortDir.getEntity(), linkedPortDir.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testDownloadDumpFileWithIpv6Host() throws IOException {
+        try (TmpPath rootPath = new TmpPath()) {
+            Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
+            LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(workerLogRoot);
+
+            Response list = handler.listDumpFiles("topoA", "[::1]:1111", "user");
+            Response response = handler.downloadDumpFile("topoA", "[::1]:1111", "worker.jfr", "user");
+            String content = readEntity(response);
+
+            Utils.forceDelete(rootPath.toString());
+
+            assertThat(list.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat((String) list.getEntity(), containsString("worker.jfr"));
+            assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            assertThat(response.getHeaderString(HttpHeaders.CONTENT_DISPOSITION), containsString("[::1]-topoA-1111-worker.jfr"));
+            assertThat(content, is("TopoA jfr"));
+        }
+    }
+
+    @Test
     public void testDownloadDumpFileUnderSymbolicLinkRoot() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
             Path realWorkerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("real-workers-artifacts"));
             Path linkedWorkerLogRoot = rootPath.getFile().toPath().resolve("workers-artifacts");
-            Files.createSymbolicLink(linkedWorkerLogRoot, realWorkerLogRoot);
+            SymbolicLinks.create(linkedWorkerLogRoot, realWorkerLogRoot);
             LogviewerProfileHandler handler = createHandlerAllowingOnlyTopoA(linkedWorkerLogRoot);
 
             Response response = handler.downloadDumpFile("topoA", "localhost:1111", "worker.jfr", "user");
@@ -211,7 +254,7 @@ public class LogviewerProfileHandlerTest {
     public void testDownloadDumpFileReplacedBySymbolicLinkAfterCheckIsNotFound() throws IOException {
         try (TmpPath rootPath = new TmpPath()) {
             Path workerLogRoot = createDumpFileTree(rootPath.getFile().toPath().resolve("workers-artifacts"));
-            Files.createSymbolicLink(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
+            SymbolicLinks.create(workerLogRoot.resolve("topoA").resolve("1111").resolve("other.jfr"),
                 workerLogRoot.resolve("topoB").resolve("1111").resolve("worker.jfr"));
             ResourceAuthorizer resourceAuthorizer = mock(ResourceAuthorizer.class);
             when(resourceAuthorizer.isUserAllowedToAccessFile(anyString(), startsWith("topoA" + File.separator))).thenReturn(true);
@@ -303,8 +346,9 @@ public class LogviewerProfileHandlerTest {
 
             Response listEmpty = handler.listDumpFiles("topoA", "localhost:", "user");
             Response downloadEmpty = handler.downloadDumpFile("topoA", "localhost:", "worker.jfr", "user");
-            Response listEmptyWithSuffix = handler.listDumpFiles("topoA", "localhost::1111", "user");
-            Response downloadEmptyWithSuffix = handler.downloadDumpFile("topoA", "localhost::1111", "worker.jfr", "user");
+            //The port is the part after the last ':', so an IPv6 host without a port has an empty port
+            Response listEmptyWithSuffix = handler.listDumpFiles("topoA", "[::1]:", "user");
+            Response downloadEmptyWithSuffix = handler.downloadDumpFile("topoA", "[::1]:", "worker.jfr", "user");
             Response listNoPort = handler.listDumpFiles("topoA", "localhost", "user");
             Response downloadNoPort = handler.downloadDumpFile("topoA", "localhost", "worker.jfr", "user");
 
