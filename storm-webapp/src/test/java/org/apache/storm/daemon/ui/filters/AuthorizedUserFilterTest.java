@@ -53,6 +53,10 @@ public class AuthorizedUserFilterTest {
         public void gated() {
         }
 
+        @AuthNimbusOp(value = "getTopology", needsTopoId = true)
+        public void topologyGated() {
+        }
+
         @UnauthenticatedNimbusOp("filtered by Nimbus using the authenticated remote user")
         public void optedOut() {
         }
@@ -127,6 +131,21 @@ public class AuthorizedUserFilterTest {
         filter.filter(request);
 
         assertEquals(401, statusOfAbort(request));
+        verify(aclHandler, never()).permit(any(), any(), any());
+    }
+
+    @Test
+    public void doAsUserWithoutAuthenticatedUserIsDeniedBeforeTopologyConfLookup() throws Exception {
+        IAuthorizer aclHandler = mock(IAuthorizer.class);
+        AuthorizedUserFilter filter = filterFor("topologyGated", aclHandler);
+        setImpersonation(null, "alice");
+        ContainerRequestContext request = mock(ContainerRequestContext.class);
+
+        filter.filter(request);
+
+        assertEquals(401, statusOfAbort(request));
+        //The topology id is read only to fetch the topology conf from Nimbus, so Nimbus is never called
+        verify(request, never()).getUriInfo();
         verify(aclHandler, never()).permit(any(), any(), any());
     }
 

@@ -31,7 +31,6 @@ import jakarta.ws.rs.ext.Provider;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.security.auth.ReqContext;
@@ -63,9 +62,9 @@ public class ReqContextFilter implements Filter {
             return null;
         }
         try {
-            // The servlet container reports an IP address literal, so no name lookup happens here.
-            return InetAddress.getByName(remoteAddr);
-        } catch (UnknownHostException e) {
+            // The servlet container reports an IP address literal; ofLiteral never does a name lookup.
+            return InetAddress.ofLiteral(remoteAddr);
+        } catch (IllegalArgumentException e) {
             return null;
         }
     }
