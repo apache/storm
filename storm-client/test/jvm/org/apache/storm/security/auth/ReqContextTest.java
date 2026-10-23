@@ -27,6 +27,12 @@ import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class ReqContextTest {
 
     private ReqContext rc;
@@ -74,5 +80,17 @@ public class ReqContextTest {
         assertNotNull(rc.principal());
         assertEquals(principalName, rc.principal().getName());
         rc.setSubject(null);
+    }
+
+    @Test
+    public void testIsImpersonatingWithUnnamedRealPrincipal() {
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new SingleUserPrincipal("alice"));
+        ReqContext context = new ReqContext(subject);
+        assertFalse(context.isImpersonating());
+        context.setRealPrincipal(new SingleUserPrincipal(null));
+        assertTrue(context.isImpersonating());
+        context.setRealPrincipal(new SingleUserPrincipal("alice"));
+        assertFalse(context.isImpersonating());
     }
 }

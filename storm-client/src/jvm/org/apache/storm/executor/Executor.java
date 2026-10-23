@@ -60,7 +60,6 @@ import org.apache.storm.executor.spout.SpoutExecutor;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.DebugOptions;
-import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
@@ -636,11 +635,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      */
     private List<Integer> computeUpstreamTaskIds() {
         Set<Integer> taskIds = new HashSet<>();
-        for (GlobalStreamId source : workerTopologyContext.getSources(componentId).keySet()) {
-            String sourceComponentId = source.get_componentId();
-            if (Utils.isSystemId(sourceComponentId)) {
-                continue;
-            }
+        for (String sourceComponentId : StormCommon.upstreamFeedbackSourceComponents(workerTopologyContext, componentId)) {
             taskIds.addAll(workerTopologyContext.getComponentTasks(sourceComponentId));
         }
         return new ArrayList<>(taskIds);

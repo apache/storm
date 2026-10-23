@@ -187,6 +187,19 @@ Impact of this on performance is dependent on the topology and its deployment fo
 Consequently it is useful to assess the impact of setting `topology.disable.loadaware.messaging` to `true` or `false` for your
 specific case.
 
+### Jitter-aware messaging
+
+`org.apache.storm.grouping.JitterAwareStreamGrouping` is an opt-in grouping that favors downstream
+tasks reporting lower jitter, falling back to load-aware shuffle when jitter feedback cannot
+distinguish the candidates. It requires both `topology.stats.ewma.enable=true` and
+`topology.upstream.feedback.enable=true` (both default to `false`). Enabling feedback alone
+does not select this grouping.
+
+Enabling upstream feedback increases inter-worker connection fan-in: each worker hosting a user
+bolt establishes an outbound Netty client connection to every remote worker hosting any task of
+that bolt's immediate upstream components (spouts or bolts), regardless of stream grouping.
+Connections are shared across tasks targeting the same worker, and existing outbound connections
+are reused. Same-worker feedback does not require a network connection.
 
 ## 7. Sampling Rate
 Sampling rate is used to control how often certain metrics are computed on the Spout and Bolt executors. This is configured using `topology.stats.sample.rate`

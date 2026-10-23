@@ -68,8 +68,10 @@ import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.serialization.ITupleSerializer;
 import org.apache.storm.serialization.KryoTupleSerializer;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.Sets;
+import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.task.WorkerUserContext;
 import org.apache.storm.tuple.AddressedTuple;
@@ -852,12 +854,31 @@ public class WorkerState {
      * @return seq of task ids that receive messages from this worker
      */
     private Set<Integer> workerOutboundTasks() {
-        WorkerTopologyContext context = getWorkerTopologyContext();
+        return computeOutboundTasks(getWorkerTopologyContext(), localTaskIds, taskToComponent,
+                ConfigUtils.upstreamFeedbackEnable(topologyConf));
+    }
+
+    /**
+     * Computes the set of task ids this worker sends messages to.
+     *
+     * <p>Normally these are the tasks of the components that are downstream targets of the
+     * locally-hosted components. When upstream feedback is enabled, the source (upstream)
+     * components of the locally-hosted components are also included: feedback tuples are routed
+     * directly to those upstream tasks (bypassing stream grouping), so they must be reachable
+     * remote destinations and have connections established. Otherwise the feedback is
+     * dropped and {@code TransferDrainer} logs "No remote destination available for task".
+     */
+    @VisibleForTesting
+    static Set<Integer> computeOutboundTasks(GeneralTopologyContext context, Collection<Integer> localTaskIds,
+                                             Map<Integer, String> taskToComponent, boolean feedbackEnabled) {
         Set<String> components = new HashSet<>();
         for (Integer taskId : localTaskIds) {
-            for (Map<String, Grouping> value : context.getTargets(context.getComponentId(taskId))
-                    .values()) {
+            String componentId = context.getComponentId(taskId);
+            for (Map<String, Grouping> value : context.getTargets(componentId).values()) {
                 components.addAll(value.keySet());
+            }
+            if (feedbackEnabled) {
+                components.addAll(StormCommon.upstreamFeedbackSourceComponents(context, componentId));
             }
         }
 
