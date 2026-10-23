@@ -40,8 +40,8 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,16 +61,18 @@ public class TupleTracerTest {
     private static final Map<String, Integer> WORKER_PORT_BY_COMPONENT = new ConcurrentHashMap<>();
     private static final AckTracker SPOUT_ACKS = new AckTracker();
 
-    private static ILocalCluster cluster;
     private static int topologyCount;
 
-    @BeforeAll
-    public static void startCluster() throws Exception {
+    private ILocalCluster cluster;
+
+    @BeforeEach
+    public void startCluster() throws Exception {
         cluster = new LocalCluster();
     }
 
-    @AfterAll
-    public static void stopCluster() throws Exception {
+    // closing the topology does not wait for its workers to stop, so the cluster stops them here
+    @AfterEach
+    public void stopCluster() throws Exception {
         cluster.close();
     }
 
