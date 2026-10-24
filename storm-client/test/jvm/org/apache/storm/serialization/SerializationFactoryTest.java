@@ -17,9 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import java.util.Map;
 import org.apache.storm.Config;
-import org.apache.storm.security.serialization.BlowfishTupleSerializer;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.ListDelegate;
@@ -48,14 +50,11 @@ public class SerializationFactoryTest {
 
     @Test
     public void test_registers_when_valid_class_name() {
-        Class arbitraryClass = BlowfishTupleSerializer.class;
-        String secretKey = "0123456789abcdef";
+        Class arbitraryClass = MockTupleSerializer.class;
         Map<String, Object> conf = Utils.readDefaultConfig();
         conf.put(Config.TOPOLOGY_TUPLE_SERIALIZER, arbitraryClass.getName());
-        conf.put(BlowfishTupleSerializer.SECRET_KEY, secretKey);
         Kryo kryo = SerializationFactory.getKryo(conf);
         assertEquals(arbitraryClass, kryo.getSerializer(ListDelegate.class).getClass());
-
     }
 
     @Test
@@ -91,6 +90,17 @@ public class SerializationFactoryTest {
     }
 
     public static class MockSerObject {
+    }
+
+    public static class MockTupleSerializer extends Serializer<ListDelegate> {
+        @Override
+        public void write(Kryo kryo, Output output, ListDelegate object) {
+        }
+
+        @Override
+        public ListDelegate read(Kryo kryo, Input input, Class<? extends ListDelegate> type) {
+            return null;
+        }
     }
 
 }

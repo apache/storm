@@ -680,7 +680,7 @@ The size limits need a caveat. `maxbytes` counts stream bytes per object, not pe
 
 An invalid pattern is rejected when the topology is submitted, and otherwise fails worker startup.
 
-For tuple encryption, use TLS-based transport encryption (`storm.messaging.netty.tls.enable`) instead of the deprecated `BlowfishTupleSerializer`, which uses a 64-bit block cipher vulnerable to birthday attacks.
+For tuple encryption, use TLS-based transport encryption (`storm.messaging.netty.tls.enable`). The legacy `BlowfishTupleSerializer` has been removed because it uses a 64-bit block cipher vulnerable to birthday attacks.
 
 ### Log Cleanup
 The Logviewer daemon now is also responsible for cleaning up old log files for dead topologies.
