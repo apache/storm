@@ -50,7 +50,8 @@ public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
     }
 
     @Override
-    public void execute(ReturnResultsState state, int streamIndex, TridentTuple input, TridentCollector collector) {
+    public void execute(ReturnResultsState state, int streamIndex, TridentTuple input,
+        TridentCollector collector) {
         if (streamIndex == 0) {
             state.returnInfo = input.getString(0);
         } else {

@@ -26,7 +26,8 @@ import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.shade.io.netty.buffer.ByteBuf;
 import org.apache.storm.shade.io.netty.buffer.ByteBufAllocator;
 
-// Instances of this type are sent from NettyWorker to upstream WorkerTransfer to indicate BackPressure situation
+// Instances of this type are sent from NettyWorker to upstream WorkerTransfer to indicate
+// BackPressure situation
 public class BackPressureStatus {
     public static final short IDENTIFIER = (short) -600;
     private static final int SIZE_OF_ID = 2; // size if IDENTIFIER
@@ -45,7 +46,8 @@ public class BackPressureStatus {
     /**
      * Constructor.
      */
-    public BackPressureStatus(String workerId, Collection<Integer> bpTasks, Collection<Integer> nonBpTasks) {
+    public BackPressureStatus(String workerId, Collection<Integer> bpTasks,
+            Collection<Integer> nonBpTasks) {
         this.workerId = workerId;
         this.id = bpCount.incrementAndGet();
         this.bpTasks = bpTasks;
@@ -58,7 +60,8 @@ public class BackPressureStatus {
 
     @Override
     public String toString() {
-        return "{worker=" + workerId + ", bpStatusId=" + id + ", bpTasks=" + bpTasks + ", nonBpTasks=" + nonBpTasks + '}';
+        return "{worker=" + workerId + ", bpStatusId=" + id + ", bpTasks=" + bpTasks
+                + ", nonBpTasks=" + nonBpTasks + '}';
     }
 
     /**

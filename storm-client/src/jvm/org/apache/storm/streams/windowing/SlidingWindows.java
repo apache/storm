@@ -47,7 +47,8 @@ public class SlidingWindows<L, I> extends BaseWindow<L, I> {
      * @param windowLength    the time duration of the window
      * @param slidingInterval the time duration after which the window slides
      */
-    public static SlidingWindows<Duration, Duration> of(Duration windowLength, Duration slidingInterval) {
+    public static SlidingWindows<Duration, Duration> of(Duration windowLength,
+            Duration slidingInterval) {
         return new SlidingWindows<>(windowLength, slidingInterval);
     }
 
@@ -88,8 +89,10 @@ public class SlidingWindows<L, I> extends BaseWindow<L, I> {
     }
 
     /**
-     * The name of the field in the tuple that contains the timestamp when the event occurred as a long value. This is used of event-time
-     * based processing. If this config is set and the field is not present in the incoming tuple, an {@link IllegalArgumentException} will
+     * The name of the field in the tuple that contains the timestamp when the event occurred as a
+     * long value. This is used of event-time
+     * based processing. If this config is set and the field is not present in the incoming tuple,
+     * an {@link IllegalArgumentException} will
      * be thrown.
      *
      * @param fieldName the name of the field that contains the timestamp
@@ -100,12 +103,17 @@ public class SlidingWindows<L, I> extends BaseWindow<L, I> {
     }
 
     /**
-     * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the {@link
-     * org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field. It must be defined on a per-component basis, and in
-     * conjunction with the {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
+     * Specify a stream id on which late tuples are going to be emitted. They are going to be
+     * accessible via the {@link
+     * org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field. It must be defined on
+     * a per-component basis, and in
+     * conjunction with the {@link BaseWindowedBolt#withTimestampField}, otherwise {@link
+     * IllegalArgumentException} will be thrown.
      *
-     * <p>The late tuple is emitted as a {@link org.apache.storm.tuple.DetachedTuple}, a serializable copy of the original
-     * tuple detached from the topology context, so it can be consumed by bolts running in other workers.
+     * <p>The late tuple is emitted as a {@link org.apache.storm.tuple.DetachedTuple}, a
+     * serializable copy of the original
+     * tuple detached from the topology context, so it can be consumed by bolts running in other
+     * workers.
      *
      * @param streamId the name of the stream used to emit late tuples on
      */
@@ -115,7 +123,8 @@ public class SlidingWindows<L, I> extends BaseWindow<L, I> {
     }
 
     /**
-     * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps cannot be out of order by
+     * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple
+     * timestamps cannot be out of order by
      * more than this amount.
      *
      * @param duration the max lag duration
@@ -139,10 +148,12 @@ public class SlidingWindows<L, I> extends BaseWindow<L, I> {
 
         SlidingWindows<?, ?> that = (SlidingWindows<?, ?>) o;
 
-        if (windowLength != null ? !windowLength.equals(that.windowLength) : that.windowLength != null) {
+        if (windowLength != null ? !windowLength
+                .equals(that.windowLength) : that.windowLength != null) {
             return false;
         }
-        return slidingInterval != null ? slidingInterval.equals(that.slidingInterval) : that.slidingInterval == null;
+        return slidingInterval != null ? slidingInterval
+                .equals(that.slidingInterval) : that.slidingInterval == null;
 
     }
 

@@ -12,6 +12,9 @@
 
 package org.apache.storm.security.auth.authorizer;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,9 +30,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class SupervisorSimpleACLAuthorizerTest {
 
     @Test
@@ -41,20 +41,22 @@ public class SupervisorSimpleACLAuthorizerTest {
         Map<String, Object> topoConf = new HashMap<>();
         topoConf.put(Config.TOPOLOGY_USERS, new HashSet<>(Collections.singletonList("user-a")));
 
-        assertFalse(authorizer.permit(new ReqContext(new Subject()), "getLocalAssignmentForStorm", topoConf));
+        assertFalse(authorizer.permit(new ReqContext(new Subject()), "getLocalAssignmentForStorm",
+                topoConf));
     }
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
     public void nimbusUserIsStillAllowedItsCommands() {
         Map<String, Object> clusterConf = ConfigUtils.readStormConfig();
-        clusterConf.put(Config.NIMBUS_DAEMON_USERS, new HashSet<>(Collections.singletonList("nimbus-daemon")));
+        clusterConf.put(Config.NIMBUS_DAEMON_USERS, new HashSet<>(Collections
+                .singletonList("nimbus-daemon")));
 
         IAuthorizer authorizer = new SupervisorSimpleACLAuthorizer();
         authorizer.prepare(clusterConf);
 
         assertTrue(authorizer.permit(new ReqContext(subjectOf("nimbus-daemon")),
-            "sendSupervisorAssignments", new HashMap<>()));
+                "sendSupervisorAssignments", new HashMap<>()));
     }
 
     private Subject subjectOf(String name) {

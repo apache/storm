@@ -37,7 +37,8 @@ public class CpuacctCore implements CgroupCore {
     }
 
     public Long getCpuUsage() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPUACCT_USAGE)).get(0));
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir,
+                CPUACCT_USAGE)).get(0));
     }
 
     public Map<StatType, Long> getCpuStat() throws IOException {
@@ -49,7 +50,8 @@ public class CpuacctCore implements CgroupCore {
     }
 
     public Long[] getPerCpuUsage() throws IOException {
-        String str = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPUACCT_USAGE_PERCPU)).get(0);
+        String str = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPUACCT_USAGE_PERCPU))
+                .get(0);
         String[] strArgs = str.split(" ");
         Long[] result = new Long[strArgs.length];
         for (int i = 0; i < result.length; i++) {

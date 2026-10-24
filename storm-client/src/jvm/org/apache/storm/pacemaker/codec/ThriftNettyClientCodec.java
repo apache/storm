@@ -28,8 +28,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Builds the Pacemaker client pipeline.
  *
- * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
- *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed
+ *     in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports
+ *     them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
 @Deprecated(since = "3.1.0", forRemoval = true)
@@ -38,7 +40,7 @@ public class ThriftNettyClientCodec extends ChannelInitializer<Channel> {
     public static final String SASL_HANDLER = "sasl-handler";
     public static final String KERBEROS_HANDLER = "kerberos-handler";
     private static final Logger LOG = LoggerFactory
-        .getLogger(ThriftNettyClientCodec.class);
+            .getLogger(ThriftNettyClientCodec.class);
 
     private final int thriftMessageMaxSize;
     private final PacemakerClient client;
@@ -65,10 +67,10 @@ public class ThriftNettyClientCodec extends ChannelInitializer<Channel> {
             try {
                 LOG.debug("Adding KerberosSaslClientHandler to pacemaker client pipeline.");
                 pipeline.addLast(KERBEROS_HANDLER,
-                                 new KerberosSaslClientHandler(client,
-                                                               topoConf,
-                                                               ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT,
-                                                               host));
+                        new KerberosSaslClientHandler(client,
+                                topoConf,
+                                ClientAuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT,
+                                host));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

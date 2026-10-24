@@ -54,7 +54,7 @@ public class CgroupUtils {
         Set<SubSystemType> result = new HashSet<SubSystemType>();
         String[] subSystems = str.split(",");
         for (String subSystem : subSystems) {
-            //return null to mount options in string that is not part of cgroups
+            // return null to mount options in string that is not part of cgroups
             SubSystemType type = SubSystemType.getSubSystem(subSystem);
             if (type != null) {
                 result.add(type);
@@ -85,7 +85,8 @@ public class CgroupUtils {
         return Files.readLines(new File(filePath), Charset.defaultCharset());
     }
 
-    public static void writeFileByLine(String filePath, List<String> linesToWrite) throws IOException {
+    public static void writeFileByLine(String filePath,
+            List<String> linesToWrite) throws IOException {
         LOG.debug("For CGroups - writing {} to {} ", linesToWrite, filePath);
         File file = new File(filePath);
         if (!file.exists()) {

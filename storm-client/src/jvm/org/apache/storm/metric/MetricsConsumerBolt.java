@@ -43,7 +43,8 @@ public class MetricsConsumerBolt implements IBolt {
     private Thread taskExecuteThread;
     private volatile boolean running = true;
 
-    public MetricsConsumerBolt(String consumerClassName, Object registrationArgument, int maxRetainMetricTuples,
+    public MetricsConsumerBolt(String consumerClassName, Object registrationArgument,
+            int maxRetainMetricTuples,
                                Predicate<IMetricsConsumer.DataPoint> filterPredicate, DataPointExpander expander) {
 
         this.consumerClassName = consumerClassName;
@@ -60,14 +61,16 @@ public class MetricsConsumerBolt implements IBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         try {
             metricsConsumer = (IMetricsConsumer) Class.forName(consumerClassName).newInstance();
         } catch (Exception e) {
-            throw new RuntimeException("Could not instantiate a class listed in config under section "
-                            + Config.TOPOLOGY_METRICS_CONSUMER_REGISTER
-                            + " with fully qualified name "
-                            + consumerClassName,
+            throw new RuntimeException("Could not instantiate a class listed in config under "
+                    + "section "
+                    + Config.TOPOLOGY_METRICS_CONSUMER_REGISTER
+                    + " with fully qualified name "
+                    + consumerClassName,
                     e);
         }
         metricsConsumer.prepare(topoConf, registrationArgument, context, collector);
@@ -81,8 +84,10 @@ public class MetricsConsumerBolt implements IBolt {
     public void execute(Tuple input) {
         IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) input.getValue(0);
         Collection<IMetricsConsumer.DataPoint> dataPoints = (Collection) input.getValue(1);
-        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = expander.expandDataPoints(dataPoints);
-        List<IMetricsConsumer.DataPoint> filteredDataPoints = getFilteredDataPoints(expandedDataPoints);
+        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = expander
+                .expandDataPoints(dataPoints);
+        List<IMetricsConsumer.DataPoint> filteredDataPoints =
+                getFilteredDataPoints(expandedDataPoints);
         MetricsTask metricsTask = new MetricsTask(taskInfo, filteredDataPoints);
 
         while (!taskQueue.offer(metricsTask)) {
@@ -107,7 +112,8 @@ public class MetricsConsumerBolt implements IBolt {
         private IMetricsConsumer.TaskInfo taskInfo;
         private Collection<IMetricsConsumer.DataPoint> dataPoints;
 
-        MetricsTask(IMetricsConsumer.TaskInfo taskInfo, Collection<IMetricsConsumer.DataPoint> dataPoints) {
+        MetricsTask(IMetricsConsumer.TaskInfo taskInfo,
+                Collection<IMetricsConsumer.DataPoint> dataPoints) {
             this.taskInfo = taskInfo;
             this.dataPoints = dataPoints;
         }

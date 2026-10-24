@@ -19,7 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Filter for debugging purposes. The `isKeep()` method simply prints the tuple to `System.out` and returns `true`.
+ * Filter for debugging purposes. The `isKeep()` method simply prints the tuple to `System.out` and
+ * returns `true`.
  */
 public class Debug extends BaseFilter {
     private static final Logger LOG = LoggerFactory.getLogger(Debug.class);

@@ -13,7 +13,8 @@
 package org.apache.storm.trident.operation;
 
 /**
- * A one-one transformation function which is aware of Operation (lifecycle of the Trident component).
+ * A one-one transformation function which is aware of Operation (lifecycle of the Trident
+ * component).
  */
 public interface OperationAwareMapFunction extends MapFunction, Operation {
 }

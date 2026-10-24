@@ -33,13 +33,17 @@ public class KryoTupleSerializer implements ITupleSerializer {
     private final int compressionThreshold;
     private final int zstdCompressionLevel;
 
-    public KryoTupleSerializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
+    public KryoTupleSerializer(final Map<String, Object> conf,
+            final GeneralTopologyContext context) {
         kryo = new KryoValuesSerializer(conf);
         kryoOut = new Output(2000, 2000000000);
         ids = new SerializationFactory.IdDictionary(context.getRawTopology());
-        isCompressionEnabled = ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE), false);
-        compressionThreshold = ObjectReader.getInt(conf.get(Config.TOPOLOGY_TUPLE_COMPRESSION_THRESHOLD), DEFAULT_COMPRESSION_THRESHOLD);
-        zstdCompressionLevel = ObjectReader.getInt(conf.get(Config.STORM_COMPRESSION_ZSTD_LEVEL), DEFAULT_ZSTD_COMPRESSION_LEVEL);
+        isCompressionEnabled = ObjectReader.getBoolean(conf
+                .get(Config.TOPOLOGY_TUPLE_COMPRESSION_ENABLE), false);
+        compressionThreshold = ObjectReader.getInt(conf
+                .get(Config.TOPOLOGY_TUPLE_COMPRESSION_THRESHOLD), DEFAULT_COMPRESSION_THRESHOLD);
+        zstdCompressionLevel = ObjectReader.getInt(conf.get(Config.STORM_COMPRESSION_ZSTD_LEVEL),
+                DEFAULT_ZSTD_COMPRESSION_LEVEL);
     }
 
     @Override
@@ -48,7 +52,8 @@ public class KryoTupleSerializer implements ITupleSerializer {
 
             kryoOut.reset();
             kryoOut.writeInt(tuple.getSourceTask(), true);
-            kryoOut.writeInt(ids.getStreamId(tuple.getSourceComponent(), tuple.getSourceStreamId()), true);
+            kryoOut.writeInt(ids.getStreamId(tuple.getSourceComponent(), tuple.getSourceStreamId()),
+                    true);
             tuple.getMessageId().serialize(kryoOut);
             kryo.serializeInto(tuple.getValues(), kryoOut);
 

@@ -20,7 +20,8 @@ import org.apache.storm.task.IErrorReporter;
 import org.apache.storm.task.TopologyContext;
 
 public interface IMetricsConsumer {
-    void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter);
+    void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context,
+            IErrorReporter errorReporter);
 
     void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints);
 
@@ -37,7 +38,8 @@ public interface IMetricsConsumer {
         public TaskInfo() {
         }
 
-        public TaskInfo(String srcWorkerHost, int srcWorkerPort, String srcComponentId, int srcTaskId, long timestamp,
+        public TaskInfo(String srcWorkerHost, int srcWorkerPort, String srcComponentId,
+                int srcTaskId, long timestamp,
                         int updateIntervalSecs) {
             this.srcWorkerHost = srcWorkerHost;
             this.srcWorkerPort = srcWorkerPort;
@@ -102,8 +104,8 @@ public interface IMetricsConsumer {
             DataPoint dataPoint = (DataPoint) o;
 
             return Objects.equals(name, dataPoint.name)
-                && Objects.deepEquals(value, dataPoint.value)
-                && Objects.deepEquals(dimensions, dataPoint.dimensions);
+                    && Objects.deepEquals(value, dataPoint.value)
+                    && Objects.deepEquals(dimensions, dataPoint.dimensions);
         }
 
         @Override

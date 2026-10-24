@@ -12,6 +12,11 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Principal;
@@ -57,7 +62,7 @@ public class ReqContextTest {
     }
 
     /**
-     * If subject has no principals, request context should return null principal
+     * If subject has no principals, request context should return null principal.
      */
     @Test
     public void testPrincipalReturnsNullWhenNoSubject() {

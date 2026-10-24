@@ -20,7 +20,6 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.trident.tuple.TridentTupleView.FreshOutputFactory;
 
-
 public class FreshCollector implements TridentCollector {
     FreshOutputFactory factory;
     TridentContext triContext;

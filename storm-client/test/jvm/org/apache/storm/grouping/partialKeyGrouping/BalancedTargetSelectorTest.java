@@ -12,6 +12,9 @@
 
 package org.apache.storm.grouping.partialKeyGrouping;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.apache.storm.grouping.PartialKeyGrouping;
@@ -19,15 +22,12 @@ import org.apache.storm.utils.Utils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-
 public class BalancedTargetSelectorTest {
 
+    private static final int[] TASK_LIST =  {9, 8, 7, 6};
 
-    private static final int[] TASK_LIST = { 9, 8, 7, 6 };
-
-    private final PartialKeyGrouping.TargetSelector targetSelector = new PartialKeyGrouping.BalancedTargetSelector();
+    private final PartialKeyGrouping.TargetSelector targetSelector = new PartialKeyGrouping
+            .BalancedTargetSelector();
 
     @Test
     public void classIsSerializable() {
@@ -39,16 +39,17 @@ public class BalancedTargetSelectorTest {
         // select tasks once more than the number of tasks available
         for (int i = 0; i < TASK_LIST.length + 1; i++) {
             int selectedTask = targetSelector.chooseTask(TASK_LIST);
-            assertThat(selectedTask, Matchers.in(Arrays.stream(TASK_LIST).boxed().collect(Collectors.toList())));
+            assertThat(selectedTask, Matchers.in(Arrays.stream(TASK_LIST).boxed().collect(Collectors
+                    .toList())));
         }
     }
 
     @Test
     public void selectsTaskThatHasBeenUsedTheLeast() {
         // ensure that the first three tasks have been selected before
-        targetSelector.chooseTask(new int[]{ TASK_LIST[0] });
-        targetSelector.chooseTask(new int[]{ TASK_LIST[1] });
-        targetSelector.chooseTask(new int[]{ TASK_LIST[2] });
+        targetSelector.chooseTask(new int[] {TASK_LIST[0]});
+        targetSelector.chooseTask(new int[] {TASK_LIST[1]});
+        targetSelector.chooseTask(new int[] {TASK_LIST[2]});
 
         // now, selecting from the full set should cause the fourth task to be chosen.
         int selectedTask = targetSelector.chooseTask(TASK_LIST);

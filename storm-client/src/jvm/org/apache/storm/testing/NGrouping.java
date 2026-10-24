@@ -28,7 +28,8 @@ public class NGrouping implements CustomStreamGrouping {
     }
 
     @Override
-    public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+    public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+        List<Integer> targetTasks) {
         targetTasks = new ArrayList<Integer>(targetTasks);
         Collections.sort(targetTasks);
         outTasks = new ArrayList<Integer>();

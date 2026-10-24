@@ -14,7 +14,6 @@ package org.apache.storm.serialization;
 
 import org.apache.storm.tuple.Tuple;
 
-
 public interface ITupleSerializer {
     byte[] serialize(Tuple tuple);
     //    long crc32(Tuple tuple);

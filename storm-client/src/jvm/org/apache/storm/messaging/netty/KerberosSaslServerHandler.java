@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory
-        .getLogger(KerberosSaslServerHandler.class);
+            .getLogger(KerberosSaslServerHandler.class);
     private final ISaslServer server;
     /**
      * Used for client or server's token to send or receive from each other.
@@ -33,7 +33,8 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
     private final String jaasSection;
     private final List<String> authorizedUsers;
 
-    public KerberosSaslServerHandler(ISaslServer server, Map<String, Object> topoConf, String jaasSection,
+    public KerberosSaslServerHandler(ISaslServer server, Map<String, Object> topoConf,
+            String jaasSection,
                                      List<String> authorizedUsers) throws IOException {
         this.server = server;
         this.topoConf = topoConf;
@@ -56,29 +57,35 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
             try {
                 LOG.debug("Got SaslMessageToken!");
 
-                KerberosSaslNettyServer saslNettyServer = channel.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).get();
+                KerberosSaslNettyServer saslNettyServer = channel
+                        .attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).get();
                 if (saslNettyServer == null) {
-                    LOG.debug("No saslNettyServer for {}  yet; creating now, with topology token: ", channel);
+                    LOG.debug("No saslNettyServer for {}  yet; creating now, with topology token: ",
+                            channel);
                     try {
-                        saslNettyServer = new KerberosSaslNettyServer(topoConf, jaasSection, authorizedUsers);
-                        channel.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).set(saslNettyServer);
+                        saslNettyServer = new KerberosSaslNettyServer(topoConf, jaasSection,
+                                authorizedUsers);
+                        channel.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER)
+                                .set(saslNettyServer);
                     } catch (RuntimeException ioe) {
-                        LOG.error("Error occurred while creating saslNettyServer on server {} for client {}",
-                                  channel.localAddress(), channel.remoteAddress());
+                        LOG.error("Error occurred while creating saslNettyServer on server {} for "
+                                + "client {}",
+                                channel.localAddress(), channel.remoteAddress());
                         throw ioe;
                     }
                 } else {
                     LOG.debug("Found existing saslNettyServer on server: {} for client {}",
-                              channel.localAddress(), channel.remoteAddress());
+                            channel.localAddress(), channel.remoteAddress());
                 }
 
                 byte[] responseBytes = saslNettyServer.response(((SaslMessageToken) msg)
-                                                                    .getSaslToken());
+                        .getSaslToken());
 
                 SaslMessageToken saslTokenMessageRequest = new SaslMessageToken(responseBytes);
 
                 if (saslTokenMessageRequest.getSaslToken() == null) {
-                    channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST, channel.voidPromise());
+                    channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST, channel
+                            .voidPromise());
                 } else {
                     // Send response to client.
                     channel.writeAndFlush(saslTokenMessageRequest, channel.voidPromise());
@@ -88,9 +95,11 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
                     // If authentication of client is complete, we will also send a
                     // SASL-Complete message to the client.
                     LOG.info("SASL authentication is complete for client with username: {}",
-                             saslNettyServer.getUserName());
-                    channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST, channel.voidPromise());
-                    LOG.debug("Removing SaslServerHandler from pipeline since SASL authentication is complete.");
+                            saslNettyServer.getUserName());
+                    channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST, channel
+                            .voidPromise());
+                    LOG.debug("Removing SaslServerHandler from pipeline since SASL authentication "
+                            + "is complete.");
                     ctx.pipeline().remove(this);
                     server.authenticated(channel);
                 }
@@ -105,7 +114,7 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
             // (the next handler upstream in the server pipeline) if SASL
             // authentication has not completed.
             LOG.warn("Sending upstream an unexpected non-SASL message : {}",
-                     msg);
+                    msg);
             ctx.fireChannelRead(msg);
         }
     }

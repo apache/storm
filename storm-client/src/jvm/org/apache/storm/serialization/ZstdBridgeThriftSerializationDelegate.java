@@ -22,8 +22,10 @@ import org.apache.storm.utils.Utils;
  */
 public class ZstdBridgeThriftSerializationDelegate implements SerializationDelegate {
 
-    private final GzipBridgeThriftSerializationDelegate defaultDelegate = new GzipBridgeThriftSerializationDelegate();
-    private final ZstdThriftSerializationDelegate zstdDelegate = new ZstdThriftSerializationDelegate();
+    private final GzipBridgeThriftSerializationDelegate defaultDelegate =
+            new GzipBridgeThriftSerializationDelegate();
+    private final ZstdThriftSerializationDelegate zstdDelegate =
+            new ZstdThriftSerializationDelegate();
 
     @Override
     public void prepare(Map<String, Object> topoConf) {
@@ -43,7 +45,8 @@ public class ZstdBridgeThriftSerializationDelegate implements SerializationDeleg
             return zstdDelegate.deserialize(bytes, clazz);
         } else {
             // Fallback to ZstdBridgeThriftSerializationDelegate
-            // it delegates to the proper SerializationDelegate (GzipThriftSerializationDelegate or ThriftSerializationDelegate)
+            // it delegates to the proper SerializationDelegate (GzipThriftSerializationDelegate or
+            // ThriftSerializationDelegate)
             return defaultDelegate.deserialize(bytes, clazz);
         }
     }

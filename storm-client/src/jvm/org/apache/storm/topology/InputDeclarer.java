@@ -17,7 +17,6 @@ import org.apache.storm.generated.Grouping;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.tuple.Fields;
 
-
 public interface InputDeclarer<T extends InputDeclarer> {
     /**
      * The stream is partitioned by the fields specified in the grouping.
@@ -30,33 +29,39 @@ public interface InputDeclarer<T extends InputDeclarer> {
     T fieldsGrouping(String componentId, String streamId, Fields fields);
 
     /**
-     * The entire stream goes to a single one of the bolt's tasks. Specifically, it goes to the task with the lowest id.
+     * The entire stream goes to a single one of the bolt's tasks. Specifically, it goes to the task
+     * with the lowest id.
      */
     T globalGrouping(String componentId);
 
     /**
-     * The entire stream goes to a single one of the bolt's tasks. Specifically, it goes to the task with the lowest id.
+     * The entire stream goes to a single one of the bolt's tasks. Specifically, it goes to the task
+     * with the lowest id.
      */
     T globalGrouping(String componentId, String streamId);
 
     /**
-     * Tuples are randomly distributed across the bolt's tasks in a way such that each bolt is guaranteed to get an equal number of tuples.
+     * Tuples are randomly distributed across the bolt's tasks in a way such that each bolt is
+     * guaranteed to get an equal number of tuples.
      */
     T shuffleGrouping(String componentId);
 
     /**
-     * Tuples are randomly distributed across the bolt's tasks in a way such that each bolt is guaranteed to get an equal number of tuples.
+     * Tuples are randomly distributed across the bolt's tasks in a way such that each bolt is
+     * guaranteed to get an equal number of tuples.
      */
     T shuffleGrouping(String componentId, String streamId);
 
     /**
-     * If the target bolt has one or more tasks in the same worker process, tuples will be shuffled to just those in-process tasks.
+     * If the target bolt has one or more tasks in the same worker process, tuples will be shuffled
+     * to just those in-process tasks.
      * Otherwise, this acts like a normal shuffle grouping.
      */
     T localOrShuffleGrouping(String componentId);
 
     /**
-     * If the target bolt has one or more tasks in the same worker process, tuples will be shuffled to just those in-process tasks.
+     * If the target bolt has one or more tasks in the same worker process, tuples will be shuffled
+     * to just those in-process tasks.
      * Otherwise, this acts like a normal shuffle grouping.
      */
     T localOrShuffleGrouping(String componentId, String streamId);
@@ -82,17 +87,20 @@ public interface InputDeclarer<T extends InputDeclarer> {
     T allGrouping(String componentId, String streamId);
 
     /**
-     * A stream grouped this way means that the producer of the tuple decides which task of the consumer will receive this tuple.
+     * A stream grouped this way means that the producer of the tuple decides which task of the
+     * consumer will receive this tuple.
      */
     T directGrouping(String componentId);
 
     /**
-     * A stream grouped this way means that the producer of the tuple decides which task of the consumer will receive this tuple.
+     * A stream grouped this way means that the producer of the tuple decides which task of the
+     * consumer will receive this tuple.
      */
     T directGrouping(String componentId, String streamId);
 
     /**
-     * Tuples are passed to two hashing functions and each target task is decided based on the comparison of the state of candidate nodes.
+     * Tuples are passed to two hashing functions and each target task is decided based on the
+     * comparison of the state of candidate nodes.
      *
      * <p>See https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream
      * -processing-engines.pdf
@@ -100,7 +108,8 @@ public interface InputDeclarer<T extends InputDeclarer> {
     T partialKeyGrouping(String componentId, Fields fields);
 
     /**
-     * Tuples are passed to two hashing functions and each target task is decided based on the comparison of the state of candidate nodes.
+     * Tuples are passed to two hashing functions and each target task is decided based on the
+     * comparison of the state of candidate nodes.
      *
      * <p>See https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream
      * -processing-engines.pdf

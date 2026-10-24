@@ -16,7 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Handles watermark events and triggers {@link TriggerHandler#onTrigger()} for each window interval that has events to be processed up to
+ * Handles watermark events and triggers {@link TriggerHandler#onTrigger()} for each window interval
+ * that has events to be processed up to
  * the watermark ts.
  */
 public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T, Long> {
@@ -28,7 +29,8 @@ public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T, Long> {
     private volatile long nextWindowEndTs;
     private boolean started;
 
-    public WatermarkTimeTriggerPolicy(long slidingIntervalMs, TriggerHandler handler, EvictionPolicy<T, ?> evictionPolicy,
+    public WatermarkTimeTriggerPolicy(long slidingIntervalMs, TriggerHandler handler,
+            EvictionPolicy<T, ?> evictionPolicy,
                                       WindowManager<T> windowManager) {
         this.slidingIntervalMs = slidingIntervalMs;
         this.handler = handler;
@@ -60,7 +62,8 @@ public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T, Long> {
     }
 
     /**
-     * Invokes the trigger all pending windows up to the watermark timestamp. The end ts of the window is set in the eviction policy context
+     * Invokes the trigger all pending windows up to the watermark timestamp. The end ts of the
+     * window is set in the eviction policy context
      * so that the events falling within that window can be processed.
      */
     private void handleWaterMarkEvent(Event<T> event) {
@@ -81,7 +84,8 @@ public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T, Long> {
                 long ts = getNextAlignedWindowTs(windowEndTs, watermarkTs);
                 LOG.debug("Next aligned window end ts {}", ts);
                 if (ts == Long.MAX_VALUE) {
-                    LOG.debug("No events to process between {} and watermark ts {}", windowEndTs, watermarkTs);
+                    LOG.debug("No events to process between {} and watermark ts {}", windowEndTs,
+                            watermarkTs);
                     break;
                 }
                 windowEndTs = ts;
@@ -91,12 +95,14 @@ public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T, Long> {
     }
 
     /**
-     * Computes the next window by scanning the events in the window and finds the next aligned window between the startTs and endTs. Return
+     * Computes the next window by scanning the events in the window and finds the next aligned
+     * window between the startTs and endTs. Return
      * the end ts of the next aligned window, i.e. the ts when the window should fire.
      *
      * @param startTs the start timestamp (excluding)
      * @param endTs   the end timestamp (including)
-     * @return the aligned window end ts for the next window or Long.MAX_VALUE if there are no more events to be processed.
+     * @return the aligned window end ts for the next window or Long.MAX_VALUE if there are no more
+     *     events to be processed.
      */
     private long getNextAlignedWindowTs(long startTs, long endTs) {
         long nextTs = windowManager.getEarliestEventTs(startTs, endTs);

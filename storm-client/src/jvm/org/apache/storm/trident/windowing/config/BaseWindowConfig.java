@@ -35,7 +35,8 @@ public abstract class BaseWindowConfig implements WindowConfig {
     public void validate() {
         if (slideLength > windowLength) {
             throw new IllegalArgumentException(
-                "slideLength '" + slideLength + "' should always be less than windowLegth '" + windowLength + "'");
+                    "slideLength '" + slideLength + "' should always be less than windowLegth '"
+                    + windowLength + "'");
         }
     }
 }

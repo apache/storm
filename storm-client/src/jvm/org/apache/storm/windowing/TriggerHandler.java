@@ -19,7 +19,8 @@ public interface TriggerHandler {
     /**
      * The code to execute when the {@link TriggerPolicy} condition is satisfied.
      *
-     * @return true if the window was evaluated with at least one event in the window, false otherwise
+     * @return true if the window was evaluated with at least one event in the window, false
+     *     otherwise
      */
     boolean onTrigger();
 }

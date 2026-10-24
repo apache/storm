@@ -19,7 +19,8 @@
 package org.apache.storm.utils;
 
 /**
- * This exception class is used to signify a problem with nimbus leader identification.  It should not be used when connection failures
+ * This exception class is used to signify a problem with nimbus leader identification. It should
+ * not be used when connection failures
  * happen, but only when successful operations result in the absence of an identified leader.
  */
 public class NimbusLeaderNotFoundException extends RuntimeException {

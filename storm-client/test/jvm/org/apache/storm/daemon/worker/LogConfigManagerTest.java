@@ -12,20 +12,6 @@
 
 package org.apache.storm.daemon.worker;
 
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.storm.generated.LogConfig;
-import org.apache.storm.generated.LogLevel;
-import org.apache.storm.generated.LogLevelAction;
-import org.apache.storm.utils.Time;
-import org.apache.storm.utils.Time.SimulatedTime;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,6 +22,18 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.LogLevel;
+import org.apache.storm.generated.LogLevelAction;
+import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Time.SimulatedTime;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LogConfigManagerTest {
     private static final Logger LOG = LoggerFactory.getLogger(LogConfigManagerTest.class);
@@ -101,7 +99,8 @@ public class LogConfigManagerTest {
         LogConfigManager underTest = spy(new LogConfigManagerUnderTest(atomConf));
         underTest.resetLogLevels();
         assertEquals(new TreeMap<>(), atomConf.get());
-        verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), anyString(), anyString());
+        verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), anyString(),
+                anyString());
     }
 
     @Test
@@ -115,7 +114,8 @@ public class LogConfigManagerTest {
             LogConfigManager underTest = spy(new LogConfigManagerUnderTest(atomConf));
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
-            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class),
+                    eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
         }
     }
 
@@ -138,25 +138,29 @@ public class LogConfigManagerTest {
 
             underTest.resetLogLevels();
             assertEquals(expected, atomConf.get());
-            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class),
+                    eq(LogManager.ROOT_LOGGER_NAME), anyString());
 
             // 11 seconds passed by, not timing out
             Time.advanceTimeSecs(11);
             underTest.resetLogLevels();
             assertEquals(expected, atomConf.get());
-            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class),
+                    eq(LogManager.ROOT_LOGGER_NAME), anyString());
 
             // 22 seconds passed by, still not timing out
             Time.advanceTimeSecs(11);
             underTest.resetLogLevels();
             assertEquals(expected, atomConf.get());
-            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+            verify(underTest, never()).setLoggerLevel(any(LoggerContext.class),
+                    eq(LogManager.ROOT_LOGGER_NAME), anyString());
 
             // 33 seconds passed by, timed out
             Time.advanceTimeSecs(11);
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
-            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class),
+                    eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
         }
     }
 
@@ -173,9 +177,12 @@ public class LogConfigManagerTest {
             LogConfigManager underTest = spy(new LogConfigManagerUnderTest(atomConf));
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
-            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_debug_logger"), eq("INFO"));
-            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_info_logger"), eq("WARN"));
-            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_error_logger"), eq("INFO"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_debug_logger"),
+                    eq("INFO"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_info_logger"),
+                    eq("WARN"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_error_logger"),
+                    eq("INFO"));
         }
     }
 
@@ -214,7 +221,8 @@ public class LogConfigManagerTest {
         logLevel.set_reset_log_level("INFO");
         logConfig.put_to_named_logger_level("RESET_LOG", logLevel);
 
-        assertThrows(IllegalArgumentException.class, () -> logConfigManager.processLogConfigChange(logConfig));
+        assertThrows(IllegalArgumentException.class, () -> logConfigManager
+                .processLogConfigChange(logConfig));
     }
 
     @Test
@@ -247,20 +255,25 @@ public class LogConfigManagerTest {
             underTest.processLogConfigChange(mockConfig);
 
             verify(underTest).setLoggerLevel(any(LoggerContext.class), eq(""), eq("DEBUG"));
-            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_debug_logger"), eq("DEBUG"));
-            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_info_logger"), eq("INFO"));
-            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_error_logger"), eq("ERROR"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_debug_logger"),
+                    eq("DEBUG"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_info_logger"),
+                    eq("INFO"));
+            verify(underTest).setLoggerLevel(any(LoggerContext.class), eq("my_error_logger"),
+                    eq("ERROR"));
         }
     }
 
     public static class LogConfigManagerUnderTest extends LogConfigManager {
-        public LogConfigManagerUnderTest(AtomicReference<TreeMap<String, LogLevel>> latestLogConfig) {
+        public LogConfigManagerUnderTest(AtomicReference<TreeMap<String,
+                LogLevel>> latestLogConfig) {
             super(latestLogConfig);
         }
 
         @Override
-        public void setLoggerLevel(LoggerContext logContext, String loggerName, String newLevelStr) {
-            //NOOP, we don't actually want to change log levels for tests
+        public void setLoggerLevel(LoggerContext logContext, String loggerName,
+            String newLevelStr) {
+            // NOOP, we don't actually want to change log levels for tests
         }
     }
 }

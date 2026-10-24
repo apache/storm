@@ -42,7 +42,8 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
     private Long maxCachedTuplesSize;
     private AtomicLong currentCachedTuplesSize = new AtomicLong();
 
-    public StoreBasedTridentWindowManager(WindowConfig windowConfig, String windowTaskId, WindowsStore windowStore, Aggregator aggregator,
+    public StoreBasedTridentWindowManager(WindowConfig windowConfig, String windowTaskId,
+            WindowsStore windowStore, Aggregator aggregator,
                                           BatchOutputCollector delegateCollector, Long maxTuplesCacheSize, Fields inputFields) {
         super(windowConfig, windowTaskId, windowStore, aggregator, delegateCollector);
 
@@ -55,9 +56,12 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
     @Override
     protected void initialize() {
 
-        // get existing tuples and pending/unsuccessful triggers for this operator-component/task and add them to WindowManager
-        String windowTriggerInprocessId = WindowTridentProcessor.getWindowTriggerInprocessIdPrefix(windowTaskId);
-        String windowTriggerTaskId = WindowTridentProcessor.getWindowTriggerTaskPrefix(windowTaskId);
+        // get existing tuples and pending/unsuccessful triggers for this operator-component/task
+        // and add them to WindowManager
+        String windowTriggerInprocessId = WindowTridentProcessor
+                .getWindowTriggerInprocessIdPrefix(windowTaskId);
+        String windowTriggerTaskId = WindowTridentProcessor
+                .getWindowTriggerTaskPrefix(windowTaskId);
 
         List<String> attemptedTriggerKeys = new ArrayList<>();
         List<String> triggerKeys = new ArrayList<>();
@@ -67,14 +71,17 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
             if (key.startsWith(windowTupleTaskId)) {
                 int tupleIndexValue = lastPart(key);
                 String batchId = secondLastPart(key);
-                LOG.debug("Received tuple with batch [{}] and tuple index [{}]", batchId, tupleIndexValue);
-                windowManager.add(new TridentBatchTuple(batchId, System.currentTimeMillis(), tupleIndexValue));
+                LOG.debug("Received tuple with batch [{}] and tuple index [{}]", batchId,
+                        tupleIndexValue);
+                windowManager.add(new TridentBatchTuple(batchId, System.currentTimeMillis(),
+                        tupleIndexValue));
             } else if (key.startsWith(windowTriggerTaskId)) {
                 triggerKeys.add(key);
                 LOG.debug("Received trigger with key [{}]", key);
             } else if (key.startsWith(windowTriggerInprocessId)) {
                 attemptedTriggerKeys.add(key);
-                LOG.debug("Received earlier unsuccessful trigger [{}] from windows store [{}]", key);
+                LOG.debug("Received earlier unsuccessful trigger [{}] from windows store [{}]",
+                        key);
             }
         }
 
@@ -101,7 +108,8 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
     private int lastPart(String key) {
         int lastSepIndex = key.lastIndexOf(WindowsStore.KEY_SEPARATOR);
         if (lastSepIndex < 0) {
-            throw new IllegalArgumentException("primaryKey does not have key separator '" + WindowsStore.KEY_SEPARATOR + "'");
+            throw new IllegalArgumentException("primaryKey does not have key separator '"
+                    + WindowsStore.KEY_SEPARATOR + "'");
         }
         return Integer.parseInt(key.substring(lastSepIndex + 1));
     }
@@ -109,12 +117,14 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
     private String secondLastPart(String key) {
         int lastSepIndex = key.lastIndexOf(WindowsStore.KEY_SEPARATOR);
         if (lastSepIndex < 0) {
-            throw new IllegalArgumentException("key " + key + " does not have key separator '" + WindowsStore.KEY_SEPARATOR + "'");
+            throw new IllegalArgumentException("key " + key + " does not have key separator '"
+                    + WindowsStore.KEY_SEPARATOR + "'");
         }
         String trimKey = key.substring(0, lastSepIndex);
         int secondLastSepIndex = trimKey.lastIndexOf(WindowsStore.KEY_SEPARATOR);
         if (secondLastSepIndex < 0) {
-            throw new IllegalArgumentException("key " + key + " does not have second key separator '" + WindowsStore.KEY_SEPARATOR + "'");
+            throw new IllegalArgumentException("key " + key
+                    + " does not have second key separator '" + WindowsStore.KEY_SEPARATOR + "'");
         }
 
         return key.substring(secondLastSepIndex + 1, lastSepIndex);
@@ -141,13 +151,15 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
 
     }
 
-    private void addToWindowManager(int tupleIndex, String effectiveBatchId, TridentTuple tridentTuple) {
+    private void addToWindowManager(int tupleIndex, String effectiveBatchId,
+            TridentTuple tridentTuple) {
         TridentTuple actualTuple = null;
         if (maxCachedTuplesSize == null || currentCachedTuplesSize.get() < maxCachedTuplesSize) {
             actualTuple = tridentTuple;
         }
         currentCachedTuplesSize.incrementAndGet();
-        windowManager.add(new TridentBatchTuple(effectiveBatchId, System.currentTimeMillis(), tupleIndex, actualTuple));
+        windowManager.add(new TridentBatchTuple(effectiveBatchId, System.currentTimeMillis(),
+                tupleIndex, actualTuple));
     }
 
     public String getBatchTxnId(Object batchId) {
@@ -175,7 +187,8 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         if (keys.size() > 0) {
             Iterable<Object> storedTupleValues = windowStore.get(keys);
             for (Object storedTupleValue : storedTupleValues) {
-                TridentTuple tridentTuple = freshOutputFactory.create((List<Object>) storedTupleValue);
+                TridentTuple tridentTuple = freshOutputFactory
+                        .create((List<Object>) storedTupleValue);
                 resultTuples.add(tridentTuple);
             }
         }
@@ -183,7 +196,8 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         return resultTuples;
     }
 
-    public TridentTuple collectTridentTupleOrKey(TridentBatchTuple tridentBatchTuple, List<String> keys) {
+    public TridentTuple collectTridentTupleOrKey(TridentBatchTuple tridentBatchTuple,
+            List<String> keys) {
         if (tridentBatchTuple.tridentTuple != null) {
             return tridentBatchTuple.tridentTuple;
         }

@@ -47,7 +47,6 @@ public class OutputFieldsGetter implements OutputFieldsDeclarer {
         this.fields.put(streamId, new StreamInfo(fields.toList(), direct));
     }
 
-
     public Map<String, StreamInfo> getFieldsDeclaration() {
         return fields;
     }

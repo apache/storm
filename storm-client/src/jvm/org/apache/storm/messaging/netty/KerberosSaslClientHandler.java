@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory
-        .getLogger(KerberosSaslClientHandler.class);
+            .getLogger(KerberosSaslClientHandler.class);
     private final long startTime;
     private final ISaslClient client;
     /**
@@ -33,8 +33,9 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
     private final String jaasSection;
     private final String host;
 
-    public KerberosSaslClientHandler(ISaslClient client, Map<String, Object> topoConf, String jaasSection, String host) throws
-        IOException {
+    public KerberosSaslClientHandler(ISaslClient client, Map<String, Object> topoConf,
+            String jaasSection, String host) throws
+            IOException {
         this.client = client;
         this.topoConf = topoConf;
         this.jaasSection = jaasSection;
@@ -48,24 +49,27 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
 
         LOG.info("Connection established from {} to {}",
-                 channel.localAddress(), channel.remoteAddress());
+                channel.localAddress(), channel.remoteAddress());
 
         try {
-            KerberosSaslNettyClient saslNettyClient = channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
+            KerberosSaslNettyClient saslNettyClient = channel
+                    .attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
 
             if (saslNettyClient == null) {
                 LOG.debug("Creating saslNettyClient now for channel: {}",
-                          channel);
+                        channel);
                 saslNettyClient = new KerberosSaslNettyClient(topoConf, jaasSection, host);
-                channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).set(saslNettyClient);
+                channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT)
+                        .set(saslNettyClient);
             }
             LOG.debug("Going to initiate Kerberos negotiations.");
-            byte[] initialChallenge = saslNettyClient.saslResponse(new SaslMessageToken(new byte[0]));
+            byte[] initialChallenge = saslNettyClient
+                    .saslResponse(new SaslMessageToken(new byte[0]));
             LOG.debug("Sending initial challenge: {}", initialChallenge);
             channel.writeAndFlush(new SaslMessageToken(initialChallenge), channel.voidPromise());
         } catch (Exception e) {
             LOG.error("Failed to authenticate with server due to error: ",
-                      e);
+                    e);
         }
     }
 
@@ -85,22 +89,26 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
 
     private KerberosSaslNettyClient getChannelSaslClient(Channel channel) throws Exception {
         // Generate SASL response to server using Channel-local SASL client.
-        KerberosSaslNettyClient saslNettyClient = channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
+        KerberosSaslNettyClient saslNettyClient = channel
+                .attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
         if (saslNettyClient == null) {
             throw new Exception("saslNettyClient was unexpectedly null for channel:" + channel);
         }
         return saslNettyClient;
     }
 
-    private void handleControlMessage(ChannelHandlerContext ctx, ControlMessage controlMessage) throws Exception {
+    private void handleControlMessage(ChannelHandlerContext ctx,
+            ControlMessage controlMessage) throws Exception {
         Channel channel = ctx.channel();
         KerberosSaslNettyClient saslNettyClient = getChannelSaslClient(channel);
         if (controlMessage == ControlMessage.SASL_COMPLETE_REQUEST) {
-            LOG.debug("Server has sent us the SaslComplete message. Allowing normal work to proceed.");
+            LOG.debug("Server has sent us the SaslComplete message. Allowing normal work to "
+                    + "proceed.");
 
             if (!saslNettyClient.isComplete()) {
                 String errorMessage =
-                    "Server returned a Sasl-complete message, but as far as we can tell, we are not authenticated yet.";
+                        "Server returned a Sasl-complete message, but as far as we can tell, we "
+                        + "are not authenticated yet.";
                 LOG.error(errorMessage);
                 throw new Exception(errorMessage);
             }
@@ -116,10 +124,12 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void handleSaslMessageToken(ChannelHandlerContext ctx, SaslMessageToken saslMessageToken) throws Exception {
+    private void handleSaslMessageToken(ChannelHandlerContext ctx,
+            SaslMessageToken saslMessageToken) throws Exception {
         Channel channel = ctx.channel();
         KerberosSaslNettyClient saslNettyClient = getChannelSaslClient(channel);
-        LOG.debug("Responding to server's token of length: {}", saslMessageToken.getSaslToken().length);
+        LOG.debug("Responding to server's token of length: {}", saslMessageToken
+                .getSaslToken().length);
 
         // Generate SASL response (but we only actually send the response if
         // it's non-null.
@@ -131,12 +141,13 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
             LOG.debug("Response to server is null: authentication should now be complete.");
             if (!saslNettyClient.isComplete()) {
                 LOG.warn("Generated a null response, but authentication is not complete.");
-                throw new Exception("Our reponse to the server is null, but as far as we can tell, we are not authenticated yet.");
+                throw new Exception("Our reponse to the server is null, but as far as we can "
+                        + "tell, we are not authenticated yet.");
             }
             this.client.channelReady(channel);
         } else {
             LOG.debug("Response to server token has length: {}",
-                      responseToServer.length);
+                    responseToServer.length);
             // Construct a message containing the SASL response and send it to the server.
             SaslMessageToken saslResponse = new SaslMessageToken(responseToServer);
             channel.writeAndFlush(saslResponse, channel.voidPromise());

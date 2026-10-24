@@ -34,13 +34,13 @@ import org.apache.storm.topology.InputDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
-
 public class BatchSubtopologyBuilder {
     Map<String, Component> bolts = new HashMap<>();
     Component masterBolt;
     String masterId;
 
-    public BatchSubtopologyBuilder(String masterBoltId, IBasicBolt masterBolt, Number boltParallelism) {
+    public BatchSubtopologyBuilder(String masterBoltId, IBasicBolt masterBolt,
+            Number boltParallelism) {
         Integer p = boltParallelism == null ? null : boltParallelism.intValue();
         this.masterBolt = new Component(new BasicBoltExecutor(masterBolt), p);
         masterId = masterBoltId;
@@ -81,7 +81,8 @@ public class BatchSubtopologyBuilder {
     }
 
     public void extendTopology(TopologyBuilder builder) {
-        BoltDeclarer declarer = builder.setBolt(masterId, new CoordinatedBolt(masterBolt.bolt), masterBolt.parallelism);
+        BoltDeclarer declarer = builder.setBolt(masterId, new CoordinatedBolt(masterBolt.bolt),
+                masterBolt.parallelism);
         for (InputDeclaration decl : masterBolt.declarations) {
             decl.declare(declarer);
         }
@@ -99,12 +100,11 @@ public class BatchSubtopologyBuilder {
                 coordinatedArgs.put(c, source);
             }
 
-
             BoltDeclarer input = builder.setBolt(id,
-                                                 new CoordinatedBolt(component.bolt,
-                                                                     coordinatedArgs,
-                                                                     null),
-                                                 component.parallelism);
+                    new CoordinatedBolt(component.bolt,
+                            coordinatedArgs,
+                            null),
+                    component.parallelism);
             for (SharedMemory request : component.sharedMemory) {
                 input.addSharedMemory(request);
             }
@@ -171,7 +171,8 @@ public class BatchSubtopologyBuilder {
         }
 
         @Override
-        public BoltDeclarer fieldsGrouping(final String component, final String streamId, final Fields fields) {
+        public BoltDeclarer fieldsGrouping(final String component, final String streamId,
+            final Fields fields) {
             addDeclaration(new InputDeclaration() {
                 @Override
                 public void declare(InputDeclarer declarer) {
@@ -389,7 +390,8 @@ public class BatchSubtopologyBuilder {
         }
 
         @Override
-        public BoltDeclarer customGrouping(final String component, final CustomStreamGrouping grouping) {
+        public BoltDeclarer customGrouping(final String component,
+            final CustomStreamGrouping grouping) {
             addDeclaration(new InputDeclaration() {
                 @Override
                 public void declare(InputDeclarer declarer) {
@@ -405,7 +407,8 @@ public class BatchSubtopologyBuilder {
         }
 
         @Override
-        public BoltDeclarer customGrouping(final String component, final String streamId, final CustomStreamGrouping grouping) {
+        public BoltDeclarer customGrouping(final String component, final String streamId,
+            final CustomStreamGrouping grouping) {
             addDeclaration(new InputDeclaration() {
                 @Override
                 public void declare(InputDeclarer declarer) {

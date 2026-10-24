@@ -24,7 +24,8 @@ public class GlobalGrouping implements CustomStreamGrouping {
     List<Integer> target;
 
     @Override
-    public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targets) {
+    public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+        List<Integer> targets) {
         List<Integer> sorted = new ArrayList<>(targets);
         Collections.sort(sorted);
         target = Arrays.asList(sorted.get(0));

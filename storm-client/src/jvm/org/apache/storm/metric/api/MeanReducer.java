@@ -35,8 +35,8 @@ public class MeanReducer implements IReducer<MeanReducerState> {
             acc.sum += ((Integer) input).doubleValue();
         } else {
             throw new RuntimeException(
-                "MeanReducer::reduce called with unsupported input type `" + input.getClass()
-                + "`. Supported types are Double, Long, Integer.");
+                    "MeanReducer::reduce called with unsupported input type `" + input.getClass()
+                            + "`. Supported types are Double, Long, Integer.");
         }
         return acc;
     }

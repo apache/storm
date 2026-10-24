@@ -12,6 +12,9 @@
 
 package org.apache.storm.blobstore;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,9 +28,6 @@ import org.apache.storm.utils.NimbusClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClientBlobStoreTest {
 
@@ -98,7 +98,8 @@ public class ClientBlobStoreTest {
         BlobStore.validateKey("msg-kafka-ascii-11-148343436363-stormconf.ser");
     }
 
-    private void createTestBlob(String testKey, SettableBlobMeta meta) throws AuthorizationException, KeyAlreadyExistsException {
+    private void createTestBlob(String testKey,
+            SettableBlobMeta meta) throws AuthorizationException, KeyAlreadyExistsException {
         AccessControl submitterAcl = BlobStoreAclHandler.parseAccessControl("u:tester:rwa");
         meta.add_to_acl(submitterAcl);
         client.createBlob(testKey, meta);

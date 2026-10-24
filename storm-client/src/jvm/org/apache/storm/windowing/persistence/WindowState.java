@@ -103,7 +103,8 @@ public class WindowState<T> extends AbstractCollection<Event<T>> {
             @Override
             public void remove() {
                 if (removeFrom == null) {
-                    throw new IllegalStateException("No calls to next() since last call to remove()");
+                    throw new IllegalStateException("No calls to next() since last call to "
+                            + "remove()");
                 }
                 removeFrom.remove();
                 removeFrom = null;
@@ -217,45 +218,48 @@ public class WindowState<T> extends AbstractCollection<Event<T>> {
     private void initCache() {
         long size = maxEventsInMemory / MAX_PARTITION_EVENTS;
         LOG.info("maxEventsInMemory: {}, partition size: {}, number of partitions: {}",
-                 maxEventsInMemory, MAX_PARTITION_EVENTS, size);
+                maxEventsInMemory, MAX_PARTITION_EVENTS, size);
         cache = SimpleWindowPartitionCache.<Long, WindowPartition<T>>newBuilder()
-            .maximumSize(size)
-            .removalListener(new WindowPartitionCache.RemovalListener<Long, WindowPartition<T>>() {
-                @Override
-                public void onRemoval(Long pid, WindowPartition<T> p, WindowPartitionCache.RemovalCause removalCause) {
-                    Objects.requireNonNull(pid, "Null partition id");
-                    Objects.requireNonNull(p, "Null window partition");
-                    LOG.debug("onRemoval for id '{}', WindowPartition '{}'", pid, p);
-                    try {
-                        windowPartitionsLock.lock(pid);
-                        if (p.isEmpty() && pid != latestPartitionId) {
-                            // if the empty partition was not invalidated by flush, but evicted from cache
-                            if (removalCause != WindowPartitionCache.RemovalCause.EXPLICIT) {
-                                deletePartition(pid);
-                                windowPartitionsState.delete(pid);
+                .maximumSize(size)
+                .removalListener(new WindowPartitionCache.RemovalListener<Long,
+                WindowPartition<T>>() {
+                    @Override
+                    public void onRemoval(Long pid, WindowPartition<T> p,
+                        WindowPartitionCache.RemovalCause removalCause) {
+                        Objects.requireNonNull(pid, "Null partition id");
+                        Objects.requireNonNull(p, "Null window partition");
+                        LOG.debug("onRemoval for id '{}', WindowPartition '{}'", pid, p);
+                        try {
+                            windowPartitionsLock.lock(pid);
+                            if (p.isEmpty() && pid != latestPartitionId) {
+                                // if the empty partition was not invalidated by flush, but evicted
+                                // from cache
+                                if (removalCause != WindowPartitionCache.RemovalCause.EXPLICIT) {
+                                    deletePartition(pid);
+                                    windowPartitionsState.delete(pid);
+                                }
+                            } else if (p.isModified()) {
+                                windowPartitionsState.put(pid, p);
+                            } else {
+                                LOG.debug("WindowPartition '{}' is not modified", pid);
                             }
-                        } else if (p.isModified()) {
-                            windowPartitionsState.put(pid, p);
-                        } else {
-                            LOG.debug("WindowPartition '{}' is not modified", pid);
+                        } finally {
+                            windowPartitionsLock.unlock(pid);
                         }
-                    } finally {
-                        windowPartitionsLock.unlock(pid);
                     }
-                }
-            }).build(new WindowPartitionCache.CacheLoader<Long, WindowPartition<T>>() {
-                @Override
-                public WindowPartition<T> load(Long id) {
-                    LOG.debug("Load partition: {}", id);
-                    // load from state
-                    try {
-                        windowPartitionsLock.lock(id);
-                        return windowPartitionsState.get(id, new WindowPartition<>(id));
-                    } finally {
-                        windowPartitionsLock.unlock(id);
+                }).build(new WindowPartitionCache.CacheLoader<Long, WindowPartition<T>>() {
+                    @Override
+                    public WindowPartition<T> load(Long id) {
+                        LOG.debug("Load partition: {}", id);
+                        // load from state
+                        try {
+                            windowPartitionsLock.lock(id);
+                            return windowPartitionsState.get(id, new WindowPartition<>(id));
+                        } finally {
+                            windowPartitionsLock.unlock(id);
+                        }
                     }
-                }
-            });
+                });
     }
 
     private void deletePartition(long pid) {
@@ -305,7 +309,8 @@ public class WindowState<T> extends AbstractCollection<Event<T>> {
             }
             // invalidate after releasing the lock
             // if the parition is pinned before we could invalidate,
-            // it will get invalidated in the next flush or when the entry gets evicted from the cache.
+            // it will get invalidated in the next flush or when the entry gets evicted from the
+            // cache.
             if (pidToInvalidate != null) {
                 cache.invalidate(pidToInvalidate);
             }

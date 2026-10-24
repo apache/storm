@@ -16,12 +16,11 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.serializers.MapSerializer;
 import java.util.HashMap;
-import java.util.Map;
-
 
 public class HashMapSerializer extends MapSerializer<HashMap> {
     @Override
-    protected HashMap<String, Object> create(Kryo kryo, Input input, Class<? extends HashMap> type, int length) {
+    protected HashMap<String, Object> create(Kryo kryo, Input input, Class<? extends HashMap> type,
+        int length) {
         return new HashMap<>(length);
     }
 }

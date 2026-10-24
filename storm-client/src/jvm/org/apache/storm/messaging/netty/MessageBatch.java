@@ -42,7 +42,7 @@ class MessageBatch implements INettySerializable {
             return 0;
         }
 
-        int size = 6; //INT + SHORT
+        int size = 6; // INT + SHORT
         if (taskMsg.message() != null) {
             size += taskMsg.message().length;
         }
@@ -51,6 +51,7 @@ class MessageBatch implements INettySerializable {
 
     /**
      * Check whether full.
+     *
      * @return true if this batch used up allowed buffer size
      */
     boolean isFull() {
@@ -59,6 +60,7 @@ class MessageBatch implements INettySerializable {
 
     /**
      * Check whether empty.
+     *
      * @return true if this batch doesn't have any messages
      */
     boolean isEmpty() {
@@ -67,6 +69,7 @@ class MessageBatch implements INettySerializable {
 
     /**
      * Get size.
+     *
      * @return number of msgs in this batch
      */
     int size() {
@@ -77,9 +80,9 @@ class MessageBatch implements INettySerializable {
     public int encodeLength() {
         return encodedLength;
     }
-    
+
     /**
-     * create a buffer containing the encoding of this batch.
+     * Create a buffer containing the encoding of this batch.
      */
     @Override
     public void write(ByteBuf dest) {
@@ -87,12 +90,12 @@ class MessageBatch implements INettySerializable {
             writeTaskMessage(dest, msg);
         }
 
-        //add a END_OF_BATCH indicator
+        // add a END_OF_BATCH indicator
         ControlMessage.EOB_MESSAGE.write(dest);
     }
 
     /**
-     * write a TaskMessage into a buffer.
+     * Write a TaskMessage into a buffer.
      *
      * <p>Each TaskMessage is encoded as: task ... short(2) len ... int(4) payload ... byte[]     *
      */

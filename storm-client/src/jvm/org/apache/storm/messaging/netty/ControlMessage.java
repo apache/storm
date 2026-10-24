@@ -31,6 +31,7 @@ public enum ControlMessage implements INettySerializable {
 
     /**
      * Create message.
+     *
      * @param encoded status code
      * @return a control message per an encoded status code
      */
@@ -54,7 +55,7 @@ public enum ControlMessage implements INettySerializable {
 
     @Override
     public int encodeLength() {
-        return 2; //short
+        return 2; // short
     }
 
     @Override

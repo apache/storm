@@ -28,8 +28,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Tracks tuples across input streams and periodically emits watermark events. Watermark event timestamp is the minimum of the latest tuple
- * timestamps across all the input streams (minus the lag). Once a watermark event is emitted any tuple coming with an earlier timestamp can
+ * Tracks tuples across input streams and periodically emits watermark events. Watermark event
+ * timestamp is the minimum of the latest tuple
+ * timestamps across all the input streams (minus the lag). Once a watermark event is emitted any
+ * tuple coming with an earlier timestamp can
  * be considered as late events.
  */
 public class WaterMarkEventGenerator<T> implements Runnable {
@@ -47,8 +49,10 @@ public class WaterMarkEventGenerator<T> implements Runnable {
      * Creates a new WatermarkEventGenerator.
      *
      * @param windowManager The window manager this generator will submit watermark events to
-     * @param intervalMs    The generator will check if it should generate a watermark event with this interval
-     * @param eventTsLagMs  The max allowed lag behind the last watermark event before an event is considered late
+     * @param intervalMs The generator will check if it should generate a watermark event with this
+     *     interval
+     * @param eventTsLagMs The max allowed lag behind the last watermark event before an event is
+     *     considered late
      * @param inputStreams  The input streams this generator is expected to handle
      */
     public WaterMarkEventGenerator(WindowManager<T> windowManager, int intervalMs,
@@ -57,9 +61,9 @@ public class WaterMarkEventGenerator<T> implements Runnable {
         streamToTs = new ConcurrentHashMap<>();
 
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
-            .setNameFormat("watermark-event-generator-%d")
-            .setDaemon(true)
-            .build();
+                .setNameFormat("watermark-event-generator-%d")
+                .setDaemon(true)
+                .build();
         executorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
 
         this.interval = intervalMs;
@@ -68,7 +72,8 @@ public class WaterMarkEventGenerator<T> implements Runnable {
     }
 
     /**
-     * Tracks the timestamp of the event in the stream, returns true if the event can be considered for processing or false if its a late
+     * Tracks the timestamp of the event in the stream, returns true if the event can be considered
+     * for processing or false if its a late
      * event.
      */
     public boolean track(GlobalStreamId stream, long ts) {
@@ -124,7 +129,8 @@ public class WaterMarkEventGenerator<T> implements Runnable {
     }
 
     public void start() {
-        this.executorFuture = executorService.scheduleAtFixedRate(this, interval, interval, TimeUnit.MILLISECONDS);
+        this.executorFuture = executorService.scheduleAtFixedRate(this, interval, interval,
+                TimeUnit.MILLISECONDS);
     }
 
     public void shutdown() {

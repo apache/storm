@@ -15,13 +15,12 @@ package org.apache.storm.serialization.types;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.serializers.CollectionSerializer;
-import java.util.Collection;
 import org.apache.storm.utils.ListDelegate;
-
 
 public class ListDelegateSerializer extends CollectionSerializer<ListDelegate> {
     @Override
-    public ListDelegate create(Kryo kryo, Input input, Class<? extends ListDelegate> type, int length) {
+    public ListDelegate create(Kryo kryo, Input input, Class<? extends ListDelegate> type,
+        int length) {
         return new ListDelegate();
     }
 }

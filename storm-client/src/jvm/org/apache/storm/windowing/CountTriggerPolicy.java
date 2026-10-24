@@ -15,7 +15,8 @@ package org.apache.storm.windowing;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A trigger that tracks event counts and calls back {@link TriggerHandler#onTrigger()} when the count threshold is hit.
+ * A trigger that tracks event counts and calls back {@link TriggerHandler#onTrigger()} when the
+ * count threshold is hit.
  *
  * @param <T> the type of event tracked by this policy.
  */
@@ -26,7 +27,8 @@ public class CountTriggerPolicy<T> implements TriggerPolicy<T, Integer> {
     private final EvictionPolicy<T, ?> evictionPolicy;
     private boolean started;
 
-    public CountTriggerPolicy(int count, TriggerHandler handler, EvictionPolicy<T, ?> evictionPolicy) {
+    public CountTriggerPolicy(int count, TriggerHandler handler, EvictionPolicy<T,
+            ?> evictionPolicy) {
         this.count = count;
         this.currentCount = new AtomicInteger();
         this.handler = handler;

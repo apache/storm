@@ -12,15 +12,15 @@
 
 package org.apache.storm.state;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 /**
- * Unit tests for {@link InMemoryKeyValueState}
+ * Unit tests for {@link InMemoryKeyValueState}.
  */
 public class InMemoryKeyValueStateTest {
 
@@ -35,7 +35,7 @@ public class InMemoryKeyValueStateTest {
     public void testPutAndGet() {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
-        assertArrayEquals(new String[]{ "1", "2", null }, getValues());
+        assertArrayEquals(new String[] {"1", "2", null}, getValues());
     }
 
     @Test
@@ -57,38 +57,38 @@ public class InMemoryKeyValueStateTest {
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(1);
         keyValueState.put("c", "3");
-        assertArrayEquals(new String[]{ "1", "2", "3" }, getValues());
+        assertArrayEquals(new String[] {"1", "2", "3"}, getValues());
         keyValueState.rollback();
-        assertArrayEquals(new String[]{ null, null, null }, getValues());
+        assertArrayEquals(new String[] {null, null, null}, getValues());
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(1);
         keyValueState.commit(1);
         keyValueState.put("c", "3");
-        assertArrayEquals(new String[]{ "1", "2", "3" }, getValues());
+        assertArrayEquals(new String[] {"1", "2", "3"}, getValues());
         keyValueState.rollback();
-        assertArrayEquals(new String[]{ "1", "2", null }, getValues());
+        assertArrayEquals(new String[] {"1", "2", null}, getValues());
         keyValueState.put("c", "3");
         assertEquals("2", keyValueState.delete("b"));
         assertEquals("3", keyValueState.delete("c"));
-        assertArrayEquals(new String[]{ "1", null, null }, getValues());
+        assertArrayEquals(new String[] {"1", null, null}, getValues());
         keyValueState.prepareCommit(2);
-        assertArrayEquals(new String[]{ "1", null, null }, getValues());
+        assertArrayEquals(new String[] {"1", null, null}, getValues());
         keyValueState.commit(2);
-        assertArrayEquals(new String[]{ "1", null, null }, getValues());
+        assertArrayEquals(new String[] {"1", null, null}, getValues());
         keyValueState.put("b", "2");
         keyValueState.prepareCommit(3);
         keyValueState.put("c", "3");
-        assertArrayEquals(new String[]{ "1", "2", "3" }, getValues());
+        assertArrayEquals(new String[] {"1", "2", "3"}, getValues());
         keyValueState.rollback();
-        assertArrayEquals(new String[]{ "1", null, null }, getValues());
+        assertArrayEquals(new String[] {"1", null, null}, getValues());
     }
 
     private String[] getValues() {
-        return new String[]{
-            keyValueState.get("a"),
-            keyValueState.get("b"),
-            keyValueState.get("c")
+        return new String[] {
+                keyValueState.get("a"),
+                keyValueState.get("b"),
+                keyValueState.get("c")
         };
     }
 }

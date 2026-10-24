@@ -20,7 +20,8 @@ import org.apache.storm.task.WorkerTopologyContext;
 public interface CustomStreamGrouping extends Serializable {
 
     /**
-     * Tells the stream grouping at runtime the tasks in the target bolt. This information should be used in chooseTasks to determine the
+     * Tells the stream grouping at runtime the tasks in the target bolt. This information should be
+     * used in chooseTasks to determine the
      * target tasks.
      *
      * <p>It also tells the grouping the metadata on the stream this grouping will be used on.
@@ -28,7 +29,8 @@ public interface CustomStreamGrouping extends Serializable {
     void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks);
 
     /**
-     * This function implements a custom stream grouping. It takes in as input the number of tasks in the target bolt in prepare and returns
+     * This function implements a custom stream grouping. It takes in as input the number of tasks
+     * in the target bolt in prepare and returns
      * the tasks to send the tuples to.
      *
      * @param values the values to group on

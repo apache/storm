@@ -20,7 +20,6 @@ public abstract class BaseMultiReducer<T> implements MultiReducer<T> {
     public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
     }
 
-
     @Override
     public void cleanup() {
     }

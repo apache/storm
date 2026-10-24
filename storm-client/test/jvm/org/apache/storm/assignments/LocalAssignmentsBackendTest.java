@@ -18,6 +18,9 @@
 
 package org.apache.storm.assignments;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,10 +33,6 @@ import org.apache.storm.shade.org.apache.commons.collections4.map.HashedMap;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-
-
 public class LocalAssignmentsBackendTest {
 
     @Test
@@ -43,7 +42,8 @@ public class LocalAssignmentsBackendTest {
         Assignment ass1 = mockedAssignment(1);
         Assignment ass2 = mockedAssignment(2);
 
-        ILocalAssignmentsBackend backend = LocalAssignmentsBackendFactory.getBackend(ConfigUtils.readStormConfig());
+        ILocalAssignmentsBackend backend = LocalAssignmentsBackendFactory.getBackend(ConfigUtils
+                .readStormConfig());
         assertNull(backend.getAssignment(storm1));
         backend.keepOrUpdateAssignment(storm1, ass1);
         backend.keepOrUpdateAssignment(storm2, ass2);
@@ -66,7 +66,8 @@ public class LocalAssignmentsBackendTest {
         String id2 = "id2";
         String id3 = "id3";
 
-        ILocalAssignmentsBackend backend = LocalAssignmentsBackendFactory.getBackend(ConfigUtils.readStormConfig());
+        ILocalAssignmentsBackend backend = LocalAssignmentsBackendFactory.getBackend(ConfigUtils
+                .readStormConfig());
         assertNull(backend.getStormId(name3));
         backend.keepStormId(name1, id1);
         backend.keepStormId(name2, id2);
@@ -90,7 +91,8 @@ public class LocalAssignmentsBackendTest {
         Map<List<Long>, NodeInfo> executor_node_port = new HashMap<>();
         Set<Long> nodePorts = new HashSet<>();
         nodePorts.add(9723L);
-        executor_node_port.put(Collections.singletonList(i + 0L), new NodeInfo("node" + i, nodePorts));
+        executor_node_port.put(Collections.singletonList(i + 0L), new NodeInfo("node" + i,
+                nodePorts));
         ass.set_executor_node_port(executor_node_port);
         Map<List<Long>, Long> executor_start_time_secs = new HashMap<>();
         executor_start_time_secs.put(Collections.singletonList(1L), 12345L);

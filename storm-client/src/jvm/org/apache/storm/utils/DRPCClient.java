@@ -39,7 +39,7 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
 
     private DRPCClient(DistributedRPC.Iface override) {
         super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE,
-              "localhost", 1234, null, null);
+                "localhost", 1234, null, null);
         this.host = "localhost";
         this.port = 1234;
         this.client = override;
@@ -50,9 +50,11 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
         retryForever = true;
     }
 
-    public DRPCClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
-        super(conf, localOverrideClient != null ? ThriftConnectionType.LOCAL_FAKE : ThriftConnectionType.DRPC,
-              host, port, timeout, null);
+    public DRPCClient(Map<String, Object> conf, String host, int port,
+            Integer timeout) throws TTransportException {
+        super(conf, localOverrideClient != null
+                ? ThriftConnectionType.LOCAL_FAKE : ThriftConnectionType.DRPC,
+                host, port, timeout, null);
         this.host = host;
         this.port = port;
         if (localOverrideClient != null) {
@@ -65,7 +67,9 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
 
     /**
      * Check local override.
-     * @return true of new clients will be overridden to connect to a local cluster and not the configured remote cluster
+     *
+     * @return true of new clients will be overridden to connect to a local cluster and not the
+     *     configured remote cluster
      */
     public static boolean isLocalOverride() {
         return localOverrideClient != null;
@@ -73,19 +77,21 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
 
     /**
      * Get override service ID.
+     *
      * @return the service ID of the local override DRPC instance
      */
     public static String getOverrideServiceId() {
         return localOverrideClient.getServiceId();
     }
 
-    public static DRPCClient getConfiguredClient(Map<String, Object> conf) throws TTransportException {
+    public static DRPCClient getConfiguredClient(Map<String,
+            Object> conf) throws TTransportException {
         DistributedRPC.Iface override = localOverrideClient;
         if (override != null) {
             return new DRPCClient(override);
         }
 
-        //Extend the config with defaults and the command line
+        // Extend the config with defaults and the command line
         Map<String, Object> fullConf = Utils.readStormConfig();
         fullConf.putAll(Utils.readCommandLineOpts());
         fullConf.putAll(conf);
@@ -93,7 +99,8 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
         int port = ObjectReader.getInt(fullConf.get(Config.DRPC_PORT), 3772);
         List<String> servers = (List<String>) fullConf.get(Config.DRPC_SERVERS);
         if (servers == null) {
-            throw new IllegalStateException(Config.DRPC_SERVERS + " is not set, could not find any DRPC servers to connect to.");
+            throw new IllegalStateException(Config.DRPC_SERVERS
+                    + " is not set, could not find any DRPC servers to connect to.");
         }
         Collections.shuffle(servers);
         RuntimeException excpt = null;
@@ -123,7 +130,8 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
     }
 
     @Override
-    public String execute(String func, String args) throws TException, DRPCExecutionException, AuthorizationException {
+    public String execute(String func,
+        String args) throws TException, DRPCExecutionException, AuthorizationException {
         if (func == null) {
             throw new IllegalArgumentException("DRPC Function cannot be null");
         }

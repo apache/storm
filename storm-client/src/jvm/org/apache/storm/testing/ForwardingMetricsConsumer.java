@@ -26,7 +26,8 @@ import org.apache.storm.task.TopologyContext;
  * To use, add this to your topology's configuration:
  *
  * ```java
- *   conf.registerMetricsConsumer(org.apache.storm.testing.ForwardingMetricsConsumer.class, "<HOST>:<PORT>", 1);
+ * conf.registerMetricsConsumer(org.apache.storm.testing.ForwardingMetricsConsumer.class,
+ * "<HOST>:<PORT>", 1);
  * ```
  *
  * Or edit the storm.yaml config file:
@@ -46,7 +47,8 @@ public class ForwardingMetricsConsumer implements IMetricsConsumer {
     OutputStream out;
 
     @Override
-    public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
+    public void prepare(Map<String, Object> topoConf, Object registrationArgument,
+        TopologyContext context, IErrorReporter errorReporter) {
         String[] parts = ((String) registrationArgument).split(":", 2);
         host = parts[0];
         port = Integer.valueOf(parts[1]);

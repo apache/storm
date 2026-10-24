@@ -13,11 +13,14 @@
 package org.apache.storm.multilang;
 
 /**
- * SpoutMsg is an object that represents the data sent from a shell spout to a process that implements a multi-language spout. The SpoutMsg
+ * SpoutMsg is an object that represents the data sent from a shell spout to a process that
+ * implements a multi-language spout. The SpoutMsg
  * is used to send a "next", "ack" or "fail" message to a spout.
  *
- * <p>Spout messages are objects sent to the ISerializer interface, for serialization according to the wire protocol implemented by the
- * serializer. The SpoutMsg class allows for a decoupling between the serialized representation of the data and the data itself.
+ * <p>Spout messages are objects sent to the ISerializer interface, for serialization according to
+ * the wire protocol implemented by the
+ * serializer. The SpoutMsg class allows for a decoupling between the serialized representation of
+ * the data and the data itself.
  */
 public class SpoutMsg {
     private String command;

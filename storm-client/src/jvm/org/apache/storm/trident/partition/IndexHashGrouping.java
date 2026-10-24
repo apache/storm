@@ -35,7 +35,8 @@ public class IndexHashGrouping implements CustomStreamGrouping {
     }
 
     @Override
-    public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+    public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+        List<Integer> targetTasks) {
         targets = targetTasks;
     }
 

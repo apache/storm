@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.naming.ConfigurationException;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -27,7 +26,8 @@ import org.slf4j.LoggerFactory;
 public class X509CertPrincipalToLocal implements IPrincipalToLocal {
     private static final Logger LOG = LoggerFactory.getLogger(X509CertPrincipalToLocal.class);
 
-    public static final String X509_CERT_PRINCIPAL_TO_LOCAL_REGEX = "x509.cert.principal.to.local.regex";
+    public static final String X509_CERT_PRINCIPAL_TO_LOCAL_REGEX =
+            "x509.cert.principal.to.local.regex";
     private Pattern pattern;
 
     private static String extractCn(final String subjectPrincipal) {
@@ -44,14 +44,16 @@ public class X509CertPrincipalToLocal implements IPrincipalToLocal {
             }
             return null;
         } catch (final InvalidNameException e) {
-            throw new AccessControlException(subjectPrincipal + " is not a valid X500 distinguished name");
+            throw new AccessControlException(subjectPrincipal
+                    + " is not a valid X500 distinguished name");
         }
     }
 
     @Override
     public void prepare(Map<String, Object> conf) {
         if (conf.get(X509_CERT_PRINCIPAL_TO_LOCAL_REGEX) == null) {
-            throw new IllegalStateException(X509_CERT_PRINCIPAL_TO_LOCAL_REGEX + " is not configured");
+            throw new IllegalStateException(X509_CERT_PRINCIPAL_TO_LOCAL_REGEX
+                    + " is not configured");
         }
         pattern = Pattern.compile(conf.get(X509_CERT_PRINCIPAL_TO_LOCAL_REGEX).toString());
     }
@@ -68,6 +70,5 @@ public class X509CertPrincipalToLocal implements IPrincipalToLocal {
         }
         throw new AccessControlException("Invalid principal " + principalName);
     }
-
 
 }

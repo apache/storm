@@ -33,7 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Tracks a window of events and fires {@link WindowLifecycleListener} callbacks on expiry of events or activation of the window due to
+ * Tracks a window of events and fires {@link WindowLifecycleListener} callbacks on expiry of events
+ * or activation of the window due to
  * {@link TriggerPolicy}.
  *
  * @param <T> the type of event in the window.
@@ -42,7 +43,8 @@ public class WindowManager<T> implements TriggerHandler {
     /**
      * Expire old events every EXPIRE_EVENTS_THRESHOLD to keep the window size in check.
      *
-     * <p>Note that if the eviction policy is based on watermarks, events will not be evicted until a new watermark would cause them to be
+     * <p>Note that if the eviction policy is based on watermarks, events will not be evicted until
+     * a new watermark would cause them to be
      * considered expired anyway, regardless of this limit
      */
     public static final int EXPIRE_EVENTS_THRESHOLD = 100;
@@ -152,8 +154,10 @@ public class WindowManager<T> implements TriggerHandler {
         prevWindowEvents.clear();
         if (!events.isEmpty()) {
             prevWindowEvents.addAll(windowEvents);
-            LOG.debug("invoking windowLifecycleListener onActivation, [{}] events in window.", events.size());
-            windowLifecycleListener.onActivation(events, newEvents, expired, evictionPolicy.getContext().getReferenceTime());
+            LOG.debug("invoking windowLifecycleListener onActivation, [{}] events in window.",
+                    events.size());
+            windowLifecycleListener.onActivation(events, newEvents, expired, evictionPolicy
+                    .getContext().getReferenceTime());
         } else {
             LOG.debug("No events in the window, skipping onActivation");
         }
@@ -169,7 +173,8 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * expires events that fall out of the window every EXPIRE_EVENTS_THRESHOLD so that the window does not grow too big.
+     * Expires events that fall out of the window every EXPIRE_EVENTS_THRESHOLD so that the window
+     * does not grow too big.
      */
     protected void compactWindow() {
         if (eventsSinceLastExpiry.incrementAndGet() >= EXPIRE_EVENTS_THRESHOLD) {
@@ -178,7 +183,8 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * feed the event to the eviction and trigger policies for bookkeeping and optionally firing the trigger.
+     * Feed the event to the eviction and trigger policies for bookkeeping and optionally firing the
+     * trigger.
      */
     private void track(Event<T> windowEvent) {
         evictionPolicy.track(windowEvent);
@@ -186,9 +192,11 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Scan events in the queue, using the expiration policy to check if the event should be evicted or not.
+     * Scan events in the queue, using the expiration policy to check if the event should be evicted
+     * or not.
      *
-     * @param fullScan if set, will scan the entire queue; if not set, will stop as soon as an event not satisfying the expiration policy is
+     * @param fullScan if set, will scan the entire queue; if not set, will stop as soon as an event
+     *     not satisfying the expiration policy is
      *                 found
      * @return the list of events to be processed as a part of the current window
      */
@@ -242,7 +250,8 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Scans the event queue and returns number of events having timestamp less than or equal to the reference time.
+     * Scans the event queue and returns number of events having timestamp less than or equal to the
+     * reference time.
      *
      * @param referenceTime the reference timestamp in millis
      * @return the count of events with timestamp less than or equal to referenceTime
@@ -258,7 +267,8 @@ public class WindowManager<T> implements TriggerHandler {
     }
 
     /**
-     * Scans the event queue and returns the list of event ts falling between startTs (exclusive) and endTs (inclusive) at each sliding
+     * Scans the event queue and returns the list of event ts falling between startTs (exclusive)
+     * and endTs (inclusive) at each sliding
      * interval counts.
      *
      * @param startTs      the start timestamp (exclusive)
@@ -302,8 +312,8 @@ public class WindowManager<T> implements TriggerHandler {
 
     public Map<String, Optional<?>> getState() {
         return ImmutableMap.of(
-            EVICTION_STATE_KEY, Optional.ofNullable(evictionPolicy.getState()),
-            TRIGGER_STATE_KEY, Optional.ofNullable(triggerPolicy.getState())
+                EVICTION_STATE_KEY, Optional.ofNullable(evictionPolicy.getState()),
+                TRIGGER_STATE_KEY, Optional.ofNullable(triggerPolicy.getState())
         );
     }
 }

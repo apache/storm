@@ -15,7 +15,6 @@ package org.apache.storm.metrics2;
 import static org.apache.storm.utils.ConfigUtils.RFC1889_ALPHA;
 
 import com.codahale.metrics.Gauge;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 /**

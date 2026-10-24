@@ -12,14 +12,14 @@
 
 package org.apache.storm.grouping.partialKeyGrouping;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+
 import org.apache.storm.grouping.PartialKeyGrouping;
 import org.apache.storm.shade.com.google.common.collect.Lists;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
 
 public class RandomTwoTaskAssignmentCreatorTest {
 
@@ -28,30 +28,39 @@ public class RandomTwoTaskAssignmentCreatorTest {
 
     @Test
     public void classIsSerializable() throws Exception {
-        PartialKeyGrouping.AssignmentCreator assignmentCreator = new PartialKeyGrouping.RandomTwoTaskAssignmentCreator();
+        PartialKeyGrouping.AssignmentCreator assignmentCreator = new PartialKeyGrouping
+                .RandomTwoTaskAssignmentCreator();
         Utils.javaSerialize(assignmentCreator);
     }
 
     @Test
     public void returnsAssignmentOfExpectedSize() {
-        PartialKeyGrouping.AssignmentCreator assignmentCreator = new PartialKeyGrouping.RandomTwoTaskAssignmentCreator();
-        int[] assignedTasks = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6), GROUPING_KEY_ONE);
+        PartialKeyGrouping.AssignmentCreator assignmentCreator = new PartialKeyGrouping
+                .RandomTwoTaskAssignmentCreator();
+        int[] assignedTasks = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6),
+                GROUPING_KEY_ONE);
         assertThat(assignedTasks.length, equalTo(2));
     }
 
     @Test
     public void returnsDifferentAssignmentForDifferentKeys() {
-        PartialKeyGrouping.AssignmentCreator assignmentCreator = new PartialKeyGrouping.RandomTwoTaskAssignmentCreator();
-        int[] assignmentOne = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6), GROUPING_KEY_ONE);
-        int[] assignmentTwo = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6), GROUPING_KEY_TWO);
+        PartialKeyGrouping.AssignmentCreator assignmentCreator = new PartialKeyGrouping
+                .RandomTwoTaskAssignmentCreator();
+        int[] assignmentOne = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6),
+                GROUPING_KEY_ONE);
+        int[] assignmentTwo = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6),
+                GROUPING_KEY_TWO);
         assertThat(assignmentOne, not(equalTo(assignmentTwo)));
     }
 
     @Test
     public void returnsSameAssignmentForSameKey() {
-        PartialKeyGrouping.AssignmentCreator assignmentCreator = new PartialKeyGrouping.RandomTwoTaskAssignmentCreator();
-        int[] assignmentOne = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6), GROUPING_KEY_ONE);
-        int[] assignmentOneAgain = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6), GROUPING_KEY_ONE);
+        PartialKeyGrouping.AssignmentCreator assignmentCreator = new PartialKeyGrouping
+                .RandomTwoTaskAssignmentCreator();
+        int[] assignmentOne = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7, 6),
+                GROUPING_KEY_ONE);
+        int[] assignmentOneAgain = assignmentCreator.createAssignment(Lists.newArrayList(9, 8, 7,
+                6), GROUPING_KEY_ONE);
         assertThat(assignmentOne, equalTo(assignmentOneAgain));
     }
 }

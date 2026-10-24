@@ -25,7 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The type of process/daemon that this server is running as.  This is used with the IStormClusterState implementation to know how to
+ * The type of process/daemon that this server is running as. This is used with the
+ * IStormClusterState implementation to know how to
  * properly secure data stored in it.
  */
 public enum DaemonType {
@@ -34,7 +35,7 @@ public enum DaemonType {
         public List<ACL> getDefaultZkAcls(Map<String, Object> conf) {
             return getDefaultNimbusSupervisorZkAcls(conf);
         }
-    },
+},
     NIMBUS {
         @Override
         public List<ACL> getDefaultZkAcls(Map<String, Object> conf) {
@@ -44,13 +45,14 @@ public enum DaemonType {
         @Override
         public List<ACL> getZkSecretAcls(WorkerTokenServiceType type, Map<String, Object> conf) {
             if (!Utils.isZkAuthenticationConfiguredStormServer(conf)) {
-                //This is here only for testing.
-                LOG.error("Will Store Worker Token Keys in ZK without ACLs.  If you are not running tests STOP NOW!");
+                // This is here only for testing.
+                LOG.error("Will Store Worker Token Keys in ZK without ACLs.  If you are not "
+                        + "running tests STOP NOW!");
                 return null;
             }
             switch (type) {
                 case NIMBUS:
-                    //Fall through on purpose
+                // Fall through on purpose
                 case SUPERVISOR:
                     return ZooDefs.Ids.CREATOR_ALL_ACL;
                 case DRPC:
@@ -58,11 +60,12 @@ public enum DaemonType {
                     String drpcAcl = (String) conf.get(Config.STORM_ZOOKEEPER_DRPC_ACL);
                     if (drpcAcl != null) {
                         ret.add(new ACL(ZooDefs.Perms.READ,
-                                        Utils.parseZkId(drpcAcl, Config.STORM_ZOOKEEPER_DRPC_ACL)));
-                    } //else we assume it is the same as teh SUPER_ACL which is covered by CREATOR_ALL
+                                Utils.parseZkId(drpcAcl, Config.STORM_ZOOKEEPER_DRPC_ACL)));
+                    } // else we assume it is the same as teh SUPER_ACL which is covered by CREATOR_ALL
                     return ret;
                 default:
-                    throw new IllegalStateException("WorkerTokens for " + type + " are not currently supported.");
+                    throw new IllegalStateException("WorkerTokens for " + type
+                        + " are not currently supported.");
             }
         }
     },

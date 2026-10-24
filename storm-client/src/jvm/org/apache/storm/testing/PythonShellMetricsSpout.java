@@ -39,7 +39,8 @@ public class PythonShellMetricsSpout extends ShellSpout implements IRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
         super.open(conf, context, collector);
 
         CountShellMetric countShellMetric = new CountShellMetric();

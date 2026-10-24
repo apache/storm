@@ -21,7 +21,6 @@ import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.trident.tuple.TridentTupleView;
 import org.apache.storm.trident.tuple.TridentTupleView.OperationOutputFactory;
 
-
 public class AppendCollector implements TridentCollector {
     OperationOutputFactory factory;
     TridentContext triContext;
@@ -30,7 +29,8 @@ public class AppendCollector implements TridentCollector {
 
     public AppendCollector(TridentContext context) {
         triContext = context;
-        factory = new OperationOutputFactory(context.getParentTupleFactories().get(0), context.getSelfOutputFields());
+        factory = new OperationOutputFactory(context.getParentTupleFactories().get(0), context
+                .getSelfOutputFields());
     }
 
     public void setContext(ProcessorContext pc, TridentTuple t) {

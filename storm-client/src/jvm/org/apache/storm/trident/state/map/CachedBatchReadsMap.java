@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class CachedBatchReadsMap<T> {
     public IBackingMap<T> delegate;
     Map<List<Object>, T> cached = new HashMap<List<Object>, T>();
@@ -67,6 +66,5 @@ public class CachedBatchReadsMap<T> {
             cached = c;
         }
     }
-
 
 }

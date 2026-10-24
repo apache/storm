@@ -22,7 +22,8 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 public abstract class BaseStatefulBolt<T extends State> implements IStatefulBolt<T> {
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         // NOOP
     }
 

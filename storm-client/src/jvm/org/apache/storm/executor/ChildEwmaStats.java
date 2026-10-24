@@ -18,9 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.metrics2.TaskMetrics;
 
 /**
- * Thread-safe store of EWMA jitter statistics reported by downstream (child) tasks back to a parent task.
+ * Thread-safe store of EWMA jitter statistics reported by downstream (child) tasks back to a parent
+ * task.
  * The data is indexed by parent {@code taskId} so a lookup touches only that task's children:
- * {@link #getStats} is an O(1) map lookup and {@link #update} is O(metrics), neither scanning the whole
+ * {@link #getStats} is an O(1) map lookup and {@link #update} is O(metrics), neither scanning the
+ * whole
  * store. This keeps cost bound to a single task's child fan-out, independent of how many tasks the
  * executor hosts.
  */
@@ -29,7 +31,7 @@ public class ChildEwmaStats {
     private final boolean enabled;
     private final Map<Integer, ConcurrentHashMap<Integer, Map<String, Double>>> byTask;
 
-    private static final String[] JITTER_PRIORITY = {
+    private static final String[] JITTER_PRIORITY =  {
         TaskMetrics.METRIC_NAME_EXECUTE_JITTER,
         TaskMetrics.METRIC_NAME_PROCESS_JITTER,
         TaskMetrics.METRIC_NAME_COMPLETE_JITTER,
@@ -42,15 +44,17 @@ public class ChildEwmaStats {
 
     /**
      * Records the jitter metrics reported by {@code childTaskId} for the given parent {@code taskId}.
-     * Runs in O(metrics) by writing straight into the task's bucket; no rescanning of existing data.
+     * Runs in O(metrics) by writing straight into the task's bucket; no rescanning of existing
+     * data.
      */
     public void update(int taskId, int childTaskId, EwmaFeedbackRecord feedback) {
         if (!enabled) {
             return;
         }
         ConcurrentHashMap<Integer, Map<String, Double>> children =
-            byTask.computeIfAbsent(taskId, k -> new ConcurrentHashMap<>());
-        Map<String, Double> metrics = children.computeIfAbsent(childTaskId, k -> new ConcurrentHashMap<>());
+                byTask.computeIfAbsent(taskId, k -> new ConcurrentHashMap<>());
+        Map<String, Double> metrics = children.computeIfAbsent(childTaskId,
+                k -> new ConcurrentHashMap<>());
         feedback.forEachMetric(metrics::put);
     }
 
@@ -73,8 +77,8 @@ public class ChildEwmaStats {
     public static int compareByJitter(Map<String, Double> a, Map<String, Double> b) {
         for (String metric : JITTER_PRIORITY) {
             int cmp = Double.compare(
-                a.getOrDefault(metric, Double.MAX_VALUE),
-                b.getOrDefault(metric, Double.MAX_VALUE));
+                    a.getOrDefault(metric, Double.MAX_VALUE),
+                    b.getOrDefault(metric, Double.MAX_VALUE));
             if (cmp != 0) {
                 return cmp;
             }

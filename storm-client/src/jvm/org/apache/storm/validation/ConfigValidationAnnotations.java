@@ -18,10 +18,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Note: every annotation interface must have method `validatorClass()` For every annotation there must validator class to do the validation
- * To add another annotation for config validation, add another annotation @interface class.  Implement the corresponding validator logic in
- * a class in ConfigValidation.  Make sure validateField method in ConfigValidation knows how to use the validator and which method
- * definition/parameters to pass in based on what fields are in the annotation.  By default, params of annotations will be passed into a
+ * Note: every annotation interface must have method `validatorClass()` For every annotation there
+ * must validator class to do the validation
+ * To add another annotation for config validation, add another annotation @interface class.
+ * Implement the corresponding validator logic in
+ * a class in ConfigValidation. Make sure validateField method in ConfigValidation knows how to use
+ * the validator and which method
+ * definition/parameters to pass in based on what fields are in the annotation. By default, params
+ * of annotations will be passed into a
  * constructor that takes a Map as a parameter.
  */
 public class ConfigValidationAnnotations {
@@ -53,7 +57,7 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * validates each entry in a list is of a certain type.
+     * Validates each entry in a list is of a certain type.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -111,7 +115,8 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * Validates each entry in a list with a list of validators Validators with fields: validatorClass and entryValidatorClass.
+     * Validates each entry in a list with a list of validators Validators with fields:
+     * validatorClass and entryValidatorClass.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -127,9 +132,9 @@ public class ConfigValidationAnnotations {
         Class<?> validatorClass() default ConfigValidation.LongValidator.class;
     }
 
-
     /**
-     * Validates the type of each key and value in a map Validator with fields: validatorClass, keyValidatorClass, valueValidatorClass.
+     * Validates the type of each key and value in a map Validator with fields: validatorClass,
+     * keyValidatorClass, valueValidatorClass.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -142,7 +147,8 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * Validates a each key and value in a Map with a list of validators Validator with fields: validatorClass, keyValidatorClasses,
+     * Validates a each key and value in a Map with a list of validators Validator with fields:
+     * validatorClass, keyValidatorClasses,
      * valueValidatorClasses.
      */
     @Retention(RetentionPolicy.RUNTIME)
@@ -156,7 +162,8 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * Checks if a number is positive and whether zero inclusive Validator with fields: validatorClass, includeZero.
+     * Checks if a number is positive and whether zero inclusive Validator with fields:
+     * validatorClass, includeZero.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -205,9 +212,12 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * For custom cross-field validators. Unlike {@link CustomValidator}, whose validator receives a single
-     * field's value, the referenced {@link ConfigValidation.ComboValidator} receives the whole configuration
-     * so it can enforce dependencies between keys. Place it on the field whose presence triggers the rule.
+     * For custom cross-field validators. Unlike {@link CustomValidator}, whose validator receives a
+     * single
+     * field's value, the referenced {@link ConfigValidation.ComboValidator} receives the whole
+     * configuration
+     * so it can enforce dependencies between keys. Place it on the field whose presence triggers
+     * the rule.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -224,6 +234,7 @@ public class ConfigValidationAnnotations {
     @Target(ElementType.FIELD)
     public @interface IsExactlyOneOf {
         Class<?> validatorClass() default ConfigValidation.CustomIsExactlyOneOfValidators.class;
+
         Class<?>[] valueValidatorClasses();
     }
 

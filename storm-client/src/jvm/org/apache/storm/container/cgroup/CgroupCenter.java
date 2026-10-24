@@ -59,7 +59,7 @@ public class CgroupCenter implements CgroupOperation {
                 String name = strSplit[0];
                 String type = strSplit[3];
                 String dir = strSplit[1];
-                //Some mount options (i.e. rw and relatime) in type are not cgroups related
+                // Some mount options (i.e. rw and relatime) in type are not cgroups related
                 Hierarchy h = new Hierarchy(name, CgroupUtils.getSubSystemsFromString(type), dir);
                 hierarchies.put(type, h);
             }
@@ -151,7 +151,8 @@ public class CgroupCenter implements CgroupOperation {
         for (SubSystemType type : subSystems) {
             Hierarchy hierarchyWithSubSystem = this.getHierarchyWithSubSystem(type);
             if (hierarchyWithSubSystem != null) {
-                LOG.error("subSystem: {} is already mounted on hierarchy: {}", type.name(), hierarchyWithSubSystem);
+                LOG.error("subSystem: {} is already mounted on hierarchy: {}", type.name(),
+                        hierarchyWithSubSystem);
                 subSystems.remove(type);
             }
         }

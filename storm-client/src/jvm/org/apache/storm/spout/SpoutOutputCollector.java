@@ -17,9 +17,12 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.utils.Utils;
 
 /**
- * This output collector exposes the API for emitting tuples from an {@link org.apache.storm.topology.IRichSpout}. The main difference
- * between this output collector and {@link OutputCollector} for {@link org.apache.storm.topology.IRichBolt} is that spouts can tag messages
- * with ids so that they can be acked or failed later on. This is the Spout portion of Storm's API to guarantee that each message is fully
+ * This output collector exposes the API for emitting tuples from an {@link
+ * org.apache.storm.topology.IRichSpout}. The main difference
+ * between this output collector and {@link OutputCollector} for {@link
+ * org.apache.storm.topology.IRichBolt} is that spouts can tag messages
+ * with ids so that they can be acked or failed later on. This is the Spout portion of Storm's API
+ * to guarantee that each message is fully
  * processed at least once.
  */
 public class SpoutOutputCollector implements ISpoutOutputCollector {
@@ -30,10 +33,14 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
     }
 
     /**
-     * Emits a new tuple to the specified output stream with the given message ID. When Storm detects that this tuple has been fully
-     * processed, or has failed to be fully processed, the spout will receive an ack or fail callback respectively with the messageId as
-     * long as the messageId was not null. If the messageId was null, Storm will not track the tuple and no callback will be received. Note
-     * that Storm's event logging functionality will only work if the messageId is serializable via Kryo or the Serializable interface. The
+     * Emits a new tuple to the specified output stream with the given message ID. When Storm
+     * detects that this tuple has been fully
+     * processed, or has failed to be fully processed, the spout will receive an ack or fail
+     * callback respectively with the messageId as
+     * long as the messageId was not null. If the messageId was null, Storm will not track the tuple
+     * and no callback will be received. Note
+     * that Storm's event logging functionality will only work if the messageId is serializable via
+     * Kryo or the Serializable interface. The
      * emitted values must be immutable.
      *
      * @return the list of task ids that this tuple was sent to
@@ -44,10 +51,14 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
     }
 
     /**
-     * Emits a new tuple to the default output stream with the given message ID. When Storm detects that this tuple has been fully
-     * processed, or has failed to be fully processed, the spout will receive an ack or fail callback respectively with the messageId as
-     * long as the messageId was not null. If the messageId was null, Storm will not track the tuple and no callback will be received. Note
-     * that Storm's event logging functionality will only work if the messageId is serializable via Kryo or the Serializable interface. The
+     * Emits a new tuple to the default output stream with the given message ID. When Storm detects
+     * that this tuple has been fully
+     * processed, or has failed to be fully processed, the spout will receive an ack or fail
+     * callback respectively with the messageId as
+     * long as the messageId was not null. If the messageId was null, Storm will not track the tuple
+     * and no callback will be received. Note
+     * that Storm's event logging functionality will only work if the messageId is serializable via
+     * Kryo or the Serializable interface. The
      * emitted values must be immutable.
      *
      * @return the list of task ids that this tuple was sent to
@@ -57,7 +68,8 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
     }
 
     /**
-     * Emits a tuple to the default output stream with a null message id. Storm will not track this message so ack and fail will never be
+     * Emits a tuple to the default output stream with a null message id. Storm will not track this
+     * message so ack and fail will never be
      * called for this tuple. The emitted values must be immutable.
      */
     public List<Integer> emit(List<Object> tuple) {
@@ -65,7 +77,8 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
     }
 
     /**
-     * Emits a tuple to the specified output stream with a null message id. Storm will not track this message so ack and fail will never be
+     * Emits a tuple to the specified output stream with a null message id. Storm will not track
+     * this message so ack and fail will never be
      * called for this tuple. The emitted values must be immutable.
      */
     public List<Integer> emit(String streamId, List<Object> tuple) {
@@ -73,9 +86,12 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
     }
 
     /**
-     * Emits a tuple to the specified task on the specified output stream. This output stream must have been declared as a direct stream,
-     * and the specified task must use a direct grouping on this stream to receive the message. Note that Storm's event logging
-     * functionality will only work if the messageId is serializable via Kryo or the Serializable interface. The emitted values must be
+     * Emits a tuple to the specified task on the specified output stream. This output stream must
+     * have been declared as a direct stream,
+     * and the specified task must use a direct grouping on this stream to receive the message. Note
+     * that Storm's event logging
+     * functionality will only work if the messageId is serializable via Kryo or the Serializable
+     * interface. The emitted values must be
      * immutable.
      */
     @Override
@@ -84,29 +100,38 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
     }
 
     /**
-     * Emits a tuple to the specified task on the default output stream. This output stream must have been declared as a direct stream, and
-     * the specified task must use a direct grouping on this stream to receive the message. Note that Storm's event logging functionality
-     * will only work if the messageId is serializable via Kryo or the Serializable interface. The emitted values must be immutable.
+     * Emits a tuple to the specified task on the default output stream. This output stream must
+     * have been declared as a direct stream, and
+     * the specified task must use a direct grouping on this stream to receive the message. Note
+     * that Storm's event logging functionality
+     * will only work if the messageId is serializable via Kryo or the Serializable interface. The
+     * emitted values must be immutable.
      */
     public void emitDirect(int taskId, List<Object> tuple, Object messageId) {
         emitDirect(taskId, Utils.DEFAULT_STREAM_ID, tuple, messageId);
     }
 
     /**
-     * Emits a tuple to the specified task on the specified output stream. This output stream must have been declared as a direct stream,
-     * and the specified task must use a direct grouping on this stream to receive the message. The emitted values must be immutable.
+     * Emits a tuple to the specified task on the specified output stream. This output stream must
+     * have been declared as a direct stream,
+     * and the specified task must use a direct grouping on this stream to receive the message. The
+     * emitted values must be immutable.
      *
-     * <p>Because no message id is specified, Storm will not track this message so ack and fail will never be called for this tuple.
+     * <p>Because no message id is specified, Storm will not track this message so ack and fail will
+     * never be called for this tuple.
      */
     public void emitDirect(int taskId, String streamId, List<Object> tuple) {
         emitDirect(taskId, streamId, tuple, null);
     }
 
     /**
-     * Emits a tuple to the specified task on the default output stream. This output stream must have been declared as a direct stream, and
-     * the specified task must use a direct grouping on this stream to receive the message. The emitted values must be immutable.
+     * Emits a tuple to the specified task on the default output stream. This output stream must
+     * have been declared as a direct stream, and
+     * the specified task must use a direct grouping on this stream to receive the message. The
+     * emitted values must be immutable.
      *
-     * <p>Because no message id is specified, Storm will not track this message so ack and fail will never be called for this tuple.
+     * <p>Because no message id is specified, Storm will not track this message so ack and fail will
+     * never be called for this tuple.
      */
     public void emitDirect(int taskId, List<Object> tuple) {
         emitDirect(taskId, tuple, null);

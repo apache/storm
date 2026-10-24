@@ -25,13 +25,17 @@ import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
 
 /**
- * A variation on FieldGrouping. This grouping operates on a partitioning of the incoming tuples (like a FieldGrouping),
+ * A variation on FieldGrouping. This grouping operates on a partitioning of the incoming tuples
+ * (like a FieldGrouping),
  * but it can send Tuples from a given partition to multiple downstream tasks.
  *
- * <p>Given a total pool of target tasks, this grouping will always send Tuples with a given key to one member of a
- * subset of those tasks. Each key is assigned a subset of tasks. Each tuple is then sent to one task from that subset.
+ * <p>Given a total pool of target tasks, this grouping will always send Tuples with a given key to
+ * one member of a
+ * subset of those tasks. Each key is assigned a subset of tasks. Each tuple is then sent to one
+ * task from that subset.
  *
- * <p>Notes: - the default TaskSelector ensures each task gets as close to a balanced number of Tuples as possible - the
+ * <p>Notes: - the default TaskSelector ensures each task gets as close to a balanced number of
+ * Tuples as possible - the
  * default AssignmentCreator hashes the key and produces an assignment of two tasks
  */
 public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
@@ -55,14 +59,16 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
         this(fields, assignmentCreator, new BalancedTargetSelector());
     }
 
-    public PartialKeyGrouping(Fields fields, AssignmentCreator assignmentCreator, TargetSelector targetSelector) {
+    public PartialKeyGrouping(Fields fields, AssignmentCreator assignmentCreator,
+            TargetSelector targetSelector) {
         this.fields = fields;
         this.assignmentCreator = assignmentCreator;
         this.targetSelector = targetSelector;
     }
 
     @Override
-    public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+    public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+        List<Integer> targetTasks) {
         this.targetTasks = targetTasks;
         if (this.fields != null) {
             this.outFields = context.getComponentOutputFields(stream);
@@ -75,14 +81,14 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
         if (values.size() > 0) {
             final byte[] rawKeyBytes = getKeyBytes(values);
 
-            final int[] taskAssignmentForKey = assignmentCreator.createAssignment(this.targetTasks, rawKeyBytes);
+            final int[] taskAssignmentForKey = assignmentCreator.createAssignment(this.targetTasks,
+                    rawKeyBytes);
             final int selectedTask = targetSelector.chooseTask(taskAssignmentForKey);
 
             boltIds.add(selectedTask);
         }
         return boltIds;
     }
-
 
     /**
      * Extract the key from the input Tuple.
@@ -129,10 +135,13 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     // Helper Classes
 
     /**
-     * This interface is responsible for choosing a subset of the target tasks to use for a given key.
+     * This interface is responsible for choosing a subset of the target tasks to use for a given
+     * key.
      *
-     * <p>NOTE: whatever scheme you use to create the assignment should be deterministic. This may be executed on
-     * multiple Storm Workers, thus each of them needs to come up with the same assignment for a given key.
+     * <p>NOTE: whatever scheme you use to create the assignment should be deterministic. This may
+     * be executed on
+     * multiple Storm Workers, thus each of them needs to come up with the same assignment for a
+     * given key.
      */
     public interface AssignmentCreator extends Serializable {
         int[] createAssignment(List<Integer> targetTasks, byte[] key);
@@ -156,26 +165,29 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
          */
         @Override
         public int[] createAssignment(List<Integer> tasks, byte[] key) {
-            // It is necessary that this produce a deterministic assignment based on the key, so seed the Random from the key
+            // It is necessary that this produce a deterministic assignment based on the key, so
+            // seed the Random from the key
             final long seedForRandom = Arrays.hashCode(key);
             final Random random = new Random(seedForRandom);
             final int choice1 = random.nextInt(tasks.size());
             int choice2 = random.nextInt(tasks.size());
             // ensure that choice1 and choice2 are not the same task
             choice2 = choice1 == choice2 ? (choice2 + 1) % tasks.size() : choice2;
-            return new int[]{ tasks.get(choice1), tasks.get(choice2) };
+            return new int[] {tasks.get(choice1), tasks.get(choice2)};
         }
     }
 
     /**
-     * A basic implementation of target selection. This strategy chooses the task within the assignment that has received the fewest Tuples
+     * A basic implementation of target selection. This strategy chooses the task within the
+     * assignment that has received the fewest Tuples
      * overall from this instance of the grouping.
      */
     public static class BalancedTargetSelector implements TargetSelector {
         private Map<Integer, Long> targetTaskStats = Maps.newHashMap();
 
         /**
-         * Chooses one of the incoming tasks and selects the one that has been selected the fewest times so far.
+         * Chooses one of the incoming tasks and selects the one that has been selected the fewest
+         * times so far.
          */
         @Override
         public Integer chooseTask(int[] assignedTasks) {
@@ -190,7 +202,8 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
                 }
             }
 
-            targetTaskStats.put(taskIdWithMinLoad, targetTaskStats.getOrDefault(taskIdWithMinLoad, 0L) + 1);
+            targetTaskStats.put(taskIdWithMinLoad, targetTaskStats.getOrDefault(taskIdWithMinLoad,
+                    0L) + 1);
             return taskIdWithMinLoad;
         }
     }

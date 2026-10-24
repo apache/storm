@@ -22,7 +22,6 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
-
 public class TestPlannerSpout extends BaseRichSpout {
     boolean isDistributed;
     Fields outFields;
@@ -44,9 +43,9 @@ public class TestPlannerSpout extends BaseRichSpout {
         return outFields;
     }
 
-
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
 
     }
 

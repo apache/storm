@@ -34,7 +34,7 @@ import org.apache.storm.utils.Utils;
  */
 public class JsonSerializer implements ISerializer {
     public static final String DEFAULT_CHARSET = "UTF-8";
-    //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
+    // ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
     private static final long serialVersionUID = 2548814660410474022L;
     private transient BufferedWriter processIn;
     private transient BufferedReader processOut;
@@ -43,7 +43,8 @@ public class JsonSerializer implements ISerializer {
     public void initialize(OutputStream processIn, InputStream processOut) {
         try {
             this.processIn = new BufferedWriter(new OutputStreamWriter(processIn, DEFAULT_CHARSET));
-            this.processOut = new BufferedReader(new InputStreamReader(processOut, DEFAULT_CHARSET));
+            this.processOut = new BufferedReader(new InputStreamReader(processOut,
+                    DEFAULT_CHARSET));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -51,7 +52,7 @@ public class JsonSerializer implements ISerializer {
 
     @Override
     public Number connect(Map<String, Object> conf, TopologyContext context)
-        throws IOException, NoOutputException {
+            throws IOException, NoOutputException {
         JSONObject setupInfo = new JSONObject();
         setupInfo.put("pidDir", context.getPIDDir());
         setupInfo.put("conf", conf);
@@ -183,7 +184,7 @@ public class JsonSerializer implements ISerializer {
                     errorMessage.append(" No output read.\n");
                 } else {
                     errorMessage.append(" Currently read output: "
-                                        + line.toString() + "\n");
+                            + line.toString() + "\n");
                 }
                 errorMessage.append("Serializer Exception:\n");
                 throw new NoOutputException(errorMessage.toString());

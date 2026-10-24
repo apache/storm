@@ -26,15 +26,19 @@ import org.apache.storm.trident.tuple.TridentTuple;
  *
  * <p>The `Negate` filter is useful for dividing a Stream in two based on some boolean condition.
  *
- * <p>Suppose we had a Stream named `userStream` containing information about users, and a custom `Filter` implementation,
- * `RegisteredUserFilter` that filtered out unregistered users. We could divide the `userStream` Stream into two separate Streams -- one for
+ * <p>Suppose we had a Stream named `userStream` containing information about users, and a custom
+ * `Filter` implementation,
+ * `RegisteredUserFilter` that filtered out unregistered users. We could divide the `userStream`
+ * Stream into two separate Streams -- one for
  * registered users, and one for unregistered users -- by doing the following:
  *
  * <p>```java Stream userStream = ...
  *
- * <p>Filter registeredFilter = new ResisteredUserFilter(); Filter unregisteredFilter = new Negate(registeredFilter);
+ * <p>Filter registeredFilter = new ResisteredUserFilter(); Filter unregisteredFilter = new
+ * Negate(registeredFilter);
  *
- * <p>Stream registeredUserStream = userStream.each(userStream.getOutputFields(), registeredFilter); Stream unregisteredUserStream =
+ * <p>Stream registeredUserStream = userStream.each(userStream.getOutputFields(), registeredFilter);
+ * Stream unregisteredUserStream =
  * userStream.each(userStream.getOutputFields(), unregisteredFilter); ```
  */
 public class Negate implements Filter {

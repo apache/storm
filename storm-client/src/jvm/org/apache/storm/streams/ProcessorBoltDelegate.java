@@ -98,9 +98,11 @@ class ProcessorBoltDelegate implements Serializable {
                         streamToChildren.put(stream, child);
                     }
                 }
-                ForwardingProcessorContext forwardingContext = new ForwardingProcessorContext(processorNode, streamToChildren);
+                ForwardingProcessorContext forwardingContext =
+                        new ForwardingProcessorContext(processorNode, streamToChildren);
                 if (hasOutgoingChild(processorNode, new HashSet<>(children))) {
-                    processorContext = new ChainedProcessorContext(processorNode, forwardingContext, createEmittingContext(processorNode));
+                    processorContext = new ChainedProcessorContext(processorNode, forwardingContext,
+                            createEmittingContext(processorNode));
                 } else {
                     processorContext = forwardingContext;
                 }
@@ -129,11 +131,14 @@ class ProcessorBoltDelegate implements Serializable {
                     declarer.declareStream(stream, new Fields(fields));
                 }
                 /*
-                 * Declare a separate 'punctuation' stream per output stream so that the receiving bolt
-                 * can subscribe to this stream with 'ALL' grouping and process the punctuation once it
+                 * Declare a separate 'punctuation' stream per output stream so that the receiving
+                 * bolt
+                 * can subscribe to this stream with 'ALL' grouping and process the punctuation once
+                 * it
                  * receives from all upstream tasks.
                  */
-                declarer.declareStream(StreamUtil.getPunctuationStream(stream), StreamUtil.getPunctuationFields());
+                declarer.declareStream(StreamUtil.getPunctuationStream(stream), StreamUtil
+                        .getPunctuationFields());
             }
         }
     }
@@ -151,7 +156,8 @@ class ProcessorBoltDelegate implements Serializable {
         // otherwise the value is in the first field of the tuple
         if (input.getSourceComponent().startsWith("spout")) {
             value = input;
-            stream = input.getSourceGlobalStreamId().get_componentId() + input.getSourceGlobalStreamId().get_streamId();
+            stream = input.getSourceGlobalStreamId().get_componentId() + input
+                    .getSourceGlobalStreamId().get_streamId();
         } else if (isPair(input)) {
             value = Pair.of(input.getValue(0), input.getValue(1));
             stream = input.getSourceStreamId();
@@ -243,7 +249,8 @@ class ProcessorBoltDelegate implements Serializable {
     private ProcessorContext createEmittingContext(ProcessorNode processorNode) {
         List<EmittingProcessorContext> emittingContexts = new ArrayList<>();
         for (String stream : processorNode.getOutputStreams()) {
-            EmittingProcessorContext emittingContext = new EmittingProcessorContext(processorNode, outputCollector, stream);
+            EmittingProcessorContext emittingContext = new EmittingProcessorContext(processorNode,
+                    outputCollector, stream);
             emittingContexts.add(emittingContext);
         }
         emittingProcessorContexts.addAll(emittingContexts);
@@ -254,7 +261,7 @@ class ProcessorBoltDelegate implements Serializable {
     private boolean hasOutgoingChild(ProcessorNode processorNode, Set<ProcessorNode> boltChildren) {
         for (Node child : getChildNodes(processorNode)) {
             if ((child instanceof ProcessorNode && !boltChildren.contains(child))
-                || child instanceof SinkNode) {
+                    || child instanceof SinkNode) {
                 return true;
             }
         }
@@ -273,26 +280,31 @@ class ProcessorBoltDelegate implements Serializable {
         return children;
     }
 
-    // for the given processor node, if we received punctuation from all tasks of its parent windowed streams
+    // for the given processor node, if we received punctuation from all tasks of its parent
+    // windowed streams
     private boolean shouldPunctuate(ProcessorNode processorNode, String sourceStreamId) {
         if (!processorNode.getWindowedParentStreams().isEmpty()) {
             updateCount(processorNode, sourceStreamId);
-            if (punctuationState.row(processorNode).size() != processorNode.getWindowedParentStreams().size()) {
+            if (punctuationState.row(processorNode).size() != processorNode
+                    .getWindowedParentStreams().size()) {
                 return false;
             }
             // size matches, check if the streams are expected
             Set<String> receivedStreams = punctuationState.row(processorNode).keySet();
             if (!receivedStreams.equals(processorNode.getWindowedParentStreams())) {
-                throw new IllegalStateException("Received punctuation from streams " + receivedStreams + " expected "
-                                                + processorNode.getWindowedParentStreams());
+                throw new IllegalStateException("Received punctuation from streams "
+                        + receivedStreams + " expected "
+                        + processorNode.getWindowedParentStreams());
             }
             for (String receivedStream : receivedStreams) {
                 Integer expected = streamToInputTaskCount.get(receivedStream);
                 if (expected == null) {
-                    throw new IllegalStateException("Punctuation received on unexpected stream '" + receivedStream
+                    throw new IllegalStateException("Punctuation received on unexpected stream '"
+                            + receivedStream
                             + "' for which input task count is not set.");
                 }
-                if (punctuationState.get(processorNode, receivedStream) < streamToInputTaskCount.get(receivedStream)) {
+                if (punctuationState.get(processorNode, receivedStream) < streamToInputTaskCount
+                        .get(receivedStream)) {
                     return false;
                 }
             }

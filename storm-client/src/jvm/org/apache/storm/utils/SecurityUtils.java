@@ -16,7 +16,8 @@ public class SecurityUtils {
 
     /**
      * Check if the suffix ends in pkcs12/p12/jks (case insensitive) and return PKCS12 ot JKS.
-     * If not, then return null. The path can be url to a resource since only the ending is compared.
+     * If not, then return null. The path can be url to a resource since only the ending is
+     * compared.
      *
      * @param path to the key resource file - can be embedded resource in a jar file.
      * @return PKCS12 or JKS or null

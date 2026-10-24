@@ -21,13 +21,14 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 
 /**
- * The timer defined in this file is very similar to java.util.Timer, except it integrates with Storm's time simulation capabilities. This
+ * The timer defined in this file is very similar to java.util.Timer, except it integrates with
+ * Storm's time simulation capabilities. This
  * lets us test code that does asynchronous work on the timer thread.
  */
 
 public class StormTimer implements AutoCloseable {
 
-    //task to run
+    // task to run
     private final StormTimerTask task = new StormTimerTask();
 
     /**
@@ -140,7 +141,8 @@ public class StormTimer implements AutoCloseable {
      * @param jitterMs  jitter added to the run
      * @param func      the function to run
      */
-    public void scheduleRecurringWithJitter(int delaySecs, final int recurSecs, final int jitterMs, final Runnable func) {
+    public void scheduleRecurringWithJitter(int delaySecs, final int recurSecs, final int jitterMs,
+            final Runnable func) {
         schedule(delaySecs, new Runnable() {
             @Override
             public void run() {
@@ -152,7 +154,7 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * check if timer is active.
+     * Check if timer is active.
      */
     private void checkActive() {
         if (!this.task.isActive()) {
@@ -161,7 +163,7 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * cancel timer.
+     * Cancel timer.
      */
 
     @Override
@@ -174,7 +176,7 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * is timer waiting. Used in timer simulation.
+     * Is timer waiting. Used in timer simulation.
      */
     public boolean isTimerWaiting() {
         return Time.isThreadWaiting(task);
@@ -194,13 +196,14 @@ public class StormTimer implements AutoCloseable {
 
     public static class StormTimerTask extends Thread {
 
-        //initialCapacity set to 11 since its the default inital capacity of PriorityBlockingQueue
-        private PriorityBlockingQueue<QueueEntry> queue = new PriorityBlockingQueue<QueueEntry>(11, new Comparator<QueueEntry>() {
-            @Override
-            public int compare(QueueEntry o1, QueueEntry o2) {
-                return o1.endTimeMs.intValue() - o2.endTimeMs.intValue();
-            }
-        });
+        // initialCapacity set to 11 since its the default inital capacity of PriorityBlockingQueue
+        private PriorityBlockingQueue<QueueEntry> queue = new PriorityBlockingQueue<QueueEntry>(11,
+                new Comparator<QueueEntry>() {
+                @Override
+                public int compare(QueueEntry o1, QueueEntry o2) {
+                    return o1.endTimeMs.intValue() - o2.endTimeMs.intValue();
+                }
+            });
 
         // boolean to indicate whether timer is active
         private AtomicBoolean active = new AtomicBoolean(false);
@@ -208,7 +211,7 @@ public class StormTimer implements AutoCloseable {
         // function to call when timer is killed
         private Thread.UncaughtExceptionHandler onKill;
 
-        //random number generator
+        // random number generator
         private Random random = new Random();
 
         @Override
@@ -217,7 +220,8 @@ public class StormTimer implements AutoCloseable {
                 QueueEntry queueEntry = null;
                 try {
                     queueEntry = this.queue.peek();
-                    if ((queueEntry != null) && (Time.currentTimeMillis() >= queueEntry.endTimeMs)) {
+                    if ((queueEntry != null) && (Time
+                            .currentTimeMillis() >= queueEntry.endTimeMs)) {
                         // It is imperative to not run the function
                         // inside the timer lock. Otherwise, it is
                         // possible to deadlock if the fn deals with
@@ -233,7 +237,8 @@ public class StormTimer implements AutoCloseable {
                         // an upper bound, e.g. 1000 millis, to the
                         // sleeping time, to limit the response time
                         // for detecting any new event within 1 secs.
-                        Time.sleep(Math.min(1000, (queueEntry.endTimeMs - Time.currentTimeMillis())));
+                        Time.sleep(Math.min(1000, (queueEntry.endTimeMs - Time
+                                .currentTimeMillis())));
                     } else {
                         // Otherwise poll to see if any new event
                         // was scheduled. This is, in essence, the
@@ -247,8 +252,10 @@ public class StormTimer implements AutoCloseable {
                     }
                 } catch (Throwable e) {
                     if (!(Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e))
-                        && !(Utils.exceptionCauseIsInstanceOf(ClosedByInterruptException.class, e))) {
-                        // need to set active false before calling onKill() - current implementation does not return.
+                            && !(Utils.exceptionCauseIsInstanceOf(ClosedByInterruptException.class,
+                            e))) {
+                        // need to set active false before calling onKill() - current implementation
+                        // does not return.
                         this.setActive(false);
                         this.onKill.uncaughtException(this, e);
                     }

@@ -12,6 +12,9 @@
 
 package org.apache.storm.cluster;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +25,6 @@ import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.data.Id;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class DaemonTypeTest {
 
@@ -48,8 +48,10 @@ public class DaemonTypeTest {
 
         assertNull(DaemonType.UNKNOWN.getDefaultZkAcls(conf));
         assertNull(DaemonType.PACEMAKER.getDefaultZkAcls(conf));
-        assertEquals(DaemonType.NIMBUS_SUPERVISOR_ZK_ACLS, DaemonType.SUPERVISOR.getDefaultZkAcls(conf));
-        assertEquals(DaemonType.NIMBUS_SUPERVISOR_ZK_ACLS, DaemonType.NIMBUS.getDefaultZkAcls(conf));
+        assertEquals(DaemonType.NIMBUS_SUPERVISOR_ZK_ACLS, DaemonType.SUPERVISOR
+                .getDefaultZkAcls(conf));
+        assertEquals(DaemonType.NIMBUS_SUPERVISOR_ZK_ACLS, DaemonType.NIMBUS
+                .getDefaultZkAcls(conf));
         assertNull(DaemonType.WORKER.getDefaultZkAcls(conf));
     }
 

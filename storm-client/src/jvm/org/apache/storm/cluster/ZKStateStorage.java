@@ -43,7 +43,8 @@ public class ZKStateStorage implements IStateStorage {
 
     private static Logger LOG = LoggerFactory.getLogger(ZKStateStorage.class);
 
-    private ConcurrentHashMap<String, ZKStateChangedCallback> callbacks = new ConcurrentHashMap<String, ZKStateChangedCallback>();
+    private ConcurrentHashMap<String, ZKStateChangedCallback> callbacks =
+            new ConcurrentHashMap<String, ZKStateChangedCallback>();
     private CuratorFramework zkWriter;
     private CuratorFramework zkReader;
     private AtomicBoolean active;
@@ -52,7 +53,8 @@ public class ZKStateStorage implements IStateStorage {
     private Map<String, Object> authConf;
     private Map<String, Object> conf;
 
-    public ZKStateStorage(Map<String, Object> conf, Map<String, Object> authConf, ClusterStateContext context) throws Exception {
+    public ZKStateStorage(Map<String, Object> conf, Map<String, Object> authConf,
+            ClusterStateContext context) throws Exception {
         this.conf = conf;
         this.authConf = authConf;
         if (context.getDaemonType().equals(DaemonType.NIMBUS)) {
@@ -77,15 +79,19 @@ public class ZKStateStorage implements IStateStorage {
 
     @SuppressWarnings("unchecked")
     private CuratorFramework mkZk(DaemonType type) {
-        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
-                                        conf.get(Config.STORM_ZOOKEEPER_PORT), "", new DefaultWatcherCallBack(), authConf, type);
+        return ClientZookeeper.mkClient(conf, (List<String>) conf
+                .get(Config.STORM_ZOOKEEPER_SERVERS),
+                conf.get(Config.STORM_ZOOKEEPER_PORT), "", new DefaultWatcherCallBack(), authConf, type);
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk(WatcherCallBack watcher, DaemonType type) throws NumberFormatException {
-        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
-                                        conf.get(Config.STORM_ZOOKEEPER_PORT), String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)),
-                                        watcher, authConf, type);
+    private CuratorFramework mkZk(WatcherCallBack watcher,
+        DaemonType type) throws NumberFormatException {
+        return ClientZookeeper.mkClient(conf, (List<String>) conf
+                .get(Config.STORM_ZOOKEEPER_SERVERS),
+                conf.get(Config.STORM_ZOOKEEPER_PORT), String.valueOf(conf
+                .get(Config.STORM_ZOOKEEPER_ROOT)),
+                watcher, authConf, type);
     }
 
     @Override
@@ -107,7 +113,8 @@ public class ZKStateStorage implements IStateStorage {
 
     @Override
     public String create_sequential(String path, byte[] data, List<ACL> acls) {
-        return ClientZookeeper.createNode(zkWriter, path, data, CreateMode.EPHEMERAL_SEQUENTIAL, acls);
+        return ClientZookeeper.createNode(zkWriter, path, data, CreateMode.EPHEMERAL_SEQUENTIAL,
+                acls);
     }
 
     @Override
@@ -173,7 +180,8 @@ public class ZKStateStorage implements IStateStorage {
             try {
                 ClientZookeeper.createNode(zkWriter, path, data, CreateMode.PERSISTENT, acls);
             } catch (RuntimeException e) {
-                if (Utils.exceptionCauseIsInstanceOf(KeeperException.NodeExistsException.class, e)) {
+                if (Utils.exceptionCauseIsInstanceOf(KeeperException.NodeExistsException.class,
+                        e)) {
                     ClientZookeeper.setData(zkWriter, path, data);
                 } else {
                     throw e;
@@ -219,7 +227,8 @@ public class ZKStateStorage implements IStateStorage {
     @Override
     public void add_listener(final ConnectionStateListener listener) {
         ClientZookeeper.addListener(zkReader,
-            (curatorFramework, connectionState) -> listener.stateChanged(curatorFramework, connectionState));
+                (curatorFramework, connectionState) -> listener.stateChanged(curatorFramework,
+                connectionState));
     }
 
     @Override
@@ -229,10 +238,12 @@ public class ZKStateStorage implements IStateStorage {
 
     private class ZkWatcherCallBack implements WatcherCallBack {
         @Override
-        public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path) {
+        public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type,
+            String path) {
             if (active.get()) {
                 if (!(state.equals(Watcher.Event.KeeperState.SyncConnected))) {
-                    LOG.debug("Received event {} : {}: {} with disconnected Zookeeper.", state, type, path);
+                    LOG.debug("Received event {} : {}: {} with disconnected Zookeeper.", state,
+                            type, path);
                 } else {
                     LOG.debug("Received event {} : {} : {}", state, type, path);
                 }

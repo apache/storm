@@ -72,7 +72,8 @@ public interface ILocalAssignmentsBackend extends AutoCloseable {
     /**
      * Sync remote assignments to local, if remote is null, we will sync it from zk.
      *
-     * @param remote specific remote assignments, if it is null, it will sync from zookeeper[only used for nimbus]
+     * @param remote specific remote assignments, if it is null, it will sync from zookeeper[only
+     *     used for nimbus]
      */
     void syncRemoteAssignments(Map<String, byte[]> remote);
 

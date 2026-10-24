@@ -34,41 +34,49 @@ public class ReloadableX509TrustManager extends X509ExtendedTrustManager {
     private static final X509Certificate[] EMPTY = new X509Certificate[0];
     private volatile X509ExtendedTrustManager trustManager;
 
-    public ReloadableX509TrustManager(String trustStorePath, String trustStorePassword) throws Exception {
+    public ReloadableX509TrustManager(String trustStorePath,
+            String trustStorePassword) throws Exception {
         trustManager = createTrustManager(trustStorePath, trustStorePassword);
         FileWatcher.Callback keyStoreWatcherCallback = () ->
                 reloadCert(trustStorePath, trustStorePassword);
-        FileWatcher keyStoreWatcher = new FileWatcher(Paths.get(trustStorePath), keyStoreWatcherCallback);
+        FileWatcher keyStoreWatcher = new FileWatcher(Paths.get(trustStorePath),
+                keyStoreWatcherCallback);
         keyStoreWatcher.start();
     }
 
     @Override
-    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+    public void checkClientTrusted(X509Certificate[] chain,
+        String authType) throws CertificateException {
         trustManager.checkClientTrusted(chain, authType);
     }
 
     @Override
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+    public void checkClientTrusted(X509Certificate[] x509Certificates, String s,
+        Socket socket) throws CertificateException {
         trustManager.checkClientTrusted(x509Certificates, s, socket);
     }
 
     @Override
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+    public void checkClientTrusted(X509Certificate[] x509Certificates, String s,
+        SSLEngine sslEngine) throws CertificateException {
         trustManager.checkClientTrusted(x509Certificates, s, sslEngine);
     }
 
     @Override
-    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+    public void checkServerTrusted(X509Certificate[] chain,
+        String authType) throws CertificateException {
         trustManager.checkServerTrusted(chain, authType);
     }
 
     @Override
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String s,
+        Socket socket) throws CertificateException {
         trustManager.checkServerTrusted(x509Certificates, s, socket);
     }
 
     @Override
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String s,
+        SSLEngine sslEngine) throws CertificateException {
         trustManager.checkServerTrusted(x509Certificates, s, sslEngine);
     }
 
@@ -77,8 +85,8 @@ public class ReloadableX509TrustManager extends X509ExtendedTrustManager {
         return trustManager.getAcceptedIssuers();
     }
 
-
-    public X509ExtendedTrustManager createTrustManager(String trustStorePath, String keystorePassword) throws Exception {
+    public X509ExtendedTrustManager createTrustManager(String trustStorePath,
+            String keystorePassword) throws Exception {
 
         LOG.info(" createTrustManager trustStorePath {}", trustStorePath);
         KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -86,7 +94,8 @@ public class ReloadableX509TrustManager extends X509ExtendedTrustManager {
             keystore.load(keystoreStream, keystorePassword.toCharArray());
         }
 
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
+                .getDefaultAlgorithm());
         tmf.init(keystore);
 
         X509ExtendedTrustManager x509TrustManager = null;

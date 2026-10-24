@@ -40,9 +40,11 @@ import org.slf4j.LoggerFactory;
 public final class VersionInfo {
     private static final Logger LOG = LoggerFactory.getLogger(VersionInfo.class);
     private static final String STORM_CORE_PROPERTIES_NAME = "storm-core-version-info.properties";
-    private static final String STORM_CLIENT_PROPERTIES_NAME = "storm-client-version-info.properties";
+    private static final String STORM_CLIENT_PROPERTIES_NAME =
+            "storm-client-version-info.properties";
     public static final IVersionInfo OUR_FULL_VERSION = new VersionInfoImpl("storm-client");
-    public static final SimpleVersion OUR_VERSION = new SimpleVersion(OUR_FULL_VERSION.getVersion());
+    public static final SimpleVersion OUR_VERSION = new SimpleVersion(OUR_FULL_VERSION
+            .getVersion());
 
     private static class VersionInfoImpl implements IVersionInfo {
         private Properties info;
@@ -51,7 +53,7 @@ public final class VersionInfo {
             info = new Properties();
             String versionInfoFile = component + "-version-info.properties";
             try (InputStream is = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(versionInfoFile)) {
+                         .getResourceAsStream(versionInfoFile)) {
                 if (is == null) {
                     throw new IOException("Resource not found");
                 }
@@ -100,6 +102,7 @@ public final class VersionInfo {
 
     /**
      * Look for the version of storm defined by the given classpath.
+     *
      * @param cp the classpath as a string to be parsed.
      * @return the IVersionInfo or null.
      */
@@ -110,19 +113,21 @@ public final class VersionInfo {
 
     /**
      * Look for the version of storm defined by the given classpath.
+     *
      * @param classpath the classpath as list of files/directories.
      * @return the IVersionInfo or null.
      */
     public static IVersionInfo getFromClasspath(List<String> classpath) {
         IVersionInfo ret = getFromClasspath(classpath, STORM_CLIENT_PROPERTIES_NAME);
         if (ret == null) {
-            //storm-core is needed here for backwards compatibility.
+            // storm-core is needed here for backwards compatibility.
             ret = getFromClasspath(classpath, STORM_CORE_PROPERTIES_NAME);
         }
         return ret;
     }
 
-    private static IVersionInfo getFromClasspath(List<String> classpath, final String propFileName) {
+    private static IVersionInfo getFromClasspath(List<String> classpath,
+            final String propFileName) {
         IVersionInfo ret = null;
         for (String part : classpath) {
             Path p = Paths.get(part);
@@ -135,18 +140,20 @@ public final class VersionInfo {
                         ret = new VersionInfoImpl(info);
                         break;
                     } catch (IOException e) {
-                        LOG.error("Skipping {}; got an error while trying to parse the file.", part, e);
+                        LOG.error("Skipping {}; got an error while trying to parse the file.", part,
+                                e);
                     }
                 }
             } else if (part.toLowerCase().endsWith(".jar")
-                || part.toLowerCase().endsWith(".zip")) {
-                //Treat it like a jar
+                    || part.toLowerCase().endsWith(".zip")) {
+                // Treat it like a jar
                 try (JarFile jf = new JarFile(p.toFile())) {
                     Enumeration<? extends ZipEntry> zipEnums = jf.entries();
                     while (zipEnums.hasMoreElements()) {
                         ZipEntry entry = zipEnums.nextElement();
                         if (!entry.isDirectory() && entry.getName().equals(propFileName)) {
-                            try (InputStreamReader reader = new InputStreamReader(jf.getInputStream(entry))) {
+                            try (InputStreamReader reader = new InputStreamReader(jf
+                                    .getInputStream(entry))) {
                                 Properties info = new Properties();
                                 info.load(reader);
                                 ret = new VersionInfoImpl(info);
@@ -155,16 +162,17 @@ public final class VersionInfo {
                         }
                     }
                 } catch (IOException e) {
-                    LOG.error("Skipping {}; got an error while trying to parse the jar file.", part, e);
+                    LOG.error("Skipping {}; got an error while trying to parse the jar file.", part,
+                            e);
                 }
             } else if (p.endsWith("*")) {
-                //for a path like /<parent-path>/*
+                // for a path like /<parent-path>/*
                 Path parent = p.getParent();
                 List<String> children = new ArrayList<>();
                 try (Stream<Path> stream = Files.list(parent)) {
-                    //avoid infinite recursion
+                    // avoid infinite recursion
                     stream.filter(path -> !path.endsWith("*"))
-                        .forEach(path -> children.add(path.toString()));
+                            .forEach(path -> children.add(path.toString()));
                     IVersionInfo resFromChildren = getFromClasspath(children, propFileName);
                     if (resFromChildren != null) {
                         ret = resFromChildren;
@@ -182,6 +190,7 @@ public final class VersionInfo {
 
     /**
      * Get the version number of the build.
+     *
      * @return the version number of the build.
      */
     public static String getVersion() {
@@ -190,6 +199,7 @@ public final class VersionInfo {
 
     /**
      * Get the SCM revision number of the build.
+     *
      * @return the SCM revision number of the build.
      */
     public static String getRevision() {
@@ -198,6 +208,7 @@ public final class VersionInfo {
 
     /**
      * Get the SCM branch of the build.
+     *
      * @return the SCM branch of the build.
      */
     public static String getBranch() {
@@ -206,6 +217,7 @@ public final class VersionInfo {
 
     /**
      * Get the date/time the build happened.
+     *
      * @return the date/time of the build.
      */
     public static String getDate() {
@@ -214,6 +226,7 @@ public final class VersionInfo {
 
     /**
      * Get the checksum of the source.
+     *
      * @return the checksum of the source.
      */
     public static String getSrcChecksum() {
@@ -222,6 +235,7 @@ public final class VersionInfo {
 
     /**
      * Get a descriptive representation of the build meant for human consumption.
+     *
      * @return a descriptive representation of the build.
      */
     public static String getBuildVersion() {

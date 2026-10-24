@@ -63,7 +63,8 @@ import org.slf4j.LoggerFactory;
  */
 public class WindowedBoltExecutor implements IRichBolt {
     /**
-     * Name of the field carrying a late tuple on the late tuple stream. The value is a {@link DetachedTuple},
+     * Name of the field carrying a late tuple on the late tuple stream. The value is a {@link
+     * DetachedTuple},
      * a serializable copy of the original tuple detached from the topology context.
      */
     public static final String LATE_TUPLE_FIELD = "late_tuple";
@@ -90,7 +91,8 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     protected int getTopologyTimeoutMillis(Map<String, Object> topoConf) {
         if (topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS) != null) {
-            boolean timeOutsEnabled = (boolean) topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
+            boolean timeOutsEnabled = (boolean) topoConf
+                    .get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
             if (!timeOutsEnabled) {
                 return Integer.MAX_VALUE;
             }
@@ -112,20 +114,24 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     private void ensureDurationLessThanTimeout(int duration, int timeout) {
         if (duration > timeout) {
-            throw new IllegalArgumentException("Window duration (length + sliding interval) value " + duration
-                    + " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS + " value " + timeout);
+            throw new IllegalArgumentException("Window duration (length + sliding interval) value "
+                    + duration
+                    + " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS + " value "
+                    + timeout);
         }
     }
 
     private void ensureCountLessThanMaxPending(int count, int maxPending) {
         if (count > maxPending) {
-            throw new IllegalArgumentException("Window count (length + sliding interval) value " + count
+            throw new IllegalArgumentException("Window count (length + sliding interval) value "
+                    + count
                     + " is more than " + Config.TOPOLOGY_MAX_SPOUT_PENDING
                     + " value " + maxPending);
         }
     }
 
-    protected void validate(Map<String, Object> topoConf, Count windowLengthCount, Duration windowLengthDuration,
+    protected void validate(Map<String, Object> topoConf, Count windowLengthCount,
+            Duration windowLengthDuration,
                             Count slidingIntervalCount, Duration slidingIntervalDuration) {
 
         int topologyTimeout = getTopologyTimeoutMillis(topoConf);
@@ -135,7 +141,8 @@ public class WindowedBoltExecutor implements IRichBolt {
         }
 
         if (windowLengthDuration != null && slidingIntervalDuration != null) {
-            ensureDurationLessThanTimeout(windowLengthDuration.value + slidingIntervalDuration.value, topologyTimeout);
+            ensureDurationLessThanTimeout(windowLengthDuration.value
+                    + slidingIntervalDuration.value, topologyTimeout);
         } else if (windowLengthDuration != null) {
             ensureDurationLessThanTimeout(windowLengthDuration.value, topologyTimeout);
         } else if (slidingIntervalDuration != null) {
@@ -143,7 +150,8 @@ public class WindowedBoltExecutor implements IRichBolt {
         }
 
         if (windowLengthCount != null && slidingIntervalCount != null) {
-            ensureCountLessThanMaxPending(windowLengthCount.value + slidingIntervalCount.value, maxSpoutPending);
+            ensureCountLessThanMaxPending(windowLengthCount.value + slidingIntervalCount.value,
+                    maxSpoutPending);
         } else if (windowLengthCount != null) {
             ensureCountLessThanMaxPending(windowLengthCount.value, maxSpoutPending);
         } else if (slidingIntervalCount != null) {
@@ -151,7 +159,8 @@ public class WindowedBoltExecutor implements IRichBolt {
         }
     }
 
-    private WindowManager<Tuple> initWindowManager(WindowLifecycleListener<Tuple> lifecycleListener, Map<String, Object> topoConf,
+    private WindowManager<Tuple> initWindowManager(WindowLifecycleListener<Tuple> lifecycleListener,
+            Map<String, Object> topoConf,
                                                    TopologyContext context, Collection<Event<Tuple>> queue, boolean stateful) {
 
         WindowManager<Tuple> manager = stateful
@@ -163,18 +172,23 @@ public class WindowedBoltExecutor implements IRichBolt {
         Count slidingIntervalCount = null;
         // window length
         if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT)) {
-            windowLengthCount = new Count(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT)).intValue());
+            windowLengthCount = new Count(((Number) topoConf
+                    .get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT)).intValue());
         } else if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS)) {
             windowLengthDuration = new Duration(
-                ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS)).intValue(),
-                TimeUnit.MILLISECONDS);
+                    ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS))
+                    .intValue(),
+                    TimeUnit.MILLISECONDS);
         }
         // sliding interval
         if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT)) {
-            slidingIntervalCount = new Count(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT)).intValue());
+            slidingIntervalCount = new Count(((Number) topoConf
+                    .get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT)).intValue());
         } else if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS)) {
             slidingIntervalDuration =
-                new Duration(((Number) topoConf.get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS)).intValue(), TimeUnit.MILLISECONDS);
+                    new Duration(((Number) topoConf
+                    .get(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS))
+                    .intValue(), TimeUnit.MILLISECONDS);
         } else {
             // default is a sliding window of count 1
             slidingIntervalCount = new Count(1);
@@ -186,35 +200,39 @@ public class WindowedBoltExecutor implements IRichBolt {
             if (lateTupleStream != null) {
                 if (!context.getThisStreams().contains(lateTupleStream)) {
                     throw new IllegalArgumentException(
-                        "Stream for late tuples must be defined with the builder method withLateTupleStream");
+                            "Stream for late tuples must be defined with the builder method "
+                            + "withLateTupleStream");
                 }
             }
             // max lag
             if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS)) {
-                maxLagMs = ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS)).intValue();
+                maxLagMs = ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS))
+                        .intValue();
             } else {
                 maxLagMs = DEFAULT_MAX_LAG_MS;
             }
             // watermark interval
             int watermarkInterval;
             if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS)) {
-                watermarkInterval = ((Number) topoConf.get(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS)).intValue();
+                watermarkInterval = ((Number) topoConf
+                        .get(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS)).intValue();
             } else {
                 watermarkInterval = DEFAULT_WATERMARK_EVENT_INTERVAL_MS;
             }
             waterMarkEventGenerator = new WaterMarkEventGenerator<>(manager, watermarkInterval,
-                                                                    maxLagMs, getComponentStreams(context));
+                    maxLagMs, getComponentStreams(context));
         } else {
             if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM)) {
-                throw new IllegalArgumentException("Late tuple stream can be defined only when specifying a timestamp field");
+                throw new IllegalArgumentException("Late tuple stream can be defined only when "
+                        + "specifying a timestamp field");
             }
         }
         // validate
         validate(topoConf, windowLengthCount, windowLengthDuration,
-                 slidingIntervalCount, slidingIntervalDuration);
+                slidingIntervalCount, slidingIntervalDuration);
         evictionPolicy = getEvictionPolicy(windowLengthCount, windowLengthDuration);
         triggerPolicy = getTriggerPolicy(slidingIntervalCount, slidingIntervalDuration,
-                                         manager, evictionPolicy);
+                manager, evictionPolicy);
         manager.setEvictionPolicy(evictionPolicy);
         manager.setTriggerPolicy(triggerPolicy);
         return manager;
@@ -254,24 +272,30 @@ public class WindowedBoltExecutor implements IRichBolt {
         return timestampExtractor != null;
     }
 
-    private TriggerPolicy<Tuple, ?> getTriggerPolicy(Count slidingIntervalCount, Duration slidingIntervalDuration,
+    private TriggerPolicy<Tuple, ?> getTriggerPolicy(Count slidingIntervalCount,
+            Duration slidingIntervalDuration,
                                                      WindowManager<Tuple> manager, EvictionPolicy<Tuple, ?> evictionPolicy) {
         if (slidingIntervalCount != null) {
             if (isTupleTs()) {
-                return new WatermarkCountTriggerPolicy<>(slidingIntervalCount.value, manager, evictionPolicy, manager);
+                return new WatermarkCountTriggerPolicy<>(slidingIntervalCount.value, manager,
+                        evictionPolicy, manager);
             } else {
-                return new CountTriggerPolicy<>(slidingIntervalCount.value, manager, evictionPolicy);
+                return new CountTriggerPolicy<>(slidingIntervalCount.value, manager,
+                        evictionPolicy);
             }
         } else {
             if (isTupleTs()) {
-                return new WatermarkTimeTriggerPolicy<>(slidingIntervalDuration.value, manager, evictionPolicy, manager);
+                return new WatermarkTimeTriggerPolicy<>(slidingIntervalDuration.value, manager,
+                        evictionPolicy, manager);
             } else {
-                return new TimeTriggerPolicy<>(slidingIntervalDuration.value, manager, evictionPolicy);
+                return new TimeTriggerPolicy<>(slidingIntervalDuration.value, manager,
+                        evictionPolicy);
             }
         }
     }
 
-    private EvictionPolicy<Tuple, ?> getEvictionPolicy(Count windowLengthCount, Duration windowLengthDuration) {
+    private EvictionPolicy<Tuple, ?> getEvictionPolicy(Count windowLengthCount,
+            Duration windowLengthDuration) {
         if (windowLengthCount != null) {
             if (isTupleTs()) {
                 return new WatermarkCountEvictionPolicy<>(windowLengthCount.value);
@@ -288,12 +312,14 @@ public class WindowedBoltExecutor implements IRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         doPrepare(topoConf, context, collector, new ConcurrentLinkedQueue<>(), false);
     }
 
     // NOTE: the queue has to be thread safe.
-    protected void doPrepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector,
+    protected void doPrepare(Map<String, Object> topoConf, TopologyContext context,
+            OutputCollector collector,
                              Collection<Event<Tuple>> queue, boolean stateful) {
         Objects.requireNonNull(topoConf);
         Objects.requireNonNull(context);
@@ -315,10 +341,13 @@ public class WindowedBoltExecutor implements IRichBolt {
                 windowManager.add(input, ts);
             } else {
                 if (lateTupleStream != null) {
-                    // emit a detached copy: the original tuple references the topology context and cannot be serialized
-                    windowedOutputCollector.emit(lateTupleStream, input, new Values(new DetachedTuple(input)));
+                    // emit a detached copy: the original tuple references the topology context and
+                    // cannot be serialized
+                    windowedOutputCollector.emit(lateTupleStream, input,
+                            new Values(new DetachedTuple(input)));
                 } else {
-                    LOG.info("Received a late tuple {} with ts {}. This will not be processed.", input, ts);
+                    LOG.info("Received a late tuple {} with ts {}. This will not be processed.",
+                            input, ts);
                 }
                 windowedOutputCollector.ack(input);
             }
@@ -343,7 +372,8 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        String lateTupleStream = (String) getComponentConfiguration().get(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
+        String lateTupleStream = (String) getComponentConfiguration()
+                .get(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
         if (lateTupleStream != null) {
             declarer.declareStream(lateTupleStream, new Fields(LATE_TUPLE_FIELD));
         }
@@ -352,7 +382,8 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return bolt.getComponentConfiguration() != null ? bolt.getComponentConfiguration() : Collections.emptyMap();
+        return bolt.getComponentConfiguration() != null ? bolt
+                .getComponentConfiguration() : Collections.emptyMap();
     }
 
     protected WindowLifecycleListener<Tuple> newWindowLifecycleListener() {
@@ -365,7 +396,8 @@ public class WindowedBoltExecutor implements IRichBolt {
             }
 
             @Override
-            public void onActivation(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
+            public void onActivation(List<Tuple> tuples, List<Tuple> newTuples,
+                List<Tuple> expiredTuples, Long timestamp) {
                 windowedOutputCollector.setContext(tuples);
                 boltExecute(tuples, newTuples, expiredTuples, timestamp);
             }
@@ -373,14 +405,17 @@ public class WindowedBoltExecutor implements IRichBolt {
         };
     }
 
-    protected void boltExecute(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
-        bolt.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples, getWindowStartTs(timestamp), timestamp));
+    protected void boltExecute(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples,
+            Long timestamp) {
+        bolt.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples,
+                getWindowStartTs(timestamp), timestamp));
     }
 
     protected void boltExecute(Supplier<Iterator<Tuple>> tuples,
                                Supplier<Iterator<Tuple>> newTuples,
                                Supplier<Iterator<Tuple>> expiredTuples, Long timestamp) {
-        bolt.execute(new TupleWindowIterImpl(tuples, newTuples, expiredTuples, getWindowStartTs(timestamp), timestamp));
+        bolt.execute(new TupleWindowIterImpl(tuples, newTuples, expiredTuples,
+                getWindowStartTs(timestamp), timestamp));
     }
 
     private Long getWindowStartTs(Long endTs) {
@@ -392,7 +427,8 @@ public class WindowedBoltExecutor implements IRichBolt {
     }
 
     /**
-     * Creates an {@link OutputCollector} wrapper that automatically anchors the tuples to inputTuples while emitting.
+     * Creates an {@link OutputCollector} wrapper that automatically anchors the tuples to
+     * inputTuples while emitting.
      */
     private static class WindowedOutputCollector extends OutputCollector {
         private List<Tuple> inputTuples;

@@ -20,7 +20,8 @@ import org.apache.storm.task.TopologyContext;
  */
 public interface StateProvider {
     /**
-     * Returns a new state instance. Each state belongs unique namespace which is typically the componentid-task of the task, so that each
+     * Returns a new state instance. Each state belongs unique namespace which is typically the
+     * componentid-task of the task, so that each
      * task can have its own unique state.
      *
      * @param namespace a namespace of the state

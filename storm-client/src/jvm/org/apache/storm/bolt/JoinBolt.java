@@ -34,14 +34,16 @@ public class JoinBolt extends BaseWindowedBolt {
     // Map[StreamName -> JoinInfo]
     protected LinkedHashMap<String, JoinInfo> joinCriteria = new LinkedHashMap<>();
     protected FieldSelector[] outputFields;  // specified via bolt.select() ... used in declaring Output fields
-    //    protected String[] dotSeparatedOutputFieldNames; // fieldNames in x.y.z format w/o stream name, used for naming output fields
+    // protected String[] dotSeparatedOutputFieldNames; // fieldNames in x.y.z format w/o stream
+    // name, used for naming output fields
     protected String outputStreamName;
     // Map[StreamName -> Map[Key -> List<Tuple>]  ]
-    HashMap<String, HashMap<Object, ArrayList<Tuple>>> hashedInputs = new HashMap<>(); // holds remaining streams
+    HashMap<String, HashMap<Object, ArrayList<Tuple>>> hashedInputs =
+            new HashMap<>(); // holds remaining streams
     private OutputCollector collector;
 
     /**
-     * Calls  JoinBolt(Selector.SOURCE, sourceId, fieldName)
+     * Calls  JoinBolt(Selector.SOURCE, sourceId, fieldName).
      *
      * @param sourceId  Id of source component (spout/bolt) from which this bolt is receiving data
      * @param fieldName the field to use for joining the stream (x.y.z format)
@@ -50,9 +52,9 @@ public class JoinBolt extends BaseWindowedBolt {
         this(Selector.SOURCE, sourceId, fieldName);
     }
 
-
     /**
-     * Introduces the first stream to start the join with. Equivalent SQL ... select .... from srcOrStreamId ...
+     * Introduces the first stream to start the join with. Equivalent SQL ... select .... from
+     * srcOrStreamId ...
      *
      * @param type          Specifies whether 'srcOrStreamId' refers to stream name/source component
      * @param srcOrStreamId name of stream OR source component
@@ -65,7 +67,8 @@ public class JoinBolt extends BaseWindowedBolt {
     }
 
     /**
-     * Optional. Allows naming the output stream of this bolt. If not specified, the emits will happen on 'default' stream.
+     * Optional. Allows naming the output stream of this bolt. If not specified, the emits will
+     * happen on 'default' stream.
      */
     public JoinBolt withOutputStream(String streamName) {
         this.outputStreamName = streamName;
@@ -91,10 +94,12 @@ public class JoinBolt extends BaseWindowedBolt {
     }
 
     /**
-     * Performs left Join with the newStream. SQL    :   from stream1  left join stream2  on stream2.field = stream1.field1 same as:   new
+     * Performs left Join with the newStream. SQL : from stream1 left join stream2 on stream2.field
+     * = stream1.field1 same as: new
      * WindowedQueryBolt(stream1, field1). leftJoin(stream2, field, stream1);
      *
-     * <p>Note: priorStream must be previously joined Valid ex:    new WindowedQueryBolt(s1,k1). leftJoin(s2,k2, s1). leftJoin(s3,k3, s2);
+     * <p>Note: priorStream must be previously joined Valid ex: new WindowedQueryBolt(s1,k1).
+     * leftJoin(s2,k2, s1). leftJoin(s3,k3, s2);
      * Invalid ex:  new WindowedQueryBolt(s1,k1). leftJoin(s3,k3, s2). leftJoin(s2,k2, s1);
      *
      * @param newStream Either a name of a stream or an upstream component
@@ -104,14 +109,17 @@ public class JoinBolt extends BaseWindowedBolt {
         return joinCommon(newStream, field, priorStream, JoinType.LEFT);
     }
 
-    private JoinBolt joinCommon(String newStream, String fieldDescriptor, String priorStream, JoinType joinType) {
+    private JoinBolt joinCommon(String newStream, String fieldDescriptor, String priorStream,
+            JoinType joinType) {
         if (hashedInputs.containsKey(newStream)) {
-            throw new IllegalArgumentException("'" + newStream + "' is already part of join. Cannot join with it more than once.");
+            throw new IllegalArgumentException("'" + newStream
+                    + "' is already part of join. Cannot join with it more than once.");
         }
         hashedInputs.put(newStream, new HashMap<Object, ArrayList<Tuple>>());
         JoinInfo joinInfo = joinCriteria.get(priorStream);
         if (joinInfo == null) {
-            throw new IllegalArgumentException("Stream '" + priorStream + "' was not previously declared");
+            throw new IllegalArgumentException("Stream '" + priorStream
+                    + "' was not previously declared");
         }
 
         FieldSelector field = new FieldSelector(newStream, fieldDescriptor);
@@ -120,9 +128,12 @@ public class JoinBolt extends BaseWindowedBolt {
     }
 
     /**
-     * Specify projection fields. i.e. Specifies the fields to include in the output. e.g: .select("field1, stream2:field2, field3") Nested
-     * Key names are supported for nested types: e.g: .select("outerKey1.innerKey1, outerKey1.innerKey2, stream3:outerKey2.innerKey3)" Inner
-     * types (non leaf) must be Map<> in order to support nested lookup using this dot notation This selected fields implicitly declare the
+     * Specify projection fields. i.e. Specifies the fields to include in the output. e.g:
+     * .select("field1, stream2:field2, field3") Nested
+     * Key names are supported for nested types: e.g: .select("outerKey1.innerKey1,
+     * outerKey1.innerKey2, stream3:outerKey2.innerKey3)" Inner
+     * types (non leaf) must be Map<> in order to support nested lookup using this dot notation This
+     * selected fields implicitly declare the
      * output fieldNames for the bolt based.
      */
     public JoinBolt select(String commaSeparatedKeys) {
@@ -149,7 +160,8 @@ public class JoinBolt extends BaseWindowedBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         this.collector = collector;
         // initialize the hashedInputs data structure
         int i = 0;
@@ -174,11 +186,13 @@ public class JoinBolt extends BaseWindowedBolt {
         for (ResultRecord resultRecord : joinResult.getRecords()) {
             ArrayList<Object> outputTuple = resultRecord.getOutputFields();
             if (outputStreamName == null) {
-                // explicit anchoring emits to corresponding input tuples only, as default window anchoring will anchor them to all
+                // explicit anchoring emits to corresponding input tuples only, as default window
+                // anchoring will anchor them to all
                 // tuples in window
                 collector.emit(resultRecord.tupleList, outputTuple);
             } else {
-                // explicitly anchor emits to corresponding input tuples only, as default window anchoring will anchor them to all tuples
+                // explicitly anchor emits to corresponding input tuples only, as default window
+                // anchoring will anchor them to all tuples
                 // in window
                 collector.emit(outputStreamName, resultRecord.tupleList, outputTuple);
             }
@@ -221,17 +235,18 @@ public class JoinBolt extends BaseWindowedBolt {
         for (String streamName : joinCriteria.keySet()) {
             boolean finalJoin = (i == joinCriteria.size() - 1);
             if (i > 0) {
-                probe = doJoin(probe, hashedInputs.get(streamName), joinCriteria.get(streamName), finalJoin);
+                probe = doJoin(probe, hashedInputs.get(streamName), joinCriteria.get(streamName),
+                        finalJoin);
             }
             ++i;
         }
-
 
         return probe;
     }
 
     // Dispatches to the right join method (inner/left/right/outer) based on the joinInfo.joinType
-    protected JoinAccumulator doJoin(JoinAccumulator probe, HashMap<Object, ArrayList<Tuple>> buildInput, JoinInfo joinInfo,
+    protected JoinAccumulator doJoin(JoinAccumulator probe, HashMap<Object,
+            ArrayList<Tuple>> buildInput, JoinInfo joinInfo,
                                      boolean finalJoin) {
         final JoinType joinType = joinInfo.getJoinType();
         switch (joinType) {
@@ -247,11 +262,13 @@ public class JoinBolt extends BaseWindowedBolt {
     }
 
     // inner join - core implementation
-    protected JoinAccumulator doInnerJoin(JoinAccumulator probe, Map<Object, ArrayList<Tuple>> buildInput, JoinInfo joinInfo,
+    protected JoinAccumulator doInnerJoin(JoinAccumulator probe, Map<Object,
+            ArrayList<Tuple>> buildInput, JoinInfo joinInfo,
                                           boolean finalJoin) {
         String[] probeKeyName = joinInfo.getOtherField();
         JoinAccumulator result = new JoinAccumulator();
-        FieldSelector fieldSelector = new FieldSelector(joinInfo.other.getStreamName(), probeKeyName);
+        FieldSelector fieldSelector = new FieldSelector(joinInfo.other.getStreamName(),
+                probeKeyName);
         for (ResultRecord rec : probe.getRecords()) {
             Object probeKey = rec.getField(fieldSelector);
             if (probeKey != null) {
@@ -268,15 +285,18 @@ public class JoinBolt extends BaseWindowedBolt {
     }
 
     // left join - core implementation
-    protected JoinAccumulator doLeftJoin(JoinAccumulator probe, Map<Object, ArrayList<Tuple>> buildInput, JoinInfo joinInfo,
+    protected JoinAccumulator doLeftJoin(JoinAccumulator probe, Map<Object,
+            ArrayList<Tuple>> buildInput, JoinInfo joinInfo,
                                          boolean finalJoin) {
         String[] probeKeyName = joinInfo.getOtherField();
         JoinAccumulator result = new JoinAccumulator();
-        FieldSelector fieldSelector = new FieldSelector(joinInfo.other.getStreamName(), probeKeyName);
+        FieldSelector fieldSelector = new FieldSelector(joinInfo.other.getStreamName(),
+                probeKeyName);
         for (ResultRecord rec : probe.getRecords()) {
             Object probeKey = rec.getField(fieldSelector);
             if (probeKey != null) {
-                ArrayList<Tuple> matchingBuildRecs = buildInput.get(probeKey); // ok if its return null
+                ArrayList<Tuple> matchingBuildRecs = buildInput
+                        .get(probeKey); // ok if its return null
                 if (matchingBuildRecs != null && !matchingBuildRecs.isEmpty()) {
                     for (Tuple matchingRec : matchingBuildRecs) {
                         ResultRecord mergedRecord = new ResultRecord(rec, matchingRec, finalJoin);
@@ -292,11 +312,13 @@ public class JoinBolt extends BaseWindowedBolt {
         return result;
     }
 
-    // Identify the join field for the stream, and look it up in 'tuple'. field can be nested field:  outerKey.innerKey
+    // Identify the join field for the stream, and look it up in 'tuple'. field can be nested field:
+    // outerKey.innerKey
     private Object getJoinField(String streamId, Tuple tuple) {
         JoinInfo ji = joinCriteria.get(streamId);
         if (ji == null) {
-            throw new RuntimeException("Join information for '" + streamId + "' not found. Check the join clauses.");
+            throw new RuntimeException("Join information for '" + streamId
+                    + "' not found. Check the join clauses.");
         }
         return lookupField(ji.getJoinField(), tuple);
     }
@@ -309,14 +331,17 @@ public class JoinBolt extends BaseWindowedBolt {
             case SOURCE:
                 return ti.getSourceComponent();
             default:
-                throw new RuntimeException(selectorType + " stream selector type not yet supported");
+                throw new RuntimeException(selectorType
+                    + " stream selector type not yet supported");
         }
     }
 
     // Performs projection on the tuples based on 'projectionFields'
-    protected ArrayList<Object> doProjection(ArrayList<Tuple> tuples, FieldSelector[] projectionFields) {
+    protected ArrayList<Object> doProjection(ArrayList<Tuple> tuples,
+            FieldSelector[] projectionFields) {
         ArrayList<Object> result = new ArrayList<>(projectionFields.length);
-        // TODO: optimize this computation... perhaps inner loop can be outside to avoid rescanning tuples
+        // TODO: optimize this computation... perhaps inner loop can be outside to avoid rescanning
+        // tuples
         for (int i = 0; i < projectionFields.length; i++) {
             boolean missingField = true;
             for (Tuple tuple : tuples) {
@@ -451,14 +476,14 @@ public class JoinBolt extends BaseWindowedBolt {
         private FieldSelector field;           // field for the current stream
         private FieldSelector other;      // field for the other (2nd) stream
 
-
         public JoinInfo(FieldSelector field) {
             this.joinType = null;
             this.field = field;
             this.other = null;
         }
 
-        public JoinInfo(FieldSelector field, String otherStream, JoinInfo otherStreamJoinInfo, JoinType joinType) {
+        public JoinInfo(FieldSelector field, String otherStream, JoinInfo otherStreamJoinInfo,
+                JoinType joinType) {
             this.joinType = joinType;
             this.field = field;
             this.other = new FieldSelector(otherStream, otherStreamJoinInfo.field.getOutputName());
@@ -512,13 +537,15 @@ public class JoinBolt extends BaseWindowedBolt {
          * Constructor.
          *
          * @param stream          name of stream
-         * @param fieldDescriptor Simple fieldDescriptor like "x.y.z" and w/o a 'stream1:' stream qualifier.
+         * @param fieldDescriptor Simple fieldDescriptor like "x.y.z" and w/o a 'stream1:' stream
+         *     qualifier.
          */
         public FieldSelector(String stream, String fieldDescriptor) {
             this(fieldDescriptor);
             if (fieldDescriptor.indexOf(":") >= 0) {
-                throw new IllegalArgumentException("Not expecting stream qualifier ':' in '" + fieldDescriptor
-                                                   + "'. Stream name '" + stream + "' is implicit in this context");
+                throw new IllegalArgumentException("Not expecting stream qualifier ':' in '"
+                        + fieldDescriptor
+                        + "'. Stream name '" + stream + "' is implicit in this context");
             }
             this.streamName = stream;
         }
@@ -526,7 +553,6 @@ public class JoinBolt extends BaseWindowedBolt {
         public FieldSelector(String stream, String[] field) {
             this(stream, String.join(".", field));
         }
-
 
         public String getStreamName() {
             return streamName;
@@ -549,10 +575,12 @@ public class JoinBolt extends BaseWindowedBolt {
     // Join helper to concat fields to the record
     protected class ResultRecord {
 
-        ArrayList<Tuple> tupleList = new ArrayList<>(); // contains one Tuple per Stream being joined
+        ArrayList<Tuple> tupleList =
+                new ArrayList<>(); // contains one Tuple per Stream being joined
         ArrayList<Object> outFields = null; // refs to fields that will be part of output fields
 
-        // 'generateOutputFields' enables us to avoid projection unless it is the final stream being joined
+        // 'generateOutputFields' enables us to avoid projection unless it is the final stream being
+        // joined
         public ResultRecord(Tuple tuple, boolean generateOutputFields) {
             tupleList.add(tuple);
             if (generateOutputFields) {
@@ -575,7 +603,6 @@ public class JoinBolt extends BaseWindowedBolt {
         public ArrayList<Object> getOutputFields() {
             return outFields;
         }
-
 
         // 'stream' cannot be null,
         public Object getField(FieldSelector fieldSelector) {

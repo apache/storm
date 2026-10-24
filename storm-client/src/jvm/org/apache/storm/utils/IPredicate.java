@@ -13,7 +13,8 @@
 package org.apache.storm.utils;
 
 /**
- * This interface is implemented by classes, instances of which can be passed into certain Util functions which test some collection for
+ * This interface is implemented by classes, instances of which can be passed into certain Util
+ * functions which test some collection for
  * elements matching the IPredicate. (IPredicate.test(...) == true)
  */
 public interface IPredicate<T> {

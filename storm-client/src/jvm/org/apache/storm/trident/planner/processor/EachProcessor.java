@@ -24,7 +24,6 @@ import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
-
 public class EachProcessor implements TridentProcessor {
     Function function;
     TridentContext context;
@@ -38,7 +37,8 @@ public class EachProcessor implements TridentProcessor {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        TridentContext tridentContext) {
         List<Factory> parents = tridentContext.getParentTupleFactories();
         if (parents.size() != 1) {
             throw new RuntimeException("Each operation can only have one parent");
@@ -64,7 +64,6 @@ public class EachProcessor implements TridentProcessor {
         collector.setContext(processorContext, tuple);
         function.execute(projection.create(tuple), collector);
     }
-
 
     @Override
     public void startBatch(ProcessorContext processorContext) {

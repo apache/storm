@@ -14,7 +14,6 @@ package org.apache.storm.trident.fluent;
 
 import org.apache.storm.trident.operation.impl.SingleEmitAggregator.BatchToPartition;
 
-
 public interface GlobalAggregationScheme<S extends IAggregatableStream> {
     IAggregatableStream aggPartition(S stream); // how to partition for second stage of aggregation
 

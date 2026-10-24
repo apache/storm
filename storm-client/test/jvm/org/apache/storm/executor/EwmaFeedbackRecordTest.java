@@ -12,6 +12,12 @@
 
 package org.apache.storm.executor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.codahale.metrics.Gauge;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -29,12 +35,6 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 /**
  * Tests for {@link EwmaFeedbackRecord}, covering three concerns:
  * <ul>
@@ -48,7 +48,8 @@ import static org.mockito.Mockito.when;
  *       <em>suffixed</em> names (one per {@code sourceComponent:sourceStream}), e.g.
  *       {@code __execute-jitter-splitter:default}, so a bare {@code get("__execute-jitter")} never matches.
  *       These tests assert the signal is actually discovered and aggregated — without it
- *       {@link org.apache.storm.grouping.JitterAwareStreamGrouping} silently degrades to round-robin.</li>
+ * {@link org.apache.storm.grouping.JitterAwareStreamGrouping} silently degrades to
+ * round-robin.</li>
  * </ul>
  */
 public class EwmaFeedbackRecordTest {
@@ -96,7 +97,8 @@ public class EwmaFeedbackRecordTest {
 
     @Test
     public void forEachMetric_skipsAbsentMetrics() {
-        // -1 is the VOID sentinel: an absent gauge must not be reported as a real (negative) measurement.
+        // -1 is the VOID sentinel: an absent gauge must not be reported as a real (negative)
+        // measurement.
         EwmaFeedbackRecord record = new EwmaFeedbackRecord(-1, 2.0, -1);
 
         Map<String, Double> collected = new LinkedHashMap<>();
@@ -108,7 +110,8 @@ public class EwmaFeedbackRecordTest {
 
     @Test
     public void forEachMetric_emitsZeroJitter() {
-        // Zero is a legitimate value (jitter decays to 0 under stable latency) and must be distinct from VOID.
+        // Zero is a legitimate value (jitter decays to 0 under stable latency) and must be distinct
+        // from VOID.
         EwmaFeedbackRecord record = new EwmaFeedbackRecord(0.0, 0.0, 0.0);
 
         Map<String, Double> collected = new LinkedHashMap<>();
@@ -135,14 +138,15 @@ public class EwmaFeedbackRecordTest {
 
     @Test
     public void kryoRoundTrip_insideFeedbackTuple() {
-        // Mirrors Executor#buildUpstreamFeedbackTuple: [TaskInfo, EwmaFeedbackRecord]. Both elements
+        // Mirrors Executor#buildUpstreamFeedbackTuple: [TaskInfo, EwmaFeedbackRecord]. Both
+        // elements
         // must survive the wire so the receiving task can rebuild its child stats.
         Map<String, Object> conf = conf();
         KryoValuesSerializer serializer = new KryoValuesSerializer(conf);
         KryoValuesDeserializer deserializer = new KryoValuesDeserializer(conf);
 
         IMetricsConsumer.TaskInfo taskInfo =
-            new IMetricsConsumer.TaskInfo("host", 6700, "comp", 7, 123456, -1);
+                new IMetricsConsumer.TaskInfo("host", 6700, "comp", 7, 123456, -1);
         EwmaFeedbackRecord feedback = new EwmaFeedbackRecord(-1, 9.0, 4.0);
         Values original = new Values(taskInfo, feedback);
 
@@ -153,7 +157,8 @@ public class EwmaFeedbackRecordTest {
         assertInstanceOf(EwmaFeedbackRecord.class, restored.get(1));
         assertEquals(7, ((IMetricsConsumer.TaskInfo) restored.get(0)).srcTaskId);
         assertEquals(feedback, restored.get(1));
-        assertTrue(((EwmaFeedbackRecord) restored.get(1)).processJitter() < 0, "VOID sentinel preserved");
+        assertTrue(((EwmaFeedbackRecord) restored.get(1)).processJitter() < 0,
+                "VOID sentinel preserved");
     }
 
     @Test
@@ -161,24 +166,30 @@ public class EwmaFeedbackRecordTest {
         StormMetricRegistry registry = new StormMetricRegistry();
         TaskMetrics taskMetrics = newTaskMetrics(registry, ewmaConf(true));
 
-        // Real path: registers "__execute-jitter-splitter:default" and feeds the RFC-1889 EWMA estimator.
+        // Real path: registers "__execute-jitter-splitter:default" and feeds the RFC-1889 EWMA
+        // estimator.
         // Varying latencies make the jitter estimate strictly positive.
-        for (long latency : new long[]{10, 60, 15, 90, 20}) {
+        for (long latency : new long[] {10, 60, 15, 90, 20}) {
             taskMetrics.boltExecuteTuple("splitter", "default", latency);
         }
 
-        EwmaFeedbackRecord record = EwmaFeedbackRecord.fromWorkerState(workerStateFor(registry), TASK_ID);
+        EwmaFeedbackRecord record = EwmaFeedbackRecord.fromWorkerState(workerStateFor(registry),
+                TASK_ID);
 
-        // Regression guard: a bare get("__execute-jitter") misses the suffixed key and leaves this VOID (-1).
+        // Regression guard: a bare get("__execute-jitter") misses the suffixed key and leaves this
+        // VOID (-1).
         assertTrue(record.executeJitter() > 0,
-            "execute-jitter must be discovered from the suffixed gauge, got " + record.executeJitter());
+                "execute-jitter must be discovered from the suffixed gauge, got " + record
+                .executeJitter());
 
-        // Metrics that were never driven must stay VOID — proving the prefix filter does not cross-match
+        // Metrics that were never driven must stay VOID — proving the prefix filter does not
+        // cross-match
         // (e.g. __execute-jitter must not be picked up when asking for __process-jitter).
         assertEquals(VOID, record.processJitter());
         assertEquals(VOID, record.completeJitter());
 
-        // forEachMetric must surface the value under the canonical bare name consumed by ChildEwmaStats.
+        // forEachMetric must surface the value under the canonical bare name consumed by
+        // ChildEwmaStats.
         Map<String, Double> emitted = new HashMap<>();
         record.forEachMetric(emitted::put);
         assertEquals(1, emitted.size());
@@ -190,26 +201,28 @@ public class EwmaFeedbackRecordTest {
         StormMetricRegistry registry = new StormMetricRegistry();
         TaskMetrics taskMetrics = newTaskMetrics(registry, ewmaConf(true));
 
-        // Same task consuming from two upstream sources => two distinct __execute-jitter-<src> gauges.
-        for (long latency : new long[]{10, 20, 12, 18}) {
+        // Same task consuming from two upstream sources => two distinct __execute-jitter-<src>
+        // gauges.
+        for (long latency : new long[] {10, 20, 12, 18}) {
             taskMetrics.boltExecuteTuple("srcA", "default", latency);
         }
-        for (long latency : new long[]{10, 200, 5, 300}) {   // far jumpier => higher jitter
+        for (long latency : new long[] {10, 200, 5, 300}) {   // far jumpier => higher jitter
             taskMetrics.boltExecuteTuple("srcB", "default", latency);
         }
 
         // Compute the expected max directly from the registry, independent of EWMA arithmetic.
         Map<String, Gauge> gauges = registry.getTaskGauges(TASK_ID);
         double expectedMax = gauges.entrySet().stream()
-            .filter(e -> e.getKey().startsWith(TaskMetrics.METRIC_NAME_EXECUTE_JITTER + "-"))
-            .mapToDouble(e -> ((Number) e.getValue().getValue()).doubleValue())
-            .max()
-            .orElseThrow(() -> new AssertionError("no execute-jitter gauges registered"));
+                .filter(e -> e.getKey().startsWith(TaskMetrics.METRIC_NAME_EXECUTE_JITTER + "-"))
+                .mapToDouble(e -> ((Number) e.getValue().getValue()).doubleValue())
+                .max()
+                .orElseThrow(() -> new AssertionError("no execute-jitter gauges registered"));
         assertTrue(expectedMax > 0, "precondition: at least one source produced positive jitter");
 
-        EwmaFeedbackRecord record = EwmaFeedbackRecord.fromWorkerState(workerStateFor(registry), TASK_ID);
+        EwmaFeedbackRecord record = EwmaFeedbackRecord.fromWorkerState(workerStateFor(registry),
+                TASK_ID);
         assertEquals(expectedMax, record.executeJitter(),
-            "fromWorkerState must report the max jitter across all of the task's source gauges");
+                "fromWorkerState must report the max jitter across all of the task's source gauges");
     }
 
     @Test
@@ -220,7 +233,8 @@ public class EwmaFeedbackRecordTest {
 
         taskMetrics.boltExecuteTuple("splitter", "default", 42);
 
-        EwmaFeedbackRecord record = EwmaFeedbackRecord.fromWorkerState(workerStateFor(registry), TASK_ID);
+        EwmaFeedbackRecord record = EwmaFeedbackRecord.fromWorkerState(workerStateFor(registry),
+                TASK_ID);
         assertEquals(VOID, record.executeJitter());
         assertEquals(VOID, record.processJitter());
         assertEquals(VOID, record.completeJitter());

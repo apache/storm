@@ -12,6 +12,14 @@
 
 package org.apache.storm.executor;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.Constants;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.daemon.worker.WorkerState;
@@ -29,17 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.mockito.Mockito;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-
 public class SpoutExecutorTest {
-
 
     @Test
     public void testPendingTuplesRotateShouldBeCalledOnlyOnce() throws Exception {
@@ -47,9 +45,10 @@ public class SpoutExecutorTest {
         RateCounter rateCounter = Mockito.mock(RateCounter.class);
 
         StormMetricRegistry stormMetricRegistry = Mockito.mock(StormMetricRegistry.class);
-        Mockito.when(stormMetricRegistry.rateCounter(anyString(),anyString(),anyInt())).thenReturn(rateCounter);
+        Mockito.when(stormMetricRegistry.rateCounter(anyString(), anyString(), anyInt()))
+                .thenReturn(rateCounter);
 
-        Map<String,Object> hashmap = Utils.readDefaultConfig();
+        Map<String, Object> hashmap = Utils.readDefaultConfig();
 
         IStateStorage stateStorage = Mockito.mock(IStateStorage.class);
 
@@ -58,7 +57,8 @@ public class SpoutExecutorTest {
 
         WorkerTopologyContext workerTopologyContext = Mockito.mock(WorkerTopologyContext.class);
         Mockito.when(workerTopologyContext.getComponentId(anyInt())).thenReturn("1");
-        Mockito.when(workerTopologyContext.getComponentCommon(anyString())).thenReturn(componentCommon);
+        Mockito.when(workerTopologyContext.getComponentCommon(anyString()))
+                .thenReturn(componentCommon);
 
         WorkerState workerState = Mockito.mock(WorkerState.class);
         Mockito.when(workerState.getWorkerTopologyContext()).thenReturn(workerTopologyContext);
@@ -66,11 +66,12 @@ public class SpoutExecutorTest {
         Mockito.when(workerState.getTopologyConf()).thenReturn(hashmap);
         Mockito.when(workerState.getMetricRegistry()).thenReturn(stormMetricRegistry);
 
-        SpoutExecutor spoutExecutor = new SpoutExecutor(workerState,List.of(1L,5L),new HashMap<>());
+        SpoutExecutor spoutExecutor = new SpoutExecutor(workerState, List.of(1L, 5L),
+                new HashMap<>());
 
-        TupleImpl tuple =   Mockito.mock(TupleImpl.class);
+        TupleImpl tuple = Mockito.mock(TupleImpl.class);
         Mockito.when(tuple.getSourceStreamId()).thenReturn(Constants.SYSTEM_TICK_STREAM_ID);
-        AddressedTuple addressedTuple =   Mockito.mock(AddressedTuple.class);
+        AddressedTuple addressedTuple = Mockito.mock(AddressedTuple.class);
         Mockito.when(addressedTuple.getDest()).thenReturn(AddressedTuple.BROADCAST_DEST);
         Mockito.when(addressedTuple.getTuple()).thenReturn(tuple);
 
@@ -84,7 +85,7 @@ public class SpoutExecutorTest {
 
         spoutExecutor.accept(addressedTuple);
 
-        Mockito.verify(rotatingMap,Mockito.times(1)).rotate();
+        Mockito.verify(rotatingMap, Mockito.times(1)).rotate();
     }
 
     @Test
@@ -93,14 +94,16 @@ public class SpoutExecutorTest {
         RateCounter rateCounter = Mockito.mock(RateCounter.class);
 
         StormMetricRegistry stormMetricRegistry = Mockito.mock(StormMetricRegistry.class);
-        Mockito.when(stormMetricRegistry.rateCounter(anyString(),anyString(),anyInt())).thenReturn(rateCounter);
+        Mockito.when(stormMetricRegistry.rateCounter(anyString(), anyString(), anyInt()))
+                .thenReturn(rateCounter);
 
         ComponentCommon componentCommon = Mockito.mock(ComponentCommon.class);
         Mockito.when(componentCommon.get_json_conf()).thenReturn(null);
 
         WorkerTopologyContext workerTopologyContext = Mockito.mock(WorkerTopologyContext.class);
         Mockito.when(workerTopologyContext.getComponentId(anyInt())).thenReturn("1");
-        Mockito.when(workerTopologyContext.getComponentCommon(anyString())).thenReturn(componentCommon);
+        Mockito.when(workerTopologyContext.getComponentCommon(anyString()))
+                .thenReturn(componentCommon);
 
         WorkerState workerState = Mockito.mock(WorkerState.class);
         Mockito.when(workerState.getWorkerTopologyContext()).thenReturn(workerTopologyContext);
@@ -108,7 +111,8 @@ public class SpoutExecutorTest {
         Mockito.when(workerState.getTopologyConf()).thenReturn(Utils.readDefaultConfig());
         Mockito.when(workerState.getMetricRegistry()).thenReturn(stormMetricRegistry);
 
-        SpoutExecutor spoutExecutor = new SpoutExecutor(workerState,List.of(1L,5L),new HashMap<>());
+        SpoutExecutor spoutExecutor = new SpoutExecutor(workerState, List.of(1L, 5L),
+                new HashMap<>());
 
         assertInstanceOf(KeyStreamRandom.class, spoutExecutor.rand);
     }

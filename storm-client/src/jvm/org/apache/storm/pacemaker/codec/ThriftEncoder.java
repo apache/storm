@@ -31,18 +31,20 @@ import org.slf4j.LoggerFactory;
 /**
  * Encodes messages as length-prefixed thrift {@link HBMessage} frames of the Pacemaker protocol.
  *
- * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
- *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed
+ *     in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports
+ *     them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
 @Deprecated(since = "3.1.0", forRemoval = true)
 public class ThriftEncoder extends MessageToMessageEncoder<Object> {
 
     private static final Logger LOG = LoggerFactory
-        .getLogger(ThriftEncoder.class);
+            .getLogger(ThriftEncoder.class);
 
     private HBMessage encodeNettySerializable(ByteBufAllocator alloc,
-        INettySerializable nettyMessage, HBServerMessageType serverMessageType) {
+                                              INettySerializable nettyMessage, HBServerMessageType serverMessageType) {
 
         HBMessageData messageData = new HBMessageData();
         HBMessage m = new HBMessage();
@@ -51,7 +53,7 @@ public class ThriftEncoder extends MessageToMessageEncoder<Object> {
         try {
             wrappedBuffer.resetWriterIndex();
             nettyMessage.write(wrappedBuffer);
-            
+
             messageData.set_message_blob(messageBuffer);
             m.set_type(serverMessageType);
             m.set_data(messageData);
@@ -62,7 +64,8 @@ public class ThriftEncoder extends MessageToMessageEncoder<Object> {
     }
 
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, Object msg, List<Object> out) throws Exception {
+    protected void encode(ChannelHandlerContext channelHandlerContext, Object msg,
+        List<Object> out) throws Exception {
         if (msg == null) {
             return;
         }

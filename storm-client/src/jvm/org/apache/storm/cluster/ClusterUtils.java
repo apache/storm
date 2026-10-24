@@ -45,7 +45,8 @@ public class ClusterUtils {
     public static final String LEADERINFO_ROOT = "leader-info";
     public static final String ERRORS_ROOT = "errors";
     public static final String BLOBSTORE_ROOT = "blobstore";
-    public static final String BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT = "blobstoremaxkeysequencenumber";
+    public static final String BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT =
+            "blobstoremaxkeysequencenumber";
     public static final String NIMBUSES_ROOT = "nimbuses";
     public static final String CREDENTIALS_ROOT = "credentials";
     public static final String LOGCONFIG_ROOT = "logconfigs";
@@ -60,7 +61,8 @@ public class ClusterUtils {
     public static final String LEADERINFO_SUBTREE = ZK_SEPERATOR + LEADERINFO_ROOT;
     public static final String ERRORS_SUBTREE = ZK_SEPERATOR + ERRORS_ROOT;
     public static final String BLOBSTORE_SUBTREE = ZK_SEPERATOR + BLOBSTORE_ROOT;
-    public static final String BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE = ZK_SEPERATOR + BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT;
+    public static final String BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE = ZK_SEPERATOR
+            + BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT;
     public static final String NIMBUSES_SUBTREE = ZK_SEPERATOR + NIMBUSES_ROOT;
     public static final String CREDENTIALS_SUBTREE = ZK_SEPERATOR + CREDENTIALS_ROOT;
     public static final String LOGCONFIG_SUBTREE = ZK_SEPERATOR + LOGCONFIG_ROOT;
@@ -73,7 +75,8 @@ public class ClusterUtils {
     private static ClusterUtils _instance = INSTANCE;
 
     /**
-     * Provide an instance of this class for delegates to use. To mock out delegated methods, provide an instance of a subclass that
+     * Provide an instance of this class for delegates to use. To mock out delegated methods,
+     * provide an instance of a subclass that
      * overrides the implementation of the delegated method.
      *
      * @param u a Cluster instance
@@ -83,7 +86,8 @@ public class ClusterUtils {
     }
 
     /**
-     * Resets the singleton instance to the default. This is helpful to reset the class to its original functionality when mocking is no
+     * Resets the singleton instance to the default. This is helpful to reset the class to its
+     * original functionality when mocking is no
      * longer desired.
      */
     public static void resetInstance() {
@@ -118,10 +122,11 @@ public class ClusterUtils {
             ACL acl1 = ZooDefs.Ids.CREATOR_ALL_ACL.get(0);
             aclList.add(acl1);
             try {
-                ACL acl2 = new ACL(perms, new Id("digest", DigestAuthenticationProvider.generateDigest(payload)));
+                ACL acl2 = new ACL(perms, new Id("digest", DigestAuthenticationProvider
+                        .generateDigest(payload)));
                 aclList.add(acl2);
             } catch (NoSuchAlgorithmException e) {
-                //Should only happen on a badly configured system
+                // Should only happen on a badly configured system
                 throw new RuntimeException(e);
             }
         }
@@ -209,7 +214,8 @@ public class ClusterUtils {
         return PROFILERCONFIG_SUBTREE + ZK_SEPERATOR + stormId;
     }
 
-    public static String profilerConfigPath(String stormId, String host, Long port, ProfileAction requestType) {
+    public static String profilerConfigPath(String stormId, String host, Long port,
+            ProfileAction requestType) {
         return profilerConfigPath(stormId) + ZK_SEPERATOR + host + "_" + port + "_" + requestType;
     }
 
@@ -242,7 +248,8 @@ public class ClusterUtils {
      * @param version    the version the secret is for.
      * @return the path to the secret.
      */
-    public static String secretKeysPath(WorkerTokenServiceType type, String topologyId, long version) {
+    public static String secretKeysPath(WorkerTokenServiceType type, String topologyId,
+            long version) {
         return secretKeysPath(type, topologyId) + ZK_SEPERATOR + version;
     }
 
@@ -272,18 +279,22 @@ public class ClusterUtils {
         return executorWhb;
     }
 
-    public static IStateStorage mkStateStorage(Map<String, Object> config, Map<String, Object> authConf,
+    public static IStateStorage mkStateStorage(Map<String, Object> config, Map<String,
+            Object> authConf,
                                                ClusterStateContext context) throws Exception {
         return _instance.mkStateStorageImpl(config, authConf, context);
     }
 
-    public static IStormClusterState mkStormClusterState(Object stateStorage, ILocalAssignmentsBackend backend,
+    public static IStormClusterState mkStormClusterState(Object stateStorage,
+            ILocalAssignmentsBackend backend,
                                                          ClusterStateContext context) throws Exception {
         return _instance.mkStormClusterStateImpl(stateStorage, backend, context);
     }
 
-    public static IStormClusterState mkStormClusterState(Object stateStorage, ClusterStateContext context) throws Exception {
-        return _instance.mkStormClusterStateImpl(stateStorage, LocalAssignmentsBackendFactory.getDefault(), context);
+    public static IStormClusterState mkStormClusterState(Object stateStorage,
+            ClusterStateContext context) throws Exception {
+        return _instance.mkStormClusterStateImpl(stateStorage, LocalAssignmentsBackendFactory
+                .getDefault(), context);
     }
 
     public static String stringifyError(Throwable error) {
@@ -293,19 +304,21 @@ public class ClusterUtils {
         return result.toString();
     }
 
-    public IStormClusterState mkStormClusterStateImpl(Object stateStorage, ILocalAssignmentsBackend backend,
+    public IStormClusterState mkStormClusterStateImpl(Object stateStorage,
+            ILocalAssignmentsBackend backend,
                                                       ClusterStateContext context) throws Exception {
         if (stateStorage instanceof IStateStorage) {
             return new StormClusterStateImpl((IStateStorage) stateStorage, backend, context, false);
         } else {
             IStateStorage storage = _instance.mkStateStorageImpl((Map<String, Object>) stateStorage,
-                                                                 (Map<String, Object>) stateStorage, context);
+                    (Map<String, Object>) stateStorage, context);
             return new StormClusterStateImpl(storage, backend, context, true);
         }
     }
 
-    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map<String, Object> authConf, ClusterStateContext context) throws
-        Exception {
+    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map<String,
+            Object> authConf, ClusterStateContext context) throws
+            Exception {
         String className = null;
         IStateStorage stateStorage = null;
         if (config.get(Config.STORM_CLUSTER_STATE_STORE) != null) {

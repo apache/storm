@@ -13,7 +13,6 @@
 package org.apache.storm.hooks.info;
 
 import java.util.List;
-
 import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.task.TopologyContext;
 

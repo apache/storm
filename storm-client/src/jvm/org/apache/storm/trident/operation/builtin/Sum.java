@@ -16,7 +16,6 @@ import java.math.BigDecimal;
 import org.apache.storm.trident.operation.CombinerAggregator;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-
 public class Sum implements CombinerAggregator<Number> {
 
     private static BigDecimal asBigDecimal(Number val) {

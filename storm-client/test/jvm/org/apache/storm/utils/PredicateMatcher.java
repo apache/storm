@@ -23,11 +23,11 @@ import org.hamcrest.TypeSafeMatcher;
 public class PredicateMatcher<T> extends TypeSafeMatcher<T> {
 
     private final Predicate<T> predicate;
-    
+
     private PredicateMatcher(Predicate<T> predicate) {
         this.predicate = predicate;
     }
-    
+
     public static <T> PredicateMatcher<T> matchesPredicate(Predicate<T> predicate) {
         return new PredicateMatcher<>(predicate);
     }

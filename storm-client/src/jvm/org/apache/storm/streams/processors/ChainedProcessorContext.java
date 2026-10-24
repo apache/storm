@@ -25,7 +25,8 @@ public class ChainedProcessorContext<T> implements ProcessorContext<T> {
     private final ProcessorNode processorNode;
     private final List<? extends ProcessorContext> contexts;
 
-    public ChainedProcessorContext(ProcessorNode processorNode, List<? extends ProcessorContext> contexts) {
+    public ChainedProcessorContext(ProcessorNode processorNode,
+            List<? extends ProcessorContext> contexts) {
         this.processorNode = processorNode;
         this.contexts = new ArrayList<>(contexts);
     }

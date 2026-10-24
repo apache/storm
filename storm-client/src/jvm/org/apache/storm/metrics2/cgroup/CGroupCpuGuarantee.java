@@ -23,7 +23,8 @@ import org.apache.storm.task.TopologyContext;
 /**
  * Report the guaranteed number of cpu percentage this worker has requested.
  * It gets the result from cpu.shares.
- * Use this when org.apache.storm.container.cgroup.CgroupManager is used as the storm.resource.isolation.plugin.
+ * Use this when org.apache.storm.container.cgroup.CgroupManager is used as the
+ * storm.resource.isolation.plugin.
  */
 public class CGroupCpuGuarantee extends CGroupMetricsBase implements WorkerMetricRegistrant {
     private long shares = -1L;

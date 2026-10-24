@@ -26,13 +26,14 @@ import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
-    private static final Logger LOG = LoggerFactory.getLogger(PartitionedTridentSpoutExecutor.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(PartitionedTridentSpoutExecutor.class);
 
     IPartitionedTridentSpout<Object, ISpoutPartition, Object> spout;
 
-    public PartitionedTridentSpoutExecutor(IPartitionedTridentSpout<Object, ISpoutPartition, Object> spout) {
+    public PartitionedTridentSpoutExecutor(IPartitionedTridentSpout<Object, ISpoutPartition,
+            Object> spout) {
         this.spout = spout;
     }
 
@@ -41,12 +42,14 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
     }
 
     @Override
-    public ITridentSpout.BatchCoordinator<Object> getCoordinator(String txStateId, Map<String, Object> conf, TopologyContext context) {
+    public ITridentSpout.BatchCoordinator<Object> getCoordinator(String txStateId, Map<String,
+        Object> conf, TopologyContext context) {
         return new Coordinator(conf, context);
     }
 
     @Override
-    public ITridentSpout.Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
+    public ITridentSpout.Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf,
+        TopologyContext context) {
         return new Emitter(txStateId, conf, context);
     }
 
@@ -79,7 +82,8 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
 
         @Override
         public Object initializeTransaction(long txid, Object prevMetadata, Object currMetadata) {
-            LOG.debug("Initialize Transaction. txid = {}, prevMetadata = {}, currMetadata = {}", txid, prevMetadata, currMetadata);
+            LOG.debug("Initialize Transaction. txid = {}, prevMetadata = {}, currMetadata = {}",
+                    txid, prevMetadata, currMetadata);
 
             if (currMetadata != null) {
                 return currMetadata;
@@ -87,7 +91,6 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
                 return coordinator.getPartitionsForBatch();
             }
         }
-
 
         @Override
         public void close() {
@@ -125,8 +128,10 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
         }
 
         @Override
-        public void emitBatch(final TransactionAttempt tx, final Object coordinatorMeta, final TridentCollector collector) {
-            LOG.debug("Emitting Batch. [transaction = {}], [coordinatorMeta = {}], [collector = {}]", tx, coordinatorMeta, collector);
+        public void emitBatch(final TransactionAttempt tx, final Object coordinatorMeta,
+            final TridentCollector collector) {
+            LOG.debug("Emitting Batch. [transaction = {}], [coordinatorMeta = {}], [collector = "
+                    + "{}]", tx, coordinatorMeta, collector);
 
             if (savedCoordinatorMeta == null || !savedCoordinatorMeta.equals(coordinatorMeta)) {
                 partitionStates.clear();
@@ -134,7 +139,8 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
                         emitter.getOrderedPartitions(coordinatorMeta));
                 for (ISpoutPartition partition : taskPartitions) {
                     partitionStates.put(partition.getId(),
-                            new EmitterPartitionState(new RotatingTransactionalState(state, partition.getId()), partition));
+                            new EmitterPartitionState(new RotatingTransactionalState(state,
+                            partition.getId()), partition));
                 }
 
                 emitter.refreshPartitions(taskPartitions);
@@ -143,7 +149,8 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
             Map<ISpoutPartition, Object> prevStateMap = new HashMap<>();
             Set<ISpoutPartition> partitions = new HashSet<>();
             for (EmitterPartitionState s : partitionStates.values()) {
-                prevStateMap.put(s.partition, s.rotatingState.getPreviousState(tx.getTransactionId()));
+                prevStateMap.put(s.partition, s.rotatingState.getPreviousState(tx
+                        .getTransactionId()));
                 partitions.add(s.partition);
             }
             boolean isNewBatch = true;
@@ -154,11 +161,13 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
                 }
             }
             if (isNewBatch) {
-                Map<ISpoutPartition, Object> partitionToBatchMeta = emitter.emitBatchNew(tx, collector, partitions, prevStateMap);
+                Map<ISpoutPartition, Object> partitionToBatchMeta = emitter.emitBatchNew(tx,
+                        collector, partitions, prevStateMap);
                 for (Map.Entry<ISpoutPartition, Object> entry : partitionToBatchMeta.entrySet()) {
                     ISpoutPartition partition = entry.getKey();
                     Object batchMeta = entry.getValue();
-                    partitionStates.get(partition.getId()).rotatingState.getStateOrCreate(tx.getTransactionId(),
+                    partitionStates.get(partition.getId()).rotatingState.getStateOrCreate(tx
+                            .getTransactionId(),
                             new RotatingTransactionalState.StateInitializer() {
                                 @Override
                                 public Object init(long txid, Object lastState) {
@@ -173,7 +182,8 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
                     emitter.reEmitPartitionBatch(tx, collector, s.partition, partitionBatchMeta);
                 }
             }
-            LOG.debug("Emitted Batch. [tx = {}], [coordinatorMeta = {}], [collector = {}]", tx, coordinatorMeta, collector);
+            LOG.debug("Emitted Batch. [tx = {}], [coordinatorMeta = {}], [collector = {}]", tx,
+                    coordinatorMeta, collector);
         }
 
         @Override

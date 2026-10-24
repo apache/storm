@@ -14,7 +14,6 @@ package org.apache.storm.trident.topology;
 
 import org.apache.storm.trident.spout.IBatchID;
 
-
 public class BatchInfo {
     public IBatchID batchId;
     public Object state;

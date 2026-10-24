@@ -12,6 +12,12 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,12 +27,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConfigUtilsTest {
 
@@ -55,7 +55,8 @@ public class ConfigUtilsTest {
 
     @Test
     public void getValueAsList_nullConfig() {
-        assertThrows(IllegalArgumentException.class, () -> ConfigUtils.getValueAsList(Config.WORKER_CHILDOPTS, null));
+        assertThrows(IllegalArgumentException.class, () -> ConfigUtils
+                .getValueAsList(Config.WORKER_CHILDOPTS, null));
     }
 
     @Test
@@ -102,8 +103,10 @@ public class ConfigUtilsTest {
     @Deprecated
     @Test
     public void getBlobstoreHDFSPrincipal() throws UnknownHostException {
-        Map<String, Object> conf = mockMap(Config.BLOBSTORE_HDFS_PRINCIPAL, "primary/_HOST@EXAMPLE.COM");
-        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), "primary/" +  Utils.localHostname() + "@EXAMPLE.COM");
+        Map<String, Object> conf = mockMap(Config.BLOBSTORE_HDFS_PRINCIPAL,
+                "primary/_HOST@EXAMPLE.COM");
+        assertEquals(Config.getBlobstoreHDFSPrincipal(conf), "primary/" + Utils.localHostname()
+                + "@EXAMPLE.COM");
 
         String principal = "primary/_HOST_HOST@EXAMPLE.COM";
         conf.put(Config.BLOBSTORE_HDFS_PRINCIPAL, principal);
@@ -132,8 +135,10 @@ public class ConfigUtilsTest {
 
     @Test
     public void getHfdsPrincipal() throws UnknownHostException {
-        Map<String, Object> conf = mockMap(Config.STORM_HDFS_LOGIN_PRINCIPAL, "primary/_HOST@EXAMPLE.COM");
-        assertEquals(Config.getHdfsPrincipal(conf), "primary/" +  Utils.localHostname() + "@EXAMPLE.COM");
+        Map<String, Object> conf = mockMap(Config.STORM_HDFS_LOGIN_PRINCIPAL,
+                "primary/_HOST@EXAMPLE.COM");
+        assertEquals(Config.getHdfsPrincipal(conf), "primary/" + Utils.localHostname()
+                + "@EXAMPLE.COM");
 
         String principal = "primary/_HOST_HOST@EXAMPLE.COM";
         conf.put(Config.STORM_HDFS_LOGIN_PRINCIPAL, principal);
@@ -168,11 +173,11 @@ public class ConfigUtilsTest {
     @Test
     public void upstreamFeedbackEnable_readsConfiguredValue() {
         assertTrue(ConfigUtils.upstreamFeedbackEnable(
-            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, true)));
+                mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, true)));
         assertFalse(ConfigUtils.upstreamFeedbackEnable(
-            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, false)));
+                mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, false)));
     }
-    
+
     @Test
     public void upstreamFeedbackFreqSecs_defaultsToTenWhenAbsent() {
         assertEquals(10, ConfigUtils.upstreamFeedbackFreqSecs(new HashMap<>()));
@@ -181,19 +186,19 @@ public class ConfigUtilsTest {
     @Test
     public void upstreamFeedbackFreqSecs_returnsConfiguredPositiveValue() {
         assertEquals(5, ConfigUtils.upstreamFeedbackFreqSecs(
-            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, 5)));
+                mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, 5)));
     }
 
     @Test
     public void upstreamFeedbackFreqSecs_rejectsZero() {
         assertThrows(IllegalArgumentException.class, () -> ConfigUtils.upstreamFeedbackFreqSecs(
-            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, 0)));
+                mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, 0)));
     }
 
     @Test
     public void upstreamFeedbackFreqSecs_rejectsNegative() {
         assertThrows(IllegalArgumentException.class, () -> ConfigUtils.upstreamFeedbackFreqSecs(
-            mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, -1)));
+                mockMap(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS, -1)));
     }
 
     @Test
@@ -247,13 +252,15 @@ public class ConfigUtilsTest {
     @Test
     public void maskCredentials_masksKeysThatOnlyPluginsDeclare() {
         Map<String, Object> conf = new HashMap<>();
-        conf.put("storm.daemon.metrics.reporter.plugin.prometheus.basic_auth_password", "plugin-secret");
+        conf.put("storm.daemon.metrics.reporter.plugin.prometheus.basic_auth_password",
+                "plugin-secret");
         conf.put("storm.zookeeper.auth.password", "zk-pass");
         conf.put("some.plugin.shared_secret", "shared");
 
         Map<String, Object> masked = ConfigUtils.maskCredentials(conf);
 
-        assertEquals("*****", masked.get("storm.daemon.metrics.reporter.plugin.prometheus.basic_auth_password"));
+        assertEquals("*****", masked
+                .get("storm.daemon.metrics.reporter.plugin.prometheus.basic_auth_password"));
         assertEquals("*****", masked.get("storm.zookeeper.auth.password"));
         assertEquals("*****", masked.get("some.plugin.shared_secret"));
     }
@@ -263,7 +270,8 @@ public class ConfigUtilsTest {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_ZOOKEEPER_AUTH_PAYLOAD, "zk-user:zk-secret");
 
-        assertEquals("*****", ConfigUtils.maskCredentials(conf).get(Config.STORM_ZOOKEEPER_AUTH_PAYLOAD));
+        assertEquals("*****", ConfigUtils.maskCredentials(conf)
+                .get(Config.STORM_ZOOKEEPER_AUTH_PAYLOAD));
     }
 
     @Test
@@ -278,7 +286,8 @@ public class ConfigUtilsTest {
 
         assertEquals(30, masked.get("task.credentials.poll.secs"));
         assertEquals(600, masked.get("nimbus.credential.renewers.freq.secs"));
-        assertEquals(Collections.singletonList("org.example.AutoCreds"), masked.get("topology.auto-credentials"));
+        assertEquals(Collections.singletonList("org.example.AutoCreds"), masked
+                .get("topology.auto-credentials"));
         assertEquals(Collections.singletonList("nimbus1"), masked.get("nimbus.seeds"));
     }
 
@@ -286,7 +295,9 @@ public class ConfigUtilsTest {
     public void isCredentialKey_recognisesAnnotatedAndPluginDeclaredKeys() {
         assertTrue(ConfigUtils.isCredentialKey(Config.STORM_ZOOKEEPER_AUTH_PAYLOAD));
         assertTrue(ConfigUtils.isCredentialKey(Config.NIMBUS_THRIFT_TLS_CLIENT_KEYSTORE_PASSWORD));
-        assertTrue(ConfigUtils.isCredentialKey("storm.daemon.metrics.reporter.plugin.prometheus.basic_auth_password"));
+        assertTrue(ConfigUtils
+                .isCredentialKey("storm.daemon.metrics.reporter.plugin.prometheus.basic_auth_passw"
+                + "ord"));
         assertTrue(ConfigUtils.isCredentialKey("some.plugin.shared_secret"));
     }
 
@@ -307,6 +318,7 @@ public class ConfigUtilsTest {
         Map<String, Object> masked = ConfigUtils.maskPasswords(conf);
 
         assertEquals(Collections.singletonList("zk1"), masked.get(Config.STORM_ZOOKEEPER_SERVERS));
-        assertEquals("/etc/storm/nimbus.jks", masked.get(Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PATH));
+        assertEquals("/etc/storm/nimbus.jks", masked
+                .get(Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PATH));
     }
 }

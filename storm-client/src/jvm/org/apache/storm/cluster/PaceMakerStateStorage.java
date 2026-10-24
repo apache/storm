@@ -40,8 +40,10 @@ import org.slf4j.LoggerFactory;
 /**
  * State storage that keeps worker heartbeats in Pacemaker and everything else in ZooKeeper.
  *
- * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
- *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed
+ *     in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports
+ *     them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
 @Deprecated(since = "3.1.0", forRemoval = true)
@@ -52,7 +54,8 @@ public class PaceMakerStateStorage implements IStateStorage {
     private PacemakerClientPool pacemakerClientPool;
     private IStateStorage stateStorage;
 
-    public PaceMakerStateStorage(PacemakerClientPool pacemakerClientPool, IStateStorage stateStorage) throws Exception {
+    public PaceMakerStateStorage(PacemakerClientPool pacemakerClientPool,
+            IStateStorage stateStorage) throws Exception {
         this.pacemakerClientPool = pacemakerClientPool;
         this.stateStorage = stateStorage;
     }
@@ -131,7 +134,8 @@ public class PaceMakerStateStorage implements IStateStorage {
                 HBPulse hbPulse = new HBPulse();
                 hbPulse.set_id(path);
                 hbPulse.set_details(data);
-                HBMessage message = new HBMessage(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
+                HBMessage message = new HBMessage(HBServerMessageType.SEND_PULSE, HBMessageData
+                        .pulse(hbPulse));
                 HBMessage response = pacemakerClientPool.send(message);
                 if (response.get_type() != HBServerMessageType.SEND_PULSE_RESPONSE) {
                     throw new WrappedHBExecutionException("Invalid Response Type");
@@ -143,7 +147,8 @@ public class PaceMakerStateStorage implements IStateStorage {
                     throw new RuntimeException(e);
                 }
                 retry--;
-                LOG.error("{} Failed to set_worker_hb. Will make {} more attempts.", e.getMessage(), retry);
+                LOG.error("{} Failed to set_worker_hb. Will make {} more attempts.", e.getMessage(),
+                        retry);
             } catch (InterruptedException e) {
                 LOG.debug("set_worker_hb got interrupted: {}", e);
                 throw new RuntimeException(e);
@@ -160,7 +165,8 @@ public class PaceMakerStateStorage implements IStateStorage {
                 long latestTimeSecs = 0;
                 boolean gotResponse = false;
 
-                HBMessage message = new HBMessage(HBServerMessageType.GET_PULSE, HBMessageData.path(path));
+                HBMessage message = new HBMessage(HBServerMessageType.GET_PULSE, HBMessageData
+                        .path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
                 for (HBMessage response : responses) {
                     if (response.get_type() != HBServerMessageType.GET_PULSE_RESPONSE) {
@@ -173,7 +179,8 @@ public class PaceMakerStateStorage implements IStateStorage {
                     if (details == null) {
                         continue;
                     }
-                    ClusterWorkerHeartbeat cwh = Utils.deserialize(details, ClusterWorkerHeartbeat.class);
+                    ClusterWorkerHeartbeat cwh = Utils.deserialize(details,
+                            ClusterWorkerHeartbeat.class);
                     if (cwh != null && cwh.get_time_secs() > latestTimeSecs) {
                         latestTimeSecs = cwh.get_time_secs();
                         ret = details;
@@ -188,7 +195,8 @@ public class PaceMakerStateStorage implements IStateStorage {
                     throw new RuntimeException(e);
                 }
                 retry--;
-                LOG.error("{} Failed to get_worker_hb. Will make {} more attempts.", e.getMessage(), retry);
+                LOG.error("{} Failed to get_worker_hb. Will make {} more attempts.", e.getMessage(),
+                        retry);
             } catch (InterruptedException e) {
                 LOG.debug("get_worker_hb got interrupted: {}", e);
                 throw new RuntimeException(e);
@@ -203,10 +211,12 @@ public class PaceMakerStateStorage implements IStateStorage {
             try {
                 HashSet<String> retSet = new HashSet<>();
 
-                HBMessage message = new HBMessage(HBServerMessageType.GET_ALL_NODES_FOR_PATH, HBMessageData.path(path));
+                HBMessage message = new HBMessage(HBServerMessageType.GET_ALL_NODES_FOR_PATH,
+                        HBMessageData.path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
                 for (HBMessage response : responses) {
-                    if (response.get_type() != HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE) {
+                    if (response
+                            .get_type() != HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE) {
                         LOG.error("get_worker_hb_children: Invalid Response Type");
                         continue;
                     }
@@ -222,7 +232,8 @@ public class PaceMakerStateStorage implements IStateStorage {
                     throw new RuntimeException(e);
                 }
                 retry--;
-                LOG.error("{} Failed to get_worker_hb_children. Will make {} more attempts.", e.getMessage(), retry);
+                LOG.error("{} Failed to get_worker_hb_children. Will make {} more attempts.", e
+                        .getMessage(), retry);
             } catch (InterruptedException e) {
                 LOG.debug("get_worker_hb_children got interrupted: {}", e);
                 throw new RuntimeException(e);
@@ -237,7 +248,8 @@ public class PaceMakerStateStorage implements IStateStorage {
         while (true) {
             someSucceeded = false;
             try {
-                HBMessage message = new HBMessage(HBServerMessageType.DELETE_PATH, HBMessageData.path(path));
+                HBMessage message = new HBMessage(HBServerMessageType.DELETE_PATH, HBMessageData
+                        .path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
                 boolean allSucceeded = true;
                 for (HBMessage response : responses) {
@@ -264,7 +276,8 @@ public class PaceMakerStateStorage implements IStateStorage {
                     }
                 }
                 retry--;
-                LOG.debug("{} Failed to delete_worker_hb. Will make {} more attempts.", e.getMessage(), retry);
+                LOG.debug("{} Failed to delete_worker_hb. Will make {} more attempts.", e
+                        .getMessage(), retry);
             } catch (InterruptedException e) {
                 LOG.debug("delete_worker_hb got interrupted: {}", e);
                 throw new RuntimeException(e);

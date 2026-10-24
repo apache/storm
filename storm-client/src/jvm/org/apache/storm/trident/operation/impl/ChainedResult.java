@@ -15,8 +15,7 @@ package org.apache.storm.trident.operation.impl;
 import org.apache.storm.shade.org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.storm.trident.operation.TridentCollector;
 
-
-//for ChainedAggregator
+// for ChainedAggregator
 public class ChainedResult {
     Object[] objs;
     TridentCollector[] collectors;

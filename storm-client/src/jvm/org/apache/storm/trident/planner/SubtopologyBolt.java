@@ -52,15 +52,17 @@ public class SubtopologyBolt implements ITridentBatchBolt {
     final Map<String, List<TridentProcessor>> myTopologicallyOrdered = new HashMap<>();
     final Map<Node, String> batchGroups;
 
-    //given processornodes and static state nodes
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public SubtopologyBolt(DefaultDirectedGraph<Node, IndexedEdge> graph, Set<Node> nodes, Map<Node, String> batchGroups) {
+    // given processornodes and static state nodes
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public SubtopologyBolt(DefaultDirectedGraph<Node, IndexedEdge> graph, Set<Node> nodes, Map<Node,
+        String> batchGroups) {
         this.nodes = nodes;
         this.graph = (Graph<Node, IndexedEdge>) graph.clone();
         this.batchGroups = copyAndOnlyKeep(batchGroups, nodes);
 
-        //Remove the unneeded entries from the graph
-        //We want to keep all of our nodes, and the nodes that they are connected directly to (parents and children).
+        // Remove the unneeded entries from the graph
+        // We want to keep all of our nodes, and the nodes that they are connected directly to
+        // (parents and children).
         Set<Node> nodesToKeep = new HashSet<>();
         for (IndexedEdge edge : this.graph.edgeSet()) {
             Node s = this.graph.getEdgeSource(edge);
@@ -76,7 +78,8 @@ public class SubtopologyBolt implements ITridentBatchBolt {
         this.graph.removeAllVertices(nodesToRemove);
     }
 
-    private static Map<Node, String> copyAndOnlyKeep(Map<Node, String> batchGroups, Set<Node> nodes) {
+    private static Map<Node, String> copyAndOnlyKeep(Map<Node, String> batchGroups,
+            Set<Node> nodes) {
         Map<Node, String> ret = new HashMap<>(nodes.size());
         for (Map.Entry<Node, String> entry : batchGroups.entrySet()) {
             if (nodes.contains(entry.getKey())) {
@@ -87,11 +90,13 @@ public class SubtopologyBolt implements ITridentBatchBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector batchCollector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        BatchOutputCollector batchCollector) {
         int thisComponentNumTasks = context.getComponentTasks(context.getThisComponentId()).size();
         for (Node n : nodes) {
             if (n.stateInfo != null) {
-                State s = n.stateInfo.spec.stateFactory.makeState(conf, context, context.getThisTaskIndex(), thisComponentNumTasks);
+                State s = n.stateInfo.spec.stateFactory.makeState(conf, context, context
+                        .getThisTaskIndex(), thisComponentNumTasks);
                 context.setTaskData(n.stateInfo.id, s);
             }
         }
@@ -115,7 +120,8 @@ public class SubtopologyBolt implements ITridentBatchBolt {
                         parentFactories.add(outputFactories.get(p));
                     } else {
                         if (!roots.containsKey(p.streamId)) {
-                            roots.put(p.streamId, new InitialReceiver(p.streamId, getSourceOutputFields(context, p.streamId)));
+                            roots.put(p.streamId, new InitialReceiver(p.streamId,
+                                    getSourceOutputFields(context, p.streamId)));
                         }
                         roots.get(p.streamId).addReceiver(pn.processor);
                         parentFactories.add(roots.get(p.streamId).getOutputFactory());
@@ -135,13 +141,13 @@ public class SubtopologyBolt implements ITridentBatchBolt {
                 }
 
                 TridentContext triContext = new TridentContext(
-                    pn.selfOutFields,
-                    parentFactories,
-                    parentStreams,
-                    targets,
-                    pn.streamId,
-                    stateIndex,
-                    batchCollector
+                        pn.selfOutFields,
+                        parentFactories,
+                        parentStreams,
+                        targets,
+                        pn.streamId,
+                        stateIndex,
+                        batchCollector
                 );
                 pn.processor.prepare(conf, context, triContext);
                 outputFactories.put(n, pn.processor.getOutputFactory());
@@ -197,7 +203,8 @@ public class SubtopologyBolt implements ITridentBatchBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         for (Node n : nodes) {
-            declarer.declareStream(n.streamId, TridentUtils.fieldsConcat(new Fields("$batchId"), n.allOutputFields));
+            declarer.declareStream(n.streamId, TridentUtils.fieldsConcat(new Fields("$batchId"),
+                    n.allOutputFields));
         }
     }
 
@@ -205,7 +212,6 @@ public class SubtopologyBolt implements ITridentBatchBolt {
     public Map<String, Object> getComponentConfiguration() {
         return null;
     }
-
 
     protected static class InitialReceiver {
         List<TridentProcessor> receivers = new ArrayList<>();

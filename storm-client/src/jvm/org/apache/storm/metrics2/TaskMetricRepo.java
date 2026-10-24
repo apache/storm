@@ -90,13 +90,16 @@ public class TaskMetricRepo {
                 filteredTimers.put(entry.getKey(), entry.getValue());
             }
         }
-        reporter.report(filteredGauges, filteredCounters, filteredHistograms, filteredMeters, filteredTimers);
+        reporter.report(filteredGauges, filteredCounters, filteredHistograms, filteredMeters,
+                filteredTimers);
     }
 
     void degister(MetricFilter metricFilter) {
         gauges.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
-        counters.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
-        histograms.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
+        counters.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry
+                .getValue()));
+        histograms.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry
+                .getValue()));
         meters.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
         timers.entrySet().removeIf(entry -> metricFilter.matches(entry.getKey(), entry.getValue()));
     }

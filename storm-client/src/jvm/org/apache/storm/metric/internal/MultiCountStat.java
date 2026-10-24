@@ -18,7 +18,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Acts as a MultiCount Stat, but keeps track of approximate counts for the last 10 mins, 3 hours, 1 day, and all time. for the same keys
+ * Acts as a MultiCount Stat, but keeps track of approximate counts for the last 10 mins, 3 hours, 1
+ * day, and all time. for the same keys
  */
 public class MultiCountStat<T> {
     public static final int TEN_MIN_IN_SECONDS = 60 * 10;
@@ -60,8 +61,8 @@ public class MultiCountStat<T> {
 
     protected String keyToString(T key) {
         if (key instanceof List) {
-            //This is a bit of a hack.  If it is a list, then it is [component, stream]
-            //we want to format this as component:stream
+            // This is a bit of a hack.  If it is a list, then it is [component, stream]
+            // we want to format this as component:stream
             List<String> lk = (List<String>) key;
             return lk.get(0) + ":" + lk.get(1);
         }

@@ -12,7 +12,27 @@
 
 package org.apache.storm.metrics2;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.contains;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.codahale.metrics.Gauge;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.ConfigUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,33 +43,24 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class TaskMetricsTest {
 
-    private static final String TOPOLOGY_ID   = "test-topology-1";
-    private static final String COMPONENT_ID  = "test-bolt";
-    private static final Integer TASK_ID      = 42;
-    private static final Integer WORKER_PORT  = 6700;
-    private static final String STREAM_ID     = "default";
-    private static final String SOURCE_COMP   = "source-spout";
-    private static final int    SAMPLING_RATE = 1;
-    private static final double EWMA_FACTOR   = 0.3;
+    private static final String TOPOLOGY_ID = "test-topology-1";
+    private static final String COMPONENT_ID = "test-bolt";
+    private static final Integer TASK_ID = 42;
+    private static final Integer WORKER_PORT = 6700;
+    private static final String STREAM_ID = "default";
+    private static final String SOURCE_COMP = "source-spout";
+    private static final int SAMPLING_RATE = 1;
+    private static final double EWMA_FACTOR = 0.3;
 
-    @Mock private WorkerTopologyContext context;
-    @Mock private StormMetricRegistry   metricRegistry;
-    @Mock private RateCounter           rateCounter;
+    @Mock
+    private WorkerTopologyContext context;
+    @Mock
+    private StormMetricRegistry metricRegistry;
+    @Mock
+    private RateCounter rateCounter;
 
     private Map<String, Object> topoConf;
 
@@ -354,13 +365,16 @@ class TaskMetricsTest {
         int threadCount = 20;
         CountDownLatch ready = new CountDownLatch(threadCount);
         CountDownLatch start = new CountDownLatch(1);
-        CountDownLatch done  = new CountDownLatch(threadCount);
+        CountDownLatch done = new CountDownLatch(threadCount);
 
         ExecutorService pool = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
             pool.submit(() -> {
                 ready.countDown();
-                try { start.await(); } catch (InterruptedException ignored) {}
+                try {
+                    start.await();
+                } catch (InterruptedException ignored) {
+                }
                 tm.emittedTuple(STREAM_ID);
                 done.countDown();
             });
@@ -384,13 +398,16 @@ class TaskMetricsTest {
         int threadCount = 20;
         CountDownLatch ready = new CountDownLatch(threadCount);
         CountDownLatch start = new CountDownLatch(1);
-        CountDownLatch done  = new CountDownLatch(threadCount);
+        CountDownLatch done = new CountDownLatch(threadCount);
 
         ExecutorService pool = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
             pool.submit(() -> {
                 ready.countDown();
-                try { start.await(); } catch (InterruptedException ignored) {}
+                try {
+                    start.await();
+                } catch (InterruptedException ignored) {
+                }
                 tm.spoutAckedTuple(STREAM_ID, 100L);
                 done.countDown();
             });
@@ -466,8 +483,8 @@ class TaskMetricsTest {
 
         tm.emittedTuple(STREAM_ID);
 
-        ArgumentCaptor<String> topoCaptor  = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> compCaptor  = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> topoCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> compCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> taskCaptor = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Integer> portCaptor = ArgumentCaptor.forClass(Integer.class);
 

@@ -38,14 +38,14 @@ public class Hierarchy {
     }
 
     /**
-     * get subsystems.
+     * Get subsystems.
      */
     public Set<SubSystemType> getSubSystems() {
         return subSystems;
     }
 
     /**
-     * get all subsystems in hierarchy as a comma delimited list.
+     * Get all subsystems in hierarchy as a comma delimited list.
      */
     public String getType() {
         return type;

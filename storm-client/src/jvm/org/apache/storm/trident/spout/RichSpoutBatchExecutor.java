@@ -47,12 +47,14 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
     }
 
     @Override
-    public BatchCoordinator<Object> getCoordinator(String txStateId, Map<String, Object> conf, TopologyContext context) {
+    public BatchCoordinator<Object> getCoordinator(String txStateId, Map<String, Object> conf,
+        TopologyContext context) {
         return new RichSpoutCoordinator();
     }
 
     @Override
-    public Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
+    public Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf,
+        TopologyContext context) {
         return new RichSpoutEmitter(conf, context);
     }
 
@@ -139,18 +141,20 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
             maxBatchSize = batchSize.intValue();
             collector = new CaptureCollector();
             idsMap = new RotatingMap<>(3);
-            rotateTime = 1000L * ((Number) conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)).intValue();
+            rotateTime = 1000L * ((Number) conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS))
+                    .intValue();
         }
 
         @Override
-        public void emitBatch(TransactionAttempt tx, Object coordinatorMeta, TridentCollector collector) {
+        public void emitBatch(TransactionAttempt tx, Object coordinatorMeta,
+            TridentCollector collector) {
             long txid = tx.getTransactionId();
 
             long now = System.currentTimeMillis();
             if (now - lastRotate > rotateTime) {
                 Map<Long, List<Object>> failed = idsMap.rotate();
                 for (Long id : failed.keySet()) {
-                    //TODO: this isn't right... it's not in the map anymore
+                    // TODO: this isn't right... it's not in the map anymore
                     fail(id);
                 }
                 lastRotate = now;

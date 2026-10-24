@@ -17,7 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class NettyRenameThreadFactory implements ThreadFactory {
 
-    private static final NettyUncaughtExceptionHandler UNCAUGHT_EXCEPTION_HANDLER = new NettyUncaughtExceptionHandler();
+    private static final NettyUncaughtExceptionHandler UNCAUGHT_EXCEPTION_HANDLER =
+            new NettyUncaughtExceptionHandler();
 
     private final ThreadGroup group;
     private final AtomicInteger index = new AtomicInteger(1);

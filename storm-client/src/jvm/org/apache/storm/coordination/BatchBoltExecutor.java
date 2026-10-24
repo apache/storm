@@ -40,7 +40,8 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        OutputCollector collector) {
         this.conf = conf;
         this.context = context;
         this.collector = new BatchOutputCollectorImpl(collector);
@@ -75,7 +76,6 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
     public void timeoutId(Object attempt) {
         openTransactions.remove(attempt);
     }
-
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {

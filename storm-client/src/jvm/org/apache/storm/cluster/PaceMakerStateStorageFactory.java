@@ -25,14 +25,17 @@ import org.apache.storm.utils.Utils;
 /**
  * Factory for {@link PaceMakerStateStorage}.
  *
- * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
- *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed
+ *     in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports
+ *     them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
 @Deprecated(since = "3.1.0", forRemoval = true)
 public class PaceMakerStateStorageFactory implements StateStorageFactory {
     @Override
-    public IStateStorage mkStore(Map<String, Object> config, Map<String, Object> authConf, ClusterStateContext context) {
+    public IStateStorage mkStore(Map<String, Object> config, Map<String, Object> authConf,
+        ClusterStateContext context) {
         try {
             ZKStateStorageFactory zkfact = new ZKStateStorageFactory();
             IStateStorage zkState = zkfact.mkStore(config, authConf, context);

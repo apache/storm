@@ -39,7 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Extensions of this class takes a reference to one or more configuration files. The main() method should call ConfigurableTopology.start()
+ * Extensions of this class takes a reference to one or more configuration files. The main() method
+ * should call ConfigurableTopology.start()
  * and it must instantiate a TopologyBuilder in the run() method.
  *
  * <pre>
@@ -76,10 +77,10 @@ public abstract class ConfigurableTopology {
     }
 
     public static Config loadConf(String resource, Config conf)
-        throws FileNotFoundException {
+            throws FileNotFoundException {
         Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(
-            new FileInputStream(resource), Charset.defaultCharset()));
+                new FileInputStream(resource), Charset.defaultCharset()));
         if (ret == null) {
             ret = new HashMap<>();
         } else {
@@ -110,7 +111,7 @@ public abstract class ConfigurableTopology {
         String name = (String) Utils.get(conf, Config.TOPOLOGY_NAME, null);
         if (StringUtils.isBlank(name)) {
             throw new RuntimeException(
-                "No value found for " + Config.TOPOLOGY_NAME);
+                    "No value found for " + Config.TOPOLOGY_NAME);
         }
         return submit(name, conf, builder);
     }
@@ -121,7 +122,7 @@ public abstract class ConfigurableTopology {
     protected int submit(String name, Config conf, TopologyBuilder builder) {
         try {
             StormSubmitter.submitTopology(name, conf,
-                                          builder.createTopology());
+                    builder.createTopology());
         } catch (Exception e) {
             LOG.error("Failed to submit topology {}", name, e);
             return -1;

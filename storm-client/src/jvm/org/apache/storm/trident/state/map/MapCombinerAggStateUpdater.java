@@ -28,7 +28,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 public class MapCombinerAggStateUpdater implements StateUpdater<MapState> {
-    //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
+    // ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
     private static final long serialVersionUID = -3960578785572592092L;
 
     CombinerAggregator agg;
@@ -38,13 +38,15 @@ public class MapCombinerAggStateUpdater implements StateUpdater<MapState> {
     transient ProjectionFactory inputFactory;
     ComboList.Factory factory;
 
-    public MapCombinerAggStateUpdater(CombinerAggregator agg, Fields groupFields, Fields inputFields) {
+    public MapCombinerAggStateUpdater(CombinerAggregator agg, Fields groupFields,
+            Fields inputFields) {
         this.agg = agg;
         this.groupFields = groupFields;
         this.inputFields = inputFields;
         if (inputFields.size() != 1) {
             throw new IllegalArgumentException(
-                "Combiner aggs only take a single field as input. Got this instead: " + inputFields.toString());
+                    "Combiner aggs only take a single field as input. Got this instead: "
+                    + inputFields.toString());
         }
         factory = new ComboList.Factory(groupFields.size(), inputFields.size());
     }
@@ -63,7 +65,7 @@ public class MapCombinerAggStateUpdater implements StateUpdater<MapState> {
         for (int i = 0; i < tuples.size(); i++) {
             List<Object> key = groups.get(i);
             Object result = newVals.get(i);
-            collector.emit(factory.create(new List[]{ key, new Values(result) }));
+            collector.emit(factory.create(new List[] {key, new Values(result)}));
         }
     }
 

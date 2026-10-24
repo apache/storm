@@ -93,6 +93,7 @@ public class Tuple6<T1, T2, T3, T4, T5, T6> {
 
     @Override
     public String toString() {
-        return "(" + value1 + "," + value2 + "," + value3 + "," + value4 + "," + value5 + "," + value6 + ")";
+        return "(" + value1 + "," + value2 + "," + value3 + "," + value4 + "," + value5 + ","
+                + value6 + ")";
     }
 }

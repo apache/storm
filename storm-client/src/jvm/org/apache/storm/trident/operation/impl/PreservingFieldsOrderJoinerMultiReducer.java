@@ -31,8 +31,8 @@ public class PreservingFieldsOrderJoinerMultiReducer implements GroupedMultiRedu
     int numGroupFields;
     ComboList.Factory factory;
 
-
-    public PreservingFieldsOrderJoinerMultiReducer(List<JoinType> types, int numGroupFields, List<Fields> origins,
+    public PreservingFieldsOrderJoinerMultiReducer(List<JoinType> types, int numGroupFields,
+            List<Fields> origins,
                                                    List<Fields> joins, List<Fields> sides) {
         this.types = types;
         originFields = origins;
@@ -58,9 +58,11 @@ public class PreservingFieldsOrderJoinerMultiReducer implements GroupedMultiRedu
     }
 
     @Override
-    public void execute(JoinState state, int streamIndex, TridentTuple group, TridentTuple input, TridentCollector collector) {
-        //TODO: do the inner join incrementally, emitting the cross join with this tuple, against all other sides
-        //TODO: only do cross join if at least one tuple in each side
+    public void execute(JoinState state, int streamIndex, TridentTuple group, TridentTuple input,
+        TridentCollector collector) {
+        // TODO: do the inner join incrementally, emitting the cross join with this tuple, against
+        // all other sides
+        // TODO: only do cross join if at least one tuple in each side
         List<List> side = state.sides[streamIndex];
         if (side.isEmpty()) {
             state.numSidesReceived++;
@@ -99,7 +101,8 @@ public class PreservingFieldsOrderJoinerMultiReducer implements GroupedMultiRedu
         return ret;
     }
 
-    private void emitCrossJoin(JoinState state, TridentCollector collector, int overrideIndex, TridentTuple overrideTuple) {
+    private void emitCrossJoin(JoinState state, TridentCollector collector, int overrideIndex,
+            TridentTuple overrideTuple) {
         List<List>[] sides = state.sides;
         int[] indices = state.indices;
         for (int i = 0; i < indices.length; i++) {
@@ -107,12 +110,13 @@ public class PreservingFieldsOrderJoinerMultiReducer implements GroupedMultiRedu
         }
 
         boolean keepGoing = true;
-        //emit cross-join of all emitted tuples
+        // emit cross-join of all emitted tuples
         while (keepGoing) {
             List[] combined = new List[sides.length];
 
             for (int i = 0; i < sides.length; i++) {
-                List<Object> values = buildValuesForStream(state, overrideIndex, overrideTuple, sides, indices, combined, i);
+                List<Object> values = buildValuesForStream(state, overrideIndex, overrideTuple,
+                        sides, indices, combined, i);
                 combined[i] = values;
             }
             collector.emit(factory.create(combined));
@@ -120,7 +124,8 @@ public class PreservingFieldsOrderJoinerMultiReducer implements GroupedMultiRedu
         }
     }
 
-    private List<Object> buildValuesForStream(JoinState state, int overrideIndex, TridentTuple overrideTuple, List<List>[] sides,
+    private List<Object> buildValuesForStream(JoinState state, int overrideIndex,
+            TridentTuple overrideTuple, List<List>[] sides,
                                               int[] indices, List[] combined, int streamIdx) {
         List sideValues;
         if (streamIdx == overrideIndex) {
@@ -150,9 +155,8 @@ public class PreservingFieldsOrderJoinerMultiReducer implements GroupedMultiRedu
         }
     }
 
-
-    //return false if can't increment anymore
-    //TODO: DRY this code up with what's in ChainedAggregatorImpl
+    // return false if can't increment anymore
+    // TODO: DRY this code up with what's in ChainedAggregatorImpl
     private boolean increment(List[] lengths, int[] indices, int j, int overrideIndex) {
         if (j == -1) {
             return false;

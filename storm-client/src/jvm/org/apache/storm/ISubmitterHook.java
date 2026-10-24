@@ -17,9 +17,12 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 
 /**
- * if FQCN of an implementation of this class is specified by setting the config storm.topology.submission.notifier.plugin.class, that
- * class's notify method will be invoked when a topology is successfully submitted via StormSubmitter class.
+ * If FQCN of an implementation of this class is specified by setting the config
+ * storm.topology.submission.notifier.plugin.class, that
+ * class's notify method will be invoked when a topology is successfully submitted via
+ * StormSubmitter class.
  */
 public interface ISubmitterHook {
-    void notify(TopologyInfo topologyInfo, Map<String, Object> topoConf, StormTopology topology) throws IllegalAccessException;
+    void notify(TopologyInfo topologyInfo, Map<String, Object> topoConf,
+            StormTopology topology) throws IllegalAccessException;
 }

@@ -18,6 +18,7 @@ import java.util.Map;
 public interface IKryoDecorator {
     /**
      * Decorate the Kryo instance with custom serializations.
+     *
      * @deprecated use {@link #decorate(Kryo, Map)} instead.
      */
     @Deprecated
@@ -26,6 +27,7 @@ public interface IKryoDecorator {
 
     /**
      * Decorate the Kryo instance with custom serializations.
+     *
      * @param k the Kryo instance to decorate
      * @param conf the topology configuration
      */

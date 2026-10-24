@@ -26,7 +26,6 @@ import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
-
 public class MultiReducerProcessor implements TridentProcessor {
     MultiReducer reducer;
     TridentContext context;
@@ -41,7 +40,8 @@ public class MultiReducerProcessor implements TridentProcessor {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        TridentContext tridentContext) {
         List<Factory> parents = tridentContext.getParentTupleFactories();
         this.context = tridentContext;
         streamToIndex = new HashMap<>();
@@ -54,7 +54,8 @@ public class MultiReducerProcessor implements TridentProcessor {
             projectionFactories[i] = new ProjectionFactory(parents.get(i), projectFields.get(i));
         }
         collector = new FreshCollector(tridentContext);
-        reducer.prepare(conf, new TridentMultiReducerContext((List) Arrays.asList(projectionFactories)));
+        reducer.prepare(conf, new TridentMultiReducerContext((List) Arrays
+                .asList(projectionFactories)));
     }
 
     @Override
@@ -72,7 +73,8 @@ public class MultiReducerProcessor implements TridentProcessor {
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
         collector.setContext(processorContext);
         int i = streamToIndex.get(streamId);
-        reducer.execute(processorContext.state[context.getStateIndex()], i, projectionFactories[i].create(tuple), collector);
+        reducer.execute(processorContext.state[context.getStateIndex()], i,
+                projectionFactories[i].create(tuple), collector);
     }
 
     @Override
