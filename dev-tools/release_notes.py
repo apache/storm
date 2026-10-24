@@ -26,6 +26,8 @@ Generates release notes for a Storm release by generating an HTML doc containing
 
 """
 
+import html
+import re
 import requests
 import sys
 import os
@@ -95,6 +97,26 @@ def get_issues(owner, repo, milestone):
 def issue_link(issue):
     return issue["html_url"]
 
+UPGRADE_NOTES_HEADING = re.compile(r"^#{1,6}[ \t]*Upgrade notes[ \t]*$", re.IGNORECASE | re.MULTILINE)
+NEXT_HEADING = re.compile(r"^#{1,6}[ \t]", re.MULTILINE)
+TEMPLATE_HINT = re.compile(r"^\*\(.*\)\*$")
+
+def extract_upgrade_notes(issue):
+    """
+    Return the text under the "Upgrade notes" heading of the issue body, or None if there is none.
+    The italic hint from the pull request template does not count as a note.
+    """
+    body = (issue.get("body") or "").replace("\r\n", "\n")
+    heading = UPGRADE_NOTES_HEADING.search(body)
+    if not heading:
+        return None
+    section = body[heading.end():]
+    next_heading = NEXT_HEADING.search(section)
+    if next_heading:
+        section = section[:next_heading.start()]
+    lines = [line for line in section.strip().split("\n") if not TEMPLATE_HINT.match(line.strip())]
+    return "\n".join(lines).strip() or None
+
 if __name__ == "__main__":
     issues = get_issues(owner, repo, milestone)
 
@@ -159,6 +181,16 @@ if __name__ == "__main__":
         "\n\t</ul>"
         for label, issues in issues_by_label.items()
     ])
+
+    # Pull requests can describe breaking or behaviour changes under an "Upgrade notes" heading in their description
+    upgrade_notes = [(issue, extract_upgrade_notes(issue)) for issue in issues]
+    upgrade_notes = [(issue, note) for issue, note in upgrade_notes if note]
+    if upgrade_notes:
+        issues_str = "\n\t<h2>Upgrade notes</h2>\n\t<ul>" + "\n\t\t".join([
+            f'<li>[<a href="{issue_link(issue)}">#{issue["number"]}</a>] - {issue["title"]}'
+            f'\n<pre>{html.escape(note)}</pre></li>'
+            for issue, note in upgrade_notes
+        ]) + "\n\t</ul>" + issues_str
 
     version = get_milestone_title(owner, repo, milestone)
 
