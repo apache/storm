@@ -12,6 +12,7 @@
 
 package org.apache.storm.security.auth;
 
+import java.util.Locale;
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.generated.WorkerTokenServiceType;
@@ -133,6 +134,14 @@ public enum ThriftConnectionType {
 
     public boolean isFake() {
         return isFake;
+    }
+
+    /**
+     * Prefix for the names of the threads that handle requests of this server type,
+     * e.g. {@code "nimbus-handler-"}.
+     */
+    public String getHandlerThreadNamePrefix() {
+        return name().toLowerCase(Locale.ROOT) + "-handler-";
     }
 
     public String getTransportPlugin(Map<String, Object> conf) {

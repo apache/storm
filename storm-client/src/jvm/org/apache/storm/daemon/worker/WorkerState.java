@@ -79,6 +79,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.StormThreadFactory;
 import org.apache.storm.utils.SupervisorIfaceFactory;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.Utils;
@@ -831,10 +832,14 @@ public class WorkerState {
     }
 
     private Map<String, Object> makeDefaultResources() {
+        // The pool size is read from the daemon conf, as it always was; only the thread type comes
+        // from the topology conf so that a topology can opt in or out of virtual threads for its
+        // shared executor.
         int threadPoolSize = ObjectReader.getInt(conf
                 .get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE));
-        return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, Executors
-                .newFixedThreadPool(threadPoolSize));
+        ExecutorService sharedExecutor = Executors.newFixedThreadPool(threadPoolSize,
+                StormThreadFactory.create(topologyConf, "worker-shared-executor-"));
+        return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, sharedExecutor);
     }
 
     private Map<String, Object> makeUserResources() {

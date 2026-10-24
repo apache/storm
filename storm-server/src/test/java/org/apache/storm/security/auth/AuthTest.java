@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 import javax.security.auth.Subject;
 import org.apache.storm.Config;
 import org.apache.storm.Testing;
@@ -45,6 +46,9 @@ import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.slf4j.Logger;
@@ -646,5 +650,61 @@ public class AuthTest {
 
     public interface MyBiConsumer<T, U> {
         void accept(T t, U u) throws Exception;
+    }
+
+    /**
+     * Each case runs a real ThriftServer with the given transport and extra conf, calls it through NimbusClient
+     * and asserts from inside the handler whether it ran on a virtual thread. The principal check only applies to
+     * the authenticated transport, where it proves ReqContext is still populated on a virtual handler thread.
+     */
+    static Stream<Arguments> handlerThreadCases() {
+        Map<String, Object> virtualOn = new HashMap<>();
+        virtualOn.put(Config.STORM_VIRTUAL_THREADS_ENABLED, true);
+
+        // defaults.yaml ships nimbus.queue.size, so unset it explicitly to exercise the path where
+        // THsHaServer would otherwise build its own pool (the DRPC invocations case).
+        Map<String, Object> virtualOnNoQueue = new HashMap<>(virtualOn);
+        virtualOnNoQueue.put(Config.NIMBUS_QUEUE_SIZE, null);
+
+        Map<String, Object> virtualOnSmallQueue = new HashMap<>(virtualOn);
+        virtualOnSmallQueue.put(Config.NIMBUS_QUEUE_SIZE, 8);
+
+        return Stream.of(
+            Arguments.of("simple transport, no queue size, flag on", null, SimpleTransportPlugin.class,
+                         virtualOnNoQueue, true, null),
+            Arguments.of("simple transport, queue size, flag on", null, SimpleTransportPlugin.class,
+                         virtualOnSmallQueue, true, null),
+            Arguments.of("simple transport, flag off by default", null, SimpleTransportPlugin.class,
+                         null, false, null),
+            Arguments.of("digest transport, flag on", DIGEST_JAAS_CONF, DigestSaslTransportPlugin.class,
+                         virtualOn, true, "bob"));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("handlerThreadCases")
+    public void handlerRunsOnExpectedThreadType(String name, String loginCfg, Class<? extends ITransportPlugin> transport,
+                                                Map<String, Object> extra, boolean expectVirtual,
+                                                String expectedPrincipal) throws Exception {
+        Nimbus.Iface impl = mock(Nimbus.Iface.class);
+        final AtomicReference<Boolean> handlerOnVirtualThread = new AtomicReference<>();
+        final AtomicReference<ReqContext> user = new AtomicReference<>();
+        doAnswer((invocation) -> {
+            handlerOnVirtualThread.set(Thread.currentThread().isVirtual());
+            user.set(new ReqContext(ReqContext.context()));
+            return null;
+        }).when(impl).activate(anyString());
+
+        withServer(loginCfg, transport, impl, null, extra,
+            (ThriftServer server, Map<String, Object> conf) -> {
+                try (NimbusClient client = NimbusClient.Builder.withConf(conf).withTimeout(NIMBUS_TIMEOUT)
+                        .buildWithNimbusHostPort("localhost", server.getPort())) {
+                    client.getClient().activate("handler_thread_test_topology");
+                }
+                assertEquals(expectVirtual, handlerOnVirtualThread.get());
+                if (expectedPrincipal != null) {
+                    assertNotNull(user.get());
+                    assertEquals(expectedPrincipal, user.get().principal().getName());
+                }
+            });
     }
 }

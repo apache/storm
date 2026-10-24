@@ -20,6 +20,8 @@ import java.security.Principal;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
@@ -35,6 +37,7 @@ import org.apache.storm.thrift.transport.TSocket;
 import org.apache.storm.thrift.transport.TTransport;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.thrift.transport.layered.TFramedTransport;
+import org.apache.storm.utils.StormThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,9 +77,21 @@ public class SimpleTransportPlugin implements ITransportPlugin {
 
         serverArgs.maxReadBufferBytes = maxBufferSize;
 
-        if (queueSize != null) {
+        if (queueSize != null || StormThreadFactory.isVirtualEnabled(topoConf)) {
+            // THsHaServer builds its own platform-thread pool (core 5, unbounded
+            // LinkedBlockingQueue) when no executor is supplied, so when virtual threads are
+            // requested we always supply an executor; without a configured queue size we use the
+            // same unbounded queue so no request is rejected that would not be rejected today. Note
+            // that this raises the effective handler concurrency from THsHaServer's 5 to
+            // numWorkerThreads. That is always the case for DRPC_INVOCATIONS, which has no queue
+            // size key at all, and for any Nimbus, Supervisor or DRPC server whose *.queue.size was
+            // explicitly unset.
+            BlockingQueue<Runnable> workQueue = queueSize != null
+                ? new ArrayBlockingQueue<>(queueSize)
+                : new LinkedBlockingQueue<>();
             serverArgs.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
-                    60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
+                    60, TimeUnit.SECONDS, workQueue,
+                    StormThreadFactory.create(topoConf, type.getHandlerThreadNamePrefix())));
         }
 
         // construct THsHaServer

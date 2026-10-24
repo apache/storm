@@ -30,6 +30,7 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.INodeAssignmentSentCallBack;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.StormThreadFactory;
 import org.apache.storm.utils.SupervisorClient;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
@@ -121,7 +122,8 @@ public class AssignmentDistributionService implements Closeable {
             this.assignmentsQueue.put(i, new LinkedBlockingQueue<NodeAssignments>(queueSize));
         }
         //start the thread pool
-        this.service = Executors.newFixedThreadPool(threadsNum);
+        this.service = Executors.newFixedThreadPool(threadsNum,
+            StormThreadFactory.create(conf, "nimbus-assignment-distribution-"));
         this.active = true;
         //start the threads
         for (int i = 0; i < threadsNum; i++) {

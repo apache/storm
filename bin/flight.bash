@@ -98,6 +98,14 @@ function get_recording_timestamps {
 function jstack_record {
     FILENAME=jstack-$1-${NOW}.txt
     ${BINPATH}jstack $1 > "$2/${FILENAME}" 2>&1
+    # jstack does not list virtual threads (storm.virtual.threads.enabled); Thread.dump_to_file does. The dump is
+    # written by the target JVM, so the directory is made absolute (the JVM resolves relative paths against its own
+    # cwd) and jcmd's own output, including the reason when the dump fails, is kept next to it.
+    if [ -x "${BINPATH}jcmd" ] || command -v "${BINPATH}jcmd" > /dev/null 2>&1; then
+        DUMPDIR=$(cd "$2" && pwd)
+        ${BINPATH}jcmd $1 Thread.dump_to_file -format=text "${DUMPDIR}/threaddump-$1-${NOW}.txt" \
+            > "$2/threaddump-$1-${NOW}.log" 2>&1
+    fi
 }
 
 function jmap_record {
