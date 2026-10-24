@@ -29,13 +29,13 @@ import org.slf4j.LoggerFactory;
  *
  * <p>When {@link Config#STORM_VIRTUAL_THREADS_ENABLED} is true the factory creates virtual threads.
  * Otherwise it creates non-daemon platform threads with normal priority, matching
- * {@code Executors.defaultThreadFactory()}. Note that virtual threads are always daemon threads, so with the
- * flag on none of these pools keeps the JVM alive. Storm daemons and workers exit through explicit
- * {@code System.exit} / {@code Runtime.halt} calls and their shutdown hooks do not join these pools, so this
- * makes no difference to them, but it does to an embedding application that relies on non-daemon threads to
- * keep running. In both modes threads are named
- * {@code <namePrefix><n>} with {@code n} starting at 0; the prefix is used verbatim, so callers include
- * their own separator.
+ * {@code Executors.defaultThreadFactory()}. Note that virtual threads are always daemon threads, so
+ * with the flag on none of these pools keeps the JVM alive. Storm daemons and workers exit through
+ * explicit {@code System.exit} / {@code Runtime.halt} calls and their shutdown hooks do not join
+ * these pools, so this makes no difference to them, but it does to an embedding application that
+ * relies on non-daemon threads to keep running. In both modes threads are named
+ * {@code <namePrefix><n>} with {@code n} starting at 0; the prefix is used verbatim, so callers
+ * include their own separator.
  */
 public final class StormThreadFactory {
 
@@ -47,7 +47,8 @@ public final class StormThreadFactory {
     /**
      * Create a thread factory for a pool.
      *
-     * @param conf       cluster or topology configuration; a raw {@code Map} is accepted for callers that hold one
+     * @param conf       cluster or topology configuration; a raw {@code Map} is accepted for
+     *                   callers that hold one
      * @param namePrefix prefix for the thread names, used verbatim, e.g. {@code "nimbus-handler-"}
      * @return a factory producing virtual or platform threads depending on the configuration
      */
@@ -65,10 +66,10 @@ public final class StormThreadFactory {
     /**
      * Whether virtual threads are enabled for blocking I/O pools.
      *
-     * <p>Boolean values are honoured. String values, which only reach here through {@code storm.options}
-     * since daemon and topology confs are validated as boolean, are accepted when they equal {@code "true"}
-     * or {@code "false"} ignoring case; anything else, like any other type, is logged and treated as
-     * disabled. This method never throws.
+     * <p>Boolean values are honoured. String values, which only reach here through
+     * {@code storm.options} since daemon and topology confs are validated as boolean, are accepted
+     * when they equal {@code "true"} or {@code "false"} ignoring case; anything else, like any
+     * other type, is logged and treated as disabled. This method never throws.
      */
     public static boolean isVirtualEnabled(Map<?, ?> conf) {
         if (conf == null) {
@@ -89,11 +90,12 @@ public final class StormThreadFactory {
             if (str.equalsIgnoreCase("false")) {
                 return false;
             }
-            LOG.warn("Ignoring value '{}' for {}; expected true or false", value, Config.STORM_VIRTUAL_THREADS_ENABLED);
+            LOG.warn("Ignoring value '{}' for {}; expected true or false", value,
+                Config.STORM_VIRTUAL_THREADS_ENABLED);
             return false;
         }
-        LOG.warn("Ignoring {} value of type {} for {}; expected a boolean", value, value.getClass().getName(),
-            Config.STORM_VIRTUAL_THREADS_ENABLED);
+        LOG.warn("Ignoring {} value of type {} for {}; expected a boolean", value,
+            value.getClass().getName(), Config.STORM_VIRTUAL_THREADS_ENABLED);
         return false;
     }
 }

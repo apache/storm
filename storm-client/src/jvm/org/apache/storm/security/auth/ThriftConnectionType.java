@@ -137,7 +137,8 @@ public enum ThriftConnectionType {
     }
 
     /**
-     * Prefix for the names of the threads that handle requests of this server type, e.g. {@code "nimbus-handler-"}.
+     * Prefix for the names of the threads that handle requests of this server type,
+     * e.g. {@code "nimbus-handler-"}.
      */
     public String getHandlerThreadNamePrefix() {
         return name().toLowerCase(Locale.ROOT) + "-handler-";

@@ -151,7 +151,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.upTime = Utils.makeUptimeComputer();
         this.stormVersion = VersionInfo.getVersion();
         this.sharedContext = sharedContext;
-        this.heartbeatExecutor = Executors.newFixedThreadPool(1, StormThreadFactory.create(conf, "supervisor-heartbeat-"));
+        this.heartbeatExecutor = Executors.newFixedThreadPool(1,
+            StormThreadFactory.create(conf, "supervisor-heartbeat-"));
         this.authorizationHandler = StormCommon.mkAuthorizationHandler(
             (String) conf.get(DaemonConfig.SUPERVISOR_AUTHORIZER), conf);
         if (authorizationHandler == null && conf.get(DaemonConfig.NIMBUS_AUTHORIZER) != null) {
