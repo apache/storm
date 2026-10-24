@@ -21,8 +21,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class LoadMapping {
     private static final Load NOT_CONNECTED = new Load(false, 1.0, 1.0);
-    private final AtomicReference<Map<Integer, Load>> local = new AtomicReference<Map<Integer, Load>>(new HashMap<Integer, Load>());
-    private final AtomicReference<Map<Integer, Load>> remote = new AtomicReference<Map<Integer, Load>>(new HashMap<Integer, Load>());
+    private final AtomicReference<Map<Integer, Load>> local =
+            new AtomicReference<Map<Integer, Load>>(new HashMap<Integer, Load>());
+    private final AtomicReference<Map<Integer, Load>> remote =
+            new AtomicReference<Map<Integer, Load>>(new HashMap<Integer, Load>());
 
     public void setLocal(Map<Integer, Double> local) {
         Map<Integer, Load> newLocal = new HashMap<Integer, Load>();

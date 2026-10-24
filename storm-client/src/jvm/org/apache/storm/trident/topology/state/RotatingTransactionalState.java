@@ -141,7 +141,8 @@ public class RotatingTransactionalState {
             try {
                 state.delete(txPath(tx));
             } catch (RuntimeException e) {
-                // Ignore NoNodeExists exceptions because when sync() it may populate curr with stale data since
+                // Ignore NoNodeExists exceptions because when sync() it may populate curr with
+                // stale data since
                 // zookeeper reads are eventually consistent.
                 if (!Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
                     throw e;

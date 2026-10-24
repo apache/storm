@@ -64,9 +64,12 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Implementation details:
  *
- * <p>Sending messages, i.e. writing to the channel, is performed asynchronously. Messages are sent in batches to optimize for network
- * throughput at the expense of network latency.  The message batch size is configurable. Connecting and reconnecting are performed
- * asynchronously. Note: The current implementation drops any messages that are being enqueued for sending if the connection to the remote
+ * <p>Sending messages, i.e. writing to the channel, is performed asynchronously. Messages are sent
+ * in batches to optimize for network
+ * throughput at the expense of network latency. The message batch size is configurable. Connecting
+ * and reconnecting are performed
+ * asynchronously. Note: The current implementation drops any messages that are being enqueued for
+ * sending if the connection to the remote
  * destination is currently unavailable.
  */
 public class Client extends ConnectionWithStatus implements ISaslClient {
@@ -130,21 +133,29 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
     private Set<Metric> metrics = new HashSet<>();
 
     Client(Map<String, Object> topoConf, AtomicBoolean[] remoteBpStatus,
-        EventLoopGroup eventLoopGroup, HashedWheelTimer scheduler, String host,
+           EventLoopGroup eventLoopGroup, HashedWheelTimer scheduler, String host,
            int port, StormMetricRegistry metricRegistry) {
         this.topoConf = topoConf;
         closing = false;
         this.scheduler = scheduler;
-        int bufferSize = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
-        int lowWatermark = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_LOW_WATERMARK));
-        int highWatermark = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_HIGH_WATERMARK));
-        // if SASL authentication is disabled, saslChannelReady is initialized as true; otherwise false
-        saslChannelReady.set(!ObjectReader.getBoolean(topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION), false));
-        LOG.info("Creating Netty Client, connecting to {}:{}, bufferSize: {}, lowWatermark: {}, highWatermark: {}",
-                 host, port, bufferSize, lowWatermark, highWatermark);
+        int bufferSize = ObjectReader.getInt(topoConf
+                .get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        int lowWatermark = ObjectReader.getInt(topoConf
+                .get(Config.STORM_MESSAGING_NETTY_BUFFER_LOW_WATERMARK));
+        int highWatermark = ObjectReader.getInt(topoConf
+                .get(Config.STORM_MESSAGING_NETTY_BUFFER_HIGH_WATERMARK));
+        // if SASL authentication is disabled, saslChannelReady is initialized as true; otherwise
+        // false
+        saslChannelReady.set(!ObjectReader.getBoolean(topoConf
+                .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION), false));
+        LOG.info("Creating Netty Client, connecting to {}:{}, bufferSize: {}, lowWatermark: {}, "
+                + "highWatermark: {}",
+                host, port, bufferSize, lowWatermark, highWatermark);
 
-        int minWaitMs = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
-        int maxWaitMs = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
+        int minWaitMs = ObjectReader.getInt(topoConf
+                .get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
+        int maxWaitMs = ObjectReader.getInt(topoConf
+                .get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, -1);
 
         SslContext sslContext = NettyTlsUtils.createSslContext(topoConf, false);
@@ -153,21 +164,26 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
         this.eventLoopGroup = eventLoopGroup;
         // Initiate connection to remote destination
         bootstrap = new Bootstrap()
-            .group(this.eventLoopGroup)
-            .channel(NioSocketChannel.class)
-            .option(ChannelOption.TCP_NODELAY, true)
-            .option(ChannelOption.SO_SNDBUF, bufferSize)
-            .option(ChannelOption.SO_KEEPALIVE, true)
-            .option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(lowWatermark, highWatermark))
-            .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-            .handler(new StormClientPipelineFactory(this, remoteBpStatus, topoConf, sslContext, host, port));
+                .group(this.eventLoopGroup)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_SNDBUF, bufferSize)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.WRITE_BUFFER_WATER_MARK,
+                    new WriteBufferWaterMark(lowWatermark, highWatermark))
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .handler(new StormClientPipelineFactory(this, remoteBpStatus, topoConf, sslContext,
+                host, port));
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
         scheduleConnect(NO_DELAY_MS);
-        int messageBatchSize = ObjectReader.getInt(topoConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
-        pendingMessagesFlushTimeoutMs = ObjectReader.getLong(topoConf.get(Config.STORM_MESSAGING_NETTY_FLUSH_TIMEOUT_MS), 600000L);
-        pendingMessagesFlushIntervalMs = (long) (pendingMessagesFlushFactor * pendingMessagesFlushTimeoutMs);
+        int messageBatchSize = ObjectReader.getInt(topoConf
+                .get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
+        pendingMessagesFlushTimeoutMs = ObjectReader.getLong(topoConf
+                .get(Config.STORM_MESSAGING_NETTY_FLUSH_TIMEOUT_MS), 600000L);
+        pendingMessagesFlushIntervalMs =
+                (long) (pendingMessagesFlushFactor * pendingMessagesFlushTimeoutMs);
         batcher = new MessageBuffer(messageBatchSize);
         String clazz = (String) topoConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY);
         if (clazz == null) {
@@ -178,9 +194,11 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
         waitStrategy.prepare(topoConf, WaitSituation.BACK_PRESSURE_WAIT);
         this.metricRegistry = metricRegistry;
 
-        // it's possible to be passed a null metric registry if users are using their own IContext implementation.
-        boolean reportMetrics =  this.metricRegistry != null
-                && ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_ENABLE_SEND_ICONNECTION_METRICS), true);
+        // it's possible to be passed a null metric registry if users are using their own IContext
+        // implementation.
+        boolean reportMetrics = this.metricRegistry != null
+                && ObjectReader.getBoolean(topoConf
+                .get(Config.TOPOLOGY_ENABLE_SEND_ICONNECTION_METRICS), true);
 
         if (reportMetrics) {
             Gauge<Integer> reconnects = new Gauge<Integer>() {
@@ -226,8 +244,10 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
     }
 
     /**
-     * This thread helps us to check for channel connection periodically. This is performed just to know whether the destination address is
-     * alive or attempts to refresh connections if not alive. This solution is better than what we have now in case of a bad channel.
+     * This thread helps us to check for channel connection periodically. This is performed just to
+     * know whether the destination address is
+     * alive or attempts to refresh connections if not alive. This solution is better than what we
+     * have now in case of a bad channel.
      */
     private void launchChannelAliveThread() {
         // netty TimerTask is already defined and hence a fully
@@ -275,7 +295,8 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
     }
 
     /**
-     * Note:  Storm will check via this method whether a worker can be activated safely during the initial startup of a topology.  The
+     * Note: Storm will check via this method whether a worker can be activated safely during the
+     * initial startup of a topology. The
      * worker will only be activated once all of the its connections are ready.
      */
     @Override
@@ -310,8 +331,9 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
     public void send(Iterator<TaskMessage> msgs) {
         if (closing) {
             int numMessages = iteratorSize(msgs);
-            LOG.error("Dropping {} messages because the Netty client to {} is being closed", numMessages,
-                      dstAddressPrefixedName);
+            LOG.error("Dropping {} messages because the Netty client to {} is being closed",
+                    numMessages,
+                    dstAddressPrefixedName);
             return;
         }
 
@@ -322,10 +344,13 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
         Channel channel = getConnectedChannel();
         if (channel == null) {
             /*
-             * Connection is unavailable. We will drop pending messages and let at-least-once message replay kick in.
+             * Connection is unavailable. We will drop pending messages and let at-least-once
+             * message replay kick in.
              *
-             * Another option would be to buffer the messages in memory.  But this option has the risk of causing OOM errors,
-             * especially for topologies that disable message acking because we don't know whether the connection recovery will
+             * Another option would be to buffer the messages in memory. But this option has the
+             * risk of causing OOM errors,
+             * especially for topologies that disable message acking because we don't know whether
+             * the connection recovery will
              * succeed  or not, and how long the recovery will take.
              */
             dropMessages(msgs);
@@ -431,8 +456,9 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
                     LOG.debug("sent {} messages to {}", numMessages, dstAddressPrefixedName);
                     messagesSent.getAndAdd(batch.size());
                 } else {
-                    LOG.error("failed to send {} messages to {}: {}", numMessages, dstAddressPrefixedName,
-                              future.cause());
+                    LOG.error("failed to send {} messages to {}: {}", numMessages,
+                            dstAddressPrefixedName,
+                            future.cause());
                     closeChannelAndReconnect(future.channel());
                     messagesLost.getAndAdd(numMessages);
                 }
@@ -442,7 +468,8 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
     }
 
     /**
-     * Schedule a reconnect if we closed a non-null channel, and acquired the right to provide a replacement by successfully setting a null
+     * Schedule a reconnect if we closed a non-null channel, and acquired the right to provide a
+     * replacement by successfully setting a null
      * to the channel field.
      *
      * @param channel the channel to close
@@ -485,15 +512,17 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
 
     private void waitForPendingMessagesToBeSent() {
         LOG.info("waiting up to {} ms to send {} pending messages to {}",
-                 pendingMessagesFlushTimeoutMs, pendingMessages.get(), dstAddressPrefixedName);
+                pendingMessagesFlushTimeoutMs, pendingMessages.get(), dstAddressPrefixedName);
         long totalPendingMsgs = pendingMessages.get();
         long startMs = System.currentTimeMillis();
         while (pendingMessages.get() != 0) {
             try {
                 long deltaMs = System.currentTimeMillis() - startMs;
                 if (deltaMs > pendingMessagesFlushTimeoutMs) {
-                    LOG.error("failed to send all pending messages to {} within timeout, {} of {} messages were not "
-                        + "sent", dstAddressPrefixedName, pendingMessages.get(), totalPendingMsgs);
+                    LOG.error("failed to send all pending messages to {} within timeout, {} of {} "
+                            + "messages were not "
+                            + "sent", dstAddressPrefixedName, pendingMessages
+                            .get(), totalPendingMsgs);
                     break;
                 }
                 Thread.sleep(pendingMessagesFlushIntervalMs);
@@ -569,7 +598,8 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
     }
 
     /**
-     * Asynchronously establishes a Netty connection to the remote address This task runs on a single thread shared among all clients, and
+     * Asynchronously establishes a Netty connection to the remote address This task runs on a
+     * single thread shared among all clients, and
      * thus should not perform operations that block.
      */
     private class Connect implements TimerTask {
@@ -582,13 +612,12 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
 
         private void reschedule(Throwable t) {
             String baseMsg = String.format("connection attempt %s to %s failed", connectionAttempts,
-                                           dstAddressPrefixedName);
+                    dstAddressPrefixedName);
             String failureMsg = (t == null) ? baseMsg : baseMsg + ": " + t.toString();
             LOG.error(failureMsg);
             long nextDelayMs = retryPolicy.getSleepTimeMs(connectionAttempts.get(), 0);
             scheduleConnect(nextDelayMs);
         }
-
 
         @Override
         public void run(Timeout timeout) throws Exception {
@@ -607,11 +636,13 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
                         if (future.isSuccess() && connectionEstablished(newChannel)) {
                             boolean setChannel = channelRef.compareAndSet(null, newChannel);
                             checkState(setChannel);
-                            LOG.debug("successfully connected to {}, {} [attempt {}]", address.toString(), newChannel.toString(),
-                                      connectionAttempt);
+                            LOG.debug("successfully connected to {}, {} [attempt {}]", address
+                                    .toString(), newChannel.toString(),
+                                    connectionAttempt);
                             if (messagesLost.get() > 0) {
-                                LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(),
-                                         messagesLost.get());
+                                LOG.warn("Re-connection to {} was successful but {} messages has "
+                                        + "been lost so far", address.toString(),
+                                        messagesLost.get());
                             }
                         } else {
                             Throwable cause = future.cause();
@@ -624,8 +655,10 @@ public class Client extends ConnectionWithStatus implements ISaslClient {
                 });
             } else {
                 close();
-                throw new RuntimeException("Giving up to scheduleConnect to " + dstAddressPrefixedName + " after "
-                    + connectionAttempts + " failed attempts. " + messagesLost.get() + " messages were lost");
+                throw new RuntimeException("Giving up to scheduleConnect to "
+                        + dstAddressPrefixedName + " after "
+                        + connectionAttempts + " failed attempts. " + messagesLost.get()
+                        + " messages were lost");
 
             }
         }

@@ -17,9 +17,9 @@ import java.util.List;
 import java.util.Set;
 import org.apache.storm.coordination.CoordinatedBolt;
 
-
 public class Constants {
-    public static final String COORDINATED_STREAM_ID = CoordinatedBolt.class.getName() + "/coord-stream";
+    public static final String COORDINATED_STREAM_ID = CoordinatedBolt.class.getName()
+            + "/coord-stream";
 
     public static final long SYSTEM_TASK_ID = -1;
     public static final List<Long> SYSTEM_EXECUTOR_ID = Arrays.asList(-1L, -1L);
@@ -33,19 +33,25 @@ public class Constants {
     public static final String FEEDBACK_TICK_STREAM_ID = "__feedback_tick";
 
     /**
-     * System streams carrying low-volume, time-driven control signals that may be routed to the executor receive
+     * System streams carrying low-volume, time-driven control signals that may be routed to the
+     * executor receive
      * queue's control lane (see {@code Config.TOPOLOGY_EXECUTOR_RECEIVE_CONTROL_QUEUE_ENABLE}). Tuples on these
-     * streams are wall-clock signals with no ordering contract against data tuples, so delivering them ahead of
-     * co-enqueued data tuples is safe, and dropping one when the control lane is full is self-healing because the
+     * streams are wall-clock signals with no ordering contract against data tuples, so delivering
+     * them ahead of
+     * co-enqueued data tuples is safe, and dropping one when the control lane is full is
+     * self-healing because the
      * next one arrives within the signal's period.
      */
     public static final Set<String> SYSTEM_CONTROL_STREAM_IDS =
-            Set.of(SYSTEM_TICK_STREAM_ID, SYSTEM_FLUSH_STREAM_ID, METRICS_TICK_STREAM_ID, FEEDBACK_STREAM_ID, FEEDBACK_TICK_STREAM_ID);
+            Set.of(SYSTEM_TICK_STREAM_ID, SYSTEM_FLUSH_STREAM_ID, METRICS_TICK_STREAM_ID,
+            FEEDBACK_STREAM_ID, FEEDBACK_TICK_STREAM_ID);
 
     public static boolean isControlStreamId(String streamId) {
-        // All control stream ids start with "__"; the prefix check cheaply rejects the common data-stream
+        // All control stream ids start with "__"; the prefix check cheaply rejects the common
+        // data-stream
         // case before falling through to the set lookup.
-        return streamId != null && streamId.startsWith("__") && SYSTEM_CONTROL_STREAM_IDS.contains(streamId);
+        return streamId != null && streamId.startsWith("__") && SYSTEM_CONTROL_STREAM_IDS
+                .contains(streamId);
     }
 
     public static final Object TOPOLOGY = "topology";
@@ -74,8 +80,10 @@ public class Constants {
     public static final String COMMON_OFFHEAP_MEMORY_RESOURCE_NAME = "offheap.memory.mb";
     public static final String COMMON_TOTAL_MEMORY_RESOURCE_NAME = "memory.mb";
 
-    public static final String NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS = "nimbus:num-send-assignment-exceptions";
-    public static final String SUPERVISOR_HEALTH_CHECK_TIMEOUTS = "supervisor:health-check-timeouts";
+    public static final String NIMBUS_SEND_ASSIGNMENT_EXCEPTIONS =
+            "nimbus:num-send-assignment-exceptions";
+    public static final String SUPERVISOR_HEALTH_CHECK_TIMEOUTS =
+            "supervisor:health-check-timeouts";
 
     public static final String WORKER_METRICS_REGISTRY = "worker-metrics-registry";
 }

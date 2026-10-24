@@ -51,7 +51,8 @@ public class TridentSpoutExecutor implements ITridentBatchBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        BatchOutputCollector collector) {
         emitter = spout.getEmitter(txStateId, conf, context);
         this.collector = new AddIdCollector(streamName, collector);
     }
@@ -114,7 +115,6 @@ public class TridentSpoutExecutor implements ITridentBatchBolt {
             delegate = c;
             this.stream = stream;
         }
-
 
         public void setBatch(Object id) {
             this.id = id;

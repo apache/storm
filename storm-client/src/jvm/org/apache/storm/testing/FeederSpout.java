@@ -24,7 +24,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.InprocMessaging;
 
-
 public class FeederSpout extends BaseRichSpout {
     private int id;
     private Fields outFields;
@@ -61,7 +60,8 @@ public class FeederSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
         this.collector = collector;
     }
 

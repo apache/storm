@@ -23,35 +23,48 @@ import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.task.WorkerTopologyContext;
 
 /**
- * A {@link LoadAwareCustomStreamGrouping} that steers each tuple toward the downstream (child) task with
+ * A {@link LoadAwareCustomStreamGrouping} that steers each tuple toward the downstream (child) task
+ * with
  * lower jitter, as reported back to the emitting task through upstream feedback and aggregated by
- * {@link ChildEwmaStats}. Jitter is compared with {@link ChildEwmaStats#compareByJitter}, so a lower
+ * {@link ChildEwmaStats}. Jitter is compared with {@link ChildEwmaStats#compareByJitter}, so a
+ * lower
  * {@code __execute-jitter} wins first, then {@code __process-jitter}, then {@code __complete-jitter}.
  *
- * <p>Steering uses <b>power-of-two-choices</b>: for each tuple two target tasks are sampled at random and
+ * <p>Steering uses <b>power-of-two-choices</b>: for each tuple two target tasks are sampled at
+ * random and
  * the lower-jitter one wins. Random sampling keeps the best task from receiving every tuple (the
- * "thundering herd" a plain arg-min selection would cause) while still biasing traffic toward the good
+ * "thundering herd" a plain arg-min selection would cause) while still biasing traffic toward the
+ * good
  * tasks.
  *
- * <p>Whenever jitter cannot pick a winner — the sampled pair ties (equal jitter, or neither has reported),
- * no feedback exists yet for the source task, or no {@link ChildEwmaStats} was registered — the decision is
- * delegated to an embedded {@link LoadAwareShuffleGrouping}. When <i>all</i> targets carry equal jitter,
- * every sampled pair ties, so the grouping behaves as a pure load-aware shuffle. {@link #refreshLoad} is
+ * <p>Whenever jitter cannot pick a winner — the sampled pair ties (equal jitter, or neither has
+ * reported),
+ * no feedback exists yet for the source task, or no {@link ChildEwmaStats} was registered — the
+ * decision is
+ * delegated to an embedded {@link LoadAwareShuffleGrouping}. When <i>all</i> targets carry equal
+ * jitter,
+ * every sampled pair ties, so the grouping behaves as a pure load-aware shuffle. {@link
+ * #refreshLoad} is
  * forwarded to that delegate, so the fallback path honours real system load and locality.
  *
- * <p><b>Ordering:</b> like any load-aware shuffle, this grouping does <i>not</i> preserve tuple ordering.
- * It is a routing policy layered on top of {@link LoadAwareShuffleGrouping} and inherits the same (lack of)
+ * <p><b>Ordering:</b> like any load-aware shuffle, this grouping does <i>not</i> preserve tuple
+ * ordering.
+ * It is a routing policy layered on top of {@link LoadAwareShuffleGrouping} and inherits the same
+ * (lack of)
  * ordering semantics: successive tuples emitted by the same source task may be steered to different
- * downstream tasks, so consumers must not rely on receiving tuples in emission order. Use a fields grouping
+ * downstream tasks, so consumers must not rely on receiving tuples in emission order. Use a fields
+ * grouping
  * if per-key ordering is required.
  *
- * <p><b>Requirements:</b> this grouping is purely opt-in and only steers while the upstream feedback loop is
+ * <p><b>Requirements:</b> this grouping is purely opt-in and only steers while the upstream
+ * feedback loop is
  * active. The feedback records carry EWMA jitter stats, which are produced solely when
  * {@code topology.stats.ewma.enable=true}; enabling {@code topology.upstream.feedback.enable} without EWMA
  * is therefore rejected at config validation (see {@code ConfigValidation.UpstreamFeedbackValidator}), since
  * the grouping would otherwise silently degrade to a plain load-aware shuffle forever.
  *
- * <p><b>Performance:</b> benchmarks show the feedback signal adds negligible overhead and, at moderate load yields
+ * <p><b>Performance:</b> benchmarks show the feedback signal adds negligible overhead and, at
+ * moderate load yields
  * a directionally lower complete latency than a  plain load-aware shuffle at comparable throughput.
  * At higher load the advantage disappears and results are neutral-to-slightly-worse.
  * Treat it as an opt-in latency-smoothing policy rather than a general throughput improvement.
@@ -77,9 +90,11 @@ public class JitterAwareStreamGrouping implements LoadAwareCustomStreamGrouping 
     }
 
     @Override
-    public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+    public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+        List<Integer> targetTasks) {
         this.targetTasks = targetTasks;
-        // The fallback rejects an empty target list; chooseTasks short-circuits that case before delegating.
+        // The fallback rejects an empty target list; chooseTasks short-circuits that case before
+        // delegating.
         if (targetTasks != null && !targetTasks.isEmpty()) {
             fallback.prepare(context, stream, targetTasks);
         }
@@ -123,7 +138,8 @@ public class JitterAwareStreamGrouping implements LoadAwareCustomStreamGrouping 
         if (cmp > 0) {
             return Collections.singletonList(b);
         }
-        // Tie (equal jitter, or both unreported): no jitter winner -> defer to the load-aware fallback.
+        // Tie (equal jitter, or both unreported): no jitter winner -> defer to the load-aware
+        // fallback.
         return fallback.chooseTasks(taskId, values);
     }
 

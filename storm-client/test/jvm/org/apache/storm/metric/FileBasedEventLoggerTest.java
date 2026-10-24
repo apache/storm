@@ -18,6 +18,10 @@
 
 package org.apache.storm.metric;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,9 +35,6 @@ import org.apache.storm.task.TopologyContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class FileBasedEventLoggerTest {
 
@@ -88,7 +89,7 @@ public class FileBasedEventLoggerTest {
 
         List<Object> values = new ArrayList<>();
         values.add(largeValue);
-        
+
         // This toString() will add some bytes overhead, so each event is ~ 100KB.
         IEventLogger.EventInfo eventInfo = new IEventLogger.EventInfo(
                 System.currentTimeMillis(), "test-component", 1, "msgId", values);
@@ -108,21 +109,21 @@ public class FileBasedEventLoggerTest {
 
         // The first 10 writes should be in one file, almost 1 MB.
         assertTrue(Files.exists(logFile));
-        
+
         // Write 2 more times to push it over 1MB
         eventLogger.log(eventInfo);
         eventLogger.log(eventInfo);
-        
+
         Thread.sleep(100);
 
         // Now we expect events.log.1 to exist and events.log to be new
         assertTrue(Files.exists(logFile1), "Rotated file events.log.1 should exist");
-        
+
         // Write 12 more times to push over 1MB again
         for (int i = 0; i < 12; i++) {
             eventLogger.log(eventInfo);
         }
-        
+
         Thread.sleep(100);
 
         // Now events.log.2 and events.log.1 and events.log should exist

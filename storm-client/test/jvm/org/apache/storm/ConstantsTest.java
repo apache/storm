@@ -21,15 +21,17 @@ public class ConstantsTest {
     @Test
     public void testEveryWhitelistedStreamIsControl() {
         for (String id : Constants.SYSTEM_CONTROL_STREAM_IDS) {
-            // fresh instance: the fast-reject gates must not depend on identity or a cached hashCode
+            // fresh instance: the fast-reject gates must not depend on identity or a cached
+            // hashCode
             assertTrue(Constants.isControlStreamId(new String(id.toCharArray())), id);
         }
     }
 
     @Test
     public void testHighVolumeSystemStreamsAreNotControl() {
-        // volume-proportional to the data plane: must stay on the data path (see SYSTEM_CONTROL_STREAM_IDS javadoc)
-        String[] dataPlaneSystemStreams = {
+        // volume-proportional to the data plane: must stay on the data path (see
+        // SYSTEM_CONTROL_STREAM_IDS javadoc)
+        String[] dataPlaneSystemStreams =  {
             "__ack_init", "__ack_ack", "__ack_fail", "__ack_reset_timeout",
             "__metrics", "__system", "__eventlog", "__heartbeat"
         };
@@ -40,8 +42,10 @@ public class ConstantsTest {
 
     @Test
     public void testUserStreamsAreNotControl() {
-        // includes ids whose length collides with a whitelisted id, to exercise the prefix/char gates
-        String[] userStreams = { "default", "s1", "stream", "__x", "_tick", "___tick", "abcdef", "abcdefghij" };
+        // includes ids whose length collides with a whitelisted id, to exercise the prefix/char
+        // gates
+        String[] userStreams =
+            {"default", "s1", "stream", "__x", "_tick", "___tick", "abcdef", "abcdefghij"};
         for (String id : userStreams) {
             assertFalse(Constants.isControlStreamId(id), id);
         }

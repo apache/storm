@@ -17,7 +17,6 @@ import java.util.List;
 import org.apache.storm.trident.state.TransactionalValue;
 import org.apache.storm.trident.state.ValueUpdater;
 
-
 public class TransactionalMap<T> implements MapState<T> {
     CachedBatchReadsMap<TransactionalValue> backing;
     Long currTx;

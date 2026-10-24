@@ -17,7 +17,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * An interface to implement the basic functions to manage cgroups such as mount and mounting a hiearchy and creating cgroups.  Also
+ * An interface to implement the basic functions to manage cgroups such as mount and mounting a
+ * hiearchy and creating cgroups. Also
  * contains functions to access basic information of cgroups.
  */
 public interface CgroupOperation {
@@ -28,7 +29,7 @@ public interface CgroupOperation {
     List<Hierarchy> getHierarchies();
 
     /**
-     * get a list of available subsystems.
+     * Get a list of available subsystems.
      */
     Set<SubSystem> getSubSystems();
 
@@ -38,37 +39,37 @@ public interface CgroupOperation {
     boolean isSubSystemEnabled(SubSystemType subsystem);
 
     /**
-     * get the first hierarchy that has a certain subsystem isMounted.
+     * Get the first hierarchy that has a certain subsystem isMounted.
      */
     Hierarchy getHierarchyWithSubSystem(SubSystemType subsystem);
 
     /**
-     * get the first hierarchy that has a certain list of subsystems isMounted.
+     * Get the first hierarchy that has a certain list of subsystems isMounted.
      */
     Hierarchy getHierarchyWithSubSystems(List<SubSystemType> subSystems);
 
     /**
-     * check if a hiearchy is mounted.
+     * Check if a hiearchy is mounted.
      */
     boolean isMounted(Hierarchy hierarchy);
 
     /**
-     * mount a hierarchy.
+     * Mount a hierarchy.
      */
     void mount(Hierarchy hierarchy) throws IOException;
 
     /**
-     * umount a heirarchy.
+     * Umount a heirarchy.
      */
     void umount(Hierarchy hierarchy) throws IOException;
 
     /**
-     * create a cgroup.
+     * Create a cgroup.
      */
     void createCgroup(CgroupCommon cgroup) throws SecurityException;
 
     /**
-     * delete a cgroup.
+     * Delete a cgroup.
      */
     void deleteCgroup(CgroupCommon cgroup) throws IOException;
 }

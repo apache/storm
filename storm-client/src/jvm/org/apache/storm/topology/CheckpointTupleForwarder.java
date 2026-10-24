@@ -16,7 +16,6 @@ import static org.apache.storm.spout.CheckPointState.Action;
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
 
 import java.util.Map;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
@@ -26,8 +25,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Wraps {@link IRichBolt} and forwards checkpoint tuples in a stateful topology.
- * <p>
- * When a storm topology contains one or more {@link IStatefulBolt} all non-stateful bolts are wrapped in {@link CheckpointTupleForwarder}
+ *
+ * <p>When a storm topology contains one or more {@link IStatefulBolt} all non-stateful bolts are
+ * wrapped in {@link CheckpointTupleForwarder}
  * so that the checkpoint tuples can flow through the entire topology DAG.
  * </p>
  */
@@ -40,7 +40,8 @@ public class CheckpointTupleForwarder extends BaseStatefulBoltExecutor {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector outputCollector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector outputCollector) {
         init(context, new AnchoringOutputCollector(outputCollector));
         bolt.prepare(topoConf, context, collector);
     }
@@ -77,8 +78,9 @@ public class CheckpointTupleForwarder extends BaseStatefulBoltExecutor {
     /**
      * Hands off tuple to the wrapped bolt to execute.
      *
-     * <p>
-     * Right now tuples continue to get forwarded while waiting for checkpoints to arrive on other streams after checkpoint arrives on one
+     * <p>Right now tuples continue to get forwarded while waiting for checkpoints to arrive on
+     * other
+     * streams after checkpoint arrives on one
      * of the streams. This can cause duplicates but still at least once.
      * </p>
      *

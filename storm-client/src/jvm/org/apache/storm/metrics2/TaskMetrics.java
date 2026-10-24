@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
-
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
@@ -50,7 +49,6 @@ public class TaskMetrics {
     private final int samplingRate;
     private final boolean ewmaEnable;
 
-
     public TaskMetrics(WorkerTopologyContext context, String componentId, Integer taskid,
                        StormMetricRegistry metricRegistry, Map<String, Object> topoConf) {
         this.metricRegistry = metricRegistry;
@@ -68,7 +66,8 @@ public class TaskMetrics {
     public void setCapacity(double capacity) {
         String metricName = METRIC_NAME_CAPACITY;
         // capacity is over all streams, will report using the default streamId
-        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName, Utils.DEFAULT_STREAM_ID);
+        RollingAverageGauge gauge = this.getRollingAverageGauge(metricName,
+                Utils.DEFAULT_STREAM_ID);
         gauge.addValue(capacity);
     }
 
@@ -83,7 +82,8 @@ public class TaskMetrics {
 
         if (this.ewmaEnable) {
             metricName = METRIC_NAME_COMPLETE_JITTER + "-" + streamId;
-            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName, streamId);
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName,
+                    streamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -100,7 +100,8 @@ public class TaskMetrics {
 
         if (this.ewmaEnable) {
             metricName = METRIC_NAME_PROCESS_JITTER + "-" + key;
-            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName, sourceStreamId);
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName,
+                    sourceStreamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -145,7 +146,8 @@ public class TaskMetrics {
 
         if (this.ewmaEnable) {
             metricName = METRIC_NAME_EXECUTE_JITTER + "-" + key;
-            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName, sourceStreamId);
+            EwmaGauge ewmaGauge = this.getExponentialWeightedMovingAverageGauge(metricName,
+                    sourceStreamId);
             ewmaGauge.addValue(latencyMs);
         }
     }
@@ -166,7 +168,8 @@ public class TaskMetrics {
     }
 
     private RollingAverageGauge getRollingAverageGauge(String metricName, String streamId) {
-        return getOrCreateGauge(metricName, streamId, RollingAverageGauge.class, this.rollingAverageGaugeFactory);
+        return getOrCreateGauge(metricName, streamId, RollingAverageGauge.class,
+                this.rollingAverageGaugeFactory);
     }
 
     private EwmaGauge getExponentialWeightedMovingAverageGauge(String metricName, String streamId) {

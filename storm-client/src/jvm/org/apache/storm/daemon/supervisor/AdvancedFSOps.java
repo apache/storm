@@ -69,7 +69,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
     }
 
     /**
-     * Set directory permissions to (OWNER)RWX (GROUP)R-X (OTHER)--- On some systems that do not support this, it may become a noop.
+     * Set directory permissions to (OWNER)RWX (GROUP)R-X (OTHER)--- On some systems that do not
+     * support this, it may become a noop.
      *
      * @param dir the directory to change permissions on
      * @throws IOException on any error
@@ -77,9 +78,9 @@ public class AdvancedFSOps implements IAdvancedFSOps {
     @Override
     public void restrictDirectoryPermissions(File dir) throws IOException {
         Set<PosixFilePermission> perms = new HashSet<>(
-            Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
-                          PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_READ,
-                          PosixFilePermission.GROUP_EXECUTE));
+                Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_READ,
+                        PosixFilePermission.GROUP_EXECUTE));
         Files.setPosixFilePermissions(dir.toPath(), perms);
     }
 
@@ -110,6 +111,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
 
     /**
      * Check whether supports atomic directory move.
+     *
      * @return true if an atomic directory move works, else false
      */
     @Override
@@ -138,7 +140,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      */
     @Override
     public void setupBlobPermissions(File path, String user) throws IOException {
-        //Normally this is a NOOP
+        // Normally this is a NOOP
     }
 
     /**
@@ -146,12 +148,13 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      *
      * @param path      what to delete
      * @param user      who to delete it as if doing it as someone else is supported
-     * @param logPrefix if an external process needs to be launched to delete the object what prefix to include in the logs
+     * @param logPrefix if an external process needs to be launched to delete the object what prefix
+     *     to include in the logs
      * @throws IOException on any error.
      */
     @Override
     public void deleteIfExists(File path, String user, String logPrefix) throws IOException {
-        //by default no need to do this as a different user
+        // by default no need to do this as a different user
         deleteIfExists(path);
     }
 
@@ -169,7 +172,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
             try {
                 FileUtils.forceDelete(path);
             } catch (FileNotFoundException ignored) {
-                //ignore
+                // ignore
             }
         }
     }
@@ -183,7 +186,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      */
     @Override
     public void setupStormCodeDir(String user, File path) throws IOException {
-        //By default this is a NOOP
+        // By default this is a NOOP
     }
 
     /**
@@ -195,7 +198,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      */
     @Override
     public void setupWorkerArtifactsDir(String user, File path) throws IOException {
-        //By default this is a NOOP
+        // By default this is a NOOP
     }
 
     /**
@@ -208,7 +211,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      * @throws IOException on any error
      */
     @Override
-    public boolean doRequiredTopoFilesExist(Map<String, Object> conf, String topologyId) throws IOException {
+    public boolean doRequiredTopoFilesExist(Map<String, Object> conf,
+        String topologyId) throws IOException {
         return ClientSupervisorUtils.doRequiredTopoFilesExist(conf, topologyId);
     }
 
@@ -235,7 +239,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
     }
 
     @Override
-    public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
+    public DirectoryStream<Path> newDirectoryStream(Path dir,
+        DirectoryStream.Filter<? super Path> filter) throws IOException {
         return Files.newDirectoryStream(dir, filter);
     }
 
@@ -357,7 +362,7 @@ public class AdvancedFSOps implements IAdvancedFSOps {
         LOG.debug("Creating symlink [{}] to [{}]", plink, ptarget);
         if (Files.exists(plink)) {
             if (Files.isSameFile(plink, ptarget)) {
-                //It already points where we want it to
+                // It already points where we want it to
                 return;
             }
             FileUtils.forceDelete(link);
@@ -372,7 +377,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
         AdvancedRunAsUserFSOps(Map<String, Object> conf) {
             super(conf);
             if (Utils.isOnWindows()) {
-                throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
+                throw new UnsupportedOperationException("ERROR: Windows doesn't support running "
+                        + "workers as different users yet");
             }
             this.conf = conf;
         }
@@ -380,7 +386,8 @@ public class AdvancedFSOps implements IAdvancedFSOps {
         @Override
         public void setupBlobPermissions(File path, String user) throws IOException {
             String logPrefix = "setup blob permissions for " + path;
-            ClientSupervisorUtils.processLauncherAndWait(conf, user, Arrays.asList("blob", path.toString()), null, logPrefix);
+            ClientSupervisorUtils.processLauncherAndWait(conf, user, Arrays.asList("blob", path
+                    .toString()), null, logPrefix);
         }
 
         @Override
@@ -433,13 +440,15 @@ public class AdvancedFSOps implements IAdvancedFSOps {
         AdvancedWindowsFSOps(Map<String, Object> conf) {
             super(conf);
             if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
-                throw new RuntimeException("ERROR: Windows doesn't support running workers as different users yet");
+                throw new RuntimeException("ERROR: Windows doesn't support running workers as "
+                        + "different users yet");
             }
         }
 
         @Override
         public void restrictDirectoryPermissions(File dir) throws IOException {
-            //NOOP, if windows gets support for run as user we will need to find a way to support this
+            // NOOP, if windows gets support for run as user we will need to find a way to support
+            // this
         }
 
         @Override

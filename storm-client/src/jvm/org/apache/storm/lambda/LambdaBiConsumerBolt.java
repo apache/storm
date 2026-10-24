@@ -24,7 +24,8 @@ public class LambdaBiConsumerBolt extends BaseBasicBolt {
 
     private String[] fields;
 
-    public LambdaBiConsumerBolt(SerializableBiConsumer<Tuple, BasicOutputCollector> biConsumer, String[] fields) {
+    public LambdaBiConsumerBolt(SerializableBiConsumer<Tuple, BasicOutputCollector> biConsumer,
+            String[] fields) {
         this.biConsumer = biConsumer;
         this.fields = fields;
     }

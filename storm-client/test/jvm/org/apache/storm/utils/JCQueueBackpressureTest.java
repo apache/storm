@@ -12,20 +12,21 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Collections;
 import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue.Consumer;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class JCQueueBackpressureTest {
-    
+
     private static JCQueue createQueue(String name, int queueSize) {
-        return new JCQueue(name, name, queueSize, 0, 1, new WaitStrategyPark(0), "test", "test", Collections.singletonList(1000), 1000, new StormMetricRegistry());
+        return new JCQueue(name, name, queueSize, 0, 1, new WaitStrategyPark(0), "test", "test",
+                Collections.singletonList(1000), 1000, new StormMetricRegistry());
     }
 
     @Test
@@ -44,7 +45,7 @@ public class JCQueueBackpressureTest {
         TestConsumer consumer = new TestConsumer();
         queue.consume(consumer);
         assertEquals(MESSAGES, consumer.lastMsg);
-        
+
         queue.close();
     }
 
@@ -73,7 +74,7 @@ public class JCQueueBackpressureTest {
         queue.consume(new TestConsumer(), () -> consumeCount.increment() <= 1);
         assertEquals(CAPACITY - 1, queue.size());
         assertTrue(queue.tryPublish(0));
-        
+
         queue.close();
     }
 
@@ -88,7 +89,8 @@ public class JCQueueBackpressureTest {
         }
 
         @Override
-        public void flush() throws InterruptedException { }
+        public void flush() throws InterruptedException {
+        }
     }
 
 }

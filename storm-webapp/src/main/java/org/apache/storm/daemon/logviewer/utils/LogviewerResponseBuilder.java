@@ -22,7 +22,6 @@ import static j2html.TagCreator.body;
 import static j2html.TagCreator.h2;
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
-import com.codahale.metrics.Meter;
 import com.google.common.io.ByteStreams;
 
 import jakarta.ws.rs.core.MediaType;
@@ -30,11 +29,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
 
 import org.apache.storm.daemon.common.JsonResponseBuilder;
 import org.apache.storm.daemon.ui.UIHelpers;
@@ -69,25 +65,17 @@ public class LogviewerResponseBuilder {
     }
 
     /**
-     * Build a Response object representing download a file.
+     * Build a Response object representing download of an already opened file.
      *
      * @param contentDispositionName The name to set in the Content-Disposition header
-     * @param file file to download
+     * @param is the opened file; it is read and then closed when the response is written
      */
-    public static Response buildDownloadFile(String contentDispositionName,
-        File file, Meter numFileDownloadExceptions) throws IOException {
-        try {
-            // do not close this InputStream in method: it will be used from jetty server
-            InputStream is = Files.newInputStream(file.toPath());
-            return Response.status(jakarta.ws.rs.core.Response.Status.OK)
-                    .entity(wrapWithStreamingOutput(is))
-                    .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                    .header("Content-Disposition", "attachment; filename=\"" + contentDispositionName + "\"")
-                    .build();
-        } catch (IOException e) {
-            numFileDownloadExceptions.mark();
-            throw e;
-        }
+    public static Response buildDownloadFile(String contentDispositionName, InputStream is) {
+        return Response.status(jakarta.ws.rs.core.Response.Status.OK)
+                .entity(wrapWithStreamingOutput(is))
+                .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+                .header("Content-Disposition", "attachment; filename=\"" + contentDispositionName + "\"")
+                .build();
     }
 
     /**
@@ -142,15 +130,18 @@ public class LogviewerResponseBuilder {
     }
 
     private static StreamingOutput wrapWithStreamingOutput(final InputStream inputStream) {
+        //The input is closed once it has been written (or the write failed), Jersey does not close it for a StreamingOutput
         return os -> {
-            OutputStream wrappedOutputStream = os;
-            if (!(os instanceof BufferedOutputStream)) {
-                wrappedOutputStream = new BufferedOutputStream(os);
+            try (InputStream is = inputStream) {
+                OutputStream wrappedOutputStream = os;
+                if (!(os instanceof BufferedOutputStream)) {
+                    wrappedOutputStream = new BufferedOutputStream(os);
+                }
+
+                ByteStreams.copy(is, wrappedOutputStream);
+
+                wrappedOutputStream.flush();
             }
-
-            ByteStreams.copy(inputStream, wrappedOutputStream);
-
-            wrappedOutputStream.flush();
         };
     }
 

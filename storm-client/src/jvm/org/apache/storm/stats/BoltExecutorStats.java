@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.storm.daemon.Task;
 import org.apache.storm.generated.BoltStats;
 import org.apache.storm.generated.ExecutorSpecificStats;
@@ -58,13 +57,15 @@ public class BoltExecutorStats extends CommonStats {
         super.cleanupStats();
     }
 
-    public void boltExecuteTuple(String component, String stream, long latencyMs, long workerUptimeSecs,
+    public void boltExecuteTuple(String component, String stream, long latencyMs,
+            long workerUptimeSecs,
                                  Task firstExecutorTask) {
         List key = Lists.newArrayList(component, stream);
         this.getExecuted().incBy(key, this.rate);
         this.getExecuteLatencies().record(key, latencyMs);
 
-        // Calculate capacity:  This is really for the whole executor, but we will use the executor's first task
+        // Calculate capacity: This is really for the whole executor, but we will use the executor's
+        // first task
         // for reporting the metric.
         double capacity = calculateCapacity(workerUptimeSecs);
         firstExecutorTask.getTaskMetrics().setCapacity(capacity);
@@ -72,8 +73,10 @@ public class BoltExecutorStats extends CommonStats {
 
     private double calculateCapacity(long workerUptimeSecs) {
         if (workerUptimeSecs > 0) {
-            Map<String, Double> execAvg = valueStat(this.getExecuteLatencies()).get(MultiCountStat.TEN_MIN_IN_SECONDS_STR);
-            Map<String, Long> exec = valueStat(this.getExecuted()).get(MultiCountStat.TEN_MIN_IN_SECONDS_STR);
+            Map<String, Double> execAvg = valueStat(this.getExecuteLatencies())
+                    .get(MultiCountStat.TEN_MIN_IN_SECONDS_STR);
+            Map<String, Long> exec = valueStat(this.getExecuted())
+                    .get(MultiCountStat.TEN_MIN_IN_SECONDS_STR);
 
             Set<Object> allKeys = new HashSet<>();
             if (execAvg != null) {
@@ -90,7 +93,8 @@ public class BoltExecutorStats extends CommonStats {
                 totalAvg += avg * cnt;
             }
 
-            return totalAvg / (Math.min(workerUptimeSecs, MultiCountStat.TEN_MIN_IN_SECONDS) * 1000);
+            return totalAvg / (Math.min(workerUptimeSecs,
+                    MultiCountStat.TEN_MIN_IN_SECONDS) * 1000);
         }
         return 0.0;
     }
@@ -128,11 +132,16 @@ public class BoltExecutorStats extends CommonStats {
 
         // bolt stats
         BoltStats boltStats = new BoltStats(
-            ClientStatsUtil.windowSetConverter(valueStat(getAcked()), ClientStatsUtil.TO_GSID, ClientStatsUtil.IDENTITY),
-            ClientStatsUtil.windowSetConverter(valueStat(getFailed()), ClientStatsUtil.TO_GSID, ClientStatsUtil.IDENTITY),
-            ClientStatsUtil.windowSetConverter(valueStat(processLatencyStats), ClientStatsUtil.TO_GSID, ClientStatsUtil.IDENTITY),
-            ClientStatsUtil.windowSetConverter(valueStat(executedStats), ClientStatsUtil.TO_GSID, ClientStatsUtil.IDENTITY),
-            ClientStatsUtil.windowSetConverter(valueStat(executeLatencyStats), ClientStatsUtil.TO_GSID, ClientStatsUtil.IDENTITY));
+                ClientStatsUtil.windowSetConverter(valueStat(getAcked()), ClientStatsUtil.TO_GSID,
+                ClientStatsUtil.IDENTITY),
+                ClientStatsUtil.windowSetConverter(valueStat(getFailed()), ClientStatsUtil.TO_GSID,
+                ClientStatsUtil.IDENTITY),
+                ClientStatsUtil.windowSetConverter(valueStat(processLatencyStats),
+                ClientStatsUtil.TO_GSID, ClientStatsUtil.IDENTITY),
+                ClientStatsUtil.windowSetConverter(valueStat(executedStats),
+                ClientStatsUtil.TO_GSID, ClientStatsUtil.IDENTITY),
+                ClientStatsUtil.windowSetConverter(valueStat(executeLatencyStats),
+                ClientStatsUtil.TO_GSID, ClientStatsUtil.IDENTITY));
         ret.set_specific(ExecutorSpecificStats.bolt(boltStats));
 
         return ret;

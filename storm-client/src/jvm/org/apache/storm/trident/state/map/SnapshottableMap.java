@@ -17,7 +17,6 @@ import java.util.List;
 import org.apache.storm.trident.state.ValueUpdater;
 import org.apache.storm.trident.state.snapshot.Snapshottable;
 
-
 public class SnapshottableMap<T> implements MapState<T>, Snapshottable<T> {
     MapState<T> delegate;
     List<List<Object>> keys;

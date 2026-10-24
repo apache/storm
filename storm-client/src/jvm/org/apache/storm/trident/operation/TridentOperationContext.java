@@ -65,10 +65,11 @@ public class TridentOperationContext implements IMetricsContext {
     }
 
     @Override
-    public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
+    public CombinedMetric registerMetric(String name, ICombiner combiner,
+        int timeBucketSizeInSecs) {
         return topoContext.registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }
-    
+
     @Override
     public Timer registerTimer(String name) {
         return topoContext.registerTimer(name);

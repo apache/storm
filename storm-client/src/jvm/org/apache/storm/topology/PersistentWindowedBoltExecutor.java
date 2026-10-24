@@ -41,8 +41,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Wraps a {@link IStatefulWindowedBolt} and handles the execution. Uses state and the underlying checkpointing mechanisms to save the
- * tuples in window to state. The tuples are also kept in-memory by transparently caching the window partitions and checkpointing them as
+ * Wraps a {@link IStatefulWindowedBolt} and handles the execution. Uses state and the underlying
+ * checkpointing mechanisms to save the
+ * tuples in window to state. The tuples are also kept in-memory by transparently caching the window
+ * partitions and checkpointing them as
  * needed.
  */
 public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBoltExecutor implements IStatefulBolt<T> {
@@ -60,8 +62,10 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-        List<String> registrations = (List<String>) topoConf.getOrDefault(Config.TOPOLOGY_STATE_KRYO_REGISTER, new ArrayList<>());
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
+        List<String> registrations = (List<String>) topoConf
+                .getOrDefault(Config.TOPOLOGY_STATE_KRYO_REGISTER, new ArrayList<>());
         registrations.add(ConcurrentLinkedQueue.class.getName());
         registrations.add(LinkedList.class.getName());
         registrations.add(AtomicInteger.class.getName());
@@ -69,7 +73,8 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
         registrations.add(WindowPartition.class.getName());
         registrations.add(DefaultEvictionContext.class.getName());
         topoConf.put(Config.TOPOLOGY_STATE_KRYO_REGISTER, registrations);
-        prepare(topoConf, context, collector, getWindowState(topoConf, context), getPartitionState(topoConf, context),
+        prepare(topoConf, context, collector, getWindowState(topoConf, context),
+                getPartitionState(topoConf, context),
                 getWindowSystemState(topoConf, context));
     }
 
@@ -81,7 +86,7 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
         outputCollector = collector;
         this.windowSystemState = windowSystemState;
         state = new WindowState<>(windowState, partitionState, windowSystemState, this::getState,
-                                  statefulWindowedBolt.maxEventsInMemory());
+                statefulWindowedBolt.maxEventsInMemory());
         doPrepare(topoConf, context, new NoAckOutputCollector(collector), state, true);
         restoreWindowSystemState();
     }
@@ -107,15 +112,16 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
         int timeout = getTopologyTimeoutMillis(topoConf);
         if (interval > timeout) {
             throw new IllegalArgumentException(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL + interval
-                                               + " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS
-                                               + " value " + timeout);
+                    + " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS
+                    + " value " + timeout);
         }
     }
 
     private int getCheckpointIntervalMillis(Map<String, Object> topoConf) {
         int checkpointInterval = Integer.MAX_VALUE;
         if (topoConf.get(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL) != null) {
-            checkpointInterval = ((Number) topoConf.get(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL)).intValue();
+            checkpointInterval = ((Number) topoConf.get(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL))
+                    .intValue();
         }
         return checkpointInterval;
     }
@@ -132,7 +138,8 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
     @Override
     public void execute(Tuple input) {
         if (!stateInitialized) {
-            throw new IllegalStateException("execute invoked before initState with input tuple " + input);
+            throw new IllegalStateException("execute invoked before initState with input tuple "
+                    + input);
         }
         super.execute(input);
         // StatefulBoltExecutor does the actual ack when the state is saved.
@@ -206,8 +213,10 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
                                      Supplier<Iterator<Tuple>> expiredIt,
                                      Long timestamp) {
                 /*
-                 * Here we don't set the tuples in windowedOutputCollector's context and emit un-anchored.
-                 * The checkpoint tuple will trigger a checkpoint in the receiver with the emitted tuples.
+                 * Here we don't set the tuples in windowedOutputCollector's context and emit
+                 * un-anchored.
+                 * The checkpoint tuple will trigger a checkpoint in the receiver with the emitted
+                 * tuples.
                  */
                 boltExecute(eventsIt, newEventsIt, expiredIt, timestamp);
                 state.clearIteratorPins();
@@ -215,23 +224,32 @@ public class PersistentWindowedBoltExecutor<T extends State> extends WindowedBol
         };
     }
 
-    private KeyValueState<Long, WindowPartition<Tuple>> getWindowState(Map<String, Object> topoConf, TopologyContext context) {
+    private KeyValueState<Long, WindowPartition<Tuple>> getWindowState(Map<String, Object> topoConf,
+            TopologyContext context) {
         String namespace = context.getThisComponentId() + "-" + context.getThisTaskId() + "-window";
-        return (KeyValueState<Long, WindowPartition<Tuple>>) StateFactory.getState(namespace, topoConf, context);
+        return (KeyValueState<Long, WindowPartition<Tuple>>) StateFactory.getState(namespace,
+                topoConf, context);
     }
 
-    private KeyValueState<String, Deque<Long>> getPartitionState(Map<String, Object> topoConf, TopologyContext context) {
-        String namespace = context.getThisComponentId() + "-" + context.getThisTaskId() + "-window-partitions";
-        return (KeyValueState<String, Deque<Long>>) StateFactory.getState(namespace, topoConf, context);
+    private KeyValueState<String, Deque<Long>> getPartitionState(Map<String, Object> topoConf,
+            TopologyContext context) {
+        String namespace = context.getThisComponentId() + "-" + context.getThisTaskId()
+                + "-window-partitions";
+        return (KeyValueState<String, Deque<Long>>) StateFactory.getState(namespace, topoConf,
+                context);
     }
 
-    private KeyValueState<String, Optional<?>> getWindowSystemState(Map<String, Object> topoConf, TopologyContext context) {
-        String namespace = context.getThisComponentId() + "-" + context.getThisTaskId() + "-window-systemstate";
-        return (KeyValueState<String, Optional<?>>) StateFactory.getState(namespace, topoConf, context);
+    private KeyValueState<String, Optional<?>> getWindowSystemState(Map<String, Object> topoConf,
+            TopologyContext context) {
+        String namespace = context.getThisComponentId() + "-" + context.getThisTaskId()
+                + "-window-systemstate";
+        return (KeyValueState<String, Optional<?>>) StateFactory.getState(namespace, topoConf,
+                context);
     }
 
     /**
-     * Creates an {@link OutputCollector} wrapper that ignores acks. The {@link PersistentWindowedBoltExecutor} acks the tuples in execute
+     * Creates an {@link OutputCollector} wrapper that ignores acks. The {@link
+     * PersistentWindowedBoltExecutor} acks the tuples in execute
      * and this is to prevent double ack-ing
      */
     private static class NoAckOutputCollector extends OutputCollector {

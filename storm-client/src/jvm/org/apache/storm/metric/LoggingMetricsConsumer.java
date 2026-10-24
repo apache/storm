@@ -21,32 +21,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Listens for all metrics, dumps them to log
+ * Listens for all metrics, dumps them to log.
  *
  * <p>To use, add this to your topology's configuration:
  *
- * <p>```java conf.registerMetricsConsumer(org.apache.storm.metrics.LoggingMetricsConsumer.class, 1); ```
+ * <p>```java conf.registerMetricsConsumer(org.apache.storm.metrics.LoggingMetricsConsumer.class,
+ * 1); ```
  *
  * <p>Or edit the storm.yaml config file:
  *
- * <p>```yaml topology.metrics.consumer.register: - class: "org.apache.storm.metrics.LoggingMetricsConsumer" parallelism.hint: 1 ```
+ * <p>```yaml topology.metrics.consumer.register: - class:
+ * "org.apache.storm.metrics.LoggingMetricsConsumer" parallelism.hint: 1 ```
  */
 public class LoggingMetricsConsumer implements IMetricsConsumer {
     public static final Logger LOG = LoggerFactory.getLogger(LoggingMetricsConsumer.class);
     private static String padding = "                       ";
 
     @Override
-    public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
+    public void prepare(Map<String, Object> topoConf, Object registrationArgument,
+        TopologyContext context, IErrorReporter errorReporter) {
     }
 
     @Override
     public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
         StringBuilder sb = new StringBuilder();
         String header = String.format("%d\t%15s:%-4d\t%3d:%-11s\t",
-                                      taskInfo.timestamp,
-                                      taskInfo.srcWorkerHost, taskInfo.srcWorkerPort,
-                                      taskInfo.srcTaskId,
-                                      taskInfo.srcComponentId);
+                taskInfo.timestamp,
+                taskInfo.srcWorkerHost, taskInfo.srcWorkerPort,
+                taskInfo.srcTaskId,
+                taskInfo.srcComponentId);
         sb.append(header);
         for (DataPoint p : dataPoints) {
             sb.delete(header.length(), sb.length());

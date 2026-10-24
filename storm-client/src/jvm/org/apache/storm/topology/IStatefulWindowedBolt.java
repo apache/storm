@@ -19,9 +19,10 @@ import org.apache.storm.state.State;
  */
 public interface IStatefulWindowedBolt<T extends State> extends IStatefulComponent<T>, IWindowedBolt {
     /**
-     * If the stateful windowed bolt should have its windows persisted in state and maintain a subset of events in memory.
-     * <p>
-     * The default is to keep all the window events in memory.
+     * If the stateful windowed bolt should have its windows persisted in state and maintain a
+     * subset of events in memory.
+     *
+     * <p>The default is to keep all the window events in memory.
      * </p>
      *
      * @return true if the windows should be persisted

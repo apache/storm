@@ -18,6 +18,11 @@
 
 package org.apache.storm.state;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
@@ -31,13 +36,8 @@ import org.apache.storm.spout.CheckPointState;
 import org.junit.jupiter.api.Test;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 /**
- * Unit tests for {@link DefaultStateSerializer}
+ * Unit tests for {@link DefaultStateSerializer}.
  */
 public class DefaultStateSerializerTest {
 
@@ -58,21 +58,24 @@ public class DefaultStateSerializerTest {
         List<Class<?>> classesToRegister = new ArrayList<>();
         classesToRegister.add(CheckPointState.class);
         classesToRegister.add(CheckPointState.State.class);
-        Serializer<CheckPointState> s3 = new DefaultStateSerializer<>(Collections.emptyMap(), null, classesToRegister);
+        Serializer<CheckPointState> s3 = new DefaultStateSerializer<>(Collections.emptyMap(), null,
+                classesToRegister);
         bytes = s3.serialize(cs);
         assertEquals(cs, s3.deserialize(bytes));
 
     }
 
     /**
-     * The encoder wraps every value as Optional&lt;byte[]&gt;, so byte[] must round-trip even though
+     * The encoder wraps every value as Optional&lt;byte[]&gt;, so byte[] must round-trip even
+     * though
      * no caller registers it explicitly.
      */
     @Test
     public void testDefaultStateEncoderRoundTrip() {
         DefaultStateEncoder<String, byte[]> encoder =
-            new DefaultStateEncoder<>(new DefaultStateSerializer<>(), new DefaultStateSerializer<>());
-        byte[] value = new byte[]{ 1, 2, 3 };
+                new DefaultStateEncoder<>(new DefaultStateSerializer<>(),
+                new DefaultStateSerializer<>());
+        byte[] value = new byte[] {1, 2, 3};
 
         assertEquals("k", encoder.decodeKey(encoder.encodeKey("k")));
         assertArrayEquals(value, encoder.decodeValue(encoder.encodeValue(value)));
@@ -86,19 +89,22 @@ public class DefaultStateSerializerTest {
         // or an unrelated writer could have left in the store
         Kryo permissive = new Kryo();
         permissive.setRegistrationRequired(false);
-        permissive.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+        permissive
+                .setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
         Output out = new Output(4096);
         permissive.writeClassAndObject(out, new UnregisteredPojo());
         byte[] unregisteredClassBytes = out.toBytes();
 
         Serializer<Object> serializer = new DefaultStateSerializer<>();
-        assertThrows(IllegalArgumentException.class, () -> serializer.deserialize(unregisteredClassBytes));
+        assertThrows(IllegalArgumentException.class, () -> serializer
+                .deserialize(unregisteredClassBytes));
     }
 
     @Test
     public void testSerializeRejectsUnregisteredClasses() {
         Serializer<Object> serializer = new DefaultStateSerializer<>();
-        assertThrows(IllegalArgumentException.class, () -> serializer.serialize(new UnregisteredPojo()));
+        assertThrows(IllegalArgumentException.class, () -> serializer
+                .serialize(new UnregisteredPojo()));
     }
 
     @Test
@@ -115,14 +121,15 @@ public class DefaultStateSerializerTest {
     }
 
     /**
-     * Replica of the serializer as it behaved before registration was required: unregistered classes
+     * Replica of the serializer as it behaved before registration was required: unregistered
+     * classes
      * are written by name. State persisted by earlier releases is in this format.
      */
     private static Kryo legacyKryo() {
         Kryo k = new Kryo();
         k.setRegistrationRequired(false);
         org.apache.storm.serialization.SerializationFactory.register(
-            k, Collections.singletonList(java.util.Optional.class.getName()));
+                k, Collections.singletonList(java.util.Optional.class.getName()));
         k.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
         return k;
     }
@@ -147,7 +154,8 @@ public class DefaultStateSerializerTest {
     @Test
     public void testSequentialReadsOfLegacyEncodedState() {
         DefaultStateEncoder<String, Object> encoder =
-            new DefaultStateEncoder<>(new DefaultStateSerializer<>(), new DefaultStateSerializer<>());
+                new DefaultStateEncoder<>(new DefaultStateSerializer<>(),
+                new DefaultStateSerializer<>());
 
         assertEquals("first", encoder.decodeValue(legacyEncodeValue("first")));
         assertEquals("second", encoder.decodeValue(legacyEncodeValue("second")));
@@ -161,13 +169,15 @@ public class DefaultStateSerializerTest {
     @Test
     public void testRejectedPayloadDoesNotBreakLaterReads() {
         DefaultStateEncoder<String, Object> encoder =
-            new DefaultStateEncoder<>(new DefaultStateSerializer<>(), new DefaultStateSerializer<>());
+                new DefaultStateEncoder<>(new DefaultStateSerializer<>(),
+                new DefaultStateSerializer<>());
 
         assertThrows(IllegalArgumentException.class,
-            () -> encoder.decodeValue(legacyWrite(new UnregisteredPojo())));
+                () -> encoder.decodeValue(legacyWrite(new UnregisteredPojo())));
 
         // a legitimate value, in both the current and the legacy encoding
         assertEquals("still-works", encoder.decodeValue(encoder.encodeValue("still-works")));
-        assertEquals("legacy-still-works", encoder.decodeValue(legacyEncodeValue("legacy-still-works")));
+        assertEquals("legacy-still-works", encoder
+                .decodeValue(legacyEncodeValue("legacy-still-works")));
     }
 }

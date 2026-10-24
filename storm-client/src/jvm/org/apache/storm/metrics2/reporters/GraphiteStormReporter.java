@@ -17,7 +17,6 @@ import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.codahale.metrics.graphite.GraphiteUDP;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +50,8 @@ public class GraphiteStormReporter extends ScheduledStormReporter {
     }
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf,  Map<String, Object> reporterConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf, Map<String,
+        Object> reporterConf) {
         LOG.debug("Preparing...");
         GraphiteReporter.Builder builder = GraphiteReporter.forRegistry(metricsRegistry);
 
@@ -74,10 +74,10 @@ public class GraphiteStormReporter extends ScheduledStormReporter {
             builder.prefixedWith(prefix);
         }
 
-        //defaults to 10
+        // defaults to 10
         reportingPeriod = getReportPeriod(reporterConf);
 
-        //defaults to seconds
+        // defaults to seconds
         reportingPeriodUnit = getReportPeriodUnit(reporterConf);
 
         // Not exposed:

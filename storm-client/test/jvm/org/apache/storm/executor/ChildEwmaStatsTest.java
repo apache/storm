@@ -12,13 +12,13 @@
 
 package org.apache.storm.executor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.metrics2.TaskMetrics;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link ChildEwmaStats}: the per-source-task aggregation of downstream jitter
@@ -71,12 +71,14 @@ public class ChildEwmaStatsTest {
         ChildEwmaStats stats = new ChildEwmaStats(true);
         stats.update(PARENT, CHILD_A, new EwmaFeedbackRecord(1, 1, 1));
         stats.update(PARENT, CHILD_A, new EwmaFeedbackRecord(9, 9, 9));
-        assertEquals(9.0, stats.getStats(PARENT).get(CHILD_A).get(TaskMetrics.METRIC_NAME_EXECUTE_JITTER));
+        assertEquals(9.0, stats.getStats(PARENT).get(CHILD_A)
+                .get(TaskMetrics.METRIC_NAME_EXECUTE_JITTER));
     }
 
     @Test
     public void update_absentMetricNotStored() {
-        // VOID-valued components are skipped by EwmaFeedbackRecord#forEachMetric, so they never reach the map.
+        // VOID-valued components are skipped by EwmaFeedbackRecord#forEachMetric, so they never
+        // reach the map.
         ChildEwmaStats stats = new ChildEwmaStats(true);
         stats.update(PARENT, CHILD_A, new EwmaFeedbackRecord(-1, -1, 5.0));
         Map<String, Double> child = stats.getStats(PARENT).get(CHILD_A);

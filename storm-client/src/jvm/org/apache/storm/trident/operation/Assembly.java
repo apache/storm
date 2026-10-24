@@ -14,9 +14,9 @@ package org.apache.storm.trident.operation;
 
 import org.apache.storm.trident.Stream;
 
-
 /**
- * The `Assembly` interface provides a means to encapsulate logic applied to a {@link org.apache.storm.trident.Stream}.
+ * The `Assembly` interface provides a means to encapsulate logic applied to a {@link
+ * org.apache.storm.trident.Stream}.
  *
  * <p>Usage:
  *

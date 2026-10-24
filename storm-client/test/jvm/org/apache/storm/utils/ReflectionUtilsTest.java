@@ -35,41 +35,48 @@ public class ReflectionUtilsTest {
     public void testSchedulerStrategyWithoutWhitelistOnlyAllowsShippedStrategies() {
         Map<String, Object> conf = new HashMap<>();
         DisallowedStrategyException e = assertThrows(DisallowedStrategyException.class,
-            () -> ReflectionUtils.newSchedulerStrategyInstance("java.util.HashMap", conf));
+                () -> ReflectionUtils.newSchedulerStrategyInstance("java.util.HashMap", conf));
         assertEquals("java.util.HashMap", e.getAttemptedClass());
         assertEquals(ReflectionUtils.DEFAULT_SCHEDULER_STRATEGIES, e.getAllowedStrategies());
 
         for (String strategy : ReflectionUtils.DEFAULT_SCHEDULER_STRATEGIES) {
-            // The strategies themselves live in storm-server, so they cannot be loaded here, but they must pass the whitelist check.
+            // The strategies themselves live in storm-server, so they cannot be loaded here, but
+            // they must pass the whitelist check.
             RuntimeException notFound = assertThrows(RuntimeException.class,
-                () -> ReflectionUtils.newSchedulerStrategyInstance(strategy, conf));
-            assertTrue(notFound.getCause() instanceof ClassNotFoundException, "unexpected failure for " + strategy);
+                    () -> ReflectionUtils.newSchedulerStrategyInstance(strategy, conf));
+            assertTrue(notFound.getCause() instanceof ClassNotFoundException,
+                    "unexpected failure for " + strategy);
         }
     }
 
     @Test
     public void testSchedulerStrategyMessageNamesTheClassAndTheConfigToChange() {
         DisallowedStrategyException e = assertThrows(DisallowedStrategyException.class,
-            () -> ReflectionUtils.newSchedulerStrategyInstance("com.example.CustomStrategy", new HashMap<>()));
+                () -> ReflectionUtils.newSchedulerStrategyInstance("com.example.CustomStrategy",
+                    new HashMap<>()));
         assertTrue(e.getMessage().contains("com.example.CustomStrategy"), e.getMessage());
-        assertTrue(e.getMessage().contains(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST), e.getMessage());
+        assertTrue(e.getMessage().contains(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST), e
+                .getMessage());
     }
 
     @Test
     public void testSchedulerStrategyWithWhitelist() {
         Map<String, Object> conf = new HashMap<>();
-        conf.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, Collections.singletonList("java.util.HashMap"));
+        conf.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, Collections
+                .singletonList("java.util.HashMap"));
         Object instance = ReflectionUtils.newSchedulerStrategyInstance("java.util.HashMap", conf);
         assertEquals(HashMap.class, instance.getClass());
 
         conf.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, Collections.emptyList());
-        assertThrows(DisallowedStrategyException.class, () -> ReflectionUtils.newSchedulerStrategyInstance("java.util.HashMap", conf));
+        assertThrows(DisallowedStrategyException.class, () -> ReflectionUtils
+                .newSchedulerStrategyInstance("java.util.HashMap", conf));
     }
 
     @Test
     public void testDefaultsYamlMatchesTheShippedStrategies() {
         List<String> fromDefaults =
-            (List<String>) Utils.readDefaultConfig().get(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST);
+                (List<String>) Utils.readDefaultConfig()
+                .get(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST);
         assertEquals(ReflectionUtils.DEFAULT_SCHEDULER_STRATEGIES, fromDefaults);
     }
 }

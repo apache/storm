@@ -12,6 +12,10 @@
 
 package org.apache.storm.serialization;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
@@ -23,10 +27,6 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.ListDelegate;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SerializationFactoryTest {
 
@@ -60,7 +60,8 @@ public class SerializationFactoryTest {
     @Test
     public void test_registers_decorator_with_conf() {
         Map<String, Object> conf = Utils.readDefaultConfig();
-        conf.put(Config.TOPOLOGY_KRYO_DECORATORS, java.util.Collections.singletonList(MockKryoDecorator.class.getName()));
+        conf.put(Config.TOPOLOGY_KRYO_DECORATORS, java.util.Collections
+                .singletonList(MockKryoDecorator.class.getName()));
         conf.put("test_key", "test_value");
         Kryo kryo = SerializationFactory.getKryo(conf);
         assertEquals(com.esotericsoftware.kryo.serializers.DefaultSerializers.StringSerializer.class,
@@ -71,7 +72,8 @@ public class SerializationFactoryTest {
     public void test_get_stream_name_null_for_unknown_component() {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new TestWordSpout(true), 1);
-        SerializationFactory.IdDictionary ids = new SerializationFactory.IdDictionary(builder.createTopology());
+        SerializationFactory.IdDictionary ids = new SerializationFactory.IdDictionary(builder
+                .createTopology());
 
         assertNull(ids.getStreamName("no-such-component", 1));
     }
@@ -80,7 +82,9 @@ public class SerializationFactoryTest {
         @Override
         public void decorate(Kryo k, Map<String, Object> conf) {
             if ("test_value".equals(conf.get("test_key"))) {
-                k.register(MockSerObject.class, new com.esotericsoftware.kryo.serializers.DefaultSerializers.StringSerializer());
+                k.register(MockSerObject.class,
+                        new com.esotericsoftware.kryo.serializers.DefaultSerializers
+                        .StringSerializer());
             }
         }
     }

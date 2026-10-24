@@ -13,12 +13,12 @@
 package org.apache.storm.security.auth;
 
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class X509CertOrKerberosPrincipalToLocal implements IPrincipalToLocal {
-    private static final Logger LOG = LoggerFactory.getLogger(X509CertOrKerberosPrincipalToLocal.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(X509CertOrKerberosPrincipalToLocal.class);
 
     X509CertPrincipalToLocal x509CertPrincipalToLocal;
     KerberosPrincipalToLocal kerberosPrincipalToLocal;
@@ -38,16 +38,19 @@ public class X509CertOrKerberosPrincipalToLocal implements IPrincipalToLocal {
         try {
             localName = x509CertPrincipalToLocal.toLocal(principalName);
             LOG.debug("{} translates principal {} to {}",
-                    x509CertPrincipalToLocal.getClass().getCanonicalName(), principalName, localName);
+                    x509CertPrincipalToLocal.getClass()
+                    .getCanonicalName(), principalName, localName);
         } catch (RuntimeException e) {
-            //ignore x509CertPrincipalToLocal error.
-            LOG.debug("Error reading localName from x509CertPrincipalToLocal. The error will be ignored. Error: {}", e.getMessage());
+            // ignore x509CertPrincipalToLocal error.
+            LOG.debug("Error reading localName from x509CertPrincipalToLocal. The error will be "
+                    + "ignored. Error: {}", e.getMessage());
         }
 
         if (localName == null) {
             localName = kerberosPrincipalToLocal.toLocal(principalName);
             LOG.debug("{} translates principal {} to {}",
-                    kerberosPrincipalToLocal.getClass().getCanonicalName(), principalName, localName);
+                    kerberosPrincipalToLocal.getClass()
+                    .getCanonicalName(), principalName, localName);
         }
 
         return localName;

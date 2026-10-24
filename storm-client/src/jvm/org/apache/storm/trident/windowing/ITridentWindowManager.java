@@ -23,7 +23,8 @@ public interface ITridentWindowManager {
 
     /**
      * This is invoked from {@code org.apache.storm.trident.planner.TridentProcessor}'s  prepare method. So any initialization tasks can be
-     * done before the topology starts accepting tuples. For ex: initialize window manager with any earlier stored tuples/triggers and start
+     * done before the topology starts accepting tuples. For ex: initialize window manager with any
+     * earlier stored tuples/triggers and start
      * WindowManager.
      */
     void prepare();

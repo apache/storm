@@ -16,7 +16,8 @@ import org.apache.storm.trident.operation.BaseFilter;
 import org.apache.storm.trident.tuple.TridentTuple;
 
 /**
- * Simple `Filter` implementation that filters out any tuples that have fields with a value of `null`.
+ * Simple `Filter` implementation that filters out any tuples that have fields with a value of
+ * `null`.
  */
 public class FilterNull extends BaseFilter {
     @Override

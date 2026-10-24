@@ -76,10 +76,10 @@ public class SimpleTransportPlugin implements ITransportPlugin {
 
         if (queueSize != null) {
             serverArgs.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
-                                                               60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
+                    60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
         }
 
-        //construct THsHaServer
+        // construct THsHaServer
         return new THsHaServer(serverArgs);
     }
 
@@ -91,12 +91,13 @@ public class SimpleTransportPlugin implements ITransportPlugin {
      * @param asUser     unused
      */
     @Override
-    public TTransport connect(TTransport transport, String serverHost, String asUser) throws TTransportException {
+    public TTransport connect(TTransport transport, String serverHost,
+        String asUser) throws TTransportException {
         int maxBufferSize = type.getMaxBufferSize(topoConf);
-        //create a framed transport
+        // create a framed transport
         TTransport conn = new TFramedTransport(transport, maxBufferSize);
 
-        //connect
+        // connect
         conn.open();
         LOG.debug("Simple client transport has been established");
 
@@ -105,6 +106,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
 
     /**
      * Get default subject.
+     *
      * @return the subject that will be used for all connections
      */
     protected Subject getDefaultSubject() {
@@ -117,7 +119,8 @@ public class SimpleTransportPlugin implements ITransportPlugin {
     }
 
     /**
-     * Processor that populate simple transport info into ReqContext, and then invoke a service handler.
+     * Processor that populate simple transport info into ReqContext, and then invoke a service
+     * handler.
      */
     private class SimpleWrapProcessor implements TProcessor {
         final TProcessor wrapped;
@@ -128,7 +131,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
 
         @Override
         public void process(final TProtocol inProt, final TProtocol outProt) throws TException {
-            //populating request context 
+            // populating request context 
             ReqContext reqContext = ReqContext.context();
 
             TTransport trans = inProt.getTransport();
@@ -140,12 +143,12 @@ public class SimpleTransportPlugin implements ITransportPlugin {
                 }
             } else if (trans instanceof TSocket) {
                 TSocket tsocket = (TSocket) trans;
-                //remote address
+                // remote address
                 Socket socket = tsocket.getSocket();
                 reqContext.setRemoteAddress(socket.getInetAddress());
             }
 
-            //anonymous user
+            // anonymous user
             Subject s = getDefaultSubject();
             if (s == null) {
                 final String user = (String) topoConf.get("debug.simple.transport.user");
@@ -167,7 +170,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             }
             reqContext.setSubject(s);
 
-            //invoke service handler
+            // invoke service handler
             wrapped.process(inProt, outProt);
         }
     }

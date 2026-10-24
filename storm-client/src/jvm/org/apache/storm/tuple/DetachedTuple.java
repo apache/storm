@@ -20,16 +20,22 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.GeneralTopologyContext;
 
 /**
- * A self-contained, serializable copy of a {@link Tuple} that is detached from the topology context.
+ * A self-contained, serializable copy of a {@link Tuple} that is detached from the topology
+ * context.
  *
- * <p>A regular {@link TupleImpl} holds a reference to the {@link GeneralTopologyContext} it was created in, which cannot be
+ * <p>A regular {@link TupleImpl} holds a reference to the {@link GeneralTopologyContext} it was
+ * created in, which cannot be
  * serialized. A {@code DetachedTuple} instead snapshots the source component, task, stream, output fields and values of the
- * original tuple, so it can be emitted as a value inside another tuple and cross worker boundaries (see STORM-4000).
+ * original tuple, so it can be emitted as a value inside another tuple and cross worker boundaries
+ * (see STORM-4000).
  *
- * <p>Detached tuples are unanchored: {@link #getMessageId()} always returns an unanchored message id, and
- * {@link #getContext()} throws {@link UnsupportedOperationException} since no topology context is available.
+ * <p>Detached tuples are unanchored: {@link #getMessageId()} always returns an unanchored message
+ * id, and
+ * {@link #getContext()} throws {@link UnsupportedOperationException} since no topology context is
+ * available.
  *
- * <p>Unlike {@link TupleImpl}, which uses identity-based equality, two detached tuples are equal if they snapshot
+ * <p>Unlike {@link TupleImpl}, which uses identity-based equality, two detached tuples are equal if
+ * they snapshot
  * the same source metadata, fields and values, so a detached tuple keeps comparing equal after a
  * serialization round-trip.
  */
@@ -44,7 +50,8 @@ public class DetachedTuple implements Tuple, Serializable {
     private transient Fields fields;
 
     /**
-     * Creates a detached copy of the given tuple. The tuple must still be attached to its topology context, since the
+     * Creates a detached copy of the given tuple. The tuple must still be attached to its topology
+     * context, since the
      * output fields of the source component are resolved through it.
      *
      * @param tuple the tuple to detach

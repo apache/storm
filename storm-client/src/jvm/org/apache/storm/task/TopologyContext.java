@@ -42,10 +42,13 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
 /**
- * A `TopologyContext` is given to bolts and spouts in their `prepare()` and `open()` methods, respectively. This object provides
- * information about the component's place within the topology, such as task ids, inputs and outputs, etc.
+ * A `TopologyContext` is given to bolts and spouts in their `prepare()` and `open()` methods,
+ * respectively. This object provides
+ * information about the component's place within the topology, such as task ids, inputs and
+ * outputs, etc.
  *
- * <p>The `TopologyContext` is also used to declare `ISubscribedState` objects to synchronize state with StateSpouts
+ * <p>The `TopologyContext` is also used to declare `ISubscribedState` objects to synchronize state
+ * with StateSpouts
  * this object is subscribed to.
  */
 public class TopologyContext extends WorkerTopologyContext implements IMetricsContext {
@@ -78,8 +81,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
                            AtomicBoolean openOrPrepareWasCalled,
                            StormMetricRegistry metricRegistry) {
         super(topology, topoConf, taskToComponent, componentToSortedTasks,
-              componentToStreamToFields, stormId, codeDir, pidDir,
-              workerPort, workerTasks, defaultResources, userResources);
+                componentToStreamToFields, stormId, codeDir, pidDir,
+                workerPort, workerTasks, defaultResources, userResources);
         this.metricRegistry = metricRegistry;
         this.taskId = taskId;
         this.executorData = executorData;
@@ -101,7 +104,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /**
      * All state from all subscribed state spouts streams will be synced with the provided object.
      *
-     * <p>It is recommended that your ISubscribedState object is kept as an instance variable of this object. The recommended usage of this
+     * <p>It is recommended that your ISubscribedState object is kept as an instance variable of
+     * this object. The recommended usage of this
      * method is as follows:
      *
      * <p>```java _myState = context.setAllSubscribedState(new MyState()); ```
@@ -110,13 +114,14 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @return Returns the ISubscribedState object provided
      */
     public <T extends ISubscribedState> T setAllSubscribedState(T obj) {
-        //check that only subscribed to one component/stream for statespout
-        //setsubscribedstate appropriately
+        // check that only subscribed to one component/stream for statespout
+        // setsubscribedstate appropriately
         throw new NotImplementedException();
     }
 
     /**
-     * Synchronizes the default stream from the specified state spout component id with the provided ISubscribedState object.
+     * Synchronizes the default stream from the specified state spout component id with the provided
+     * ISubscribedState object.
      *
      * <p>The recommended usage of this method is as follows:
      *
@@ -131,7 +136,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Synchronizes the specified stream from the specified state spout component id with the provided ISubscribedState object.
+     * Synchronizes the specified stream from the specified state spout component id with the
+     * provided ISubscribedState object.
      *
      * <p>The recommended usage of this method is as follows:
      *
@@ -142,7 +148,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @param obj         Provided ISubscribedState implementation
      * @return Returns the ISubscribedState object provided
      */
-    public <T extends ISubscribedState> T setSubscribedState(String componentId, String streamId, T obj) {
+    public <T extends ISubscribedState> T setSubscribedState(String componentId, String streamId,
+            T obj) {
         throw new NotImplementedException();
     }
 
@@ -161,7 +168,9 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
 
     /**
      * Get component id.
-     * @return the component id for this task. The component id maps to a component id specified for a Spout or Bolt in the topology
+     *
+     * @return the component id for this task. The component id maps to a component id specified for
+     *     a Spout or Bolt in the topology
      *     definition.
      */
     public String getThisComponentId() {
@@ -169,7 +178,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Gets the declared output fields for the specified stream id for the component this task is a part of.
+     * Gets the declared output fields for the specified stream id for the component this task is a
+     * part of.
      */
     public Fields getThisOutputFields(String streamId) {
         return getComponentOutputFields(getThisComponentId(), streamId);
@@ -194,7 +204,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Gets the index of this task id in getComponentTasks(getThisComponentId()). An example use case for this method is determining which
+     * Gets the index of this task id in getComponentTasks(getThisComponentId()). An example use
+     * case for this method is determining which
      * task accesses which resource in a distributed resource to ensure an even distribution.
      */
     public int getThisTaskIndex() {
@@ -249,7 +260,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Sets the task-level data for the given name. This data is shared amongst the task and its corresponding task hooks.
+     * Sets the task-level data for the given name. This data is shared amongst the task and its
+     * corresponding task hooks.
      *
      * @param name  name of the task-level data to be set
      * @param data  task-level data
@@ -259,7 +271,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Fetches the task-level data for the given name. This data is shared amongst the task and its corresponding task hooks.
+     * Fetches the task-level data for the given name. This data is shared amongst the task and its
+     * corresponding task hooks.
      *
      * @param name  name of the task-level data to be fetched
      * @return Associated task-level data
@@ -269,7 +282,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Sets the executor-level data for the given name. This data is shared amongst tasks and corresponding task hooks managed by the
+     * Sets the executor-level data for the given name. This data is shared amongst tasks and
+     * corresponding task hooks managed by the
      * given executor.
      *
      * @param name  name of the executor-level data to be set
@@ -280,7 +294,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Fetches the executor-level data for the given name. This data is shared across tasks and corresponding task hook managed by the
+     * Fetches the executor-level data for the given name. This data is shared across tasks and
+     * corresponding task hook managed by the
      * given executor.
      *
      * @param name  name of the executor-level data to be fetched
@@ -314,7 +329,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         for (Map.Entry<String, Map<String, Grouping>> entry : this.getThisTargets().entrySet()) {
             Map<String, Object> stringTargetMap = new HashMap<>();
             for (Map.Entry<String, Grouping> innerEntry : entry.getValue().entrySet()) {
-                stringTargetMap.put(innerEntry.getKey(), groupingToJSONableMap(innerEntry.getValue()));
+                stringTargetMap.put(innerEntry.getKey(), groupingToJSONableMap(innerEntry
+                        .getValue()));
             }
             stringTargets.put(entry.getKey(), stringTargetMap);
         }
@@ -348,7 +364,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     @Override
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         if (openOrPrepareWasCalled.get()) {
-            throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden "
+            throw new RuntimeException("TopologyContext.registerMetric can only be called from "
+                    + "within overridden "
                     + "IBolt::prepare() or ISpout::open() method.");
         }
 
@@ -357,7 +374,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         }
 
         if (timeBucketSizeInSecs <= 0) {
-            throw new IllegalArgumentException("TopologyContext.registerMetric can only be called with "
+            throw new IllegalArgumentException("TopologyContext.registerMetric can only be called "
+                    + "with "
                     + "timeBucketSizeInSecs greater than or equal to 1 second.");
         }
 
@@ -399,12 +417,14 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      */
     @Deprecated
     @Override
-    public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
+    public CombinedMetric registerMetric(String name, ICombiner combiner,
+        int timeBucketSizeInSecs) {
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }
 
     /**
-     * Get component's metric from registered metrics by name. Notice: Normally, one component can only register one metric name once. But
+     * Get component's metric from registered metrics by name. Notice: Normally, one component can
+     * only register one metric name once. But
      * now registerMetric has a bug(https://issues.apache.org/jira/browse/STORM-254) cause the same metric name can register twice. So we
      * just return the first metric we meet.
      */
@@ -417,7 +437,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
             if (nameToMetric != null) {
                 metric = nameToMetric.get(name);
                 if (metric != null) {
-                    //we just return the first metric we meet
+                    // we just return the first metric we meet
                     break;
                 }
             }

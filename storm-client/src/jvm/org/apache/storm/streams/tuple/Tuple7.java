@@ -100,6 +100,7 @@ public class Tuple7<T1, T2, T3, T4, T5, T6, T7> {
 
     @Override
     public String toString() {
-        return "(" + value1 + "," + value2 + "," + value3 + "," + value4 + "," + value5 + "," + value6 + "," + value7 + ")";
+        return "(" + value1 + "," + value2 + "," + value3 + "," + value4 + "," + value5 + ","
+                + value6 + "," + value7 + ")";
     }
 }

@@ -23,13 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An assignment backend which will keep all assignments and id-info in memory. Only used if no backend is specified internal.
+ * An assignment backend which will keep all assignments and id-info in memory. Only used if no
+ * backend is specified internal.
  *
  * <p>About thread safe: idToAssignment,idToName,nameToId are all memory cache in nimbus local, for
  * <ul>
  * <li>idToAssignment: nimbus will modify it and supervisors will sync it at fixed interval,
  * so the assignments would come to eventual consistency.</li>
- * <li>idToName: storm submitting/killing is guarded by the same lock, a {@link ConcurrentHashMap} is ok.</li>
+ * <li>idToName: storm submitting/killing is guarded by the same lock, a {@link ConcurrentHashMap}
+ * is ok.</li>
  * <li>nameToId: same as <i>idToName</i>.
  * </ul>
  */
@@ -96,7 +98,8 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     public void syncRemoteAssignments(Map<String, byte[]> remote) {
         Map<String, Assignment> tmp = new ConcurrentHashMap<>();
         for (Map.Entry<String, byte[]> entry : remote.entrySet()) {
-            tmp.put(entry.getKey(), ClusterUtils.maybeDeserialize(entry.getValue(), Assignment.class));
+            tmp.put(entry.getKey(), ClusterUtils.maybeDeserialize(entry.getValue(),
+                    Assignment.class));
         }
         this.idToAssignment = tmp;
     }

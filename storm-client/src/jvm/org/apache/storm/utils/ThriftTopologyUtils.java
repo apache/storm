@@ -26,7 +26,8 @@ public class ThriftTopologyUtils {
     }
 
     public static boolean isDependencies(StormTopology._Fields f) {
-        return f.equals(StormTopology._Fields.DEPENDENCY_JARS) || f.equals(StormTopology._Fields.DEPENDENCY_ARTIFACTS);
+        return f.equals(StormTopology._Fields.DEPENDENCY_JARS) || f
+                .equals(StormTopology._Fields.DEPENDENCY_ARTIFACTS);
     }
 
     public static Set<String> getComponentIds(StormTopology topology) {

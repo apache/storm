@@ -19,7 +19,8 @@ import java.util.Map;
 import org.apache.storm.trident.util.LRUMap;
 
 /**
- * Useful to layer over a map that communicates with a database. you generally layer opaque map over this over your database store.
+ * Useful to layer over a map that communicates with a database. you generally layer opaque map over
+ * this over your database store.
  */
 public class CachedMap<T> implements IBackingMap<T> {
     LRUMap<List<Object>, T> cache;

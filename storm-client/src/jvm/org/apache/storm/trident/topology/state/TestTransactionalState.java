@@ -32,7 +32,7 @@ public class TestTransactionalState extends TransactionalState {
 
     public static void createNode(CuratorFramework curator,
                                   String rootDir, byte[] data, List<ACL> acls, CreateMode mode)
-        throws Exception {
+            throws Exception {
         TransactionalState.createNode(curator, rootDir, data, acls, mode);
     }
 }

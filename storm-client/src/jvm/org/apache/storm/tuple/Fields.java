@@ -37,7 +37,7 @@ public class Fields implements Iterable<String>, Serializable {
         for (String field : fields) {
             if (this.fields.contains(field)) {
                 throw new IllegalArgumentException(
-                    String.format("duplicate field '%s'", field)
+                        String.format("duplicate field '%s'", field)
                 );
             }
             this.fields.add(field);
@@ -46,7 +46,8 @@ public class Fields implements Iterable<String>, Serializable {
     }
 
     /**
-     * Select values out of tuple given a Fields selector Note that this function can throw a NullPointerException if the fields in selector
+     * Select values out of tuple given a Fields selector Note that this function can throw a
+     * NullPointerException if the fields in selector
      * are not found in the index.
      *
      * @param selector Fields to select
@@ -75,7 +76,8 @@ public class Fields implements Iterable<String>, Serializable {
      * Gets the field at position index in the collection.
      *
      * @param index index of the field to return
-     * @throws IndexOutOfBoundsException - if the index is out of range (index < 0 || index >= size())
+     * @throws IndexOutOfBoundsException - if the index is out of range (index < 0 || index >=
+     *     size())
      */
     public String get(int index) {
         return fields.get(index);
@@ -102,6 +104,7 @@ public class Fields implements Iterable<String>, Serializable {
 
     /**
      * Check contains.
+     *
      * @return true if this contains the specified name of the field.
      */
     public boolean contains(String field) {

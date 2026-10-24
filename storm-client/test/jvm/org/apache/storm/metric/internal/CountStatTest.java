@@ -12,14 +12,14 @@
 
 package org.apache.storm.metric.internal;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 /**
- * Unit test for CountStat
+ * Unit test for CountStat.
  */
 public class CountStatTest {
     final long TEN_MIN = 10 * 60 * 1000;
@@ -32,7 +32,7 @@ public class CountStatTest {
         long time = 0L;
         CountStat count = new CountStat(10, time);
         while (time < TEN_MIN) {
-            //For this part of the test we interleave the different rotation types.
+            // For this part of the test we interleave the different rotation types.
             count.incBy(50);
             time += THIRTY_SEC / 2;
             count.rotateSched(time);

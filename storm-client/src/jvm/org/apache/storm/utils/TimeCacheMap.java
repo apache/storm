@@ -16,18 +16,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Expires keys that have not been updated in the configured number of seconds. The algorithm used will take between expirationSecs and
+ * Expires keys that have not been updated in the configured number of seconds. The algorithm used
+ * will take between expirationSecs and
  * expirationSecs * (1 + 1 / (numBuckets-1)) to actually expire the message.
  *
  * <p>get, put, remove, containsKey, and size take O(numBuckets) time to run.
  *
- * <p>The advantage of this design is that the expiration thread only locks the object for O(1) time, meaning the object
+ * <p>The advantage of this design is that the expiration thread only locks the object for O(1)
+ * time, meaning the object
  * is essentially always available for gets/puts.
  */
-//deprecated in favor of non-threaded RotatingMap
+// deprecated in favor of non-threaded RotatingMap
 @Deprecated
 public class TimeCacheMap<K, V> {
-    //this default ensures things expire at most 50% past the expiration time
+    // this default ensures things expire at most 50% past the expiration time
     private static final int DEFAULT_NUM_BUCKETS = 3;
     private final RotatingMap<K, V> rotatingMap;
     private final Object lock = new Object();
@@ -58,7 +60,7 @@ public class TimeCacheMap<K, V> {
                         }
                     }
                 } catch (InterruptedException ex) {
-                    //ignore
+                    // ignore
                 }
             }
         });

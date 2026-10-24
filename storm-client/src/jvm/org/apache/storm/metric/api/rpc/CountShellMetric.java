@@ -30,7 +30,8 @@ public class CountShellMetric extends CountMetric implements IShellMetric {
         } else if (value instanceof Number) {
             incrBy(((Number) value).longValue());
         } else {
-            throw new RuntimeException("CountShellMetric updateMetricFromRPC params should be null or number.");
+            throw new RuntimeException("CountShellMetric updateMetricFromRPC params should be "
+                    + "null or number.");
         }
     }
 }

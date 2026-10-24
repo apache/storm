@@ -30,7 +30,6 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
     int numGroupFields;
     ComboList.Factory factory;
 
-
     public JoinerMultiReducer(List<JoinType> types, int numGroupFields, List<Fields> sides) {
         this.types = types;
         sideFields = sides;
@@ -53,9 +52,11 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
     }
 
     @Override
-    public void execute(JoinState state, int streamIndex, TridentTuple group, TridentTuple input, TridentCollector collector) {
-        //TODO: do the inner join incrementally, emitting the cross join with this tuple, against all other sides
-        //TODO: only do cross join if at least one tuple in each side
+    public void execute(JoinState state, int streamIndex, TridentTuple group, TridentTuple input,
+        TridentCollector collector) {
+        // TODO: do the inner join incrementally, emitting the cross join with this tuple, against
+        // all other sides
+        // TODO: only do cross join if at least one tuple in each side
         List<List> side = state.sides[streamIndex];
         if (side.isEmpty()) {
             state.numSidesReceived++;
@@ -94,7 +95,8 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
         return ret;
     }
 
-    private void emitCrossJoin(JoinState state, TridentCollector collector, int overrideIndex, TridentTuple overrideTuple) {
+    private void emitCrossJoin(JoinState state, TridentCollector collector, int overrideIndex,
+            TridentTuple overrideTuple) {
         List<List>[] sides = state.sides;
         int[] indices = state.indices;
         for (int i = 0; i < indices.length; i++) {
@@ -102,7 +104,7 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
         }
 
         boolean keepGoing = true;
-        //emit cross-join of all emitted tuples
+        // emit cross-join of all emitted tuples
         while (keepGoing) {
             List[] combined = new List[sides.length + 1];
             combined[0] = state.group;
@@ -118,9 +120,8 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
         }
     }
 
-
-    //return false if can't increment anymore
-    //TODO: DRY this code up with what's in ChainedAggregatorImpl
+    // return false if can't increment anymore
+    // TODO: DRY this code up with what's in ChainedAggregatorImpl
     private boolean increment(List[] lengths, int[] indices, int j, int overrideIndex) {
         if (j == -1) {
             return false;

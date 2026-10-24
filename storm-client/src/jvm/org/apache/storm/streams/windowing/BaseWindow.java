@@ -45,10 +45,12 @@ public abstract class BaseWindow<L, I> implements Window<L, I> {
 
         BaseWindow<?, ?> that = (BaseWindow<?, ?>) o;
 
-        if (timestampField != null ? !timestampField.equals(that.timestampField) : that.timestampField != null) {
+        if (timestampField != null ? !timestampField
+                .equals(that.timestampField) : that.timestampField != null) {
             return false;
         }
-        if (lateTupleStream != null ? !lateTupleStream.equals(that.lateTupleStream) : that.lateTupleStream != null) {
+        if (lateTupleStream != null ? !lateTupleStream
+                .equals(that.lateTupleStream) : that.lateTupleStream != null) {
             return false;
         }
         return lag != null ? lag.equals(that.lag) : that.lag == null;

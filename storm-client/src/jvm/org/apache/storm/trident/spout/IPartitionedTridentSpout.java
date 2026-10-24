@@ -22,14 +22,17 @@ import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.tuple.Fields;
 
 /**
- * This interface defines a transactional spout that reads its tuples from a partitioned set of brokers. It automates the storing of
- * metadata for each partition to ensure that the same batch is always emitted for the same transaction id. The partition metadata is stored
+ * This interface defines a transactional spout that reads its tuples from a partitioned set of
+ * brokers. It automates the storing of
+ * metadata for each partition to ensure that the same batch is always emitted for the same
+ * transaction id. The partition metadata is stored
  * in Zookeeper.
  */
 public interface IPartitionedTridentSpout<PartitionsT, PartitionT extends ISpoutPartition, T> extends ITridentDataSource {
     Coordinator<PartitionsT> getCoordinator(Map<String, Object> conf, TopologyContext context);
 
-    Emitter<PartitionsT, PartitionT, T> getEmitter(Map<String, Object> conf, TopologyContext context);
+    Emitter<PartitionsT, PartitionT, T> getEmitter(Map<String, Object> conf,
+            TopologyContext context);
 
     Map<String, Object> getComponentConfiguration();
 
@@ -37,8 +40,10 @@ public interface IPartitionedTridentSpout<PartitionsT, PartitionT extends ISpout
 
     interface Coordinator<PartitionsT> {
         /**
-         * Return the partitions currently in the source of data. The idea is is that if a new partition is added and a prior transaction is
-         * replayed, it doesn't emit tuples for the new partition because it knows what partitions were in that transaction.
+         * Return the partitions currently in the source of data. The idea is is that if a new
+         * partition is added and a prior transaction is
+         * replayed, it doesn't emit tuples for the new partition because it knows what partitions
+         * were in that transaction.
          */
         PartitionsT getPartitionsForBatch();
 
@@ -52,41 +57,51 @@ public interface IPartitionedTridentSpout<PartitionsT, PartitionT extends ISpout
         /**
          * Sorts given partition info to produce an ordered list of partitions.
          *
-         * @param allPartitionInfo  The partition info for all partitions being processed by all spout tasks
-         * @return sorted list of partitions being processed by all the tasks. The ordering must be consistent for all tasks.
+         * @param allPartitionInfo The partition info for all partitions being processed by all
+         *     spout tasks
+         * @return sorted list of partitions being processed by all the tasks. The ordering must be
+         *     consistent for all tasks.
          */
         List<PartitionT> getOrderedPartitions(PartitionsT allPartitionInfo);
 
         /**
-         * Emit a batch of tuples for the partitions that's never been emitted before. Return the metadata that can be used to
+         * Emit a batch of tuples for the partitions that's never been emitted before. Return the
+         * metadata that can be used to
          * reconstruct this partition/batch in the future.
          */
-        Map<PartitionT, X> emitBatchNew(TransactionAttempt tx, TridentCollector collector, Set<PartitionT> partitions,
-            Map<PartitionT, X> lastPartitionMetaMap);
+        Map<PartitionT, X> emitBatchNew(TransactionAttempt tx, TridentCollector collector,
+                Set<PartitionT> partitions,
+                                        Map<PartitionT, X> lastPartitionMetaMap);
 
         /**
-         * This method is called when this task is responsible for a new set of partitions. Should be used to manage things like connections
+         * This method is called when this task is responsible for a new set of partitions. Should
+         * be used to manage things like connections
          * to brokers.
          */
         void refreshPartitions(List<PartitionT> partitionResponsibilities);
 
         /**
-         * Emit a batch of tuples for a partition/transaction that has been emitted before, using the metadata created when it was first
+         * Emit a batch of tuples for a partition/transaction that has been emitted before, using
+         * the metadata created when it was first
          * emitted.
          */
-        void reEmitPartitionBatch(TransactionAttempt tx, TridentCollector collector, PartitionT partition, X partitionMeta);
+        void reEmitPartitionBatch(TransactionAttempt tx, TridentCollector collector,
+                PartitionT partition, X partitionMeta);
 
         /**
          * Get the partitions assigned to the given task.
          *
          * @param taskId                 The id of the task
          * @param numTasks               The number of tasks for the spout
-         * @param allPartitionInfoSorted The partition info of all partitions being processed by all spout tasks, sorted according to
+         * @param allPartitionInfoSorted The partition info of all partitions being processed by all
+         *     spout tasks, sorted according to
          *                               {@link #getOrderedPartitions(java.lang.Object)}
          * @return The list of partitions that are to be processed by the task with {@code taskId}
          */
-        default List<PartitionT> getPartitionsForTask(int taskId, int numTasks, List<PartitionT> allPartitionInfoSorted) {
-            List<PartitionT> taskPartitions = new ArrayList<>(allPartitionInfoSorted == null ? 0 : allPartitionInfoSorted.size());
+        default List<PartitionT> getPartitionsForTask(int taskId, int numTasks,
+                List<PartitionT> allPartitionInfoSorted) {
+            List<PartitionT> taskPartitions = new ArrayList<>(allPartitionInfoSorted == null
+                    ? 0 : allPartitionInfoSorted.size());
             if (allPartitionInfoSorted != null) {
                 for (int i = taskId; i < allPartitionInfoSorted.size(); i += numTasks) {
                     taskPartitions.add(allPartitionInfoSorted.get(i));

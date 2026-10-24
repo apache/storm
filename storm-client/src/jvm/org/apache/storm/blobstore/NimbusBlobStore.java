@@ -32,10 +32,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * NimbusBlobStore is a USER facing client API to perform basic operations such as create, update, delete and read for local and hdfs blob
+ * NimbusBlobStore is a USER facing client API to perform basic operations such as create, update,
+ * delete and read for local and hdfs blob
  * store.
  *
- * <p>For local blob store it is also the client facing API for supervisor in order to download blobs from nimbus.
+ * <p>For local blob store it is also the client facing API for supervisor in order to download
+ * blobs from nimbus.
  */
 public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(NimbusBlobStore.class);
@@ -46,16 +48,18 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     public void prepare(Map<String, Object> conf) {
         this.client = NimbusClient.Builder.withConf(conf).build();
         if (conf != null) {
-            this.bufferSize = ObjectReader.getInt(conf.get(Config.STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES), bufferSize);
+            this.bufferSize = ObjectReader.getInt(conf
+                    .get(Config.STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES), bufferSize);
         }
     }
 
     @Override
     protected AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta)
-        throws AuthorizationException, KeyAlreadyExistsException {
+            throws AuthorizationException, KeyAlreadyExistsException {
         try {
             synchronized (client) {
-                return new NimbusUploadAtomicOutputStream(client.getClient().beginCreateBlob(key, meta), this.bufferSize, key);
+                return new NimbusUploadAtomicOutputStream(client.getClient().beginCreateBlob(key,
+                        meta), this.bufferSize, key);
             }
         } catch (AuthorizationException | KeyAlreadyExistsException exp) {
             throw exp;
@@ -66,10 +70,11 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
 
     @Override
     public AtomicOutputStream updateBlob(String key)
-        throws AuthorizationException, KeyNotFoundException {
+            throws AuthorizationException, KeyNotFoundException {
         try {
             synchronized (client) {
-                return new NimbusUploadAtomicOutputStream(client.getClient().beginUpdateBlob(key), this.bufferSize, key);
+                return new NimbusUploadAtomicOutputStream(client.getClient().beginUpdateBlob(key),
+                        this.bufferSize, key);
             }
         } catch (AuthorizationException | KeyNotFoundException exp) {
             throw exp;
@@ -104,7 +109,7 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
 
     @Override
     protected void setBlobMetaToExtend(String key, SettableBlobMeta meta)
-        throws AuthorizationException, KeyNotFoundException {
+            throws AuthorizationException, KeyNotFoundException {
         try {
             synchronized (client) {
                 client.getClient().setBlobMeta(key, meta);
@@ -176,7 +181,8 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     }
 
     @Override
-    public int updateBlobReplication(String key, int replication) throws AuthorizationException, KeyNotFoundException {
+    public int updateBlobReplication(String key,
+        int replication) throws AuthorizationException, KeyNotFoundException {
         try {
             return client.getClient().updateBlobReplication(key, replication);
         } catch (AuthorizationException | KeyNotFoundException exp) {
@@ -193,7 +199,8 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
         }
         this.client = client;
         if (conf != null) {
-            this.bufferSize = ObjectReader.getInt(conf.get(Config.STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES), bufferSize);
+            this.bufferSize = ObjectReader.getInt(conf
+                    .get(Config.STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES), bufferSize);
         }
         return true;
     }
@@ -393,7 +400,8 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
         public void write(int b) throws IOException {
             try {
                 synchronized (client) {
-                    client.getClient().uploadBlobChunk(session, ByteBuffer.wrap(new byte[]{ (byte) b }));
+                    client.getClient().uploadBlobChunk(session, ByteBuffer
+                            .wrap(new byte[] {(byte) b}));
                 }
             } catch (TException e) {
                 throw new RuntimeException(e);
@@ -413,7 +421,8 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
                     int realLen = Math.min(end - realOffset, maxChunkSize);
                     LOG.debug("Writing {} bytes of {} remaining", realLen, (end - realOffset));
                     synchronized (client) {
-                        client.getClient().uploadBlobChunk(session, ByteBuffer.wrap(b, realOffset, realLen));
+                        client.getClient().uploadBlobChunk(session, ByteBuffer.wrap(b, realOffset,
+                                realLen));
                     }
                 }
             } catch (TException e) {

@@ -33,7 +33,8 @@ public class TupleCollectionGet extends BaseQueryFunction<State, Iterator<List<O
     }
 
     @Override
-    public void execute(TridentTuple tuple, Iterator<List<Object>> tuplesIterator, TridentCollector collector) {
+    public void execute(TridentTuple tuple, Iterator<List<Object>> tuplesIterator,
+        TridentCollector collector) {
         while (tuplesIterator.hasNext()) {
             collector.emit(tuplesIterator.next());
         }

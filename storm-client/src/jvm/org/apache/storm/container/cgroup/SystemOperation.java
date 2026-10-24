@@ -30,7 +30,8 @@ public class SystemOperation {
         return Integer.valueOf(result.substring(0, result.length())).intValue() == 0 ? true : false;
     }
 
-    public static void mount(String name, String target, String type, String options) throws IOException {
+    public static void mount(String name, String target, String type,
+            String options) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append("mount -t ")
                 .append(type)
@@ -51,7 +52,7 @@ public class SystemOperation {
 
     public static String exec(String cmd) throws IOException {
         LOG.debug("Shell cmd: {}", cmd);
-        Process process = new ProcessBuilder(new String[]{ "/bin/bash", "-c", cmd }).start();
+        Process process = new ProcessBuilder(new String[] {"/bin/bash", "-c", cmd}).start();
         try {
             process.waitFor();
             String output = IOUtils.toString(process.getInputStream());

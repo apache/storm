@@ -23,7 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A simple implementation that evicts the largest un-pinned entry from the cache. This works well for caching window partitions since the
+ * A simple implementation that evicts the largest un-pinned entry from the cache. This works well
+ * for caching window partitions since the
  * access pattern is mostly sequential scans.
  */
 public class SimpleWindowPartitionCache<K, V> implements WindowPartitionCache<K, V> {
@@ -37,7 +38,8 @@ public class SimpleWindowPartitionCache<K, V> implements WindowPartitionCache<K,
     private final ReentrantLock lock = new ReentrantLock(true);
     private int size;
 
-    private SimpleWindowPartitionCache(long maximumSize, RemovalListener<K, V> removalListener, CacheLoader<K, V> cacheLoader) {
+    private SimpleWindowPartitionCache(long maximumSize, RemovalListener<K, V> removalListener,
+            CacheLoader<K, V> cacheLoader) {
         if (maximumSize <= 0) {
             throw new IllegalArgumentException("maximumSize must be greater than 0");
         }
@@ -157,7 +159,8 @@ public class SimpleWindowPartitionCache<K, V> implements WindowPartitionCache<K,
                 if (!isPinned(next.getKey())) {
                     it.remove();
                     if (removalListener != null) {
-                        removalListener.onRemoval(next.getKey(), next.getValue(), RemovalCause.REPLACED);
+                        removalListener.onRemoval(next.getKey(), next.getValue(),
+                                RemovalCause.REPLACED);
                     }
                     --size;
                     break;
@@ -187,7 +190,8 @@ public class SimpleWindowPartitionCache<K, V> implements WindowPartitionCache<K,
         }
 
         @Override
-        public SimpleWindowPartitionCacheBuilder<K, V> removalListener(RemovalListener<K, V> listener) {
+        public SimpleWindowPartitionCacheBuilder<K, V> removalListener(RemovalListener<K,
+            V> listener) {
             removalListener = listener;
             return this;
         }

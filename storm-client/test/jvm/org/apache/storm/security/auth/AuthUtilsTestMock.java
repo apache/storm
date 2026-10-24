@@ -19,10 +19,10 @@ import javax.security.auth.Subject;
 import org.apache.storm.security.INimbusCredentialPlugin;
 
 public class AuthUtilsTestMock implements IAutoCredentials,
-                                          ICredentialsRenewer,
-                                          INimbusCredentialPlugin,
-                                          IPrincipalToLocal,
-                                          IGroupMappingServiceProvider {
+        ICredentialsRenewer,
+        INimbusCredentialPlugin,
+        IPrincipalToLocal,
+        IGroupMappingServiceProvider {
 
     // IAutoCredentials
     // ICredentialsRenewer
@@ -30,7 +30,8 @@ public class AuthUtilsTestMock implements IAutoCredentials,
     // IPrincipalToLocal 
     // IGroupMappingServiceProvider 
     @Override
-    public void prepare(Map<String, Object> conf) {}
+    public void prepare(Map<String, Object> conf) {
+    }
 
     // IPrincipalToLocal 
     @Override
@@ -46,25 +47,32 @@ public class AuthUtilsTestMock implements IAutoCredentials,
 
     // ICredentialsRenewer
     @Override
-    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String ownerPrincipal) {}
+    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf,
+        String ownerPrincipal) {
+    }
 
     // IAutoCredentials
     @Override
-    public void updateSubject(Subject subject, Map<String, String> creds) {}
+    public void updateSubject(Subject subject, Map<String, String> creds) {
+    }
 
     // IAutoCredentials
     @Override
-    public void populateSubject(Subject subject, Map<String, String> creds) {}
+    public void populateSubject(Subject subject, Map<String, String> creds) {
+    }
 
     // IAutoCredentials
     @Override
-    public void populateCredentials(Map<String, String> creds) {}
+    public void populateCredentials(Map<String, String> creds) {
+    }
 
     // INimbusCredentialPlugin
     @Override
-    public void populateCredentials(Map<String, String> credentials, Map<String, Object> topoConf) {}
+    public void populateCredentials(Map<String, String> credentials, Map<String, Object> topoConf) {
+    }
 
     // Shutdownable via INimbusCredentailPlugin
     @Override
-    public void shutdown() {}
+    public void shutdown() {
+    }
 }

@@ -40,7 +40,8 @@ public final class WritableUtils {
         }
         byte[] buffer = new byte[length];
         in.readFully(buffer);      // could/should use readFully(buffer,0,length)?
-        GZIPInputStream gzi = new GZIPInputStream(new ByteArrayInputStream(buffer, 0, buffer.length));
+        GZIPInputStream gzi = new GZIPInputStream(new ByteArrayInputStream(buffer, 0,
+                buffer.length));
         byte[] outbuf = new byte[length];
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         int len;
@@ -89,7 +90,6 @@ public final class WritableUtils {
         return new String(bytes, "UTF-8");
     }
 
-
     public static int writeCompressedString(DataOutput out, String s) throws IOException {
         return writeCompressedByteArray(out, (s != null) ? s.getBytes("UTF-8") : null);
     }
@@ -124,7 +124,6 @@ public final class WritableUtils {
         in.readFully(buffer);      // could/should use readFully(buffer,0,length)?
         return new String(buffer, "UTF-8");
     }
-
 
     /**
      * Write a String array as a Nework Int N, followed by Int N Byte Array Strings.
@@ -170,7 +169,6 @@ public final class WritableUtils {
         return s;
     }
 
-
     /**
      * Write a String array as a Nework Int N, followed by Int N Byte Array Strings.
      * Could be generalised using introspection. Handles null arrays and null values.
@@ -186,7 +184,6 @@ public final class WritableUtils {
         }
         return s;
     }
-
 
     /**
      * Test Utility Method Display Byte Array.
@@ -205,7 +202,6 @@ public final class WritableUtils {
         System.out.print(Integer.toHexString(record[i] & 0x0F));
         System.out.println();
     }
-
 
     /**
      * Serializes an integer to a binary stream with zero-compressed encoding.
@@ -268,9 +264,9 @@ public final class WritableUtils {
         }
     }
 
-
     /**
      * Reads a zero-compressed encoded long from input stream and returns it.
+     *
      * @param stream Binary input stream
      * @return deserialized long from stream.
      */
@@ -291,6 +287,7 @@ public final class WritableUtils {
 
     /**
      * Reads a zero-compressed encoded integer from input stream and returns it.
+     *
      * @param stream Binary input stream
      * @return deserialized integer from stream.
      */
@@ -300,6 +297,7 @@ public final class WritableUtils {
 
     /**
      * Given the first byte of a vint/vlong, determine the sign.
+     *
      * @param value the first byte
      * @return is the value negative
      */
@@ -309,6 +307,7 @@ public final class WritableUtils {
 
     /**
      * Parse the first byte of a vint/vlong to determine the number of bytes.
+     *
      * @param value the first byte of the vint/vlong
      * @return the total number of bytes (1 to 9)
      */
@@ -323,6 +322,7 @@ public final class WritableUtils {
 
     /**
      * Get the encoded length if an integer is stored in a variable-length format.
+     *
      * @return the encoded length
      */
     public static int getVIntSize(long i) {
@@ -341,6 +341,7 @@ public final class WritableUtils {
 
     /**
      * Skip <i>len</i> number of bytes in input stream<i>in</i>.
+     *
      * @param in input stream
      * @param len number of bytes to skip
      * @throws IOException when skipped less number of bytes

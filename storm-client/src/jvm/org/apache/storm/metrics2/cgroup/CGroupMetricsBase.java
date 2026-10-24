@@ -38,7 +38,8 @@ public abstract class CGroupMetricsBase {
         enabled = false;
         CgroupCenter center = CgroupCenter.getInstance();
         if (center == null) {
-            LOG.warn("{} is disabled. cgroups do not appear to be enabled on this system", simpleName);
+            LOG.warn("{} is disabled. cgroups do not appear to be enabled on this system",
+                    simpleName);
             return;
         }
         if (!center.isSubSystemEnabled(type)) {
@@ -46,54 +47,59 @@ public abstract class CGroupMetricsBase {
             return;
         }
 
-        //Check to see if the CGroup is mounted at all
+        // Check to see if the CGroup is mounted at all
         if (null == center.getHierarchyWithSubSystem(type)) {
             LOG.warn("{} is disabled. {} is not a mounted subsystem", simpleName, type);
             return;
         }
 
-        //Good so far, check if we are in a CGroup
+        // Good so far, check if we are in a CGroup
         File cgroupFile = new File("/proc/self/cgroup");
         if (!cgroupFile.exists()) {
-            LOG.warn("{} is disabled we do not appear to be a part of a CGroup", getClass().getSimpleName());
+            LOG.warn("{} is disabled we do not appear to be a part of a CGroup", getClass()
+                    .getSimpleName());
             return;
         }
 
         String cgroupPath;
         try (BufferedReader reader = new BufferedReader(new FileReader(cgroupFile))) {
-            //There can be more then one line if cgroups are mounted in more then one place, but we assume the first is good enough
+            // There can be more then one line if cgroups are mounted in more then one place, but we
+            // assume the first is good enough
             String line = reader.readLine();
-            //hierarchy-ID:controller-list:cgroup-path
+            // hierarchy-ID:controller-list:cgroup-path
             String[] parts = line.split(":");
-            //parts[0] == 0 for CGroup V2, else maps to hierarchy in /proc/cgroups
-            //parts[1] is empty for CGroups V2 else what is mapped that we are looking for
+            // parts[0] == 0 for CGroup V2, else maps to hierarchy in /proc/cgroups
+            // parts[1] is empty for CGroups V2 else what is mapped that we are looking for
             cgroupPath = parts[2];
         } catch (Exception e) {
             LOG.warn("{} is disabled error trying to read or parse {}", simpleName, cgroupFile);
             return;
         }
 
-        //Storm on Rhel6 and Rhel7 use different cgroup settings.
-        //On Rhel6, the cgroup of the worker is under
+        // Storm on Rhel6 and Rhel7 use different cgroup settings.
+        // On Rhel6, the cgroup of the worker is under
         // "Config.STORM_CGROUP_HIERARCHY_DIR/DaemonConfig.STORM_SUPERVISOR_CGROUP_ROOTDIR/<worker-id>"
-        //On Rhel7, the cgroup of the worker is under
+        // On Rhel7, the cgroup of the worker is under
         // "Config.STORM_OCI_CGROUP_ROOT/<subsystem>/DaemonConfig.STORM_OCI_CGROUP_PARENT/<container-id>"
         // This block of code is a workaround for the CGroupMetrics to work on both system
         String hierarchyDir = (String) conf.get(Config.STORM_CGROUP_HIERARCHY_DIR);
         if (StringUtils.isEmpty(hierarchyDir) || !new File(hierarchyDir, cgroupPath).exists()) {
-            LOG.info("{} is not set or does not exist. checking {}", Config.STORM_CGROUP_HIERARCHY_DIR,
+            LOG.info("{} is not set or does not exist. checking {}",
+                    Config.STORM_CGROUP_HIERARCHY_DIR,
                     Config.STORM_OCI_CGROUP_ROOT);
 
             String ociCgroupRoot = (String) conf.get(Config.STORM_OCI_CGROUP_ROOT);
             hierarchyDir = ociCgroupRoot + File.separator + type;
-            if (StringUtils.isEmpty(ociCgroupRoot) || !new File(hierarchyDir, cgroupPath).exists()) {
+            if (StringUtils.isEmpty(ociCgroupRoot) || !new File(hierarchyDir, cgroupPath)
+                    .exists()) {
                 LOG.info("{} is not set or does not exist", Config.STORM_OCI_CGROUP_ROOT);
                 LOG.warn("{} is disabled", simpleName);
                 return;
             }
         }
 
-        core = CgroupCoreFactory.getInstance(type, new File(hierarchyDir, cgroupPath).getAbsolutePath());
+        core = CgroupCoreFactory.getInstance(type, new File(hierarchyDir, cgroupPath)
+                .getAbsolutePath());
         enabled = true;
         LOG.info("Metric {} is ENABLED and directory {} exists...", simpleName, hierarchyDir);
     }

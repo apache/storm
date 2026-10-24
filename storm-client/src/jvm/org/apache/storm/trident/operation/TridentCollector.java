@@ -14,11 +14,12 @@ package org.apache.storm.trident.operation;
 
 import java.util.List;
 
-
 /**
- * Interface for publishing tuples to a stream and reporting exceptions (to be displayed in Storm UI).
+ * Interface for publishing tuples to a stream and reporting exceptions (to be displayed in Storm
+ * UI).
  *
- * <p>Trident components that have the ability to emit tuples to a stream are passed an instance of this interface.
+ * <p>Trident components that have the ability to emit tuples to a stream are passed an instance of
+ * this interface.
  *
  * <p>For example, to emit a new tuple to a stream, you would do something like the following:
  *
@@ -43,7 +44,8 @@ public interface TridentCollector {
     /**
      * Reports an error. The corresponding stack trace will be visible in the Storm UI.
      *
-     * <p>Note that calling this method does not alter the processing of a batch. To explicitly fail a batch and trigger
+     * <p>Note that calling this method does not alter the processing of a batch. To explicitly fail
+     * a batch and trigger
      * a replay, components should throw {@link org.apache.storm.topology.FailedException}.
      *
      * @param t The instance of the error (Throwable) being reported.

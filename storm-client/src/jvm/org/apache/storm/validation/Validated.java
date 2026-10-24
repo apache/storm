@@ -16,5 +16,5 @@ package org.apache.storm.validation;
  * An interface that is used to inform config validation what to look at.
  */
 public interface Validated {
-    //Empty
+    // Empty
 }

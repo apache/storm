@@ -12,6 +12,10 @@
 
 package org.apache.storm.windowing.persistence;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.AdditionalAnswers.returnsArgAt;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -33,12 +37,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.AdditionalAnswers.returnsArgAt;
-
 /**
- * Unit tests for {@link WindowState}
+ * Unit tests for {@link WindowState}.
  */
 @ExtendWith(MockitoExtension.class)
 public class WindowStateTest {
@@ -69,10 +69,12 @@ public class WindowStateTest {
             ws.add(getEvent(i));
         }
         // 5 partitions evicted to window state
-        Mockito.verify(windowState, Mockito.times(5)).put(longCaptor.capture(), windowValuesCaptor.capture());
+        Mockito.verify(windowState, Mockito.times(5)).put(longCaptor.capture(), windowValuesCaptor
+                .capture());
         assertEquals(5, longCaptor.getAllValues().size());
         // each evicted partition has MAX_EVENTS_PER_PARTITION
-        windowValuesCaptor.getAllValues().forEach(wp -> assertEquals(WindowState.MAX_PARTITION_EVENTS, wp.size()));
+        windowValuesCaptor.getAllValues()
+                .forEach(wp -> assertEquals(WindowState.MAX_PARTITION_EVENTS, wp.size()));
         // last partition is not evicted
         assertFalse(longCaptor.getAllValues().contains(partitions - 1));
     }
@@ -205,6 +207,6 @@ public class WindowStateTest {
 
     private WindowState<Integer> getWindowState(int maxEvents) {
         return new WindowState<>(windowState, partitionIdsState, systemState,
-                                 supplier, maxEvents);
+                supplier, maxEvents);
     }
 }

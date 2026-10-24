@@ -13,21 +13,25 @@
 package org.apache.storm.windowing;
 
 /**
- * Eviction policy tracks events and decides whether an event should be evicted from the window or not.
+ * Eviction policy tracks events and decides whether an event should be evicted from the window or
+ * not.
  *
  * @param <T> the type of event that is tracked.
  */
 public interface EvictionPolicy<T, S> {
     /**
-     * Decides if an event should be expired from the window, processed in the current window or kept for later processing.
+     * Decides if an event should be expired from the window, processed in the current window or
+     * kept for later processing.
      *
      * @param event the input event
-     * @return the {@link org.apache.storm.windowing.EvictionPolicy.Action} to be taken based on the input event
+     * @return the {@link org.apache.storm.windowing.EvictionPolicy.Action} to be taken based on the
+     *     input event
      */
     Action evict(Event<T> event);
 
     /**
-     * Tracks the event to later decide whether {@link EvictionPolicy#evict(Event)} should evict it or not.
+     * Tracks the event to later decide whether {@link EvictionPolicy#evict(Event)} should evict it
+     * or not.
      *
      * @param event the input event to be tracked
      */
@@ -41,7 +45,8 @@ public interface EvictionPolicy<T, S> {
     EvictionContext getContext();
 
     /**
-     * Sets a context in the eviction policy that can be used while evicting the events. E.g. For TimeEvictionPolicy, this could be used to
+     * Sets a context in the eviction policy that can be used while evicting the events. E.g. For
+     * TimeEvictionPolicy, this could be used to
      * set the reference timestamp.
      *
      * @param context the eviction context
@@ -54,7 +59,8 @@ public interface EvictionPolicy<T, S> {
     void reset();
 
     /**
-     * Return runtime state to be checkpointed by the framework for restoring the eviction policy in case of failures.
+     * Return runtime state to be checkpointed by the framework for restoring the eviction policy in
+     * case of failures.
      *
      * @return the state
      */
@@ -72,19 +78,20 @@ public interface EvictionPolicy<T, S> {
      */
     enum Action {
         /**
-         * expire the event and remove it from the queue.
+         * Expire the event and remove it from the queue.
          */
         EXPIRE,
         /**
-         * process the event in the current window of events.
+         * Process the event in the current window of events.
          */
         PROCESS,
         /**
-         * don't include in the current window but keep the event in the queue for evaluating as a part of future windows.
+         * don't include in the current window but keep the event in the queue for evaluating as a
+         * part of future windows.
          */
         KEEP,
         /**
-         * stop processing the queue, there cannot be anymore events satisfying the eviction policy.
+         * Stop processing the queue, there cannot be anymore events satisfying the eviction policy.
          */
         STOP
     }

@@ -39,8 +39,10 @@ public interface Window<L, I> extends Serializable {
     I getSlidingInterval();
 
     /**
-     * The name of the field in the tuple that contains the timestamp when the event occurred as a long value. This is used of event-time
-     * based processing. If this config is set and the field is not present in the incoming tuple, an {@link IllegalArgumentException} will
+     * The name of the field in the tuple that contains the timestamp when the event occurred as a
+     * long value. This is used of event-time
+     * based processing. If this config is set and the field is not present in the incoming tuple,
+     * an {@link IllegalArgumentException} will
      * be thrown.
      *
      * @return the timestamp field.
@@ -48,14 +50,16 @@ public interface Window<L, I> extends Serializable {
     String getTimestampField();
 
     /**
-     * The name of the stream where late arriving tuples should be emitted. If this is not provided, the late tuples would be discarded.
+     * The name of the stream where late arriving tuples should be emitted. If this is not provided,
+     * the late tuples would be discarded.
      *
      * @return the name of the stream used to emit late tuples on
      */
     String getLateTupleStream();
 
     /**
-     * The maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps cannot be out of order by more than
+     * The maximum time lag of the tuple timestamp in milliseconds. It means that the tuple
+     * timestamps cannot be out of order by more than
      * this amount.
      *
      * @return the lag

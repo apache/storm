@@ -19,7 +19,6 @@ import java.io.InputStreamReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * Launch a sub process and write files out to logs.
  */

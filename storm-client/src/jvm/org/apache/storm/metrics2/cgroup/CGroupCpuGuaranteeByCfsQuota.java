@@ -23,7 +23,8 @@ import org.apache.storm.task.TopologyContext;
 /**
  * Report the percentage of the cpu guaranteed for the worker.
  * It gets the result from cpu.cfs_period_us and cpu.cfs_quota_us.
- * Use this when org.apache.storm.container.docker.DockerManager or org.apache.storm.container.oci.RuncLibContainerManager
+ * Use this when org.apache.storm.container.docker.DockerManager or
+ * org.apache.storm.container.oci.RuncLibContainerManager
  * is used as the storm.resource.isolation.plugin.
  */
 public class CGroupCpuGuaranteeByCfsQuota extends CGroupMetricsBase implements WorkerMetricRegistrant {
@@ -44,7 +45,8 @@ public class CGroupCpuGuaranteeByCfsQuota extends CGroupMetricsBase implements W
                         try {
                             long cpuCfsQuotaUs = cpu.getCpuCfsQuotaUs();
                             if (cpuCfsQuotaUs == -1) {
-                                //cpu.cfs_quota_us = -1 indicates that the cgroup does not adhere to any CPU time restrictions.
+                                // cpu.cfs_quota_us = -1 indicates that the cgroup does not adhere
+                                // to any CPU time restrictions.
                                 guarantee = -1L;
                             } else {
                                 long cpuCfsPeriodUs = cpu.getCpuCfsPeriodUs();

@@ -12,6 +12,11 @@
 
 package org.apache.storm.messaging.netty;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.apache.storm.messaging.FatalDeserializationException;
@@ -19,11 +24,6 @@ import org.apache.storm.shade.io.netty.channel.Channel;
 import org.apache.storm.shade.io.netty.channel.ChannelHandlerContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class StormServerHandlerTest {
 
@@ -46,7 +46,8 @@ public class StormServerHandlerTest {
 
     @Test
     public void testIoExceptionClosesConnection() {
-        handler.exceptionCaught(ctx, new RuntimeException("Failed to decompress", new IOException("corrupt frame")));
+        handler.exceptionCaught(ctx, new RuntimeException("Failed to decompress",
+                new IOException("corrupt frame")));
 
         verify(ctx).close();
         verify(terminator, never()).run();
@@ -65,7 +66,7 @@ public class StormServerHandlerTest {
     @Test
     public void testFatalDeserializationWrappingIoExceptionTerminates() {
         handler.exceptionCaught(ctx, new FatalDeserializationException("strict",
-            new RuntimeException("Failed to decompress", new IOException("corrupt frame"))));
+                new RuntimeException("Failed to decompress", new IOException("corrupt frame"))));
 
         verify(server).terminating();
         verify(terminator).run();
@@ -75,7 +76,7 @@ public class StormServerHandlerTest {
     @Test
     public void testWrappedFatalDeserializationTerminates() {
         handler.exceptionCaught(ctx, new RuntimeException("rethrown",
-            new FatalDeserializationException("strict", new IOException("corrupt frame"))));
+                new FatalDeserializationException("strict", new IOException("corrupt frame"))));
 
         verify(server).terminating();
         verify(terminator).run();
@@ -86,7 +87,8 @@ public class StormServerHandlerTest {
     public void testFatalDeserializationTerminatesEvenIfLoggingFails() {
         when(channel.remoteAddress()).thenThrow(new OutOfMemoryError("no heap left to log"));
 
-        handler.exceptionCaught(ctx, new FatalDeserializationException("strict", new IOException("corrupt frame")));
+        handler.exceptionCaught(ctx, new FatalDeserializationException("strict",
+                new IOException("corrupt frame")));
 
         verify(server).terminating();
         verify(terminator).run();

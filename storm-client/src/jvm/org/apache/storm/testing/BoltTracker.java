@@ -17,7 +17,6 @@ import java.util.Map;
 import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 
-
 public class BoltTracker extends NonRichBoltTracker implements IRichBolt {
     IRichBolt richDelegate;
 

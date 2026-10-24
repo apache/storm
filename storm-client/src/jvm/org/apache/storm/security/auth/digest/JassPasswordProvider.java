@@ -26,10 +26,12 @@ import org.apache.storm.security.auth.sasl.PasswordProvider;
  */
 public class JassPasswordProvider implements PasswordProvider {
     /**
-     * The system property that sets a super user password.  This can be used in addition to the jaas conf, and takes precedent over a
+     * The system property that sets a super user password. This can be used in addition to the jaas
+     * conf, and takes precedent over a
      * "super" user in the jaas conf if this is set.
      */
-    public static final String SYSPROP_SUPER_PASSWORD = "storm.SASLAuthenticationProvider.superPassword";
+    public static final String SYSPROP_SUPER_PASSWORD =
+            "storm.SASLAuthenticationProvider.superPassword";
     private static final String USER_PREFIX = "user_";
     private Map<String, char[]> credentials = new ConcurrentHashMap<>();
 
@@ -46,17 +48,20 @@ public class JassPasswordProvider implements PasswordProvider {
             return;
         }
 
-        AppConfigurationEntry[] configurationEntries = configuration.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
+        AppConfigurationEntry[] configurationEntries = configuration
+                .getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
             String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_SERVER
-                                  + "' entry in this configuration: Server cannot start.";
+                    + "' entry in this configuration: Server cannot start.";
             throw new IOException(errorMessage);
         }
         credentials.clear();
         for (AppConfigurationEntry entry : configurationEntries) {
             Map<String, ?> options = entry.getOptions();
-            // Populate user -> password map with JAAS configuration entries from the "Server" section.
-            // Usernames are distinguished from other options by prefixing the username with a "user_" prefix.
+            // Populate user -> password map with JAAS configuration entries from the "Server"
+            // section.
+            // Usernames are distinguished from other options by prefixing the username with a
+            // "user_" prefix.
             for (Map.Entry<String, ?> pair : options.entrySet()) {
                 String key = pair.getKey();
                 if (key.startsWith(USER_PREFIX)) {

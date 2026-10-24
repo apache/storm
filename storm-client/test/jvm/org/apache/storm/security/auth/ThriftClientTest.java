@@ -12,15 +12,15 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ThriftClientTest {
 
@@ -36,26 +36,30 @@ public class ThriftClientTest {
     @Test
     public void testConstructorThrowsIfPortNegative() {
         assertThrows(IllegalArgumentException.class,
-            () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "bogushost", -1, NIMBUS_TIMEOUT));
+                () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "bogushost", -1,
+                NIMBUS_TIMEOUT));
     }
 
     @Test
     public void testConstructorThrowsIfPortZero() {
         assertThrows(IllegalArgumentException.class,
-            () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "bogushost", 0, NIMBUS_TIMEOUT));
+                () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "bogushost", 0,
+                NIMBUS_TIMEOUT));
     }
 
     @Test
     public void testConstructorThrowsIfHostNull() {
         assertThrows(IllegalArgumentException.class,
-            () -> new ThriftClient(conf, ThriftConnectionType.DRPC, null, 4242, NIMBUS_TIMEOUT));
+                () -> new ThriftClient(conf, ThriftConnectionType.DRPC, null, 4242,
+                NIMBUS_TIMEOUT));
     }
 
     @Test
     public void testConstructorThrowsIfHostEmpty() {
         Exception e = assertThrows(RuntimeException.class,
-            () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "", 4242, NIMBUS_TIMEOUT));
+                () -> new ThriftClient(conf, ThriftConnectionType.DRPC, "", 4242, NIMBUS_TIMEOUT));
         // Now the cause of the thrown exception must be TTransportException
-        assertTrue(e.getCause().getCause() instanceof TTransportException, e.getCause().getMessage());
+        assertTrue(e.getCause().getCause() instanceof TTransportException, e.getCause()
+                .getMessage());
     }
 }

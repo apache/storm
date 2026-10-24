@@ -18,33 +18,39 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBackoffRetry {
-    private static final Logger LOG = LoggerFactory.getLogger(StormBoundedExponentialBackoffRetry.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(StormBoundedExponentialBackoffRetry.class);
     private final Random random = new Random();
     private final int linearBaseSleepMs;
     private final int stepSize;
     private int expRetriesThreshold;
 
     /**
-     * The class provides generic exponential-linear backoff retry strategy for storm. It calculates threshold for exponentially increasing
+     * The class provides generic exponential-linear backoff retry strategy for storm. It calculates
+     * threshold for exponentially increasing
      * sleeptime for retries. Beyond this threshold, the sleeptime increase is linear.
      *
-     * <p>Also adds jitter for exponential/linear retry. It guarantees `currSleepTimeMs >= prevSleepTimeMs` and `baseSleepTimeMs <=
+     * <p>Also adds jitter for exponential/linear retry. It guarantees `currSleepTimeMs >=
+     * prevSleepTimeMs` and `baseSleepTimeMs <=
      * currSleepTimeMs <= maxSleepTimeMs`
      */
-    public StormBoundedExponentialBackoffRetry(int baseSleepTimeMs, int maxSleepTimeMs, int maxRetries) {
+    public StormBoundedExponentialBackoffRetry(int baseSleepTimeMs, int maxSleepTimeMs,
+            int maxRetries) {
         super(baseSleepTimeMs, maxSleepTimeMs, maxRetries);
         expRetriesThreshold = 1;
         while ((1 << (expRetriesThreshold + 1)) < ((maxSleepTimeMs - baseSleepTimeMs) / 2)) {
             expRetriesThreshold++;
         }
         LOG.debug("The baseSleepTimeMs [{}] the maxSleepTimeMs [{}] the maxRetries [{}]",
-            baseSleepTimeMs, maxSleepTimeMs, maxRetries);
+                baseSleepTimeMs, maxSleepTimeMs, maxRetries);
         if (baseSleepTimeMs > maxSleepTimeMs) {
-            LOG.warn("Misconfiguration: the baseSleepTimeMs [" + baseSleepTimeMs + "] can't be greater than "
-                + "the maxSleepTimeMs [" + maxSleepTimeMs + "].");
+            LOG.warn("Misconfiguration: the baseSleepTimeMs [" + baseSleepTimeMs
+                    + "] can't be greater than "
+                    + "the maxSleepTimeMs [" + maxSleepTimeMs + "].");
         }
         if (maxRetries > 0 && maxRetries > expRetriesThreshold) {
-            this.stepSize = Math.max(1, (maxSleepTimeMs - (1 << expRetriesThreshold)) / (maxRetries - expRetriesThreshold));
+            this.stepSize = Math.max(1,
+                    (maxSleepTimeMs - (1 << expRetriesThreshold)) / (maxRetries - expRetriesThreshold));
         } else {
             this.stepSize = 1;
         }
@@ -62,7 +68,7 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
         } else {
             int stepJitter = random.nextInt(stepSize);
             long sleepTimeMs = Math.min(super.getMaxSleepTimeMs(), (linearBaseSleepMs
-                + (stepSize * (retryCount - expRetriesThreshold)) + stepJitter));
+                    + (stepSize * (retryCount - expRetriesThreshold)) + stepJitter));
             LOG.debug("WILL SLEEP FOR {}ms (MAX)", sleepTimeMs);
             return sleepTimeMs;
         }

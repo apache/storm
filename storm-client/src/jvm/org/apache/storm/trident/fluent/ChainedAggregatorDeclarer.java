@@ -29,14 +29,14 @@ import org.apache.storm.trident.operation.impl.SingleEmitAggregator.BatchToParti
 import org.apache.storm.trident.tuple.ComboList;
 import org.apache.storm.tuple.Fields;
 
-
 public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer, ChainedPartitionAggregatorDeclarer {
     List<AggSpec> aggs = new ArrayList<>();
     IAggregatableStream stream;
     AggType type = null;
     GlobalAggregationScheme globalScheme;
 
-    public ChainedAggregatorDeclarer(IAggregatableStream stream, GlobalAggregationScheme globalScheme) {
+    public ChainedAggregatorDeclarer(IAggregatableStream stream,
+            GlobalAggregationScheme globalScheme) {
         this.stream = stream;
         this.globalScheme = globalScheme;
     }
@@ -66,12 +66,14 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
             allInFields.addAll(infields.toList());
         }
         if (new HashSet(allOutFields).size() != allOutFields.size()) {
-            throw new IllegalArgumentException("Output fields for chained aggregators must be distinct: " + allOutFields.toString());
+            throw new IllegalArgumentException("Output fields for chained aggregators must be "
+                    + "distinct: " + allOutFields.toString());
         }
 
         Fields inFields = new Fields(new ArrayList<>(allInFields));
         Fields outFields = new Fields(allOutFields);
-        Aggregator combined = new ChainedAggregatorImpl(aggs, inputFields, new ComboList.Factory(outSizes));
+        Aggregator combined = new ChainedAggregatorImpl(aggs, inputFields, new ComboList
+                .Factory(outSizes));
 
         if (type != AggType.FULL) {
             stream = stream.partitionAggregate(inFields, combined, outFields);
@@ -91,35 +93,42 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
     }
 
     @Override
-    public ChainedPartitionAggregatorDeclarer partitionAggregate(Aggregator agg, Fields functionFields) {
+    public ChainedPartitionAggregatorDeclarer partitionAggregate(Aggregator agg,
+        Fields functionFields) {
         return partitionAggregate(null, agg, functionFields);
     }
 
     @Override
-    public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
+    public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, Aggregator agg,
+        Fields functionFields) {
         type = AggType.PARTITION;
         aggs.add(new AggSpec(inputFields, agg, functionFields));
         return this;
     }
 
     @Override
-    public ChainedPartitionAggregatorDeclarer partitionAggregate(CombinerAggregator agg, Fields functionFields) {
+    public ChainedPartitionAggregatorDeclarer partitionAggregate(CombinerAggregator agg,
+        Fields functionFields) {
         return partitionAggregate(null, agg, functionFields);
     }
 
     @Override
-    public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
+    public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields,
+        CombinerAggregator agg, Fields functionFields) {
         initCombiner(inputFields, agg, functionFields);
-        return partitionAggregate(functionFields, new CombinerAggregatorCombineImpl(agg), functionFields);
+        return partitionAggregate(functionFields, new CombinerAggregatorCombineImpl(agg),
+                functionFields);
     }
 
     @Override
-    public ChainedPartitionAggregatorDeclarer partitionAggregate(ReducerAggregator agg, Fields functionFields) {
+    public ChainedPartitionAggregatorDeclarer partitionAggregate(ReducerAggregator agg,
+        Fields functionFields) {
         return partitionAggregate(null, agg, functionFields);
     }
 
     @Override
-    public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, ReducerAggregator agg, Fields functionFields) {
+    public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields,
+        ReducerAggregator agg, Fields functionFields) {
         return partitionAggregate(inputFields, new ReducerAggregatorImpl(agg), functionFields);
     }
 
@@ -129,11 +138,13 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
     }
 
     @Override
-    public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
+    public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, Aggregator agg,
+        Fields functionFields) {
         return aggregate(inputFields, agg, functionFields, false);
     }
 
-    private ChainedFullAggregatorDeclarer aggregate(Fields inputFields, Aggregator agg, Fields functionFields, boolean isCombiner) {
+    private ChainedFullAggregatorDeclarer aggregate(Fields inputFields, Aggregator agg,
+            Fields functionFields, boolean isCombiner) {
         if (isCombiner) {
             if (type == null) {
                 type = AggType.FULL_COMBINE;
@@ -151,9 +162,11 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
     }
 
     @Override
-    public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
+    public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, CombinerAggregator agg,
+        Fields functionFields) {
         initCombiner(inputFields, agg, functionFields);
-        return aggregate(functionFields, new CombinerAggregatorCombineImpl(agg), functionFields, true);
+        return aggregate(functionFields, new CombinerAggregatorCombineImpl(agg), functionFields,
+                true);
     }
 
     @Override
@@ -162,7 +175,8 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
     }
 
     @Override
-    public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, ReducerAggregator agg, Fields functionFields) {
+    public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, ReducerAggregator agg,
+        Fields functionFields) {
         return aggregate(inputFields, new ReducerAggregatorImpl(agg), functionFields);
     }
 
@@ -180,7 +194,8 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
         Stream partition(Stream input);
     }
 
-    // inputFields can be equal to outFields, but multiple aggregators cannot have intersection outFields
+    // inputFields can be equal to outFields, but multiple aggregators cannot have intersection
+    // outFields
     private static class AggSpec {
         Fields inFields;
         Aggregator agg;

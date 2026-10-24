@@ -55,7 +55,7 @@ public class SpoutExecutorStats extends CommonStats {
 
         // spout stats
         SpoutStats spoutStats = new SpoutStats(
-            valueStat(getAcked()), valueStat(getFailed()), valueStat(completeLatencyStats));
+                valueStat(getAcked()), valueStat(getFailed()), valueStat(completeLatencyStats));
         ret.set_specific(ExecutorSpecificStats.spout(spoutStats));
 
         return ret;

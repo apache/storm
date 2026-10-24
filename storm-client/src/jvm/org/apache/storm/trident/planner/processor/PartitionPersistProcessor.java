@@ -27,7 +27,6 @@ import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
-
 public class PartitionPersistProcessor implements TridentProcessor {
     StateUpdater updater;
     State state;
@@ -44,7 +43,8 @@ public class PartitionPersistProcessor implements TridentProcessor {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        TridentContext tridentContext) {
         List<Factory> parents = tridentContext.getParentTupleFactories();
         if (parents.size() != 1) {
             throw new RuntimeException("Partition persist operation can only have one parent");
@@ -89,7 +89,8 @@ public class PartitionPersistProcessor implements TridentProcessor {
         // this is also a helpful optimization that state implementations don't need to manually do
         if (buffer.size() > 0) {
             Long txid = null;
-            // this is to support things like persisting off of drpc stream, which is inherently unreliable
+            // this is to support things like persisting off of drpc stream, which is inherently
+            // unreliable
             // and won't have a tx attempt
             if (batchId instanceof TransactionAttempt) {
                 txid = ((TransactionAttempt) batchId).getTransactionId();

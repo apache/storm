@@ -37,7 +37,8 @@ public class JCQueueMetrics implements Closeable {
      * Creates and registers the queue gauges. {@code controlQ} may be null when the queue has no control lane;
      * the control-lane gauges are then not registered.
      */
-    public JCQueueMetrics(String metricNamePrefix, String topologyId, String componentId, int taskId, int port,
+    public JCQueueMetrics(String metricNamePrefix, String topologyId, String componentId,
+            int taskId, int port,
                           StormMetricRegistry metricRegistry, MpscArrayQueue<Object> receiveQ,
                           MpscUnboundedArrayQueue<Object> overflowQ, MpscArrayQueue<Object> controlQ) {
 
@@ -72,8 +73,10 @@ public class JCQueueMetrics implements Closeable {
         Gauge<Double> sojourn = new Gauge<Double>() {
             @Override
             public Double getValue() {
-                // Assume the recvQueue is stable, in which the arrival rate is equal to the consumption rate.
-                // If this assumption does not hold, the calculation of sojourn time should also consider
+                // Assume the recvQueue is stable, in which the arrival rate is equal to the
+                // consumption rate.
+                // If this assumption does not hold, the calculation of sojourn time should also
+                // consider
                 // departure rate according to Queuing Theory.
                 return receiveQ.size() / Math.max(arrivalsTracker.reportRate(), 0.00001) * 1000.0;
             }
@@ -100,21 +103,31 @@ public class JCQueueMetrics implements Closeable {
             }
         };
 
-        metricRegistry.gauge(metricNamePrefix + "-capacity", cap, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(metricNamePrefix + "-pct_full", pctFull, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(metricNamePrefix + "-population", pop, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(metricNamePrefix + "-arrival_rate_secs", arrivalRate, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(metricNamePrefix + "-sojourn_time_ms", sojourn, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(metricNamePrefix + "-insert_failures", insertFailures, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(metricNamePrefix + "-dropped_messages", dropped, topologyId, componentId, taskId, port);
-        metricRegistry.gauge(metricNamePrefix + "-overflow", overflow, topologyId, componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-capacity", cap, topologyId, componentId, taskId,
+                port);
+        metricRegistry.gauge(metricNamePrefix + "-pct_full", pctFull, topologyId, componentId,
+                taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-population", pop, topologyId, componentId, taskId,
+                port);
+        metricRegistry.gauge(metricNamePrefix + "-arrival_rate_secs", arrivalRate, topologyId,
+                componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-sojourn_time_ms", sojourn, topologyId,
+                componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-insert_failures", insertFailures, topologyId,
+                componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-dropped_messages", dropped, topologyId,
+                componentId, taskId, port);
+        metricRegistry.gauge(metricNamePrefix + "-overflow", overflow, topologyId, componentId,
+                taskId, port);
 
         if (controlQ != null) {
             Gauge<Integer> controlPop = controlQ::size;
             Gauge<Long> controlDropped = droppedControlMessages::get;
 
-            metricRegistry.gauge(metricNamePrefix + "-control_population", controlPop, topologyId, componentId, taskId, port);
-            metricRegistry.gauge(metricNamePrefix + "-control_dropped_messages", controlDropped, topologyId, componentId, taskId, port);
+            metricRegistry.gauge(metricNamePrefix + "-control_population", controlPop, topologyId,
+                    componentId, taskId, port);
+            metricRegistry.gauge(metricNamePrefix + "-control_dropped_messages", controlDropped,
+                    topologyId, componentId, taskId, port);
         }
     }
 

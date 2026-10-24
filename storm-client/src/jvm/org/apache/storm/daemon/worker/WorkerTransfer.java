@@ -50,7 +50,8 @@ public class WorkerTransfer implements JCQueue.Consumer {
 
     private final AtomicBoolean[] remoteBackPressureStatus; // [[remoteTaskId] -> true/false : indicates if remote task is under BP.
 
-    public WorkerTransfer(WorkerState workerState, Map<String, Object> topologyConf, int maxTaskIdInTopo) {
+    public WorkerTransfer(WorkerState workerState, Map<String, Object> topologyConf,
+            int maxTaskIdInTopo) {
         this.workerState = workerState;
         this.backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         this.drainer = new TransferDrainer();
@@ -59,17 +60,21 @@ public class WorkerTransfer implements JCQueue.Consumer {
             remoteBackPressureStatus[i] = new AtomicBoolean(false);
         }
 
-        Integer xferQueueSz = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE));
-        Integer xferBatchSz = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE));
+        Integer xferQueueSz = ObjectReader.getInt(topologyConf
+                .get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE));
+        Integer xferBatchSz = ObjectReader.getInt(topologyConf
+                .get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE));
         if (xferBatchSz > xferQueueSz / 2) {
-            throw new IllegalArgumentException(Config.TOPOLOGY_TRANSFER_BATCH_SIZE + ":" + xferBatchSz + " must be no more than half of "
-                                               + Config.TOPOLOGY_TRANSFER_BUFFER_SIZE + ":" + xferQueueSz);
+            throw new IllegalArgumentException(Config.TOPOLOGY_TRANSFER_BATCH_SIZE + ":"
+                    + xferBatchSz + " must be no more than half of "
+                    + Config.TOPOLOGY_TRANSFER_BUFFER_SIZE + ":" + xferQueueSz);
         }
 
         this.transferQueue = new JCQueue("worker-transfer-queue", "worker-transfer-queue",
-            xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy,
-            workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, Collections.singletonList(-1), workerState.getPort(),
-            workerState.getMetricRegistry());
+                xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy,
+                workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, Collections
+                .singletonList(-1), workerState.getPort(),
+                workerState.getMetricRegistry());
     }
 
     public JCQueue getTransferQueue() {
@@ -100,7 +105,8 @@ public class WorkerTransfer implements JCQueue.Consumer {
         ReentrantReadWriteLock.ReadLock readLock = workerState.endpointSocketLock.readLock();
         try {
             readLock.lock();
-            drainer.send(workerState.cachedTaskToNodePort.get(), workerState.cachedNodeToPortSocket.get());
+            drainer.send(workerState.cachedTaskToNodePort.get(), workerState.cachedNodeToPortSocket
+                    .get());
         } finally {
             readLock.unlock();
         }
@@ -108,14 +114,16 @@ public class WorkerTransfer implements JCQueue.Consumer {
     }
 
     /* Not a Blocking call. If cannot emit, will add 'tuple' to 'pendingEmits' and return 'false'. 'pendingEmits' can be null */
-    public boolean tryTransferRemote(AddressedTuple addressedTuple, Queue<AddressedTuple> pendingEmits, ITupleSerializer serializer) {
+    public boolean tryTransferRemote(AddressedTuple addressedTuple,
+            Queue<AddressedTuple> pendingEmits, ITupleSerializer serializer) {
         if (pendingEmits != null && !pendingEmits.isEmpty()) {
             pendingEmits.add(addressedTuple);
             return false;
         }
 
         if (!remoteBackPressureStatus[addressedTuple.dest].get()) {
-            TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer.serialize(addressedTuple.getTuple()));
+            TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer
+                    .serialize(addressedTuple.getTuple()));
             if (transferQueue.tryPublish(tm)) {
                 return true;
             }
@@ -135,7 +143,6 @@ public class WorkerTransfer implements JCQueue.Consumer {
     public boolean tryFlushRemotes() {
         return transferQueue.tryFlush();
     }
-
 
     public void haltTransferThd() {
         transferQueue.close();

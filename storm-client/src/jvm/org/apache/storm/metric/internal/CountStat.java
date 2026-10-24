@@ -22,15 +22,15 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class CountStat {
     private final AtomicLong currentBucket;
-    //10 min values
+    // 10 min values
     private final int tmSize;
     private final long[] tmBuckets;
     private final long[] tmTime;
-    //3 hour values
+    // 3 hour values
     private final int thSize;
     private final long[] thBuckets;
     private final long[] thTime;
-    //1 day values
+    // 1 day values
     private final int odSize;
     private final long[] odBuckets;
     private final long[] odTime;
@@ -38,9 +38,9 @@ public class CountStat {
     // All internal state except for the count of the current bucket are
     // protected using a lock on this counter
     private long bucketStart;
-    //exact variable time, that is added to the current bucket
+    // exact variable time, that is added to the current bucket
     private long exactExtra;
-    //all time
+    // all time
     private long allTime;
 
     /**
@@ -60,7 +60,7 @@ public class CountStat {
      */
     CountStat(int numBuckets, long startTime) {
         numBuckets = Math.max(numBuckets, 2);
-        //We want to capture the full time range, so the target size is as
+        // We want to capture the full time range, so the target size is as
         // if we had one bucket less, then we do
         tmSize = 10 * 60 * 1000 / (numBuckets - 1);
         thSize = 3 * 60 * 60 * 1000 / (numBuckets - 1);
@@ -111,7 +111,8 @@ public class CountStat {
         allTime += value;
     }
 
-    private synchronized void rotate(long value, long timeSpent, long targetSize, long[] times, long[] buckets) {
+    private synchronized void rotate(long value, long timeSpent, long targetSize, long[] times,
+            long[] buckets) {
         times[0] += timeSpent;
         buckets[0] += value;
 
@@ -132,7 +133,9 @@ public class CountStat {
 
     /**
      * Get time counts.
-     * @return a map of time window to count. Keys are "600" for last 10 mins "10800" for the last 3 hours "86400" for the last day
+     *
+     * @return a map of time window to count. Keys are "600" for last 10 mins "10800" for the last 3
+     *     hours "86400" for the last day
      *     ":all-time" for all time
      */
     public synchronized Map<String, Long> getTimeCounts() {
@@ -150,7 +153,8 @@ public class CountStat {
         return ret;
     }
 
-    long readApproximateTime(long value, long timeSpent, long[] bucketTime, long[] buckets, long desiredTime) {
+    long readApproximateTime(long value, long timeSpent, long[] bucketTime, long[] buckets,
+            long desiredTime) {
         long timeNeeded = desiredTime - timeSpent;
         long total = value;
         for (int i = 0; i < bucketTime.length; i++) {

@@ -14,7 +14,6 @@ package org.apache.storm.trident.util;
 
 import java.io.Serializable;
 
-
 public class IndexedEdge<T> implements Comparable, Serializable {
     public T source;
     public T target;

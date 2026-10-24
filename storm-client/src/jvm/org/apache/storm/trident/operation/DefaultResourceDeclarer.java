@@ -22,14 +22,19 @@ import org.apache.storm.topology.ResourceDeclarer;
 
 /**
  * Default implementation of resources declarer.
- * @param <T> Must always be the type of the extending class. i.e. <code>public class SubResourceDeclarer extends
+ *
+ * @param <T> Must always be the type of the extending class. i.e. <code>public class
+ *     SubResourceDeclarer extends
  *          DefaultResourceDeclarer&lt;SubResourceDeclarer&gt; {...}</code>
  */
 public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implements ResourceDeclarer<T>, ITridentResource {
 
-    //@{link org.apache.storm.trident.planner.Node} and several other trident classes inherit from DefaultResourceDeclarer
-    // These classes are serialized out as part of the bolts and spouts of a topology, often for each bolt/spout in the topology.
-    // The following are marked as transient because they are never used after the topology is created so keeping them around just wastes
+    // @{link org.apache.storm.trident.planner.Node} and several other trident classes inherit from
+    // DefaultResourceDeclarer
+    // These classes are serialized out as part of the bolts and spouts of a topology, often for
+    // each bolt/spout in the topology.
+    // The following are marked as transient because they are never used after the topology is
+    // created so keeping them around just wastes
     // space in the serialized topology
     private final transient Map<String, Number> resources = new HashMap<>();
     private final transient Set<SharedMemory> sharedMemory = new HashSet<>();

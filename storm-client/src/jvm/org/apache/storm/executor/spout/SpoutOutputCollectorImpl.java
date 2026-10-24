@@ -31,7 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Methods are not thread safe. Each thread expected to have a separate instance, or else synchronize externally
+ * Methods are not thread safe. Each thread expected to have a separate instance, or else
+ * synchronize externally
  */
 public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private static final Logger LOG = LoggerFactory.getLogger(SpoutOutputCollectorImpl.class);
@@ -46,6 +47,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final RotatingMap<Long, TupleInfo> pending;
     private final long spoutExecutorThdId;
     private TupleInfo globalTupleInfo = new TupleInfo();
+
     // thread safety: assumes Collector.emit*() calls are externally synchronized (if needed).
 
     @SuppressWarnings("unused")
@@ -94,7 +96,6 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
         }
     }
 
-
     @Override
     public long getPendingCount() {
         return pending.size();
@@ -106,8 +107,9 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
         executor.getReportError().report(error);
     }
 
-    private List<Integer> sendSpoutMsg(String stream, List<Object> values, Object messageId, Integer outTaskId) throws
-        InterruptedException {
+    private List<Integer> sendSpoutMsg(String stream, List<Object> values, Object messageId,
+            Integer outTaskId) throws
+            InterruptedException {
         emittedCount.increment();
 
         List<Integer> outTasks;
@@ -135,12 +137,14 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             }
 
             final TupleImpl tuple =
-                new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), this.taskId, stream, msgId);
+                    new TupleImpl(executor.getWorkerTopologyContext(), values, executor
+                    .getComponentId(), this.taskId, stream, msgId);
             AddressedTuple adrTuple = new AddressedTuple(t, tuple);
             executor.getExecutorTransfer().tryTransfer(adrTuple, executor.getPendingEmits());
         }
         if (isEventLoggers) {
-            taskData.sendToEventLogger(executor, values, executor.getComponentId(), messageId, random, executor.getPendingEmits());
+            taskData.sendToEventLogger(executor, values, executor.getComponentId(), messageId,
+                    random, executor.getPendingEmits());
         }
 
         if (needAck) {
@@ -159,13 +163,17 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
             pending.put(rootId, info);
             List<Object> ackInitTuple = new Values(rootId, Utils.bitXorVals(ackSeq), this.taskId);
-            taskData.sendUnanchored(Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor.getExecutorTransfer(), executor.getPendingEmits());
+            taskData.sendUnanchored(Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor
+                    .getExecutorTransfer(), executor.getPendingEmits());
         } else if (messageId != null) {
-            // Reusing TupleInfo object as we directly call executor.ackSpoutMsg() & are not sending msgs. perf critical
+            // Reusing TupleInfo object as we directly call executor.ackSpoutMsg() & are not sending
+            // msgs. perf critical
             if (isDebug) {
                 if (spoutExecutorThdId != Thread.currentThread().getId()) {
-                    throw new RuntimeException("Detected background thread emitting tuples for the spout. "
-                            + "Spout Output Collector should only emit from the main spout executor thread.");
+                    throw new RuntimeException("Detected background thread emitting tuples for "
+                            + "the spout. "
+                            + "Spout Output Collector should only emit from the main spout "
+                            + "executor thread.");
                 }
             }
             globalTupleInfo.clear();

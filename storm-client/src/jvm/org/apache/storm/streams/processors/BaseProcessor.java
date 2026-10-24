@@ -19,7 +19,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 /**
- * Base implementation of the {@link Processor} interface that provides convenience methods {@link #execute(Object)} and {@link #finish()}.
+ * Base implementation of the {@link Processor} interface that provides convenience methods {@link
+ * #execute(Object)} and {@link #finish()}.
  */
 abstract class BaseProcessor<T> implements Processor<T> {
     private final Set<String> punctuationState = new HashSet<>();
@@ -34,7 +35,8 @@ abstract class BaseProcessor<T> implements Processor<T> {
     }
 
     /**
-     * {@inheritDoc} Processors that do not care about the source stream should override {@link BaseProcessor#execute(Object)} instead.
+     * {@inheritDoc} Processors that do not care about the source stream should override {@link
+     * BaseProcessor#execute(Object)} instead.
      */
     @Override
     public void execute(T input, String streamId) {
@@ -42,7 +44,8 @@ abstract class BaseProcessor<T> implements Processor<T> {
     }
 
     /**
-     * Execute some operation on the input value. Sub classes can override this when then don't care about the source stream from where the
+     * Execute some operation on the input value. Sub classes can override this when then don't care
+     * about the source stream from where the
      * input is received.
      *
      * @param input the input
@@ -64,8 +67,10 @@ abstract class BaseProcessor<T> implements Processor<T> {
     }
 
     /**
-     * This is triggered to signal the end of the current batch of values. Sub classes can override this to emit the result of a batch of
-     * values, for e.g. to emit the result of an aggregate or join operation on a batch of values. If a processor does per-value operation
+     * This is triggered to signal the end of the current batch of values. Sub classes can override
+     * this to emit the result of a batch of
+     * values, for e.g. to emit the result of an aggregate or join operation on a batch of values.
+     * If a processor does per-value operation
      * like filter, map etc, they can choose to ignore this.
      */
     protected void finish() {
@@ -73,7 +78,8 @@ abstract class BaseProcessor<T> implements Processor<T> {
     }
 
     /**
-     * Forwards the result update to downstream processors. Processors that operate on a batch of tuples, like aggregation, join etc can use
+     * Forwards the result update to downstream processors. Processors that operate on a batch of
+     * tuples, like aggregation, join etc can use
      * this to emit the partial results on each input if they are operating in non-windowed mode.
      *
      * @param result the result function

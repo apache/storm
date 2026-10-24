@@ -55,16 +55,18 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         if (workerTokenAuthorizer == null) {
             workerTokenAuthorizer = new WorkerTokenAuthorizer(conf, type);
         }
-        //create an authentication callback handler
-        CallbackHandler serverCallbackHandler = new ServerCallbackHandler(conf, impersonationAllowed);
+        // create an authentication callback handler
+        CallbackHandler serverCallbackHandler = new ServerCallbackHandler(conf,
+                impersonationAllowed);
 
         String jaasConfFile = ClientAuthUtils.getJaasConf(conf);
 
-        //login our principal
+        // login our principal
         Subject subject = null;
         try {
-            //now login
-            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_SERVER, serverCallbackHandler, jaasConfFile);
+            // now login
+            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_SERVER, serverCallbackHandler,
+                    jaasConfFile);
             subject = login.getSubject();
             login.startThreadIfNeeded();
         } catch (LoginException ex) {
@@ -72,13 +74,15 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             throw new RuntimeException(ex);
         }
 
-        //check the credential of our principal
+        // check the credential of our principal
         if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) {
             throw new RuntimeException("Fail to verify user principal with section \""
-                                       + ClientAuthUtils.LOGIN_CONTEXT_SERVER + "\" in login configuration file " + jaasConfFile);
+                    + ClientAuthUtils.LOGIN_CONTEXT_SERVER + "\" in login configuration file "
+                    + jaasConfFile);
         }
 
-        String principal = ClientAuthUtils.get(conf, ClientAuthUtils.LOGIN_CONTEXT_SERVER, "principal");
+        String principal = ClientAuthUtils.get(conf, ClientAuthUtils.LOGIN_CONTEXT_SERVER,
+                "principal");
         LOG.debug("principal:" + principal);
         KerberosName serviceKerberosName = new KerberosName(principal);
         String serviceName = serviceKerberosName.getServiceName();
@@ -87,16 +91,17 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         props.put(Sasl.QOP, "auth");
         props.put(Sasl.SERVER_AUTH, "false");
 
-        //create a transport factory that will invoke our auth callback for digest
+        // create a transport factory that will invoke our auth callback for digest
         TSaslServerTransport.Factory factory = new TSaslServerTransport.Factory();
         factory.addServerDefinition(KERBEROS, serviceName, hostName, props, serverCallbackHandler);
 
-        //Also add in support for worker tokens
+        // Also add in support for worker tokens
         factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, hostName, null,
-                                    new SimpleSaslServerCallbackHandler(impersonationAllowed, workerTokenAuthorizer));
+                new SimpleSaslServerCallbackHandler(impersonationAllowed, workerTokenAuthorizer));
 
-        //create a wrap transport factory so that we could apply user credential during connections
-        TUGIAssumingTransportFactory wrapFactory = new TUGIAssumingTransportFactory(factory, subject);
+        // create a wrap transport factory so that we could apply user credential during connections
+        TUGIAssumingTransportFactory wrapFactory = new TUGIAssumingTransportFactory(factory,
+                subject);
 
         LOG.info("SASL GSSAPI transport factory will be used");
         return wrapFactory;
@@ -104,10 +109,11 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
     private Login mkLogin() throws IOException {
         try {
-            //create an authentication callback handler
+            // create an authentication callback handler
             ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(conf);
-            //now login
-            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, clientCallbackHandler, ClientAuthUtils.getJaasConf(conf));
+            // now login
+            Login login = new Login(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, clientCallbackHandler,
+                    ClientAuthUtils.getJaasConf(conf));
             login.startThreadIfNeeded();
             return login;
         } catch (LoginException ex) {
@@ -117,17 +123,18 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     }
 
     @Override
-    public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException {
+    public TTransport connect(TTransport transport, String serverHost,
+        String asUser) throws IOException, TTransportException {
         WorkerToken token = WorkerTokenClientCallbackHandler.findWorkerTokenInSubject(type);
         if (token != null) {
             CallbackHandler clientCallbackHandler = new WorkerTokenClientCallbackHandler(token);
             TSaslClientTransport wrapperTransport = new TSaslClientTransport(DIGEST,
-                                                                             null,
-                                                                             ClientAuthUtils.SERVICE,
-                                                                             serverHost,
-                                                                             null,
-                                                                             clientCallbackHandler,
-                                                                             transport);
+                    null,
+                    ClientAuthUtils.SERVICE,
+                    serverHost,
+                    null,
+                    clientCallbackHandler,
+                    transport);
             wrapperTransport.open();
             LOG.debug("SASL DIGEST-MD5 WorkerToken client transport has been established");
 
@@ -136,11 +143,14 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         return kerberosConnect(transport, serverHost, asUser);
     }
 
-    private TTransport kerberosConnect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException {
-        //login our user
-        SortedMap<String, ?> authConf = ClientAuthUtils.pullConfig(conf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
+    private TTransport kerberosConnect(TTransport transport, String serverHost,
+            String asUser) throws IOException, TTransportException {
+        // login our user
+        SortedMap<String, ?> authConf = ClientAuthUtils.pullConfig(conf,
+                ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
         if (authConf == null) {
-            throw new RuntimeException("Error in parsing the kerberos login Configuration, returned null");
+            throw new RuntimeException("Error in parsing the kerberos login Configuration, "
+                    + "returned null");
         }
 
         boolean disableLoginCache = false;
@@ -153,10 +163,11 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         if (disableLoginCache) {
             LOG.debug("Kerberos Login Cache is disabled, attempting to contact the Kerberos Server");
             login = mkLogin();
-            //this is to prevent the potential bug that
-            //if the Login Cache is (1) enabled, and then (2) disabled and then (3) enabled again,
-            //and if the LoginCacheKey remains unchanged, (3) will use the Login cache from (1), which could be wrong,
-            //because the TGT cache (as well as the principle) could have been changed during (2)
+            // this is to prevent the potential bug that
+            // if the Login Cache is (1) enabled, and then (2) disabled and then (3) enabled again,
+            // and if the LoginCacheKey remains unchanged, (3) will use the Login cache from (1),
+            // which could be wrong,
+            // because the TGT cache (as well as the principle) could have been changed during (2)
             loginCache.remove(key);
         } else {
             LOG.debug("Trying to get the Kerberos Login from the Login Cache");
@@ -165,7 +176,8 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
                 synchronized (loginCache) {
                     login = loginCache.get(key);
                     if (login == null) {
-                        LOG.debug("Kerberos Login was not found in the Login Cache, attempting to contact the Kerberos Server");
+                        LOG.debug("Kerberos Login was not found in the Login Cache, attempting to "
+                                + "contact the Kerberos Server");
                         login = mkLogin();
                         loginCache.put(key, login);
                     }
@@ -174,13 +186,15 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         }
 
         final Subject subject = login.getSubject();
-        if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) { //error
+        if (subject.getPrivateCredentials(KerberosTicket.class).isEmpty()) { // error
             throw new RuntimeException("Fail to verify user principal with section \""
-                    + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + ClientAuthUtils.getJaasConf(conf));
+                    + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file "
+                    + ClientAuthUtils.getJaasConf(conf));
         }
 
         final String principal = StringUtils.isBlank(asUser) ? getPrincipal(subject) : asUser;
-        String serviceName = ClientAuthUtils.get(conf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT, "serviceName");
+        String serviceName = ClientAuthUtils.get(conf, ClientAuthUtils.LOGIN_CONTEXT_CLIENT,
+                "serviceName");
         if (serviceName == null) {
             serviceName = ClientAuthUtils.SERVICE;
         }
@@ -190,23 +204,24 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
         LOG.debug("SASL GSSAPI client transport is being established");
         final TTransport sasalTransport = new TSaslClientTransport(KERBEROS,
-                                                                   principal,
-                                                                   serviceName,
-                                                                   serverHost,
-                                                                   props,
-                                                                   null,
-                                                                   transport);
+                principal,
+                serviceName,
+                serverHost,
+                props,
+                null,
+                transport);
 
-        //open Sasl transport with the login credential
+        // open Sasl transport with the login credential
         try {
             SubjectCompat.doAs(subject, () -> {
                 try {
                     LOG.debug("do as:" + principal);
                     sasalTransport.open();
                 } catch (Exception e) {
-                    LOG.error("Client failed to open SaslClientTransport to interact with a server during "
-                                    + "session initiation: "
-                                    + e,
+                    LOG.error("Client failed to open SaslClientTransport to interact with a "
+                            + "server during "
+                            + "session initiation: "
+                            + e,
                             e);
                 }
                 return null;
@@ -238,7 +253,8 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     }
 
     /**
-     * A TransportFactory that wraps another one, but assumes a specified UGI before calling through.
+     * A TransportFactory that wraps another one, but assumes a specified UGI before calling
+     * through.
      *
      * <p>This is used on the server side to assume the server's Principal when accepting clients.
      */
@@ -264,17 +280,18 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
                     try {
                         return wrapped.getTransport(trans);
                     } catch (Exception e) {
-                        LOG.debug("Storm server failed to open transport to interact with a client during "
-                                        + "session initiation: "
-                                        + e,
+                        LOG.debug("Storm server failed to open transport to interact with a "
+                                + "client during "
+                                + "session initiation: "
+                                + e,
                                 e);
                         return new NoOpTTrasport(null);
                     }
                 });
             } catch (Exception e) {
                 LOG.error("Storm server experienced an exception while creating a transport "
-                                + "using a JAAS principal context:"
-                                + e,
+                        + "using a JAAS principal context:"
+                        + e,
                         e);
                 return null;
             }
@@ -288,8 +305,8 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             if (authConf != null) {
                 StringBuilder stringBuilder = new StringBuilder();
                 for (String configKey : authConf.keySet()) {
-                    //DISABLE_LOGIN_CACHE indicates whether or not to use the LoginCache.
-                    //So we exclude it from the keyString
+                    // DISABLE_LOGIN_CACHE indicates whether or not to use the LoginCache.
+                    // So we exclude it from the keyString
                     if (configKey.equals(DISABLE_LOGIN_CACHE)) {
                         continue;
                     }
@@ -310,7 +327,8 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
         @Override
         public boolean equals(Object obj) {
-            return (obj instanceof LoginCacheKey) && keyString.equals(((LoginCacheKey) obj).keyString);
+            return (obj instanceof LoginCacheKey) && keyString
+                    .equals(((LoginCacheKey) obj).keyString);
         }
 
         @Override

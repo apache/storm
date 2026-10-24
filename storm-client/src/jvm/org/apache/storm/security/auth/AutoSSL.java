@@ -26,10 +26,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This plugin is intended to be used for user topologies to send SSL keystore/truststore files to the remote workers. On the client side,
- * this takes the files specified in ssl.credential.files, reads the file contents, base64's it, converts it to a String, and adds it to the
- * credentials map. The key in the credentials map is the name of the file. On the worker side it uses the filenames from the
- * ssl.credential.files config to lookup the keys in the credentials map and decodes it and writes it back out as a file.
+ * This plugin is intended to be used for user topologies to send SSL keystore/truststore files to
+ * the remote workers. On the client side,
+ * this takes the files specified in ssl.credential.files, reads the file contents, base64's it,
+ * converts it to a String, and adds it to the
+ * credentials map. The key in the credentials map is the name of the file. On the worker side it
+ * uses the filenames from the
+ * ssl.credential.files config to lookup the keys in the credentials map and decodes it and writes
+ * it back out as a file.
  *
  * <p>User is responsible for referencing them from the topology code as {@code filename}.
  */
@@ -103,7 +107,8 @@ public class AutoSSL implements IAutoCredentials {
     Collection<String> getSSLFilesFromConf(Map<String, Object> conf) {
         Object sslConf = conf.get(SSL_FILES_CONF);
         if (sslConf == null) {
-            LOG.info("No ssl files requested, if you want to use SSL please set {} to the list of files",
+            LOG.info("No ssl files requested, if you want to use SSL please set {} to the list of "
+                    + "files",
                     SSL_FILES_CONF);
             return null;
         }
@@ -114,7 +119,7 @@ public class AutoSSL implements IAutoCredentials {
             sslFiles = Arrays.asList(((String) sslConf).split(","));
         } else {
             throw new RuntimeException(
-                SSL_FILES_CONF + " is not set to something that I know how to use " + sslConf);
+                    SSL_FILES_CONF + " is not set to something that I know how to use " + sslConf);
         }
         return sslFiles;
     }

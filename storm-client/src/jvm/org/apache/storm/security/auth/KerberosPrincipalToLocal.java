@@ -36,7 +36,7 @@ public class KerberosPrincipalToLocal implements IPrincipalToLocal {
      */
     @Override
     public String toLocal(String principal) {
-        //This technically does not conform with rfc1964, but should work so
+        // This technically does not conform with rfc1964, but should work so
         // long as you don't have any really odd names in your KDC.
         return principal == null ? null : principal.split("[/@]")[0];
     }

@@ -15,7 +15,8 @@ package org.apache.storm.streams;
 import org.apache.storm.tuple.Tuple;
 
 /**
- * Provides reference counting of tuples. Used when operations that operate on a batch of tuples are involved (e.g. aggregation, join etc).
+ * Provides reference counting of tuples. Used when operations that operate on a batch of tuples are
+ * involved (e.g. aggregation, join etc).
  * The input tuples are acked once the result is emitted downstream.
  */
 public class RefCountedTuple {

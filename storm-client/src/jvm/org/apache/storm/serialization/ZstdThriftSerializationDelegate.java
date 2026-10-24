@@ -29,7 +29,8 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 
 /**
- * Note, this assumes it's deserializing a zstd byte stream, and will err if it encounters any other serialization.
+ * Note, this assumes it's deserializing a zstd byte stream, and will err if it encounters any other
+ * serialization.
  */
 public class ZstdThriftSerializationDelegate implements SerializationDelegate {
 
@@ -41,9 +42,11 @@ public class ZstdThriftSerializationDelegate implements SerializationDelegate {
 
     @Override
     public void prepare(Map<String, Object> topoConf) {
-        this.zstdCompressionLevel = ObjectReader.getInt(topoConf.getOrDefault(Config.STORM_COMPRESSION_ZSTD_LEVEL,
+        this.zstdCompressionLevel = ObjectReader.getInt(topoConf
+                .getOrDefault(Config.STORM_COMPRESSION_ZSTD_LEVEL,
                 DEFAULT_ZSTD_COMPRESSION_LEVEL));
-        this.maxDecompressedBytes = ObjectReader.getInt(topoConf.getOrDefault(Config.STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES,
+        this.maxDecompressedBytes = ObjectReader.getInt(topoConf
+                .getOrDefault(Config.STORM_COMPRESSION_ZSTD_MAX_DECOMPRESSED_BYTES,
                 DEFAULT_MAX_DECOMPRESSED_BYTES));
     }
 
@@ -67,14 +70,16 @@ public class ZstdThriftSerializationDelegate implements SerializationDelegate {
     public <T> T deserialize(byte[] bytes, Class<T> clazz) {
         if (!Utils.ZstdUtils.isZstd(bytes)) {
             throw new RuntimeException(
-                    String.format("Cannot deserialize [%s]. Expected zstd compressed bytes, but received unknown format.",
+                    String.format("Cannot deserialize [%s]. Expected zstd compressed bytes, but "
+                    + "received unknown format.",
                             clazz.getSimpleName())
             );
         }
         try {
             TDeserializer deserializer = new TDeserializer();
             byte[] decompressed = Utils.ZstdUtils.decompress(bytes, this.maxDecompressedBytes);
-            TBase<?, ?> instance = clazz.asSubclass(TBase.class).getDeclaredConstructor().newInstance();
+            TBase<?, ?> instance = clazz.asSubclass(TBase.class).getDeclaredConstructor()
+                    .newInstance();
             deserializer.deserialize(instance, decompressed);
             return (T) instance;
         } catch (TTransportException e) {

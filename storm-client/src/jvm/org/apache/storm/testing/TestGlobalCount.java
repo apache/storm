@@ -23,14 +23,14 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class TestGlobalCount extends BaseRichBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
     OutputCollector collector;
     private int count;
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         this.collector = collector;
         count = 0;
     }

@@ -45,7 +45,8 @@ public class EmittingProcessorContext<T> implements ProcessorContext<T> {
     private long eventTimestamp;
     private String timestampField;
 
-    public EmittingProcessorContext(ProcessorNode processorNode, OutputCollector collector, String outputStreamId) {
+    public EmittingProcessorContext(ProcessorNode processorNode, OutputCollector collector,
+            String outputStreamId) {
         this.processorNode = processorNode;
         this.outputStreamId = outputStreamId;
         this.collector = collector;
@@ -100,7 +101,8 @@ public class EmittingProcessorContext<T> implements ProcessorContext<T> {
             }
             /*
              * track punctuation in non-batch mode so that the
-             * punctuation is acked after all the processors have emitted the punctuation downstream.
+             * punctuation is acked after all the processors have emitted the punctuation
+             * downstream.
              */
             if (StreamUtil.isPunctuation(anchor.tuple().getValue(0))) {
                 anchor.increment();
@@ -139,7 +141,8 @@ public class EmittingProcessorContext<T> implements ProcessorContext<T> {
             LOG.debug("Emit un-anchored, outputStreamId: {}, values: {}", outputStreamId, values);
             collector.emit(outputStreamId, values);
         } else {
-            LOG.debug("Emit, outputStreamId: {}, anchors: {}, values: {}", outputStreamId, anchors, values);
+            LOG.debug("Emit, outputStreamId: {}, anchors: {}, values: {}", outputStreamId, anchors,
+                    values);
             collector.emit(outputStreamId, tuples(anchors), values);
         }
     }

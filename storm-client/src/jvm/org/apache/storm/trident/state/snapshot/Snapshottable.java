@@ -14,7 +14,6 @@ package org.apache.storm.trident.state.snapshot;
 
 import org.apache.storm.trident.state.ValueUpdater;
 
-
 // used by Stream#persistentAggregate
 public interface Snapshottable<T> extends ReadOnlySnapshottable<T> {
     T update(ValueUpdater updater);

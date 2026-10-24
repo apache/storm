@@ -13,6 +13,12 @@
 package org.apache.storm.security.auth;
 
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -24,8 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
@@ -34,16 +38,11 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.security.auth.tls.ReloadableTsslTransportFactory;
 import org.apache.storm.security.auth.tls.TlsTransportPlugin;
 import org.apache.storm.thrift.transport.TServerSocket;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.mock;
 
 class TlsTransportPluginTest {
-    static private final Map<String, Object> conf = new HashMap<>();
+    private static final Map<String, Object> conf = new HashMap<>();
     Nimbus.Iface handler;
     private TlsTransportPlugin tlsTransportPlugin;
     private final ThriftConnectionType type = ThriftConnectionType.NIMBUS_TLS;
@@ -56,6 +55,7 @@ class TlsTransportPluginTest {
         conf.put(Config.STORM_THRIFT_TRANSPORT_PLUGIN, TlsTransportPlugin.class.getName());
         handler = mock(Nimbus.Iface.class);
     }
+
     @Test
     void testNonTlsConnection() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -70,7 +70,8 @@ class TlsTransportPluginTest {
         conf.put(Config.STORM_THRIFT_TLS_SOCKET_TIMEOUT_MS, 60);
         conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PATH, testDataPath + "testKeyStore.jks");
         conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD, "testpass");
-        conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PATH, testDataPath + "testTrustStore.jks");
+        conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PATH, testDataPath
+                + "testTrustStore.jks");
         conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD, "testpass");
         conf.put(Config.NIMBUS_THRIFT_TLS_THREADS, 1);
         conf.put(Config.NIMBUS_QUEUE_SIZE, 1);
@@ -96,7 +97,8 @@ class TlsTransportPluginTest {
         conf.put(Config.STORM_THRIFT_TLS_SOCKET_TIMEOUT_MS, 5000);
         conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PATH, testDataPath + "testKeyStore.jks");
         conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_KEYSTORE_PASSWORD, "testpass");
-        conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PATH, testDataPath + "testTrustStore.jks");
+        conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PATH, testDataPath
+                + "testTrustStore.jks");
         conf.put(Config.NIMBUS_THRIFT_TLS_SERVER_TRUSTSTORE_PASSWORD, "testpass");
         conf.put(Config.NIMBUS_THRIFT_TLS_CLIENT_AUTH_REQUIRED, true);
 
@@ -122,16 +124,18 @@ class TlsTransportPluginTest {
 
             // Trust-only client context: no client keystore, so the client cannot present a cert.
             KeyStore ts = KeyStore.getInstance("JKS");
-            try (InputStream in = Files.newInputStream(Paths.get(testDataPath + "testTrustStore.jks"))) {
+            try (InputStream in = Files.newInputStream(Paths.get(testDataPath
+                    + "testTrustStore.jks"))) {
                 ts.load(in, "testpass".toCharArray());
             }
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
+                    .getDefaultAlgorithm());
             tmf.init(ts);
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
 
             try (SSLSocket client = (SSLSocket) sslContext.getSocketFactory()
-                    .createSocket(InetAddress.getLoopbackAddress(), port)) {
+                         .createSocket(InetAddress.getLoopbackAddress(), port)) {
                 client.setSoTimeout(5000);
                 // Depending on timing, JSSE surfaces the server-side need-client-auth rejection
                 // as SSLException or as SocketException ("Connection reset") — both prove the

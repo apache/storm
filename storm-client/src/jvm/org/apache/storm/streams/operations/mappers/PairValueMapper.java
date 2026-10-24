@@ -27,7 +27,8 @@ public class PairValueMapper<K, V> implements TupleValueMapper<Pair<K, V>>, Pair
     private final int valueIndex;
 
     /**
-     * Constructs a new {@link PairValueMapper} that constructs a pair from a tuple based on the key and value index.
+     * Constructs a new {@link PairValueMapper} that constructs a pair from a tuple based on the key
+     * and value index.
      *
      * @param keyIndex   the key index
      * @param valueIndex the value index

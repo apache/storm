@@ -15,14 +15,18 @@ package org.apache.storm.state;
 import org.apache.storm.topology.IStatefulBolt;
 
 /**
- * The state of the component that is either managed by the framework (e.g in case of {@link IStatefulBolt}) or managed by the the
+ * The state of the component that is either managed by the framework (e.g in case of {@link
+ * IStatefulBolt}) or managed by the the
  * individual components themselves.
  */
 public interface State {
     /**
-     * Invoked by the framework to prepare a transaction for commit. It should be possible to commit the prepared state later.
-     * <p>
-     * The same txid can be prepared again, but the next txid cannot be prepared when previous one is not yet committed.
+     * Invoked by the framework to prepare a transaction for commit. It should be possible to commit
+     * the prepared state later.
+     *
+     * <p>The same txid can be prepared again, but the next txid cannot be prepared when previous
+     * one
+     * is not yet committed.
      * </p>
      *
      * @param txid the transaction id
@@ -30,7 +34,8 @@ public interface State {
     void prepareCommit(long txid);
 
     /**
-     * Commit a previously prepared transaction. It should be possible to retrieve a committed state later.
+     * Commit a previously prepared transaction. It should be possible to retrieve a committed state
+     * later.
      *
      * @param txid the transaction id
      */

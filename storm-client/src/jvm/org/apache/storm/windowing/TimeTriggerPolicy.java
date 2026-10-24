@@ -38,13 +38,14 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
         this(millis, handler, null);
     }
 
-    public TimeTriggerPolicy(long millis, TriggerHandler handler, EvictionPolicy<T, ?> evictionPolicy) {
+    public TimeTriggerPolicy(long millis, TriggerHandler handler, EvictionPolicy<T,
+            ?> evictionPolicy) {
         this.duration = millis;
         this.handler = handler;
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
-            .setNameFormat("time-trigger-policy-%d")
-            .setDaemon(true)
-            .build();
+                .setNameFormat("time-trigger-policy-%d")
+                .setDaemon(true)
+                .build();
         this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         this.evictionPolicy = evictionPolicy;
     }
@@ -61,7 +62,8 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
 
     @Override
     public void start() {
-        executorFuture = executor.scheduleAtFixedRate(newTriggerTask(), duration, duration, TimeUnit.MILLISECONDS);
+        executorFuture = executor.scheduleAtFixedRate(newTriggerTask(), duration, duration,
+                TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -108,14 +110,16 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
         return new Runnable() {
             @Override
             public void run() {
-                // do not process current timestamp since tuples might arrive while the trigger is executing
+                // do not process current timestamp since tuples might arrive while the trigger is
+                // executing
                 long now = System.currentTimeMillis() - 1;
                 try {
                     /*
                      * set the current timestamp as the reference time for the eviction policy
                      * to evict the events
                      */
-                    evictionPolicy.setContext(new DefaultEvictionContext(now, null, null, duration));
+                    evictionPolicy.setContext(new DefaultEvictionContext(now, null, null,
+                            duration));
                     handler.onTrigger();
                 } catch (Throwable th) {
                     LOG.error("handler.onTrigger failed ", th);

@@ -24,10 +24,12 @@ import org.slf4j.LoggerFactory;
 public class StateFactory {
     private static final Logger LOG = LoggerFactory.getLogger(StateFactory.class);
 
-    private static final String DEFAULT_PROVIDER = "org.apache.storm.state.InMemoryKeyValueStateProvider";
+    private static final String DEFAULT_PROVIDER =
+            "org.apache.storm.state.InMemoryKeyValueStateProvider";
 
     /**
-     * Returns a new state instance using the {@link Config#TOPOLOGY_STATE_PROVIDER} or a {@link InMemoryKeyValueState} if no provider is
+     * Returns a new state instance using the {@link Config#TOPOLOGY_STATE_PROVIDER} or a {@link
+     * InMemoryKeyValueState} if no provider is
      * configured.
      *
      * @param namespace the state namespace
@@ -35,7 +37,8 @@ public class StateFactory {
      * @param context   the topology context
      * @return the state instance
      */
-    public static State getState(String namespace, Map<String, Object> topoConf, TopologyContext context) {
+    public static State getState(String namespace, Map<String, Object> topoConf,
+            TopologyContext context) {
         State state;
         try {
             String provider = null;

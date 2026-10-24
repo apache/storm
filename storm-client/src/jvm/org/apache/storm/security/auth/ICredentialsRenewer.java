@@ -33,5 +33,6 @@ public interface ICredentialsRenewer {
      * @param topologyConf           topology configuration.
      * @param topologyOwnerPrincipal the full principal name of the owner of the topology
      */
-    void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String topologyOwnerPrincipal);
+    void renew(Map<String, String> credentials, Map<String, Object> topologyConf,
+            String topologyOwnerPrincipal);
 }

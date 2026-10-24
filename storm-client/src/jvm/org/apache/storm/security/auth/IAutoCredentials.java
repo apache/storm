@@ -16,7 +16,8 @@ import java.util.Map;
 import javax.security.auth.Subject;
 
 /**
- * Provides a way to automatically push credentials to a topology and to retrieve them in the worker.
+ * Provides a way to automatically push credentials to a topology and to retrieve them in the
+ * worker.
  */
 public interface IAutoCredentials {
 
@@ -37,9 +38,9 @@ public interface IAutoCredentials {
      */
     void populateSubject(Subject subject, Map<String, String> credentials);
 
-
     /**
-     * Called to update the subject on the worker side when new credentials are received. This means that populateSubject has already been
+     * Called to update the subject on the worker side when new credentials are received. This means
+     * that populateSubject has already been
      * called on this subject.
      *
      * @param subject     the subject to optionally put credentials in.

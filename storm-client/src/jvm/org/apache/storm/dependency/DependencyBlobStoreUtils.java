@@ -34,9 +34,12 @@ public class DependencyBlobStoreUtils {
     }
 
     /**
-     * Tell whether a blob key names a topology dependency, i.e. whether it could have been produced by
-     * {@link #generateDependencyBlobKey(String)}. Keys that a topology only refers to, rather than owns, must be
-     * checked with this before they are acted upon, because the dependency lists of a submitted topology are filled
+     * Tell whether a blob key names a topology dependency, i.e. whether it could have been produced
+     * by
+     * {@link #generateDependencyBlobKey(String)}. Keys that a topology only refers to, rather than
+     * owns, must be
+     * checked with this before they are acted upon, because the dependency lists of a submitted
+     * topology are filled
      * in by the client and can name any blob at all.
      *
      * @param key the blob key to check, may be null

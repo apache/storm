@@ -38,7 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A simple, durable, atomic K/V database. *Very inefficient*, should only be used for occasional reads/writes. Every read/write hits disk.
+ * A simple, durable, atomic K/V database. *Very inefficient*, should only be used for occasional
+ * reads/writes. Every read/write hits disk.
  */
 public class LocalState {
     public static final Logger LOG = LoggerFactory.getLogger(LocalState.class);
@@ -72,7 +73,8 @@ public class LocalState {
         try {
             Map<String, TBase> result = new HashMap<>();
             TDeserializer td = new TDeserializer();
-            for (Map.Entry<String, ThriftSerializedObject> ent : partialDeserializeLatestVersion(td).entrySet()) {
+            for (Map.Entry<String, ThriftSerializedObject> ent : partialDeserializeLatestVersion(td)
+                    .entrySet()) {
                 result.put(ent.getKey(), deserialize(ent.getValue(), td));
             }
             return result;
@@ -87,8 +89,9 @@ public class LocalState {
             try {
                 clazz = Class.forName(obj.get_name());
             } catch (ClassNotFoundException ex) {
-                //Try to maintain rolling upgrade compatible with 0.10 releases
-                clazz = Class.forName(obj.get_name().replaceAll("^backtype\\.storm\\.", "org.apache.storm."));
+                // Try to maintain rolling upgrade compatible with 0.10 releases
+                clazz = Class.forName(obj.get_name().replaceAll("^backtype\\.storm\\.",
+                        "org.apache.storm."));
             }
             TBase instance = (TBase) clazz.newInstance();
             td.deserialize(instance, obj.get_bits());
@@ -261,7 +264,8 @@ public class LocalState {
         put(LS_LOCAL_ASSIGNMENTS, new LSSupervisorAssignments(localAssignmentMap));
     }
 
-    private void persistInternal(Map<String, ThriftSerializedObject> serialized, TSerializer ser, boolean cleanup) {
+    private void persistInternal(Map<String, ThriftSerializedObject> serialized, TSerializer ser,
+            boolean cleanup) {
         try {
             if (ser == null) {
                 ser = new TSerializer();
@@ -273,8 +277,8 @@ public class LocalState {
             FileUtils.writeByteArrayToFile(file, toWrite);
             if (toWrite.length != file.length()) {
                 throw new IOException("Tried to serialize " + toWrite.length
-                                      + " bytes to " + file.getCanonicalPath() + ", but "
-                                      + file.length() + " bytes were written.");
+                        + " bytes to " + file.getCanonicalPath() + ", but "
+                        + file.length() + " bytes were written.");
             }
             versionedStore.succeedVersion(newPath);
             if (cleanup) {
@@ -287,7 +291,8 @@ public class LocalState {
 
     private ThriftSerializedObject serialize(TBase o, TSerializer ser) {
         try {
-            return new ThriftSerializedObject(o.getClass().getName(), ByteBuffer.wrap(ser.serialize(o)));
+            return new ThriftSerializedObject(o.getClass().getName(), ByteBuffer.wrap(ser
+                    .serialize(o)));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

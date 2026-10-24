@@ -15,7 +15,6 @@ package org.apache.storm.trident.operation.builtin;
 import org.apache.storm.trident.operation.CombinerAggregator;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-
 public class Count implements CombinerAggregator<Long> {
 
     @Override

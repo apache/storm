@@ -29,9 +29,8 @@ import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class ShellBasedGroupsMapping implements
-                                     IGroupMappingServiceProvider {
+        IGroupMappingServiceProvider {
 
     public static final Logger LOG = LoggerFactory.getLogger(ShellBasedGroupsMapping.class);
     private final ShellCommandRunner shellCommandRunner;
@@ -55,7 +54,8 @@ public class ShellBasedGroupsMapping implements
      */
     @Override
     public void prepare(Map<String, Object> topoConf) {
-        timeoutMs = TimeUnit.SECONDS.toMillis(ObjectReader.getInt(topoConf.get(Config.STORM_GROUP_MAPPING_SERVICE_CACHE_DURATION_SECS)));
+        timeoutMs = TimeUnit.SECONDS.toMillis(ObjectReader.getInt(topoConf
+                .get(Config.STORM_GROUP_MAPPING_SERVICE_CACHE_DURATION_SECS)));
         lastRotationMs = Time.currentTimeMillis();
         cachedGroups = new RotatingMap<>(2);
     }
@@ -86,8 +86,8 @@ public class ShellBasedGroupsMapping implements
     private void rotateIfNeeded() {
         long nowMs = Time.currentTimeMillis();
         if (nowMs >= lastRotationMs + timeoutMs) {
-            //Rotate once per timeout period that has passed since last time this was called.
-            //This is necessary since this method may be called at arbitrary intervals.
+            // Rotate once per timeout period that has passed since last time this was called.
+            // This is necessary since this method may be called at arbitrary intervals.
             int rotationsToDo = (int) ((nowMs - lastRotationMs) / timeoutMs);
             for (int i = 0; i < rotationsToDo; i++) {
                 cachedGroups.rotate();
@@ -97,7 +97,8 @@ public class ShellBasedGroupsMapping implements
     }
 
     /**
-     * Get the current user's group list from Unix by running the command 'groups' NOTE. For non-existing user it will return EMPTY list
+     * Get the current user's group list from Unix by running the command 'groups' NOTE. For
+     * non-existing user it will return EMPTY list
      *
      * @param user user name
      * @return the groups set that the <code>user</code> belongs to
@@ -115,7 +116,8 @@ public class ShellBasedGroupsMapping implements
             result = shellCommandRunner.execCommand(ShellUtils.getGroupsForUserCommand(user));
         } catch (ExitCodeException e) {
             // if we didn't get the group - just return empty list;
-            LOG.debug("Unable to get groups for user " + user + ". ShellUtils command failed with exit code " + e.getExitCode());
+            LOG.debug("Unable to get groups for user " + user
+                    + ". ShellUtils command failed with exit code " + e.getExitCode());
             return new HashSet<>();
         }
 

@@ -26,7 +26,8 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
     private long delta;
 
     /**
-     * Constructs a TimeEvictionPolicy that evicts events older than the given window length in millis.
+     * Constructs a TimeEvictionPolicy that evicts events older than the given window length in
+     * millis.
      *
      * @param windowLength the duration in milliseconds
      */
@@ -39,7 +40,8 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
      */
     @Override
     public Action evict(Event<T> event) {
-        long now = evictionContext == null ? System.currentTimeMillis() : evictionContext.getReferenceTime();
+        long now = evictionContext == null ? System.currentTimeMillis() : evictionContext
+                .getReferenceTime();
         long diff = now - event.getTimestamp();
         if (diff >= (windowLength + delta)) {
             return Action.EXPIRE;
@@ -68,12 +70,13 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
             if (prevContext == null) {
                 delta = Integer.MAX_VALUE; // consider all events for the initial window
             } else {
-                delta = context.getReferenceTime() - prevContext.getReferenceTime() - context.getSlidingInterval();
+                delta = context.getReferenceTime() - prevContext.getReferenceTime() - context
+                        .getSlidingInterval();
                 if (Math.abs(delta) > 100) {
                     LOG.warn("Possible clock drift or long running computation in window; "
-                                    + "Previous eviction time: {}, current eviction time: {}",
-                             prevContext.getReferenceTime(),
-                             context.getReferenceTime());
+                            + "Previous eviction time: {}, current eviction time: {}",
+                            prevContext.getReferenceTime(),
+                            context.getReferenceTime());
                 }
             }
         }

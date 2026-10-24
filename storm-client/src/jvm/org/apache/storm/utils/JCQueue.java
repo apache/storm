@@ -40,38 +40,48 @@ public class JCQueue implements Closeable {
     private final MpscArrayQueue<Object> recvQueue;
     // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
     private final MpscUnboundedArrayQueue<Object> overflowQ;
-    // dedicated lane for low-volume control tuples (flush/tick/metrics tick/feedback), drained before recvQueue.
-    // Like recvQueue, this lane is not drained on close(): any tuples still buffered at shutdown are discarded.
+    // dedicated lane for low-volume control tuples (flush/tick/metrics tick/feedback), drained
+    // before recvQueue.
+    // Like recvQueue, this lane is not drained on close(): any tuples still buffered at shutdown
+    // are discarded.
     private final MpscArrayQueue<Object> controlQueue;
     private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow limiting.
     private final int producerBatchSz;
     private final boolean dynamicBatch;
     private final DirectInserter directInserter = new DirectInserter(this);
-    private final ThreadLocal<BatchInserter> thdLocalBatcher = new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
+    private final ThreadLocal<BatchInserter> thdLocalBatcher =
+            new ThreadLocal<BatchInserter>(); // ensure 1 instance per producer thd.
     // ensure 1 instance per producer thd.
-    private final ThreadLocal<DynamicBatchInserter> thdLocalDynamicBatcher = new ThreadLocal<DynamicBatchInserter>();
+    private final ThreadLocal<DynamicBatchInserter> thdLocalDynamicBatcher =
+            new ThreadLocal<DynamicBatchInserter>();
     private final IWaitStrategy backPressureWaitStrategy;
     private final String queueName;
 
-    // Throttle for the control-lane-full WARN so a stalled executor cannot flood the logs; log at most once per interval.
+    // Throttle for the control-lane-full WARN so a stalled executor cannot flood the logs; log at
+    // most once per interval.
     private static final long CONTROL_DROP_LOG_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(30);
     private final AtomicLong lastControlDropLogNanos = new AtomicLong(Long.MIN_VALUE);
 
-    public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
+    public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit,
+            int producerBatchSz,
                    IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
                    int port, StormMetricRegistry metricRegistry) {
-        this(queueName, metricNamePrefix, size, overflowLimit, producerBatchSz, backPressureWaitStrategy, topologyId, componentId,
+        this(queueName, metricNamePrefix, size, overflowLimit, producerBatchSz,
+                backPressureWaitStrategy, topologyId, componentId,
                 taskIds, port, metricRegistry, false);
     }
 
-    public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
+    public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit,
+            int producerBatchSz,
                    IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
                    int port, StormMetricRegistry metricRegistry, boolean dynamicBatch) {
-        this(queueName, metricNamePrefix, size, overflowLimit, producerBatchSz, backPressureWaitStrategy, topologyId, componentId,
+        this(queueName, metricNamePrefix, size, overflowLimit, producerBatchSz,
+                backPressureWaitStrategy, topologyId, componentId,
                 taskIds, port, metricRegistry, dynamicBatch, 0);
     }
 
-    public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit, int producerBatchSz,
+    public JCQueue(String queueName, String metricNamePrefix, int size, int overflowLimit,
+            int producerBatchSz,
                    IWaitStrategy backPressureWaitStrategy, String topologyId, String componentId, List<Integer> taskIds,
                    int port, StormMetricRegistry metricRegistry, boolean dynamicBatch, int controlQueueSize) {
         this.queueName = queueName;
@@ -82,11 +92,13 @@ public class JCQueue implements Closeable {
         this.controlQueue = (controlQueueSize > 0) ? new MpscArrayQueue<>(controlQueueSize) : null;
 
         for (Integer taskId : taskIds) {
-            this.jcqMetrics.add(new JCQueueMetrics(metricNamePrefix, topologyId, componentId, taskId, port,
+            this.jcqMetrics.add(new JCQueueMetrics(metricNamePrefix, topologyId, componentId,
+                    taskId, port,
                     metricRegistry, recvQueue, overflowQ, controlQueue));
         }
 
-        //The batch size can be no larger than half the full recvQueue size, to avoid contention issues.
+        // The batch size can be no larger than half the full recvQueue size, to avoid contention
+        // issues.
         this.producerBatchSz = Math.max(1, Math.min(producerBatchSz, size / 2));
         this.backPressureWaitStrategy = backPressureWaitStrategy;
     }
@@ -110,7 +122,8 @@ public class JCQueue implements Closeable {
     }
 
     /**
-     * Non blocking. Returns immediately if Q is empty. Runs till Q is empty OR exitCond.keepRunning() return false. Returns number of
+     * Non blocking. Returns immediately if Q is empty. Runs till Q is empty OR
+     * exitCond.keepRunning() return false. Returns number of
      * elements consumed from Q.
      */
     public int consume(JCQueue.Consumer consumer, ExitCondition exitCond) {
@@ -127,7 +140,8 @@ public class JCQueue implements Closeable {
     }
 
     /**
-     * Load of the data plane only. The control lane and overflow lane are deliberately excluded so that load-aware groupings
+     * Load of the data plane only. The control lane and overflow lane are deliberately excluded so
+     * that load-aware groupings
      * (e.g. LoadAwareShuffleGrouping) are unaffected by pending control tuples.
      */
     public double getQueueLoad() {
@@ -140,7 +154,8 @@ public class JCQueue implements Closeable {
     private int consumeImpl(Consumer consumer, ExitCondition exitCond) throws InterruptedException {
         int controlDrainCount = 0;
         if (controlQueue != null) {
-            // drain the control lane first: it is small and bounded, so it cannot starve the data plane
+            // drain the control lane first: it is small and bounded, so it cannot starve the data
+            // plane
             while (exitCond.keepRunning()) {
                 Object tuple = controlQueue.poll();
                 if (tuple == null) {
@@ -163,7 +178,8 @@ public class JCQueue implements Closeable {
 
         int overflowDrainCount = 0;
         int limit = overflowQ.size();
-        while (exitCond.keepRunning() && (overflowDrainCount < limit)) { // 2nd cond prevents staying stuck with consuming overflow
+        while (exitCond.keepRunning()
+                && (overflowDrainCount < limit)) { // 2nd cond prevents staying stuck with consuming overflow
             Object tuple = overflowQ.poll();
             ++overflowDrainCount;
             consumer.accept(tuple);
@@ -189,14 +205,14 @@ public class JCQueue implements Closeable {
     // Non Blocking. returns count of how many inserts succeeded
     private int tryPublishInternal(ArrayList<Object> objs) {
         MessagePassingQueue.Supplier<Object> supplier =
-            new MessagePassingQueue.Supplier<Object>() {
-                int counter = 0;
+                new MessagePassingQueue.Supplier<Object>() {
+                    int counter = 0;
 
-                @Override
-                public Object get() {
-                    return objs.get(counter++);
-                }
-            };
+                    @Override
+                    public Object get() {
+                        return objs.get(counter++);
+                    }
+                };
         int count = recvQueue.fill(supplier, objs.size());
         for (JCQueueMetrics jcQueueMetric : jcqMetrics) {
             jcQueueMetric.notifyArrivals(count);
@@ -229,7 +245,8 @@ public class JCQueue implements Closeable {
     }
 
     /**
-     * Blocking call. Retries till it can successfully publish the obj. Can be interrupted via Thread.interrupt().
+     * Blocking call. Retries till it can successfully publish the obj. Can be interrupted via
+     * Thread.interrupt().
      */
     public void publish(Object obj) throws InterruptedException {
         Inserter inserter = getInserter();
@@ -245,7 +262,8 @@ public class JCQueue implements Closeable {
     }
 
     /**
-     * Non-blocking call. Bypasses any batching that may be enabled on the recvQueue. Intended for sending flush/metrics tuples
+     * Non-blocking call. Bypasses any batching that may be enabled on the recvQueue. Intended for
+     * sending flush/metrics tuples
      */
     public boolean tryPublishDirect(Object obj) {
         return tryPublishInternal(obj);
@@ -259,10 +277,14 @@ public class JCQueue implements Closeable {
     }
 
     /**
-     * Non-blocking, un-batched write to the control lane, exempt from backpressure. Falls back to an un-batched
-     * write to the recvQueue (same as {@link #tryPublishDirect(Object)}) when the control lane is disabled.
-     * Returns false if the target queue is full; a failed control publish is dropped by the caller and counted
-     * via the control drop metric, which is safe because control signals are periodic and self-healing.
+     * Non-blocking, un-batched write to the control lane, exempt from backpressure. Falls back to
+     * an un-batched
+     * write to the recvQueue (same as {@link #tryPublishDirect(Object)}) when the control lane is
+     * disabled.
+     * Returns false if the target queue is full; a failed control publish is dropped by the caller
+     * and counted
+     * via the control drop metric, which is safe because control signals are periodic and
+     * self-healing.
      */
     public boolean tryPublishControl(Object obj) {
         if (controlQueue == null) {
@@ -278,24 +300,33 @@ public class JCQueue implements Closeable {
         return false;
     }
 
-    // A full control lane means the consuming executor thread is stalled; surface it in the logs (rate-limited) and
+    // A full control lane means the consuming executor thread is stalled; surface it in the logs
+    // (rate-limited) and
     // not only via the control_dropped_messages metric, which an operator may not be charting.
     private void maybeWarnControlDrop() {
-        // Reads the clock on every invocation, but this is not a hot path: it runs only when a control tuple is
-        // dropped, and control tuples reach tryPublishControl only via the isControlStreamId guard (timer-driven
-        // tick/flush/metrics-tick/feedback signals). So drops are bounded by those signal periods (order of a few
-        // per second per queue even under a full stall), not by the data rate. A time-based throttle also has to
-        // read the clock to know the interval elapsed; on Linux nanoTime() is a vDSO read (no syscall/context switch).
+        // Reads the clock on every invocation, but this is not a hot path: it runs only when a
+        // control tuple is
+        // dropped, and control tuples reach tryPublishControl only via the isControlStreamId guard
+        // (timer-driven
+        // tick/flush/metrics-tick/feedback signals). So drops are bounded by those signal periods
+        // (order of a few
+        // per second per queue even under a full stall), not by the data rate. A time-based
+        // throttle also has to
+        // read the clock to know the interval elapsed; on Linux nanoTime() is a vDSO read (no
+        // syscall/context switch).
         long now = System.nanoTime();
         long last = lastControlDropLogNanos.get();
-        if (now - last >= CONTROL_DROP_LOG_INTERVAL_NANOS && lastControlDropLogNanos.compareAndSet(last, now)) {
-            LOG.warn("Control lane full on queue '{}'; dropping control tuple. The consuming executor thread is likely "
+        if (now - last >= CONTROL_DROP_LOG_INTERVAL_NANOS && lastControlDropLogNanos
+                .compareAndSet(last, now)) {
+            LOG.warn("Control lane full on queue '{}'; dropping control tuple. The consuming "
+                    + "executor thread is likely "
                     + "stalled. See the receive-queue-control_dropped_messages metric.", queueName);
         }
     }
 
     /**
-     * Un-batched write to overflowQ. Should only be called by WorkerTransfer returns false if overflowLimit has reached
+     * Un-batched write to overflowQ. Should only be called by WorkerTransfer returns false if
+     * overflowLimit has reached
      */
     public boolean tryPublishToOverflow(Object obj) {
         if (overflowLimit > 0 && overflowQ.size() >= overflowLimit) {
@@ -324,7 +355,8 @@ public class JCQueue implements Closeable {
     }
 
     /**
-     * if(batchSz>1)  : Blocking call. Does not return until at least 1 element is drained or Thread.interrupt() is received if(batchSz==1)
+     * if(batchSz>1) : Blocking call. Does not return until at least 1 element is drained or
+     * Thread.interrupt() is received if(batchSz==1)
      * : NO-OP. Returns immediately. doesnt throw.
      */
     public void flush() throws InterruptedException {
@@ -333,7 +365,8 @@ public class JCQueue implements Closeable {
     }
 
     /**
-     * if(batchSz>1)  : Non-Blocking call. Tries to flush as many as it can. Returns true if flushed at least 1. if(batchSz==1) : This is a
+     * if(batchSz>1) : Non-Blocking call. Tries to flush as many as it can. Returns true if flushed
+     * at least 1. if(batchSz==1) : This is a
      * NO-OP. Returns true immediately.
      */
     public boolean tryFlush() {
@@ -372,7 +405,7 @@ public class JCQueue implements Closeable {
         }
 
         /**
-         * Blocking call, that can be interrupted via Thread.interrupt
+         * Blocking call, that can be interrupted via Thread.interrupt.
          */
         @Override
         public void publish(Object obj) throws InterruptedException {
@@ -383,8 +416,9 @@ public class JCQueue implements Closeable {
                     jcQueueMetric.notifyInsertFailure();
                 }
                 if (idleCount == 0) { // check avoids multiple log msgs when in a idle loop
-                    LOG.debug("Experiencing Back Pressure on recvQueue: '{}'. Entering BackPressure Wait",
-                        queue.getQueueName());
+                    LOG.debug("Experiencing Back Pressure on recvQueue: '{}'. Entering "
+                            + "BackPressure Wait",
+                            queue.getQueueName());
                 }
 
                 idleCount = queue.backPressureWaitStrategy.idle(idleCount);
@@ -424,7 +458,8 @@ public class JCQueue implements Closeable {
     /* Not thread safe. Have one instance per producer thread or synchronize externally */
     private static class BatchInserter implements Inserter {
         private final int batchSz;
-        // WeakReference breaks the ThreadLocal retention cycle: thdLocalBatcher is an instance field
+        // WeakReference breaks the ThreadLocal retention cycle: thdLocalBatcher is an instance
+        // field
         // of JCQueue, so the ThreadLocalMap key (the ThreadLocal object) is kept strongly reachable
         // via value(BatchInserter) -> queue(JCQueue) -> field. A WeakReference here cuts that path,
         // allowing the key to become weakly-reachable and the entry to be expunged once the JCQueue
@@ -439,14 +474,16 @@ public class JCQueue implements Closeable {
         }
 
         /**
-         * Number of buffered elements that triggers a flush. Constant here; subclasses may vary it at runtime.
+         * Number of buffered elements that triggers a flush. Constant here; subclasses may vary it
+         * at runtime.
          */
         int batchSize() {
             return batchSz;
         }
 
         /**
-         * Hook invoked after every non-empty flush, passing whether the batch had reached {@link #batchSize()} when the flush started.
+         * Hook invoked after every non-empty flush, passing whether the batch had reached {@link
+         * #batchSize()} when the flush started.
          * No-op here; subclasses may use it to adapt {@link #batchSize()}.
          */
         void afterFlush(boolean wasFull) {
@@ -478,7 +515,8 @@ public class JCQueue implements Closeable {
         }
 
         /**
-         * Blocking call - Does not return until at least 1 element is drained or Thread.interrupt() is received. Uses backpressure wait
+         * Blocking call - Does not return until at least 1 element is drained or Thread.interrupt()
+         * is received. Uses backpressure wait
          * strategy.
          */
         @Override
@@ -488,7 +526,8 @@ public class JCQueue implements Closeable {
             }
             JCQueue queue = queueRef.get();
             if (queue == null) {
-                // The JCQueue was GC'd (topology stopped on a long-lived thread, e.g. LocalCluster).
+                // The JCQueue was GC'd (topology stopped on a long-lived thread, e.g.
+                // LocalCluster).
                 // Nothing to flush; discard the buffered batch and return cleanly.
                 currentBatch.clear();
                 return;
@@ -501,8 +540,9 @@ public class JCQueue implements Closeable {
                     jcQueueMetric.notifyInsertFailure();
                 }
                 if (retryCount == 0) { // check avoids multiple log msgs when in a idle loop
-                    LOG.debug("Experiencing Back Pressure when flushing batch to Q: '{}'. Entering BackPressure Wait.",
-                        queue.getQueueName());
+                    LOG.debug("Experiencing Back Pressure when flushing batch to Q: '{}'. "
+                            + "Entering BackPressure Wait.",
+                            queue.getQueueName());
                 }
                 retryCount = queue.backPressureWaitStrategy.idle(retryCount);
                 if (Thread.interrupted()) {
@@ -515,7 +555,8 @@ public class JCQueue implements Closeable {
         }
 
         /**
-         * Non blocking call. tries to flush as many as possible. Returns true if at least one from non-empty currentBatch was flushed or if
+         * Non blocking call. tries to flush as many as possible. Returns true if at least one from
+         * non-empty currentBatch was flushed or if
          * currentBatch is empty. Returns false otherwise
          */
         @Override
@@ -525,7 +566,8 @@ public class JCQueue implements Closeable {
             }
             JCQueue queue = queueRef.get();
             if (queue == null) {
-                // The JCQueue was GC'd (topology stopped on a long-lived thread, e.g. LocalCluster).
+                // The JCQueue was GC'd (topology stopped on a long-lived thread, e.g.
+                // LocalCluster).
                 // Nothing to flush; discard the buffered batch and report success.
                 currentBatch.clear();
                 return true;
@@ -536,10 +578,14 @@ public class JCQueue implements Closeable {
                 for (JCQueueMetrics jcQueueMetric : queue.jcqMetrics) {
                     jcQueueMetric.notifyInsertFailure();
                 }
-                // afterFlush is invoked intentionally even though nothing was published: a full batch that the recvQueue
-                // could not accept is a heavy-load signal, so subclasses grow the effective batch size (see
-                // DynamicBatchInserter#afterFlush). This matches the blocking flush(), which also grows on wasFull after its
-                // retry loop drains the queue. Do not move this out of the failure branch without revisiting that symmetry.
+                // afterFlush is invoked intentionally even though nothing was published: a full
+                // batch that the recvQueue
+                // could not accept is a heavy-load signal, so subclasses grow the effective batch
+                // size (see
+                // DynamicBatchInserter#afterFlush). This matches the blocking flush(), which also
+                // grows on wasFull after its
+                // retry loop drains the queue. Do not move this out of the failure branch without
+                // revisiting that symmetry.
                 afterFlush(wasFull);
                 return false;
             } else {
@@ -551,11 +597,16 @@ public class JCQueue implements Closeable {
     } // class BatchInserter
 
     /**
-     * A {@link BatchInserter} that adapts its batch size between 1 and a configured maximum using AIMD, to favor low latency under
-     * light load while preserving throughput under heavy load. It reuses the parent's publish/flush logic and only customizes the
-     * flush threshold ({@link #batchSize()}) and the post-flush adaptation ({@link #afterFlush(boolean)}): a flush of a full batch
-     * is read as heavy load and additively grows the effective size; a flush of a partially-filled batch (e.g. driven by the
-     * flush-tuple timer) is read as light load and multiplicatively shrinks it toward 1. Not thread safe. Have one instance per
+     * A {@link BatchInserter} that adapts its batch size between 1 and a configured maximum using
+     * AIMD, to favor low latency under
+     * light load while preserving throughput under heavy load. It reuses the parent's publish/flush
+     * logic and only customizes the
+     * flush threshold ({@link #batchSize()}) and the post-flush adaptation ({@link
+     * #afterFlush(boolean)}): a flush of a full batch
+     * is read as heavy load and additively grows the effective size; a flush of a partially-filled
+     * batch (e.g. driven by the
+     * flush-tuple timer) is read as light load and multiplicatively shrinks it toward 1. Not thread
+     * safe. Have one instance per
      * producer thread or synchronize externally.
      */
     static class DynamicBatchInserter extends BatchInserter {
@@ -563,7 +614,8 @@ public class JCQueue implements Closeable {
         private int effectiveBatchSz;
 
         DynamicBatchInserter(JCQueue queue, int maxBatchSz) {
-            super(queue, maxBatchSz); // sizes the buffer to the max; the flush threshold comes from batchSize()
+            super(queue,
+                    maxBatchSz); // sizes the buffer to the max; the flush threshold comes from batchSize()
             this.maxBatchSz = maxBatchSz;
             this.effectiveBatchSz = 1; // start small to favor latency; grows under sustained load
         }

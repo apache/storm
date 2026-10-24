@@ -105,7 +105,8 @@ public class FixedTupleSpout implements IRichSpout, CompletableSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
         this.context = context;
         List<Integer> tasks = context.getComponentTasks(context.getThisComponentId());
         int startIndex;

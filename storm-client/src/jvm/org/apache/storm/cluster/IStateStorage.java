@@ -19,15 +19,20 @@ import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionState
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 
 /**
- * StateStorage provides the API for the pluggable state store used by the Storm daemons. Data is stored in path/value
- * format, and the store supports listing sub-paths at a given path. All data should be available across all nodes with
+ * StateStorage provides the API for the pluggable state store used by the Storm daemons. Data is
+ * stored in path/value
+ * format, and the store supports listing sub-paths at a given path. All data should be available
+ * across all nodes with
  * eventual consistency.
  *
- * <p>IMPORTANT NOTE: Heartbeats have different api calls used to interact with them. The root path (/) may or may not
+ * <p>IMPORTANT NOTE: Heartbeats have different api calls used to interact with them. The root path
+ * (/) may or may not
  * be the same as the root path for the other api calls.
  *
- * <p>For example, performing these two calls: set_data("/path", data, acls); void set_worker_hb("/path", heartbeat,
- * acls); may or may not cause a collision in "/path". Never use the same paths with the *_hb* methods as you do with
+ * <p>For example, performing these two calls: set_data("/path", data, acls); void
+ * set_worker_hb("/path", heartbeat,
+ * acls); may or may not cause a collision in "/path". Never use the same paths with the *_hb*
+ * methods as you do with
  * the others.
  */
 public interface IStateStorage extends Closeable {
@@ -35,7 +40,8 @@ public interface IStateStorage extends Closeable {
     /**
      * Registers a callback function that gets called when CuratorEvents happen.
      *
-     * @param callback is a clojure IFn that accepts the type - translated to clojure keyword as in zookeeper - and the path: (callback type
+     * @param callback is a clojure IFn that accepts the type - translated to clojure keyword as in
+     *     zookeeper - and the path: (callback type
      *                 path)
      * @return is an id that can be passed to unregister(...) to unregister the callback.
      */
@@ -49,7 +55,8 @@ public interface IStateStorage extends Closeable {
     void unregister(String id);
 
     /**
-     * Path will be appended with a monotonically increasing integer, a new node will be created there, and data will be put at that node.
+     * Path will be appended with a monotonically increasing integer, a new node will be created
+     * there, and data will be put at that node.
      *
      * @param path The path that the monotonically increasing integer suffix will be added to.
      * @param data The data that will be written at the suffixed path's node.
@@ -59,7 +66,8 @@ public interface IStateStorage extends Closeable {
     String create_sequential(String path, byte[] data, List<ACL> acls);
 
     /**
-     * Creates nodes for path and all its parents. Path elements are separated by a "/", as in *nix filesystem notation. Equivalent to mkdir
+     * Creates nodes for path and all its parents. Path elements are separated by a "/", as in *nix
+     * filesystem notation. Equivalent to mkdir
      * -p in *nix.
      *
      * @param path The path to create, along with all its parents.
@@ -75,7 +83,8 @@ public interface IStateStorage extends Closeable {
     void delete_node(String path);
 
     /**
-     * Creates an ephemeral node at path. Ephemeral nodes are destroyed by the store when the client disconnects.
+     * Creates an ephemeral node at path. Ephemeral nodes are destroyed by the store when the client
+     * disconnects.
      *
      * @param path The path where a node will be created.
      * @param data The data to be written at the node.
@@ -84,11 +93,13 @@ public interface IStateStorage extends Closeable {
     void set_ephemeral_node(String path, byte[] data, List<ACL> acls);
 
     /**
-     * Gets the 'version' of the node at a path. Optionally sets a watch on that node. The version should increase whenever a write
+     * Gets the 'version' of the node at a path. Optionally sets a watch on that node. The version
+     * should increase whenever a write
      * happens.
      *
      * @param path  The path to get the version of.
-     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are consumed by functions registered with the
+     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are
+     *     consumed by functions registered with the
      *              register method. Very useful for catching updates to nodes.
      * @return The integer version of this node.
      */
@@ -98,7 +109,8 @@ public interface IStateStorage extends Closeable {
      * Check if a node exists and optionally set a watch on the path.
      *
      * @param path  The path to check for the existence of a node.
-     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are consumed by functions registered with the
+     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are
+     *     consumed by functions registered with the
      *              register method. Very useful for catching updates to nodes.
      * @return Whether or not a node exists at path.
      */
@@ -108,7 +120,8 @@ public interface IStateStorage extends Closeable {
      * Get a list of paths of all the child nodes which exist immediately under path.
      *
      * @param path  The path to look under
-     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are consumed by functions registered with the
+     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are
+     *     consumed by functions registered with the
      *              register method. Very useful for catching updates to nodes.
      * @return list of string paths under path.
      */
@@ -130,20 +143,23 @@ public interface IStateStorage extends Closeable {
     void set_data(String path, byte[] data, List<ACL> acls);
 
     /**
-     * Get the data from the node at path
+     * Get the data from the node at path.
      *
      * @param path  The path to look under
-     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are consumed by functions registered with the
+     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are
+     *     consumed by functions registered with the
      *              register method. Very useful for catching updates to nodes.
      * @return The data at the node.
      */
     byte[] get_data(String path, boolean watch);
 
     /**
-     * Get the data at the node along with its version. Data is returned in an Map with the keys data and version.
+     * Get the data at the node along with its version. Data is returned in an Map with the keys
+     * data and version.
      *
      * @param path  The path to look under
-     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are consumed by functions registered with the
+     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are
+     *     consumed by functions registered with the
      *              register method. Very useful for catching updates to nodes.
      * @return the data with a version
      */
@@ -159,21 +175,24 @@ public interface IStateStorage extends Closeable {
     void set_worker_hb(String path, byte[] data, List<ACL> acls);
 
     /**
-     * Get the heartbeat from the node at path
+     * Get the heartbeat from the node at path.
      *
      * @param path  The path to look under
-     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are consumed by functions registered with the
+     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are
+     *     consumed by functions registered with the
      *              register method. Very useful for catching updates to nodes.
      * @return The heartbeat at the node.
      */
     byte[] get_worker_hb(String path, boolean watch);
 
     /**
-     * Get a list of paths of all the child nodes which exist immediately under path. This is similar to get_children, but must be used for
+     * Get a list of paths of all the child nodes which exist immediately under path. This is
+     * similar to get_children, but must be used for
      * any nodes
      *
      * @param path  The path to look under
-     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are consumed by functions registered with the
+     * @param watch Whether or not to set a watch on the path. Watched paths emit events which are
+     *     consumed by functions registered with the
      *              register method. Very useful for catching updates to nodes.
      * @return list of string paths under path.
      */
@@ -194,14 +213,16 @@ public interface IStateStorage extends Closeable {
     void add_listener(ConnectionStateListener listener);
 
     /**
-     * Force consistency on a path. Any writes committed on the path before this call will be completely propagated when it returns.
+     * Force consistency on a path. Any writes committed on the path before this call will be
+     * completely propagated when it returns.
      *
      * @param path The path to synchronize.
      */
     void sync_path(String path);
 
     /**
-     * Allows us to delete the znodes within /storm/blobstore/key_name whose znodes start with the corresponding nimbusHostPortInfo.
+     * Allows us to delete the znodes within /storm/blobstore/key_name whose znodes start with the
+     * corresponding nimbusHostPortInfo.
      *
      * @param path               /storm/blobstore/key_name
      * @param nimbusHostPortInfo Contains the host port information of a nimbus node.

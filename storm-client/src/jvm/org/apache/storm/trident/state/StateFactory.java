@@ -17,5 +17,6 @@ import java.util.Map;
 import org.apache.storm.task.IMetricsContext;
 
 public interface StateFactory extends Serializable {
-    State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions);
+    State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex,
+            int numPartitions);
 }

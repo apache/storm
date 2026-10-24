@@ -36,7 +36,8 @@ public class OpaqueValue<T> {
         } else if (batchTxid.equals(this.currTxid)) {
             prev = this.prev;
         } else {
-            throw new RuntimeException("Current batch (" + batchTxid + ") is behind state's batch: " + this.toString());
+            throw new RuntimeException("Current batch (" + batchTxid
+                    + ") is behind state's batch: " + this.toString());
         }
         return new OpaqueValue<T>(batchTxid, newVal, prev);
     }
@@ -47,7 +48,8 @@ public class OpaqueValue<T> {
         } else if (batchTxid.equals(this.currTxid)) {
             return prev;
         } else {
-            throw new RuntimeException("Current batch (" + batchTxid + ") is behind state's batch: " + this.toString());
+            throw new RuntimeException("Current batch (" + batchTxid
+                    + ") is behind state's batch: " + this.toString());
         }
     }
 

@@ -24,14 +24,17 @@ public class LocalExecutor {
 
     private static volatile String trackId = null;
 
-    public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> initialCredentials)
-        throws Exception {
+    public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String,
+            String> initialCredentials)
+            throws Exception {
         Executor executor = Executor.mkExecutor(workerState, executorId, initialCredentials);
-        executor.setLocalExecutorTransfer(new ExecutorTransfer(workerState, executor.getTopoConf()) {
+        executor.setLocalExecutorTransfer(new ExecutorTransfer(workerState, executor
+                .getTopoConf()) {
             @Override
             public boolean tryTransfer(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits) {
                 if (null != trackId) {
-                    ((AtomicInteger) ((Map) RegisteredGlobalState.getState(trackId)).get("transferred")).incrementAndGet();
+                    ((AtomicInteger) ((Map) RegisteredGlobalState.getState(trackId))
+                            .get("transferred")).incrementAndGet();
                 }
                 return super.tryTransfer(tuple, pendingEmits);
             }

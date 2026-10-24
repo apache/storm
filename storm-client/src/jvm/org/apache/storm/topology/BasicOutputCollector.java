@@ -18,7 +18,6 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 
-
 public class BasicOutputCollector implements IBasicOutputCollector {
     private OutputCollector out;
     private Tuple inputTuple;
@@ -50,8 +49,10 @@ public class BasicOutputCollector implements IBasicOutputCollector {
     }
 
     /**
-     * Resets the message timeout for any tuple trees to which the given tuple belongs. The timeout is reset to
-     * Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS. Note that this is an expensive operation, and should be used sparingly.
+     * Resets the message timeout for any tuple trees to which the given tuple belongs. The timeout
+     * is reset to
+     * Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS. Note that this is an expensive operation, and should be
+     * used sparingly.
      *
      * @param tuple the tuple to reset timeout for
      */

@@ -30,7 +30,7 @@ public class CGroupMemoryLimit extends CGroupMetricsBase<Long> {
 
     public CGroupMemoryLimit(Map<String, Object> conf) {
         super(conf, SubSystemType.memory);
-        //In some cases we might be limiting memory in the supervisor and not in the cgroups
+        // In some cases we might be limiting memory in the supervisor and not in the cgroups
         long limit = -1;
         try {
             limit = Long.valueOf(System.getProperty("worker.memory_limit_mb", "-1"));

@@ -12,16 +12,15 @@
 
 package org.apache.storm.dependency;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DependencyPropertiesParserTest {
     private final DependencyPropertiesParser sut = new DependencyPropertiesParser();
@@ -50,8 +49,10 @@ public class DependencyPropertiesParserTest {
 
         Map<String, File> parsed = sut.parseArtifactsProperties(testJson);
         assertEquals(2, parsed.size());
-        assertEquals("storm-core-1.0.0.jar", parsed.get("org.apache.storm:storm-core:1.0.0").getName());
-        assertEquals("json-simple-1.1.jar", parsed.get("com.googlecode.json-simple:json-simple:1.1").getName());
+        assertEquals("storm-core-1.0.0.jar", parsed.get("org.apache.storm:storm-core:1.0.0")
+                .getName());
+        assertEquals("json-simple-1.1.jar", parsed.get("com.googlecode.json-simple:json-simple:1.1")
+                .getName());
     }
 
     @Test
@@ -63,7 +64,7 @@ public class DependencyPropertiesParserTest {
     @Test
     public void parsePackagesPropertiesWithBrokenJSON() {
         assertThrows(RuntimeException.class,
-            () -> sut.parseArtifactsProperties("{\"group:artifact:version\": \"a.jar\""));
+                () -> sut.parseArtifactsProperties("{\"group:artifact:version\": \"a.jar\""));
     }
 
 }

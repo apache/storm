@@ -40,7 +40,8 @@ public class StatefulWindowManager<T> extends WindowManager<T> {
      * @param queue             a collection where the events in the window can be enqueued. <br/>
      *                          <b>Note:</b> This collection has to be thread safe.
      */
-    public StatefulWindowManager(WindowLifecycleListener<T> lifecycleListener, Collection<Event<T>> queue) {
+    public StatefulWindowManager(WindowLifecycleListener<T> lifecycleListener,
+            Collection<Event<T>> queue) {
         super(lifecycleListener, queue);
     }
 
@@ -51,7 +52,8 @@ public class StatefulWindowManager<T> extends WindowManager<T> {
                 if (status.isValid()) {
                     return inner.hasNext();
                 }
-                throw new IllegalStateException("Stale iterator, the iterator is valid only within the corresponding execute");
+                throw new IllegalStateException("Stale iterator, the iterator is valid only "
+                        + "within the corresponding execute");
             }
 
             @Override
@@ -59,7 +61,8 @@ public class StatefulWindowManager<T> extends WindowManager<T> {
                 if (status.isValid()) {
                     return inner.next();
                 }
-                throw new IllegalStateException("Stale iterator, the iterator is valid only within the corresponding execute");
+                throw new IllegalStateException("Stale iterator, the iterator is valid only "
+                        + "within the corresponding execute");
             }
         };
     }
@@ -93,10 +96,12 @@ public class StatefulWindowManager<T> extends WindowManager<T> {
                         }
                         return expiringIterator(res, status);
                     }
-                    throw new IllegalStateException("Stale window, the window is valid only within the corresponding execute");
+                    throw new IllegalStateException("Stale window, the window is valid only "
+                            + "within the corresponding execute");
                 }
             };
-            windowLifecycleListener.onActivation(wrapper, null, null, evictionPolicy.getContext().getReferenceTime());
+            windowLifecycleListener.onActivation(wrapper, null, null, evictionPolicy.getContext()
+                    .getReferenceTime());
             // invalidate the iterator
             status.invalidate();
         } else {

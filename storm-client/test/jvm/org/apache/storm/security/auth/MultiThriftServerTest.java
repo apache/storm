@@ -12,19 +12,22 @@
 
 package org.apache.storm.security.auth;
 
-import java.util.*;
-import org.apache.storm.*;
-import org.apache.storm.generated.Nimbus;
-import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.storm.Config;
+import org.apache.storm.generated.Nimbus;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class MultiThriftServerTest {
 
-    static private final Map<String, Object> conf = new HashMap<>();
+    private static final Map<String, Object> conf = new HashMap<>();
     static ThriftServer serverNonTls;
     static ThriftServer serverTls;
-    static private MultiThriftServer<ThriftServer> multiThriftServer;
+    private static MultiThriftServer<ThriftServer> multiThriftServer;
 
     @BeforeAll
     public static void setUp() {
@@ -40,16 +43,19 @@ public class MultiThriftServerTest {
                 new Nimbus.Processor<>(handler),
                 ThriftConnectionType.NIMBUS_TLS);
     }
+
     @Test
     public void testAddThriftServer() {
         multiThriftServer.add(serverNonTls);
         assertEquals(serverNonTls, multiThriftServer.get(ThriftConnectionType.NIMBUS));
     }
+
     @Test
     public void testAddThriftServerTls() {
         multiThriftServer.add(serverTls);
         assertEquals(serverTls, multiThriftServer.get(ThriftConnectionType.NIMBUS_TLS));
     }
+
     @Test
     public void testAddThriftServerBoth() {
         multiThriftServer.add(serverTls);

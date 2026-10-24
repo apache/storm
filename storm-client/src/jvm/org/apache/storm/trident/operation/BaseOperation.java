@@ -25,7 +25,8 @@ public class BaseOperation implements Operation {
      * No-op implementation.
      *
      * @param conf    the Storm configuration map
-     * @param context the operation context which provides information such as the number of partitions in the stream, and the current
+     * @param context the operation context which provides information such as the number of
+     *     partitions in the stream, and the current
      *                partition index. It also provides methods for registering operation-specific metrics.
      */
     @Override

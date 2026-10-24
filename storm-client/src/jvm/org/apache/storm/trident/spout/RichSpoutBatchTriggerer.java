@@ -33,7 +33,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 
-
 public class RichSpoutBatchTriggerer implements IRichSpout {
 
     String stream;
@@ -51,8 +50,10 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        delegate.open(conf, context, new SpoutOutputCollector(new StreamOverrideCollector(collector)));
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
+        delegate.open(conf, context,
+                new SpoutOutputCollector(new StreamOverrideCollector(collector)));
         outputTasks = new ArrayList<>();
         for (String component : Utils.get(context.getThisTargets(),
                 coordStream,
@@ -121,7 +122,8 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
         } else {
             conf = new HashMap<>(conf);
         }
-        Config.registerSerialization(conf, RichSpoutBatchId.class, RichSpoutBatchIdSerializer.class);
+        Config.registerSerialization(conf, RichSpoutBatchId.class,
+                RichSpoutBatchIdSerializer.class);
         return conf;
     }
 

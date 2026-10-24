@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.security.sasl.Sasl;
 import org.apache.storm.Config;
-import org.apache.storm.shade.com.google.common.base.Charsets;
 import org.apache.storm.shade.org.apache.commons.codec.binary.Base64;
 
 class SaslUtils {
@@ -39,7 +38,7 @@ class SaslUtils {
      */
     static char[] encodePassword(byte[] password) {
         return new String(Base64.encodeBase64(password), StandardCharsets.UTF_8)
-            .toCharArray();
+                .toCharArray();
     }
 
     /**
@@ -53,7 +52,8 @@ class SaslUtils {
     }
 
     static String getSecretKey(Map<String, Object> conf) {
-        return conf == null || conf.isEmpty() ? null : (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
+        return conf == null || conf.isEmpty() ? null : (String) conf
+                .get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
     }
 
 }

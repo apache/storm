@@ -130,11 +130,11 @@ class ZstdThriftSerializationDelegateTest {
 
     @Test
     void deserialize_corruptedBytes_throwsRuntimeException() {
-        byte[] garbage = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+        byte[] garbage =  {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> delegate.deserialize(garbage, StormTopology.class));
-        assertEquals("Cannot deserialize [" +StormTopology.class.getSimpleName()  + "]. " +
-                "Expected zstd compressed bytes, but received unknown format.", ex.getMessage());
+        assertEquals("Cannot deserialize [" + StormTopology.class.getSimpleName() + "]. "
+                + "Expected zstd compressed bytes, but received unknown format.", ex.getMessage());
     }
 
     @Test

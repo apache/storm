@@ -17,7 +17,6 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.util.DefaultClassResolver;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,12 +49,15 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
             Kryo obj = new Kryo(new StateClassResolver(), null);
             // Registration bounds the set of classes this serializer will construct from stored
             // bytes to the ones the topology declared. It is keyed off the same config as the tuple
-            // path in DefaultKryoFactory, so a topology that has opted into permissive Kryo globally
+            // path in DefaultKryoFactory, so a topology that has opted into permissive Kryo
+            // globally
             // keeps the previous behaviour.
             // Note this Kryo is independent of the one SerializationFactory builds for tuples: the
-            // two id spaces must not be merged, since the tuple ids are a wire format between workers.
+            // two id spaces must not be merged, since the tuple ids are a wire format between
+            // workers.
             boolean fallBackOnJavaSerialization = ObjectReader.getBoolean(
-                topoConf == null ? null : topoConf.get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION), false);
+                    topoConf == null ? null : topoConf
+                    .get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION), false);
             obj.setRegistrationRequired(!fallBackOnJavaSerialization);
             if (context != null && topoConf != null) {
                 KryoTupleSerializer ser = new KryoTupleSerializer(topoConf, context);
@@ -79,16 +81,20 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
     };
 
     /**
-     * Constructs a {@link DefaultStateSerializer} instance with the given list of classes registered in kryo.
+     * Constructs a {@link DefaultStateSerializer} instance with the given list of classes
+     * registered in kryo.
      *
      * @param classesToRegister the classes to register.
      */
-    public DefaultStateSerializer(Map<String, Object> topoConf, TopologyContext context, List<Class<?>> classesToRegister) {
+    public DefaultStateSerializer(Map<String, Object> topoConf, TopologyContext context,
+            List<Class<?>> classesToRegister) {
         this.context = context;
         this.topoConf = topoConf;
-        registrations.addAll(classesToRegister.stream().map(Class::getName).collect(Collectors.toSet()));
+        registrations.addAll(classesToRegister.stream().map(Class::getName).collect(Collectors
+                .toSet()));
         // other classes from config
-        registrations.addAll((List<String>) topoConf.getOrDefault(Config.TOPOLOGY_STATE_KRYO_REGISTER, Collections.emptyList()));
+        registrations.addAll((List<String>) topoConf
+                .getOrDefault(Config.TOPOLOGY_STATE_KRYO_REGISTER, Collections.emptyList()));
         // defaults
         registrations.add(Optional.class.getName());
     }
@@ -115,10 +121,12 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
     }
 
     /**
-     * Registers the types Storm's own state encoding and checkpointing persist without the component
+     * Registers the types Storm's own state encoding and checkpointing persist without the
+     * component
      * declaring them.
      *
-     * <p>Called after the configured registrations so that the ids assigned to those are unaffected.
+     * <p>Called after the configured registrations so that the ids assigned to those are
+     * unaffected.
      * {@link Kryo#register(Class)} returns any existing registration, so a class already declared
      * through {@link Config#TOPOLOGY_STATE_KRYO_REGISTER} keeps the id assigned there.
      *
@@ -165,7 +173,8 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
         private final KryoTupleSerializer tupleSerializer;
         private final KryoTupleDeserializer tupleDeserializer;
 
-        TupleSerializer(KryoTupleSerializer tupleSerializer, KryoTupleDeserializer tupleDeserializer) {
+        TupleSerializer(KryoTupleSerializer tupleSerializer,
+                KryoTupleDeserializer tupleDeserializer) {
             this.tupleSerializer = tupleSerializer;
             this.tupleDeserializer = tupleDeserializer;
         }

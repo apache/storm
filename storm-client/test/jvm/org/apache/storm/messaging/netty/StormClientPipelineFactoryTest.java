@@ -35,11 +35,13 @@ public class StormClientPipelineFactoryTest {
         return initSslEngine(conf, null);
     }
 
-    private SSLEngine initSslEngine(Map<String, Object> conf, SslProvider sslProvider) throws Exception {
+    private SSLEngine initSslEngine(Map<String, Object> conf,
+            SslProvider sslProvider) throws Exception {
         SslContext sslContext = SslContextBuilder.forClient().sslProvider(sslProvider).build();
         StormClientPipelineFactory factory =
-            new StormClientPipelineFactory(null, new AtomicBoolean[]{ new AtomicBoolean(false) }, conf, sslContext,
-                                           DST_HOST, DST_PORT);
+                new StormClientPipelineFactory(null, new AtomicBoolean[] {new AtomicBoolean(false)},
+                conf, sslContext,
+                        DST_HOST, DST_PORT);
         EmbeddedChannel channel = new EmbeddedChannel(factory);
         try {
             SslHandler sslHandler = (SslHandler) channel.pipeline().get("ssl");

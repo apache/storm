@@ -35,7 +35,8 @@ import org.apache.storm.tuple.Values;
 
 public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, MapState<T>, RemovableMapState<T> {
 
-    static ConcurrentHashMap<String, Map<List<Object>, Object>> dbs = new ConcurrentHashMap<String, Map<List<Object>, Object>>();
+    static ConcurrentHashMap<String, Map<List<Object>, Object>> dbs =
+            new ConcurrentHashMap<String, Map<List<Object>, Object>>();
     MemoryMapStateBacking<OpaqueValue> backing;
     SnapshottableMap<T> delegate;
     List<List<Object>> removed = new ArrayList();
@@ -43,7 +44,8 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
 
     public MemoryMapState(String id) {
         backing = new MemoryMapStateBacking(id);
-        delegate = new SnapshottableMap(OpaqueMap.build(backing), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
+        delegate = new SnapshottableMap(OpaqueMap.build(backing),
+                new Values("$MEMORY-MAP-STATE-GLOBAL$"));
     }
 
     @Override
@@ -102,7 +104,8 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
         for (int i = 0; i < keys.size(); i++) {
             nulls.add(null);
         }
-        // first just set the keys to null, then flag to remove them at beginning of next commit when we know the current and last value
+        // first just set the keys to null, then flag to remove them at beginning of next commit
+        // when we know the current and last value
         // are both null
         multiPut(keys, nulls);
         removed.addAll(keys);
@@ -117,7 +120,8 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
         }
 
         @Override
-        public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(Map<String, Object> conf, IMetricsContext metrics,
+            int partitionIndex, int numPartitions) {
             return new MemoryMapState(id + partitionIndex);
         }
     }

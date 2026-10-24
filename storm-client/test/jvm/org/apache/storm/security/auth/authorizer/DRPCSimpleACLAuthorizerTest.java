@@ -12,6 +12,11 @@
 
 package org.apache.storm.security.auth.authorizer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -28,11 +33,6 @@ import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DRPCSimpleACLAuthorizerTest {
 
@@ -51,13 +51,17 @@ public class DRPCSimpleACLAuthorizerTest {
     public static void setup() {
         strictHandler = new DRPCSimpleACLAuthorizer();
         strictHandler.prepare(ImmutableMap
-                                  .of(Config.DRPC_AUTHORIZER_ACL_STRICT, true, Config.DRPC_AUTHORIZER_ACL_FILENAME, aclFile,
-                                      Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class.getName()));
+                .of(Config.DRPC_AUTHORIZER_ACL_STRICT, true, Config.DRPC_AUTHORIZER_ACL_FILENAME,
+                aclFile,
+                        Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class
+                        .getName()));
 
         permissiveHandler = new DRPCSimpleACLAuthorizer();
         permissiveHandler.prepare(ImmutableMap
-                                      .of(Config.DRPC_AUTHORIZER_ACL_STRICT, false, Config.DRPC_AUTHORIZER_ACL_FILENAME, aclFile,
-                                          Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class.getName()));
+                .of(Config.DRPC_AUTHORIZER_ACL_STRICT, false, Config.DRPC_AUTHORIZER_ACL_FILENAME,
+                aclFile,
+                        Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class
+                        .getName()));
     }
 
     private static ReqContext makeMockContext(String user) {
@@ -70,72 +74,73 @@ public class DRPCSimpleACLAuthorizerTest {
     public void test_partial_authorization() {
 
         assertFalse(isPermitted(strictHandler, ReqContext.context(), "execute", partialFunction),
-            "Did not deny execute to unauthorized user");
+                "Did not deny execute to unauthorized user");
 
         assertTrue(isPermitted(strictHandler, aliceKerbContext, "execute", partialFunction),
-            "Did not allow execute to authorized kerb user for correct function");
+                "Did not allow execute to authorized kerb user for correct function");
 
         assertFalse(isPermitted(strictHandler, aliceKerbContext, "fetchRequest", partialFunction),
-            "Did not deny fetchRequest to unauthorized user for correct function");
+                "Did not deny fetchRequest to unauthorized user for correct function");
     }
 
     @Test
     public void test_client_authorization_strict() {
 
         assertFalse(isPermitted(strictHandler, ReqContext.context(), "execute", function),
-            "Did not deny execute to unauthorized user");
+                "Did not deny execute to unauthorized user");
 
         assertFalse(isPermitted(strictHandler, aliceContext, "execute", wrongFunction),
-            "Did not deny execute to valid user for incorrect function");
+                "Did not deny execute to valid user for incorrect function");
 
         assertTrue(isPermitted(strictHandler, aliceKerbContext, "execute", function),
-            "Did not allow execute to authorized kerb user for correct function");
+                "Did not allow execute to authorized kerb user for correct function");
 
         assertTrue(isPermitted(strictHandler, aliceContext, "execute", function),
-            "Did not allow execute to authorized user for correct function");
+                "Did not allow execute to authorized user for correct function");
     }
 
     @Test
     public void test_client_authorization_permissive() {
 
         assertFalse(isPermitted(permissiveHandler, ReqContext.context(), "execute", function),
-            "Did not deny execute to unauthorized user for correct function");
+                "Did not deny execute to unauthorized user for correct function");
 
         assertTrue(isPermitted(permissiveHandler, aliceContext, "execute", wrongFunction),
-            "Did not allow execute for user for incorrect function when permissive");
+                "Did not allow execute for user for incorrect function when permissive");
 
         assertTrue(isPermitted(permissiveHandler, aliceKerbContext, "execute", wrongFunction),
-            "Did not allow execute for user for incorrect function when permissive");
+                "Did not allow execute for user for incorrect function when permissive");
 
         assertTrue(isPermitted(permissiveHandler, bobContext, "execute", function),
-            "Did not allow execute to authorized user for correct function");
+                "Did not allow execute to authorized user for correct function");
     }
 
     @Test
     public void test_invocation_authorization_strict() {
-        for (String operation : new String[]{ "fetchRequest", "failRequest", "result" }) {
+        for (String operation : new String[] {"fetchRequest", "failRequest", "result"}) {
             assertFalse(isPermitted(strictHandler, aliceContext, operation, function),
-                "Did not deny " + operation + " to unauthorized user for correct function");
+                    "Did not deny " + operation + " to unauthorized user for correct function");
 
             assertFalse(isPermitted(strictHandler, charlieContext, operation, wrongFunction),
-                "Did not deny " + operation + " to user for incorrect function when strict");
+                    "Did not deny " + operation + " to user for incorrect function when strict");
 
             assertTrue(isPermitted(strictHandler, charlieContext, operation, function),
-                "Did not allow " + operation + " to authorized user for correct function");
+                    "Did not allow " + operation + " to authorized user for correct function");
         }
     }
 
     @Test
     public void test_invocation_authorization_permissive() {
-        for (String operation : new String[]{ "fetchRequest", "failRequest", "result" }) {
+        for (String operation : new String[] {"fetchRequest", "failRequest", "result"}) {
             assertFalse(isPermitted(permissiveHandler, bobContext, operation, function),
-                "Did not deny " + operation + " to unauthorized user for correct function");
+                    "Did not deny " + operation + " to unauthorized user for correct function");
 
             assertTrue(isPermitted(permissiveHandler, charlieContext, operation, wrongFunction),
-                "Did not allow " + operation + " to user for incorrect function when permissive");
+                    "Did not allow " + operation
+                    + " to user for incorrect function when permissive");
 
             assertTrue(isPermitted(permissiveHandler, charlieContext, operation, function),
-                "Did not allow " + operation + " to authorized user");
+                    "Did not allow " + operation + " to authorized user");
         }
     }
 
@@ -152,24 +157,29 @@ public class DRPCSimpleACLAuthorizerTest {
 
     @Test
     public void test_deny_when_invalid_user_given() {
-        assertFalse(isPermitted(strictHandler, Mockito.mock(ReqContext.class), "execute", function));
+        assertFalse(isPermitted(strictHandler, Mockito.mock(ReqContext.class), "execute",
+                function));
 
         assertFalse(isPermitted(strictHandler, null, "execute", function));
 
-        assertFalse(isPermitted(permissiveHandler, Mockito.mock(ReqContext.class), "execute", function));
+        assertFalse(isPermitted(permissiveHandler, Mockito.mock(ReqContext.class), "execute",
+                function));
 
         assertFalse(isPermitted(permissiveHandler, null, "execute", function));
 
     }
 
-    private boolean isPermitted(IAuthorizer authorizer, ReqContext context, String operation, String function) {
+    private boolean isPermitted(IAuthorizer authorizer, ReqContext context, String operation,
+            String function) {
         Map<String, Object> config = new HashMap<>();
         config.put(DRPCSimpleACLAuthorizer.FUNCTION_KEY, function);
         return authorizer.permit(context, operation, config);
     }
 
     /**
-     * {@link DRPCSimpleACLAuthorizer} should still work even if {@link Config#DRPC_AUTHORIZER_ACL} has no values.
+     * {@link DRPCSimpleACLAuthorizer} should still work even if {@link Config#DRPC_AUTHORIZER_ACL}
+     * has no values.
+     *
      * @throws IOException if there is any issue with creating or writing the temp file.
      */
     @Test
@@ -183,8 +193,10 @@ public class DRPCSimpleACLAuthorizerTest {
         writer.close();
 
         authorizer.prepare(ImmutableMap
-                .of(Config.DRPC_AUTHORIZER_ACL_STRICT, true, Config.DRPC_AUTHORIZER_ACL_FILENAME, tempFile.toString(),
-                        Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class.getName()));
+                .of(Config.DRPC_AUTHORIZER_ACL_STRICT, true, Config.DRPC_AUTHORIZER_ACL_FILENAME,
+                tempFile.toString(),
+                        Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class
+                        .getName()));
 
         Map<String, DRPCSimpleACLAuthorizer.AclFunctionEntry> acl = authorizer.readAclFromConfig();
         assertEquals(0, acl.size());
@@ -192,6 +204,7 @@ public class DRPCSimpleACLAuthorizerTest {
 
     /**
      * The file of {@link Config#DRPC_AUTHORIZER_ACL_FILENAME} can not be empty.
+     *
      * @throws IOException if there is any issue with creating the temp file.
      */
     @Test
@@ -202,8 +215,10 @@ public class DRPCSimpleACLAuthorizerTest {
         tempFile.deleteOnExit();
 
         authorizer.prepare(ImmutableMap
-                .of(Config.DRPC_AUTHORIZER_ACL_STRICT, true, Config.DRPC_AUTHORIZER_ACL_FILENAME, tempFile.toString(),
-                        Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class.getName()));
+                .of(Config.DRPC_AUTHORIZER_ACL_STRICT, true, Config.DRPC_AUTHORIZER_ACL_FILENAME,
+                tempFile.toString(),
+                        Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, KerberosPrincipalToLocal.class
+                        .getName()));
 
         Exception exception = assertThrows(RuntimeException.class, authorizer::readAclFromConfig);
         assertTrue(exception.getMessage().contains("doesn't have any valid storm configs"));

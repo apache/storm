@@ -27,22 +27,22 @@ import org.apache.storm.utils.Utils;
  * Keeps track of approximate latency for the last 10 mins, 3 hours, 1 day, and all time.
  */
 public class LatencyStat {
-    //The current lat and count buckets are protected by a different lock
+    // The current lat and count buckets are protected by a different lock
     // from the other buckets.  This is to reduce the lock contention
     // When doing complex calculations.  Never grab the instance object lock
     // while holding currentLock to avoid deadlocks
     private final Object currentLock = new byte[0];
-    //10 min values
+    // 10 min values
     private final int tmSize;
     private final long[] tmLatBuckets;
     private final long[] tmCountBuckets;
     private final long[] tmTime;
-    //3 hour values
+    // 3 hour values
     private final int thSize;
     private final long[] thLatBuckets;
     private final long[] thCountBuckets;
     private final long[] thTime;
-    //1 day values
+    // 1 day values
     private final int odSize;
     private final long[] odLatBuckets;
     private final long[] odCountBuckets;
@@ -53,10 +53,10 @@ public class LatencyStat {
     // All internal state except for the current buckets are
     // protected using the Object Lock
     private long bucketStart;
-    //exact variable time, that is added to the current bucket
+    // exact variable time, that is added to the current bucket
     private long exactExtraLat;
     private long exactExtraCount;
-    //all time
+    // all time
     private long allTimeLat;
     private long allTimeCount;
 
@@ -77,7 +77,7 @@ public class LatencyStat {
      */
     LatencyStat(int numBuckets, long startTime) {
         numBuckets = Math.max(numBuckets, 2);
-        //We want to capture the full time range, so the target size is as
+        // We want to capture the full time range, so the target size is as
         // if we had one bucket less, then we do
         tmSize = 10 * 60 * 1000 / (numBuckets - 1);
         thSize = 3 * 60 * 60 * 1000 / (numBuckets - 1);
@@ -200,7 +200,9 @@ public class LatencyStat {
 
     /**
      * Get time latency average.
-     * @return a map of time window to average latency. Keys are "600" for last 10 mins "10800" for the last 3 hours "86400" for the last
+     *
+     * @return a map of time window to average latency. Keys are "600" for last 10 mins "10800" for
+     *     the last 3 hours "86400" for the last
      *     day ":all-time" for all time
      */
     public synchronized Map<String, Double> getTimeLatAvg() {
@@ -216,12 +218,15 @@ public class LatencyStat {
             count = currentCountBucket;
         }
         long timeSpent = now - bucketStart;
-        ret.put("600", readApproximateLatAvg(lat, count, timeSpent, tmTime, tmLatBuckets, tmCountBuckets, 600 * 1000));
-        ret.put("10800", readApproximateLatAvg(lat, count, timeSpent, thTime, thLatBuckets, thCountBuckets, 10800 * 1000));
-        ret.put("86400", readApproximateLatAvg(lat, count, timeSpent, odTime, odLatBuckets, odCountBuckets, 86400 * 1000));
+        ret.put("600", readApproximateLatAvg(lat, count, timeSpent, tmTime, tmLatBuckets,
+                tmCountBuckets, 600 * 1000));
+        ret.put("10800", readApproximateLatAvg(lat, count, timeSpent, thTime, thLatBuckets,
+                thCountBuckets, 10800 * 1000));
+        ret.put("86400", readApproximateLatAvg(lat, count, timeSpent, odTime, odLatBuckets,
+                odCountBuckets, 86400 * 1000));
         long allTimeCountSum = count + allTimeCount;
         ret.put(":all-time", Utils.zeroIfNaNOrInf(
-            (double) lat + allTimeLat) / allTimeCountSum);
+                (double) lat + allTimeLat) / allTimeCountSum);
         return ret;
     }
 
@@ -231,7 +236,7 @@ public class LatencyStat {
         long totalLat = lat;
         long totalCount = count;
         for (int i = 0; i < bucketTime.length && timeNeeded > 0; i++) {
-            //Don't pro-rate anything, it is all approximate so an extra bucket is not that bad.
+            // Don't pro-rate anything, it is all approximate so an extra bucket is not that bad.
             totalLat += latBuckets[i];
             totalCount += countBuckets[i];
             timeNeeded -= bucketTime[i];

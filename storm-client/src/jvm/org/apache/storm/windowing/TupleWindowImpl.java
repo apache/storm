@@ -89,7 +89,8 @@ public class TupleWindowImpl implements TupleWindow {
         if (newTuples != null ? !newTuples.equals(that.newTuples) : that.newTuples != null) {
             return false;
         }
-        return expiredTuples != null ? expiredTuples.equals(that.expiredTuples) : that.expiredTuples == null;
+        return expiredTuples != null ? expiredTuples
+                .equals(that.expiredTuples) : that.expiredTuples == null;
 
     }
 
