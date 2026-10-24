@@ -41,7 +41,8 @@ public class CGroupCpu extends CGroupMetricsBase<Map<String, Long>> {
         if (userHz < 0) {
             ProcessBuilder pb = new ProcessBuilder("getconf", "CLK_TCK");
             Process p = pb.start();
-            BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
+            BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream(),
+                    StandardCharsets.UTF_8));
             String line = in.readLine().trim();
             userHz = Integer.valueOf(line);
         }
@@ -61,7 +62,7 @@ public class CGroupCpu extends CGroupMetricsBase<Map<String, Long>> {
         previousSystem = systemHz;
         long hz = getUserHZ();
         HashMap<String, Long> ret = new HashMap<>();
-        ret.put("user-ms", user * 1000 / hz); //Convert to millis
+        ret.put("user-ms", user * 1000 / hz); // Convert to millis
         ret.put("sys-ms", sys * 1000 / hz);
         return ret;
     }

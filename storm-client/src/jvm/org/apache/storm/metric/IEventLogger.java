@@ -18,14 +18,16 @@ import java.util.Map;
 import org.apache.storm.task.TopologyContext;
 
 /**
- * EventLogger interface for logging the event info to a sink like log file or db for inspecting the events via UI for debugging.
+ * EventLogger interface for logging the event info to a sink like log file or db for inspecting the
+ * events via UI for debugging.
  */
 public interface IEventLogger {
 
     void prepare(Map<String, Object> conf, Map<String, Object> arguments, TopologyContext context);
 
     /**
-     * This method would be invoked when the {@link EventLoggerBolt} receives a tuple from the spouts or bolts that has event logging
+     * This method would be invoked when the {@link EventLoggerBolt} receives a tuple from the
+     * spouts or bolts that has event logging
      * enabled.
      *
      * @param e the event
@@ -44,7 +46,8 @@ public interface IEventLogger {
         private Object messageId;
         private List<Object> values;
 
-        public EventInfo(long ts, String component, int task, Object messageId, List<Object> values) {
+        public EventInfo(long ts, String component, int task, Object messageId,
+                List<Object> values) {
             this.ts = ts;
             this.component = component;
             this.task = task;
@@ -80,7 +83,7 @@ public interface IEventLogger {
         @Override
         public String toString() {
             return new Date(ts).toString() + "," + component + "," + String.valueOf(task) + ","
-                   + (messageId == null ? "" : messageId.toString()) + "," + values.toString();
+                    + (messageId == null ? "" : messageId.toString()) + "," + values.toString();
         }
     }
 }

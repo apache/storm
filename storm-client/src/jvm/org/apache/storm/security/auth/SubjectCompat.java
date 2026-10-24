@@ -33,7 +33,8 @@ import javax.security.auth.Subject;
  *   <li>{@code Subject.doAs(Subject, PrivilegedExceptionAction)} &rarr; {@code Subject.callAs(Subject, Callable)} (Java 18+)</li>
  * </ul>
  *
- * <p>All dispatch is resolved once at class-init via {@link MethodHandle}, so there is no per-call reflection overhead.
+ * <p>All dispatch is resolved once at class-init via {@link MethodHandle}, so there is no per-call
+ * reflection overhead.
  */
 public final class SubjectCompat {
 
@@ -75,7 +76,7 @@ public final class SubjectCompat {
             } else {
                 // Java 17 path: wrap Callable in PrivilegedExceptionAction for Subject.doAs()
                 return (T) CALL_AS.invoke(subject,
-                    (java.security.PrivilegedExceptionAction<T>) callable::call);
+                        (java.security.PrivilegedExceptionAction<T>) callable::call);
             }
         } catch (CompletionException e) {
             // Subject.callAs wraps in CompletionException
@@ -107,7 +108,7 @@ public final class SubjectCompat {
     private static boolean probeCallAs() {
         try {
             MethodHandles.lookup().findStatic(Subject.class, "callAs",
-                MethodType.methodType(Object.class, Subject.class, Callable.class));
+                    MethodType.methodType(Object.class, Subject.class, Callable.class));
             return true;
         } catch (NoSuchMethodException | IllegalAccessException e) {
             return false;
@@ -119,13 +120,13 @@ public final class SubjectCompat {
         try {
             // Java 18+: Subject.callAs(Subject, Callable)
             return lookup.findStatic(Subject.class, "callAs",
-                MethodType.methodType(Object.class, Subject.class, Callable.class));
+                    MethodType.methodType(Object.class, Subject.class, Callable.class));
         } catch (NoSuchMethodException e) {
             // Java 17: Subject.doAs(Subject, PrivilegedExceptionAction)
             try {
                 return lookup.findStatic(Subject.class, "doAs",
-                    MethodType.methodType(Object.class, Subject.class,
-                        java.security.PrivilegedExceptionAction.class));
+                        MethodType.methodType(Object.class, Subject.class,
+                                java.security.PrivilegedExceptionAction.class));
             } catch (NoSuchMethodException | IllegalAccessException ex) {
                 throw new AssertionError(ex);
             }

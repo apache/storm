@@ -72,7 +72,8 @@ public class TridentBoltExecutor implements IRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        OutputCollector collector) {
         messageTimeoutMs = context.maxTopologyMessageTimeout() * 1000L;
         lastRotate = System.currentTimeMillis();
         batches = new RotatingMap<>(2);
@@ -132,7 +133,8 @@ public class TridentBoltExecutor implements IRichBolt {
             String stream = coordStream(tracked.info.batchGroup);
             for (Integer task : tracked.condition.targetTasks) {
                 collector
-                    .emitDirect(task, stream, finishTuple, new Values(tracked.info.batchId, Utils.get(tracked.taskEmittedTuples, task, 0)));
+                        .emitDirect(task, stream, finishTuple, new Values(tracked.info.batchId,
+                        Utils.get(tracked.taskEmittedTuples, task, 0)));
             }
             if (tracked.delayedAck != null) {
                 collector.ack(tracked.delayedAck);
@@ -155,7 +157,7 @@ public class TridentBoltExecutor implements IRichBolt {
         CoordCondition cond = tracked.condition;
         boolean delayed = tracked.delayedAck == null
                 && (cond.commitStream != null && type == TupleType.COMMIT
-                           || cond.commitStream == null);
+                || cond.commitStream == null);
         if (delayed) {
             tracked.delayedAck = tuple;
         }
@@ -165,7 +167,7 @@ public class TridentBoltExecutor implements IRichBolt {
                 finishBatch(tracked, tuple);
             } else {
                 LOG.warn("Failing batch {}: expected {} tuples but only received {}", 
-                         tracked.info.batchId, tracked.expectedTupleCount, tracked.receivedTuples);
+                        tracked.info.batchId, tracked.expectedTupleCount, tracked.receivedTuples);
                 failBatch(tracked);
                 collector.fail(tuple);
                 failed = true;
@@ -190,15 +192,16 @@ public class TridentBoltExecutor implements IRichBolt {
         }
         String batchGroup = batchGroupIds.get(tuple.getSourceGlobalStreamId());
         if (batchGroup == null) {
-            // this is so we can do things like have simple DRPC that doesn't need to use batch processing
+            // this is so we can do things like have simple DRPC that doesn't need to use batch
+            // processing
             coordCollector.setCurrBatch(null);
             bolt.execute(null, tuple);
             collector.ack(tuple);
             return;
         }
         IBatchID id = (IBatchID) tuple.getValue(0);
-        //get transaction id
-        //if it already exists and attempt id is greater than the attempt there
+        // get transaction id
+        // if it already exists and attempt id is greater than the attempt there
 
         TrackedBatch tracked = (TrackedBatch) batches.get(id.getId());
 
@@ -216,13 +219,14 @@ public class TridentBoltExecutor implements IRichBolt {
 
         if (tracked == null) {
             tracked =
-                new TrackedBatch(new BatchInfo(batchGroup, id, bolt.initBatchState(batchGroup, id)), coordConditions.get(batchGroup),
-                                 id.getAttemptId());
+                    new TrackedBatch(new BatchInfo(batchGroup, id, bolt.initBatchState(batchGroup,
+                    id)), coordConditions.get(batchGroup),
+                            id.getAttemptId());
             batches.put(id.getId(), tracked);
         }
         coordCollector.setCurrBatch(tracked);
 
-        //System.out.println("TRACKED: " + tracked + " " + tuple);
+        // System.out.println("TRACKED: " + tracked + " " + tuple);
 
         TupleType t = getTupleType(tuple, tracked);
         if (t == TupleType.COMMIT) {
@@ -273,17 +277,18 @@ public class TridentBoltExecutor implements IRichBolt {
             ret = new HashMap<>();
         }
         ret.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 5);
-        // TODO: Need to be able to set the tick tuple time to the message timeout, ideally without parameterization
+        // TODO: Need to be able to set the tick tuple time to the message timeout, ideally without
+        // parameterization
         return ret;
     }
 
     private TupleType getTupleType(Tuple tuple, TrackedBatch batch) {
         CoordCondition cond = batch.condition;
         if (cond.commitStream != null
-            && tuple.getSourceGlobalStreamId().equals(cond.commitStream)) {
+                && tuple.getSourceGlobalStreamId().equals(cond.commitStream)) {
             return TupleType.COMMIT;
         } else if (cond.expectedTaskReports > 0
-                   && tuple.getSourceStreamId().startsWith(COORD_STREAM_PREFIX)) {
+                && tuple.getSourceStreamId().startsWith(COORD_STREAM_PREFIX)) {
             return TupleType.COORD;
         } else {
             return TupleType.REGULAR;
@@ -401,7 +406,8 @@ public class TridentBoltExecutor implements IRichBolt {
         }
 
         @Override
-        public void emitDirect(int task, String stream, Collection<Tuple> anchors, List<Object> tuple) {
+        public void emitDirect(int task, String stream, Collection<Tuple> anchors,
+            List<Object> tuple) {
             updateTaskCounts(Arrays.asList(task));
             delegate.emitDirect(task, stream, anchors, tuple);
         }
@@ -430,7 +436,6 @@ public class TridentBoltExecutor implements IRichBolt {
         public void reportError(Throwable error) {
             delegate.reportError(error);
         }
-
 
         private void updateTaskCounts(List<Integer> tasks) {
             if (currBatch != null) {

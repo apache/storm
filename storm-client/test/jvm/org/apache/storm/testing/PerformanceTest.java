@@ -26,7 +26,8 @@ import java.lang.annotation.Target;
 import org.junit.jupiter.api.Tag;
 
 /**
- * Annotation to mark performance tests. Performance tests will be run if the profile performance-tests or all-tests are enabled.
+ * Annotation to mark performance tests. Performance tests will be run if the profile
+ * performance-tests or all-tests are enabled.
  * <p/>
  * Performance tests can be in the same package as unit tests. To mark a test as a performance test,
  * add the annotation @PerformanceTest to the class definition.
@@ -37,10 +38,11 @@ import org.junit.jupiter.api.Tag;
  *  ...<br/>
  * }
  * <p/>
- *  In general performance tests should have a time limit on them, but the time limit should be liberal enough to account
+ * In general performance tests should have a time limit on them, but the time limit should be
+ * liberal enough to account
  *  for running on CI systems like GitHub actions, or the apache jenkins build.
  */
-@Target({ ElementType.TYPE, ElementType.METHOD })
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Tag("PerformanceTest")

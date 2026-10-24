@@ -1,16 +1,31 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The ASF licenses this file to you under the Apache License, Version
- * 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.apache.storm.pacemaker.codec;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.storm.generated.HBMessage;
 import org.apache.storm.generated.HBMessageData;
@@ -23,14 +38,6 @@ import org.apache.storm.shade.io.netty.channel.embedded.EmbeddedChannel;
 import org.apache.storm.shade.io.netty.handler.codec.DecoderException;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("deprecation")
 public class ThriftDecoderTest {
@@ -50,7 +57,8 @@ public class ThriftDecoderTest {
         controlMessage.write(blob);
         byte[] bytes = new byte[blob.readableBytes()];
         blob.readBytes(bytes);
-        return frame(new HBMessage(HBServerMessageType.CONTROL_MESSAGE, HBMessageData.message_blob(bytes)));
+        return frame(new HBMessage(HBServerMessageType.CONTROL_MESSAGE, HBMessageData
+                .message_blob(bytes)));
     }
 
     private static EmbeddedChannel serverChannel() {
@@ -66,14 +74,16 @@ public class ThriftDecoderTest {
         }
         byte[] bytes = new byte[blob.readableBytes()];
         blob.readBytes(bytes);
-        return frame(new HBMessage(HBServerMessageType.SASL_MESSAGE_TOKEN, HBMessageData.message_blob(bytes)));
+        return frame(new HBMessage(HBServerMessageType.SASL_MESSAGE_TOKEN, HBMessageData
+                .message_blob(bytes)));
     }
 
     @Test
     public void serverDropsSaslTokenWithOversizedPayloadLength() {
         EmbeddedChannel channel = serverChannel();
 
-        // A tiny frame that claims a ~2GB payload must not be allocated; it is dropped and the connection closed.
+        // A tiny frame that claims a ~2GB payload must not be allocated; it is dropped and the
+        // connection closed.
         channel.writeInbound(saslTokenFrame(SaslMessageToken.IDENTIFIER, Integer.MAX_VALUE, null));
 
         assertNull(channel.readInbound());
@@ -85,7 +95,7 @@ public class ThriftDecoderTest {
         EmbeddedChannel channel = new EmbeddedChannel(new ThriftDecoder(MAX_LENGTH));
 
         assertThrows(DecoderException.class, () -> channel.writeInbound(
-            saslTokenFrame(SaslMessageToken.IDENTIFIER, Integer.MAX_VALUE, null)));
+                saslTokenFrame(SaslMessageToken.IDENTIFIER, Integer.MAX_VALUE, null)));
         assertNull(channel.readInbound());
     }
 
@@ -117,13 +127,14 @@ public class ThriftDecoderTest {
     @Test
     public void serverAcceptsSaslMessageToken() {
         EmbeddedChannel channel = serverChannel();
-        byte[] token = { 1, 2, 3 };
+        byte[] token =  {1, 2, 3};
         ByteBuf blob = Unpooled.buffer();
         new SaslMessageToken(token).write(blob);
         byte[] bytes = new byte[blob.readableBytes()];
         blob.readBytes(bytes);
 
-        channel.writeInbound(frame(new HBMessage(HBServerMessageType.SASL_MESSAGE_TOKEN, HBMessageData.message_blob(bytes))));
+        channel.writeInbound(frame(new HBMessage(HBServerMessageType.SASL_MESSAGE_TOKEN,
+                HBMessageData.message_blob(bytes))));
 
         SaslMessageToken decoded = channel.readInbound();
         assertArrayEquals(token, decoded.getSaslToken());
@@ -133,7 +144,8 @@ public class ThriftDecoderTest {
     @Test
     public void serverPassesHeartbeatMessages() {
         EmbeddedChannel channel = serverChannel();
-        HBMessage message = new HBMessage(HBServerMessageType.CREATE_PATH, HBMessageData.path("/path"));
+        HBMessage message = new HBMessage(HBServerMessageType.CREATE_PATH, HBMessageData
+                .path("/path"));
 
         channel.writeInbound(frame(message));
 
@@ -146,7 +158,7 @@ public class ThriftDecoderTest {
         EmbeddedChannel channel = serverChannel();
 
         channel.writeInbound(frame(new HBMessage(HBServerMessageType.CONTROL_MESSAGE,
-                                                 HBMessageData.message_blob(new byte[]{ 0, 1 }))));
+                HBMessageData.message_blob(new byte[] {0, 1}))));
 
         assertNull(channel.readInbound());
         assertFalse(channel.isActive());
@@ -167,7 +179,7 @@ public class ThriftDecoderTest {
         EmbeddedChannel channel = serverChannel();
 
         channel.writeInbound(frame(new HBMessage(HBServerMessageType.CONTROL_MESSAGE,
-                                                 HBMessageData.message_blob(new byte[]{ 1 }))));
+                HBMessageData.message_blob(new byte[] {1}))));
 
         assertNull(channel.readInbound());
         assertFalse(channel.isActive());
@@ -188,7 +200,7 @@ public class ThriftDecoderTest {
         EmbeddedChannel channel = new EmbeddedChannel(new ThriftDecoder(MAX_LENGTH));
 
         assertThrows(DecoderException.class, () -> channel.writeInbound(
-            frame(new HBMessage(HBServerMessageType.CONTROL_MESSAGE, null))));
+                frame(new HBMessage(HBServerMessageType.CONTROL_MESSAGE, null))));
         assertNull(channel.readInbound());
     }
 }

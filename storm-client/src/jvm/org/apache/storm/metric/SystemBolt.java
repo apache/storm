@@ -22,7 +22,6 @@ import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metrics2.PerReporterGauge;
@@ -42,9 +41,10 @@ public class SystemBolt implements IBolt {
             TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS);
     private static boolean prepareWasCalled = false;
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     @Override
-    public void prepare(final Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(final Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         if (prepareWasCalled && !"local".equals(topoConf.get(Config.STORM_CLUSTER_MODE))) {
             throw new RuntimeException("A single worker should have 1 SystemBolt instance.");
         }
@@ -70,13 +70,15 @@ public class SystemBolt implements IBolt {
             }
         });
 
-
         context.registerGauge("newWorkerEvent", new NewWorkerGauge());
         context.registerGauge("workerCpuUsage", new WorkerCpuMetric());
 
-        int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
-        registerMetrics(context, (Map<String, String>) topoConf.get(Config.WORKER_METRICS), bucketSize, topoConf);
-        registerMetrics(context, (Map<String, String>) topoConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize, topoConf);
+        int bucketSize = ObjectReader.getInt(topoConf
+                .get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
+        registerMetrics(context, (Map<String, String>) topoConf.get(Config.WORKER_METRICS),
+                bucketSize, topoConf);
+        registerMetrics(context, (Map<String, String>) topoConf.get(Config.TOPOLOGY_WORKER_METRICS),
+                bucketSize, topoConf);
     }
 
     private class WorkerCpuMetric implements Gauge<Double> {
@@ -137,7 +139,8 @@ public class SystemBolt implements IBolt {
         }
     }
 
-    // allow reporting new worker metric for multiple reporters if they support getValueForReporter().
+    // allow reporting new worker metric for multiple reporters if they support
+    // getValueForReporter().
     private class NewWorkerGauge extends PerReporterGauge<Integer> {
         private final NewWorkerMetric defaultValue = new NewWorkerMetric();
         private final Map<Object, NewWorkerMetric> reporterValues = new HashMap<>();
@@ -150,11 +153,13 @@ public class SystemBolt implements IBolt {
 
         @Override
         public Integer getValueForReporter(Object reporter) {
-            return (Integer) reporterValues.computeIfAbsent(reporter, (rep) -> new NewWorkerMetric()).getValueAndReset();
+            return (Integer) reporterValues.computeIfAbsent(reporter,
+                    (rep) -> new NewWorkerMetric()).getValueAndReset();
         }
     }
 
-    private void registerMetrics(TopologyContext context, Map<String, String> metrics, int bucketSize, Map<String, Object> conf) {
+    private void registerMetrics(TopologyContext context, Map<String, String> metrics,
+            int bucketSize, Map<String, Object> conf) {
         if (metrics == null) {
             return;
         }

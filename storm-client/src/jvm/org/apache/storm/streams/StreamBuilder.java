@@ -81,7 +81,8 @@ public class StreamBuilder {
     }
 
     /**
-     * Creates a new {@link Stream} of tuples from the given {@link IRichSpout} with the given parallelism.
+     * Creates a new {@link Stream} of tuples from the given {@link IRichSpout} with the given
+     * parallelism.
      *
      * @param spout       the spout
      * @param parallelism the parallelism of the stream
@@ -97,7 +98,8 @@ public class StreamBuilder {
     }
 
     /**
-     * Creates a new {@link Stream} of values from the given {@link IRichSpout} by extracting field(s) from tuples via the supplied {@link
+     * Creates a new {@link Stream} of values from the given {@link IRichSpout} by extracting
+     * field(s) from tuples via the supplied {@link
      * TupleValueMapper}.
      *
      * @param spout       the spout
@@ -108,9 +110,9 @@ public class StreamBuilder {
         return newStream(spout).map(valueMapper);
     }
 
-
     /**
-     * Creates a new {@link Stream} of values from the given {@link IRichSpout} by extracting field(s) from tuples via the supplied {@link
+     * Creates a new {@link Stream} of values from the given {@link IRichSpout} by extracting
+     * field(s) from tuples via the supplied {@link
      * TupleValueMapper} with the given parallelism.
      *
      * @param spout       the spout
@@ -118,24 +120,28 @@ public class StreamBuilder {
      * @param parallelism the parallelism of the stream
      * @return the new stream
      */
-    public <T> Stream<T> newStream(IRichSpout spout, TupleValueMapper<T> valueMapper, int parallelism) {
+    public <T> Stream<T> newStream(IRichSpout spout, TupleValueMapper<T> valueMapper,
+            int parallelism) {
         return newStream(spout, parallelism).map(valueMapper);
     }
 
     /**
-     * Creates a new {@link PairStream} of key-value pairs from the given {@link IRichSpout} by extracting key and value from tuples via the
+     * Creates a new {@link PairStream} of key-value pairs from the given {@link IRichSpout} by
+     * extracting key and value from tuples via the
      * supplied {@link PairValueMapper}.
      *
      * @param spout           the spout
      * @param pairValueMapper the pair value mapper
      * @return the new stream of key-value pairs
      */
-    public <K, V> PairStream<K, V> newStream(IRichSpout spout, PairValueMapper<K, V> pairValueMapper) {
+    public <K, V> PairStream<K, V> newStream(IRichSpout spout, PairValueMapper<K,
+            V> pairValueMapper) {
         return newStream(spout).mapToPair(pairValueMapper);
     }
 
     /**
-     * Creates a new {@link PairStream} of key-value pairs from the given {@link IRichSpout} by extracting key and value from tuples via the
+     * Creates a new {@link PairStream} of key-value pairs from the given {@link IRichSpout} by
+     * extracting key and value from tuples via the
      * supplied {@link PairValueMapper} and with the given value of parallelism.
      *
      * @param spout           the spout
@@ -143,10 +149,10 @@ public class StreamBuilder {
      * @param parallelism     the parallelism of the stream
      * @return the new stream of key-value pairs
      */
-    public <K, V> PairStream<K, V> newStream(IRichSpout spout, PairValueMapper<K, V> pairValueMapper, int parallelism) {
+    public <K, V> PairStream<K, V> newStream(IRichSpout spout, PairValueMapper<K,
+            V> pairValueMapper, int parallelism) {
         return newStream(spout, parallelism).mapToPair(pairValueMapper);
     }
-
 
     /**
      * Builds a new {@link StormTopology} for the computation expressed via the stream api.
@@ -157,7 +163,8 @@ public class StreamBuilder {
         nodeGroupingInfo.clear();
         windowInfo.clear();
         curGroup.clear();
-        TopologicalOrderIterator<Node, Edge> iterator = new TopologicalOrderIterator<>(graph, priorityComparator());
+        TopologicalOrderIterator<Node, Edge> iterator = new TopologicalOrderIterator<>(graph,
+                priorityComparator());
         TopologyBuilder topologyBuilder = new TopologyBuilder();
         while (iterator.hasNext()) {
             Node node = iterator.next();
@@ -182,7 +189,8 @@ public class StreamBuilder {
     }
 
     Node addNode(Node parent, Node child) {
-        return addNode(parent, child, parent.getOutputStreams().iterator().next(), parent.getParallelism());
+        return addNode(parent, child, parent.getOutputStreams().iterator().next(), parent
+                .getParallelism());
     }
 
     Node addNode(Node parent, Node child, int parallelism) {
@@ -240,8 +248,10 @@ public class StreamBuilder {
             /*
              * Nodes in the descending order of priority.
              * ProcessorNode has higher priority than partition and window nodes
-             * so that the topological order iterator will group as many processor nodes together as possible.
-             * UpdateStateByKeyProcessor has a higher priority than StateQueryProcessor so that StateQueryProcessor
+             * so that the topological order iterator will group as many processor nodes together as
+             * possible.
+             * UpdateStateByKeyProcessor has a higher priority than StateQueryProcessor so that
+             * StateQueryProcessor
              * can be mapped to the same StatefulBolt that UpdateStateByKeyProcessor is part of.
              */
             Map<Class<?>, Integer> map = new HashMap<>();
@@ -284,7 +294,7 @@ public class StreamBuilder {
         if (processorNode.getProcessor() instanceof StatefulProcessor) {
             statefulProcessorCount++;
             Set<ProcessorNode> initialNodes = initialProcessors(
-                curGroup.isEmpty() ? Collections.singletonList(processorNode) : curGroup);
+                    curGroup.isEmpty() ? Collections.singletonList(processorNode) : curGroup);
             Set<Window<?, ?>> windows = getWindowParams(initialNodes);
             // if we get more than one stateful operation, we need to process the
             // current group so that we have one stateful operation per stateful bolt
@@ -305,12 +315,13 @@ public class StreamBuilder {
      * force create a windowed bolt with identity nodes so that we don't
      * have a stateful processor inside a windowed bolt.
      */
-    private void splitStatefulProcessor(ProcessorNode processorNode, TopologyBuilder topologyBuilder) {
+    private void splitStatefulProcessor(ProcessorNode processorNode,
+            TopologyBuilder topologyBuilder) {
         for (Node parent : StreamUtil.<Node>getParents(graph, processorNode)) {
             ProcessorNode identity =
-                new ProcessorNode(new MapProcessor<>(new IdentityFunction<>()),
-                                  UniqueIdGen.getInstance().getUniqueStreamId(),
-                                  parent.getOutputFields());
+                    new ProcessorNode(new MapProcessor<>(new IdentityFunction<>()),
+                            UniqueIdGen.getInstance().getUniqueStreamId(),
+                            parent.getOutputFields());
             addNode(parent, identity);
             graph.removeEdge(parent, processorNode);
             processorNode.removeParentStreams(parent);
@@ -354,7 +365,8 @@ public class StreamBuilder {
     Node parentNode(Node curNode) {
         Set<Node> parentNode = parentNodes(curNode);
         if (parentNode.size() > 1) {
-            throw new IllegalArgumentException("Node " + curNode + " has more than one parent node.");
+            throw new IllegalArgumentException("Node " + curNode
+                    + " has more than one parent node.");
         }
         if (parentNode.isEmpty()) {
             throw new IllegalArgumentException("Node " + curNode + " has no parent.");
@@ -375,7 +387,8 @@ public class StreamBuilder {
     }
 
     private Collection<List<ProcessorNode>> parallelismGroups(List<ProcessorNode> processorNodes) {
-        return processorNodes.stream().collect(Collectors.groupingBy(Node::getParallelism)).values();
+        return processorNodes.stream().collect(Collectors.groupingBy(Node::getParallelism))
+                .values();
     }
 
     private void processCurGroup(TopologyBuilder topologyBuilder) {
@@ -400,9 +413,11 @@ public class StreamBuilder {
                 addBolt(topologyBuilder, boltId, initialProcessors, group);
             }
         } else if (windowParams.size() == 1) {
-            addWindowedBolt(topologyBuilder, boltId, initialProcessors, windowParams.iterator().next(), group);
+            addWindowedBolt(topologyBuilder, boltId, initialProcessors, windowParams.iterator()
+                    .next(), group);
         } else {
-            throw new IllegalStateException("More than one window config for current group " + group);
+            throw new IllegalStateException("More than one window config for current group "
+                    + group);
         }
     }
 
@@ -416,10 +431,12 @@ public class StreamBuilder {
     }
 
     private int getParallelism(List<ProcessorNode> group) {
-        Set<Integer> parallelisms = group.stream().map(Node::getParallelism).collect(Collectors.toSet());
+        Set<Integer> parallelisms = group.stream().map(Node::getParallelism).collect(Collectors
+                .toSet());
 
         if (parallelisms.size() > 1) {
-            throw new IllegalStateException("Current group does not have same parallelism " + group);
+            throw new IllegalStateException("Current group does not have same parallelism "
+                    + group);
         }
 
         return parallelisms.isEmpty() ? 1 : parallelisms.iterator().next();
@@ -448,9 +465,11 @@ public class StreamBuilder {
         IComponent bolt = sinkNode.getBolt();
         BoltDeclarer boltDeclarer;
         if (bolt instanceof IRichBolt) {
-            boltDeclarer = topologyBuilder.setBolt(sinkNode.getComponentId(), (IRichBolt) bolt, sinkNode.getParallelism());
+            boltDeclarer = topologyBuilder.setBolt(sinkNode.getComponentId(), (IRichBolt) bolt,
+                    sinkNode.getParallelism());
         } else if (bolt instanceof IBasicBolt) {
-            boltDeclarer = topologyBuilder.setBolt(sinkNode.getComponentId(), (IBasicBolt) bolt, sinkNode.getParallelism());
+            boltDeclarer = topologyBuilder.setBolt(sinkNode.getComponentId(), (IBasicBolt) bolt,
+                    sinkNode.getParallelism());
         } else {
             throw new IllegalArgumentException("Expect IRichBolt or IBasicBolt in addBolt");
         }
@@ -480,18 +499,21 @@ public class StreamBuilder {
         StatefulProcessorBolt<?, ?> bolt;
         if (stateQueryProcessor == null) {
             bolt = new StatefulProcessorBolt<>(boltId, graph, group);
-            BoltDeclarer boltDeclarer = topologyBuilder.setBolt(boltId, bolt, getParallelism(group));
+            BoltDeclarer boltDeclarer = topologyBuilder.setBolt(boltId, bolt,
+                    getParallelism(group));
             bolt.setStreamToInitialProcessors(wireBolt(group, boltDeclarer, initialProcessors));
             streamBolts.put(bolt, boltDeclarer);
         } else {
             // state query is added to the existing stateful bolt
-            ProcessorNode updateStateNode = stateQueryProcessor.getStreamState().getUpdateStateNode();
+            ProcessorNode updateStateNode = stateQueryProcessor.getStreamState()
+                    .getUpdateStateNode();
             bolt = findStatefulProcessorBolt(updateStateNode);
             for (ProcessorNode node : group) {
                 node.setComponentId(bolt.getId());
             }
             bolt.addNodes(group);
-            bolt.addStreamToInitialProcessors(wireBolt(bolt.getNodes(), streamBolts.get(bolt), initialProcessors));
+            bolt.addStreamToInitialProcessors(wireBolt(bolt.getNodes(), streamBolts.get(bolt),
+                    initialProcessors));
         }
         return bolt;
     }
@@ -526,7 +548,8 @@ public class StreamBuilder {
                 }
             }
         }
-        throw new IllegalArgumentException("Could not find Stateful bolt for node " + updateStateNode);
+        throw new IllegalArgumentException("Could not find Stateful bolt for node "
+                + updateStateNode);
     }
 
     private Set<String> getWindowedParentStreams(ProcessorNode processorNode) {
@@ -542,8 +565,9 @@ public class StreamBuilder {
     private Multimap<String, ProcessorNode> wireBolt(List<ProcessorNode> group,
                                                      BoltDeclarer boltDeclarer,
                                                      Set<ProcessorNode> initialProcessors) {
-        LOG.debug("Wiring bolt with boltDeclarer {}, group {}, initialProcessors {}, nodeGroupingInfo {}",
-                  boltDeclarer, group, initialProcessors, nodeGroupingInfo);
+        LOG.debug("Wiring bolt with boltDeclarer {}, group {}, initialProcessors {}, "
+                + "nodeGroupingInfo {}",
+                boltDeclarer, group, initialProcessors, nodeGroupingInfo);
         Multimap<String, ProcessorNode> streamToInitialProcessor = ArrayListMultimap.create();
         Set<ProcessorNode> curSet = new HashSet<>(group);
         for (ProcessorNode curNode : initialProcessors) {
@@ -552,14 +576,16 @@ public class StreamBuilder {
                     LOG.debug("Parent {} of curNode {} is in group {}", parent, curNode, group);
                 } else {
                     for (String stream : curNode.getParentStreams(parent)) {
-                        declareGrouping(boltDeclarer, parent, stream, nodeGroupingInfo.get(parent, stream));
+                        declareGrouping(boltDeclarer, parent, stream, nodeGroupingInfo.get(parent,
+                                stream));
                         // put global stream id for spouts
                         if (parent.getComponentId().startsWith("spout")) {
                             stream = parent.getComponentId() + stream;
                         } else {
                             // subscribe to parent's punctuation stream
                             String punctuationStream = StreamUtil.getPunctuationStream(stream);
-                            declareGrouping(boltDeclarer, parent, punctuationStream, GroupingInfo.all());
+                            declareGrouping(boltDeclarer, parent, punctuationStream, GroupingInfo
+                                    .all());
                         }
                         streamToInitialProcessor.put(stream, curNode);
                     }
@@ -569,11 +595,13 @@ public class StreamBuilder {
         return streamToInitialProcessor;
     }
 
-    private void declareGrouping(BoltDeclarer boltDeclarer, Node parent, String streamId, GroupingInfo grouping) {
+    private void declareGrouping(BoltDeclarer boltDeclarer, Node parent, String streamId,
+            GroupingInfo grouping) {
         if (grouping == null) {
             boltDeclarer.shuffleGrouping(parent.getComponentId(), streamId);
         } else {
-            grouping.declareGrouping(boltDeclarer, parent.getComponentId(), streamId, grouping.getFields());
+            grouping.declareGrouping(boltDeclarer, parent.getComponentId(), streamId, grouping
+                    .getFields());
         }
     }
 

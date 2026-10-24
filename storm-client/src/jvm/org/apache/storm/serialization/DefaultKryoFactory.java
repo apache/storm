@@ -21,31 +21,35 @@ import org.apache.storm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class DefaultKryoFactory implements IKryoFactory {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultKryoFactory.class);
 
     @Override
     public Kryo getKryo(Map<String, Object> conf) {
         KryoSerializableDefault k = new KryoSerializableDefault(getJavaSerializationFilter(conf));
-        k.setRegistrationRequired(!((Boolean) conf.get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION)));
+        k.setRegistrationRequired(!((Boolean) conf
+                .get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION)));
         k.setReferences(false);
         return k;
     }
 
     /**
-     * Parses the pattern once at kryo construction so an invalid pattern fails worker setup with a clear error
-     * instead of failing per-tuple on the read path. Returns null when the key is unset or empty (no filter).
+     * Parses the pattern once at kryo construction so an invalid pattern fails worker setup with a
+     * clear error
+     * instead of failing per-tuple on the read path. Returns null when the key is unset or empty
+     * (no filter).
      */
     private static ObjectInputFilter getJavaSerializationFilter(Map<String, Object> conf) {
-        String filterSpec = (String) conf.get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER);
+        String filterSpec = (String) conf
+                .get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER);
         if (filterSpec == null || filterSpec.isEmpty()) {
             return null;
         }
         try {
             return ObjectInputFilter.Config.createFilter(filterSpec);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid " + Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER
+            throw new IllegalArgumentException("Invalid "
+                    + Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER
                     + " pattern: \"" + filterSpec + "\"", e);
         }
     }

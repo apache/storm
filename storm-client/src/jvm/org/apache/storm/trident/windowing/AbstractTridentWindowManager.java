@@ -49,7 +49,8 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
     private final String windowTriggerCountId;
     private final TriggerPolicy<T, ?> triggerPolicy;
 
-    public AbstractTridentWindowManager(WindowConfig windowConfig, String windowTaskId, WindowsStore windowStore,
+    public AbstractTridentWindowManager(WindowConfig windowConfig, String windowTaskId,
+            WindowsStore windowStore,
                                         Aggregator aggregator, BatchOutputCollector delegateCollector) {
         this.windowTaskId = windowTaskId;
         this.windowStore = windowStore;
@@ -96,7 +97,8 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
     }
 
     /**
-     * Load and initialize any resources into window manager before windowing for component/task is activated.
+     * Load and initialize any resources into window manager before windowing for component/task is
+     * activated.
      */
     protected abstract void initialize();
 
@@ -118,11 +120,12 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
 
         List<List<Object>> resultantAggregatedValue = collector.values;
 
-        ArrayList<WindowsStore.Entry> entries = Lists.newArrayList(new WindowsStore.Entry(windowTriggerCountId, currentTriggerId + 1),
-                                                                   new WindowsStore.Entry(WindowTridentProcessor
-                                                                                              .generateWindowTriggerKey(windowTaskId,
-                                                                                                                        currentTriggerId),
-                                                                                          resultantAggregatedValue));
+        ArrayList<WindowsStore.Entry> entries = Lists.newArrayList(new WindowsStore
+                .Entry(windowTriggerCountId, currentTriggerId + 1),
+                new WindowsStore.Entry(WindowTridentProcessor
+                                .generateWindowTriggerKey(windowTaskId,
+                                        currentTriggerId),
+                        resultantAggregatedValue));
         windowStore.putAll(entries);
 
         pendingTriggers.add(new TriggerResult(currentTriggerId, resultantAggregatedValue));
@@ -228,7 +231,8 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         }
 
         @Override
-        public void onActivation(List<T> events, List<T> newEvents, List<T> expired, Long timestamp) {
+        public void onActivation(List<T> events, List<T> newEvents, List<T> expired,
+            Long timestamp) {
             LOG.debug("onActivation is invoked with events size: [{}]", events.size());
             // trigger occurred, create an aggregation and keep them in store
             int currentTriggerId = triggerId.incrementAndGet();

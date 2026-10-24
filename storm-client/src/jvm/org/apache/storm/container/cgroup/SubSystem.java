@@ -13,7 +13,7 @@
 package org.apache.storm.container.cgroup;
 
 /**
- * a class that implements operations that can be performed on a cgroup subsystem.
+ * A class that implements operations that can be performed on a cgroup subsystem.
  */
 public class SubSystem {
 
@@ -81,7 +81,7 @@ public class SubSystem {
         boolean ret = false;
         if (object != null && object instanceof SubSystem) {
             ret = ((this.type == ((SubSystem) object).getType())
-                   && (this.hierarchyID == ((SubSystem) object).getHierarchyID()));
+                    && (this.hierarchyID == ((SubSystem) object).getHierarchyID()));
         }
         return ret;
     }

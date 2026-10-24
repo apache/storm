@@ -21,7 +21,8 @@ import java.util.Map;
 import org.apache.storm.task.TopologyContext;
 
 /**
- * The ISerializer interface describes the methods that an object should implement to provide serialization and de-serialization
+ * The ISerializer interface describes the methods that an object should implement to provide
+ * serialization and de-serialization
  * capabilities to non-JVM language components.
  */
 public interface ISerializer extends Serializable {
@@ -42,7 +43,7 @@ public interface ISerializer extends Serializable {
      * @return process pid
      */
     Number connect(Map<String, Object> conf, TopologyContext context) throws IOException,
-        NoOutputException;
+            NoOutputException;
 
     /**
      * This method receives a shell message from the non-JVM process.

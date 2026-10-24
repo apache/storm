@@ -19,12 +19,14 @@ import org.apache.storm.generated.DistributedRPCInvocations;
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public interface ILocalDRPC extends DistributedRPC.Iface, DistributedRPCInvocations.Iface, Shutdownable, AutoCloseable {
     /**
-     * Get the ID of the service.  This is used internally if multiple local DRPC clusters are in use at one time.
+     * Get the ID of the service. This is used internally if multiple local DRPC clusters are in use
+     * at one time.
      */
     String getServiceId();
 
     /**
      * Shutdown.
+     *
      * @deprecated use {@link #close()} instead
      */
     @Deprecated

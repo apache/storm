@@ -28,7 +28,7 @@ public class RawScheme implements Scheme {
     public List<Object> deserialize(ByteBuffer ser) {
         // Maintain backward compatibility for 0.10
         byte[] b = Utils.toByteArray(ser);
-        return Utils.tuple(new Object[]{ b });
+        return Utils.tuple(new Object[] {b});
     }
 
     @Override

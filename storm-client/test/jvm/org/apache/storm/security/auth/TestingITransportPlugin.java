@@ -31,7 +31,8 @@ public class TestingITransportPlugin implements ITransportPlugin {
     }
 
     @Override
-    public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException {
+    public TTransport connect(TTransport transport, String serverHost,
+        String asUser) throws IOException, TTransportException {
         return null;
     }
 

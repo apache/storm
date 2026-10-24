@@ -34,7 +34,6 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
     Fields outFields;
     boolean waitToEmit = true;
 
-
     public FeederBatchSpout(List<String> fields) {
         outFields = new Fields(fields);
         id = RegisteredGlobalState.registerState(new CopyOnWriteArrayList());
@@ -68,17 +67,19 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
     }
 
     @Override
-    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map<String, Object> conf,
+    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId,
+        Map<String, Object> conf,
                                                                              TopologyContext context) {
         int numTasks = context.getComponentTasks(
-            TridentTopologyBuilder.spoutIdFromCoordinatorId(
-                context.getThisComponentId()))
-                              .size();
+                TridentTopologyBuilder.spoutIdFromCoordinatorId(
+                        context.getThisComponentId()))
+                .size();
         return new FeederCoordinator(numTasks);
     }
 
     @Override
-    public Emitter<Map<Integer, List<List<Object>>>> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
+    public Emitter<Map<Integer, List<List<Object>>>> getEmitter(String txStateId, Map<String,
+        Object> conf, TopologyContext context) {
         return new FeederEmitter(context.getThisTaskIndex());
     }
 
@@ -91,7 +92,8 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
         }
 
         @Override
-        public void emitBatch(TransactionAttempt tx, Map<Integer, List<List<Object>>> coordinatorMeta, TridentCollector collector) {
+        public void emitBatch(TransactionAttempt tx, Map<Integer,
+            List<List<Object>>> coordinatorMeta, TridentCollector collector) {
             List<List<Object>> tuples = coordinatorMeta.get(index);
             if (tuples != null) {
                 for (List<Object> t : tuples) {
@@ -121,7 +123,8 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
         }
 
         @Override
-        public Map<Integer, List<List<Object>>> initializeTransaction(long txid, Map<Integer, List<List<Object>>> prevMetadata,
+        public Map<Integer, List<List<Object>>> initializeTransaction(long txid, Map<Integer,
+            List<List<Object>>> prevMetadata,
                                                                       Map<Integer, List<List<Object>>> currMetadata) {
             if (currMetadata != null) {
                 return currMetadata;
@@ -158,7 +161,8 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
         public void success(long txid) {
             Integer index = txIndices.get(txid);
             if (index != null) {
-                Semaphore sem = (Semaphore) ((List) RegisteredGlobalState.getState(semaphoreId)).get(index);
+                Semaphore sem = (Semaphore) ((List) RegisteredGlobalState.getState(semaphoreId))
+                        .get(index);
                 sem.release();
             }
         }
@@ -178,6 +182,5 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
             }
         }
     }
-
 
 }

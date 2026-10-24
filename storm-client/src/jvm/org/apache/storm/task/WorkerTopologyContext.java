@@ -36,23 +36,24 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     private final AtomicReference<Map<String, String>> nodeToHost;
 
     public WorkerTopologyContext(
-        StormTopology topology,
-        Map<String, Object> topoConf,
-        Map<Integer, String> taskToComponent,
-        Map<String, List<Integer>> componentToSortedTasks,
-        Map<String, Map<String, Fields>> componentToStreamToFields,
-        String stormId,
-        String codeDir,
-        String pidDir,
-        Integer workerPort,
-        List<Integer> workerTasks,
-        Map<String, Object> defaultResources,
-        Map<String, Object> userResources,
-        AtomicReference<Map<Integer, NodeInfo>> taskToNodePort,
-        String assignmentId,
-        AtomicReference<Map<String, String>> nodeToHost
+            StormTopology topology,
+            Map<String, Object> topoConf,
+            Map<Integer, String> taskToComponent,
+            Map<String, List<Integer>> componentToSortedTasks,
+            Map<String, Map<String, Fields>> componentToStreamToFields,
+            String stormId,
+            String codeDir,
+            String pidDir,
+            Integer workerPort,
+            List<Integer> workerTasks,
+            Map<String, Object> defaultResources,
+            Map<String, Object> userResources,
+            AtomicReference<Map<Integer, NodeInfo>> taskToNodePort,
+            String assignmentId,
+            AtomicReference<Map<String, String>> nodeToHost
     ) {
-        super(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId);
+        super(topology, topoConf, taskToComponent, componentToSortedTasks,
+                componentToStreamToFields, stormId);
         this.codeDir = codeDir;
         this.defaultResources = defaultResources;
         this.userResources = userResources;
@@ -74,24 +75,26 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     }
 
     public WorkerTopologyContext(
-        StormTopology topology,
-        Map<String, Object> topoConf,
-        Map<Integer, String> taskToComponent,
-        Map<String, List<Integer>> componentToSortedTasks,
-        Map<String, Map<String, Fields>> componentToStreamToFields,
-        String stormId,
-        String codeDir,
-        String pidDir,
-        Integer workerPort,
-        List<Integer> workerTasks,
-        Map<String, Object> defaultResources,
-        Map<String, Object> userResources) {
-        this(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId,
-             codeDir, pidDir, workerPort, workerTasks, defaultResources, userResources, null, null, null);
+            StormTopology topology,
+            Map<String, Object> topoConf,
+            Map<Integer, String> taskToComponent,
+            Map<String, List<Integer>> componentToSortedTasks,
+            Map<String, Map<String, Fields>> componentToStreamToFields,
+            String stormId,
+            String codeDir,
+            String pidDir,
+            Integer workerPort,
+            List<Integer> workerTasks,
+            Map<String, Object> defaultResources,
+            Map<String, Object> userResources) {
+        this(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields,
+                stormId,
+                codeDir, pidDir, workerPort, workerTasks, defaultResources, userResources, null, null, null);
     }
 
     /**
-     * Gets all the task ids that are running in this worker process (including the task for this task).
+     * Gets all the task ids that are running in this worker process (including the task for this
+     * task).
      */
     public List<Integer> getThisWorkerTasks() {
         return workerTasks;
@@ -116,6 +119,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
 
     /**
      * Get a map from nodeId to hostname.
+     *
      * @return a map from nodeId to hostname
      */
     public AtomicReference<Map<String, String>> getNodeToHost() {
@@ -123,7 +127,8 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     }
 
     /**
-     * Gets the location of the external resources for this worker on the local filesystem. These external resources typically include bolts
+     * Gets the location of the external resources for this worker on the local filesystem. These
+     * external resources typically include bolts
      * implemented in other languages, such as Ruby or Python.
      */
     public String getCodeDir() {
@@ -131,7 +136,8 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     }
 
     /**
-     * If this task spawns any subprocesses, those subprocesses must immediately write their PID to this directory on the local filesystem
+     * If this task spawns any subprocesses, those subprocesses must immediately write their PID to
+     * this directory on the local filesystem
      * to ensure that Storm properly destroys that process when the worker is shutdown.
      */
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
@@ -140,8 +146,10 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     }
 
     /**
-     * Fetches the worker-level data for the given name. The corresponding data needs to be first set in an implementation of
-     * {@link IWorkerHook#start(Map, WorkerUserContext)} via {@link WorkerUserContext#setResource(String, Object)}
+     * Fetches the worker-level data for the given name. The corresponding data needs to be first
+     * set in an implementation of
+     * {@link IWorkerHook#start(Map, WorkerUserContext)} via {@link
+     * WorkerUserContext#setResource(String, Object)}
      *
      * @param name  name of the worker-level data to be fetched
      * @return Associated worker-level data

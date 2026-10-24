@@ -16,7 +16,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.streams.Pair;
 
 /**
- * An eviction policy that tracks count based on watermark ts and evicts events up to the watermark based on a threshold count.
+ * An eviction policy that tracks count based on watermark ts and evicts events up to the watermark
+ * based on a threshold count.
  *
  * @param <T> the type of event tracked by this policy.
  */
@@ -35,14 +36,17 @@ public class WatermarkCountEvictionPolicy<T> implements EvictionPolicy<T, Pair<L
     @Override
     public Action evict(Event<T> event) {
         if (getContext() == null) {
-            //It is possible to get asked about eviction before we have a context, due to WindowManager.compactWindow.
-            //In this case we should hold on to all the events. When the first watermark is received, the context will be set,
-            //and the events will be reevaluated for eviction
+            // It is possible to get asked about eviction before we have a context, due to
+            // WindowManager.compactWindow.
+            // In this case we should hold on to all the events. When the first watermark is
+            // received, the context will be set,
+            // and the events will be reevaluated for eviction
             return Action.STOP;
         }
 
         Action action;
-        if (event.getTimestamp() <= getContext().getReferenceTime() && processed < currentCount.get()) {
+        if (event.getTimestamp() <= getContext().getReferenceTime() && processed < currentCount
+                .get()) {
             action = doEvict(event);
             if (action == Action.PROCESS) {
                 ++processed;

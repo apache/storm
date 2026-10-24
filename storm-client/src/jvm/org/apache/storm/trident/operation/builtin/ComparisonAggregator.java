@@ -35,7 +35,8 @@ public abstract class ComparisonAggregator<T> extends BaseAggregator<ComparisonA
     @Override
     public State init(Object batchId, TridentCollector collector) {
         this.batchId = batchId;
-        log.debug("Started comparison aggregation for batch: [{}] in operation [{}]", batchId, this);
+        log.debug("Started comparison aggregation for batch: [{}] in operation [{}]", batchId,
+                this);
         return new State();
     }
 
@@ -44,7 +45,8 @@ public abstract class ComparisonAggregator<T> extends BaseAggregator<ComparisonA
         T value1 = valueFromTuple(state.previousTuple);
         T value2 = valueFromTuple(tuple);
 
-        log.debug("Aggregated tuple value in state [{}], and received tuple value [{}] in operation [{}]", value1, value2, this);
+        log.debug("Aggregated tuple value in state [{}], and received tuple value [{}] in "
+                + "operation [{}]", value1, value2, this);
 
         if (value2 == null) {
             return;
@@ -65,15 +67,17 @@ public abstract class ComparisonAggregator<T> extends BaseAggregator<ComparisonA
             value = tuple;
         }
 
-        log.debug("value from tuple is [{}] with input field [{}] and tuple [{}]", value, inputFieldName, tuple);
+        log.debug("value from tuple is [{}] with input field [{}] and tuple [{}]", value,
+                inputFieldName, tuple);
 
         return (T) value;
     }
 
     @Override
     public void complete(State state, TridentCollector collector) {
-        log.debug("Completed comparison aggregation for batch [{}] with resultant tuple: [{}] in operation [{}]", batchId,
-                  state.previousTuple, this);
+        log.debug("Completed comparison aggregation for batch [{}] with resultant tuple: [{}] in "
+                + "operation [{}]", batchId,
+                state.previousTuple, this);
 
         collector.emit(state.previousTuple != null ? state.previousTuple.getValues() : null);
     }

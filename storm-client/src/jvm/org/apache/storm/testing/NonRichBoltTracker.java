@@ -20,7 +20,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.RegisteredGlobalState;
 
-
 public class NonRichBoltTracker implements IBolt {
     IBolt delegate;
     String trackId;
@@ -31,7 +30,8 @@ public class NonRichBoltTracker implements IBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         delegate.prepare(topoConf, context, collector);
     }
 

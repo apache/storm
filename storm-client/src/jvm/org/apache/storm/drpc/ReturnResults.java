@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 public class ReturnResults extends BaseRichBolt {
     public static final Logger LOG = LoggerFactory.getLogger(ReturnResults.class);
-    //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
+    // ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
     static final long serialVersionUID = -774882142710631591L;
     OutputCollector collector;
     boolean local;
@@ -43,7 +43,8 @@ public class ReturnResults extends BaseRichBolt {
     Map<List, DRPCInvocationsClient> clients = new HashMap<List, DRPCInvocationsClient>();
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         conf = topoConf;
         this.collector = collector;
         local = topoConf.get(Config.STORM_CLUSTER_MODE).equals("local");
@@ -86,7 +87,6 @@ public class ReturnResults extends BaseRichBolt {
                 client = clients.get(server);
             }
 
-
             int retryCnt = 0;
             int maxRetries = 3;
             while (retryCnt < maxRetries) {
@@ -114,7 +114,7 @@ public class ReturnResults extends BaseRichBolt {
         if (client instanceof DRPCInvocationsClient) {
             try {
                 LOG.info("reconnecting... ");
-                client.reconnectClient(); //Blocking call
+                client.reconnectClient(); // Blocking call
             } catch (TException e2) {
                 LOG.error("Failed to connect to DRPC server", e2);
             }

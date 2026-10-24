@@ -14,7 +14,6 @@ package org.apache.storm.state;
 
 import java.util.List;
 
-
 public class SynchronizeOutputCollector implements ISynchronizeOutputCollector {
 
     @Override

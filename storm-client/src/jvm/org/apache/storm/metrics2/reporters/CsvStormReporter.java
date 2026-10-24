@@ -14,7 +14,6 @@ package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
@@ -35,7 +34,8 @@ public class CsvStormReporter extends ScheduledStormReporter {
         String csvMetricsLogDirectory = ObjectReader.getString(reporterConf.get(CSV_LOG_DIR), null);
         if (csvMetricsLogDirectory == null) {
             csvMetricsLogDirectory = ConfigUtils.absoluteStormLocalDir(stormConf);
-            csvMetricsLogDirectory = csvMetricsLogDirectory + ConfigUtils.FILE_SEPARATOR + "csvmetrics";
+            csvMetricsLogDirectory = csvMetricsLogDirectory + ConfigUtils.FILE_SEPARATOR
+                    + "csvmetrics";
         }
         File csvMetricsDir = new File(csvMetricsLogDirectory);
         validateCreateOutputDir(csvMetricsDir);
@@ -55,7 +55,8 @@ public class CsvStormReporter extends ScheduledStormReporter {
     }
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf, Map<String, Object> reporterConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf, Map<String,
+        Object> reporterConf) {
         LOG.debug("Preparing...");
         CsvReporter.Builder builder = CsvReporter.forRegistry(metricsRegistry);
 
@@ -79,10 +80,10 @@ public class CsvStormReporter extends ScheduledStormReporter {
             builder.filter(filter);
         }
 
-        //defaults to 10
+        // defaults to 10
         reportingPeriod = getReportPeriod(reporterConf);
 
-        //defaults to seconds
+        // defaults to seconds
         reportingPeriodUnit = getReportPeriodUnit(reporterConf);
 
         File csvMetricsDir = getCsvLogDir(topoConf, reporterConf);

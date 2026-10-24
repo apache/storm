@@ -28,12 +28,16 @@ import org.apache.storm.utils.Utils;
 /**
  * The ClientBlobStore has two concrete implementations 1. NimbusBlobStore 2. HdfsClientBlobStore.
  *
- * <p>Create, update, read and delete are some of the basic operations defined by this interface. Each operation is
- * validated for permissions against an user. We currently have NIMBUS_ADMINS and SUPERVISOR_ADMINS configuration.
- * NIMBUS_ADMINS are given READ, WRITE and ADMIN access whereas the SUPERVISOR_ADMINS are given READ access in order to
+ * <p>Create, update, read and delete are some of the basic operations defined by this interface.
+ * Each operation is
+ * validated for permissions against an user. We currently have NIMBUS_ADMINS and SUPERVISOR_ADMINS
+ * configuration.
+ * NIMBUS_ADMINS are given READ, WRITE and ADMIN access whereas the SUPERVISOR_ADMINS are given READ
+ * access in order to
  * read and download the blobs form the nimbus.
  *
- * <p>The ACLs for the blob store are validated against whether the subject is a NIMBUS_ADMIN, SUPERVISOR_ADMIN or USER
+ * <p>The ACLs for the blob store are validated against whether the subject is a NIMBUS_ADMIN,
+ * SUPERVISOR_ADMIN or USER
  * who has read, write or admin privileges in order to perform respective operations on the blob.
  *
  * <p>For more detailed implementation
@@ -63,8 +67,9 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
      * @param meta contains ACL information
      * @return AtomicOutputStream returns an output stream into which data can be written
      */
-    protected abstract AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta) throws AuthorizationException,
-        KeyAlreadyExistsException;
+    protected abstract AtomicOutputStream createBlobToExtend(String key,
+            SettableBlobMeta meta) throws AuthorizationException,
+            KeyAlreadyExistsException;
 
     /**
      * Client facing API to update a blob.
@@ -84,6 +89,7 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
 
     /**
      * Decide if the blob is deleted from cluster.
+     *
      * @param blobKey blob key
      */
     public abstract boolean isRemoteBlobExists(String blobKey) throws AuthorizationException;
@@ -94,7 +100,8 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
      * @param key  blob key name
      * @param meta contains ACL information
      */
-    protected abstract void setBlobMetaToExtend(String key, SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException;
+    protected abstract void setBlobMetaToExtend(String key,
+            SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException;
 
     /**
      * Client facing API to delete a blob.
@@ -113,6 +120,7 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
 
     /**
      * List keys.
+     *
      * @return Iterator for a list of keys currently present in the blob store.
      */
     public abstract Iterator<String> listKeys();
@@ -132,7 +140,8 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
      * @param replication int indicates the replication factor a blob has to be set
      * @return int indicates the replication factor of a blob
      */
-    public abstract int updateBlobReplication(String key, int replication) throws AuthorizationException, KeyNotFoundException;
+    public abstract int updateBlobReplication(String key,
+            int replication) throws AuthorizationException, KeyNotFoundException;
 
     /**
      * Client facing API to set a nimbus client.
@@ -144,7 +153,8 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
     public abstract boolean setClient(Map<String, Object> conf, NimbusClient client);
 
     /**
-     * Creates state inside a zookeeper. Required for blobstore to write to zookeeper when Nimbus HA is turned on in
+     * Creates state inside a zookeeper. Required for blobstore to write to zookeeper when Nimbus HA
+     * is turned on in
      * order to maintain state consistency.
      */
     public abstract void createStateInZookeeper(String key);
@@ -159,7 +169,8 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
      * @param meta contains ACL information
      * @return AtomicOutputStream returns an output stream into which data can be written
      */
-    public final AtomicOutputStream createBlob(String key, SettableBlobMeta meta) throws AuthorizationException, KeyAlreadyExistsException {
+    public final AtomicOutputStream createBlob(String key,
+            SettableBlobMeta meta) throws AuthorizationException, KeyAlreadyExistsException {
         if (meta != null && meta.is_set_acl()) {
             BlobStoreAclHandler.validateSettableACLs(key, meta.get_acl());
         }
@@ -172,7 +183,8 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
      * @param key  blob key name
      * @param meta contains ACL information
      */
-    public final void setBlobMeta(String key, SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException {
+    public final void setBlobMeta(String key,
+            SettableBlobMeta meta) throws AuthorizationException, KeyNotFoundException {
         if (meta != null && meta.is_set_acl()) {
             BlobStoreAclHandler.validateSettableACLs(key, meta.get_acl());
         }
@@ -184,7 +196,8 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
-     * Client facing API to get the last update time of existing blobs in a blobstore.  This is only required for use on
+     * Client facing API to get the last update time of existing blobs in a blobstore. This is only
+     * required for use on
      * supervisors.
      *
      * @return the timestamp of when the blobstore was last updated.  -1L if the blobstore

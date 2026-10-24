@@ -37,6 +37,7 @@ public class InMemoryWindowsStore implements WindowsStore, Serializable {
 
     /**
      * Creates a new in-memory window store.
+     *
      * @param maxSize      maximum size of inmemory store
      * @param backingStore backing store containing the entries
      */
@@ -86,7 +87,8 @@ public class InMemoryWindowsStore implements WindowsStore, Serializable {
 
             @Override
             public void remove() {
-                throw new UnsupportedOperationException("remove operation is not supported as it is immutable.");
+                throw new UnsupportedOperationException("remove operation is not supported as it "
+                        + "is immutable.");
             }
         };
 

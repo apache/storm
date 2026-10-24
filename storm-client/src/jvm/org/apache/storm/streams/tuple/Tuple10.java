@@ -53,7 +53,8 @@ public class Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
      * @param value9  the ninth element
      * @param value10 the tenth element
      */
-    public Tuple10(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7, T8 value8, T9 value9, T10 value10) {
+    public Tuple10(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7,
+            T8 value8, T9 value9, T10 value10) {
         this.value1 = value1;
         this.value2 = value2;
         this.value3 = value3;

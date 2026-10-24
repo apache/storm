@@ -116,14 +116,22 @@ public class WorkerLogs {
     }
 
     /**
-     * Return a list of all log files from worker directories in root log directory.
+     * Return a list of all log files from worker directories in root log directory. Symbolic links are left out, both as worker
+     * directories and as files. Only links are left out, the listing is otherwise unchanged.
      */
     public List<Path> getAllLogsForRootDir() throws IOException {
         List<Path> files = new ArrayList<>();
         Set<Path> topoDirFiles = getAllWorkerDirs();
         if (topoDirFiles != null) {
             for (Path portDir : topoDirFiles) {
-                files.addAll(directoryCleaner.getFilesForDir(portDir));
+                if (!LogFilePaths.isWorkerDirWithoutSymbolicLink(logRootDir, portDir)) {
+                    continue;
+                }
+                for (Path file : directoryCleaner.getFilesForDir(portDir)) {
+                    if (!Files.isSymbolicLink(file)) {
+                        files.add(file);
+                    }
+                }
             }
         }
 

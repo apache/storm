@@ -19,7 +19,8 @@ package org.apache.storm.windowing;
  */
 public interface Event<T> {
     /**
-     * The event timestamp in millis. This could be the time when the source generated the tuple or the time when the tuple was received by
+     * The event timestamp in millis. This could be the time when the source generated the tuple or
+     * the time when the tuple was received by
      * a bolt.
      *
      * @return the event timestamp in milliseconds.
@@ -34,7 +35,8 @@ public interface Event<T> {
     T get();
 
     /**
-     * If this is a watermark event or not. Watermark events are used for tracking time while processing event based ts.
+     * If this is a watermark event or not. Watermark events are used for tracking time while
+     * processing event based ts.
      *
      * @return true if this is a watermark event
      */

@@ -18,12 +18,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Authorize or deny client requests based on existence and completeness of client's SASL authentication.
+ * Authorize or deny client requests based on existence and completeness of client's SASL
+ * authentication.
  */
 public class SaslStormServerAuthorizeHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory
-        .getLogger(SaslStormServerAuthorizeHandler.class);
+            .getLogger(SaslStormServerAuthorizeHandler.class);
 
     /**
      * Constructor.
@@ -37,32 +38,34 @@ public class SaslStormServerAuthorizeHandler extends ChannelInboundHandlerAdapte
             return;
         }
 
-        LOG.debug("messageReceived: Checking whether the client is authorized to send messages to the server ");
+        LOG.debug("messageReceived: Checking whether the client is authorized to send messages to "
+                + "the server ");
 
         // Authorize: client is allowed to doRequest() if and only if the client
         // has successfully authenticated with this server.
-        SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
+        SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER)
+                .get();
 
         if (saslNettyServer == null) {
             LOG.warn("messageReceived: This client is *NOT* authorized to perform "
-                     + "this action since there's no saslNettyServer to "
-                     + "authenticate the client: "
-                     + "refusing to perform requested action: " + msg);
+                    + "this action since there's no saslNettyServer to "
+                    + "authenticate the client: "
+                    + "refusing to perform requested action: " + msg);
             return;
         }
 
         if (!saslNettyServer.isComplete()) {
             LOG.warn("messageReceived: This client is *NOT* authorized to perform "
-                     + "this action because SASL authentication did not complete: "
-                     + "refusing to perform requested action: " + msg);
+                    + "this action because SASL authentication did not complete: "
+                    + "refusing to perform requested action: " + msg);
             // Return now *WITHOUT* sending upstream here, since client
             // not authorized.
             return;
         }
 
         LOG.debug("messageReceived: authenticated client: "
-                  + saslNettyServer.getUserName()
-                  + " is authorized to do request " + "on server.");
+                + saslNettyServer.getUserName()
+                + " is authorized to do request " + "on server.");
 
         // We call fireChannelRead since the client is allowed to perform
         // this request. The client's request will now proceed to the next

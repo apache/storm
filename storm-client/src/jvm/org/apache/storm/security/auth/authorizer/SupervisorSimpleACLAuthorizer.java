@@ -30,17 +30,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An authorization implementation that simply checks if a user is allowed to perform specific operations.
+ * An authorization implementation that simply checks if a user is allowed to perform specific
+ * operations.
  */
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(SupervisorSimpleACLAuthorizer.class);
 
     protected Set<String> topoCommands = new HashSet<>(Arrays.asList(
-        "getLocalAssignmentForStorm",
-        "sendSupervisorWorkerHeartbeat"));
+            "getLocalAssignmentForStorm",
+            "sendSupervisorWorkerHeartbeat"));
     protected Set<String> nimbusCommands = new HashSet<>(Arrays.asList(
-        "sendSupervisorAssignments"));
+            "sendSupervisorAssignments"));
 
     protected Set<String> admins;
     protected Set<String> adminsGroups;
@@ -70,12 +71,15 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
         if (conf.containsKey(Config.NIMBUS_DAEMON_USERS)) {
             nimbus.addAll((Collection<String>) conf.get(Config.NIMBUS_DAEMON_USERS));
         } else if (conf.containsKey(Config.NIMBUS_SUPERVISOR_USERS)) {
-            LOG.warn("{} is not set falling back to using {}.", Config.NIMBUS_DAEMON_USERS, Config.NIMBUS_SUPERVISOR_USERS);
-            //In almost all cases these should be the same, but warn the user just in case something goes wrong...
+            LOG.warn("{} is not set falling back to using {}.", Config.NIMBUS_DAEMON_USERS,
+                    Config.NIMBUS_SUPERVISOR_USERS);
+            // In almost all cases these should be the same, but warn the user just in case
+            // something goes wrong...
             nimbus.addAll((Collection<String>) conf.get(Config.NIMBUS_SUPERVISOR_USERS));
         } else {
-            //If it is not set a lot of things are not really going to work all that well
-            LOG.error("Could not find {} things might now work correctly...", Config.NIMBUS_DAEMON_USERS);
+            // If it is not set a lot of things are not really going to work all that well
+            LOG.error("Could not find {} things might now work correctly...",
+                    Config.NIMBUS_DAEMON_USERS);
         }
 
         ptol = ClientAuthUtils.getPrincipalToLocalPlugin(conf);
@@ -105,7 +109,8 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
             }
         }
 
-        if (admins.contains(principal) || admins.contains(user) || checkUserGroupAllowed(userGroups, adminsGroups)) {
+        if (admins.contains(principal) || admins.contains(user) || checkUserGroupAllowed(userGroups,
+                adminsGroups)) {
             return true;
         }
 
@@ -115,7 +120,8 @@ public class SupervisorSimpleACLAuthorizer implements IAuthorizer {
 
         if (topoCommands.contains(operation)) {
             if (topoConf != null) {
-                if (checkTopoPermission(principal, user, userGroups, topoConf, Config.TOPOLOGY_USERS, Config.TOPOLOGY_GROUPS)) {
+                if (checkTopoPermission(principal, user, userGroups, topoConf,
+                        Config.TOPOLOGY_USERS, Config.TOPOLOGY_GROUPS)) {
                     return true;
                 }
             }

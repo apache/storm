@@ -29,7 +29,7 @@ public class WindowedTimeThrottler {
         return windowEvents >= maxAmt;
     }
 
-    //returns void if the event should continue, false if the event should not be done
+    // returns void if the event should continue, false if the event should not be done
     public void markEvent() {
         resetIfNecessary();
         windowEvents++;

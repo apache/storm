@@ -21,7 +21,8 @@ import org.apache.storm.task.TopologyContext;
 public interface ShellLogHandler {
 
     /**
-     * Called at least once before {@link ShellLogHandler#log} for each spout and bolt. Allows implementing classes to save information
+     * Called at least once before {@link ShellLogHandler#log} for each spout and bolt. Allows
+     * implementing classes to save information
      * about the current running context e.g. pid, thread, task.
      *
      * @param ownerCls - the class which instantiated this ShellLogHandler.

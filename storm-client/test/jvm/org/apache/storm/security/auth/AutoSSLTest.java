@@ -12,8 +12,12 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -23,20 +27,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import javax.security.auth.Subject;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class AutoSSLTest {
-    final static Logger LOG = LoggerFactory.getLogger(AutoSSLTest.class);
+    static final Logger LOG = LoggerFactory.getLogger(AutoSSLTest.class);
 
     @Test
     public void testgetSSLFilesFromConf() {
@@ -101,7 +99,8 @@ public class AutoSSLTest {
 
             // compare contents of files
             if (outputFiles.length > 0) {
-                List<String> linesWritten = FileUtils.readLines(new File(baseDir, outputFiles[0]), StandardCharsets.UTF_8);
+                List<String> linesWritten = FileUtils.readLines(new File(baseDir, outputFiles[0]),
+                        StandardCharsets.UTF_8);
                 for (String l : linesWritten) {
                     assertTrue(lines.contains(l));
                 }

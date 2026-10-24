@@ -24,7 +24,6 @@ import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
-
 public class AggregateProcessor implements TridentProcessor {
     Aggregator agg;
     TridentContext context;
@@ -38,7 +37,8 @@ public class AggregateProcessor implements TridentProcessor {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        TridentContext tridentContext) {
         List<Factory> parents = tridentContext.getParentTupleFactories();
         if (parents.size() != 1) {
             throw new RuntimeException("Aggregate operation can only have one parent");
@@ -57,13 +57,15 @@ public class AggregateProcessor implements TridentProcessor {
     @Override
     public void startBatch(ProcessorContext processorContext) {
         collector.setContext(processorContext);
-        processorContext.state[context.getStateIndex()] = agg.init(processorContext.batchId, collector);
+        processorContext.state[context.getStateIndex()] = agg.init(processorContext.batchId,
+                collector);
     }
 
     @Override
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
         collector.setContext(processorContext);
-        agg.aggregate(processorContext.state[context.getStateIndex()], projection.create(tuple), collector);
+        agg.aggregate(processorContext.state[context.getStateIndex()], projection.create(tuple),
+                collector);
     }
 
     @Override

@@ -14,7 +14,6 @@ package org.apache.storm.topology;
 
 import org.apache.storm.state.IStateSpout;
 
-
 public interface IRichStateSpout extends IStateSpout, IComponent {
 
 }

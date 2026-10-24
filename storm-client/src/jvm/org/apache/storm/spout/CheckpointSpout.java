@@ -36,8 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Emits checkpoint tuples which is used to save the state of the {@link org.apache.storm.topology.IStatefulComponent} across the topology.
- * If a topology contains Stateful bolts, Checkpoint spouts are automatically added to the topology. There is only one Checkpoint task per
+ * Emits checkpoint tuples which is used to save the state of the {@link
+ * org.apache.storm.topology.IStatefulComponent} across the topology.
+ * If a topology contains Stateful bolts, Checkpoint spouts are automatically added to the topology.
+ * There is only one Checkpoint task per
  * topology. Checkpoint spout stores its internal state in a {@link KeyValueState}.
  *
  * @see CheckPointState
@@ -65,7 +67,8 @@ public class CheckpointSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
         open(context, collector, loadCheckpointInterval(conf), loadCheckpointState(conf, context));
     }
 
@@ -124,16 +127,19 @@ public class CheckpointSpout extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(CHECKPOINT_STREAM_ID, new Fields(CHECKPOINT_FIELD_TXID, CHECKPOINT_FIELD_ACTION));
+        declarer.declareStream(CHECKPOINT_STREAM_ID, new Fields(CHECKPOINT_FIELD_TXID,
+                CHECKPOINT_FIELD_ACTION));
     }
 
     /**
      * Loads the last saved checkpoint state the from persistent storage.
      */
-    private KeyValueState<String, CheckPointState> loadCheckpointState(Map<String, Object> conf, TopologyContext ctx) {
+    private KeyValueState<String, CheckPointState> loadCheckpointState(Map<String, Object> conf,
+            TopologyContext ctx) {
         String namespace = ctx.getThisComponentId() + "-" + ctx.getThisTaskId();
         KeyValueState<String, CheckPointState> state =
-            (KeyValueState<String, CheckPointState>) StateFactory.getState(namespace, conf, ctx);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState(namespace, conf,
+                ctx);
         if (state.get(TX_STATE_KEY) == null) {
             CheckPointState txState = new CheckPointState(-1, COMMITTED);
             state.put(TX_STATE_KEY, txState);
@@ -148,7 +154,8 @@ public class CheckpointSpout extends BaseRichSpout {
     private int loadCheckpointInterval(Map<String, Object> topoConf) {
         int interval = 0;
         if (topoConf.containsKey(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL)) {
-            interval = ((Number) topoConf.get(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL)).intValue();
+            interval = ((Number) topoConf.get(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL))
+                    .intValue();
         }
         // ensure checkpoint interval is not less than a sane low value.
         interval = Math.max(100, interval);

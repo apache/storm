@@ -24,7 +24,8 @@ public class NettyUncaughtExceptionHandler implements Thread.UncaughtExceptionHa
         try {
             LOG.error("Uncaught exception in netty", e);
         } catch (Throwable err) {
-            // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException will handle it
+            // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException
+            // will handle it
         }
 
         try {

@@ -21,7 +21,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 
-
 public class PrepareBatchBolt extends BaseBasicBolt {
     Fields outFields;
 
@@ -42,6 +41,5 @@ public class PrepareBatchBolt extends BaseBasicBolt {
         toEmit.addAll(input.getValues());
         collector.emit(toEmit);
     }
-
 
 }

@@ -12,6 +12,15 @@
 
 package org.apache.storm.topology;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,17 +49,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 /**
- * Unit tests for {@link WindowedBoltExecutor}
+ * Unit tests for {@link WindowedBoltExecutor}.
  */
 public class WindowedBoltExecutorTest {
 
@@ -60,7 +60,7 @@ public class WindowedBoltExecutorTest {
     private GeneralTopologyContext getContext(final Fields fields) {
         TopologyBuilder builder = new TopologyBuilder();
         return new GeneralTopologyContext(
-            builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
+                builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
 
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
@@ -70,7 +70,8 @@ public class WindowedBoltExecutorTest {
         };
     }
 
-    private Tuple getTuple(String streamId, final Fields fields, Values values, String srcComponent) {
+    private Tuple getTuple(String streamId, final Fields fields, Values values,
+            String srcComponent) {
         return new TupleImpl(getContext(fields), values, srcComponent, 1, streamId) {
             @Override
             public GlobalStreamId getSourceGlobalStreamId() {
@@ -87,8 +88,8 @@ public class WindowedBoltExecutorTest {
         TopologyContext context = Mockito.mock(TopologyContext.class);
 
         Map<GlobalStreamId, Grouping> sources = Collections.singletonMap(
-            new GlobalStreamId("s1", "default"),
-            null
+                new GlobalStreamId("s1", "default"),
+                null
         );
         Mockito.when(context.getThisSources()).thenReturn(sources);
         return context;
@@ -112,36 +113,40 @@ public class WindowedBoltExecutorTest {
     @Test
     public void testExecuteWithoutTs() {
         assertThrows(IllegalArgumentException.class,
-            () -> executor.execute(getTuple("s1", new Fields("a"), new Values(1), "s1Src")));
+                () -> executor.execute(getTuple("s1", new Fields("a"), new Values(1), "s1Src")));
     }
 
     @Test
     public void testExecuteWithTs() {
-        long[] timestamps = { 603, 605, 607, 618, 626, 636 };
+        long[] timestamps =  {603, 605, 607, 618, 626, 636};
         for (long ts : timestamps) {
             executor.execute(getTuple("s1", new Fields("ts"), new Values(ts), "s1Src"));
         }
-        //Thread.sleep(120);
+        // Thread.sleep(120);
         executor.waterMarkEventGenerator.run();
-        //System.out.println(testWindowedBolt.tupleWindows);
+        // System.out.println(testWindowedBolt.tupleWindows);
         assertEquals(3, testWindowedBolt.tupleWindows.size());
         TupleWindow first = testWindowedBolt.tupleWindows.get(0);
-        assertArrayEquals(new long[]{ 603, 605, 607 },
-                          new long[]{
-                              (long) first.get().get(0).getValue(0), (long) first.get().get(1).getValue(0),
-                              (long) first.get().get(2).getValue(0)
-                          });
+        assertArrayEquals(new long[] {603, 605, 607},
+                new long[] {
+                    (long) first.get().get(0).getValue(0), (long) first.get().get(1)
+                                .getValue(0),
+                    (long) first.get().get(2).getValue(0)
+                });
 
         TupleWindow second = testWindowedBolt.tupleWindows.get(1);
-        assertArrayEquals(new long[]{ 603, 605, 607, 618 },
-                          new long[]{
-                              (long) second.get().get(0).getValue(0), (long) second.get().get(1).getValue(0),
-                              (long) second.get().get(2).getValue(0), (long) second.get().get(3).getValue(0)
-                          });
+        assertArrayEquals(new long[] {603, 605, 607, 618},
+                new long[] {
+                    (long) second.get().get(0).getValue(0), (long) second.get().get(1)
+                                .getValue(0),
+                    (long) second.get().get(2).getValue(0), (long) second.get().get(3)
+                        .getValue(0)
+                });
 
         TupleWindow third = testWindowedBolt.tupleWindows.get(2);
-        assertArrayEquals(new long[]{ 618, 626 },
-                          new long[]{ (long) third.get().get(0).getValue(0), (long) third.get().get(1).getValue(0) });
+        assertArrayEquals(new long[] {618, 626},
+                new long[] {(long) third.get().get(0).getValue(0), (long) third.get().get(1)
+                .getValue(0)});
     }
 
     @Test
@@ -158,12 +163,14 @@ public class WindowedBoltExecutorTest {
         executor = new WindowedBoltExecutor(testWindowedBolt);
         TopologyContext context = getTopologyContext();
         // emulate the call of withLateTupleStream method
-        Mockito.when(context.getThisStreams()).thenReturn(new HashSet<>(Arrays.asList("default", "$late")));
+        Mockito.when(context.getThisStreams()).thenReturn(new HashSet<>(Arrays.asList("default",
+                "$late")));
         try {
             executor.prepare(conf, context, getOutputCollector());
             fail();
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Late tuple stream can be defined only when specifying a timestamp field"));
+            assertThat(e.getMessage(),
+                    is("Late tuple stream can be defined only when specifying a timestamp field"));
         }
     }
 
@@ -185,7 +192,9 @@ public class WindowedBoltExecutorTest {
             executor.prepare(conf, context, getOutputCollector());
             fail();
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Stream for late tuples must be defined with the builder method withLateTupleStream"));
+            assertThat(e.getMessage(),
+                    is("Stream for late tuples must be defined with the builder method "
+                    + "withLateTupleStream"));
         }
     }
 
@@ -195,7 +204,8 @@ public class WindowedBoltExecutorTest {
         testWindowedBolt.withTimestampField("ts");
         executor = new WindowedBoltExecutor(testWindowedBolt);
         TopologyContext context = getTopologyContext();
-        Mockito.when(context.getThisStreams()).thenReturn(new HashSet<>(Arrays.asList("default", "$late")));
+        Mockito.when(context.getThisStreams()).thenReturn(new HashSet<>(Arrays.asList("default",
+                "$late")));
 
         OutputCollector outputCollector = Mockito.mock(OutputCollector.class);
         Map<String, Object> conf = new HashMap<>();
@@ -204,11 +214,11 @@ public class WindowedBoltExecutorTest {
         conf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, 10);
         conf.put(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, "$late");
         conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS, 5);
-        //Trigger manually to avoid timing issues
+        // Trigger manually to avoid timing issues
         conf.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, 1_000_000);
         executor.prepare(conf, context, outputCollector);
 
-        long[] timestamps = { 603, 605, 607, 618, 626, 636, 600 };
+        long[] timestamps =  {603, 605, 607, 618, 626, 636, 600};
         List<Tuple> tuples = new ArrayList<>(timestamps.length);
 
         for (long ts : timestamps) {
@@ -216,12 +226,13 @@ public class WindowedBoltExecutorTest {
             tuples.add(tuple);
             executor.execute(tuple);
 
-            //Update the watermark to this timestamp
+            // Update the watermark to this timestamp
             executor.waterMarkEventGenerator.run();
         }
         System.out.println(testWindowedBolt.tupleWindows);
         Tuple tuple = tuples.get(tuples.size() - 1);
-        Mockito.verify(outputCollector).emit("$late", Collections.singletonList(tuple), new Values(new DetachedTuple(tuple)));
+        Mockito.verify(outputCollector).emit("$late", Collections.singletonList(tuple),
+                new Values(new DetachedTuple(tuple)));
     }
 
     @Test
@@ -230,7 +241,8 @@ public class WindowedBoltExecutorTest {
         testWindowedBolt.withTimestampField("ts");
         executor = new WindowedBoltExecutor(testWindowedBolt);
         TopologyContext context = getTopologyContext();
-        Mockito.when(context.getThisStreams()).thenReturn(new HashSet<>(Arrays.asList("default", "$late")));
+        Mockito.when(context.getThisStreams()).thenReturn(new HashSet<>(Arrays.asList("default",
+                "$late")));
 
         OutputCollector outputCollector = Mockito.mock(OutputCollector.class);
         Map<String, Object> conf = new HashMap<>();
@@ -239,11 +251,11 @@ public class WindowedBoltExecutorTest {
         conf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, 10);
         conf.put(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, "$late");
         conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS, 5);
-        //Trigger manually to avoid timing issues
+        // Trigger manually to avoid timing issues
         conf.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, 1_000_000);
         executor.prepare(conf, context, outputCollector);
 
-        long[] timestamps = { 603, 605, 607, 618, 626, 636, 600 };
+        long[] timestamps =  {603, 605, 607, 618, 626, 636, 600};
         Tuple lateTuple = null;
         for (long ts : timestamps) {
             lateTuple = getTuple("s1", new Fields("ts"), new Values(ts), "s1Src");
@@ -252,7 +264,8 @@ public class WindowedBoltExecutorTest {
         }
 
         ArgumentCaptor<List<Object>> valuesCaptor = ArgumentCaptor.forClass(List.class);
-        Mockito.verify(outputCollector).emit(Mockito.eq("$late"), Mockito.anyCollection(), valuesCaptor.capture());
+        Mockito.verify(outputCollector).emit(Mockito.eq("$late"), Mockito.anyCollection(),
+                valuesCaptor.capture());
         Object lateValue = valuesCaptor.getValue().get(0);
         assertInstanceOf(DetachedTuple.class, lateValue);
         DetachedTuple detached = (DetachedTuple) lateValue;
@@ -260,7 +273,8 @@ public class WindowedBoltExecutorTest {
         assertEquals(lateTuple.getSourceComponent(), detached.getSourceComponent());
         assertEquals(lateTuple.getSourceStreamId(), detached.getSourceStreamId());
 
-        // STORM-4000 regression: the late tuple must survive Kryo serialization without java fallback
+        // STORM-4000 regression: the late tuple must survive Kryo serialization without java
+        // fallback
         Map<String, Object> serConf = Utils.readDefaultConfig();
         serConf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, false);
         byte[] serialized = new KryoValuesSerializer(serConf).serialize(new Values(lateValue));
@@ -281,7 +295,7 @@ public class WindowedBoltExecutorTest {
 
         @Override
         public void execute(TupleWindow input) {
-            //System.out.println(input);
+            // System.out.println(input);
             tupleWindows.add(input);
         }
     }

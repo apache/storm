@@ -15,7 +15,8 @@ package org.apache.storm.topology;
 import org.apache.storm.generated.SharedMemory;
 
 /**
- * This is a new base interface that can be used by anything that wants to mirror RAS's basic API. Trident uses this to allow setting
+ * This is a new base interface that can be used by anything that wants to mirror RAS's basic API.
+ * Trident uses this to allow setting
  * resources in the Stream API.
  */
 public interface ResourceDeclarer<T extends ResourceDeclarer> {
@@ -46,7 +47,8 @@ public interface ResourceDeclarer<T extends ResourceDeclarer> {
     T setCPULoad(Number amount);
 
     /**
-     * Add in request for shared memory that this component will use. See {@link SharedOnHeap}, {@link SharedOffHeapWithinNode}, and {@link
+     * Add in request for shared memory that this component will use. See {@link SharedOnHeap},
+     * {@link SharedOffHeapWithinNode}, and {@link
      * SharedOffHeapWithinWorker} for convenient ways to create shared memory requests.
      *
      * @param request the shared memory request for this component

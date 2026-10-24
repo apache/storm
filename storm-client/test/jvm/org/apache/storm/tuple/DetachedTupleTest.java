@@ -12,6 +12,14 @@
 
 package org.apache.storm.tuple;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -26,14 +34,6 @@ import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 /**
  * Unit tests for {@link DetachedTuple}.
  */
@@ -45,7 +45,7 @@ public class DetachedTupleTest {
     private GeneralTopologyContext getContext(final Fields fields) {
         TopologyBuilder builder = new TopologyBuilder();
         return new GeneralTopologyContext(
-            builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
+                builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
 
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
@@ -58,7 +58,8 @@ public class DetachedTupleTest {
     @BeforeEach
     public void setUp() {
         Fields fields = new Fields("id", "ts");
-        sourceTuple = new TupleImpl(getContext(fields), new Values(42, 1000L), "srcComponent", 7, "srcStream");
+        sourceTuple = new TupleImpl(getContext(fields), new Values(42, 1000L), "srcComponent", 7,
+                "srcStream");
         detached = new DetachedTuple(sourceTuple);
     }
 
@@ -67,7 +68,8 @@ public class DetachedTupleTest {
         assertEquals("srcComponent", detached.getSourceComponent());
         assertEquals(7, detached.getSourceTask());
         assertEquals("srcStream", detached.getSourceStreamId());
-        assertEquals(new GlobalStreamId("srcComponent", "srcStream"), detached.getSourceGlobalStreamId());
+        assertEquals(new GlobalStreamId("srcComponent", "srcStream"), detached
+                .getSourceGlobalStreamId());
     }
 
     @Test
@@ -95,7 +97,8 @@ public class DetachedTupleTest {
         assertEquals(detached, other);
         assertEquals(detached.hashCode(), other.hashCode());
 
-        Tuple differentTuple = new TupleImpl(getContext(new Fields("id", "ts")), new Values(43, 1000L), "srcComponent", 7, "srcStream");
+        Tuple differentTuple = new TupleImpl(getContext(new Fields("id", "ts")), new Values(43,
+                1000L), "srcComponent", 7, "srcStream");
         assertNotEquals(detached, new DetachedTuple(differentTuple));
     }
 
@@ -109,7 +112,8 @@ public class DetachedTupleTest {
     @Test
     public void testTypedGetters() {
         Fields fields = new Fields("bool", "byte", "short");
-        Tuple typed = new TupleImpl(getContext(fields), new Values(true, (byte) 1, (short) 2), "srcComponent", 0, "srcStream");
+        Tuple typed = new TupleImpl(getContext(fields), new Values(true, (byte) 1, (short) 2),
+                "srcComponent", 0, "srcStream");
         DetachedTuple typedDetached = new DetachedTuple(typed);
 
         assertEquals(Boolean.TRUE, typedDetached.getBoolean(0));
@@ -123,7 +127,8 @@ public class DetachedTupleTest {
     @Test
     public void testKryoRoundTripWithNullValue() {
         Fields fields = new Fields("id", "ts");
-        Tuple withNull = new TupleImpl(getContext(fields), new Values(42, null), "srcComponent", 7, "srcStream");
+        Tuple withNull = new TupleImpl(getContext(fields), new Values(42, null), "srcComponent", 7,
+                "srcStream");
         DetachedTuple detachedWithNull = new DetachedTuple(withNull);
 
         Map<String, Object> conf = Utils.readDefaultConfig();
@@ -140,7 +145,8 @@ public class DetachedTupleTest {
 
     /**
      * The {@code fields} member is transient and rebuilt lazily. Populate it via {@link DetachedTuple#getFields()}
-     * before serializing so the transient-skip path is actually exercised: the deserialized copy must rebuild its
+     * before serializing so the transient-skip path is actually exercised: the deserialized copy
+     * must rebuild its
      * fields from scratch rather than carry a serialized {@link Fields} instance.
      */
     @Test
@@ -161,8 +167,10 @@ public class DetachedTupleTest {
     }
 
     /**
-     * STORM-4000 regression: a tuple emitted on the late tuple stream must survive Kryo serialization. With
-     * {@link Config#TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION} disabled, serializing a {@link TupleImpl} (with its
+     * STORM-4000 regression: a tuple emitted on the late tuple stream must survive Kryo
+     * serialization. With
+     * {@link Config#TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION} disabled, serializing a {@link
+     * TupleImpl} (with its
      * attached topology context) fails, while a {@link DetachedTuple} round-trips cleanly.
      */
     @Test

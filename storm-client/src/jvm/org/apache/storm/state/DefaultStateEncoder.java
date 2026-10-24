@@ -15,14 +15,17 @@ package org.apache.storm.state;
 import java.util.Optional;
 
 /**
- * Default state encoder class for encoding/decoding key values. This class assumes encoded types of key and value are both binary (byte
+ * Default state encoder class for encoding/decoding key values. This class assumes encoded types of
+ * key and value are both binary (byte
  * array) due to keep backward compatibility.
  */
 public class DefaultStateEncoder<K, V> implements StateEncoder<K, V, byte[], byte[]> {
 
-    public static final Serializer<Optional<byte[]>> INTERNAL_VALUE_SERIALIZER = new DefaultStateSerializer<>();
+    public static final Serializer<Optional<byte[]>> INTERNAL_VALUE_SERIALIZER =
+            new DefaultStateSerializer<>();
 
-    public static final byte[] TOMBSTONE = INTERNAL_VALUE_SERIALIZER.serialize(Optional.<byte[]>empty());
+    public static final byte[] TOMBSTONE = INTERNAL_VALUE_SERIALIZER
+            .serialize(Optional.<byte[]>empty());
 
     private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
@@ -48,7 +51,7 @@ public class DefaultStateEncoder<K, V> implements StateEncoder<K, V, byte[], byt
     @Override
     public byte[] encodeValue(V value) {
         return INTERNAL_VALUE_SERIALIZER.serialize(
-            Optional.of(valueSerializer.serialize(value)));
+                Optional.of(valueSerializer.serialize(value)));
     }
 
     @Override

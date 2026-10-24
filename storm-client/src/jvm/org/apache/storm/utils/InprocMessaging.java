@@ -23,7 +23,8 @@ import org.slf4j.LoggerFactory;
 
 public class InprocMessaging {
     private static final Logger LOG = LoggerFactory.getLogger(InprocMessaging.class);
-    private static Map<Integer, LinkedBlockingQueue<Object>> _queues = new HashMap<Integer, LinkedBlockingQueue<Object>>();
+    private static Map<Integer, LinkedBlockingQueue<Object>> _queues =
+            new HashMap<Integer, LinkedBlockingQueue<Object>>();
     private static ConcurrentMap<Integer, AtomicBoolean> _hasReader = new ConcurrentHashMap<>();
     private static int port = 1;
 
@@ -71,7 +72,7 @@ public class InprocMessaging {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                //Ignored
+                // Ignored
             }
             if (Time.currentTimeMillis() - start > 20000) {
                 LOG.error("DONE WAITING FOR READER AFTER {} ms", Time.currentTimeMillis() - start);

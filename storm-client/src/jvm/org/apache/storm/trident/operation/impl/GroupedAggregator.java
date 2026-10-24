@@ -52,7 +52,7 @@ public class GroupedAggregator implements Aggregator<Object[]> {
 
     @Override
     public Object[] init(Object batchId, TridentCollector collector) {
-        return new Object[]{ new GroupCollector(collector, fact), new HashMap(), batchId };
+        return new Object[] {new GroupCollector(collector, fact), new HashMap(), batchId};
     }
 
     @Override

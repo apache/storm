@@ -13,19 +13,21 @@
 package org.apache.storm.grouping;
 
 /**
- * Represents the load that a Bolt is currently under to help in deciding where to route a tuple, to help balance the load.
+ * Represents the load that a Bolt is currently under to help in deciding where to route a tuple, to
+ * help balance the load.
  */
 public class Load {
     private boolean hasMetrics = false;
-    private double boltLoad = 0.0; //0 no load to 1 fully loaded
-    private double connectionLoad = 0.0; //0 no load to 1 fully loaded
+    private double boltLoad = 0.0; // 0 no load to 1 fully loaded
+    private double connectionLoad = 0.0; // 0 no load to 1 fully loaded
 
     /**
      * Create a new load.
      *
      * @param hasMetrics     have metrics been reported yet?
      * @param boltLoad       the load as reported by the bolt 0.0 no load 1.0 fully loaded
-     * @param connectionLoad the load as reported by the connection to the bolt 0.0 no load 1.0 fully loaded.
+     * @param connectionLoad the load as reported by the connection to the bolt 0.0 no load 1.0
+     *     fully loaded.
      */
     public Load(boolean hasMetrics, double boltLoad, double connectionLoad) {
         this.hasMetrics = hasMetrics;
@@ -35,6 +37,7 @@ public class Load {
 
     /**
      * Check whether has metrics.
+     *
      * @return true if metrics have been reported so far.
      */
     public boolean hasMetrics() {
@@ -43,6 +46,7 @@ public class Load {
 
     /**
      * Get bolt load.
+     *
      * @return the load as reported by the bolt.
      */
     public double getBoltLoad() {
@@ -51,6 +55,7 @@ public class Load {
 
     /**
      * Get connection load.
+     *
      * @return the load as reported by the connection
      */
     public double getConnectionLoad() {
@@ -59,6 +64,7 @@ public class Load {
 
     /**
      * Get load.
+     *
      * @return the load that is a combination of sub loads.
      */
     public double getLoad() {

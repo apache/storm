@@ -29,7 +29,6 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
     ComboList.Factory fact;
     Fields[] inputFields;
 
-
     public ChainedAggregatorImpl(Aggregator[] aggs, Fields[] inputFields, ComboList.Factory fact) {
         this.aggs = aggs;
         this.inputFields = inputFields;
@@ -78,7 +77,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
                 indices[i] = 0;
             }
             boolean keepGoing = true;
-            //emit cross-join of all emitted tuples
+            // emit cross-join of all emitted tuples
             while (keepGoing) {
                 List[] combined = new List[aggs.length];
                 for (int i = 0; i < aggs.length; i++) {
@@ -91,7 +90,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
         }
     }
 
-    //return false if can't increment anymore
+    // return false if can't increment anymore
     private boolean increment(TridentCollector[] lengths, int[] indices, int j) {
         if (j == -1) {
             return false;

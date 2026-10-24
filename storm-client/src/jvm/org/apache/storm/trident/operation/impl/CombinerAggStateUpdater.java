@@ -30,11 +30,12 @@ public class CombinerAggStateUpdater implements StateUpdater<Snapshottable> {
         this.agg = agg;
     }
 
-
     @Override
-    public void updateState(Snapshottable state, List<TridentTuple> tuples, TridentCollector collector) {
+    public void updateState(Snapshottable state, List<TridentTuple> tuples,
+        TridentCollector collector) {
         if (tuples.size() != 1) {
-            throw new IllegalArgumentException("Combiner state updater should receive a single tuple. Received: " + tuples.toString());
+            throw new IllegalArgumentException("Combiner state updater should receive a single "
+                    + "tuple. Received: " + tuples.toString());
         }
         Object newVal = state.update(new CombinerValueUpdater(agg, tuples.get(0).getValue(0)));
         collector.emit(new Values(newVal));

@@ -36,7 +36,8 @@ public class ValuePointer {
         return ret;
     }
 
-    public static ValuePointer[] buildIndex(Fields fieldsOrder, Map<String, ValuePointer> pointers) {
+    public static ValuePointer[] buildIndex(Fields fieldsOrder, Map<String,
+            ValuePointer> pointers) {
         if (fieldsOrder.size() != pointers.size()) {
             throw new IllegalArgumentException("Fields order must be same length as pointers map");
         }

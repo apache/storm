@@ -35,13 +35,15 @@ import org.apache.storm.tuple.Values;
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class LRUMemoryMapState<T> implements Snapshottable<T>, ITupleCollection, MapState<T> {
 
-    static ConcurrentHashMap<String, Map<List<Object>, Object>> dbs = new ConcurrentHashMap<String, Map<List<Object>, Object>>();
+    static ConcurrentHashMap<String, Map<List<Object>, Object>> dbs =
+            new ConcurrentHashMap<String, Map<List<Object>, Object>>();
     LRUMemoryMapStateBacking<OpaqueValue> backing;
     SnapshottableMap<T> delegate;
 
     public LRUMemoryMapState(int cacheSize, String id) {
         backing = new LRUMemoryMapStateBacking(cacheSize, id);
-        delegate = new SnapshottableMap(OpaqueMap.build(backing), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
+        delegate = new SnapshottableMap(OpaqueMap.build(backing),
+                new Values("$MEMORY-MAP-STATE-GLOBAL$"));
     }
 
     @Override
@@ -100,7 +102,8 @@ public class LRUMemoryMapState<T> implements Snapshottable<T>, ITupleCollection,
         }
 
         @Override
-        public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(Map<String, Object> conf, IMetricsContext metrics,
+            int partitionIndex, int numPartitions) {
             return new LRUMemoryMapState(maxSize, id + partitionIndex);
         }
     }

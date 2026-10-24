@@ -30,7 +30,8 @@ public class ProcessorNode extends Node {
     // Windowed parent streams
     private Set<String> windowedParentStreams = Collections.emptySet();
 
-    public ProcessorNode(Processor<?> processor, String outputStream, Fields outputFields, boolean preservesKey) {
+    public ProcessorNode(Processor<?> processor, String outputStream, Fields outputFields,
+            boolean preservesKey) {
         super(outputStream, outputFields);
         this.isBatch = processor instanceof BatchProcessor;
         this.processor = processor;

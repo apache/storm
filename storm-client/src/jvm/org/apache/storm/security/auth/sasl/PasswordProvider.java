@@ -15,12 +15,14 @@ package org.apache.storm.security.auth.sasl;
 import java.util.Optional;
 
 /**
- * A very basic API that will provide a password for a given user name. This is intended to be used with the SimpleSaslServerCallbackHandler
+ * A very basic API that will provide a password for a given user name. This is intended to be used
+ * with the SimpleSaslServerCallbackHandler
  * to verify a user that is attempting to log in.
  */
 public interface PasswordProvider {
     /**
-     * Get an optional password for a user.  If no password for the user is found the option will be empty and another PasswordProvider
+     * Get an optional password for a user. If no password for the user is found the option will be
+     * empty and another PasswordProvider
      * would be tried.
      *
      * @param user the user this is for.
@@ -38,8 +40,10 @@ public interface PasswordProvider {
     }
 
     /**
-     * Convert the supplied user name to the actual user name that should be used in the system.  This may be called on any name.  If it
-     * cannot be translated then a null may be returned or an exception thrown.  If getPassword returns successfully this should not return
+     * Convert the supplied user name to the actual user name that should be used in the system.
+     * This may be called on any name. If it
+     * cannot be translated then a null may be returned or an exception thrown. If getPassword
+     * returns successfully this should not return
      * null, nor throw an exception for the same user.
      *
      * @param user the SASL negotiated user name.

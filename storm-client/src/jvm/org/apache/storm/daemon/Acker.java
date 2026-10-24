@@ -39,7 +39,8 @@ public class Acker implements IBolt {
     private RotatingMap<Object, AckObject> pending;
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         this.collector = collector;
         this.pending = new RotatingMap<>(TIMEOUT_BUCKET_NUM);
     }
@@ -102,7 +103,8 @@ public class Acker implements IBolt {
             } else if (resetTimeout) {
                 collector.emitDirect(task, ACKER_RESET_TIMEOUT_STREAM_ID, tuple);
             } else {
-                throw new IllegalStateException("The checks are inconsistent we reach what should be unreachable code.");
+                throw new IllegalStateException("The checks are inconsistent we reach what should "
+                        + "be unreachable code.");
             }
         }
 

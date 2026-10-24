@@ -46,7 +46,8 @@ public class DevicesCore implements CgroupCore {
         return SubSystemType.devices;
     }
 
-    private void setPermission(String prop, char type, Device device, int accesses) throws IOException {
+    private void setPermission(String prop, char type, Device device,
+            int accesses) throws IOException {
         Record record = new Record(type, device, accesses);
         CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, prop), record.toString());
     }
@@ -60,7 +61,8 @@ public class DevicesCore implements CgroupCore {
     }
 
     public Record[] getList() throws IOException {
-        List<String> output = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, DEVICES_LIST));
+        List<String> output = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir,
+                DEVICES_LIST));
         return Record.parseRecordList(output);
     }
 

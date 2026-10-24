@@ -14,7 +14,6 @@ package org.apache.storm.executor;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.storm.Constants;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.generated.Credentials;
@@ -24,9 +23,6 @@ import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.spout.ISpout;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.AddressedTuple;
-import org.apache.storm.tuple.TupleImpl;
-import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -41,7 +37,8 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
     private final ArrayList<Task> taskDatas;
     private final JCQueue receiveQueue;
 
-    public ExecutorShutdown(Executor executor, List<Utils.SmartThread> threads, ArrayList<Task> taskDatas, JCQueue recvQueue) {
+    public ExecutorShutdown(Executor executor, List<Utils.SmartThread> threads,
+            ArrayList<Task> taskDatas, JCQueue recvQueue) {
         this.executor = executor;
         this.threads = threads;
         this.taskDatas = taskDatas;
@@ -81,20 +78,24 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
     @Override
     public void shutdown() {
         try {
-            LOG.info("Shutting down executor " + executor.getComponentId() + ":" + executor.getExecutorId());
+            LOG.info("Shutting down executor " + executor.getComponentId() + ":" + executor
+                    .getExecutorId());
             executor.getReceiveQueue().close();
             for (Utils.SmartThread t : threads) {
                 t.interrupt();
             }
             for (Utils.SmartThread t : threads) {
-                LOG.debug("Executor " + executor.getComponentId() + ":" + executor.getExecutorId() + " joining thread " + t.getName());
-                //Don't wait forever.
-                //This is to avoid the deadlock between the executor thread (t) and the shutdown hook (which invokes Worker::shutdown)
-                //when it is the executor thread (t) who invokes the shutdown hook. See STORM-3658.
+                LOG.debug("Executor " + executor.getComponentId() + ":" + executor.getExecutorId()
+                        + " joining thread " + t.getName());
+                // Don't wait forever.
+                // This is to avoid the deadlock between the executor thread (t) and the shutdown
+                // hook (which invokes Worker::shutdown)
+                // when it is the executor thread (t) who invokes the shutdown hook. See STORM-3658.
                 long waitMs = 100;
                 t.join(waitMs);
                 if (t.isAlive()) {
-                    LOG.warn("Thread {} is still alive ({} ms after interruption). Stop waiting for it.", t.getName(), waitMs);
+                    LOG.warn("Thread {} is still alive ({} ms after interruption). Stop waiting "
+                            + "for it.", t.getName(), waitMs);
                 }
             }
             executor.getStats().cleanupStats();
@@ -123,7 +124,8 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
                     }
                 }
             }
-            LOG.info("Shut down executor " + executor.getComponentId() + ":" + executor.getExecutorId());
+            LOG.info("Shut down executor " + executor.getComponentId() + ":" + executor
+                    .getExecutorId());
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }

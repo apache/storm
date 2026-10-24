@@ -22,13 +22,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.WorkerTopologyContext;
 
-
 public class ShuffleGrouping implements CustomStreamGrouping, Serializable {
     private ArrayList<List<Integer>> choices;
     private AtomicInteger current;
 
     @Override
-    public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+    public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+        List<Integer> targetTasks) {
         choices = new ArrayList<List<Integer>>(targetTasks.size());
         for (Integer i : targetTasks) {
             choices.add(Arrays.asList(i));

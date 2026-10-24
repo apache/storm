@@ -24,7 +24,6 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
-
 public class GroupedMultiReducerExecutor implements MultiReducer<Map<TridentTuple, Object>> {
     GroupedMultiReducer reducer;
     List<Fields> groupFields;
@@ -32,9 +31,11 @@ public class GroupedMultiReducerExecutor implements MultiReducer<Map<TridentTupl
     List<ProjectionFactory> groupFactories = new ArrayList<ProjectionFactory>();
     List<ProjectionFactory> inputFactories = new ArrayList<ProjectionFactory>();
 
-    public GroupedMultiReducerExecutor(GroupedMultiReducer reducer, List<Fields> groupFields, List<Fields> inputFields) {
+    public GroupedMultiReducerExecutor(GroupedMultiReducer reducer, List<Fields> groupFields,
+            List<Fields> inputFields) {
         if (inputFields.size() != groupFields.size()) {
-            throw new IllegalArgumentException("Multireducer groupFields and inputFields must be the same size");
+            throw new IllegalArgumentException("Multireducer groupFields and inputFields must be "
+                    + "the same size");
         }
         this.groupFields = groupFields;
         this.inputFields = inputFields;
@@ -56,7 +57,8 @@ public class GroupedMultiReducerExecutor implements MultiReducer<Map<TridentTupl
     }
 
     @Override
-    public void execute(Map<TridentTuple, Object> state, int streamIndex, TridentTuple full, TridentCollector collector) {
+    public void execute(Map<TridentTuple, Object> state, int streamIndex, TridentTuple full,
+        TridentCollector collector) {
         ProjectionFactory groupFactory = groupFactories.get(streamIndex);
         ProjectionFactory inputFactory = inputFactories.get(streamIndex);
 

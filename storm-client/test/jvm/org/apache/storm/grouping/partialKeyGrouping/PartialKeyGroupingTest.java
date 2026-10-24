@@ -12,6 +12,13 @@
 
 package org.apache.storm.grouping.partialKeyGrouping;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.List;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.grouping.PartialKeyGrouping;
@@ -21,13 +28,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class PartialKeyGroupingTest {
 
@@ -69,7 +69,8 @@ public class PartialKeyGroupingTest {
     public void testChooseTasksFields() {
         PartialKeyGrouping pkg = new PartialKeyGrouping(new Fields("test"));
         WorkerTopologyContext context = mock(WorkerTopologyContext.class);
-        when(context.getComponentOutputFields(any(GlobalStreamId.class))).thenReturn(new Fields("test"));
+        when(context.getComponentOutputFields(any(GlobalStreamId.class)))
+                .thenReturn(new Fields("test"));
         pkg.prepare(context, mock(GlobalStreamId.class), Lists.newArrayList(0, 1, 2, 3, 4, 5));
         Values message = new Values("key1");
         List<Integer> choice1 = pkg.chooseTasks(0, message);

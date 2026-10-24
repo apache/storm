@@ -22,16 +22,17 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.task.WorkerTopologyContext;
 
-
 public class IdentityGrouping implements CustomStreamGrouping {
     final Map<Integer, List<Integer>> precomputed = new HashMap<>();
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> tasks) {
-        List<Integer> sourceTasks = new ArrayList<>(context.getComponentTasks(stream.get_componentId()));
+        List<Integer> sourceTasks = new ArrayList<>(context.getComponentTasks(stream
+                .get_componentId()));
         Collections.sort(sourceTasks);
         if (sourceTasks.size() != tasks.size()) {
-            throw new RuntimeException("Can only do an identity grouping when source and target have same number of tasks");
+            throw new RuntimeException("Can only do an identity grouping when source and target "
+                    + "have same number of tasks");
         }
         tasks = new ArrayList<>(tasks);
         Collections.sort(tasks);
@@ -46,7 +47,8 @@ public class IdentityGrouping implements CustomStreamGrouping {
     public List<Integer> chooseTasks(int task, List<Object> values) {
         List<Integer> ret = precomputed.get(task);
         if (ret == null) {
-            throw new RuntimeException("Tuple emitted by task that's not part of this component. Should be impossible");
+            throw new RuntimeException("Tuple emitted by task that's not part of this component. "
+                    + "Should be impossible");
         }
         return ret;
     }

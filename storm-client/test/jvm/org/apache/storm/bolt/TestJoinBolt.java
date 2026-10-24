@@ -12,6 +12,9 @@
 
 package org.apache.storm.bolt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,58 +28,56 @@ import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.windowing.TupleWindow;
 import org.apache.storm.windowing.TupleWindowImpl;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestJoinBolt {
-    String[] userFields = { "userId", "name", "city" };
-    Object[][] users = {
-        { 1, "roshan", "san jose" },
-        { 2, "harsha", "santa clara" },
-        { 3, "siva", "dublin" },
-        { 4, "hugo", "san mateo" },
-        { 5, "suresh", "sunnyvale" },
-        { 6, "guru", "palo alto" },
-        { 7, "arun", "bengaluru" },
-        { 8, "satish", "mumbai" },
-        { 9, "mani", "bengaluru" },
-        { 10, "priyank", "seattle" }
+    String[] userFields =  {"userId", "name", "city"};
+    Object[][] users =  {
+            {1, "roshan", "san jose"},
+            {2, "harsha", "santa clara"},
+            {3, "siva", "dublin"},
+            {4, "hugo", "san mateo"},
+            {5, "suresh", "sunnyvale"},
+            {6, "guru", "palo alto"},
+            {7, "arun", "bengaluru"},
+            {8, "satish", "mumbai"},
+            {9, "mani", "bengaluru"},
+            {10, "priyank", "seattle"}
     };
 
-    String[] orderFields = { "orderId", "userId", "itemId", "price" };
+    String[] orderFields =  {"orderId", "userId", "itemId", "price"};
 
-    Object[][] orders = {
-        { 11, 2, 21, 7 },
-        { 12, 2, 22, 3 },
-        { 13, 3, 23, 4 },
-        { 14, 4, 24, 5 },
-        { 15, 5, 25, 2 },
-        { 16, 6, 26, 7 },
-        { 17, 6, 27, 4 },
-        { 18, 7, 28, 2 },
-        { 19, 8, 29, 9 }
+    Object[][] orders =  {
+            {11, 2, 21, 7},
+            {12, 2, 22, 3},
+            {13, 3, 23, 4},
+            {14, 4, 24, 5},
+            {15, 5, 25, 2},
+            {16, 6, 26, 7},
+            {17, 6, 27, 4},
+            {18, 7, 28, 2},
+            {19, 8, 29, 9}
     };
 
-    String[] storeFields = { "storeId", "storeName", "city" };
-    Object[][] stores = {
-        { 1, "store1", "san jose" },
-        { 2, "store2", "santa clara" },
-        { 3, "store3", "dublin" },
-        { 4, "store4", "san mateo" },
-        { 5, "store5", "bengaluru" },
+    String[] storeFields =  {"storeId", "storeName", "city"};
+    Object[][] stores =  {
+            {1, "store1", "san jose"},
+            {2, "store2", "santa clara"},
+            {3, "store3", "dublin"},
+            {4, "store4", "san mateo"},
+            {5, "store5", "bengaluru"},
     };
 
-    String[] cityFields = { "cityId", "cityName", "country" };
-    Object[][] cities = {
-        { 1, "san jose", "US" },
-        { 2, "santa clara", "US" },
-        { 3, "dublin", "US" },
-        { 4, "san mateo", "US" },
-        { 5, "sunnyvale", "US" },
-        { 6, "palo alto", "US" },
-        { 7, "bengaluru", "India" },
-        { 8, "mumbai", "India" },
-        { 9, "chennai", "India" }
+    String[] cityFields =  {"cityId", "cityName", "country"};
+    Object[][] cities =  {
+            {1, "san jose", "US"},
+            {2, "santa clara", "US"},
+            {3, "dublin", "US"},
+            {4, "san mateo", "US"},
+            {5, "sunnyvale", "US"},
+            {6, "palo alto", "US"},
+            {7, "bengaluru", "India"},
+            {8, "mumbai", "India"},
+            {9, "chennai", "India"}
     };
 
     private static void printResults(MockCollector collector) {
@@ -106,22 +107,25 @@ public class TestJoinBolt {
         return new TupleWindowImpl(combined, null, null);
     }
 
-    private static ArrayList<Tuple> makeStream(String streamName, String[] fieldNames, Object[][] data, String srcComponentName) {
+    private static ArrayList<Tuple> makeStream(String streamName, String[] fieldNames,
+            Object[][] data, String srcComponentName) {
         ArrayList<Tuple> result = new ArrayList<>();
         MockContext mockContext = new MockContext(fieldNames);
 
         for (Object[] record : data) {
-            TupleImpl rec = new TupleImpl(mockContext, Arrays.asList(record), srcComponentName, 0, streamName);
+            TupleImpl rec = new TupleImpl(mockContext, Arrays.asList(record), srcComponentName, 0,
+                    streamName);
             result.add(rec);
         }
 
         return result;
     }
 
-    private static ArrayList<Tuple> makeNestedEventsStream(String streamName, String[] fieldNames, Object[][] records
-        , String srcComponentName) {
+    private static ArrayList<Tuple> makeNestedEventsStream(String streamName, String[] fieldNames,
+            Object[][] records,
+                                                           String srcComponentName) {
 
-        MockContext mockContext = new MockContext(new String[]{ "outer" });
+        MockContext mockContext = new MockContext(new String[] {"outer"});
         ArrayList<Tuple> result = new ArrayList<>(records.length);
 
         // convert each record into a HashMap using fieldNames as keys
@@ -133,7 +137,8 @@ public class TestJoinBolt {
 
             ArrayList<Object> tupleValues = new ArrayList<>(1);
             tupleValues.add(recordMap);
-            TupleImpl tuple = new TupleImpl(mockContext, tupleValues, srcComponentName, 0, streamName);
+            TupleImpl tuple = new TupleImpl(mockContext, tupleValues, srcComponentName, 0,
+                    streamName);
             result.add(tuple);
         }
 
@@ -146,7 +151,7 @@ public class TestJoinBolt {
         TupleWindow window = makeTupleWindow(orderStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "orders", orderFields[0])
-            .select("orderId,userId,itemId,price");
+                .select("orderId,userId,itemId,price");
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
         bolt.execute(window);
@@ -156,10 +161,11 @@ public class TestJoinBolt {
 
     @Test
     public void testNestedKeys() throws Exception {
-        ArrayList<Tuple> userStream = makeNestedEventsStream("users", userFields, users, "usersSpout");
+        ArrayList<Tuple> userStream = makeNestedEventsStream("users", userFields, users,
+                "usersSpout");
         TupleWindow window = makeTupleWindow(userStream);
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", "outer.userId")
-            .select("outer.name, outer.city");
+                .select("outer.name, outer.city");
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
         bolt.execute(window);
@@ -176,8 +182,8 @@ public class TestJoinBolt {
 
         // join users and stores on city name
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[2])
-            .join("stores", "city", "users")
-            .select("userId,name,storeName,users:city,stores:city");
+                .join("stores", "city", "users")
+                .select("userId,name,storeName,users:city,stores:city");
 
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
@@ -200,8 +206,8 @@ public class TestJoinBolt {
         TupleWindow window = makeTupleWindow(orderStream, userStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[0])
-            .join("orders", "userId", "users")
-            .select("userId,name,price");
+                .join("orders", "userId", "users")
+                .select("userId,name,price");
 
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
@@ -217,8 +223,8 @@ public class TestJoinBolt {
         TupleWindow window = makeTupleWindow(orderStream, userStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[0])
-            .leftJoin("orders", "userId", "users")
-            .select("userId,name,price");
+                .leftJoin("orders", "userId", "users")
+                .select("userId,name,price");
 
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
@@ -236,9 +242,9 @@ public class TestJoinBolt {
         TupleWindow window = makeTupleWindow(userStream, storesStream, cityStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[2])
-            .join("stores", "city", "users")
-            .join("cities", "cityName", "stores")
-            .select("name,storeName,city,country");
+                .join("stores", "city", "users")
+                .join("cities", "cityName", "stores")
+                .select("name,storeName,city,country");
 
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
@@ -257,9 +263,9 @@ public class TestJoinBolt {
         TupleWindow window = makeTupleWindow(userStream, cityStream, storesStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[2])
-            .leftJoin("stores", "city", "users")
-            .leftJoin("cities", "cityName", "users")
-            .select("name,storeName,city,country");
+                .leftJoin("stores", "city", "users")
+                .leftJoin("cities", "cityName", "users")
+                .select("name,storeName,city,country");
 
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
@@ -277,15 +283,17 @@ public class TestJoinBolt {
         TupleWindow window = makeTupleWindow(userStream, cityStream, storesStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", "city")
-            .leftJoin("stores", "city", "users")
-            .leftJoin("cities", "cityName", "stores")  // join against diff stream compared to testThreeStreamLeftJoin_1
-            .select("name,storeName,city,country");
+                .leftJoin("stores", "city", "users")
+                .leftJoin("cities", "cityName",
+                "stores")  // join against diff stream compared to testThreeStreamLeftJoin_1
+                .select("name,storeName,city,country");
 
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        assertEquals(stores.length + 1, collector.actualResults.size()); // stores.length+1 as 2 users in Bengaluru
+        assertEquals(stores.length + 1, collector.actualResults
+                .size()); // stores.length+1 as 2 users in Bengaluru
     }
 
     @Test
@@ -297,15 +305,16 @@ public class TestJoinBolt {
         TupleWindow window = makeTupleWindow(userStream, cityStream, storesStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[2])
-            .join("stores", "city", "users")
-            .leftJoin("cities", "cityName", "users")
-            .select("name,storeName,city,country");
+                .join("stores", "city", "users")
+                .leftJoin("cities", "cityName", "users")
+                .select("name,storeName,city,country");
 
         MockCollector collector = new MockCollector();
         bolt.prepare(null, null, collector);
         bolt.execute(window);
         printResults(collector);
-        assertEquals(stores.length + 1, collector.actualResults.size()); // stores.length+1 as 2 users in Bengaluru
+        assertEquals(stores.length + 1, collector.actualResults
+                .size()); // stores.length+1 as 2 users in Bengaluru
     }
 
     static class MockCollector extends OutputCollector {

@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsRegistrant {
     protected static final AtomicReference<KerberosTicket> kerbTicket = new AtomicReference<>();
     private static final Logger LOG = LoggerFactory.getLogger(AutoTGT.class);
-    private static final float TICKET_RENEW_WINDOW = 0.80f;
+    private static final float TICKET_RENEW_WINDOW = 0.80F;
     private Map<String, Object> conf;
     private Map<String, String> credentials;
 
@@ -61,8 +61,10 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public static KerberosTicket getTGT(Map<String, String> credentials) {
         KerberosTicket ret = null;
-        if (credentials != null && credentials.containsKey("TGT") && credentials.get("TGT") != null) {
-            ret = ClientAuthUtils.deserializeKerberosTicket(DatatypeConverter.parseBase64Binary(credentials.get("TGT")));
+        if (credentials != null && credentials.containsKey("TGT") && credentials
+                .get("TGT") != null) {
+            ret = ClientAuthUtils.deserializeKerberosTicket(DatatypeConverter
+                    .parseBase64Binary(credentials.get("TGT")));
         }
         return ret;
     }
@@ -120,33 +122,38 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
     @Override
     public void populateCredentials(Map<String, String> credentials) {
         this.credentials = credentials;
-        //Log the user in and get the TGT
+        // Log the user in and get the TGT
         try {
             Configuration loginConf = ClientAuthUtils.getConfiguration(conf);
             ClientCallbackHandler clientCallbackHandler = new ClientCallbackHandler(conf);
 
-            //login our user
-            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, null, clientCallbackHandler, loginConf);
+            // login our user
+            LoginContext lc = new LoginContext(ClientAuthUtils.LOGIN_CONTEXT_CLIENT, null,
+                    clientCallbackHandler, loginConf);
             try {
                 lc.login();
                 final Subject subject = lc.getSubject();
                 KerberosTicket tgt = getTGT(subject);
 
-                if (tgt == null) { //error
+                if (tgt == null) { // error
                     throw new RuntimeException("Fail to verify user principal with section \""
-                                               + ClientAuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + loginConf);
+                            + ClientAuthUtils.LOGIN_CONTEXT_CLIENT
+                            + "\" in login configuration file " + loginConf);
                 }
 
                 if (!tgt.isForwardable()) {
-                    throw new RuntimeException("The TGT found is not forwardable. Please use -f option with 'kinit'.");
+                    throw new RuntimeException("The TGT found is not forwardable. Please use -f "
+                            + "option with 'kinit'.");
                 }
 
                 if (!tgt.isRenewable()) {
-                    throw new RuntimeException("The TGT found is not renewable. Please use -r option with 'kinit'.");
+                    throw new RuntimeException("The TGT found is not renewable. Please use -r "
+                            + "option with 'kinit'.");
                 }
 
                 if (tgt.getClientAddresses() != null) {
-                    throw new RuntimeException("The TGT found is not address-less. Please use -A option with 'kinit'.");
+                    throw new RuntimeException("The TGT found is not address-less. Please use -A "
+                            + "option with 'kinit'.");
                 }
 
                 LOG.info("Pushing TGT for " + tgt.getClient() + " to topology.");
@@ -202,9 +209,9 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
             Method isSecEnabled = ugi.getMethod("isSecurityEnabled");
             if (!((Boolean) isSecEnabled.invoke(null))) {
                 LOG.warn("Hadoop is on the classpath but not configured for "
-                         + "security, if you want security you need to be sure that "
-                         + "hadoop.security.authentication=kerberos in core-site.xml "
-                         + "in your jar");
+                        + "security, if you want security you need to be sure that "
+                        + "hadoop.security.authentication=kerberos in core-site.xml "
+                        + "in your jar");
                 return;
             }
 
@@ -212,15 +219,19 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
             Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
             login.invoke(null, subject);
 
-            //Refer to STORM-3606 for details
-            LOG.warn("UserGroupInformation.loginUserFromSubject will spawn a TGT renewal thread (\"TGT Renewer for <username>\") "
+            // Refer to STORM-3606 for details
+            LOG.warn("UserGroupInformation.loginUserFromSubject will spawn a TGT renewal thread "
+                    + "(\"TGT Renewer for <username>\") "
                     + "to execute \"kinit -R\" command some time before the current TGT expires. "
-                    + "It will fail because TGT is not in the local TGT cache and the thread will eventually abort. "
-                    + "Exceptions from this TGT renewal thread can be ignored. Note: TGT for the Worker is kept in memory. "
+                    + "It will fail because TGT is not in the local TGT cache and the thread will "
+                    + "eventually abort. "
+                    + "Exceptions from this TGT renewal thread can be ignored. Note: TGT for the "
+                    + "Worker is kept in memory. "
                     + "Please refer to STORM-3606 for detailed explanations");
         } catch (Exception e) {
-            LOG.error("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop "
-                     + "may not be compatible.", e);
+            LOG.error("Something went wrong while trying to initialize Hadoop through reflection. "
+                    + "This version of hadoop "
+                    + "may not be compatible.", e);
         }
     }
 
@@ -231,7 +242,8 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetricsR
     }
 
     @Override
-    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String topologyOwnerPrincipal) {
+    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf,
+        String topologyOwnerPrincipal) {
         this.credentials = credentials;
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {

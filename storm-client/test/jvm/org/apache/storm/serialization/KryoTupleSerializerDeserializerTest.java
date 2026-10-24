@@ -12,6 +12,16 @@
 
 package org.apache.storm.serialization;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -33,19 +43,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
-
 /**
- * Unit tests for {@link KryoTupleSerializer} and {@link KryoTupleDeserializer}, covering the compressed and
- * uncompressed code paths, round-trip fidelity, mixing both encodings through a single (de)serializer instance,
+ * Unit tests for {@link KryoTupleSerializer} and {@link KryoTupleDeserializer}, covering the
+ * compressed and
+ * uncompressed code paths, round-trip fidelity, mixing both encodings through a single
+ * (de)serializer instance,
  * and the negative/error paths.
  */
 public class KryoTupleSerializerDeserializerTest {
@@ -68,7 +70,8 @@ public class KryoTupleSerializerDeserializerTest {
     private StormTopology createStormTopology() {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SOURCE_COMPONENT, new TestWordSpout(true), 1);
-        builder.setBolt(DEST_COMPONENT, new TestWordCounter(), 1).fieldsGrouping(SOURCE_COMPONENT, new Fields("word"));
+        builder.setBolt(DEST_COMPONENT, new TestWordCounter(), 1).fieldsGrouping(SOURCE_COMPONENT,
+                new Fields("word"));
         return builder.createTopology();
     }
 
@@ -111,10 +114,12 @@ public class KryoTupleSerializerDeserializerTest {
         KryoTupleSerializer serializer = new KryoTupleSerializer(conf, context);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(conf, context);
 
-        TupleImpl original = tuple(new Values("hello", 42, bigString(8192)), MessageId.makeRootId(7L, 99L));
+        TupleImpl original = tuple(new Values("hello", 42, bigString(8192)), MessageId
+                .makeRootId(7L, 99L));
         byte[] bytes = serializer.serialize(original);
 
-        assertFalse(Utils.ZstdUtils.isZstd(bytes), "compression disabled must never emit a zstd frame");
+        assertFalse(Utils.ZstdUtils.isZstd(bytes),
+                "compression disabled must never emit a zstd frame");
         assertSameTuple(original, deserializer.deserialize(bytes));
     }
 
@@ -127,7 +132,8 @@ public class KryoTupleSerializerDeserializerTest {
         TupleImpl original = tuple(new Values("small", 1), MessageId.makeUnanchored());
         byte[] bytes = serializer.serialize(original);
 
-        assertFalse(Utils.ZstdUtils.isZstd(bytes), "payload below threshold must not be compressed");
+        assertFalse(Utils.ZstdUtils.isZstd(bytes),
+                "payload below threshold must not be compressed");
         assertSameTuple(original, deserializer.deserialize(bytes));
     }
 
@@ -153,7 +159,8 @@ public class KryoTupleSerializerDeserializerTest {
         TupleImpl original = tuple(new Values("x"), MessageId.makeUnanchored());
         byte[] bytes = serializer.serialize(original);
 
-        assertTrue(Utils.ZstdUtils.isZstd(bytes), "threshold 0 must compress every non-empty payload");
+        assertTrue(Utils.ZstdUtils.isZstd(bytes),
+                "threshold 0 must compress every non-empty payload");
         assertSameTuple(original, deserializer.deserialize(bytes));
     }
 
@@ -164,7 +171,8 @@ public class KryoTupleSerializerDeserializerTest {
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(conf, context);
 
         TupleImpl small = tuple(new Values("tiny", 1), MessageId.makeRootId(1L, 2L));
-        TupleImpl large = tuple(new Values(bigString(32 * 1024), "tail"), MessageId.makeRootId(3L, 4L));
+        TupleImpl large = tuple(new Values(bigString(32 * 1024), "tail"), MessageId.makeRootId(3L,
+                4L));
 
         // Buffer reuse across compressed and uncompressed payloads.
         byte[] smallBytes1 = serializer.serialize(small);
@@ -187,7 +195,8 @@ public class KryoTupleSerializerDeserializerTest {
     @Test
     public void testComponentLevelCompressionEnablesDecompressPath() {
         enableComponentLevelCompression(SOURCE_COMPONENT);
-        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0), context);
+        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0),
+                context);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
 
         TupleImpl original = tuple(new Values(bigString(16 * 1024)), MessageId.makeRootId(8L, 9L));
@@ -199,56 +208,72 @@ public class KryoTupleSerializerDeserializerTest {
 
     @Test
     public void testDecompressPathGatedPerTopology() {
-        // Two distinct topologies sharing the exact same compressed frame on the wire. The gating decision is
-        // per-topology (workers are per-topology), so the same bytes must be decompressed by one and not the other.
+        // Two distinct topologies sharing the exact same compressed frame on the wire. The gating
+        // decision is
+        // per-topology (workers are per-topology), so the same bytes must be decompressed by one
+        // and not the other.
         GeneralTopologyContext compressingTopology = newContext();
-        enableComponentLevelCompression(compressingTopology, SOURCE_COMPONENT); // at least one component compresses
-        GeneralTopologyContext plainTopology = newContext();                    // no component enables compression
+        enableComponentLevelCompression(compressingTopology,
+                SOURCE_COMPONENT); // at least one component compresses
+        GeneralTopologyContext plainTopology =
+                newContext();                    // no component enables compression
 
-        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0), compressingTopology);
+        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0),
+                compressingTopology);
         TupleImpl original = tuple(new Values(bigString(16 * 1024)), MessageId.makeRootId(8L, 9L));
         byte[] bytes = serializer.serialize(original);
-        assertTrue(Utils.ZstdUtils.isZstd(bytes), "precondition: serializer produced a compressed frame");
+        assertTrue(Utils.ZstdUtils.isZstd(bytes),
+                "precondition: serializer produced a compressed frame");
 
-        KryoTupleDeserializer compressingDeser = new KryoTupleDeserializer(baseConf(), compressingTopology);
+        KryoTupleDeserializer compressingDeser = new KryoTupleDeserializer(baseConf(),
+                compressingTopology);
         KryoTupleDeserializer plainDeser = new KryoTupleDeserializer(baseConf(), plainTopology);
 
         // Compressing topology: decompress path is taken, the frame round-trips.
         assertSameTuple(original, compressingDeser.deserialize(bytes));
-        // Plain topology: decompress path is skipped, the frame is treated as a raw kryo tuple and fails to parse.
+        // Plain topology: decompress path is skipped, the frame is treated as a raw kryo tuple and
+        // fails to parse.
         assertThrows(RuntimeException.class, () -> plainDeser.deserialize(bytes));
     }
 
     @Test
     public void testNoComponentCompressionSkipsDecompressPath() {
-        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0), context);
+        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0),
+                context);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
 
-        byte[] bytes = serializer.serialize(tuple(new Values(bigString(16 * 1024)), MessageId.makeRootId(8L, 9L)));
-        assertTrue(Utils.ZstdUtils.isZstd(bytes), "precondition: serializer produced a compressed frame");
+        byte[] bytes = serializer.serialize(tuple(new Values(bigString(16 * 1024)), MessageId
+                .makeRootId(8L, 9L)));
+        assertTrue(Utils.ZstdUtils.isZstd(bytes),
+                "precondition: serializer produced a compressed frame");
         assertThrows(RuntimeException.class, () -> deserializer.deserialize(bytes));
     }
 
     @Test
     public void testDecompressFailureFallsBackToRawTupleParsing() {
-        // Exercises the false-positive fallback in KryoTupleDeserializer#deserialize: compression is enabled and
-        // isZstd() reports a match, but the decompress path surfaces a "Failed to deserialize tuple" error.
+        // Exercises the false-positive fallback in KryoTupleDeserializer#deserialize: compression
+        // is enabled and
+        // isZstd() reports a match, but the decompress path surfaces a "Failed to deserialize
+        // tuple" error.
         enableComponentLevelCompression(SOURCE_COMPONENT); // anyTupleCompressionEnabled == true
         KryoTupleSerializer serializer = new KryoTupleSerializer(baseConf(), context);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
 
         TupleImpl original = tuple(new Values("hello", 42), MessageId.makeRootId(5L, 11L));
         byte[] raw = serializer.serialize(original);
-        assertFalse(Utils.ZstdUtils.isZstd(raw), "precondition: serializer produced a raw, uncompressed tuple");
+        assertFalse(Utils.ZstdUtils.isZstd(raw),
+                "precondition: serializer produced a raw, uncompressed tuple");
 
         try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
-            // Force entry into the decompress branch, then make decompression report a tuple-deserialization failure.
+            // Force entry into the decompress branch, then make decompression report a
+            // tuple-deserialization failure.
             mocked.when(() -> Utils.ZstdUtils.isZstd(raw)).thenReturn(true);
             mocked.when(() -> Utils.ZstdUtils.decompress(eq(raw), anyInt()))
-                  .thenThrow(new RuntimeException(KryoTupleDeserializer.FAILED_TO_DESERIALIZE_TUPLE));
+                    .thenThrow(new RuntimeException(KryoTupleDeserializer.FAILED_TO_DESERIALIZE_TUPLE));
 
             TupleImpl result = deserializer.deserialize(raw);
-            assertSameTuple(original, result); // fallback re-parsed the raw bytes and recovered the tuple
+            assertSameTuple(original,
+                    result); // fallback re-parsed the raw bytes and recovered the tuple
         }
     }
 
@@ -259,11 +284,11 @@ public class KryoTupleSerializerDeserializerTest {
         enableComponentLevelCompression(SOURCE_COMPONENT);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
 
-        byte[] raw = {1, 2, 3, 4, 5, 6, 7, 8};
+        byte[] raw =  {1, 2, 3, 4, 5, 6, 7, 8};
         try (MockedStatic<Utils.ZstdUtils> mocked = mockStatic(Utils.ZstdUtils.class)) {
             mocked.when(() -> Utils.ZstdUtils.isZstd(raw)).thenReturn(true);
             mocked.when(() -> Utils.ZstdUtils.decompress(eq(raw), anyInt()))
-                  .thenThrow(new RuntimeException(KryoTupleDeserializer.FAILED_TO_DESERIALIZE_TUPLE));
+                    .thenThrow(new RuntimeException(KryoTupleDeserializer.FAILED_TO_DESERIALIZE_TUPLE));
 
             assertThrows(RuntimeException.class, () -> deserializer.deserialize(raw));
         }
@@ -299,7 +324,7 @@ public class KryoTupleSerializerDeserializerTest {
     public void testDeserializeGarbageBytesThrows() {
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
         // Not a zstd frame (length < 4 keeps isZstd false) and not a valid kryo tuple.
-        assertThrows(RuntimeException.class, () -> deserializer.deserialize(new byte[]{1, 2, 3}));
+        assertThrows(RuntimeException.class, () -> deserializer.deserialize(new byte[] {1, 2, 3}));
     }
 
     @Test
@@ -312,26 +337,33 @@ public class KryoTupleSerializerDeserializerTest {
     public void testDeserializeZstdMagicButInvalidFrameThrows() {
         enableComponentLevelCompression(SOURCE_COMPONENT);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(baseConf(), context);
-        // First 4 bytes are the little-endian zstd magic 0xFD2FB528 so isZstd() is true, but the rest is
-        // not a valid zstd frame. decompress() throws, the false-positive fallback re-parses the raw bytes,
+        // First 4 bytes are the little-endian zstd magic 0xFD2FB528 so isZstd() is true, but the
+        // rest is
+        // not a valid zstd frame. decompress() throws, the false-positive fallback re-parses the
+        // raw bytes,
         // which are also not a valid kryo tuple -> RuntimeException.
-        byte[] fakeZstd = new byte[]{(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00, 0x01, 0x02, 0x03};
+        byte[] fakeZstd =
+                new byte[] {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00, 0x01, 0x02, 0x03};
         assertTrue(Utils.ZstdUtils.isZstd(fakeZstd));
         assertThrows(RuntimeException.class, () -> deserializer.deserialize(fakeZstd));
     }
 
     @Test
     public void testDeserializeCompressedExceedingMaxDecompressedBytesThrows() {
-        // A genuinely compressed tuple, but the deserializer is configured with a tiny decompression cap.
-        // decompress() throws ("threshold exceeded"), the fallback re-parses the still-compressed raw bytes,
+        // A genuinely compressed tuple, but the deserializer is configured with a tiny
+        // decompression cap.
+        // decompress() throws ("threshold exceeded"), the fallback re-parses the still-compressed
+        // raw bytes,
         // which are not a valid kryo tuple -> RuntimeException.
         enableComponentLevelCompression(SOURCE_COMPONENT);
-        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0), context);
+        KryoTupleSerializer serializer = new KryoTupleSerializer(compressionEnabledConf(0),
+                context);
         Map<String, Object> deserConf = baseConf();
         deserConf.put(Config.TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES, 1);
         KryoTupleDeserializer deserializer = new KryoTupleDeserializer(deserConf, context);
 
-        byte[] bytes = serializer.serialize(tuple(new Values(bigString(8192)), MessageId.makeUnanchored()));
+        byte[] bytes = serializer.serialize(tuple(new Values(bigString(8192)), MessageId
+                .makeUnanchored()));
         assertTrue(Utils.ZstdUtils.isZstd(bytes));
         assertThrows(RuntimeException.class, () -> deserializer.deserialize(bytes));
     }
@@ -352,7 +384,8 @@ public class KryoTupleSerializerDeserializerTest {
     }
 
     private TupleImpl tuple(List<Object> values, MessageId id) {
-        return new TupleImpl(context, values, SOURCE_COMPONENT, SOURCE_TASK_ID, Utils.DEFAULT_STREAM_ID, id);
+        return new TupleImpl(context, values, SOURCE_COMPONENT, SOURCE_TASK_ID,
+                Utils.DEFAULT_STREAM_ID, id);
     }
 
     private void assertSameTuple(TupleImpl expected, TupleImpl actual) {

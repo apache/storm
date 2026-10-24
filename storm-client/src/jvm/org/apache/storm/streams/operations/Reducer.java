@@ -13,7 +13,8 @@
 package org.apache.storm.streams.operations;
 
 /**
- * The {@link Reducer} performs an operation on two values of the same type producing a result of the same type.
+ * The {@link Reducer} performs an operation on two values of the same type producing a result of
+ * the same type.
  *
  * @param <T> the type of the arguments and the result
  */

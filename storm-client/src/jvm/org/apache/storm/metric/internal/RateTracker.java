@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RateTracker implements Closeable {
     private final int bucketSizeMillis;
-    //Old Buckets and their length are only touched when rotating or gathering the metrics, which should not be that frequent
+    // Old Buckets and their length are only touched when rotating or gathering the metrics, which
+    // should not be that frequent
     // As such all access to them should be protected by synchronizing with the RateTracker instance
     private final long[] bucketTime;
     private final long[] oldBuckets;
@@ -34,8 +35,10 @@ public class RateTracker implements Closeable {
     /**
      * Constructor.
      *
-     * @param validTimeWindowInMils events that happened before validTimeWindowInMils are not considered when reporting the rate.
-     * @param numBuckets            the number of time sildes to divide validTimeWindows. The more buckets, the smother the reported results
+     * @param validTimeWindowInMils events that happened before validTimeWindowInMils are not
+     *     considered when reporting the rate.
+     * @param numBuckets the number of time sildes to divide validTimeWindows. The more buckets, the
+     *     smother the reported results
      *                              will be.
      */
     public RateTracker(int validTimeWindowInMils, int numBuckets) {
@@ -45,8 +48,10 @@ public class RateTracker implements Closeable {
     /**
      * Constructor.
      *
-     * @param validTimeWindowInMils events that happened before validTimeWindow are not considered when reporting the rate.
-     * @param numBuckets            the number of time sildes to divide validTimeWindows. The more buckets, the smother the reported results
+     * @param validTimeWindowInMils events that happened before validTimeWindow are not considered
+     *     when reporting the rate.
+     * @param numBuckets the number of time sildes to divide validTimeWindows. The more buckets, the
+     *     smother the reported results
      *                              will be.
      * @param startTime             if positive the simulated time to start the first bucket at.
      */
@@ -55,7 +60,8 @@ public class RateTracker implements Closeable {
         bucketSizeMillis = validTimeWindowInMils / numBuckets;
         if (bucketSizeMillis < 1) {
             throw new IllegalArgumentException(
-                "validTimeWindowInMilis and numOfSildes cause each slide to have a window that is too small");
+                    "validTimeWindowInMilis and numOfSildes cause each slide to have a window "
+                    + "that is too small");
         }
         bucketTime = new long[numBuckets - 1];
         oldBuckets = new long[numBuckets - 1];
@@ -81,6 +87,7 @@ public class RateTracker implements Closeable {
 
     /**
      * Get report rate.
+     *
      * @return the approximate average rate per second.
      */
     public synchronized double reportRate() {

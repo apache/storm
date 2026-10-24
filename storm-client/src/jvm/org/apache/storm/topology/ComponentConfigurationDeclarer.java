@@ -16,7 +16,7 @@ import java.util.Map;
 
 public interface ComponentConfigurationDeclarer<T extends ComponentConfigurationDeclarer> extends ResourceDeclarer<T> {
     /**
-     * add in several configs to the component.
+     * Add in several configs to the component.
      *
      * @param conf the configs to add
      * @return this for chaining.
@@ -24,7 +24,7 @@ public interface ComponentConfigurationDeclarer<T extends ComponentConfiguration
     T addConfigurations(Map<String, Object> conf);
 
     /**
-     * return the current component configuration.
+     * Return the current component configuration.
      *
      * @return the current configuration.
      */

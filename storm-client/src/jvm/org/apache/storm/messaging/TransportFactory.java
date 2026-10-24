@@ -22,32 +22,35 @@ import org.slf4j.LoggerFactory;
 public class TransportFactory {
     public static final Logger LOG = LoggerFactory.getLogger(TransportFactory.class);
 
-    public static IContext makeContext(Map<String, Object> topoConf, StormMetricRegistry metricRegistry) {
+    public static IContext makeContext(Map<String, Object> topoConf,
+            StormMetricRegistry metricRegistry) {
 
-        //get factory class name
+        // get factory class name
         String transportPluginClassName = (String) topoConf.get(Config.STORM_MESSAGING_TRANSPORT);
         LOG.info("Storm peer transport plugin:" + transportPluginClassName);
 
         IContext transport;
         try {
-            //create a factory class
+            // create a factory class
             Class klass = Class.forName(transportPluginClassName);
-            //obtain a context object
+            // obtain a context object
             Object obj = klass.newInstance();
             if (obj instanceof IContext) {
-                //case 1: plugin is a IContext class
+                // case 1: plugin is a IContext class
                 transport = (IContext) obj;
-                //initialize with storm configuration
+                // initialize with storm configuration
                 transport.prepare(topoConf, metricRegistry);
             } else {
-                //case 2: Non-IContext plugin must have a makeContext(topoConf) method that returns IContext object
+                // case 2: Non-IContext plugin must have a makeContext(topoConf) method that returns
+                // IContext object
                 // StormMetricRegistry is ignored if IContext is created this way
                 Method method = klass.getMethod("makeContext", Map.class);
                 LOG.debug("object:" + obj + " method:" + method);
                 transport = (IContext) method.invoke(obj, topoConf);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Fail to construct messaging plugin from plugin " + transportPluginClassName, e);
+            throw new RuntimeException("Fail to construct messaging plugin from plugin "
+                    + transportPluginClassName, e);
         }
         return transport;
     }

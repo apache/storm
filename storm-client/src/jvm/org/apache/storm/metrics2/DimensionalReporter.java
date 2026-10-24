@@ -25,11 +25,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Class that allows using a ScheduledReporter to report V2 task metrics with support for dimensions.
+ * Class that allows using a ScheduledReporter to report V2 task metrics with support for
+ * dimensions.
+ *
  * <p></p>
- * This reporter will be started and scheduled with the MetricRegistry.  Once it is called on to report,
- * it will query the StormMetricRegistry for various sets of task metrics with unique dimensions.  The
- * underlying ScheduledReporter will perform the actual reporting with the help of a DimensionHandler to
+ * This reporter will be started and scheduled with the MetricRegistry. Once it is called on to
+ * report,
+ * it will query the StormMetricRegistry for various sets of task metrics with unique dimensions.
+ * The
+ * underlying ScheduledReporter will perform the actual reporting with the help of a
+ * DimensionHandler to
  * deal with the dimensions.
  */
 public class DimensionalReporter extends ScheduledReporter {
@@ -42,14 +47,16 @@ public class DimensionalReporter extends ScheduledReporter {
      * Constructor.
      *
      * @param metricRegistryProvider MetricRegistryProvider tracking task-specific metrics.
-     * @param unstartedReporter      ScheduledReporter to perform the actual reporting.  It should NOT be started.
+     * @param unstartedReporter ScheduledReporter to perform the actual reporting. It should NOT be
+     *     started.
      * @param dimensionHandler       class to handle setting dimensions before reporting a set of metrics.
      * @param name                   the reporter's name.
      * @param filter                 the filter for which metrics to report.
      * @param rateUnit               rate unit for the reporter.
      * @param durationUnit           duration unit for the reporter.
      * @param executor               the executor to use while scheduling reporting of metrics.
-     * @param shutdownExecutorOnStop if true, then executor will be stopped in same time with this reporter.
+     * @param shutdownExecutorOnStop if true, then executor will be stopped in same time with this
+     *     reporter.
      */
     public DimensionalReporter(MetricRegistryProvider metricRegistryProvider,
                                ScheduledReporter unstartedReporter,
@@ -60,7 +67,8 @@ public class DimensionalReporter extends ScheduledReporter {
                                TimeUnit durationUnit,
                                ScheduledExecutorService executor,
                                boolean shutdownExecutorOnStop) {
-        super(metricRegistryProvider.getRegistry(), name, filter, rateUnit, durationUnit, executor, shutdownExecutorOnStop);
+        super(metricRegistryProvider.getRegistry(), name, filter, rateUnit, durationUnit, executor,
+                shutdownExecutorOnStop);
         underlyingReporter = unstartedReporter;
         this.metricRegistryProvider = metricRegistryProvider;
         this.filter = filter;
@@ -76,7 +84,8 @@ public class DimensionalReporter extends ScheduledReporter {
 
     @Override
     public void report() {
-        for (Map.Entry<TaskMetricDimensions, TaskMetricRepo> entry : metricRegistryProvider.getTaskMetrics().entrySet()) {
+        for (Map.Entry<TaskMetricDimensions, TaskMetricRepo> entry : metricRegistryProvider
+                .getTaskMetrics().entrySet()) {
             TaskMetricRepo repo = entry.getValue();
             if (dimensionHandler != null) {
                 TaskMetricDimensions dimensions = entry.getKey();

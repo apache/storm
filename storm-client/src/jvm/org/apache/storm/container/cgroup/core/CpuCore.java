@@ -38,43 +38,53 @@ public class CpuCore implements CgroupCore {
     }
 
     public int getCpuShares() throws IOException {
-        return Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPU_SHARES)).get(0));
+        return Integer.parseInt(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPU_SHARES))
+                .get(0));
     }
 
     public void setCpuShares(int weight) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_SHARES), String.valueOf(weight));
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_SHARES), String
+                .valueOf(weight));
     }
 
     public long getCpuRtRuntimeUs() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPU_RT_RUNTIME_US)).get(0));
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir,
+                CPU_RT_RUNTIME_US)).get(0));
     }
 
     public void setCpuRtRuntimeUs(long us) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_RT_RUNTIME_US), String.valueOf(us));
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_RT_RUNTIME_US), String
+                .valueOf(us));
     }
 
     public Long getCpuRtPeriodUs() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPU_RT_PERIOD_US)).get(0));
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir,
+                CPU_RT_PERIOD_US)).get(0));
     }
 
     public void setCpuRtPeriodUs(long us) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_RT_PERIOD_US), String.valueOf(us));
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_RT_PERIOD_US), String
+                .valueOf(us));
     }
 
     public Long getCpuCfsPeriodUs() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPU_CFS_PERIOD_US)).get(0));
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir,
+                CPU_CFS_PERIOD_US)).get(0));
     }
 
     public void setCpuCfsPeriodUs(long us) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_CFS_PERIOD_US), String.valueOf(us));
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_CFS_PERIOD_US), String
+                .valueOf(us));
     }
 
     public Long getCpuCfsQuotaUs() throws IOException {
-        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CPU_CFS_QUOTA_US)).get(0));
+        return Long.parseLong(CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir,
+                CPU_CFS_QUOTA_US)).get(0));
     }
 
     public void setCpuCfsQuotaUs(long us) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_CFS_QUOTA_US), String.valueOf(us));
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CPU_CFS_QUOTA_US), String
+                .valueOf(us));
     }
 
     public Stat getCpuStat() throws IOException {

@@ -25,7 +25,8 @@ import org.apache.storm.utils.Utils;
 public class ZKStateStorageFactory implements StateStorageFactory {
 
     @Override
-    public IStateStorage mkStore(Map<String, Object> config, Map<String, Object> authConf, ClusterStateContext context) {
+    public IStateStorage mkStore(Map<String, Object> config, Map<String, Object> authConf,
+        ClusterStateContext context) {
         try {
             return new ZKStateStorage(config, authConf, context);
         } catch (Exception e) {

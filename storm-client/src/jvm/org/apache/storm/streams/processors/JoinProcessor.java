@@ -35,7 +35,8 @@ public class JoinProcessor<K, R, V1, V2> extends BaseProcessor<Pair<K, ?>> imple
     private final JoinType leftType;
     private final JoinType rightType;
 
-    public JoinProcessor(String leftStream, String rightStream, ValueJoiner<V1, V2, R> valueJoiner) {
+    public JoinProcessor(String leftStream, String rightStream, ValueJoiner<V1, V2,
+            R> valueJoiner) {
         this(leftStream, rightStream, valueJoiner, JoinType.INNER, JoinType.INNER);
     }
 
@@ -89,11 +90,13 @@ public class JoinProcessor<K, R, V1, V2> extends BaseProcessor<Pair<K, ?>> imple
      */
     private void joinAndForward(List<Pair<K, V1>> leftRows, List<Pair<K, V2>> rightRows) {
         if (leftRows.size() < rightRows.size()) {
-            for (Tuple3<K, V1, V2> res : join(getJoinTable(leftRows), rightRows, leftType, rightType)) {
+            for (Tuple3<K, V1, V2> res : join(getJoinTable(leftRows), rightRows, leftType,
+                    rightType)) {
                 context.forward(Pair.of(res.value1, valueJoiner.apply(res.value2, res.value3)));
             }
         } else {
-            for (Tuple3<K, V2, V1> res : join(getJoinTable(rightRows), leftRows, rightType, leftType)) {
+            for (Tuple3<K, V2, V1> res : join(getJoinTable(rightRows), leftRows, rightType,
+                    leftType)) {
                 context.forward(Pair.of(res.value1, valueJoiner.apply(res.value3, res.value2)));
             }
         }

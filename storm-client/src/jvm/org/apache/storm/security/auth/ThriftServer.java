@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class ThriftServer {
     private static final Logger LOG = LoggerFactory.getLogger(ThriftServer.class);
     protected final TProcessor processor;
-    private final Map<String, Object> conf; //storm configuration
+    private final Map<String, Object> conf; // storm configuration
     private final ThriftConnectionType type;
     private TServer server;
     private int port;
@@ -37,9 +37,9 @@ public class ThriftServer {
         this.type = type;
 
         try {
-            //locate our thrift transport plugin
+            // locate our thrift transport plugin
             transportPlugin = ClientAuthUtils.getTransportPlugin(this.type, this.conf);
-            //server
+            // server
             server = transportPlugin.getServer(this.processor);
             port = transportPlugin.getPort();
             areWorkerTokensSupported = transportPlugin.areWorkerTokensSupported();
@@ -58,6 +58,7 @@ public class ThriftServer {
 
     /**
      * Check whether serving.
+     *
      * @return true if ThriftServer is listening to requests?
      */
     public boolean isServing() {
@@ -66,7 +67,7 @@ public class ThriftServer {
 
     public void serve() {
         try {
-            //start accepting requests
+            // start accepting requests
             server.serve();
         } catch (Exception ex) {
             handleServerException(ex);
@@ -78,11 +79,13 @@ public class ThriftServer {
         if (server != null) {
             server.stop();
         }
-        Runtime.getRuntime().halt(1); //shutdown server process since we could not handle Thrift requests any more
+        Runtime.getRuntime()
+                .halt(1); // shutdown server process since we could not handle Thrift requests any more
     }
 
     /**
      * Get port.
+     *
      * @return The port this server is/will be listening on
      */
     public int getPort() {
@@ -91,6 +94,7 @@ public class ThriftServer {
 
     /**
      * Get type.
+     *
      * @return The type of server
      */
     public ThriftConnectionType getType() {

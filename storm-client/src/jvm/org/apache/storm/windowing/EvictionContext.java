@@ -17,7 +17,8 @@ package org.apache.storm.windowing;
  */
 public interface EvictionContext {
     /**
-     * Returns the reference time that the eviction policy could use to evict the events. In the case of event time processing, this would
+     * Returns the reference time that the eviction policy could use to evict the events. In the
+     * case of event time processing, this would
      * be the watermark time.
      *
      * @return the reference time in millis
@@ -31,7 +32,6 @@ public interface EvictionContext {
      */
     Long getSlidingCount();
 
-
     /**
      * Returns the sliding interval for time based windows.
      *
@@ -40,7 +40,8 @@ public interface EvictionContext {
     Long getSlidingInterval();
 
     /**
-     * Returns the current count of events in the queue up to the reference time based on which count based evictions can be performed.
+     * Returns the current count of events in the queue up to the reference time based on which
+     * count based evictions can be performed.
      *
      * @return the current count
      */

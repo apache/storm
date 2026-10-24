@@ -37,11 +37,14 @@ public class WaitStrategyPark implements IWaitStrategy {
     @Override
     public void prepare(Map<String, Object> conf, WaitSituation waitSituation) {
         if (waitSituation == WaitSituation.SPOUT_WAIT) {
-            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf.get(Config.TOPOLOGY_SPOUT_WAIT_PARK_MICROSEC));
+            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf
+                    .get(Config.TOPOLOGY_SPOUT_WAIT_PARK_MICROSEC));
         } else if (waitSituation == WaitSituation.BOLT_WAIT) {
-            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC));
+            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf
+                    .get(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC));
         } else if (waitSituation == WaitSituation.BACK_PRESSURE_WAIT) {
-            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PARK_MICROSEC));
+            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf
+                    .get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PARK_MICROSEC));
         } else {
             throw new IllegalArgumentException("Unknown wait situation : " + waitSituation);
         }

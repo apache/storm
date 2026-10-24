@@ -70,12 +70,14 @@ public class CgroupCommon implements CgroupCommonOperation {
 
     @Override
     public void addProcs(int pid) throws IOException {
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CGROUP_PROCS), String.valueOf(pid));
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CGROUP_PROCS), String
+                .valueOf(pid));
     }
 
     @Override
     public Set<Long> getPids() throws IOException {
-        List<String> stringPids = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CGROUP_PROCS));
+        List<String> stringPids = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir,
+                CGROUP_PROCS));
         Set<Long> pids = new HashSet<>();
         for (String task : stringPids) {
             pids.add(Long.valueOf(task));
@@ -85,19 +87,22 @@ public class CgroupCommon implements CgroupCommonOperation {
 
     @Override
     public boolean getNotifyOnRelease() throws IOException {
-        return CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, NOTIFY_ON_RELEASE)).get(0).equals("1") ? true : false;
+        return CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, NOTIFY_ON_RELEASE)).get(0)
+                .equals("1") ? true : false;
     }
 
     @Override
     public void setNotifyOnRelease(boolean flag) throws IOException {
 
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, NOTIFY_ON_RELEASE), flag ? "1" : "0");
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, NOTIFY_ON_RELEASE), flag
+                ? "1" : "0");
     }
 
     @Override
     public String getReleaseAgent() throws IOException {
         if (!this.isRoot) {
-            LOG.warn("Cannot get {} in {} since its not the root group", RELEASE_AGENT, this.isRoot);
+            LOG.warn("Cannot get {} in {} since its not the root group", RELEASE_AGENT,
+                    this.isRoot);
             return null;
         }
         return CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, RELEASE_AGENT)).get(0);
@@ -106,7 +111,8 @@ public class CgroupCommon implements CgroupCommonOperation {
     @Override
     public void setReleaseAgent(String command) throws IOException {
         if (!this.isRoot) {
-            LOG.warn("Cannot set {} in {} since its not the root group", RELEASE_AGENT, this.isRoot);
+            LOG.warn("Cannot set {} in {} since its not the root group", RELEASE_AGENT,
+                    this.isRoot);
             return;
         }
         CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, RELEASE_AGENT), command);
@@ -114,7 +120,8 @@ public class CgroupCommon implements CgroupCommonOperation {
 
     @Override
     public boolean getCgroupCloneChildren() throws IOException {
-        return CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CGROUP_CLONE_CHILDREN)).get(0).equals("1") ? true : false;
+        return CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CGROUP_CLONE_CHILDREN))
+                .get(0).equals("1") ? true : false;
     }
 
     @Override
@@ -122,11 +129,13 @@ public class CgroupCommon implements CgroupCommonOperation {
         if (!getCores().keySet().contains(SubSystemType.cpuset)) {
             return;
         }
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CGROUP_CLONE_CHILDREN), flag ? "1" : "0");
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CGROUP_CLONE_CHILDREN), flag
+                ? "1" : "0");
     }
 
     @Override
-    public void setEventControl(String eventFd, String controlFd, String... args) throws IOException {
+    public void setEventControl(String eventFd, String controlFd,
+        String... args) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append(eventFd);
         sb.append(' ');
@@ -135,7 +144,8 @@ public class CgroupCommon implements CgroupCommonOperation {
             sb.append(' ');
             sb.append(arg);
         }
-        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CGROUP_EVENT_CONTROL), sb.toString());
+        CgroupUtils.writeFileByLine(CgroupUtils.getDir(this.dir, CGROUP_EVENT_CONTROL), sb
+                .toString());
     }
 
     public Hierarchy getHierarchy() {

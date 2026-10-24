@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class DRPCSpout extends BaseRichSpout {
     public static final Logger LOG = LoggerFactory.getLogger(DRPCSpout.class);
-    //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
+    // ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
     private static final long serialVersionUID = 2387848310969237877L;
     private static final int clientConstructionRetryIntervalSec = 120;
     private final String function;
@@ -69,7 +69,6 @@ public class DRPCSpout extends BaseRichSpout {
         }
     }
 
-
     public DRPCSpout(String function, ILocalDRPC drpc) {
         this.function = function;
         localDrpcId = drpc.getServiceId();
@@ -83,20 +82,21 @@ public class DRPCSpout extends BaseRichSpout {
         String remote = client.getHost();
         CompletableFuture<Void> future = futuresMap.get(remote);
         if (future.isDone()) {
-            LOG.warn("DRPCInvocationsClient [{}:{}] connection failed, no pending reconnection. Try reconnecting...",
-                client.getHost(), client.getPort());
+            LOG.warn("DRPCInvocationsClient [{}:{}] connection failed, no pending reconnection. "
+                    + "Try reconnecting...",
+                    client.getHost(), client.getPort());
             CompletableFuture<Void> newFuture =
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        client.reconnectClient();
-                        LOG.info("Reconnected to remote {}:{}. ",
-                            client.getHost(), client.getPort());
-                    } catch (Exception e) {
-                        collector.reportError(e);
-                        LOG.warn("Failed to reconnect to remote {}:{}. ",
-                            client.getHost(), client.getPort(), e);
-                    }
-                }, background);
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            client.reconnectClient();
+                            LOG.info("Reconnected to remote {}:{}. ",
+                                    client.getHost(), client.getPort());
+                        } catch (Exception e) {
+                            collector.reportError(e);
+                            LOG.warn("Failed to reconnect to remote {}:{}. ",
+                                    client.getHost(), client.getPort(), e);
+                        }
+                    }, background);
             futuresMap.put(remote, newFuture);
         }
     }
@@ -104,19 +104,20 @@ public class DRPCSpout extends BaseRichSpout {
     private void reconnectSync(DRPCInvocationsClient client) {
         try {
             LOG.info("reconnecting... ");
-            client.reconnectClient(); //Blocking call
+            client.reconnectClient(); // Blocking call
         } catch (TException e2) {
             LOG.error("Failed to connect to DRPC server", e2);
         }
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
         this.collector = collector;
         if (localDrpcId == null) {
             background = new ExtendedThreadPoolExecutor(0, Integer.MAX_VALUE,
-                                                        60L, TimeUnit.SECONDS,
-                                                        new SynchronousQueue<Runnable>());
+                    60L, TimeUnit.SECONDS,
+                    new SynchronousQueue<Runnable>());
             futuresMap = new HashMap<>();
             int numTasks = context.getComponentTasks(context.getThisComponentId()).size();
             int index = context.getThisTaskIndex();
@@ -164,7 +165,7 @@ public class DRPCSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         if (localDrpcId == null) {
-            //This will only ever grow and at least one client has been up
+            // This will only ever grow and at least one client has been up
             for (int i = 0; i < clients.size(); i++) {
                 DRPCInvocationsClient client = clients.get(i);
                 if (!client.isConnected()) {
@@ -178,22 +179,24 @@ public class DRPCSpout extends BaseRichSpout {
                         returnInfo.put("id", req.get_request_id());
                         returnInfo.put("host", client.getHost());
                         returnInfo.put("port", client.getPort());
-                        collector.emit(new Values(req.get_func_args(), JSONValue.toJSONString(returnInfo)),
-                                        new DRPCMessageId(req.get_request_id(), i));
+                        collector.emit(new Values(req.get_func_args(), JSONValue
+                                .toJSONString(returnInfo)),
+                                new DRPCMessageId(req.get_request_id(), i));
                         break;
                     }
                 } catch (AuthorizationException aze) {
                     LOG.error("Not authorized to fetch DRPC request from DRPC server [{}:{}]",
-                        client.getHost(), client.getPort(), aze);
+                            client.getHost(), client.getPort(), aze);
                     reconnectAsync(client);
                 } catch (Exception e) {
                     LOG.error("Failed to fetch DRPC request from DRPC server [{}:{}]",
-                        client.getHost(), client.getPort(), e);
+                            client.getHost(), client.getPort(), e);
                     reconnectAsync(client);
                 }
             }
         } else {
-            DistributedRPCInvocations.Iface drpc = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(localDrpcId);
+            DistributedRPCInvocations.Iface drpc = (DistributedRPCInvocations.Iface) ServiceRegistry
+                    .getService(localDrpcId);
             if (drpc != null) { // can happen during shutdown of drpc while topology is still up
                 try {
                     DRPCRequest req = drpc.fetchRequest(function);
@@ -202,8 +205,9 @@ public class DRPCSpout extends BaseRichSpout {
                         returnInfo.put("id", req.get_request_id());
                         returnInfo.put("host", localDrpcId);
                         returnInfo.put("port", 0);
-                        collector.emit(new Values(req.get_func_args(), JSONValue.toJSONString(returnInfo)),
-                                        new DRPCMessageId(req.get_request_id(), 0));
+                        collector.emit(new Values(req.get_func_args(), JSONValue
+                                .toJSONString(returnInfo)),
+                                new DRPCMessageId(req.get_request_id(), 0));
                     }
                 } catch (AuthorizationException aze) {
                     throw new RuntimeException(aze);
@@ -286,8 +290,9 @@ public class DRPCSpout extends BaseRichSpout {
                     c = new DRPCInvocationsClient(conf, server, port);
                 } catch (Exception e) {
                     collector.reportError(e);
-                    LOG.error("Failed to create DRPCInvocationsClient for remote {}:{}. Retrying after {} secs.",
-                        server, port, clientConstructionRetryIntervalSec, e);
+                    LOG.error("Failed to create DRPCInvocationsClient for remote {}:{}. Retrying "
+                            + "after {} secs.",
+                            server, port, clientConstructionRetryIntervalSec, e);
                     try {
                         Thread.sleep(clientConstructionRetryIntervalSec * 1000);
                     } catch (InterruptedException ex) {
@@ -297,11 +302,12 @@ public class DRPCSpout extends BaseRichSpout {
                 }
             }
             if (c != null) {
-                LOG.info("Successfully created DRPCInvocationsClient for remote {}:{}.", server, port);
+                LOG.info("Successfully created DRPCInvocationsClient for remote {}:{}.", server,
+                        port);
                 clients.add(c);
             } else {
                 LOG.warn("DRPCInvocationsClient creation retry for remote {}:{} interrupted.",
-                    server, port);
+                        server, port);
             }
         }
 

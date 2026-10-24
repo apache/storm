@@ -17,7 +17,6 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
-
 public class TridentMultiReducerContext {
     List<TridentTuple.Factory> factories;
 

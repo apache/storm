@@ -93,7 +93,7 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
     public T addResource(String resourceName, Number resourceValue) {
         Map<String, Double> resourcesMap = (Map<String, Double>) getComponentConfiguration()
                 .computeIfAbsent(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP,
-                    (x) -> new HashMap<String, Double>());
+                        (x) -> new HashMap<String, Double>());
         resourcesMap.put(resourceName, resourceValue.doubleValue());
 
         return (T) this;
@@ -105,12 +105,12 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
     @Override
     public T addResources(Map<String, Double> resources) {
         if (resources != null) {
-            Map<String, Double> currentResources = (Map<String, Double>) getComponentConfiguration().computeIfAbsent(
-                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+            Map<String, Double> currentResources = (Map<String, Double>) getComponentConfiguration()
+                    .computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
             currentResources.putAll(resources);
         }
         return (T) this;
     }
-
 
 }

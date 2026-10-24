@@ -30,8 +30,8 @@ public final class TupleUtils {
 
     public static boolean isTick(Tuple tuple) {
         return tuple != null
-               && Constants.SYSTEM_COMPONENT_ID.equals(tuple.getSourceComponent())
-               && Constants.SYSTEM_TICK_STREAM_ID.equals(tuple.getSourceStreamId());
+                && Constants.SYSTEM_COMPONENT_ID.equals(tuple.getSourceComponent())
+                && Constants.SYSTEM_TICK_STREAM_ID.equals(tuple.getSourceStreamId());
     }
 
     public static <T> int chooseTaskIndex(List<T> keys, int numTasks) {
@@ -46,7 +46,8 @@ public final class TupleUtils {
         }
     }
 
-    public static Map<String, Object> putTickFrequencyIntoComponentConfig(Map<String, Object> conf, int tickFreqSecs) {
+    public static Map<String, Object> putTickFrequencyIntoComponentConfig(Map<String, Object> conf,
+            int tickFreqSecs) {
         if (conf == null) {
             conf = new Config();
         }

@@ -19,13 +19,15 @@ import java.util.Set;
 /**
  * This is a base class for DNS to Switch mappings.
  *
- * <p>It is not mandatory to derive {@link DNSToSwitchMapping} implementations from it, but it is strongly recommended,
- * as it makes it easy for the developers to add new methods to this base class that are automatically picked up by all
+ * <p>It is not mandatory to derive {@link DNSToSwitchMapping} implementations from it, but it is
+ * strongly recommended,
+ * as it makes it easy for the developers to add new methods to this base class that are
+ * automatically picked up by all
  * implementations.
  */
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public abstract class AbstractDNSToSwitchMapping
-    implements DNSToSwitchMapping {
+        implements DNSToSwitchMapping {
 
     /**
      * Create an unconfigured instance.
@@ -34,8 +36,10 @@ public abstract class AbstractDNSToSwitchMapping
     }
 
     /**
-     * Predicate that indicates that the switch mapping is known to be single-switch. The base class returns false: it assumes all mappings
-     * are multi-rack. Subclasses may override this with methods that are more aware of their topologies.
+     * Predicate that indicates that the switch mapping is known to be single-switch. The base class
+     * returns false: it assumes all mappings
+     * are multi-rack. Subclasses may override this with methods that are more aware of their
+     * topologies.
      *
      * @return true if the mapping thinks that it is on a single switch
      */
@@ -53,7 +57,8 @@ public abstract class AbstractDNSToSwitchMapping
     }
 
     /**
-     * Generate a string listing the switch mapping implementation, the mapping for every known node and the number of nodes and unique
+     * Generate a string listing the switch mapping implementation, the mapping for every known node
+     * and the number of nodes and unique
      * switches known about -each entry to a separate line.
      *
      * @return a string that can be presented to the ops team or used in debug messages.
@@ -67,10 +72,10 @@ public abstract class AbstractDNSToSwitchMapping
             Set<String> switches = new HashSet<>();
             for (Map.Entry<String, String> entry : rack.entrySet()) {
                 builder.append("  ")
-                       .append(entry.getKey())
-                       .append(" -> ")
-                       .append(entry.getValue())
-                       .append("\n");
+                        .append(entry.getKey())
+                        .append(" -> ")
+                        .append(entry.getValue())
+                        .append("\n");
                 switches.add(entry.getValue());
             }
             builder.append("Nodes: ").append(rack.size()).append("\n");

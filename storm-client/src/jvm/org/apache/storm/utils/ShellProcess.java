@@ -51,7 +51,8 @@ public class ShellProcess implements Serializable {
     private void modifyEnvironment(Map<String, String> buildEnv) {
         for (Map.Entry<String, String> entry : env.entrySet()) {
             if ("PATH".equals(entry.getKey())) {
-                buildEnv.put("PATH", buildEnv.get("PATH") + File.pathSeparatorChar + env.get("PATH"));
+                buildEnv.put("PATH", buildEnv.get("PATH") + File.pathSeparatorChar + env
+                        .get("PATH"));
             } else {
                 buildEnv.put(entry.getKey(), entry.getValue());
             }
@@ -62,7 +63,8 @@ public class ShellProcess implements Serializable {
         return launch(conf, context, true);
     }
 
-    public Number launch(Map<String, Object> conf, TopologyContext context, boolean changeDirectory) {
+    public Number launch(Map<String, Object> conf, TopologyContext context,
+            boolean changeDirectory) {
         ProcessBuilder builder = new ProcessBuilder(command);
         if (!env.isEmpty()) {
             Map<String, String> buildEnv = builder.environment();
@@ -84,8 +86,8 @@ public class ShellProcess implements Serializable {
             this.pid = serializer.connect(conf, context);
         } catch (IOException e) {
             throw new RuntimeException(
-                "Error when launching multilang subprocess\n"
-                + getErrorsString(), e);
+                    "Error when launching multilang subprocess\n"
+                            + getErrorsString(), e);
         } catch (NoOutputException e) {
             throw new RuntimeException(e + getErrorsString() + "\n");
         }
@@ -93,19 +95,20 @@ public class ShellProcess implements Serializable {
     }
 
     private ISerializer getSerializer(Map<String, Object> conf) {
-        //get factory class name
+        // get factory class name
         String serializerClassName = (String) conf.get(Config.TOPOLOGY_MULTILANG_SERIALIZER);
         LOG.info("Storm multilang serializer: " + serializerClassName);
 
         ISerializer serializer;
         try {
-            //create a factory class
+            // create a factory class
             Class klass = Class.forName(serializerClassName);
-            //obtain a serializer object
+            // obtain a serializer object
             Object obj = klass.newInstance();
             serializer = (ISerializer) obj;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to construct multilang serializer from serializer " + serializerClassName, e);
+            throw new RuntimeException("Failed to construct multilang serializer from serializer "
+                    + serializerClassName, e);
         }
         return serializer;
     }
@@ -149,7 +152,7 @@ public class ShellProcess implements Serializable {
                 ShellLogger.info(new String(errorReadingBuffer));
             }
         } catch (Exception e) {
-            //ignore
+            // ignore
         }
     }
 
@@ -174,6 +177,7 @@ public class ShellProcess implements Serializable {
 
     /**
      * Get PID.
+     *
      * @return pid, if the process has been launched, null otherwise.
      */
     public Number getPid() {
@@ -186,7 +190,9 @@ public class ShellProcess implements Serializable {
 
     /**
      * Get exit code.
-     * @return exit code of the process if process is terminated, -1 if process is not started or terminated.
+     *
+     * @return exit code of the process if process is terminated, -1 if process is not started or
+     *     terminated.
      */
     public int getExitCode() {
         try {

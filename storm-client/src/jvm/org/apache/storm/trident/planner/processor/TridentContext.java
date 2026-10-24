@@ -18,7 +18,6 @@ import org.apache.storm.trident.planner.TupleReceiver;
 import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.tuple.Fields;
 
-
 public class TridentContext {
     Fields selfFields;
     List<Factory> parentFactories;
@@ -64,7 +63,7 @@ public class TridentContext {
         return stateIndex;
     }
 
-    //for reporting errors
+    // for reporting errors
     public BatchOutputCollector getDelegateCollector() {
         return collector;
     }

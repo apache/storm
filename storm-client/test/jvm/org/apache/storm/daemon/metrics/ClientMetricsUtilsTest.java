@@ -67,9 +67,11 @@ public class ClientMetricsUtilsTest {
         assertNull(ClientMetricsUtils.getTimeUnitForConfig(reporterConf, dummyKey));
 
         reporterConf.put(dummyKey, "SECONDS");
-        assertEquals(TimeUnit.SECONDS, ClientMetricsUtils.getTimeUnitForConfig(reporterConf, dummyKey));
+        assertEquals(TimeUnit.SECONDS, ClientMetricsUtils.getTimeUnitForConfig(reporterConf,
+                dummyKey));
 
         reporterConf.put(dummyKey, "MINUTES");
-        assertEquals(TimeUnit.MINUTES, ClientMetricsUtils.getTimeUnitForConfig(reporterConf, dummyKey));
+        assertEquals(TimeUnit.MINUTES, ClientMetricsUtils.getTimeUnitForConfig(reporterConf,
+                dummyKey));
     }
 }

@@ -63,7 +63,8 @@ public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
         this.collector = collector;
         this.source = context.getThisTaskId();
         long taskCount = context.getComponentTasks(context.getThisComponentId()).size();

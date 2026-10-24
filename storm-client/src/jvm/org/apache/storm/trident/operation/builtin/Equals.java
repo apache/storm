@@ -15,7 +15,6 @@ package org.apache.storm.trident.operation.builtin;
 import org.apache.storm.trident.operation.BaseFilter;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-
 public class Equals extends BaseFilter {
 
     @Override

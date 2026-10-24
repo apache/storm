@@ -19,7 +19,8 @@ import org.apache.storm.shade.com.google.common.collect.Iterators;
 import org.apache.storm.shade.com.google.common.primitives.UnsignedBytes;
 
 /**
- * Base implementation of iterator over {@link KeyValueState} which encoded types of key and value are both binary type.
+ * Base implementation of iterator over {@link KeyValueState} which encoded types of key and value
+ * are both binary type.
  */
 public abstract class BaseBinaryStateIterator<K, V> extends BaseStateIterator<K, V, byte[], byte[]> {
 
@@ -31,8 +32,9 @@ public abstract class BaseBinaryStateIterator<K, V> extends BaseStateIterator<K,
      */
     public BaseBinaryStateIterator(Iterator<Map.Entry<byte[], byte[]>> pendingPrepareIterator,
                                    Iterator<Map.Entry<byte[], byte[]>> pendingCommitIterator) {
-        super(Iterators.peekingIterator(pendingPrepareIterator), Iterators.peekingIterator(pendingCommitIterator),
-              new TreeSet<>(UnsignedBytes.lexicographicalComparator()));
+        super(Iterators.peekingIterator(pendingPrepareIterator), Iterators
+                .peekingIterator(pendingCommitIterator),
+                new TreeSet<>(UnsignedBytes.lexicographicalComparator()));
     }
 
     /**

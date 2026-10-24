@@ -30,7 +30,7 @@ public class ConfigValidationUtils {
         return new NestableFieldValidator() {
             @Override
             public void validateField(String pd, String name, Object field)
-                throws IllegalArgumentException {
+                    throws IllegalArgumentException {
                 if (field == null) {
                     if (notNull) {
                         throw new IllegalArgumentException("Field " + name + " must not be null");
@@ -40,7 +40,7 @@ public class ConfigValidationUtils {
                 }
                 if (!cls.isInstance(field)) {
                     throw new IllegalArgumentException(
-                        pd + name + " must be a " + cls.getName() + ". (" + field + ")");
+                            pd + name + " must be a " + cls.getName() + ". (" + field + ")");
                 }
             }
         };
@@ -62,14 +62,15 @@ public class ConfigValidationUtils {
      *
      * @param validator used to validate each item in the list
      * @param notNull   whether or not a value of null is valid
-     * @return a NestableFieldValidator for a list with each item validated by a different validator.
+     * @return a NestableFieldValidator for a list with each item validated by a different
+     *     validator.
      */
     public static NestableFieldValidator listFv(final NestableFieldValidator validator,
                                                 final boolean notNull) {
         return new NestableFieldValidator() {
             @Override
             public void validateField(String pd, String name, Object field)
-                throws IllegalArgumentException {
+                    throws IllegalArgumentException {
 
                 if (field == null) {
                     if (notNull) {
@@ -119,7 +120,7 @@ public class ConfigValidationUtils {
             @SuppressWarnings("unchecked")
             @Override
             public void validateField(String pd, String name, Object field)
-                throws IllegalArgumentException {
+                    throws IllegalArgumentException {
                 if (field == null) {
                     if (notNull) {
                         throw new IllegalArgumentException("Field " + name + " must not be null");
@@ -128,14 +129,15 @@ public class ConfigValidationUtils {
                     }
                 }
                 if (field instanceof Map) {
-                    for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) field).entrySet()) {
+                    for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) field)
+                            .entrySet()) {
                         key.validateField("Each key of the map ", name, entry.getKey());
                         val.validateField("Each value in the map ", name, entry.getValue());
                     }
                     return;
                 }
                 throw new IllegalArgumentException(
-                    "Field " + name + " must be a Map");
+                        "Field " + name + " must be a Map");
             }
         };
     }
@@ -171,6 +173,7 @@ public class ConfigValidationUtils {
          * @param field The field to be validated.
          * @throws IllegalArgumentException if the field fails validation.
          */
-        public abstract void validateField(String pd, String name, Object field) throws IllegalArgumentException;
+        public abstract void validateField(String pd, String name,
+                Object field) throws IllegalArgumentException;
     }
 }

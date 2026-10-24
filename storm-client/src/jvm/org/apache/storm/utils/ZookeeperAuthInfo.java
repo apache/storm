@@ -16,7 +16,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import org.apache.storm.Config;
 
-
 public class ZookeeperAuthInfo {
     public String scheme;
     public byte[] payload = null;

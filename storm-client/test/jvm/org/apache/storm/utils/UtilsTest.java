@@ -18,6 +18,18 @@
 
 package org.apache.storm.utils;
 
+import static org.apache.storm.utils.Utils.handleUncaughtException;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +44,6 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
@@ -48,29 +59,26 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.utils.Utils.handleUncaughtException;
-import static org.junit.jupiter.api.Assertions.*;
-
 public class UtilsTest {
     public static final Logger LOG = LoggerFactory.getLogger(UtilsTest.class);
 
     @Test
     public void isZkAuthenticationConfiguredTopologyTest() {
         assertFalse(
-            Utils.isZkAuthenticationConfiguredTopology(null),
-            "Returns null if given null config");
+                Utils.isZkAuthenticationConfiguredTopology(null),
+                "Returns null if given null config");
 
         assertFalse(
-            Utils.isZkAuthenticationConfiguredTopology(emptyMockMap()),
-            "Returns false if scheme key is missing");
+                Utils.isZkAuthenticationConfiguredTopology(emptyMockMap()),
+                "Returns false if scheme key is missing");
 
         assertFalse(
-            Utils.isZkAuthenticationConfiguredTopology(topologyMockMap(null)),
-            "Returns false if scheme value is null");
+                Utils.isZkAuthenticationConfiguredTopology(topologyMockMap(null)),
+                "Returns false if scheme value is null");
 
         assertTrue(
-            Utils.isZkAuthenticationConfiguredTopology(topologyMockMap("foobar")),
-            "Returns true if scheme value is string");
+                Utils.isZkAuthenticationConfiguredTopology(topologyMockMap("foobar")),
+                "Returns true if scheme value is string");
     }
 
     private Map<String, Object> topologyMockMap(String value) {
@@ -95,7 +103,8 @@ public class UtilsTest {
         doParseJvmHeapMemByChildOptsTest(message, Collections.singletonList(opt), expected);
     }
 
-    private void doParseJvmHeapMemByChildOptsTest(String message, List<String> opts, double expected) {
+    private void doParseJvmHeapMemByChildOptsTest(String message, List<String> opts,
+            double expected) {
         assertEquals(expected, Utils.parseJvmHeapMemByChildOpts(opts, 123.0), 0, message);
     }
 
@@ -131,7 +140,8 @@ public class UtilsTest {
     @Test
     public void parseJvmHeapMemByChildOptsTestNulls() {
         doParseJvmHeapMemByChildOptsTest("Null value results in default", (String) null, 123.0);
-        doParseJvmHeapMemByChildOptsTest("Null list results in default", (List<String>) null, 123.0);
+        doParseJvmHeapMemByChildOptsTest("Null list results in default", (List<String>) null,
+                123.0);
     }
 
     @Test
@@ -143,27 +153,27 @@ public class UtilsTest {
     @Test
     public void parseJvmHeapMemByChildOptsTestFirstMatch() {
         doParseJvmHeapMemByChildOptsTest("First valid match is used",
-                                         Arrays.asList(null, "Xmx1t", "Xmx1g", "Xms1024k Xmx1024k", "Xmx100m"),
-                                         1024.0);
+                Arrays.asList(null, "Xmx1t", "Xmx1g", "Xms1024k Xmx1024k", "Xmx100m"),
+                1024.0);
     }
 
     @Test
     public void isZkAuthenticationConfiguredStormServerTest() {
         assertFalse(
-            Utils.isZkAuthenticationConfiguredStormServer(null),
-            "Returns false if given null config");
+                Utils.isZkAuthenticationConfiguredStormServer(null),
+                "Returns false if given null config");
 
         assertFalse(
-            Utils.isZkAuthenticationConfiguredStormServer(emptyMockMap()),
-            "Returns false if scheme key is missing");
+                Utils.isZkAuthenticationConfiguredStormServer(emptyMockMap()),
+                "Returns false if scheme key is missing");
 
         assertFalse(
-            Utils.isZkAuthenticationConfiguredStormServer(serverMockMap(null)),
-            "Returns false if scheme value is null");
+                Utils.isZkAuthenticationConfiguredStormServer(serverMockMap(null)),
+                "Returns false if scheme value is null");
 
         assertTrue(
-            Utils.isZkAuthenticationConfiguredStormServer(serverMockMap("foobar")),
-            "Returns true if scheme value is string");
+                Utils.isZkAuthenticationConfiguredStormServer(serverMockMap("foobar")),
+                "Returns true if scheme value is string");
     }
 
     @Test
@@ -191,26 +201,31 @@ public class UtilsTest {
 
     @Test
     public void testIsValidConfIdentical() {
-        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
-                                                   "k2", "as");
+        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1",
+                ImmutableSet.of('s', 'f'),
+                "k2", "as");
         assertTrue(Utils.isValidConf(map1, map1));
     }
 
     @Test
     public void testIsValidConfEqual() {
-        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
-                                                   "k2", "as");
-        Map<String, Object> map2 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
-                                                   "k2", "as");
+        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1",
+                ImmutableSet.of('s', 'f'),
+                "k2", "as");
+        Map<String, Object> map2 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1",
+                ImmutableSet.of('s', 'f'),
+                "k2", "as");
         assertTrue(Utils.isValidConf(map1, map2)); // test deep equal
     }
 
     @Test
     public void testIsValidConfNotEqual() {
-        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
-                                                   "k2", "as");
-        Map<String, Object> map3 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 't'),
-                                                   "k2", "as");
+        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1",
+                ImmutableSet.of('s', 'f'),
+                "k2", "as");
+        Map<String, Object> map3 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1",
+                ImmutableSet.of('s', 't'),
+                "k2", "as");
         assertFalse(Utils.isValidConf(map1, map3));
     }
 
@@ -236,7 +251,8 @@ public class UtilsTest {
         versions.put(key, System.getProperty("java.class.path"));
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, versions);
-        NavigableMap<String, IVersionInfo> alternativeVersions = Utils.getAlternativeVersionsMap(conf);
+        NavigableMap<String, IVersionInfo> alternativeVersions = Utils
+                .getAlternativeVersionsMap(conf);
         assertEquals(1, alternativeVersions.size());
         IVersionInfo found = alternativeVersions.get(key);
         assertNotNull(found);
@@ -258,7 +274,8 @@ public class UtilsTest {
                 expectedCycles = 0;
             }
 
-            CycleDetectionScenario(String testName, String testDescription, StormTopology topology, int expectedCycles) {
+            CycleDetectionScenario(String testName, String testDescription, StormTopology topology,
+                    int expectedCycles) {
                 this.testName = testName.replace(' ', '-');
                 this.testDescription = testDescription;
                 this.topology = topology;
@@ -301,7 +318,8 @@ public class UtilsTest {
                     tb.setBolt("bolt21", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     tb.setBolt("bolt22", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     // loop bolt 3  (also connect bolt3 to spout 1)
-                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt3");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1")
+                            .shuffleGrouping("bolt3");
                     ret.add(new CycleDetectionScenario(String.format("(%d) One Loop", testNo),
                             "Three level component hierarchy with 1 cycle in bolt3",
                             tb.createTopology(),
@@ -320,7 +338,8 @@ public class UtilsTest {
                     tb.setBolt("bolt21", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     tb.setBolt("bolt22", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     // loop bolt 3 -> 4 -> 5 -> 3 (also connect bolt3 to spout1)
-                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt5");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1")
+                            .shuffleGrouping("bolt5");
                     tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3");
                     tb.setBolt("bolt5", new TestWordCounter(), 10).shuffleGrouping("bolt4");
                     ret.add(new CycleDetectionScenario(String.format("(%d) One Loop", testNo),
@@ -341,13 +360,16 @@ public class UtilsTest {
                     tb.setBolt("bolt21", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     tb.setBolt("bolt22", new TestWordCounter(), 10).shuffleGrouping("bolt2");
                     // loop bolt 3 -> 4 -> 5 -> 3 (also connect bolt3 to spout1)
-                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt5");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("spout1")
+                            .shuffleGrouping("bolt5");
                     tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3");
                     tb.setBolt("bolt5", new TestWordCounter(), 10).shuffleGrouping("bolt4");
                     // loop bolt 6  (also connect bolt6 to spout 1)
-                    tb.setBolt("bolt6", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt6");
+                    tb.setBolt("bolt6", new TestWordCounter(), 10).shuffleGrouping("spout1")
+                            .shuffleGrouping("bolt6");
                     ret.add(new CycleDetectionScenario(String.format("(%d) Two Loops", testNo),
-                            "Four level component hierarchy with 2 cycles in bolt3,bolt4,bolt5 and bolt6",
+                            "Four level component hierarchy with 2 cycles in bolt3,bolt4,bolt5 "
+                            + "and bolt6",
                             tb.createTopology(),
                             2));
                 }
@@ -359,12 +381,17 @@ public class UtilsTest {
                     tb = new TopologyBuilder();
                     tb.setSpout("spout1", new TestWordSpout(), 10);
                     tb.setSpout("spout2", new TestWordSpout(), 10);
-                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt4");
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1")
+                            .shuffleGrouping("bolt4");
                     tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2").shuffleGrouping("bolt4");
-                    tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3").shuffleGrouping("spout2");
-                    ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops#1", testNo),
-                            "Complex cycle (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> B1)",
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2")
+                            .shuffleGrouping("bolt4");
+                    tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("bolt3")
+                            .shuffleGrouping("spout2");
+                    ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops#1",
+                            testNo),
+                            "Complex cycle (S1 -> B1 -> B2 -> B3 -> B4 <- S2), (B4 -> B3), (B4 -> "
+                            + "B1)",
                             tb.createTopology(),
                             1));
                 }
@@ -375,12 +402,16 @@ public class UtilsTest {
                     tb = new TopologyBuilder();
                     tb.setSpout("spout1", new TestWordSpout(), 10);
                     tb.setSpout("spout2", new TestWordSpout(), 10);
-                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1").shuffleGrouping("bolt4").shuffleGrouping("bolt2");
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("spout1")
+                            .shuffleGrouping("bolt4").shuffleGrouping("bolt2");
                     tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2").shuffleGrouping("bolt4");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2")
+                            .shuffleGrouping("bolt4");
                     tb.setBolt("bolt4", new TestWordCounter(), 10).shuffleGrouping("spout2");
-                    ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops#2", testNo),
-                            "Complex cycle 2 (S1 -> B1 <-> B2 -> B3 ), (S2 -> B4 -> B3), (B4 -> B1)",
+                    ret.add(new CycleDetectionScenario(String.format("(%d) Complex Loops#2",
+                            testNo),
+                            "Complex cycle 2 (S1 -> B1 <-> B2 -> B3 ), (S2 -> B4 -> B3), (B4 -> "
+                            + "B1)",
                             tb.createTopology(),
                             1));
                 }
@@ -389,11 +420,14 @@ public class UtilsTest {
                 {
                     testNo++;
                     tb = new TopologyBuilder();
-                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("bolt4").shuffleGrouping("bolt2");
+                    tb.setBolt("bolt1", new TestWordCounter(), 10).shuffleGrouping("bolt4")
+                            .shuffleGrouping("bolt2");
                     tb.setBolt("bolt2", new TestWordCounter(), 10).shuffleGrouping("bolt1");
-                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2").shuffleGrouping("bolt4");
+                    tb.setBolt("bolt3", new TestWordCounter(), 10).shuffleGrouping("bolt2")
+                            .shuffleGrouping("bolt4");
                     tb.setBolt("bolt4", new TestWordCounter(), 10);
-                    ret.add(new CycleDetectionScenario(String.format("(%d) No spout complex loops", testNo),
+                    ret.add(new CycleDetectionScenario(String.format("(%d) No spout complex loops",
+                            testNo),
                             "No Spouts, but with cycles (B1 <-> B2 -> B3 ), (B4 -> B3), (B4 -> B1)",
                             tb.createTopology(),
                             0));
@@ -410,30 +444,35 @@ public class UtilsTest {
                     // topology component and connection counts
                     int spoutCnt = ThreadLocalRandom.current().nextInt(0, maxSpouts) + 1;
                     int boltCnt = ThreadLocalRandom.current().nextInt(0, maxBolts) + 1;
-                    int spoutToBoltConnectionCnt = ThreadLocalRandom.current().nextInt(spoutCnt * boltCnt) + 1;
-                    int boltToBoltConnectionCnt =  ThreadLocalRandom.current().nextInt(boltCnt * boltCnt) + 1;
+                    int spoutToBoltConnectionCnt = ThreadLocalRandom.current()
+                            .nextInt(spoutCnt * boltCnt) + 1;
+                    int boltToBoltConnectionCnt = ThreadLocalRandom.current()
+                            .nextInt(boltCnt * boltCnt) + 1;
 
                     Map<Integer, BoltDeclarer> boltDeclarers = new HashMap<>();
-                    for (int iSpout = 0 ; iSpout  < spoutCnt ; iSpout++) {
+                    for (int iSpout = 0; iSpout < spoutCnt; iSpout++) {
                         tb.setSpout("spout" + iSpout, new TestWordSpout(), 10);
                     }
-                    for (int iBolt = 0 ; iBolt  < boltCnt ; iBolt++) {
-                        boltDeclarers.put(iBolt, tb.setBolt("bolt" + iBolt, new TestWordCounter(), 10));
+                    for (int iBolt = 0; iBolt < boltCnt; iBolt++) {
+                        boltDeclarers.put(iBolt, tb.setBolt("bolt" + iBolt, new TestWordCounter(),
+                                10));
                     }
                     // spout to bolt connections
-                    for (int i = 0 ; i < spoutToBoltConnectionCnt ; i++) {
+                    for (int i = 0; i < spoutToBoltConnectionCnt; i++) {
                         int iSpout = ThreadLocalRandom.current().nextInt(0, spoutCnt);
                         int iBolt = ThreadLocalRandom.current().nextInt(0, boltCnt);
                         boltDeclarers.get(iBolt).shuffleGrouping("spout" + iSpout);
                     }
                     // bolt to bolt connections
-                    for (int i = 0 ; i < boltToBoltConnectionCnt ; i++) {
+                    for (int i = 0; i < boltToBoltConnectionCnt; i++) {
                         int iBolt1 = ThreadLocalRandom.current().nextInt(0, boltCnt);
                         int iBolt2 = ThreadLocalRandom.current().nextInt(0, boltCnt);
                         boltDeclarers.get(iBolt2).shuffleGrouping("bolt" + iBolt1);
                     }
-                    ret.add(new CycleDetectionScenario(String.format("(%d) Random Topo#%d", testNo, iRandTest),
-                            String.format("Random topology #%d, spouts=%d, bolts=%d, connections: fromSpouts=%d/fromBolts=%d",
+                    ret.add(new CycleDetectionScenario(String.format("(%d) Random Topo#%d", testNo,
+                            iRandTest),
+                            String.format("Random topology #%d, spouts=%d, bolts=%d, connections: "
+                            + "fromSpouts=%d/fromBolts=%d",
                                     iRandTest, spoutCnt, boltCnt, spoutToBoltConnectionCnt, boltToBoltConnectionCnt),
                             tb.createTopology(),
                             -1));
@@ -445,7 +484,8 @@ public class UtilsTest {
         List<String> testFailures = new ArrayList<>();
 
         new CycleDetectionScenario().createTestScenarios().forEach(x -> {
-            LOG.info("==================== Running Test Scenario: {} =======================", x.testName);
+            LOG.info("==================== Running Test Scenario: {} =======================",
+                    x.testName);
             LOG.info("{}: {}", x.testName, x.testDescription);
 
             List<List<String>> loops = Utils.findComponentCycles(x.topology, x.testName);
@@ -459,7 +499,8 @@ public class UtilsTest {
                 }
                 if (loops.size() != x.expectedCycles) {
                     testFailures.add(
-                            String.format("Test \"%s\" failed, detected cycles=%d does not match expected=%d for \"%s\"",
+                            String.format("Test \"%s\" failed, detected cycles=%d does not match "
+                            + "expected=%d for \"%s\"",
                                     x.testName, loops.size(), x.expectedCycles, x.testDescription));
                     if (!loops.isEmpty()) {
                         testFailures.add(
@@ -483,39 +524,44 @@ public class UtilsTest {
 
     @Test
     public void testHandleUncaughtExceptionSwallowsCausedAndDerivedExceptions() {
-        Set<Class<?>> allowedExceptions = new HashSet<>(Arrays.asList(new Class<?>[]{ IOException.class }));
+        Set<Class<?>> allowedExceptions = new HashSet<>(Arrays
+                .asList(new Class<?>[] {IOException.class}));
         try {
             handleUncaughtException(new IOException(), allowedExceptions, false);
-        } catch(Throwable unexpected) {
+        } catch (Throwable unexpected) {
             fail("Should have swallowed IOException!", unexpected);
         }
 
         try {
             handleUncaughtException(new SocketException(), allowedExceptions, false);
-        } catch(Throwable unexpected) {
+        } catch (Throwable unexpected) {
             fail("Should have swallowed Throwable derived from IOException!", unexpected);
         }
 
         try {
-            handleUncaughtException(new TTransportException(new IOException()), allowedExceptions, false);
-        } catch(Throwable unexpected) {
+            handleUncaughtException(new TTransportException(new IOException()), allowedExceptions,
+                    false);
+        } catch (Throwable unexpected) {
             fail("Should have swallowed Throwable caused by an IOException!", unexpected);
         }
 
         try {
-            handleUncaughtException(new TTransportException(new SocketException()), allowedExceptions, false);
-        } catch(Throwable unexpected) {
-            fail("Should have swallowed Throwable caused by a Throwable derived from IOException!", unexpected);
+            handleUncaughtException(new TTransportException(new SocketException()),
+                    allowedExceptions, false);
+        } catch (Throwable unexpected) {
+            fail("Should have swallowed Throwable caused by a Throwable derived from IOException!",
+                    unexpected);
         }
 
         Throwable t = new NullPointerException();
-        String expectationMessage = "Should have thrown an Error() with a cause of NullPointerException";
+        String expectationMessage =
+                "Should have thrown an Error() with a cause of NullPointerException";
         try {
             handleUncaughtException(t, allowedExceptions, false);
             fail(expectationMessage);
-        } catch(Error expected) {
+        } catch (Error expected) {
             assertEquals(expected.getCause(), t, expectationMessage);
-        } catch(Throwable unexpected) {
+        } catch (Throwable unexpected) {
             fail(expectationMessage, unexpected);
         }
     }
@@ -534,7 +580,7 @@ public class UtilsTest {
 
     @Test
     void compress_singleByte_producesZstdFrame() {
-        byte[] input = {0x42};
+        byte[] input =  {0x42};
         byte[] compressed = Utils.ZstdUtils.compress(input, 3);
         assertTrue(Utils.ZstdUtils.isZstd(compressed),
                 "Compressed output should start with the Zstd magic number");
@@ -592,7 +638,7 @@ public class UtilsTest {
 
     @Test
     void compress_offsetLength_zeroLengthOrNull() {
-        byte[] empty = Utils.ZstdUtils.compress(new byte[]{1, 2, 3}, 1, 0, 3);
+        byte[] empty = Utils.ZstdUtils.compress(new byte[] {1, 2, 3}, 1, 0, 3);
         assertNotNull(empty);
         assertEquals(0, empty.length);
 
@@ -606,7 +652,7 @@ public class UtilsTest {
 
     @Test
     void compress_offsetLength_outOfBounds_throws() {
-        byte[] data = {1, 2, 3, 4};
+        byte[] data =  {1, 2, 3, 4};
         assertThrows(IndexOutOfBoundsException.class,
                 () -> Utils.ZstdUtils.compress(data, -1, 2, 3));
         assertThrows(IndexOutOfBoundsException.class,
@@ -646,7 +692,7 @@ public class UtilsTest {
 
     @Test
     void decompress_corruptedData_throwsRuntimeException() {
-        byte[] garbage = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+        byte[] garbage =  {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> Utils.ZstdUtils.decompress(garbage, 1024 * 1024));
         assertTrue(ex.getMessage().contains("Zstd decompression failed"),
@@ -701,13 +747,13 @@ public class UtilsTest {
     @Test
     void isZstd_arrayTooShort_returnsFalse() {
         // Only 3 bytes — not enough for the 4-byte magic
-        assertFalse(Utils.ZstdUtils.isZstd(new byte[]{(byte) 0x28, (byte) 0xB5, (byte) 0x2F}));
+        assertFalse(Utils.ZstdUtils.isZstd(new byte[] {(byte) 0x28, (byte) 0xB5, (byte) 0x2F}));
     }
 
     @Test
     void isZstd_validMagicBytes_returnsTrue() {
         // Pad with enough trailing bytes so INT_HANDLE.get(bytes, 0) does not throw
-        byte[] magic = new byte[]{(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00};
+        byte[] magic = new byte[] {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00};
         assertTrue(Utils.ZstdUtils.isZstd(magic));
     }
 
@@ -727,14 +773,14 @@ public class UtilsTest {
     @Test
     void isZstd_wrongMagicOrder_returnsFalse() {
         // Big-endian order of the same bytes — should NOT match
-        byte[] wrongEndian = {(byte) 0xFD, (byte) 0x2F, (byte) 0xB5, (byte) 0x28, 0x00};
+        byte[] wrongEndian =  {(byte) 0xFD, (byte) 0x2F, (byte) 0xB5, (byte) 0x28, 0x00};
         assertFalse(Utils.ZstdUtils.isZstd(wrongEndian));
     }
 
     @Test
     void isZstd_almostCorrectMagic_returnsFalse() {
         // One byte off
-        byte[] close = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFE, 0x00};
+        byte[] close =  {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFE, 0x00};
         assertFalse(Utils.ZstdUtils.isZstd(close));
     }
 
@@ -796,7 +842,7 @@ public class UtilsTest {
 
         IPredicate<Integer> mockPredicate = Mockito.mock(IPredicate.class);
         Mockito.when(mockPredicate.test(Mockito.any())).thenReturn(true);
-        Map<Integer, Integer> map = Map.of(1,1);
+        Map<Integer, Integer> map = Map.of(1, 1);
         Integer integer = 1;
         assertEquals(integer, Utils.findOne(mockPredicate, map));
     }
@@ -811,7 +857,7 @@ public class UtilsTest {
         Integer integer2 = 2;
         Mockito.lenient().when(mockPredicate.test(integer)).thenReturn(false);
         Mockito.lenient().when(mockPredicate.test(integer2)).thenReturn(true);
-        Map<Integer, Integer> map = Map.of(1,1,2,2);
+        Map<Integer, Integer> map = Map.of(1, 1, 2, 2);
         assertEquals(integer2, Utils.findOne(mockPredicate, map));
     }
 
@@ -822,7 +868,7 @@ public class UtilsTest {
 
         IPredicate<Integer> mockPredicate = Mockito.mock(IPredicate.class);
         Mockito.when(mockPredicate.test(Mockito.any())).thenReturn(false);
-        Map<Integer, Integer> map = Map.of(1,1);
+        Map<Integer, Integer> map = Map.of(1, 1);
         assertNull(Utils.findOne(mockPredicate, map));
     }
 }

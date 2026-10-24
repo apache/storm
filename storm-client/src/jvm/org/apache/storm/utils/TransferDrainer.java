@@ -42,7 +42,8 @@ public class TransferDrainer {
     }
 
     public void send(Map<Integer, NodeInfo> taskToNode, Map<NodeInfo, IConnection> connections) {
-        HashMap<NodeInfo, Stream<TaskMessage>> bundleMapByDestination = groupBundleByDestination(taskToNode);
+        HashMap<NodeInfo, Stream<TaskMessage>> bundleMapByDestination =
+                groupBundleByDestination(taskToNode);
 
         for (Map.Entry<NodeInfo, Stream<TaskMessage>> entry : bundleMapByDestination.entrySet()) {
             NodeInfo node = entry.getKey();
@@ -58,7 +59,8 @@ public class TransferDrainer {
         }
     }
 
-    private HashMap<NodeInfo, Stream<TaskMessage>> groupBundleByDestination(Map<Integer, NodeInfo> taskToNode) {
+    private HashMap<NodeInfo, Stream<TaskMessage>> groupBundleByDestination(Map<Integer,
+            NodeInfo> taskToNode) {
         HashMap<NodeInfo, Stream<TaskMessage>> result = new HashMap<>();
 
         for (Entry<Integer, ArrayList<TaskMessage>> entry : bundles.entrySet()) {

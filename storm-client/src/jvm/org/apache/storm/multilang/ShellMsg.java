@@ -16,11 +16,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ShellMsg is an object that represents the data sent to a shell component from a process that implements a multi-language protocol. It is
+ * ShellMsg is an object that represents the data sent to a shell component from a process that
+ * implements a multi-language protocol. It is
  * the union of all data types that a component can send to Storm.
  *
- * <p>ShellMsgs are objects received from the ISerializer interface, after the serializer has deserialized the data from the underlying wire
- * protocol. The ShellMsg class allows for a decoupling between the serialized representation of the data and the data itself.
+ * <p>ShellMsgs are objects received from the ISerializer interface, after the serializer has
+ * deserialized the data from the underlying wire
+ * protocol. The ShellMsg class allows for a decoupling between the serialized representation of the
+ * data and the data itself.
  */
 public class ShellMsg {
     private String command;
@@ -32,7 +35,7 @@ public class ShellMsg {
     private List<Object> tuple;
     private boolean needTaskIds;
 
-    //metrics rpc 
+    // metrics rpc 
     private String metricName;
     private Object metricParams;
     private ShellLogLevel logLevel = ShellLogLevel.INFO;
@@ -156,7 +159,7 @@ public class ShellMsg {
                 + '}';
     }
 
-    //logLevel
+    // logLevel
     public enum ShellLogLevel {
         TRACE, DEBUG, INFO, WARN, ERROR;
 

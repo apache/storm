@@ -36,11 +36,12 @@ public class DefaultShellLogHandler implements ShellLogHandler {
 
     private Logger getLogger(final Class<?> ownerCls) {
         return LoggerFactory.getLogger(
-            ownerCls == null ? DefaultShellLogHandler.class : ownerCls);
+                ownerCls == null ? DefaultShellLogHandler.class : ownerCls);
     }
 
     /**
-     * This default implementation saves the {@link ShellProcess} so it can output the process info string later.
+     * This default implementation saves the {@link ShellProcess} so it can output the process info
+     * string later.
      *
      * @param ownerCls - the class which instantiated this ShellLogHandler.
      * @param process  - the current {@link ShellProcess}.

@@ -12,21 +12,20 @@
 
 package org.apache.storm.metrics2;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 class EwmaGaugeTest {
 
@@ -48,9 +47,9 @@ class EwmaGaugeTest {
         @Test
         @DisplayName("Invalid alpha values throw IllegalArgumentException")
         void invalidAlphaThrows() {
-            double[] invalidAlphas = {
-                    0.0, 1.0, -0.1, 1.1,
-                    Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY
+            double[] invalidAlphas =  {
+                0.0, 1.0, -0.1, 1.1,
+                Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY
             };
             for (double alpha : invalidAlphas) {
                 assertThrows(IllegalArgumentException.class,
@@ -62,14 +61,13 @@ class EwmaGaugeTest {
         @Test
         @DisplayName("Valid alpha boundary values are accepted")
         void validAlphaAccepted() {
-            double[] validAlphas = {0.001, 0.0625, 0.5, 0.999};
+            double[] validAlphas =  {0.001, 0.0625, 0.5, 0.999};
             for (double alpha : validAlphas) {
                 assertNotNull(new EwmaGauge(alpha),
                         "Expected no exception for alpha=" + alpha);
             }
         }
     }
-
 
     @Nested
     @DisplayName("Cold-start semantics")
@@ -145,7 +143,6 @@ class EwmaGaugeTest {
 
     }
 
-
     @Nested
     @DisplayName("Negative value guard")
     class NegativeValueTest {
@@ -169,7 +166,6 @@ class EwmaGaugeTest {
             assertEquals(5.0, gauge.getValue(), DELTA);
         }
     }
-
 
     @Nested
     @DisplayName("getValue() preserves EWMA across calls")

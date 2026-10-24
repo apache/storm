@@ -17,7 +17,6 @@ import java.util.HashSet;
 import javax.security.auth.Subject;
 import org.apache.storm.security.auth.SimpleTransportPlugin;
 
-
 public class SingleUserSimpleTransport extends SimpleTransportPlugin {
     @Override
     protected Subject getDefaultSubject() {

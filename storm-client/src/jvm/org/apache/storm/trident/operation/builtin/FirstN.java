@@ -22,7 +22,6 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 
-
 /**
  * An {@link org.apache.storm.trident.operation.Assembly} implementation.
  */
@@ -46,8 +45,8 @@ public class FirstN implements Assembly {
     public Stream apply(Stream input) {
         Fields outputFields = input.getOutputFields();
         return input.partitionAggregate(outputFields, agg, outputFields)
-                    .global()
-                    .partitionAggregate(outputFields, agg, outputFields);
+                .global()
+                .partitionAggregate(outputFields, agg, outputFields);
     }
 
     public static class FirstNAgg extends BaseAggregator<FirstNAgg.State> {

@@ -25,7 +25,8 @@ public interface WindowsStoreFactory extends Serializable {
     /**
      * Creates a window store.
      *
-     * @param topoConf storm topology configuration passed in {@link org.apache.storm.trident.planner.TridentProcessor#prepare(Map,
+     * @param topoConf storm topology configuration passed in {@link
+     *     org.apache.storm.trident.planner.TridentProcessor#prepare(Map,
      *                 TopologyContext, TridentContext)}
      */
     WindowsStore create(Map<String, Object> topoConf);

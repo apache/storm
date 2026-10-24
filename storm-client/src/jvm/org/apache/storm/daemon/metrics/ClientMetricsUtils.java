@@ -15,7 +15,6 @@ package org.apache.storm.daemon.metrics;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
 
 public class ClientMetricsUtils {
@@ -41,7 +40,8 @@ public class ClientMetricsUtils {
         return null;
     }
 
-    public static TimeUnit getTimeUnitForConfig(Map<String, Object> reporterConf, String configName) {
+    public static TimeUnit getTimeUnitForConfig(Map<String, Object> reporterConf,
+            String configName) {
         String timeUnitString = ObjectReader.getString(reporterConf.get(configName), null);
         if (timeUnitString != null) {
             return TimeUnit.valueOf(timeUnitString);

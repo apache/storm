@@ -12,6 +12,11 @@
 
 package org.apache.storm.security.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Principal;
@@ -26,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReqContextTest {
 
@@ -56,7 +62,7 @@ public class ReqContextTest {
     }
 
     /**
-     * If subject has no principals, request context should return null principal
+     * If subject has no principals, request context should return null principal.
      */
     @Test
     public void testPrincipalReturnsNullWhenNoSubject() {
@@ -74,5 +80,17 @@ public class ReqContextTest {
         assertNotNull(rc.principal());
         assertEquals(principalName, rc.principal().getName());
         rc.setSubject(null);
+    }
+
+    @Test
+    public void testIsImpersonatingWithUnnamedRealPrincipal() {
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new SingleUserPrincipal("alice"));
+        ReqContext context = new ReqContext(subject);
+        assertFalse(context.isImpersonating());
+        context.setRealPrincipal(new SingleUserPrincipal(null));
+        assertTrue(context.isImpersonating());
+        context.setRealPrincipal(new SingleUserPrincipal("alice"));
+        assertFalse(context.isImpersonating());
     }
 }

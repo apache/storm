@@ -49,8 +49,10 @@ abstract class Node implements Serializable {
         this.groupingInfo = groupingInfo;
     }
 
-    Node(String outputStream, Fields outputFields, String componentId, int parallelism, GroupingInfo groupingInfo) {
-        this(Collections.singleton(outputStream), outputFields, componentId, parallelism, groupingInfo);
+    Node(String outputStream, Fields outputFields, String componentId, int parallelism,
+            GroupingInfo groupingInfo) {
+        this(Collections.singleton(outputStream), outputFields, componentId, parallelism,
+                groupingInfo);
     }
 
     Node(String outputStream, Fields outputFields, String componentId, GroupingInfo groupingInfo) {
@@ -128,7 +130,8 @@ abstract class Node implements Serializable {
     }
 
     Set<Node> getParents(String stream) {
-        Multimap<String, Node> rev = Multimaps.invertFrom(parentStreams, ArrayListMultimap.<String, Node>create());
+        Multimap<String, Node> rev = Multimaps.invertFrom(parentStreams, ArrayListMultimap.<String,
+                Node>create());
         return new HashSet<>(rev.get(stream));
     }
 

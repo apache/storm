@@ -12,15 +12,15 @@
 
 package org.apache.storm.tuple;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 public class FieldsTest {
 
@@ -101,12 +101,12 @@ public class FieldsTest {
     @Test
     public void selectTest() {
         Fields fields = new Fields("foo", "bar");
-        List<Object> second = Arrays.asList(new Object[]{ "b" });
-        List<Object> tuple = Arrays.asList(new Object[]{ "a", "b", "c" });
+        List<Object> second = Arrays.asList(new Object[] {"b"});
+        List<Object> tuple = Arrays.asList(new Object[] {"a", "b", "c"});
         List<Object> pickSecond = fields.select(new Fields("bar"), tuple);
         assertEquals(pickSecond, second);
 
-        List<Object> secondAndFirst = Arrays.asList(new Object[]{ "b", "a" });
+        List<Object> secondAndFirst = Arrays.asList(new Object[] {"b", "a"});
         List<Object> pickSecondAndFirst = fields.select(new Fields("bar", "foo"), tuple);
         assertEquals(pickSecondAndFirst, secondAndFirst);
     }
@@ -115,7 +115,7 @@ public class FieldsTest {
     public void selectingUnknownFieldThrowsTest() {
         assertThrows(IllegalArgumentException.class, () -> {
             Fields fields = new Fields("foo", "bar");
-            fields.select(new Fields("bar", "baz"), Arrays.asList(new Object[]{ "a", "b", "c" }));
+            fields.select(new Fields("bar", "baz"), Arrays.asList(new Object[] {"a", "b", "c"}));
         });
     }
 }

@@ -23,7 +23,7 @@ public class BatchHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(BatchHelper.class);
 
-    private int batchSize = 15000;  //default batch size 15000
+    private int batchSize = 15000;  // default batch size 15000
     private List<Tuple> tupleBatch;
     private boolean forceFlush = false;
     private OutputCollector collector;

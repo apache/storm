@@ -31,7 +31,8 @@ public interface WindowPartitionCache<K, V> {
     V get(K key);
 
     /**
-     * Get value from the cache or load the value pinning it so that the entry will never get evicted.
+     * Get value from the cache or load the value pinning it so that the entry will never get
+     * evicted.
      *
      * @param key the key
      * @return the value

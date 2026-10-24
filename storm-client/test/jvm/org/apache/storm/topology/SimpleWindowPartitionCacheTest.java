@@ -12,6 +12,11 @@
 
 package org.apache.storm.topology;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,13 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 /**
- * Unit tests for {@link SimpleWindowPartitionCache}
+ * Unit tests for {@link SimpleWindowPartitionCache}.
  */
 public class SimpleWindowPartitionCacheTest {
 
@@ -39,33 +39,35 @@ public class SimpleWindowPartitionCacheTest {
 
     @Test
     public void testBuildInvalid1() {
-        assertThrows(IllegalArgumentException.class, () -> SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-            .maximumSize(0)
-            .build(null));
+        assertThrows(IllegalArgumentException.class, () -> SimpleWindowPartitionCache.<Integer,
+                Integer>newBuilder()
+                .maximumSize(0)
+                .build(null));
     }
 
     @Test
     public void testBuildInvalid2() {
-        assertThrows(IllegalArgumentException.class, () -> SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-            .maximumSize(-1)
-            .build(null));
+        assertThrows(IllegalArgumentException.class, () -> SimpleWindowPartitionCache.<Integer,
+                Integer>newBuilder()
+                .maximumSize(-1)
+                .build(null));
     }
 
     @Test
     public void testBuildInvalid3() {
         assertThrows(NullPointerException.class,
-            () -> SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-            .maximumSize(1)
-            .build(null));
+                () -> SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
+                        .maximumSize(1)
+                        .build(null));
     }
 
     @Test
     public void testBuildOk() {
         SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-            .maximumSize(1)
-            .removalListener((key, val, removalCause) -> {
-            })
-            .build(key -> key);
+                .maximumSize(1)
+                .removalListener((key, val, removalCause) -> {
+                })
+                .build(key -> key);
     }
 
     @Test
@@ -73,13 +75,13 @@ public class SimpleWindowPartitionCacheTest {
         List<Integer> removed = new ArrayList<>();
         List<Integer> loaded = new ArrayList<>();
         SimpleWindowPartitionCache<Integer, Integer> cache =
-            SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-                .maximumSize(2)
-                .removalListener((key, val, removalCause) -> removed.add(key))
-                .build(key -> {
-                    loaded.add(key);
-                    return key;
-                });
+                SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
+                        .maximumSize(2)
+                        .removalListener((key, val, removalCause) -> removed.add(key))
+                        .build(key -> {
+                            loaded.add(key);
+                            return key;
+                        });
 
         cache.get(1);
         cache.get(2);
@@ -93,9 +95,9 @@ public class SimpleWindowPartitionCacheTest {
     public void testGetNull() {
         assertThrows(NullPointerException.class, () -> {
             SimpleWindowPartitionCache<Integer, Integer> cache =
-                SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-                    .maximumSize(2)
-                    .build(key -> null);
+                    SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
+                            .maximumSize(2)
+                            .build(key -> null);
 
             cache.get(1);
         });
@@ -104,9 +106,9 @@ public class SimpleWindowPartitionCacheTest {
     @Test
     public void testEvictNoRemovalListener() {
         SimpleWindowPartitionCache<Integer, Integer> cache =
-            SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-                .maximumSize(1)
-                .build(key -> key);
+                SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
+                        .maximumSize(1)
+                        .build(key -> key);
         cache.get(1);
         cache.get(2);
         assertEquals(Collections.singletonMap(2, 2), cache.asMap());
@@ -119,13 +121,13 @@ public class SimpleWindowPartitionCacheTest {
         List<Integer> removed = new ArrayList<>();
         List<Integer> loaded = new ArrayList<>();
         SimpleWindowPartitionCache<Integer, Integer> cache =
-            SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-                .maximumSize(1)
-                .removalListener((key, val, removalCause) -> removed.add(key))
-                .build(key -> {
-                    loaded.add(key);
-                    return key;
-                });
+                SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
+                        .maximumSize(1)
+                        .removalListener((key, val, removalCause) -> removed.add(key))
+                        .build(key -> {
+                            loaded.add(key);
+                            return key;
+                        });
 
         cache.get(1);
         cache.pinAndGet(2);
@@ -139,13 +141,13 @@ public class SimpleWindowPartitionCacheTest {
         List<Integer> removed = new ArrayList<>();
         List<Integer> loaded = new ArrayList<>();
         SimpleWindowPartitionCache<Integer, Integer> cache =
-            SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
-                .maximumSize(1)
-                .removalListener((key, val, removalCause) -> removed.add(key))
-                .build(key -> {
-                    loaded.add(key);
-                    return key;
-                });
+                SimpleWindowPartitionCache.<Integer, Integer>newBuilder()
+                        .maximumSize(1)
+                        .removalListener((key, val, removalCause) -> removed.add(key))
+                        .build(key -> {
+                            loaded.add(key);
+                            return key;
+                        });
 
         cache.pinAndGet(1);
         cache.invalidate(1);
@@ -158,19 +160,18 @@ public class SimpleWindowPartitionCacheTest {
         assertTrue(cache.asMap().isEmpty());
     }
 
-
     @Timeout(10000)
     @Test
     public void testConcurrentGet() throws Exception {
         List<Integer> loaded = new ArrayList<>();
         SimpleWindowPartitionCache<Integer, Object> cache =
-            SimpleWindowPartitionCache.<Integer, Object>newBuilder()
-                .maximumSize(1)
-                .build(key -> {
-                    Utils.sleep(1000);
-                    loaded.add(key);
-                    return new Object();
-                });
+                SimpleWindowPartitionCache.<Integer, Object>newBuilder()
+                        .maximumSize(1)
+                        .build(key -> {
+                            Utils.sleep(1000);
+                            loaded.add(key);
+                            return new Object();
+                        });
 
         FutureTask<Object> ft1 = new FutureTask<>(() -> cache.pinAndGet(1));
         FutureTask<Object> ft2 = new FutureTask<>(() -> cache.pinAndGet(1));
@@ -188,9 +189,9 @@ public class SimpleWindowPartitionCacheTest {
     @Test
     public void testConcurrentUnpin() throws Exception {
         SimpleWindowPartitionCache<Integer, Object> cache =
-            SimpleWindowPartitionCache.<Integer, Object>newBuilder()
-                .maximumSize(1)
-                .build(key -> new Object());
+                SimpleWindowPartitionCache.<Integer, Object>newBuilder()
+                        .maximumSize(1)
+                        .build(key -> new Object());
 
         cache.pinAndGet(1);
         FutureTask<Boolean> ft1 = new FutureTask<>(() -> cache.unpin(1));
@@ -210,10 +211,10 @@ public class SimpleWindowPartitionCacheTest {
     public void testEviction() {
         List<Integer> removed = new ArrayList<>();
         SimpleWindowPartitionCache<Integer, Object> cache =
-            SimpleWindowPartitionCache.<Integer, Object>newBuilder()
-                .maximumSize(1)
-                .removalListener((key, val, removalCause) -> removed.add(key))
-                .build(key -> new Object());
+                SimpleWindowPartitionCache.<Integer, Object>newBuilder()
+                        .maximumSize(1)
+                        .removalListener((key, val, removalCause) -> removed.add(key))
+                        .build(key -> new Object());
 
         cache.get(0);
         cache.pinAndGet(1);

@@ -19,18 +19,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Expires keys that have not been updated in the configured number of seconds. The algorithm used will take between expirationSecs and
+ * Expires keys that have not been updated in the configured number of seconds. The algorithm used
+ * will take between expirationSecs and
  * expirationSecs * (1 + 1 / (numBuckets-1)) to actually expire the message.
  *
  * <p>get, put, remove, containsKey, and size take O(numBuckets) time to run.
  *
- * <p>The advantage of this design is that the expiration thread only locks the object for O(1) time, meaning the object
+ * <p>The advantage of this design is that the expiration thread only locks the object for O(1)
+ * time, meaning the object
  * is essentially always available for gets/puts.
  *
- * <p>Note: This class is not thread-safe since it does not protect against changes to buckets while it is being read
+ * <p>Note: This class is not thread-safe since it does not protect against changes to buckets while
+ * it is being read
  */
 public class RotatingMap<K, V> {
-    //this default ensures things expire at most 50% past the expiration time
+    // this default ensures things expire at most 50% past the expiration time
     private static final int DEFAULT_NUM_BUCKETS = 3;
     private final LinkedList<HashMap<K, V>> buckets;
     private final ExpiredCallback<K, V> callback;

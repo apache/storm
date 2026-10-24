@@ -20,7 +20,6 @@ public enum SubSystemType {
     // net_cls,ns is not supported in ubuntu
     blkio, cpu, cpuacct, cpuset, devices, freezer, memory, perf_event, net_cls, net_prio;
 
-
     public static SubSystemType getSubSystem(String str) {
         try {
             return SubSystemType.valueOf(str);

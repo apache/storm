@@ -15,15 +15,17 @@ package org.apache.storm.messaging;
 public abstract class ConnectionWithStatus implements IConnection {
 
     /**
-     * whether this connection is available to transfer data.
+     * Whether this connection is available to transfer data.
      */
     public abstract Status status();
 
     public enum Status {
 
         /**
-         * we are establishing a active connection with target host. The new data sending request can be buffered for future sending, or
-         * dropped(cases like there is no enough memory). It varies with difference IConnection implementations.
+         * We are establishing a active connection with target host. The new data sending request
+         * can be buffered for future sending, or
+         * dropped(cases like there is no enough memory). It varies with difference IConnection
+         * implementations.
          */
         Connecting,
 
@@ -33,7 +35,8 @@ public abstract class ConnectionWithStatus implements IConnection {
         Ready,
 
         /**
-         * The connection channel is closed or being closed. We don't accept further data sending or receiving. All data sending request
+         * The connection channel is closed or being closed. We don't accept further data sending or
+         * receiving. All data sending request
          * will be dropped.
          */
         Closed
