@@ -14,6 +14,7 @@ package org.apache.storm.daemon.supervisor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -140,7 +141,15 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                 //Something odd happened try again later
                 return;
             }
-            Map<String, List<ProfileRequest>> topoIdToProfilerActions = getProfileActions(stormClusterState, stormIds);
+            Map<String, List<ProfileRequest>> topoIdToProfilerActions;
+            try {
+                topoIdToProfilerActions = getProfileActions(stormClusterState, stormIds);
+            } catch (Exception e) {
+                // Assignments come from the local backend; profiler requests are the only ZooKeeper read here.
+                // They stay in ZooKeeper, so skip them for this cycle instead of halting the supervisor.
+                LOG.warn("Failed to read profiler requests, will retry next cycle", e);
+                topoIdToProfilerActions = Collections.emptyMap();
+            }
 
             HashSet<Integer> assignedPorts = new HashSet<>();
             LOG.debug("Synchronizing supervisor");

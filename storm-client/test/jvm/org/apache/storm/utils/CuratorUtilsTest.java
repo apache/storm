@@ -20,6 +20,7 @@ package org.apache.storm.utils;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import org.apache.curator.test.InstanceSpec;
 import org.apache.curator.test.TestingServer;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
+import org.apache.storm.shade.org.apache.curator.RetryPolicy;
 import org.apache.storm.shade.org.apache.curator.ensemble.fixed.FixedEnsembleProvider;
 import org.apache.storm.shade.org.apache.curator.framework.AuthInfo;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
@@ -70,8 +72,11 @@ public class CuratorUtilsTest {
         CuratorFramework curator = CuratorUtils.newCurator(config,
                 Collections.singletonList("bogus_server"), 42, "", DaemonType.WORKER
                 .getDefaultZkAcls(config));
-        StormBoundedExponentialBackoffRetry policy =
-                (StormBoundedExponentialBackoffRetry) curator.getZookeeperClient().getRetryPolicy();
+        RetryPolicy retryPolicy = curator.getZookeeperClient().getRetryPolicy();
+        assertTrue(retryPolicy instanceof ConnectionAwareRetryPolicy,
+                "newCurator should wrap the retry policy in a ConnectionAwareRetryPolicy");
+        StormBoundedExponentialBackoffRetry policy = (StormBoundedExponentialBackoffRetry)
+                ((ConnectionAwareRetryPolicy) retryPolicy).getDelegate();
         assertEquals(policy.getBaseSleepTimeMs(), expectedInterval);
         assertEquals(policy.getN(), expectedRetries);
         assertEquals(policy.getSleepTimeMs(10, 0), expectedCeiling);
