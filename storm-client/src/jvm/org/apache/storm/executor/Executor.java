@@ -77,6 +77,7 @@ import org.apache.storm.shade.org.jctools.queues.MpscChunkedArrayQueue;
 import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.stats.CommonStats;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.TupleImpl;
@@ -107,6 +108,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final CountDownLatch workerReady;
     protected final AtomicBoolean stormActive;
     protected final AtomicReference<Map<String, DebugOptions>> stormComponentDebug;
+    protected final TupleTracer tupleTracer;
     protected final Runnable suicideFn;
     protected final IStormClusterState stormClusterState;
     protected final Map<Integer, String> taskToComponent;
@@ -152,6 +154,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         this.openOrPrepareWasCalled = new AtomicBoolean(false);
         this.topoConf = normalizedComponentConf(workerData.getTopologyConf(), workerTopologyContext,
                 componentId);
+        this.tupleTracer = workerData.getTupleTracer();
         this.receiveQueue = (workerData.getExecutorReceiveQueueMap().get(executorId));
         this.stormId = workerData.getTopologyId();
         this.conf = workerData.getConf();
@@ -821,6 +824,13 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     public String getComponentId() {
         return componentId;
+    }
+
+    /**
+     * Returns the tracer of this worker, or null when tuples are not traced.
+     */
+    public TupleTracer getTupleTracer() {
+        return tupleTracer;
     }
 
     public AtomicBoolean getOpenOrPrepareWasCalled() {

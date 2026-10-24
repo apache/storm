@@ -36,6 +36,7 @@ import org.apache.storm.stats.ClientStatsUtil;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
@@ -223,13 +224,30 @@ public class BoltExecutor extends Executor {
             if (isSampled) {
                 tuple.setProcessSampleStartTime(now);
             }
-            if (isExecuteSampler) {
-                tuple.setExecuteSampleStartTime(now);
+            Object received = tupleTracer == null ? null : tuple.getTraceContext();
+            TupleTracer.ExecuteScope scope =
+                received == null ? null : tupleTracer.startExecute(taskId, tuple, received);
+            long delta;
+            if (scope == null) {
+                if (isExecuteSampler) {
+                    // leave out a startExecute() call that returned null
+                    tuple.setExecuteSampleStartTime(received == null ? now : Time.currentTimeMillis());
+                }
+                boltObject.execute(tuple);
+                delta = executeDelta(tuple);
+            } else {
+                try (scope) {
+                    // anchored emits and fail() read the context from the tuple, also after execute() returns
+                    tuple.setTraceContext(scope.context());
+                    // the execute latency leaves out opening and closing the scope
+                    if (isExecuteSampler) {
+                        tuple.setExecuteSampleStartTime(Time.currentTimeMillis());
+                    }
+                    boltObject.execute(tuple);
+                    delta = executeDelta(tuple);
+                }
             }
-            boltObject.execute(tuple);
 
-            Long ms = tuple.getExecuteSampleStartTime();
-            long delta = (ms != null) ? Time.deltaMs(ms) : -1;
             if (isDebug) {
                 LOG.info("Execute done TUPLE {} TASK: {} DELTA: {}", tuple, taskId, delta);
             }
@@ -247,5 +265,10 @@ public class BoltExecutor extends Executor {
                         .getSourceStreamId(), delta);
             }
         }
+    }
+
+    private static long executeDelta(TupleImpl tuple) {
+        Long ms = tuple.getExecuteSampleStartTime();
+        return (ms != null) ? Time.deltaMs(ms) : -1;
     }
 }

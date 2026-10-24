@@ -1989,6 +1989,14 @@ public class Config extends HashMap<String, Object> {
     @IsPositiveNumber(includeZero = false)
     public static final String TOPOLOGY_TUPLE_COMPRESSION_MAX_DECOMPRESSED_BYTES =
         "topology.tuple.compression.max.decompressed.bytes";
+
+    /**
+     * The class that traces tuples, an implementation of {@link org.apache.storm.tracing.TupleTracer} with a zero-arg constructor.
+     * Each worker creates one instance. When unset, tuples are not traced.
+     */
+    @IsString
+    public static final String TOPOLOGY_TRACING_TRACER = "topology.tracing.tracer";
+
     /**
      * Topology configuration to make tuple deserialization failures fatal instead of dropping the
      * undecodable message.
