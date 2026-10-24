@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.generated.AuthorizationException;
@@ -37,16 +36,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Provides a way to store blobs that can be downloaded. Blobs must be able to be uploaded and listed from Nimbus, and
- * downloaded from the Supervisors. It is a key value based store. Key being a string and value being the blob data.
+ * Provides a way to store blobs that can be downloaded. Blobs must be able to be uploaded and
+ * listed from Nimbus, and
+ * downloaded from the Supervisors. It is a key value based store. Key being a string and value
+ * being the blob data.
  *
- * <p>ACL checking must take place against the provided subject. If the blob store does not support Security it must
+ * <p>ACL checking must take place against the provided subject. If the blob store does not support
+ * Security it must
  * validate that all ACLs set are always WORLD, everything.
  *
- * <p>The users can upload their blobs through the blob store command line. The command line also allows us to update
+ * <p>The users can upload their blobs through the blob store command line. The command line also
+ * allows us to update
  * and delete blobs.
  *
- * <p>Modifying the replication factor only works for HdfsBlobStore as for the LocalFsBlobStore the replication is
+ * <p>Modifying the replication factor only works for HdfsBlobStore as for the LocalFsBlobStore the
+ * replication is
  * dependent on the number of Nimbodes available.
  */
 public abstract class BlobStore implements Shutdownable, AutoCloseable {
@@ -72,7 +76,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param baseDir    The directory path to store the blobs
      * @param nimbusInfo Contains the nimbus host, port and leadership information
      */
-    public abstract void prepare(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo, ILeaderElector leaderElector);
+    public abstract void prepare(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo,
+            ILeaderElector leaderElector);
 
     /**
      * Start the syncing blobs between the local running instance of the BlobStore and others.
@@ -91,8 +96,9 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param who  Is the subject creating the blob
      * @return AtomicOutputStream returns a stream into which the data can be written
      */
-    public abstract AtomicOutputStream createBlob(String key, SettableBlobMeta meta, Subject who) throws AuthorizationException,
-        KeyAlreadyExistsException;
+    public abstract AtomicOutputStream createBlob(String key, SettableBlobMeta meta,
+            Subject who) throws AuthorizationException,
+            KeyAlreadyExistsException;
 
     /**
      * Wrapper called to create the blob which contains the byte data.
@@ -102,7 +108,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param meta Metadata which contains the acls information
      * @param who  Is the subject creating the blob
      */
-    public void createBlob(String key, byte[] data, SettableBlobMeta meta, Subject who) throws AuthorizationException,
+    public void createBlob(String key, byte[] data, SettableBlobMeta meta,
+            Subject who) throws AuthorizationException,
             KeyAlreadyExistsException, IOException {
         AtomicOutputStream out = null;
         try {
@@ -125,7 +132,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param meta Metadata which contains the acls information
      * @param who  Is the subject creating the blob
      */
-    public void createBlob(String key, InputStream in, SettableBlobMeta meta, Subject who) throws AuthorizationException,
+    public void createBlob(String key, InputStream in, SettableBlobMeta meta,
+            Subject who) throws AuthorizationException,
             KeyAlreadyExistsException, IOException {
         AtomicOutputStream out = null;
         try {
@@ -156,7 +164,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param who Is the subject having the write privilege for the blob
      * @return AtomicOutputStream returns a stream into which the data can be written
      */
-    public abstract AtomicOutputStream updateBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
+    public abstract AtomicOutputStream updateBlob(String key,
+            Subject who) throws AuthorizationException, KeyNotFoundException;
 
     /**
      * Wrapper called to create the blob which contains the byte data.
@@ -165,7 +174,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param data Byte data that needs to be uploaded
      * @param who  Is the subject creating the blob
      */
-    public void updateBlob(String key, byte[] data, Subject who) throws AuthorizationException, IOException, KeyNotFoundException {
+    public void updateBlob(String key, byte[] data,
+            Subject who) throws AuthorizationException, IOException, KeyNotFoundException {
         AtomicOutputStream out = null;
         try {
             out = updateBlob(key, who);
@@ -180,13 +190,15 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
-     * Gets the current version of metadata for a blob to be viewed by the user or downloaded by the supervisor.
+     * Gets the current version of metadata for a blob to be viewed by the user or downloaded by the
+     * supervisor.
      *
      * @param key Key for the blob
      * @param who Is the subject having the read privilege for the blob
      * @return AtomicOutputStream returns a stream into which the data can be written
      */
-    public abstract ReadableBlobMeta getBlobMeta(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
+    public abstract ReadableBlobMeta getBlobMeta(String key,
+            Subject who) throws AuthorizationException, KeyNotFoundException;
 
     /**
      * Sets leader elector (only used by LocalFsBlobStore to help sync blobs between Nimbi.
@@ -201,7 +213,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param meta Metadata which contains the updated acls information
      * @param who  Is the subject having the write privilege for the blob
      */
-    public abstract void setBlobMeta(String key, SettableBlobMeta meta, Subject who) throws AuthorizationException, KeyNotFoundException;
+    public abstract void setBlobMeta(String key, SettableBlobMeta meta,
+            Subject who) throws AuthorizationException, KeyNotFoundException;
 
     /**
      * Deletes the blob data and metadata.
@@ -209,7 +222,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param key Key for the blob
      * @param who Is the subject having write privilege for the blob
      */
-    public abstract void deleteBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
+    public abstract void deleteBlob(String key,
+            Subject who) throws AuthorizationException, KeyNotFoundException;
 
     /**
      * Gets the InputStream to read the blob details.
@@ -218,7 +232,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param who Is the subject having the read privilege for the blob
      * @return InputStreamWithMeta has the additional file length and version information
      */
-    public abstract InputStreamWithMeta getBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException;
+    public abstract InputStreamWithMeta getBlob(String key,
+            Subject who) throws AuthorizationException, KeyNotFoundException;
 
     /**
      * Returns an iterator with all the list of keys currently available on the blob store.
@@ -244,8 +259,9 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param who         Is the subject having the update privilege for the blob
      * @return BlobReplication object containing the updated replication factor for the blob
      */
-    public abstract int updateBlobReplication(String key, int replication, Subject who) throws AuthorizationException, KeyNotFoundException,
-        IOException;
+    public abstract int updateBlobReplication(String key, int replication,
+            Subject who) throws AuthorizationException, KeyNotFoundException,
+            IOException;
 
     @Override
     public void close() {
@@ -278,7 +294,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param out Output stream
      * @param who Is the subject having read privilege for the blob
      */
-    public void readBlobTo(String key, OutputStream out, Subject who) throws IOException, KeyNotFoundException, AuthorizationException {
+    public void readBlobTo(String key, OutputStream out,
+            Subject who) throws IOException, KeyNotFoundException, AuthorizationException {
         InputStreamWithMeta in = getBlob(key, who);
         if (in == null) {
             throw new IOException("Could not find " + key);
@@ -301,7 +318,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
      * @param key Key for the blob
      * @param who Is the subject having the read privilege for the blob
      */
-    public byte[] readBlob(String key, Subject who) throws IOException, KeyNotFoundException, AuthorizationException {
+    public byte[] readBlob(String key,
+            Subject who) throws IOException, KeyNotFoundException, AuthorizationException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         readBlobTo(key, out, who);
         byte[] bytes = out.toByteArray();
@@ -311,6 +329,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
 
     /**
      * Get IDs stored in blob store.
+     *
      * @return a set of all of the topology ids with special data stored in the blob store.
      */
     public Set<String> storedTopoIds() {
@@ -327,7 +346,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
-     * Validates that the blob update time of the blobstore is up to date with the current existing blobs.
+     * Validates that the blob update time of the blobstore is up to date with the current existing
+     * blobs.
      *
      * @throws IOException on any error
      */
@@ -396,7 +416,7 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
         @Override
         public void close() throws IOException {
             try {
-                //close means commit
+                // close means commit
                 out.close();
                 part.commit();
             } catch (IOException | RuntimeException e) {
@@ -431,7 +451,8 @@ public abstract class BlobStore implements Shutdownable, AutoCloseable {
     }
 
     /**
-     * Input stream implementation used for writing both the metadata containing the acl information and the blob data.
+     * Input stream implementation used for writing both the metadata containing the acl information
+     * and the blob data.
      */
     protected class BlobStoreFileInputStream extends InputStreamWithMeta {
         private BlobStoreFile part;

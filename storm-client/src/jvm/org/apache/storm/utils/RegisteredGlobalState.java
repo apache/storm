@@ -16,8 +16,10 @@ import java.util.HashMap;
 import java.util.UUID;
 
 /**
- * This class is used as part of testing Storm. It is used to keep track of "global metrics" in an atomic way. For example, it is used for
- * doing fine-grained detection of when a local Storm cluster is idle by tracking the number of transferred tuples vs the number of
+ * This class is used as part of testing Storm. It is used to keep track of "global metrics" in an
+ * atomic way. For example, it is used for
+ * doing fine-grained detection of when a local Storm cluster is idle by tracking the number of
+ * transferred tuples vs the number of
  * processed tuples.
  */
 public class RegisteredGlobalState {

@@ -27,15 +27,18 @@ import org.junit.jupiter.api.Tag;
 
 /**
  * Annotation to mark integration tests. Integration tests will be run during the Maven
- * <b><i>integration-test</i></b> phase, whereas unit tests will be run during the Maven <b><i>test</i></b> phase.
+ * <b><i>integration-test</i></b> phase, whereas unit tests will be run during the Maven
+ * <b><i>test</i></b> phase.
  * <p/>
- * Integration tests can be in the same package as unit tests. To mark a test as integration test, add the annotation
+ * Integration tests can be in the same package as unit tests. To mark a test as integration test,
+ * add the annotation
  *
- * {@literal @}IntegrationTest to the class definition, or to any methods you want to run during the integration test phase. For example:
+ * {@literal @}IntegrationTest to the class definition, or to any methods you want to run during the
+ * integration test phase. For example:
  *     <p/>
  * {@literal @}IntegrationTest <br/> public class MyIntegrationTest {<br/> ...<br/> }
  */
-@Target({ ElementType.TYPE, ElementType.METHOD })
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Tag("IntegrationTest")

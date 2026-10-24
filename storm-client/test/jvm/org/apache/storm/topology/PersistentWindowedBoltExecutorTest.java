@@ -12,6 +12,12 @@
 
 package org.apache.storm.topology;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.AdditionalAnswers.returnsArgAt;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,14 +54,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.AdditionalAnswers.returnsArgAt;
-
 /**
- * Unit tests for {@link PersistentWindowedBoltExecutor}
+ * Unit tests for {@link PersistentWindowedBoltExecutor}.
  */
 @ExtendWith(MockitoExtension.class)
 public class PersistentWindowedBoltExecutorTest {
@@ -104,7 +104,8 @@ public class PersistentWindowedBoltExecutorTest {
         tupleTs = System.currentTimeMillis();
         Mockito.when(mockBolt.getTimestampExtractor()).thenReturn(mockTimestampExtractor);
         mockTopologyContext = Mockito.mock(TopologyContext.class);
-        Mockito.when(mockTopologyContext.getThisStreams()).thenReturn(Collections.singleton(LATE_STREAM));
+        Mockito.when(mockTopologyContext.getThisStreams()).thenReturn(Collections
+                .singleton(LATE_STREAM));
         mockOutputCollector = Mockito.mock(OutputCollector.class);
         executor = new PersistentWindowedBoltExecutor<>(mockBolt);
         testStormConf.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT, WINDOW_EVENT_COUNT);
@@ -116,14 +117,16 @@ public class PersistentWindowedBoltExecutorTest {
         Mockito.when(mockPartitionState.get(Mockito.any(), Mockito.any())).then(returnsArgAt(1));
         Mockito.when(mockWindowState.get(Mockito.any(), Mockito.any())).then(returnsArgAt(1));
         Mockito.when(mockSystemState.iterator()).thenReturn(
-            ImmutableMap.<String, Optional<?>>of("es", Optional.empty(), "ts", Optional.empty()).entrySet().iterator());
+                ImmutableMap.<String, Optional<?>>of("es", Optional.empty(), "ts", Optional.empty())
+                .entrySet().iterator());
         executor.prepare(testStormConf, mockTopologyContext, mockOutputCollector,
-                         mockWindowState, mockPartitionState, mockSystemState);
+                mockWindowState, mockPartitionState, mockSystemState);
     }
 
     @Test
     public void testExecuteTuple() {
-        Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong())).thenReturn(true);
+        Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong()))
+                .thenReturn(true);
         Mockito.when(mockTimestampExtractor.extractTimestamp(Mockito.any())).thenReturn(tupleTs);
         Tuple mockTuple = Mockito.mock(Tuple.class);
         executor.initState(null);
@@ -135,7 +138,8 @@ public class PersistentWindowedBoltExecutorTest {
 
     @Test
     public void testExecuteLatetuple() {
-        Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong())).thenReturn(false);
+        Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong()))
+                .thenReturn(false);
         Mockito.when(mockTimestampExtractor.extractTimestamp(Mockito.any())).thenReturn(tupleTs);
         Tuple mockTuple = Mockito.mock(Tuple.class);
         Mockito.when(mockTuple.getFields()).thenReturn(new Fields("ts"));
@@ -148,7 +152,7 @@ public class PersistentWindowedBoltExecutorTest {
         // late tuple emitted
         ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
         Mockito.verify(mockOutputCollector, Mockito.times(1))
-               .emit(stringCaptor.capture(), anchorCaptor.capture(), valuesCaptor.capture());
+                .emit(stringCaptor.capture(), anchorCaptor.capture(), valuesCaptor.capture());
         assertEquals(LATE_STREAM, stringCaptor.getValue());
         assertEquals(Collections.singletonList(mockTuple), anchorCaptor.getValue());
         assertEquals(new Values(new DetachedTuple(mockTuple)), valuesCaptor.getValue());
@@ -156,7 +160,8 @@ public class PersistentWindowedBoltExecutorTest {
 
     @Test
     public void testActivation() {
-        Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong())).thenReturn(true);
+        Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong()))
+                .thenReturn(true);
         Mockito.when(mockTimestampExtractor.extractTimestamp(Mockito.any())).thenReturn(tupleTs);
         executor.initState(null);
         executor.waterMarkEventGenerator = mockWaterMarkEventGenerator;
@@ -164,7 +169,8 @@ public class PersistentWindowedBoltExecutorTest {
         List<Tuple> mockTuples = getMockTuples(WINDOW_EVENT_COUNT);
         mockTuples.forEach(t -> executor.execute(t));
         // all tuples acked
-        Mockito.verify(mockOutputCollector, Mockito.times(WINDOW_EVENT_COUNT)).ack(tupleCaptor.capture());
+        Mockito.verify(mockOutputCollector, Mockito.times(WINDOW_EVENT_COUNT)).ack(tupleCaptor
+                .capture());
         assertArrayEquals(mockTuples.toArray(), tupleCaptor.getAllValues().toArray());
 
         Mockito.doAnswer((Answer<Void>) invocation -> {
@@ -183,32 +189,37 @@ public class PersistentWindowedBoltExecutorTest {
 
         // partition ids
         ArgumentCaptor<String> pkCatptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(mockPartitionState, Mockito.times(1)).put(pkCatptor.capture(), partitionValuesCaptor.capture());
+        Mockito.verify(mockPartitionState, Mockito.times(1)).put(pkCatptor.capture(),
+                partitionValuesCaptor.capture());
         assertEquals(PARTITION_KEY, pkCatptor.getValue());
         List<Long> expectedPartitionIds = Collections.singletonList(0L);
-        assertThat(partitionValuesCaptor.getValue(), contains(expectedPartitionIds.toArray(new Long[0])));
+        assertThat(partitionValuesCaptor.getValue(), contains(expectedPartitionIds
+                .toArray(new Long[0])));
 
         // window partitions
-        Mockito.verify(mockWindowState, Mockito.times(1)).put(longCaptor.capture(), windowValuesCaptor.capture());
+        Mockito.verify(mockWindowState, Mockito.times(1)).put(longCaptor.capture(),
+                windowValuesCaptor.capture());
         assertEquals((long) expectedPartitionIds.get(0), (long) longCaptor.getValue());
         assertEquals(WINDOW_EVENT_COUNT, windowValuesCaptor.getValue().size());
         List<Tuple> tuples = windowValuesCaptor.getValue()
-                                               .getEvents().stream().map(Event::get).collect(Collectors.toList());
+                .getEvents().stream().map(Event::get).collect(Collectors.toList());
         assertArrayEquals(mockTuples.toArray(), tuples.toArray());
 
         // window system state
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(mockSystemState, Mockito.times(2)).put(keyCaptor.capture(), systemValuesCaptor.capture());
+        Mockito.verify(mockSystemState, Mockito.times(2)).put(keyCaptor.capture(),
+                systemValuesCaptor.capture());
         assertEquals(EVICTION_STATE_KEY, keyCaptor.getAllValues().get(0));
         assertEquals(Optional.of(Pair.of((long) WINDOW_EVENT_COUNT, (long) WINDOW_EVENT_COUNT)),
-                            systemValuesCaptor.getAllValues().get(0));
+                systemValuesCaptor.getAllValues().get(0));
         assertEquals(TRIGGER_STATE_KEY, keyCaptor.getAllValues().get(1));
         assertEquals(Optional.of(tupleTs), systemValuesCaptor.getAllValues().get(1));
     }
 
     @Test
     public void testCacheEviction() {
-        Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong())).thenReturn(true);
+        Mockito.when(mockWaterMarkEventGenerator.track(Mockito.any(), Mockito.anyLong()))
+                .thenReturn(true);
         Mockito.when(mockTimestampExtractor.extractTimestamp(Mockito.any())).thenReturn(tupleTs);
         executor.initState(null);
         executor.waterMarkEventGenerator = mockWaterMarkEventGenerator;
@@ -218,19 +229,22 @@ public class PersistentWindowedBoltExecutorTest {
 
         int numPartitions = tupleCount / WindowState.MAX_PARTITION_EVENTS;
         int numEvictedPartitions = numPartitions - WindowState.MIN_PARTITIONS;
-        Mockito.verify(mockWindowState, Mockito.times(numEvictedPartitions)).put(longCaptor.capture(), windowValuesCaptor.capture());
+        Mockito.verify(mockWindowState, Mockito.times(numEvictedPartitions)).put(longCaptor
+                .capture(), windowValuesCaptor.capture());
         // number of evicted events
         assertEquals(numEvictedPartitions * WindowState.MAX_PARTITION_EVENTS,
-            windowValuesCaptor.getAllValues().stream().mapToInt(x -> x.size()).sum());
+                windowValuesCaptor.getAllValues().stream().mapToInt(x -> x.size()).sum());
 
         Map<Long, WindowState.WindowPartition<Tuple>> partitionMap = new HashMap<>();
         windowValuesCaptor.getAllValues().forEach(v -> partitionMap.put(v.getId(), v));
 
         ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(mockPartitionState, Mockito.times(numPartitions)).put(stringCaptor.capture(), partitionValuesCaptor.capture());
+        Mockito.verify(mockPartitionState, Mockito.times(numPartitions)).put(stringCaptor.capture(),
+                partitionValuesCaptor.capture());
         // partition ids 0 .. 19
         assertThat(partitionValuesCaptor.getAllValues().get(numPartitions - 1),
-            contains(LongStream.range(0, numPartitions).boxed().collect(Collectors.toList()).toArray(new Long[0])));
+                contains(LongStream.range(0, numPartitions).boxed().collect(Collectors.toList())
+                .toArray(new Long[0])));
 
         Mockito.when(mockWindowState.get(Mockito.any(), Mockito.any())).then(invocation -> {
             Long partition = invocation.getArgument(0);
@@ -248,7 +262,8 @@ public class PersistentWindowedBoltExecutorTest {
         long activationTs = tupleTs + 1000;
         executor.getWindowManager().add(new WaterMarkEvent<>(activationTs));
 
-        Mockito.verify(mockBolt, Mockito.times(tupleCount / WINDOW_EVENT_COUNT)).execute(Mockito.any());
+        Mockito.verify(mockBolt, Mockito.times(tupleCount / WINDOW_EVENT_COUNT)).execute(Mockito
+                .any());
     }
 
     @Test
@@ -269,7 +284,8 @@ public class PersistentWindowedBoltExecutorTest {
         Mockito.verify(mockBolt, Mockito.times(1)).preRollback();
         Mockito.verify(mockPartitionState, Mockito.times(1)).rollback();
         ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-        Mockito.verify(mockPartitionState, Mockito.times(2)).put(stringArgumentCaptor.capture(), partitionValuesCaptor.capture());
+        Mockito.verify(mockPartitionState, Mockito.times(2)).put(stringArgumentCaptor.capture(),
+                partitionValuesCaptor.capture());
         Mockito.verify(mockWindowState, Mockito.times(1)).rollback();
         Mockito.verify(mockSystemState, Mockito.times(1)).rollback();
         Mockito.verify(mockSystemState, Mockito.times(2)).iterator();

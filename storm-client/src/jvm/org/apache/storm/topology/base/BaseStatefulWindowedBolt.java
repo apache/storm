@@ -142,7 +142,8 @@ public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWind
     }
 
     /**
-     * Specify the name of the field in the tuple that holds the message id. This is used to track the windowing boundaries and
+     * Specify the name of the field in the tuple that holds the message id. This is used to track
+     * the windowing boundaries and
      * re-evaluating the windowing operation during recovery of IStatefulWindowedBolt
      *
      * @param fieldName the name of the field that contains the message id
@@ -153,7 +154,8 @@ public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWind
     }
 
     /**
-     * If set, the stateful windowed bolt would use the backend state for window persistence and only keep a sub-set of events in memory as
+     * If set, the stateful windowed bolt would use the backend state for window persistence and
+     * only keep a sub-set of events in memory as
      * specified by {@link #withMaxEventsInMemory(long)}.
      */
     public BaseStatefulWindowedBolt<T> withPersistence() {
@@ -162,8 +164,10 @@ public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWind
     }
 
     /**
-     * The maximum number of window events to keep in memory. This is meaningful only if {@link #withPersistence()} is also set. As the
-     * number of events in memory grows close to the maximum, the events that are less likely to be used again are evicted and persisted.
+     * The maximum number of window events to keep in memory. This is meaningful only if {@link
+     * #withPersistence()} is also set. As the
+     * number of events in memory grows close to the maximum, the events that are less likely to be
+     * used again are evicted and persisted.
      * The default value for this is {@code 1,000,000}.
      *
      * @param maxEventsInMemory the maximum number of window events to keep in memory
@@ -180,7 +184,8 @@ public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWind
 
     @Override
     public long maxEventsInMemory() {
-        return maxEventsInMemory > 0 ? maxEventsInMemory : IStatefulWindowedBolt.super.maxEventsInMemory();
+        return maxEventsInMemory > 0 ? maxEventsInMemory : IStatefulWindowedBolt.super
+                .maxEventsInMemory();
     }
 
     @Override

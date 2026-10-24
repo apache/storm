@@ -17,25 +17,17 @@
 
 package org.apache.storm.security.auth.tls;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.net.Socket;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.List;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.X509KeyManager;
 import org.apache.storm.daemon.common.FileWatcher;
-import org.apache.storm.shade.io.netty.buffer.ByteBufAllocator;
-import org.apache.storm.shade.io.netty.handler.ssl.ApplicationProtocolNegotiator;
-import org.apache.storm.shade.io.netty.handler.ssl.SslContext;
 import org.apache.storm.utils.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,18 +40,22 @@ public class ReloadableX509KeyManager implements X509KeyManager {
     private volatile X509KeyManager keyManager;
 
     public ReloadableX509KeyManager(String keystorePath, String keystorePassword) throws Exception {
-        keyManager = createKeyManager(getKeyStore(keystorePath, keystorePassword), keystorePassword);
+        keyManager = createKeyManager(getKeyStore(keystorePath, keystorePassword),
+                keystorePassword);
         FileWatcher.Callback keyStoreWatcherCallback = () -> {
             reloadCert(keystorePath, keystorePassword);
         };
-        FileWatcher keyStoreWatcher = new FileWatcher(Paths.get(keystorePath), keyStoreWatcherCallback);
+        FileWatcher keyStoreWatcher = new FileWatcher(Paths.get(keystorePath),
+                keyStoreWatcherCallback);
         keyStoreWatcher.start();
     }
 
-    public X509KeyManager createKeyManager(KeyStore keystore, String keystorePassword) throws Exception {
+    public X509KeyManager createKeyManager(KeyStore keystore,
+            String keystorePassword) throws Exception {
         // Load the keystore
 
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
+                .getDefaultAlgorithm());
         kmf.init(keystore, keystorePassword.toCharArray());
 
         X509KeyManager x509KeyManager = null;
@@ -112,12 +108,13 @@ public class ReloadableX509KeyManager implements X509KeyManager {
     private synchronized void reloadCert(String keystorePath, String keystorePassword) {
         try {
             LOG.info("Reloading KeyManager");
-            keyManager = createKeyManager(getKeyStore(keystorePath, keystorePassword), keystorePassword);
+            keyManager = createKeyManager(getKeyStore(keystorePath, keystorePassword),
+                    keystorePassword);
             LOG.info("Reloading KeyManager - Done");
         } catch (Exception e) {
             LOG.error("Error reloading KeyManager. Setting keyManager to null", e);
             keyManager = null;
-            //on error set keyManager to null
+            // on error set keyManager to null
         }
     }
 

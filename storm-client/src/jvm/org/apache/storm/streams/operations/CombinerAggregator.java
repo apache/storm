@@ -17,7 +17,8 @@ package org.apache.storm.streams.operations;
  */
 public interface CombinerAggregator<T, A, R> extends Operation {
     /**
-     * A static factory to create a {@link CombinerAggregator} based on initial value, accumulator and combiner.
+     * A static factory to create a {@link CombinerAggregator} based on initial value, accumulator
+     * and combiner.
      *
      * @param initialValue the initial value of the result to start with
      * @param accumulator  a function that accumulates values into a partial result
@@ -25,8 +26,10 @@ public interface CombinerAggregator<T, A, R> extends Operation {
      * @return the {@link CombinerAggregator}
      */
     static <T, R> CombinerAggregator<T, R, R> of(R initialValue,
-                                                 BiFunction<? super R, ? super T, ? extends R> accumulator,
-                                                 BiFunction<? super R, ? super R, ? extends R> combiner) {
+                                                 BiFunction<? super R, ? super T,
+                                                 ? extends R> accumulator,
+                                                 BiFunction<? super R, ? super R,
+                                                 ? extends R> combiner) {
         return new CombinerAggregator<T, R, R>() {
             @Override
             public R init() {

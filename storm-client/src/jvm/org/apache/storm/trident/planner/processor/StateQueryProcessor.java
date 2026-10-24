@@ -27,7 +27,6 @@ import org.apache.storm.trident.tuple.TridentTuple.Factory;
 import org.apache.storm.trident.tuple.TridentTupleView.ProjectionFactory;
 import org.apache.storm.tuple.Fields;
 
-
 public class StateQueryProcessor implements TridentProcessor {
     QueryFunction function;
     State state;
@@ -44,7 +43,8 @@ public class StateQueryProcessor implements TridentProcessor {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> conf, TopologyContext context,
+        TridentContext tridentContext) {
         List<Factory> parents = tridentContext.getParentTupleFactories();
         if (parents.size() != 1) {
             throw new RuntimeException("State query operation can only have one parent");
@@ -82,10 +82,12 @@ public class StateQueryProcessor implements TridentProcessor {
     public void finishBatch(ProcessorContext processorContext) {
         BatchState state = (BatchState) processorContext.state[context.getStateIndex()];
         if (!state.tuples.isEmpty()) {
-            List<Object> results = function.batchRetrieve(this.state, Collections.unmodifiableList(state.args));
+            List<Object> results = function.batchRetrieve(this.state, Collections
+                    .unmodifiableList(state.args));
             if (results.size() != state.tuples.size()) {
                 throw new RuntimeException(
-                    "Results size is different than argument size: " + results.size() + " vs " + state.tuples.size());
+                        "Results size is different than argument size: " + results.size() + " vs "
+                        + state.tuples.size());
             }
             for (int i = 0; i < state.tuples.size(); i++) {
                 TridentTuple tuple = state.tuples.get(i);

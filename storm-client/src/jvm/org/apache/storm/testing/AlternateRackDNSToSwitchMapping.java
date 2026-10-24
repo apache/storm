@@ -21,7 +21,8 @@ import org.apache.storm.networktopography.AbstractDNSToSwitchMapping;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 
 /**
- * This class implements the {@link DNSToSwitchMapping} interface It alternates bewteen RACK1 and RACK2 for the hosts.
+ * This class implements the {@link DNSToSwitchMapping} interface It alternates bewteen RACK1 and
+ * RACK2 for the hosts.
  */
 @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public final class AlternateRackDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
@@ -33,7 +34,7 @@ public final class AlternateRackDNSToSwitchMapping extends AbstractDNSToSwitchMa
         TreeSet<String> sortedNames = new TreeSet<String>(names);
         Map<String, String> m = new HashMap<String, String>();
         if (names.isEmpty()) {
-            //name list is empty, return an empty map
+            // name list is empty, return an empty map
             return m;
         }
 

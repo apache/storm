@@ -94,7 +94,6 @@ public class TridentUtils {
         return ret;
     }
 
-
     public static <T> T getParent(Graph g, T n) {
         List<T> parents = getParents(g, n);
         if (parents.size() != 1) {

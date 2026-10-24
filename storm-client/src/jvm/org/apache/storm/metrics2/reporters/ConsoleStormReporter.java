@@ -15,7 +15,6 @@ package org.apache.storm.metrics2.reporters;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
-
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
@@ -31,7 +30,8 @@ public class ConsoleStormReporter extends ScheduledStormReporter implements Dime
     private static final Logger LOG = LoggerFactory.getLogger(ConsoleStormReporter.class);
 
     @Override
-    public void prepare(MetricRegistry registry, Map<String, Object> topoConf, Map<String, Object> reporterConf) {
+    public void prepare(MetricRegistry registry, Map<String, Object> topoConf, Map<String,
+        Object> reporterConf) {
         init(registry, null, reporterConf);
     }
 
@@ -41,7 +41,8 @@ public class ConsoleStormReporter extends ScheduledStormReporter implements Dime
         init(metricRegistryProvider.getRegistry(), metricRegistryProvider, reporterConf);
     }
 
-    private void init(MetricRegistry registry, MetricRegistryProvider metricRegistryProvider, Map<String, Object> reporterConf) {
+    private void init(MetricRegistry registry, MetricRegistryProvider metricRegistryProvider,
+            Map<String, Object> reporterConf) {
         LOG.debug("Preparing ConsoleReporter");
         ConsoleReporter.Builder builder = ConsoleReporter.forRegistry(registry);
 
@@ -66,10 +67,10 @@ public class ConsoleStormReporter extends ScheduledStormReporter implements Dime
             builder.filter(filter);
         }
 
-        //defaults to 10
+        // defaults to 10
         reportingPeriod = getReportPeriod(reporterConf);
 
-        //defaults to seconds
+        // defaults to seconds
         reportingPeriodUnit = getReportPeriodUnit(reporterConf);
 
         ScheduledReporter consoleReporter = builder.build();
@@ -77,7 +78,8 @@ public class ConsoleStormReporter extends ScheduledStormReporter implements Dime
         boolean reportDimensions = isReportDimensionsEnabled(reporterConf);
         if (reportDimensions) {
             if (metricRegistryProvider == null) {
-                throw new RuntimeException("MetricRegistryProvider is required to enable reporting dimensions");
+                throw new RuntimeException("MetricRegistryProvider is required to enable "
+                        + "reporting dimensions");
             }
             if (rateUnit == null) {
                 rateUnit = TimeUnit.SECONDS;
@@ -85,7 +87,8 @@ public class ConsoleStormReporter extends ScheduledStormReporter implements Dime
             if (durationUnit == null) {
                 durationUnit = TimeUnit.MILLISECONDS;
             }
-            DimensionalReporter dimensionalReporter = new DimensionalReporter(metricRegistryProvider, consoleReporter, this,
+            DimensionalReporter dimensionalReporter =
+                    new DimensionalReporter(metricRegistryProvider, consoleReporter, this,
                     "ConsoleDimensionalReporter",
                     filter, rateUnit, durationUnit, null, true);
             reporter = dimensionalReporter;

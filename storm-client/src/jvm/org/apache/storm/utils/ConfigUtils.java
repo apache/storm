@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;
@@ -43,7 +42,8 @@ public class ConfigUtils {
     public static final double RFC1889_ALPHA = 1.0 / 16.0;
 
     private static final Set<String> passwordConfigKeys = new HashSet<>();
-    private static final Pattern CREDENTIAL_KEY_NAME = Pattern.compile("(?i)(password|passwd|secret)");
+    private static final Pattern CREDENTIAL_KEY_NAME = Pattern
+            .compile("(?i)(password|passwd|secret)");
 
     static {
         for (Class<?> clazz : ConfigValidation.getConfigClasses()) {
@@ -63,13 +63,13 @@ public class ConfigUtils {
         }
     }
 
-
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
     private static ConfigUtils instance = new ConfigUtils();
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * Provide an instance of this class for delegates to use. To mock out delegated methods,
+     * provide an instance of a subclass that
      * overrides the implementation of the delegated method.
      *
      * @param u a ConfigUtils instance
@@ -82,41 +82,49 @@ public class ConfigUtils {
     }
 
     public static Map<String, Object> maskPasswords(final Map<String, Object> conf) {
-        Maps.EntryTransformer<String, Object, Object> maskPasswords = new Maps.EntryTransformer<String, Object, Object>() {
-            @Override
-            public Object transformEntry(String key, Object value) {
-                return passwordConfigKeys.contains(key) ? "*****" : value;
-            }
-        };
+        Maps.EntryTransformer<String, Object, Object> maskPasswords =
+                new Maps.EntryTransformer<String, Object, Object>() {
+                @Override
+                public Object transformEntry(String key, Object value) {
+                    return passwordConfigKeys.contains(key) ? "*****" : value;
+                }
+            };
         return Maps.transformEntries(conf, maskPasswords);
     }
 
     /**
      * Mask credential values before a config map is served over an API. This covers what
-     * {@link #maskPasswords(Map)} covers, plus string values whose key name denotes a secret: plugins read their
-     * own keys straight out of the config map, so those keys are declared by no annotated field and the annotation
-     * scan cannot see them. Only string values are considered, so timeouts and class lists whose names merely
+     * {@link #maskPasswords(Map)} covers, plus string values whose key name denotes a secret:
+     * plugins read their
+     * own keys straight out of the config map, so those keys are declared by no annotated field and
+     * the annotation
+     * scan cannot see them. Only string values are considered, so timeouts and class lists whose
+     * names merely
      * mention credentials keep their value.
      *
      * @param conf the config to mask
      * @return a view of the config with credential values replaced
      */
     public static Map<String, Object> maskCredentials(final Map<String, Object> conf) {
-        Maps.EntryTransformer<String, Object, Object> maskCredentials = new Maps.EntryTransformer<String, Object, Object>() {
-            @Override
-            public Object transformEntry(String key, Object value) {
-                if (passwordConfigKeys.contains(key)) {
-                    return "*****";
+        Maps.EntryTransformer<String, Object, Object> maskCredentials =
+                new Maps.EntryTransformer<String, Object, Object>() {
+                @Override
+                public Object transformEntry(String key, Object value) {
+                    if (passwordConfigKeys.contains(key)) {
+                        return "*****";
+                    }
+                    return value instanceof String && CREDENTIAL_KEY_NAME.matcher(key).find()
+                        ? "*****" : value;
                 }
-                return value instanceof String && CREDENTIAL_KEY_NAME.matcher(key).find() ? "*****" : value;
-            }
-        };
+            };
         return Maps.transformEntries(conf, maskCredentials);
     }
 
     /**
-     * Whether a config key holds a credential, and therefore whether {@link #maskCredentials(Map)} would replace its
-     * value. Callers that read a config back from a daemon use this to tell which entries carry no usable value and
+     * Whether a config key holds a credential, and therefore whether {@link #maskCredentials(Map)}
+     * would replace its
+     * value. Callers that read a config back from a daemon use this to tell which entries carry no
+     * usable value and
      * must be taken from their own configuration instead.
      *
      * @param key the config key
@@ -242,15 +250,16 @@ public class ConfigUtils {
         }
         return ObjectReader.getBoolean(value, false);
     }
-    
+
     public static int upstreamFeedbackFreqSecs(Map<String, Object> conf) {
-        int freqSecs = ObjectReader.getInt(conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS), 10);
+        int freqSecs = ObjectReader.getInt(conf.get(Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS),
+                10);
         if (freqSecs > 0) {
             return freqSecs;
         }
         throw new IllegalArgumentException(
-            "Illegal " + Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS
-                + " in conf: " + freqSecs + " must be > 0");
+                "Illegal " + Config.TOPOLOGY_UPSTREAM_FEEDBACK_FREQ_SECS
+                        + " in conf: " + freqSecs + " must be > 0");
     }
 
     public static BooleanSupplier mkStatsSampler(Map<String, Object> conf) {
@@ -276,7 +285,8 @@ public class ConfigUtils {
         };
     }
 
-    public static StormTopology readSupervisorTopology(Map<String, Object> conf, String stormId, AdvancedFSOps ops) throws IOException {
+    public static StormTopology readSupervisorTopology(Map<String, Object> conf, String stormId,
+            AdvancedFSOps ops) throws IOException {
         return instance.readSupervisorTopologyImpl(conf, stormId, ops);
     }
 
@@ -286,7 +296,8 @@ public class ConfigUtils {
 
     public static String concatIfNotNull(String dir) {
         String ret = "";
-        // we do this since to concat a null String will actually concat a "null", which is not the expected: ""
+        // we do this since to concat a null String will actually concat a "null", which is not the
+        // expected: ""
         if (dir != null) {
             ret = dir;
         }
@@ -299,11 +310,13 @@ public class ConfigUtils {
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static String supervisorStormDistRoot(Map<String, Object> conf, String stormId) throws IOException {
+    public static String supervisorStormDistRoot(Map<String, Object> conf,
+            String stormId) throws IOException {
         return instance.supervisorStormDistRootImpl(conf, stormId);
     }
 
-    public static String sharedByTopologyDir(Map<String, Object> conf, String stormId) throws IOException {
+    public static String sharedByTopologyDir(Map<String, Object> conf,
+            String stormId) throws IOException {
         return supervisorStormDistRoot(conf, stormId) + FILE_SEPARATOR + "shared_by_topology";
     }
 
@@ -343,7 +356,8 @@ public class ConfigUtils {
         }
     }
 
-    public static StormTopology readSupervisorStormCodeGivenPath(String stormCodePath, AdvancedFSOps ops) throws IOException {
+    public static StormTopology readSupervisorStormCodeGivenPath(String stormCodePath,
+            AdvancedFSOps ops) throws IOException {
         return Utils.deserialize(ops.slurp(new File(stormCodePath)), StormTopology.class);
     }
 
@@ -381,18 +395,21 @@ public class ConfigUtils {
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static Map<String, Object> readSupervisorStormConf(Map<String, Object> conf, String stormId) throws IOException {
+    public static Map<String, Object> readSupervisorStormConf(Map<String, Object> conf,
+            String stormId) throws IOException {
         return instance.readSupervisorStormConfImpl(conf, stormId);
     }
 
-    public static Map<String, Object> readSupervisorStormConfGivenPath(Map<String, Object> conf, String topoConfPath) throws IOException {
+    public static Map<String, Object> readSupervisorStormConfGivenPath(Map<String, Object> conf,
+            String topoConfPath) throws IOException {
         Map<String, Object> ret = new HashMap<>(conf);
-        ret.putAll(Utils.fromCompressedJsonConf(FileUtils.readFileToByteArray(new File(topoConfPath))));
+        ret.putAll(Utils.fromCompressedJsonConf(FileUtils
+                .readFileToByteArray(new File(topoConfPath))));
         return ret;
     }
 
     public static Map<String, Object> overrideLoginConfigWithSystemProperty(
-        Map<String, Object> conf) { // note that we delete the return value
+            Map<String, Object> conf) { // note that we delete the return value
         String loginConfFile = System.getProperty("java.security.auth.login.config");
         if (loginConfFile != null) {
             conf.put("java.security.auth.login.config", loginConfFile);
@@ -457,7 +474,8 @@ public class ConfigUtils {
 
     public static String stormDistPath(String stormRoot) {
         String ret = "";
-        // we do this since to concat a null String will actually concat a "null", which is not the expected: ""
+        // we do this since to concat a null String will actually concat a "null", which is not the
+        // expected: ""
         if (stormRoot != null) {
             ret = stormRoot;
         }
@@ -505,16 +523,17 @@ public class ConfigUtils {
             listValue = null;
         } else if (value instanceof Collection) {
             listValue = ((Collection<?>) value)
-                .stream()
-                .map(ObjectReader::getString)
-                .collect(Collectors.toList());
+                    .stream()
+                    .map(ObjectReader::getString)
+                    .collect(Collectors.toList());
         } else {
             listValue = Arrays.asList(ObjectReader.getString(value).split("\\s+"));
         }
         return listValue;
     }
 
-    public StormTopology readSupervisorTopologyImpl(Map<String, Object> conf, String stormId, AdvancedFSOps ops) throws IOException {
+    public StormTopology readSupervisorTopologyImpl(Map<String, Object> conf, String stormId,
+            AdvancedFSOps ops) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String topologyPath = supervisorStormCodePath(stormRoot);
         return readSupervisorStormCodeGivenPath(topologyPath, ops);
@@ -539,7 +558,8 @@ public class ConfigUtils {
         }
     }
 
-    public String supervisorStormDistRootImpl(Map<String, Object> conf, String stormId) throws IOException {
+    public String supervisorStormDistRootImpl(Map<String, Object> conf,
+            String stormId) throws IOException {
         return supervisorStormDistRoot(conf) + FILE_SEPARATOR + Utils.urlEncodeUtf8(stormId);
     }
 
@@ -551,7 +571,8 @@ public class ConfigUtils {
         return (absoluteStormLocalDir(conf) + FILE_SEPARATOR + "workers");
     }
 
-    public Map<String, Object> readSupervisorStormConfImpl(Map<String, Object> conf, String stormId) throws IOException {
+    public Map<String, Object> readSupervisorStormConfImpl(Map<String, Object> conf,
+            String stormId) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String confPath = supervisorStormConfPath(stormRoot);
         return readSupervisorStormConfGivenPath(conf, confPath);

@@ -22,27 +22,29 @@ import org.apache.storm.tuple.Fields;
 public class WorkerUserContext extends WorkerTopologyContext {
 
     public WorkerUserContext(
-        StormTopology topology,
-        Map<String, Object> topoConf, Map<Integer,
-        String> taskToComponent,
-        Map<String, List<Integer>> componentToSortedTasks,
-        Map<String, Map<String, Fields>> componentToStreamToFields,
-        String stormId,
-        String codeDir,
-        String pidDir,
-        Integer workerPort,
-        List<Integer> workerTasks,
-        Map<String, Object> defaultResources,
-        Map<String, Object> userResources,
-        AtomicReference<Map<Integer, NodeInfo>> taskToNodePort,
-        String assignmentId,
-        AtomicReference<Map<String, String>> nodeToHost) {
-        super(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId, codeDir, pidDir, workerPort,
+            StormTopology topology,
+            Map<String, Object> topoConf, Map<Integer,
+                    String> taskToComponent,
+            Map<String, List<Integer>> componentToSortedTasks,
+            Map<String, Map<String, Fields>> componentToStreamToFields,
+            String stormId,
+            String codeDir,
+            String pidDir,
+            Integer workerPort,
+            List<Integer> workerTasks,
+            Map<String, Object> defaultResources,
+            Map<String, Object> userResources,
+            AtomicReference<Map<Integer, NodeInfo>> taskToNodePort,
+            String assignmentId,
+            AtomicReference<Map<String, String>> nodeToHost) {
+        super(topology, topoConf, taskToComponent, componentToSortedTasks,
+                componentToStreamToFields, stormId, codeDir, pidDir, workerPort,
                 workerTasks, defaultResources, userResources, taskToNodePort, assignmentId, nodeToHost);
     }
 
     /**
-     * Sets the worker-level data for the given name. This data can then be read by all components running on the same worker,
+     * Sets the worker-level data for the given name. This data can then be read by all components
+     * running on the same worker,
      * i.e. tasks (spouts, bolts), task hooks and worker hooks.
      *
      * @param name  name of the worker-level data to be set

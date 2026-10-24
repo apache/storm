@@ -12,6 +12,10 @@
 
 package org.apache.storm.spout;
 
+import static org.apache.storm.spout.CheckPointState.Action;
+import static org.apache.storm.spout.CheckPointState.State.COMMITTED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.storm.Config;
@@ -25,12 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import static org.apache.storm.spout.CheckPointState.Action;
-import static org.apache.storm.spout.CheckPointState.State.COMMITTED;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 /**
- * Unit test for {@link CheckpointSpout}
+ * Unit test for {@link CheckpointSpout}.
  */
 public class CheckpointSpoutTest {
     CheckpointSpout spout = new CheckpointSpout();
@@ -55,8 +55,8 @@ public class CheckpointSpoutTest {
         ArgumentCaptor<Values> values = ArgumentCaptor.forClass(Values.class);
         ArgumentCaptor<Object> msgId = ArgumentCaptor.forClass(Object.class);
         Mockito.verify(mockOutputCollector).emit(stream.capture(),
-                                                 values.capture(),
-                                                 msgId.capture());
+                values.capture(),
+                msgId.capture());
 
         assertEquals(CheckpointSpout.CHECKPOINT_STREAM_ID, stream.getValue());
         assertEquals(expectedTuple, values.getValue());
@@ -65,8 +65,8 @@ public class CheckpointSpoutTest {
         spout.ack(-1L);
 
         Mockito.verify(mockOutputCollector).emit(stream.capture(),
-                                                 values.capture(),
-                                                 msgId.capture());
+                values.capture(),
+                msgId.capture());
 
         expectedTuple = new Values(-1L, Action.INITSTATE);
         assertEquals(CheckpointSpout.CHECKPOINT_STREAM_ID, stream.getValue());
@@ -86,8 +86,8 @@ public class CheckpointSpoutTest {
         spout.ack(-1L);
         spout.nextTuple();
         Mockito.verify(mockOutputCollector, Mockito.times(2)).emit(stream.capture(),
-                                                                   values.capture(),
-                                                                   msgId.capture());
+                values.capture(),
+                msgId.capture());
 
         Values expectedTuple = new Values(0L, Action.PREPARE);
         assertEquals(CheckpointSpout.CHECKPOINT_STREAM_ID, stream.getValue());
@@ -100,7 +100,8 @@ public class CheckpointSpoutTest {
     public void testPrepareWithFail() {
         Map<String, Object> topoConf = new HashMap<>();
         KeyValueState<String, CheckPointState> state =
-            (KeyValueState<String, CheckPointState>) StateFactory.getState("__state", topoConf, mockTopologyContext);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState("__state", topoConf,
+                mockTopologyContext);
         CheckPointState txState = new CheckPointState(-1, COMMITTED);
         state.put("__state", txState);
 
@@ -132,8 +133,8 @@ public class CheckpointSpoutTest {
         Utils.sleep(10);
         spout.nextTuple();
         Mockito.verify(mockOutputCollector, Mockito.times(8)).emit(stream.capture(),
-                                                                   values.capture(),
-                                                                   msgId.capture());
+                values.capture(),
+                msgId.capture());
 
         Values expectedTuple = new Values(1L, Action.PREPARE);
         assertEquals(CheckpointSpout.CHECKPOINT_STREAM_ID, stream.getValue());
@@ -161,8 +162,8 @@ public class CheckpointSpoutTest {
         Utils.sleep(10);
         spout.nextTuple();
         Mockito.verify(mockOutputCollector, Mockito.times(4)).emit(stream.capture(),
-                                                                   values.capture(),
-                                                                   msgId.capture());
+                values.capture(),
+                msgId.capture());
 
         Values expectedTuple = new Values(0L, Action.COMMIT);
         assertEquals(CheckpointSpout.CHECKPOINT_STREAM_ID, stream.getValue());
@@ -176,7 +177,8 @@ public class CheckpointSpoutTest {
         Map<String, Object> topoConf = new HashMap<>();
 
         KeyValueState<String, CheckPointState> state =
-            (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf,
+                mockTopologyContext);
 
         CheckPointState checkPointState = new CheckPointState(100, CheckPointState.State.PREPARING);
         state.put("__state", checkPointState);
@@ -187,8 +189,8 @@ public class CheckpointSpoutTest {
 
         spout.nextTuple();
         Mockito.verify(mockOutputCollector, Mockito.times(1)).emit(stream.capture(),
-                                                                   values.capture(),
-                                                                   msgId.capture());
+                values.capture(),
+                msgId.capture());
 
         Values expectedTuple = new Values(100L, Action.ROLLBACK);
         assertEquals(CheckpointSpout.CHECKPOINT_STREAM_ID, stream.getValue());
@@ -202,7 +204,8 @@ public class CheckpointSpoutTest {
         Map<String, Object> topoConf = new HashMap<>();
 
         KeyValueState<String, CheckPointState> state =
-            (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf,
+                mockTopologyContext);
 
         CheckPointState checkPointState = new CheckPointState(100, CheckPointState.State.PREPARING);
         state.put("__state", checkPointState);
@@ -217,8 +220,8 @@ public class CheckpointSpoutTest {
         spout.ack(99L);
         spout.nextTuple();
         Mockito.verify(mockOutputCollector, Mockito.times(3)).emit(stream.capture(),
-                                                                   values.capture(),
-                                                                   msgId.capture());
+                values.capture(),
+                msgId.capture());
 
         Values expectedTuple = new Values(100L, Action.PREPARE);
         assertEquals(CheckpointSpout.CHECKPOINT_STREAM_ID, stream.getValue());
@@ -232,9 +235,11 @@ public class CheckpointSpoutTest {
         Map<String, Object> topoConf = new HashMap<>();
 
         KeyValueState<String, CheckPointState> state =
-            (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf,
+                mockTopologyContext);
 
-        CheckPointState checkPointState = new CheckPointState(100, CheckPointState.State.COMMITTING);
+        CheckPointState checkPointState = new CheckPointState(100,
+                CheckPointState.State.COMMITTING);
         state.put("__state", checkPointState);
         spout.open(mockTopologyContext, mockOutputCollector, 0, state);
         ArgumentCaptor<String> stream = ArgumentCaptor.forClass(String.class);
@@ -243,8 +248,8 @@ public class CheckpointSpoutTest {
 
         spout.nextTuple();
         Mockito.verify(mockOutputCollector, Mockito.times(1)).emit(stream.capture(),
-                                                                   values.capture(),
-                                                                   msgId.capture());
+                values.capture(),
+                msgId.capture());
 
         Values expectedTuple = new Values(100L, Action.COMMIT);
         assertEquals(CheckpointSpout.CHECKPOINT_STREAM_ID, stream.getValue());

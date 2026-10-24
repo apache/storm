@@ -36,22 +36,22 @@ import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 public class ReqContext {
 
     private static final AtomicInteger uniqueId = new AtomicInteger(0);
-    //each thread will have its own request context
+    // each thread will have its own request context
     private static final ThreadLocal<ReqContext> ctxt =
-        ThreadLocal.withInitial(ReqContext::new);
+            ThreadLocal.withInitial(ReqContext::new);
     private Subject subject;
     private InetAddress remoteAddr;
     private final int reqId;
     private Principal realPrincipal;
 
-    //private constructor
+    // private constructor
     @VisibleForTesting
     public ReqContext() {
         subject = currentSubject();
         reqId = uniqueId.incrementAndGet();
     }
 
-    //private constructor
+    // private constructor
     @VisibleForTesting
     public ReqContext(Subject sub) {
         subject = sub;
@@ -71,6 +71,7 @@ public class ReqContext {
 
     /**
      * Get context.
+     *
      * @return a request context associated with current thread
      */
     public static ReqContext context() {
@@ -96,7 +97,7 @@ public class ReqContext {
     }
 
     /**
-     * client address.
+     * Client address.
      */
     public void setRemoteAddress(InetAddress addr) {
         remoteAddr = addr;
@@ -147,6 +148,7 @@ public class ReqContext {
 
     /**
      * Check whether context is impersonating.
+     *
      * @return true if this request is an impersonation request.
      */
     public boolean isImpersonating() {
@@ -154,7 +156,7 @@ public class ReqContext {
     }
 
     /**
-     * request ID of this request.
+     * Request ID of this request.
      */
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public int requestID() {
@@ -163,6 +165,7 @@ public class ReqContext {
 
     /**
      * Maps to Subject.current() if available, otherwise maps to Subject.getSubject().
+     *
      * @return the current subject
      * @see SubjectCompat#currentSubject()
      */

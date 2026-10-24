@@ -25,7 +25,6 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class TestWordCounter extends BaseBasicBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
 

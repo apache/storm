@@ -14,7 +14,6 @@ package org.apache.storm.utils;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -23,17 +22,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class implements time simulation support. When time simulation is enabled, methods on this class will use fixed time. When time
- * simulation is disabled, methods will pass through to relevant java.lang.System/java.lang.Thread calls. Methods using units higher than
- * nanoseconds will pass through to System.currentTimeMillis(). Methods supporting nanoseconds will pass through to System.nanoTime().
+ * This class implements time simulation support. When time simulation is enabled, methods on this
+ * class will use fixed time. When time
+ * simulation is disabled, methods will pass through to relevant java.lang.System/java.lang.Thread
+ * calls. Methods using units higher than
+ * nanoseconds will pass through to System.currentTimeMillis(). Methods supporting nanoseconds will
+ * pass through to System.nanoTime().
  */
 public class Time {
     private static final Logger LOG = LoggerFactory.getLogger(Time.class);
     private static final AtomicBoolean SIMULATING = new AtomicBoolean(false);
     private static final AtomicLong AUTO_ADVANCE_NANOS_ON_SLEEP = new AtomicLong(0);
-    private static final Map<Thread, AtomicLong> THREAD_SLEEP_TIMES_NANOS = new ConcurrentHashMap<>();
+    private static final Map<Thread, AtomicLong> THREAD_SLEEP_TIMES_NANOS =
+            new ConcurrentHashMap<>();
     private static final Object SLEEP_TIMES_LOCK = new Object();
-    private static final AtomicLong SIMULATED_CURR_TIME_NANOS = new AtomicLong(0); 
+    private static final AtomicLong SIMULATED_CURR_TIME_NANOS = new AtomicLong(0);
 
     public static boolean isSimulating() {
         return SIMULATING.get();
@@ -67,17 +70,20 @@ public class Time {
         try {
             synchronized (SLEEP_TIMES_LOCK) {
                 if (!SIMULATING.get()) {
-                    LOG.debug("{} is still sleeping after simulated time disabled.", Thread.currentThread(),
-                        new RuntimeException("STACK TRACE"));
+                    LOG.debug("{} is still sleeping after simulated time disabled.", Thread
+                            .currentThread(),
+                            new RuntimeException("STACK TRACE"));
                     throw new InterruptedException();
                 }
-                THREAD_SLEEP_TIMES_NANOS.put(Thread.currentThread(), new AtomicLong(targetTimeNanos));
+                THREAD_SLEEP_TIMES_NANOS.put(Thread.currentThread(),
+                        new AtomicLong(targetTimeNanos));
             }
             while (SIMULATED_CURR_TIME_NANOS.get() < targetTimeNanos) {
                 synchronized (SLEEP_TIMES_LOCK) {
                     if (!SIMULATING.get()) {
-                        LOG.debug("{} is still sleeping after simulated time disabled.", Thread.currentThread(),
-                                  new RuntimeException("STACK TRACE"));
+                        LOG.debug("{} is still sleeping after simulated time disabled.", Thread
+                                .currentThread(),
+                                new RuntimeException("STACK TRACE"));
                         throw new InterruptedException();
                     }
                     long autoAdvance = AUTO_ADVANCE_NANOS_ON_SLEEP.get();
@@ -91,7 +97,7 @@ public class Time {
             THREAD_SLEEP_TIMES_NANOS.remove(Thread.currentThread());
         }
     }
-    
+
     public static void sleep(long ms) throws InterruptedException {
         if (ms > 0) {
             if (SIMULATING.get()) {
@@ -202,7 +208,8 @@ public class Time {
             throw new IllegalStateException("Cannot simulate time unless in simulation mode");
         }
         if (nanos < 0) {
-            throw new IllegalArgumentException("advanceTime only accepts positive time as an argument");
+            throw new IllegalArgumentException("advanceTime only accepts positive time as an "
+                    + "argument");
         }
         synchronized (SLEEP_TIMES_LOCK) {
             long newTime = SIMULATED_CURR_TIME_NANOS.addAndGet(nanos);

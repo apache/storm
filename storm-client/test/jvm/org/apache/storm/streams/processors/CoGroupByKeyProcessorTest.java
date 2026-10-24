@@ -12,6 +12,8 @@
 
 package org.apache.storm.streams.processors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,8 +22,6 @@ import java.util.Set;
 import org.apache.storm.streams.Pair;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class CoGroupByKeyProcessorTest {
     private CoGroupByKeyProcessor<Integer, Integer, Integer> coGroupByKeyProcessor;
     private final String firstStream = "first";
@@ -29,41 +29,42 @@ public class CoGroupByKeyProcessorTest {
     private final List<Pair<Integer, Pair<List<Integer>, List<Integer>>>> res = new ArrayList<>();
 
     private final ProcessorContext<Pair<Integer, Pair<List<Integer>, List<Integer>>>> context =
-        new ProcessorContext<Pair<Integer, Pair<List<Integer>, List<Integer>>>>() {
+            new ProcessorContext<Pair<Integer, Pair<List<Integer>, List<Integer>>>>() {
 
-        @Override
-        public void forward(Pair<Integer, Pair<List<Integer>, List<Integer>>> input) {
-            res.add(input);
-        }
+                @Override
+                public void forward(Pair<Integer, Pair<List<Integer>, List<Integer>>> input) {
+                    res.add(input);
+                }
 
-        @Override
-        public void forward(Pair<Integer, Pair<List<Integer>, List<Integer>>> input, String stream) {
-        }
+                @Override
+                public void forward(Pair<Integer, Pair<List<Integer>, List<Integer>>> input,
+                    String stream) {
+                }
 
-        @Override
-        public boolean isWindowed() {
-            return true;
-        }
+                @Override
+                public boolean isWindowed() {
+                    return true;
+                }
 
-        @Override
-        public Set<String> getWindowedParentStreams() {
-            return null;
-        }
-    };
+                @Override
+                public Set<String> getWindowedParentStreams() {
+                    return null;
+                }
+            };
 
     private final List<Pair<Integer, Integer>> firstKeyValues = Arrays.asList(
-        Pair.of(2, 4),
-        Pair.of(5, 25),
-        Pair.of(7, 49),
-        Pair.of(7, 87)
+            Pair.of(2, 4),
+            Pair.of(5, 25),
+            Pair.of(7, 49),
+            Pair.of(7, 87)
     );
 
     private final List<Pair<Integer, Integer>> secondKeyValues = Arrays.asList(
-        Pair.of(1, 1),
-        Pair.of(2, 8),
-        Pair.of(5, 125),
-        Pair.of(5, 50),
-        Pair.of(6, 216)
+            Pair.of(1, 1),
+            Pair.of(2, 8),
+            Pair.of(5, 125),
+            Pair.of(5, 50),
+            Pair.of(6, 216)
 
     );
 
@@ -71,7 +72,8 @@ public class CoGroupByKeyProcessorTest {
     public void testCoGroupByKey() {
         coGroupByKeyProcessor = new CoGroupByKeyProcessor<>(firstStream, secondStream);
         processValues();
-        List<Pair<Integer, Pair<Collection<Integer>, Collection<Integer>>>> expected = new ArrayList<>();
+        List<Pair<Integer, Pair<Collection<Integer>, Collection<Integer>>>> expected =
+                new ArrayList<>();
         Collection<Integer> list1 = new ArrayList<>();
         list1.add(25);
         Collection<Integer> list2 = new ArrayList<>();
@@ -87,7 +89,6 @@ public class CoGroupByKeyProcessorTest {
         expected.add(Pair.of(7, Pair.of(list1, list2)));
         assertEquals(expected.get(0), res.get(2));
     }
-
 
     private void processValues() {
         res.clear();

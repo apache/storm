@@ -21,7 +21,8 @@ import org.apache.storm.shade.com.google.common.collect.Iterators;
 import org.apache.storm.shade.com.google.common.collect.PeekingIterator;
 
 /**
- * Base implementation of iterator over {@link KeyValueState}. Encoded/Decoded types of key and value are all generic.
+ * Base implementation of iterator over {@link KeyValueState}. Encoded/Decoded types of key and
+ * value are all generic.
  */
 public abstract class BaseStateIterator<K, V, KENCODEDT, VENCODEDT> implements Iterator<Map.Entry<K, V>> {
 
@@ -59,7 +60,6 @@ public abstract class BaseStateIterator<K, V, KENCODEDT, VENCODEDT> implements I
             pendingIterator = pendingCommitIterator;
             return true;
         }
-
 
         if (firstLoad) {
             // load the first part of entries
@@ -151,7 +151,8 @@ public abstract class BaseStateIterator<K, V, KENCODEDT, VENCODEDT> implements I
      */
     protected abstract boolean isTombstoneValue(VENCODEDT value);
 
-    private boolean seekToAvailableEntry(PeekingIterator<Map.Entry<KENCODEDT, VENCODEDT>> iterator) {
+    private boolean seekToAvailableEntry(PeekingIterator<Map.Entry<KENCODEDT,
+            VENCODEDT>> iterator) {
         if (iterator != null) {
             while (iterator.hasNext()) {
                 Map.Entry<KENCODEDT, VENCODEDT> entry = iterator.peek();

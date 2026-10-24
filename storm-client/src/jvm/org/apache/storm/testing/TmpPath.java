@@ -53,7 +53,7 @@ public class TmpPath implements AutoCloseable {
             try {
                 FileUtils.forceDelete(path);
             } catch (Exception e) {
-                //on windows, the host process still holds lock on the logfile
+                // on windows, the host process still holds lock on the logfile
                 LOG.info(e.getMessage());
             }
         }

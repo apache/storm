@@ -37,7 +37,6 @@ import org.apache.storm.utils.ShellUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class ShellSpout implements ISpout {
     public static final Logger LOG = LoggerFactory.getLogger(ShellSpout.class);
     private static final long serialVersionUID = 5982357019665454L;
@@ -79,10 +78,12 @@ public class ShellSpout implements ISpout {
     }
 
     /**
-     * Set if the current working directory of the child process should change to the resources dir from extracted from the jar, or if it
+     * Set if the current working directory of the child process should change to the resources dir
+     * from extracted from the jar, or if it
      * should stay the same as the worker process to access things from the blob store.
      *
-     * @param changeDirectory true change the directory (default) false leave the directory the same as the worker process.
+     * @param changeDirectory true change the directory (default) false leave the directory the same
+     *     as the worker process.
      */
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     public void changeChildCWD(boolean changeDirectory) {
@@ -96,9 +97,11 @@ public class ShellSpout implements ISpout {
         this.context = context;
 
         if (topoConf.containsKey(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS)) {
-            workerTimeoutMills = 1000 * ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
+            workerTimeoutMills = 1000 * ObjectReader.getInt(topoConf
+                    .get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
         } else {
-            workerTimeoutMills = 1000 * ObjectReader.getInt(topoConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+            workerTimeoutMills = 1000 * ObjectReader.getInt(topoConf
+                    .get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
         }
 
         process = new ShellProcess(command);
@@ -112,7 +115,8 @@ public class ShellSpout implements ISpout {
         logHandler = ShellUtils.getLogHandler(topoConf);
         logHandler.setUpContext(ShellSpout.class, process, this.context);
 
-        heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
+        heartBeatExecutorService = MoreExecutors
+                .getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
     }
 
     @Override
@@ -150,25 +154,25 @@ public class ShellSpout implements ISpout {
         querySubprocess();
     }
 
-
     private void handleMetrics(ShellMsg shellMsg) {
-        //get metric name
+        // get metric name
         String name = shellMsg.getMetricName();
         if (name.isEmpty()) {
             throw new RuntimeException("Receive Metrics name is empty");
         }
 
-        //get metric by name
+        // get metric by name
         IMetric metric = context.getRegisteredMetricByName(name);
         if (metric == null) {
             throw new RuntimeException("Could not find metric by name[" + name + "] ");
         }
         if (!(metric instanceof IShellMetric)) {
-            throw new RuntimeException("Metric[" + name + "] is not IShellMetric, can not call by RPC");
+            throw new RuntimeException("Metric[" + name
+                    + "] is not IShellMetric, can not call by RPC");
         }
         IShellMetric shellMetric = (IShellMetric) metric;
 
-        //call updateMetricFromRPC with params
+        // call updateMetricFromRPC with params
         Object paramsObj = shellMsg.getMetricParams();
         try {
             shellMetric.updateMetricFromRPC(paramsObj);
@@ -188,7 +192,8 @@ public class ShellSpout implements ISpout {
                 ShellMsg shellMsg = process.readShellMsg();
                 String command = shellMsg.getCommand();
                 if (command == null) {
-                    throw new IllegalArgumentException("Command not found in spout message: " + shellMsg);
+                    throw new IllegalArgumentException("Command not found in spout message: "
+                            + shellMsg);
                 }
 
                 setHeartbeat();
@@ -219,7 +224,8 @@ public class ShellSpout implements ISpout {
                 }
             }
         } catch (Exception e) {
-            String processInfo = process.getProcessInfoString() + process.getProcessTerminationInfoString();
+            String processInfo = process.getProcessInfoString() + process
+                    .getProcessTerminationInfoString();
             throw new RuntimeException(processInfo, e);
         } finally {
             completedWaitingSubprocess();
@@ -236,10 +242,12 @@ public class ShellSpout implements ISpout {
         // prevent timer to check heartbeat based on last thing before activate
         setHeartbeat();
         if (heartBeatExecutorService.isShutdown()) {
-            //In case deactivate was called before
-            heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
+            // In case deactivate was called before
+            heartBeatExecutorService = MoreExecutors
+                    .getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
         }
-        heartBeatExecutorService.scheduleAtFixedRate(new SpoutHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
+        heartBeatExecutorService.scheduleAtFixedRate(new SpoutHeartbeatTimerTask(this), 1, 1,
+                TimeUnit.SECONDS);
         this.sendSyncCommand("activate", "");
     }
 
@@ -267,14 +275,17 @@ public class ShellSpout implements ISpout {
     }
 
     private void die(Throwable exception) {
-        String processInfo = process.getProcessInfoString() + process.getProcessTerminationInfoString();
+        String processInfo = process.getProcessInfoString() + process
+                .getProcessTerminationInfoString();
         this.exception = new RuntimeException(processInfo, exception);
-        String message = String.format("Halting process: ShellSpout died. Command: %s, ProcessInfo %s",
-                                       Arrays.toString(command),
-                                       processInfo);
+        String message = String
+                .format("Halting process: ShellSpout died. Command: %s, ProcessInfo %s",
+                Arrays.toString(command),
+                processInfo);
         LOG.error(message, exception);
         collector.reportError(exception);
-        if (running || (exception instanceof Error)) { //don't exit if not running, unless it is an Error
+        if (running
+                || (exception instanceof Error)) { // don't exit if not running, unless it is an Error
             System.exit(11);
         }
     }
@@ -293,7 +304,7 @@ public class ShellSpout implements ISpout {
             boolean isWaitingOnSubprocess = waitingOnSubprocess.get();
 
             LOG.debug("last heartbeat : {}, waiting subprocess now : {}, worker timeout (ms) : {}",
-                      lastHeartbeat, isWaitingOnSubprocess, workerTimeoutMills);
+                    lastHeartbeat, isWaitingOnSubprocess, workerTimeoutMills);
 
             if (isWaitingOnSubprocess && currentTimestamp - lastHeartbeat > workerTimeoutMills) {
                 spout.die(new RuntimeException("subprocess heartbeat timeout"));

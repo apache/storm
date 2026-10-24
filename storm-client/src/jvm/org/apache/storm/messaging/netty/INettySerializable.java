@@ -17,6 +17,7 @@ import org.apache.storm.shade.io.netty.buffer.ByteBuf;
 public interface INettySerializable {
     /**
      * Serialize this object to ByteBuf.
+     *
      * @param dest The ByteBuf to serialize to
      */
     void write(ByteBuf dest);

@@ -92,7 +92,7 @@ import org.apache.storm.utils.Utils;
 // all operations have finishBatch and can optionally be committers
 public class TridentTopology {
 
-    //TODO: add a method for drpc stream, needs to know how to automatically do return results, etc
+    // TODO: add a method for drpc stream, needs to know how to automatically do return results, etc
     // is it too expensive to do a batch per drpc request?
 
     final DefaultDirectedGraph<Node, IndexedEdge> graph;
@@ -103,29 +103,33 @@ public class TridentTopology {
 
     public TridentTopology() {
         this(new DefaultDirectedGraph<Node, IndexedEdge>(null, new ErrorEdgeFactory(), false),
-             new LinkedHashMap<String, List<Node>>(),
-             new UniqueIdGen());
+                new LinkedHashMap<String, List<Node>>(),
+                new UniqueIdGen());
     }
 
-    private TridentTopology(DefaultDirectedGraph<Node, IndexedEdge> graph, Map<String, List<Node>> colocate, UniqueIdGen gen) {
+    private TridentTopology(DefaultDirectedGraph<Node, IndexedEdge> graph, Map<String,
+            List<Node>> colocate, UniqueIdGen gen) {
         this.graph = graph;
         this.colocate = colocate;
         this.gen = gen;
     }
 
-
     // automatically turn it into a batch spout, should take parameters as to how much to batch
     //    public Stream newStream(IRichSpout spout) {
-    //        Node n = new SpoutNode(getUniqueStreamId(), TridentUtils.getSingleOutputStreamFields(spout), null, spout, SpoutNode
+    // Node n = new SpoutNode(getUniqueStreamId(), TridentUtils.getSingleOutputStreamFields(spout),
+    // null, spout, SpoutNode
     // .SpoutType.BATCH);
     //        return addNode(n);
     //    }
 
-    private static Map<String, Number> mergeDefaultResources(Map<String, Number> res, Map<String, Number> defaultConfig) {
+    private static Map<String, Number> mergeDefaultResources(Map<String, Number> res, Map<String,
+            Number> defaultConfig) {
         Map<String, Number> ret = new HashMap<>();
 
-        Number onHeapDefault = defaultConfig.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
-        Number offHeapDefault = defaultConfig.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
+        Number onHeapDefault = defaultConfig
+                .get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
+        Number offHeapDefault = defaultConfig
+                .get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
         Number cpuLoadDefault = defaultConfig.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
 
         if (res == null) {
@@ -176,7 +180,8 @@ public class TridentTopology {
         return ret;
     }
 
-    private static void completeDrpc(DefaultDirectedGraph<Node, IndexedEdge> graph, Map<String, List<Node>> colocate, UniqueIdGen gen) {
+    private static void completeDrpc(DefaultDirectedGraph<Node, IndexedEdge> graph, Map<String,
+            List<Node>> colocate, UniqueIdGen gen) {
         List<Set<Node>> connectedComponents = new ConnectivityInspector<>(graph).connectedSets();
 
         for (Set<Node> g : connectedComponents) {
@@ -190,11 +195,11 @@ public class TridentTopology {
                 Stream lastStream = new Stream(helper, null, getLastAddedNode(g));
                 Stream s = new Stream(helper, null, drpcNode);
                 helper.multiReduce(
-                    s.project(new Fields("return-info"))
-                     .batchGlobal(),
-                    lastStream.batchGlobal(),
-                    new ReturnResultsReducer(),
-                    new Fields());
+                        s.project(new Fields("return-info"))
+                                .batchGlobal(),
+                        lastStream.batchGlobal(),
+                        new ReturnResultsReducer(),
+                        new Fields());
             }
         }
     }
@@ -209,7 +214,7 @@ public class TridentTopology {
         return ret;
     }
 
-    //returns null if it's not a drpc group
+    // returns null if it's not a drpc group
     private static SpoutNode getDrpcSpoutNode(Collection<Node> g) {
         for (Node n : g) {
             if (n instanceof SpoutNode) {
@@ -236,7 +241,8 @@ public class TridentTopology {
             }
         }
         if (hasBatchSpout && hasDrpcSpout) {
-            throw new RuntimeException("Cannot join DRPC stream with streams originating from other spouts");
+            throw new RuntimeException("Cannot join DRPC stream with streams originating from "
+                    + "other spouts");
         }
     }
 
@@ -249,7 +255,8 @@ public class TridentTopology {
         for (PartitionNode n : subscriptions) {
             PartitionNode curr = ret.get(n.streamId);
             if (curr != null && !curr.thriftGrouping.equals(n.thriftGrouping)) {
-                throw new RuntimeException("Multiple subscriptions to the same stream with different groupings. Should "
+                throw new RuntimeException("Multiple subscriptions to the same stream with "
+                        + "different groupings. Should "
                         + "be impossible since that is explicitly guarded against.");
             }
             ret.put(n.streamId, n);
@@ -263,7 +270,7 @@ public class TridentTopology {
         for (SpoutNode n : spoutNodes) {
             if (n.type == SpoutNode.SpoutType.BATCH) { // if Batch spout then id contains txId
                 ret.put(n, "spout-" + n.txId);
-            } else if (n.type == SpoutNode.SpoutType.DRPC) { //if DRPC spout then id contains function
+            } else if (n.type == SpoutNode.SpoutType.DRPC) { // if DRPC spout then id contains function
                 ret.put(n, "spout-" + ((DRPCSpout) n.spout).get_function() + ctr);
                 ctr++;
             } else {
@@ -311,7 +318,8 @@ public class TridentTopology {
         return Utils.join(names, "-");
     }
 
-    private static Map<String, String> getOutputStreamBatchGroups(Group g, Map<Node, String> batchGroupMap) {
+    private static Map<String, String> getOutputStreamBatchGroups(Group g, Map<Node,
+            String> batchGroupMap) {
         Map<String, String> ret = new HashMap<>();
         Set<PartitionNode> externalGroupOutputs = externalGroupOutputs(g);
         for (PartitionNode n : externalGroupOutputs) {
@@ -332,7 +340,8 @@ public class TridentTopology {
         return ret;
     }
 
-    private static Map<Group, Integer> getGroupParallelisms(Graph<Node, IndexedEdge> graph, GraphGrouper grouper,
+    private static Map<Group, Integer> getGroupParallelisms(Graph<Node, IndexedEdge> graph,
+            GraphGrouper grouper,
                                                             Collection<Group> groups) {
         Graph<Group, Object> equivs = new Pseudograph<>(Object.class);
         for (Group g : groups) {
@@ -356,9 +365,9 @@ public class TridentTopology {
             Integer fixedP = getFixedParallelism(equivGroup);
             Integer maxP = getMaxParallelism(equivGroup);
             if (fixedP != null && maxP != null && maxP < fixedP) {
-                throw new RuntimeException("Parallelism is fixed to " + fixedP + " but max parallelism is less than that: " + maxP);
+                throw new RuntimeException("Parallelism is fixed to " + fixedP
+                        + " but max parallelism is less than that: " + maxP);
             }
-
 
             Integer p = 1;
             for (Group g : equivGroup) {
@@ -421,7 +430,8 @@ public class TridentTopology {
                 if (n.stateInfo != null && n.stateInfo.spec.requiredNumPartitions != null) {
                     int reqPartitions = n.stateInfo.spec.requiredNumPartitions;
                     if (ret != null && ret != reqPartitions) {
-                        throw new RuntimeException("Cannot have one group have fixed parallelism of two different values");
+                        throw new RuntimeException("Cannot have one group have fixed parallelism "
+                                + "of two different values");
                     }
                     ret = reqPartitions;
                 }
@@ -433,7 +443,8 @@ public class TridentTopology {
     private static boolean isIdentityPartition(PartitionNode n) {
         Grouping g = n.thriftGrouping;
         if (g.is_set_custom_serialized()) {
-            CustomStreamGrouping csg = (CustomStreamGrouping) Utils.javaDeserialize(g.get_custom_serialized(), Serializable.class);
+            CustomStreamGrouping csg = (CustomStreamGrouping) Utils.javaDeserialize(g
+                    .get_custom_serialized(), Serializable.class);
             return csg instanceof IdentityGrouping;
         }
         return false;
@@ -487,7 +498,7 @@ public class TridentTopology {
 
     private static PartitionNode makeIdentityPartition(Node basis) {
         return new PartitionNode(basis.streamId, basis.name, basis.allOutputFields,
-                                 Grouping.custom_serialized(Utils.javaSerialize(new IdentityGrouping())));
+                Grouping.custom_serialized(Utils.javaSerialize(new IdentityGrouping())));
     }
 
     private static List<Fields> getAllOutputFields(List streams) {
@@ -498,7 +509,8 @@ public class TridentTopology {
         return ret;
     }
 
-    private static List<GroupedStream> groupedStreams(List<Stream> streams, List<Fields> joinFields) {
+    private static List<GroupedStream> groupedStreams(List<Stream> streams,
+            List<Fields> joinFields) {
         List<GroupedStream> ret = new ArrayList<>();
         for (int i = 0; i < streams.size(); i++) {
             ret.add(streams.get(i).groupBy(joinFields.get(i)));
@@ -509,7 +521,8 @@ public class TridentTopology {
     private static List<Fields> strippedInputFields(List<Stream> streams, List<Fields> joinFields) {
         List<Fields> ret = new ArrayList<>();
         for (int i = 0; i < streams.size(); i++) {
-            ret.add(TridentUtils.fieldsSubtract(streams.get(i).getOutputFields(), joinFields.get(i)));
+            ret.add(TridentUtils.fieldsSubtract(streams.get(i).getOutputFields(), joinFields
+                    .get(i)));
         }
         return ret;
     }
@@ -527,12 +540,14 @@ public class TridentTopology {
     }
 
     public Stream newStream(String txId, IBatchSpout spout) {
-        Node n = new SpoutNode(getUniqueStreamId(), spout.getOutputFields(), txId, spout, SpoutNode.SpoutType.BATCH);
+        Node n = new SpoutNode(getUniqueStreamId(), spout.getOutputFields(), txId, spout,
+                SpoutNode.SpoutType.BATCH);
         return addNode(n);
     }
 
     public Stream newStream(String txId, ITridentSpout spout) {
-        Node n = new SpoutNode(getUniqueStreamId(), spout.getOutputFields(), txId, spout, SpoutNode.SpoutType.BATCH);
+        Node n = new SpoutNode(getUniqueStreamId(), spout.getOutputFields(), txId, spout,
+                SpoutNode.SpoutType.BATCH);
         return addNode(n);
     }
 
@@ -576,10 +591,12 @@ public class TridentTopology {
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     private Stream newDRPCStream(DRPCSpout spout) {
-        // TODO: consider adding a shuffle grouping after the spout to avoid so much routing of the args/return-info all over the place
+        // TODO: consider adding a shuffle grouping after the spout to avoid so much routing of the
+        // args/return-info all over the place
         // (at least until its possible to just pack bolt logic into the spout itself)
 
-        Node n = new SpoutNode(getUniqueStreamId(), TridentUtils.getSingleOutputStreamFields(spout), null, spout, SpoutNode.SpoutType.DRPC);
+        Node n = new SpoutNode(getUniqueStreamId(), TridentUtils.getSingleOutputStreamFields(spout),
+                null, spout, SpoutNode.SpoutType.DRPC);
         Stream nextStream = addNode(n);
         // later on, this will be joined back with return-info and all the results
         return nextStream.project(new Fields("args"));
@@ -601,40 +618,49 @@ public class TridentTopology {
         return multiReduce(Arrays.asList(s1, s2), function, outputFields);
     }
 
-    public Stream multiReduce(Fields inputFields1, Stream s1, Fields inputFields2, Stream s2, MultiReducer function, Fields outputFields) {
-        return multiReduce(Arrays.asList(inputFields1, inputFields2), Arrays.asList(s1, s2), function, outputFields);
+    public Stream multiReduce(Fields inputFields1, Stream s1, Fields inputFields2, Stream s2,
+            MultiReducer function, Fields outputFields) {
+        return multiReduce(Arrays.asList(inputFields1, inputFields2), Arrays.asList(s1, s2),
+                function, outputFields);
     }
 
-    public Stream multiReduce(GroupedStream s1, GroupedStream s2, GroupedMultiReducer function, Fields outputFields) {
+    public Stream multiReduce(GroupedStream s1, GroupedStream s2, GroupedMultiReducer function,
+            Fields outputFields) {
         return multiReduce(Arrays.asList(s1, s2), function, outputFields);
     }
 
-    public Stream multiReduce(Fields inputFields1, GroupedStream s1, Fields inputFields2, GroupedStream s2, GroupedMultiReducer function,
+    public Stream multiReduce(Fields inputFields1, GroupedStream s1, Fields inputFields2,
+            GroupedStream s2, GroupedMultiReducer function,
                               Fields outputFields) {
-        return multiReduce(Arrays.asList(inputFields1, inputFields2), Arrays.asList(s1, s2), function, outputFields);
+        return multiReduce(Arrays.asList(inputFields1, inputFields2), Arrays.asList(s1, s2),
+                function, outputFields);
     }
 
     public Stream multiReduce(List<Stream> streams, MultiReducer function, Fields outputFields) {
         return multiReduce(getAllOutputFields(streams), streams, function, outputFields);
     }
 
-    public Stream multiReduce(List<GroupedStream> streams, GroupedMultiReducer function, Fields outputFields) {
+    public Stream multiReduce(List<GroupedStream> streams, GroupedMultiReducer function,
+            Fields outputFields) {
         return multiReduce(getAllOutputFields(streams), streams, function, outputFields);
     }
 
-    public Stream multiReduce(List<Fields> inputFields, List<Stream> streams, MultiReducer function, Fields outputFields) {
+    public Stream multiReduce(List<Fields> inputFields, List<Stream> streams, MultiReducer function,
+            Fields outputFields) {
         List<String> names = new ArrayList<>();
         for (Stream s : streams) {
             if (s.name != null) {
                 names.add(s.name);
             }
         }
-        Node n = new ProcessorNode(getUniqueStreamId(), Utils.join(names, "-"), outputFields, outputFields,
-                                   new MultiReducerProcessor(inputFields, function));
+        Node n = new ProcessorNode(getUniqueStreamId(), Utils.join(names, "-"), outputFields,
+                outputFields,
+                new MultiReducerProcessor(inputFields, function));
         return addSourcedNode(streams, n);
     }
 
-    public Stream multiReduce(List<Fields> inputFields, List<GroupedStream> groupedStreams, GroupedMultiReducer function,
+    public Stream multiReduce(List<Fields> inputFields, List<GroupedStream> groupedStreams,
+            GroupedMultiReducer function,
                               Fields outputFields) {
         List<Fields> fullInputFields = new ArrayList<>();
         List<Stream> streams = new ArrayList<>();
@@ -647,7 +673,8 @@ public class TridentTopology {
             fullInputFields.add(TridentUtils.fieldsUnion(groupFields, inputFields.get(i)));
 
         }
-        return multiReduce(fullInputFields, streams, new GroupedMultiReducerExecutor(function, fullGroupFields, inputFields), outputFields);
+        return multiReduce(fullInputFields, streams, new GroupedMultiReducerExecutor(function,
+                fullGroupFields, inputFields), outputFields);
     }
 
     public Stream merge(Fields outputFields, Stream... streams) {
@@ -666,7 +693,8 @@ public class TridentTopology {
         return merge(streams.get(0).getOutputFields(), streams);
     }
 
-    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields) {
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2,
+            Fields outFields) {
         return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields);
     }
 
@@ -674,61 +702,77 @@ public class TridentTopology {
         return join(streams, joinFields, outFields, JoinType.INNER);
     }
 
-    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, JoinType type) {
-        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, type);
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2,
+            Fields outFields, JoinType type) {
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields,
+                type);
     }
 
-    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, JoinType type) {
+    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields,
+            JoinType type) {
         return join(streams, joinFields, outFields, repeat(streams.size(), type));
     }
 
-    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, List<JoinType> mixed) {
-        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, mixed);
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2,
+            Fields outFields, List<JoinType> mixed) {
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields,
+                mixed);
 
     }
 
-    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, List<JoinType> mixed) {
+    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields,
+            List<JoinType> mixed) {
         return join(streams, joinFields, outFields, mixed, JoinOutFieldsMode.COMPACT);
     }
 
-    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, JoinOutFieldsMode mode) {
-        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, mode);
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2,
+            Fields outFields, JoinOutFieldsMode mode) {
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields,
+                mode);
     }
 
-    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, JoinOutFieldsMode mode) {
+    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields,
+            JoinOutFieldsMode mode) {
         return join(streams, joinFields, outFields, JoinType.INNER, mode);
     }
 
-    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, JoinType type,
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2,
+            Fields outFields, JoinType type,
                        JoinOutFieldsMode mode) {
-        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, type, mode);
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, type,
+                mode);
     }
 
-    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, JoinType type, JoinOutFieldsMode mode) {
+    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields,
+            JoinType type, JoinOutFieldsMode mode) {
         return join(streams, joinFields, outFields, repeat(streams.size(), type), mode);
     }
 
-    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, List<JoinType> mixed,
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2,
+            Fields outFields, List<JoinType> mixed,
                        JoinOutFieldsMode mode) {
-        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, mixed, mode);
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields,
+                mixed, mode);
 
     }
 
-    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, List<JoinType> mixed, JoinOutFieldsMode mode) {
+    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields,
+            List<JoinType> mixed, JoinOutFieldsMode mode) {
         switch (mode) {
             case COMPACT:
                 return multiReduce(strippedInputFields(streams, joinFields),
-                                   groupedStreams(streams, joinFields),
-                                   new JoinerMultiReducer(mixed, joinFields.get(0).size(), strippedInputFields(streams, joinFields)),
-                                   outFields);
+                        groupedStreams(streams, joinFields),
+                        new JoinerMultiReducer(mixed, joinFields.get(0).size(),
+                        strippedInputFields(streams, joinFields)),
+                        outFields);
 
             case PRESERVE:
                 return multiReduce(strippedInputFields(streams, joinFields),
-                                   groupedStreams(streams, joinFields),
-                                   new PreservingFieldsOrderJoinerMultiReducer(mixed, joinFields.get(0).size(),
-                                                                               getAllOutputFields(streams), joinFields,
-                                                                               strippedInputFields(streams, joinFields)),
-                                   outFields);
+                        groupedStreams(streams, joinFields),
+                        new PreservingFieldsOrderJoinerMultiReducer(mixed, joinFields.get(0).size(),
+                                getAllOutputFields(streams), joinFields,
+                                strippedInputFields(streams, joinFields)),
+                        outFields);
 
             default:
                 throw new IllegalArgumentException("Unsupported out-fields mode: " + mode);
@@ -748,7 +792,6 @@ public class TridentTopology {
     public StormTopology build() {
         DefaultDirectedGraph<Node, IndexedEdge> graph = (DefaultDirectedGraph) this.graph.clone();
 
-
         completeDrpc(graph, colocate, gen);
 
         List<SpoutNode> spoutNodes = new ArrayList<>();
@@ -763,7 +806,6 @@ public class TridentTopology {
             }
         }
 
-
         Set<Group> initialGroups = new LinkedHashSet<>();
         for (List<Node> colocate : colocate.values()) {
             Group g = new Group(graph, colocate);
@@ -774,11 +816,9 @@ public class TridentTopology {
             initialGroups.add(new Group(graph, n));
         }
 
-
         GraphGrouper grouper = new GraphGrouper(graph, initialGroups);
         grouper.mergeFully();
         Collection<Group> mergedGroups = grouper.getAllGroups();
-
 
         // add identity partitions between groups
         for (IndexedEdge<Node> e : new HashSet<>(graph.edgeSet())) {
@@ -787,30 +827,36 @@ public class TridentTopology {
                 Group g2 = grouper.nodeGroup(e.target);
                 // g1 being null means the source is a spout node
                 if (g1 == null && !(e.source instanceof SpoutNode)) {
-                    throw new RuntimeException("Planner exception: Null source group must indicate a spout node at this phase of planning");
+                    throw new RuntimeException("Planner exception: Null source group must "
+                            + "indicate a spout node at this phase of planning");
                 }
                 if (g1 == null || !g1.equals(g2)) {
                     graph.removeEdge(e);
                     PartitionNode partitionNode = makeIdentityPartition(e.source);
                     graph.addVertex(partitionNode);
-                    graph.addEdge(e.source, partitionNode, new IndexedEdge(e.source, partitionNode, 0));
-                    graph.addEdge(partitionNode, e.target, new IndexedEdge(partitionNode, e.target, e.index));
+                    graph.addEdge(e.source, partitionNode, new IndexedEdge(e.source, partitionNode,
+                            0));
+                    graph.addEdge(partitionNode, e.target, new IndexedEdge(partitionNode, e.target,
+                            e.index));
                 }
             }
         }
         // if one group subscribes to the same stream with same partitioning multiple times,
-        // merge those together (otherwise can end up with many output streams created for that partitioning
+        // merge those together (otherwise can end up with many output streams created for that
+        // partitioning
         // if need to split into multiple output streams because of same input having different
         // partitioning to the group)
 
         // this is because can't currently merge splitting logic into a spout
-        // not the most kosher algorithm here, since the grouper indexes are being trounced via the adding of nodes to random groups, but it
+        // not the most kosher algorithm here, since the grouper indexes are being trounced via the
+        // adding of nodes to random groups, but it
         // works out
         List<Node> forNewGroups = new ArrayList<>();
         for (Group g : mergedGroups) {
             for (PartitionNode n : extraPartitionInputs(g)) {
                 Node idNode = makeIdentityNode(n.allOutputFields);
-                Node newPartitionNode = new PartitionNode(idNode.streamId, n.name, idNode.allOutputFields, n.thriftGrouping);
+                Node newPartitionNode = new PartitionNode(idNode.streamId, n.name,
+                        idNode.allOutputFields, n.thriftGrouping);
                 graph.removeVertex(n);
 
                 graph.addVertex(idNode);
@@ -846,7 +892,6 @@ public class TridentTopology {
         grouper.reindex();
         mergedGroups = grouper.getAllGroups();
 
-
         Map<Node, String> batchGroupMap = new HashMap<>();
         List<Set<Node>> connectedComponents = new ConnectivityInspector<>(graph).connectedSets();
         for (int i = 0; i < connectedComponents.size(); i++) {
@@ -881,7 +926,7 @@ public class TridentTopology {
             if (sn.type == SpoutNode.SpoutType.DRPC) {
 
                 spoutDeclarer = builder.setBatchPerTupleSpout(spoutIds.get(sn), sn.streamId,
-                                                              (IRichSpout) sn.spout, parallelism, batchGroupMap.get(sn));
+                        (IRichSpout) sn.spout, parallelism, batchGroupMap.get(sn));
             } else {
                 ITridentSpout s;
                 if (sn.spout instanceof IBatchSpout) {
@@ -889,10 +934,13 @@ public class TridentTopology {
                 } else if (sn.spout instanceof ITridentSpout) {
                     s = (ITridentSpout) sn.spout;
                 } else {
-                    throw new RuntimeException("Regular rich spouts not supported yet... try wrapping in a RichSpoutBatchExecutor");
-                    // TODO: handle regular rich spout without batches (need lots of updates to support this throughout)
+                    throw new RuntimeException("Regular rich spouts not supported yet... try "
+                            + "wrapping in a RichSpoutBatchExecutor");
+                    // TODO: handle regular rich spout without batches (need lots of updates to
+                    // support this throughout)
                 }
-                spoutDeclarer = builder.setSpout(spoutIds.get(sn), sn.streamId, sn.txId, s, parallelism, batchGroupMap.get(sn));
+                spoutDeclarer = builder.setSpout(spoutIds.get(sn), sn.streamId, sn.txId, s,
+                        parallelism, batchGroupMap.get(sn));
             }
 
             if (onHeap != null) {
@@ -915,11 +963,13 @@ public class TridentTopology {
                 Map<String, Number> groupRes = g.getResources(resourceDefaults);
 
                 Number onHeap = groupRes.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
-                Number offHeap = groupRes.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
+                Number offHeap = groupRes
+                        .get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
                 Number cpuLoad = groupRes.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
 
-                BoltDeclarer d = builder.setBolt(boltIds.get(g), new SubtopologyBolt(graph, g.nodes, batchGroupMap), p,
-                                                 committerBatches(g, batchGroupMap), streamToGroup);
+                BoltDeclarer d = builder.setBolt(boltIds.get(g), new SubtopologyBolt(graph, g.nodes,
+                        batchGroupMap), p,
+                        committerBatches(g, batchGroupMap), streamToGroup);
 
                 if (onHeap != null) {
                     if (offHeap != null) {
@@ -954,7 +1004,7 @@ public class TridentTopology {
 
     private Node makeIdentityNode(Fields allOutputFields) {
         return new ProcessorNode(getUniqueStreamId(), null, allOutputFields, new Fields(),
-                                 new EachProcessor(new Fields(), new FilterExecutor(new TrueFilter())));
+                new EachProcessor(new Fields(), new FilterExecutor(new TrueFilter())));
     }
 
     protected String getUniqueStreamId() {

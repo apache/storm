@@ -16,7 +16,8 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 
 /**
- * A Counter metric that also implements a Gauge to report the average rate of events per second over 1 minute.  This class
+ * A Counter metric that also implements a Gauge to report the average rate of events per second
+ * over 1 minute. This class
  * was added as a compromise to using a Meter, which has a much larger performance impact.
  */
 public class RateCounter implements Gauge<Double> {
@@ -38,9 +39,11 @@ public class RateCounter implements Gauge<Double> {
             metricRegistry.gauge(metricName + ".m1_rate", this, componentId, taskId);
         }
 
-        this.timeSpanInSeconds = Math.max(60 - (60 % metricRegistry.getRateCounterUpdateIntervalSeconds()),
+        this.timeSpanInSeconds = Math.max(60 - (60 % metricRegistry
+                .getRateCounterUpdateIntervalSeconds()),
                 metricRegistry.getRateCounterUpdateIntervalSeconds());
-        this.values = new long[this.timeSpanInSeconds / metricRegistry.getRateCounterUpdateIntervalSeconds() + 1];
+        this.values = new long[this.timeSpanInSeconds / metricRegistry
+                .getRateCounterUpdateIntervalSeconds() + 1];
 
     }
 
@@ -51,6 +54,7 @@ public class RateCounter implements Gauge<Double> {
 
     /**
      * Reports the the average rate of events per second over 1 minute for the metric.
+     *
      * @return the rate
      */
     @Override
@@ -68,7 +72,8 @@ public class RateCounter implements Gauge<Double> {
     void update() {
         time = (time + 1) % values.length;
         values[time] = counter.getCount();
-        currentRate =  ((double) (values[time] - values[(time + 1) % values.length]) / timeSpanInSeconds);
+        currentRate = ((double) (values[time] - values[(time
+                + 1) % values.length]) / timeSpanInSeconds);
     }
 
     Counter getCounter() {

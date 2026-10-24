@@ -13,7 +13,7 @@
 package org.apache.storm.streams.operations;
 
 /**
- * a function that accepts two arguments and produces a result.
+ * A function that accepts two arguments and produces a result.
  *
  * @param <T> the type of the first argument to the function
  * @param <U> the type of the second argument to the function

@@ -21,16 +21,19 @@ public class SecurityUtilsTest {
     public void testInferKeyStoreTypeFromPath_Pkcs12Extension() {
         Assertions.assertEquals("PKCS12", SecurityUtils.inferKeyStoreTypeFromPath("keystore.p12"));
         Assertions.assertEquals("PKCS12", SecurityUtils.inferKeyStoreTypeFromPath("mykeys.P12"));
-        Assertions.assertEquals("PKCS12", SecurityUtils.inferKeyStoreTypeFromPath("path/to/keystore.pkcs12"));
+        Assertions.assertEquals("PKCS12", SecurityUtils
+                .inferKeyStoreTypeFromPath("path/to/keystore.pkcs12"));
         Assertions.assertEquals("PKCS12", SecurityUtils.inferKeyStoreTypeFromPath("mykeys.pKCS12"));
-        Assertions.assertEquals("PKCS12", SecurityUtils.inferKeyStoreTypeFromPath("another/path/to/keystore.pfx"));
+        Assertions.assertEquals("PKCS12", SecurityUtils
+                .inferKeyStoreTypeFromPath("another/path/to/keystore.pfx"));
     }
 
     @Test
     public void testInferKeyStoreTypeFromPath_JksExtension() {
         Assertions.assertEquals("JKS", SecurityUtils.inferKeyStoreTypeFromPath("keystore.jks"));
         Assertions.assertEquals("JKS", SecurityUtils.inferKeyStoreTypeFromPath("mykeys.JKS"));
-        Assertions.assertEquals("JKS", SecurityUtils.inferKeyStoreTypeFromPath("path/to/keystore.jKs"));
+        Assertions.assertEquals("JKS", SecurityUtils
+                .inferKeyStoreTypeFromPath("path/to/keystore.jKs"));
     }
 
     @Test
@@ -38,7 +41,8 @@ public class SecurityUtilsTest {
         Assertions.assertNull(SecurityUtils.inferKeyStoreTypeFromPath("keystore.pem"));
         Assertions.assertNull(SecurityUtils.inferKeyStoreTypeFromPath("certificate.crt"));
         Assertions.assertNull(SecurityUtils.inferKeyStoreTypeFromPath("path/to/keystore.txt"));
-        Assertions.assertNull(SecurityUtils.inferKeyStoreTypeFromPath("another/path/to/keystore.pem"));
+        Assertions.assertNull(SecurityUtils
+                .inferKeyStoreTypeFromPath("another/path/to/keystore.pem"));
     }
 
     @Test

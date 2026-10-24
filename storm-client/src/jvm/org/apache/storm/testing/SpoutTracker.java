@@ -23,12 +23,10 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.utils.RegisteredGlobalState;
 
-
 public class SpoutTracker extends BaseRichSpout {
     IRichSpout delegate;
     SpoutTrackOutputCollector tracker;
     String trackId;
-
 
     public SpoutTracker(IRichSpout delegate, String trackId) {
         this.delegate = delegate;
@@ -36,7 +34,8 @@ public class SpoutTracker extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
         tracker = new SpoutTrackOutputCollector(collector);
         delegate.open(conf, context, new SpoutOutputCollector(tracker));
     }
@@ -80,7 +79,8 @@ public class SpoutTracker extends BaseRichSpout {
         }
 
         private void recordSpoutEmit() {
-            Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(trackId);
+            Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState
+                    .getState(trackId);
             ((AtomicInteger) stats.get("spout-emitted")).incrementAndGet();
 
         }

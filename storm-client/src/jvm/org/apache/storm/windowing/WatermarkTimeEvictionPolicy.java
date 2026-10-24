@@ -13,13 +13,15 @@
 package org.apache.storm.windowing;
 
 /**
- * An eviction policy that evicts events based on time duration taking watermark time and event lag into account.
+ * An eviction policy that evicts events based on time duration taking watermark time and event lag
+ * into account.
  */
 public class WatermarkTimeEvictionPolicy<T> extends TimeEvictionPolicy<T> {
     private final int lag;
 
     /**
-     * Constructs a WatermarkTimeEvictionPolicy that evicts events older than the given window length in millis.
+     * Constructs a WatermarkTimeEvictionPolicy that evicts events older than the given window
+     * length in millis.
      *
      * @param windowLength the window length in milliseconds
      */
@@ -28,7 +30,8 @@ public class WatermarkTimeEvictionPolicy<T> extends TimeEvictionPolicy<T> {
     }
 
     /**
-     * Constructs a WatermarkTimeEvictionPolicy that evicts events older than the given window length in millis. The lag parameter can be
+     * Constructs a WatermarkTimeEvictionPolicy that evicts events older than the given window
+     * length in millis. The lag parameter can be
      * used in the case of event based ts to break the queue scan early.
      *
      * @param windowLength the window length in milliseconds
@@ -42,15 +45,18 @@ public class WatermarkTimeEvictionPolicy<T> extends TimeEvictionPolicy<T> {
     /**
      * {@inheritDoc}
      * <p/>
-     * Keeps events with future ts in the queue for processing in the next window. If the ts difference is more than the lag, stops scanning
+     * Keeps events with future ts in the queue for processing in the next window. If the ts
+     * difference is more than the lag, stops scanning
      * the queue for the current window.
      */
     @Override
     public Action evict(Event<T> event) {
         if (evictionContext == null) {
-            //It is possible to get asked about eviction before we have a context, due to WindowManager.compactWindow.
-            //In this case we should hold on to all the events. When the first watermark is received, the context will be set,
-            //and the events will be reevaluated for eviction
+            // It is possible to get asked about eviction before we have a context, due to
+            // WindowManager.compactWindow.
+            // In this case we should hold on to all the events. When the first watermark is
+            // received, the context will be set,
+            // and the events will be reevaluated for eviction
             return Action.STOP;
         }
 

@@ -21,12 +21,12 @@ import org.apache.storm.utils.Utils;
 
 public class MockedSources {
     /**
-     * mocked spout sources for the [spout, stream] pair.
+     * Mocked spout sources for the [spout, stream] pair.
      */
     private Map<String, List<FixedTuple>> data = new HashMap<String, List<FixedTuple>>();
 
     public MockedSources() {
-        //Empty
+        // Empty
     }
 
     public MockedSources(Map<String, List<FixedTuple>> data) {
@@ -34,7 +34,7 @@ public class MockedSources {
     }
 
     /**
-     * add mock data for the spout.
+     * Add mock data for the spout.
      *
      * @param spoutId  the spout to be mocked
      * @param streamId the stream of the spout to be mocked

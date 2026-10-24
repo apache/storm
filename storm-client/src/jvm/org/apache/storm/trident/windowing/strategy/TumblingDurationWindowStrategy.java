@@ -33,8 +33,10 @@ public final class TumblingDurationWindowStrategy<T> extends BaseWindowStrategy<
      * Returns a {@code TriggerPolicy} which triggers for every given sliding duration.
      */
     @Override
-    public TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T, ?> evictionPolicy) {
-        return new TimeTriggerPolicy<>(windowConfig.getSlidingLength(), triggerHandler, evictionPolicy);
+    public TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T,
+        ?> evictionPolicy) {
+        return new TimeTriggerPolicy<>(windowConfig.getSlidingLength(), triggerHandler,
+                evictionPolicy);
     }
 
     /**

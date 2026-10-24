@@ -61,7 +61,8 @@ public class WindowTridentProcessor implements TridentProcessor {
     private ITridentWindowManager tridentWindowManager;
     private String windowTaskId;
 
-    public WindowTridentProcessor(WindowConfig windowConfig, String uniqueWindowId, WindowsStoreFactory windowStoreFactory,
+    public WindowTridentProcessor(WindowConfig windowConfig, String uniqueWindowId,
+            WindowsStoreFactory windowStoreFactory,
                                   Fields inputFields, Aggregator aggregator, boolean storeTuplesInStore) {
 
         this.windowConfig = windowConfig;
@@ -100,7 +101,8 @@ public class WindowTridentProcessor implements TridentProcessor {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        TridentContext tridentContext) {
         this.topologyContext = context;
         List<TridentTuple.Factory> parents = tridentContext.getParentTupleFactories();
         if (parents.size() != 1) {
@@ -112,30 +114,32 @@ public class WindowTridentProcessor implements TridentProcessor {
         projection = new TridentTupleView.ProjectionFactory(parents.get(0), inputFields);
 
         windowStore = windowStoreFactory.create(topoConf);
-        windowTaskId = windowId + WindowsStore.KEY_SEPARATOR + topologyContext.getThisTaskId() + WindowsStore.KEY_SEPARATOR;
+        windowTaskId = windowId + WindowsStore.KEY_SEPARATOR + topologyContext.getThisTaskId()
+                + WindowsStore.KEY_SEPARATOR;
         windowTriggerInprocessId = getWindowTriggerInprocessIdPrefix(windowTaskId);
 
         Long maxTuplesCacheSize = getWindowTuplesCacheSize(topoConf);
         tridentWindowManager = storeTuplesInStore
                 ? new StoreBasedTridentWindowManager(windowConfig,
-                        windowTaskId,
-                        windowStore,
-                        aggregator,
-                        tridentContext.getDelegateCollector(),
-                        maxTuplesCacheSize,
-                        inputFields)
+                windowTaskId,
+                windowStore,
+                aggregator,
+                tridentContext.getDelegateCollector(),
+                maxTuplesCacheSize,
+                inputFields)
                 : new InMemoryTridentWindowManager(windowConfig,
-                        windowTaskId,
-                        windowStore,
-                        aggregator,
-                        tridentContext.getDelegateCollector());
+                windowTaskId,
+                windowStore,
+                aggregator,
+                tridentContext.getDelegateCollector());
 
         tridentWindowManager.prepare();
     }
 
     private Long getWindowTuplesCacheSize(Map<String, Object> conf) {
         if (conf.containsKey(Config.TOPOLOGY_TRIDENT_WINDOWING_INMEMORY_CACHE_LIMIT)) {
-            return ((Number) conf.get(Config.TOPOLOGY_TRIDENT_WINDOWING_INMEMORY_CACHE_LIMIT)).longValue();
+            return ((Number) conf.get(Config.TOPOLOGY_TRIDENT_WINDOWING_INMEMORY_CACHE_LIMIT))
+                    .longValue();
         }
         return DEFAULT_INMEMORY_TUPLE_CACHE_LIMIT;
     }
@@ -177,7 +181,8 @@ public class WindowTridentProcessor implements TridentProcessor {
 
         LOG.debug("Received finishBatch of : [{}] ", batchId);
         // get all the tuples in a batch and add it to trident-window-manager
-        List<TridentTuple> tuples = (List<TridentTuple>) processorContext.state[tridentContext.getStateIndex()];
+        List<TridentTuple> tuples = (List<TridentTuple>) processorContext.state[tridentContext
+                .getStateIndex()];
         tridentWindowManager.addTuplesBatch(batchId, tuples);
 
         List<Integer> pendingTriggerIds = null;
@@ -194,13 +199,17 @@ public class WindowTridentProcessor implements TridentProcessor {
             }
         }
 
-        // if there are no trigger values in earlier attempts or this is a new batch, emit pending triggers.
+        // if there are no trigger values in earlier attempts or this is a new batch, emit pending
+        // triggers.
         if (triggerValues == null) {
             pendingTriggerIds = new ArrayList<>();
-            Queue<StoreBasedTridentWindowManager.TriggerResult> pendingTriggers = tridentWindowManager.getPendingTriggers();
-            LOG.debug("pending triggers at batch: [{}] and triggers.size: [{}] ", batchId, pendingTriggers.size());
+            Queue<StoreBasedTridentWindowManager.TriggerResult> pendingTriggers =
+                    tridentWindowManager.getPendingTriggers();
+            LOG.debug("pending triggers at batch: [{}] and triggers.size: [{}] ", batchId,
+                    pendingTriggers.size());
             try {
-                Iterator<StoreBasedTridentWindowManager.TriggerResult> pendingTriggersIter = pendingTriggers.iterator();
+                Iterator<StoreBasedTridentWindowManager.TriggerResult> pendingTriggersIter =
+                        pendingTriggers.iterator();
                 List<Object> values = new ArrayList<>();
                 StoreBasedTridentWindowManager.TriggerResult triggerResult = null;
                 while (pendingTriggersIter.hasNext()) {
@@ -225,7 +234,8 @@ public class WindowTridentProcessor implements TridentProcessor {
         collector.setContext(processorContext);
         int i = 0;
         for (Object resultValue : triggerValues) {
-            collector.emit(new ConsList(new TriggerInfo(windowTaskId, pendingTriggerIds.get(i++)), (List<Object>) resultValue));
+            collector.emit(new ConsList(new TriggerInfo(windowTaskId, pendingTriggerIds.get(i++)),
+                    (List<Object>) resultValue));
         }
         collector.setContext(null);
     }

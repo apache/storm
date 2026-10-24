@@ -33,8 +33,10 @@ public class SlidingCountWindowStrategy<T> extends BaseWindowStrategy<T> {
      * Returns a {@code TriggerPolicy} which triggers for every count of given sliding window.
      */
     @Override
-    public TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T, ?> evictionPolicy) {
-        return new CountTriggerPolicy<>(windowConfig.getSlidingLength(), triggerHandler, evictionPolicy);
+    public TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T,
+        ?> evictionPolicy) {
+        return new CountTriggerPolicy<>(windowConfig.getSlidingLength(), triggerHandler,
+                evictionPolicy);
     }
 
     /**

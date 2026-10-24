@@ -65,7 +65,8 @@ public class FileBasedEventLogger implements IEventLogger {
 
             currentFileSize = Files.exists(eventLogPath) ? Files.size(eventLogPath) : 0L;
 
-            eventLogWriter = Files.newBufferedWriter(eventLogPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+            eventLogWriter = Files.newBufferedWriter(eventLogPath, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE,
                     StandardOpenOption.WRITE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             LOG.error("Error setting up FileBasedEventLogger.", e);
@@ -101,14 +102,17 @@ public class FileBasedEventLogger implements IEventLogger {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, Map<String, Object> arguments, TopologyContext context) {
+    public void prepare(Map<String, Object> conf, Map<String, Object> arguments,
+        TopologyContext context) {
         String stormId = context.getStormId();
         int port = context.getThisWorkerPort();
 
-        int rotationSizeMb = ObjectReader.getInt(conf.get(Config.TOPOLOGY_EVENTLOGGER_ROTATION_SIZE_MB),
+        int rotationSizeMb = ObjectReader.getInt(conf
+                .get(Config.TOPOLOGY_EVENTLOGGER_ROTATION_SIZE_MB),
                 DEFAULT_ROTATION_SIZE_MB);
         this.maxFileSize = rotationSizeMb * BYTES_PER_MB;
-        this.maxRetainedFiles = ObjectReader.getInt(conf.get(Config.TOPOLOGY_EVENTLOGGER_MAX_RETAINED_FILES),
+        this.maxRetainedFiles = ObjectReader.getInt(conf
+                .get(Config.TOPOLOGY_EVENTLOGGER_MAX_RETAINED_FILES),
                 DEFAULT_MAX_RETAINED_FILES);
 
         /*

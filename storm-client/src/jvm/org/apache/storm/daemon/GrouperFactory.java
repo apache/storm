@@ -44,7 +44,8 @@ public class GrouperFactory {
         }
 
         @Override
-        public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+        public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+            List<Integer> targetTasks) {
 
         }
 
@@ -55,14 +56,16 @@ public class GrouperFactory {
 
     };
 
-    public static LoadAwareCustomStreamGrouping mkGrouper(WorkerTopologyContext context, String componentId, String streamId,
+    public static LoadAwareCustomStreamGrouping mkGrouper(WorkerTopologyContext context,
+            String componentId, String streamId,
                                                           Fields outFields,
                                                           Grouping thriftGrouping,
                                                           List<Integer> unsortedTargetTasks,
                                                           Map<String, Object> topoConf) {
         List<Integer> targetTasks = Ordering.natural().sortedCopy(unsortedTargetTasks);
-        final boolean isNotLoadAware = (null != topoConf.get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING) && (boolean) topoConf
-            .get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING));
+        final boolean isNotLoadAware = (null != topoConf
+                .get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING) && (boolean) topoConf
+                .get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING));
         CustomStreamGrouping result = null;
         switch (Thrift.groupingType(thriftGrouping)) {
             case FIELDS:
@@ -84,7 +87,8 @@ public class GrouperFactory {
                 break;
             case LOCAL_OR_SHUFFLE:
                 // Prefer local tasks as target tasks if possible
-                Set<Integer> sameTasks = Sets.intersection(Sets.newHashSet(targetTasks), Sets.newHashSet(context.getThisWorkerTasks()));
+                Set<Integer> sameTasks = Sets.intersection(Sets.newHashSet(targetTasks), Sets
+                    .newHashSet(context.getThisWorkerTasks()));
                 targetTasks = (sameTasks.isEmpty()) ? targetTasks : new ArrayList<>(sameTasks);
                 if (isNotLoadAware) {
                     result = new ShuffleGrouping();
@@ -96,10 +100,12 @@ public class GrouperFactory {
                 result = new NoneGrouper();
                 break;
             case CUSTOM_OBJECT:
-                result = (CustomStreamGrouping) Thrift.instantiateJavaObject(thriftGrouping.get_custom_object());
+                result = (CustomStreamGrouping) Thrift.instantiateJavaObject(thriftGrouping
+                .get_custom_object());
                 break;
             case CUSTOM_SERIALIZED:
-                result = Utils.javaDeserialize(thriftGrouping.get_custom_serialized(), CustomStreamGrouping.class);
+                result = Utils.javaDeserialize(thriftGrouping.get_custom_serialized(),
+                CustomStreamGrouping.class);
                 break;
             case DIRECT:
                 result = DIRECT;
@@ -137,7 +143,8 @@ public class GrouperFactory {
         }
 
         @Override
-        public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+        public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+            List<Integer> targetTasks) {
             customStreamGrouping.prepare(context, stream, targetTasks);
         }
 
@@ -161,7 +168,8 @@ public class GrouperFactory {
         }
 
         @Override
-        public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+        public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+            List<Integer> targetTasks) {
             this.targetTasks = new ArrayList<List<Integer>>();
             for (Integer targetTask : targetTasks) {
                 this.targetTasks.add(Collections.singletonList(targetTask));
@@ -171,7 +179,8 @@ public class GrouperFactory {
 
         @Override
         public List<Integer> chooseTasks(int taskId, List<Object> values) {
-            int targetTaskIndex = TupleUtils.chooseTaskIndex(outFields.select(groupFields, values), numTasks);
+            int targetTaskIndex = TupleUtils.chooseTaskIndex(outFields.select(groupFields, values),
+                    numTasks);
             return targetTasks.get(targetTaskIndex);
         }
 
@@ -185,7 +194,8 @@ public class GrouperFactory {
         }
 
         @Override
-        public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+        public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+            List<Integer> targetTasks) {
             this.targetTasks = targetTasks;
         }
 
@@ -210,7 +220,8 @@ public class GrouperFactory {
         }
 
         @Override
-        public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+        public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+            List<Integer> targetTasks) {
             this.targetTasks = targetTasks;
             this.numTasks = targetTasks.size();
         }
@@ -227,7 +238,8 @@ public class GrouperFactory {
         private List<Integer> targetTasks;
 
         @Override
-        public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
+        public void prepare(WorkerTopologyContext context, GlobalStreamId stream,
+            List<Integer> targetTasks) {
             this.targetTasks = targetTasks;
         }
 

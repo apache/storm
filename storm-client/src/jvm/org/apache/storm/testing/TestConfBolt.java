@@ -21,7 +21,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-
 public class TestConfBolt extends BaseBasicBolt {
     Map<String, Object> componentConf;
     Map<String, Object> conf;

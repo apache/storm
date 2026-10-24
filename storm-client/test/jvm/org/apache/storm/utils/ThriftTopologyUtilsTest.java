@@ -18,6 +18,10 @@
 
 package org.apache.storm.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.ByteBuffer;
 import java.util.Set;
 import org.apache.storm.generated.Bolt;
@@ -29,10 +33,6 @@ import org.apache.storm.hooks.BaseWorkerHook;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ThriftTopologyUtilsTest {
     @Test
@@ -60,9 +60,9 @@ public class ThriftTopologyUtilsTest {
         StormTopology stormTopology = genereateStormTopology(true);
         Set<String> componentIds = ThriftTopologyUtils.getComponentIds(stormTopology);
         assertEquals(
-            ImmutableSet.of("bolt-1", "spout-1"),
-            componentIds,
-            "We expect to get the IDs of the components sans the Worker Hook"
+                ImmutableSet.of("bolt-1", "spout-1"),
+                componentIds,
+                "We expect to get the IDs of the components sans the Worker Hook"
         );
     }
 
@@ -71,31 +71,33 @@ public class ThriftTopologyUtilsTest {
         StormTopology stormTopology = genereateStormTopology(false);
         Set<String> componentIds = ThriftTopologyUtils.getComponentIds(stormTopology);
         assertEquals(
-            ImmutableSet.of("bolt-1", "spout-1"),
-            componentIds,
-            "We expect to get the IDs of the components sans the Worker Hook"
-            );
+                ImmutableSet.of("bolt-1", "spout-1"),
+                componentIds,
+                "We expect to get the IDs of the components sans the Worker Hook"
+        );
     }
 
     @Test
     public void testGetComponentCommonWithWorkerHook() {
         StormTopology stormTopology = genereateStormTopology(true);
-        ComponentCommon componentCommon = ThriftTopologyUtils.getComponentCommon(stormTopology, "bolt-1");
+        ComponentCommon componentCommon = ThriftTopologyUtils.getComponentCommon(stormTopology,
+                "bolt-1");
         assertEquals(
-            new Bolt().get_common(),
-            componentCommon,
-            "We expect to get bolt-1's common");
+                new Bolt().get_common(),
+                componentCommon,
+                "We expect to get bolt-1's common");
     }
 
     @Test
     public void testGetComponentCommonWithoutWorkerHook() {
         StormTopology stormTopology = genereateStormTopology(false);
-        ComponentCommon componentCommon = ThriftTopologyUtils.getComponentCommon(stormTopology, "bolt-1");
+        ComponentCommon componentCommon = ThriftTopologyUtils.getComponentCommon(stormTopology,
+                "bolt-1");
         assertEquals(
-            new Bolt().get_common(),
-            componentCommon,
-            "We expect to get bolt-1's common"
-            );
+                new Bolt().get_common(),
+                componentCommon,
+                "We expect to get bolt-1's common"
+        );
     }
 
     private StormTopology genereateStormTopology(boolean withWorkerHook) {

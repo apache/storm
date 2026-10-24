@@ -26,7 +26,6 @@ public class CoGroupByKeyProcessor<K, V1, V2> extends BaseProcessor<Pair<K, ?>> 
     private final Multimap<K, V1> firstMap = ArrayListMultimap.create();
     private final Multimap<K, V2> secondMap = ArrayListMultimap.create();
 
-
     public CoGroupByKeyProcessor(String firstStream, String secondStream) {
         this.firstStream = firstStream;
         this.secondStream = secondStream;
@@ -57,14 +56,15 @@ public class CoGroupByKeyProcessor<K, V1, V2> extends BaseProcessor<Pair<K, ?>> 
 
     private void forwardValues() {
         firstMap.asMap().forEach((key, values) -> {
-            context.forward(Pair.of(key, Pair.of(new ArrayList<>(values), secondMap.removeAll(key))));
+            context.forward(Pair.of(key, Pair.of(new ArrayList<>(values), secondMap
+                    .removeAll(key))));
         });
 
         secondMap.asMap().forEach((key, values) -> {
-            context.forward(Pair.of(key, Pair.of(firstMap.removeAll(key), new ArrayList<>(values))));
+            context.forward(Pair.of(key, Pair.of(firstMap.removeAll(key),
+                    new ArrayList<>(values))));
         });
 
     }
-
 
 }

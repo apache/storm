@@ -17,7 +17,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import org.apache.storm.tuple.Fields;
 
-
 public interface Scheme extends Serializable {
     List<Object> deserialize(ByteBuffer ser);
 

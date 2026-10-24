@@ -30,23 +30,25 @@ public class MultiThriftServer<T extends ThriftServer> {
     private final Map<ThriftConnectionType, Thread> thriftServerThreadMap = new HashMap<>();
     private final Map<ThriftConnectionType, Boolean> thriftServerIsServingMap = new HashMap<>();
 
-
     public MultiThriftServer(String name) {
         this.name = name;
     }
 
     public void add(T thriftServer) {
         thriftServerMap.put(thriftServer.getType(), thriftServer);
-        thriftServerThreadMap.put(thriftServer.getType(), new Thread(thriftServer::serve, name + "-" + thriftServer.getPort()));
+        thriftServerThreadMap.put(thriftServer.getType(), new Thread(thriftServer::serve, name
+                + "-" + thriftServer.getPort()));
     }
 
     public void serve() {
         for (ThriftServer thriftServer : thriftServerMap.values()) {
             if (Boolean.TRUE.equals(thriftServerIsServingMap.get(thriftServer.getType()))) {
                 throw new IllegalStateException("The MultiThriftServer "
-                        + thriftServerThreadMap.get(thriftServer.getType()).getName() + " is already serving");
+                        + thriftServerThreadMap.get(thriftServer.getType()).getName()
+                        + " is already serving");
             }
-            LOG.info("Starting thrift server {}", thriftServerThreadMap.get(thriftServer.getType()).getName());
+            LOG.info("Starting thrift server {}", thriftServerThreadMap.get(thriftServer.getType())
+                    .getName());
             thriftServerThreadMap.get(thriftServer.getType()).start();
             thriftServerIsServingMap.put(thriftServer.getType(), true);
         }
@@ -59,7 +61,8 @@ public class MultiThriftServer<T extends ThriftServer> {
                 thriftServerMap.get(thriftServer.getType()).stop();
                 thriftServerIsServingMap.put(thriftServer.getType(), false);
             } else {
-                LOG.warn("Can't stop the " + thriftServerThreadMap.get(thriftServer.getType()).getName()
+                LOG.warn("Can't stop the " + thriftServerThreadMap.get(thriftServer.getType())
+                        .getName()
                         + " server since it is not currently serving");
             }
         }
@@ -78,6 +81,7 @@ public class MultiThriftServer<T extends ThriftServer> {
 
     /**
      * Check if worker tokens are supported by any one of the thrift servers.
+     *
      * @return true if any thrift server supports Worker Tokens.
      */
     public boolean supportsWorkerTokens() {

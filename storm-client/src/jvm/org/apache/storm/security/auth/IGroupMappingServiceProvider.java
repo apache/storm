@@ -26,7 +26,8 @@ public interface IGroupMappingServiceProvider {
     void prepare(Map<String, Object> topoConf);
 
     /**
-     * Get all various group memberships of a given user. Returns EMPTY list in case of non-existing user.
+     * Get all various group memberships of a given user. Returns EMPTY list in case of non-existing
+     * user.
      *
      * @param user User's name
      * @return group memberships of user

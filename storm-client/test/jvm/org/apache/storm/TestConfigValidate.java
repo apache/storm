@@ -18,6 +18,12 @@
 
 package org.apache.storm;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +36,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.security.auth.Subject;
-
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.generated.AuthorizationException;
@@ -44,9 +49,9 @@ import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.ImpersonationAclUserEntryValidator;
 import org.apache.storm.validation.ConfigValidation.IntegerValidator;
 import org.apache.storm.validation.ConfigValidation.KryoRegValidator;
-import org.apache.storm.validation.ConfigValidation.LongValidator;
 import org.apache.storm.validation.ConfigValidation.ListEntryTypeValidator;
 import org.apache.storm.validation.ConfigValidation.ListOfListOfStringValidator;
+import org.apache.storm.validation.ConfigValidation.LongValidator;
 import org.apache.storm.validation.ConfigValidation.NoDuplicateInListValidator;
 import org.apache.storm.validation.ConfigValidation.NotNullValidator;
 import org.apache.storm.validation.ConfigValidation.PositiveNumberValidator;
@@ -63,14 +68,7 @@ import org.apache.storm.validation.ConfigValidationAnnotations.IsMapEntryType;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsNoDuplicateInList;
 import org.apache.storm.validation.ConfigValidationAnnotations.IsString;
 import org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
-
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class TestConfigValidate {
 
@@ -94,21 +92,23 @@ public class TestConfigValidate {
 
     @Test
     public void fallbackJavaSerializationFilterPatternTest() {
-        // A malformed JEP-290 pattern must be rejected at conf validation time, with the key named in the error.
+        // A malformed JEP-290 pattern must be rejected at conf validation time, with the key named
+        // in the error.
         for (String invalid : Arrays.asList("!", "maxbytes=not-a-number")) {
             Map<String, Object> conf = new HashMap<>();
             conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER, invalid);
             IllegalArgumentException ex =
-                assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+                    assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(conf));
             // The validator reports the config field name (the convention for all validators here).
             assertTrue(ex.getMessage().contains("TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER"),
-                "message should name the offending field: " + ex.getMessage());
+                    "message should name the offending field: " + ex.getMessage());
         }
 
         // Valid, empty (no filter), and absent values all pass.
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER,
-                 "!org.apache.commons.collections4.functors.*;maxarray=1048576;maxbytes=10485760");
+                "!org.apache.commons.collections4.functors.*;maxarray=1048576;maxbytes=10485760");
         ConfigValidation.validateFields(conf);
         conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION_FILTER, "");
         ConfigValidation.validateFields(conf);
@@ -123,9 +123,10 @@ public class TestConfigValidate {
         conf.put(Config.TOPOLOGY_UPSTREAM_FEEDBACK_ENABLE, true);
         conf.put(Config.TOPOLOGY_STATS_EWMA_ENABLE, false);
         IllegalArgumentException ex =
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+                assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                .validateFields(conf));
         assertTrue(ex.getMessage().contains(Config.TOPOLOGY_STATS_EWMA_ENABLE),
-            "message should name the required key: " + ex.getMessage());
+                "message should name the required key: " + ex.getMessage());
     }
 
     @Test
@@ -187,7 +188,7 @@ public class TestConfigValidate {
         when(blobStoreMock.getBlobMeta("key2", subject)).thenThrow(new KeyNotFoundException());
 
         assertThrows(InvalidTopologyException.class,
-            () -> Utils.validateTopologyBlobStoreMap(topoConf, blobStoreMock));
+                () -> Utils.validateTopologyBlobStoreMap(topoConf, blobStoreMock));
     }
 
     @Test
@@ -203,7 +204,7 @@ public class TestConfigValidate {
         when(nimbusBlobStoreMock.getBlobMeta("key2")).thenThrow(new KeyNotFoundException());
 
         assertThrows(InvalidTopologyException.class,
-            () -> Utils.validateTopologyBlobStoreMap(topoConf, nimbusBlobStoreMock));
+                () -> Utils.validateTopologyBlobStoreMap(topoConf, nimbusBlobStoreMock));
     }
 
     @Test
@@ -237,7 +238,7 @@ public class TestConfigValidate {
         NimbusBlobStore nimbusBlobStoreMock = mock(NimbusBlobStore.class);
 
         assertThrows(InvalidTopologyException.class,
-            () -> Utils.validateTopologyBlobStoreMap(topoConf, nimbusBlobStoreMock));
+                () -> Utils.validateTopologyBlobStoreMap(topoConf, nimbusBlobStoreMock));
     }
 
     @Test
@@ -289,9 +290,10 @@ public class TestConfigValidate {
         ConfigValidation.validateFields(conf);
         conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, 0.9);
         ConfigValidation.validateFields(conf);
-        for (Object notAllowedValue : new Object[]{0.0, -0.1, 1.9, "1.9"}) {
+        for (Object notAllowedValue : new Object[] {0.0, -0.1, 1.9, "1.9"}) {
             conf.put(Config.TOPOLOGY_STATS_EWMA_SMOOTHING_FACTOR, notAllowedValue);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(conf));
         }
     }
 
@@ -303,14 +305,14 @@ public class TestConfigValidate {
 
         passCases.add(null);
         passCases.add("some string");
-        String[] stuff = { "some", "string", "list" };
+        String[] stuff =  {"some", "string", "list"};
         passCases.add(Arrays.asList(stuff));
 
         failCases.add(42);
-        Integer[] wrongStuff = { 1, 2, 3 };
+        Integer[] wrongStuff =  {1, 2, 3};
         failCases.add(Arrays.asList(wrongStuff));
 
-        //worker.childopts validates
+        // worker.childopts validates
         for (Object value : passCases) {
             conf.put(Config.WORKER_CHILDOPTS, value);
             ConfigValidation.validateFields(conf);
@@ -318,10 +320,11 @@ public class TestConfigValidate {
 
         for (Object value : failCases) {
             conf.put(Config.WORKER_CHILDOPTS, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(conf));
         }
 
-        //topology.worker.childopts validates
+        // topology.worker.childopts validates
         conf.clear();
         for (Object value : passCases) {
             conf.put(Config.TOPOLOGY_WORKER_CHILDOPTS, value);
@@ -330,7 +333,8 @@ public class TestConfigValidate {
 
         for (Object value : failCases) {
             conf.put(Config.TOPOLOGY_WORKER_CHILDOPTS, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(conf));
         }
     }
 
@@ -372,26 +376,30 @@ public class TestConfigValidate {
         KryoRegValidator validator = new KryoRegValidator();
 
         // fail cases
-        Object[] failCases = { ImmutableMap.of("f", "g"), ImmutableList.of(1),
-            Collections.singletonList(ImmutableMap.of("a", 1))};
+        Object[] failCases =  {ImmutableMap.of("f", "g"), ImmutableList.of(1),
+                Collections.singletonList(ImmutableMap.of("a", 1))};
         for (Object value : failCases) {
-            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", value));
+            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test",
+                    value));
         }
 
         // pass cases
-        validator.validateField("test", Arrays.asList("a", "b", "c", ImmutableMap.of("d", "e"), ImmutableMap.of("f", "g")));
+        validator.validateField("test", Arrays.asList("a", "b", "c", ImmutableMap.of("d", "e"),
+                ImmutableMap.of("f", "g")));
     }
 
     @Test
     public void testPowerOf2Validator() {
         PowerOf2Validator validator = new PowerOf2Validator();
 
-        Object[] failCases = { 42.42, 42, -33, 23423423423.0, -32, -1, -0.00001, 0, -0, "Forty-two" };
+        Object[] failCases =
+            {42.42, 42, -33, 23423423423.0, -32, -1, -0.00001, 0, -0, "Forty-two"};
         for (Object value : failCases) {
-            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", value));
+            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test",
+                    value));
         }
 
-        Object[] passCases = { 64, 4294967296.0, 1, null };
+        Object[] passCases =  {64, 4294967296.0, 1, null};
         for (Object value : passCases) {
             validator.validateField("test", value);
         }
@@ -401,28 +409,30 @@ public class TestConfigValidate {
     public void testPositiveNumberValidator() {
         PositiveNumberValidator validator = new PositiveNumberValidator();
 
-        Object[] passCases = { null, 1.0, 0.01, 1, 2147483647, 42 };
+        Object[] passCases =  {null, 1.0, 0.01, 1, 2147483647, 42};
 
         for (Object value : passCases) {
             validator.validateField("test", value);
         }
 
-        Object[] failCases = { -1.0, -1, -0.01, 0.0, 0, "43", "string" };
+        Object[] failCases =  {-1.0, -1, -0.01, 0.0, 0, "43", "string"};
 
         for (Object value : failCases) {
-            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", value));
+            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test",
+                    value));
         }
 
-        Object[] passCasesIncludeZero = { null, 1.0, 0.01, 0, 2147483647, 0.0 };
+        Object[] passCasesIncludeZero =  {null, 1.0, 0.01, 0, 2147483647, 0.0};
 
         for (Object value : passCasesIncludeZero) {
             validator.validateField("test", true, value);
         }
 
-        Object[] failCasesIncludeZero = { -1.0, -1, -0.01, "43", "string" };
+        Object[] failCasesIncludeZero =  {-1.0, -1, -0.01, "43", "string"};
 
         for (Object value : failCasesIncludeZero) {
-            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", true, value));
+            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", true,
+                    value));
         }
     }
 
@@ -430,16 +440,17 @@ public class TestConfigValidate {
     public void testIntegerValidator() {
         IntegerValidator validator = new IntegerValidator();
 
-        Object[] passCases = { null, 1000, Integer.MAX_VALUE };
+        Object[] passCases =  {null, 1000, Integer.MAX_VALUE};
 
         for (Object value : passCases) {
             validator.validateField("test", value);
         }
 
-        Object[] failCases = { 1.34, (long) Integer.MAX_VALUE + 1 };
+        Object[] failCases =  {1.34, (long) Integer.MAX_VALUE + 1};
 
         for (Object value : failCases) {
-            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", value));
+            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test",
+                    value));
         }
     }
 
@@ -447,16 +458,18 @@ public class TestConfigValidate {
     public void testLongValidator() {
         LongValidator validator = new LongValidator();
 
-        Object[] passCases = { null, 1000, Integer.MAX_VALUE, Long.MAX_VALUE };
+        Object[] passCases =  {null, 1000, Integer.MAX_VALUE, Long.MAX_VALUE};
 
         for (Object value : passCases) {
             validator.validateField("test", value);
         }
 
-        Object[] failCases = { 1.34, BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(1L))};
+        Object[] failCases =  {1.34, BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger
+                .valueOf(1L))};
 
         for (Object value : failCases) {
-            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", value));
+            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test",
+                    value));
         }
     }
 
@@ -466,11 +479,11 @@ public class TestConfigValidate {
         Collection<Object> passCases = new LinkedList<>();
         Collection<Object> failCases = new LinkedList<>();
 
-        Object[] passCase1 = { 1000, 0, -1000 };
-        Object[] passCase2 = { "one", "two", "three" };
-        Object[] passCase3 = { false, true };
-        Object[] passCase4 = { false, true, 1000, 0, -1000, "one", "two", "three" };
-        Object[] passCase5 = { 1000.0, 0.0, -1000.0 };
+        Object[] passCase1 =  {1000, 0, -1000};
+        Object[] passCase2 =  {"one", "two", "three"};
+        Object[] passCase3 =  {false, true};
+        Object[] passCase4 =  {false, true, 1000, 0, -1000, "one", "two", "three"};
+        Object[] passCase5 =  {1000.0, 0.0, -1000.0};
         passCases.add(Arrays.asList(passCase1));
         passCases.add(Arrays.asList(passCase2));
         passCases.add(Arrays.asList(passCase3));
@@ -482,14 +495,15 @@ public class TestConfigValidate {
             validator.validateField("test", value);
         }
 
-        Object[] failCase1 = { 1000, 0, 1000 };
-        Object[] failCase2 = { "one", "one", "two" };
-        Object[] failCase3 = { 5.0, 5.0, 6 };
+        Object[] failCase1 =  {1000, 0, 1000};
+        Object[] failCase2 =  {"one", "one", "two"};
+        Object[] failCase3 =  {5.0, 5.0, 6};
         failCases.add(Arrays.asList(failCase1));
         failCases.add(Arrays.asList(failCase2));
         failCases.add(Arrays.asList(failCase3));
         for (Object value : failCases) {
-            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test", value));
+            assertThrows(IllegalArgumentException.class, () -> validator.validateField("test",
+                    value));
         }
     }
 
@@ -499,8 +513,8 @@ public class TestConfigValidate {
         Collection<Object> testCases2 = new LinkedList<>();
         Collection<Object> testCases3 = new LinkedList<>();
 
-        Object[] testCase1 = { "one", "two", "three" };
-        Object[] testCase2 = { "three" };
+        Object[] testCase1 =  {"one", "two", "three"};
+        Object[] testCase2 =  {"three"};
         testCases1.add(Arrays.asList(testCase1));
         testCases1.add(Arrays.asList(testCase2));
 
@@ -509,31 +523,35 @@ public class TestConfigValidate {
         }
 
         for (Object value : testCases1) {
-            assertThrows(IllegalArgumentException.class, () -> ListEntryTypeValidator.validateField("test", Number.class, value));
+            assertThrows(IllegalArgumentException.class, () -> ListEntryTypeValidator
+                    .validateField("test", Number.class, value));
         }
 
-        Object[] testCase3 = { 1000, 0, 1000 };
-        Object[] testCase4 = { 5 };
-        Object[] testCase5 = { 5.0, 5.0, 6 };
+        Object[] testCase3 =  {1000, 0, 1000};
+        Object[] testCase4 =  {5};
+        Object[] testCase5 =  {5.0, 5.0, 6};
         testCases2.add(Arrays.asList(testCase3));
         testCases2.add(Arrays.asList(testCase4));
         testCases2.add(Arrays.asList(testCase5));
         for (Object value : testCases2) {
-            assertThrows(IllegalArgumentException.class, () -> ListEntryTypeValidator.validateField("test", String.class, value));
+            assertThrows(IllegalArgumentException.class, () -> ListEntryTypeValidator
+                    .validateField("test", String.class, value));
         }
         for (Object value : testCases2) {
             ListEntryTypeValidator.validateField("test", Number.class, value);
         }
 
-        Object[] testCase6 = { 1000, 0, 1000, "5" };
-        Object[] testCase7 = { "4", "5", 5 };
+        Object[] testCase6 =  {1000, 0, 1000, "5"};
+        Object[] testCase7 =  {"4", "5", 5};
         testCases3.add(Arrays.asList(testCase6));
         testCases3.add(Arrays.asList(testCase7));
         for (Object value : testCases3) {
-            assertThrows(IllegalArgumentException.class, () -> ListEntryTypeValidator.validateField("test", String.class, value));
+            assertThrows(IllegalArgumentException.class, () -> ListEntryTypeValidator
+                    .validateField("test", String.class, value));
         }
         for (Object value : testCases1) {
-            assertThrows(IllegalArgumentException.class, () -> ListEntryTypeValidator.validateField("test", Number.class, value));
+            assertThrows(IllegalArgumentException.class, () -> ListEntryTypeValidator
+                    .validateField("test", Number.class, value));
         }
     }
 
@@ -567,7 +585,8 @@ public class TestConfigValidate {
         failCases.add(failCase2);
         for (Object value : failCases) {
             config.put(TestConfig.TEST_MAP_CONFIG, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
@@ -611,7 +630,8 @@ public class TestConfigValidate {
         failCases.add(failCase4);
         for (Object value : failCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_2, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
@@ -630,14 +650,14 @@ public class TestConfigValidate {
         Map<Object, Object> passCaseMapOfMap = new HashMap<>();
         passCaseMapOfMap.put("comp1",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp2", "comp3")},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp2", "comp3")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         passCaseMapOfMap.put("comp2",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         passCases.add(passCaseMapOfMap);
@@ -645,13 +665,13 @@ public class TestConfigValidate {
         passCaseMapOfMap = new HashMap<>();
         passCaseMapOfMap.put("comp1",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp2", "comp3")},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp2", "comp3")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         passCaseMapOfMap.put("comp2",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         passCases.add(passCaseMapOfMap);
@@ -659,13 +679,13 @@ public class TestConfigValidate {
         passCaseMapOfMap = new HashMap<>();
         passCaseMapOfMap.put("comp1",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, "comp2"},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, "comp2"},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         passCaseMapOfMap.put("comp2",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, "comp4"},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, "comp4"},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         passCases.add(passCaseMapOfMap);
@@ -683,14 +703,14 @@ public class TestConfigValidate {
         Map<String, Object> failCaseMapOfMap = new HashMap<>();
         failCaseMapOfMap.put("comp1",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList(1, 2, 3)},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList(1, 2, 3)},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         failCaseMapOfMap.put("comp2",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2 },
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 2},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp4", "comp5")},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         failCases.add(failCaseMapOfMap);
@@ -698,8 +718,8 @@ public class TestConfigValidate {
         failCaseMapOfMap = new HashMap<>();
         failCaseMapOfMap.put("comp1",
                 Stream.of(new Object[][] {
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10 },
-                        { RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp1", 3)},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_MAX_NODE_CO_LOCATION_CNT, 10},
+                        {RasConstraintsTypeValidator.CONSTRAINT_TYPE_INCOMPATIBLE_COMPONENTS, Arrays.asList("comp1", 3)},
                 }).collect(Collectors.toMap(data -> data[0], data -> data[1]))
         );
         failCases.add(failCaseMapOfMap);
@@ -736,7 +756,8 @@ public class TestConfigValidate {
 
         for (Object value : failCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_9, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
@@ -745,8 +766,8 @@ public class TestConfigValidate {
         TestConfig config = new TestConfig();
         Collection<Object> passCases = new LinkedList<>();
         Collection<Object> failCases = new LinkedList<>();
-        Object[] passCase1 = { 1, 5.0, -0.01, 0, Integer.MAX_VALUE, Double.MIN_VALUE };
-        Object[] passCase2 = { 1 };
+        Object[] passCase1 =  {1, 5.0, -0.01, 0, Integer.MAX_VALUE, Double.MIN_VALUE};
+        Object[] passCase2 =  {1};
         passCases.add(Arrays.asList(passCase1));
         passCases.add(Arrays.asList(passCase2));
 
@@ -755,8 +776,8 @@ public class TestConfigValidate {
             ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class));
         }
 
-        Object[] failCase1 = { 1, 5.0, -0.01, 0, "aaa" };
-        Object[] failCase2 = { "aaa" };
+        Object[] failCase1 =  {1, 5.0, -0.01, 0, "aaa"};
+        Object[] failCase2 =  {"aaa"};
         failCases.add(failCase1);
         failCases.add(failCase2);
         failCases.add(1);
@@ -764,7 +785,8 @@ public class TestConfigValidate {
         failCases.add(null);
         for (Object value : failCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_3, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
@@ -773,8 +795,8 @@ public class TestConfigValidate {
         TestConfig config = new TestConfig();
         Collection<Object> passCases = new LinkedList<>();
         Collection<Object> failCases = new LinkedList<>();
-        Object[] passCase1 = { 1, 5.0, 0.01, Double.MAX_VALUE };
-        Object[] passCase2 = { 1 };
+        Object[] passCase1 =  {1, 5.0, 0.01, Double.MAX_VALUE};
+        Object[] passCase2 =  {1};
         passCases.add(Arrays.asList(passCase1));
         passCases.add(Arrays.asList(passCase2));
 
@@ -783,11 +805,11 @@ public class TestConfigValidate {
             ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class));
         }
 
-        Object[] failCase1 = { 1, 5.0, -0.01, 3.0 };
-        Object[] failCase2 = { 1, 5.0, -0.01, 1 };
-        Object[] failCase3 = { "aaa", "bbb", "aaa" };
-        Object[] failCase4 = { 1, 5.0, null, 1 };
-        Object[] failCase5 = { 1, 5.0, 0, 1 };
+        Object[] failCase1 =  {1, 5.0, -0.01, 3.0};
+        Object[] failCase2 =  {1, 5.0, -0.01, 1};
+        Object[] failCase3 =  {"aaa", "bbb", "aaa"};
+        Object[] failCase4 =  {1, 5.0, null, 1};
+        Object[] failCase5 =  {1, 5.0, 0, 1};
 
         failCases.add(Arrays.asList(failCase1));
         failCases.add(Arrays.asList(failCase2));
@@ -798,24 +820,26 @@ public class TestConfigValidate {
         failCases.add("b");
         for (Object value : failCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_4, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
     @Test
     public void TestAcceptedStrings() {
         TestConfig config = new TestConfig();
-        String[] passCases = { "aaa", "bbb", "ccc" };
+        String[] passCases =  {"aaa", "bbb", "ccc"};
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_5, value);
             ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class));
         }
 
-        String[] failCases = { "aa", "bb", "cc", "abc", "a", "b", "c", "" };
+        String[] failCases =  {"aa", "bb", "cc", "abc", "a", "b", "c", ""};
         for (Object value : failCases) {
-           config.put(TestConfig.TEST_MAP_CONFIG_5, value);
-           assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            config.put(TestConfig.TEST_MAP_CONFIG_5, value);
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
@@ -827,9 +851,9 @@ public class TestConfigValidate {
 
         Map<String, Map<String, List<String>>> passCase1 = new HashMap<>();
         Map<String, List<String>> passCase1_hostsAndGroups = new HashMap<>();
-        String[] hosts = { "host.1", "host.2", "host.3" };
+        String[] hosts =  {"host.1", "host.2", "host.3"};
         passCase1_hostsAndGroups.put("hosts", Arrays.asList(hosts));
-        String[] groups = { "group.1", "group.2", "group.3" };
+        String[] groups =  {"group.1", "group.2", "group.3"};
         passCase1_hostsAndGroups.put("groups", Arrays.asList(groups));
         passCase1.put("jerry", passCase1_hostsAndGroups);
         passCases.add(passCase1);
@@ -844,10 +868,9 @@ public class TestConfigValidate {
         failCase1_hostsAndGroups.put("hosts", Arrays.asList(hosts));
         failCase1.put("jerry", failCase1_hostsAndGroups);
 
-
         Map<String, Map<String, List<String>>> failCase2 = new HashMap<>();
         Map<String, List<String>> failCase2_hostsAndGroups = new HashMap<>();
-        String[] failgroups = { "group.1", "group.2", "group.3" };
+        String[] failgroups =  {"group.1", "group.2", "group.3"};
         failCase2_hostsAndGroups.put("groups", Arrays.asList(groups));
         failCase2.put("jerry", failCase2_hostsAndGroups);
 
@@ -858,7 +881,8 @@ public class TestConfigValidate {
 
         for (Object value : failCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_6, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
@@ -891,11 +915,11 @@ public class TestConfigValidate {
         failCase1.get("jerry").put("memory", 20148);
         failCase1.get("bobby").put("cpu", 20000);
         failCase1.get("bobby").put("memory", 40148);
-        //this will fail the test since user derek does not have an entry for memory
+        // this will fail the test since user derek does not have an entry for memory
         failCase1.get("derek").put("cpu", 30000);
 
         Map<String, Map<String, Integer>> failCase2 = new HashMap<>();
-        //this will fail since jerry doesn't have either cpu or memory entries
+        // this will fail since jerry doesn't have either cpu or memory entries
         failCase2.put("jerry", new HashMap<>());
         failCase2.put("bobby", new HashMap<>());
         failCase2.put("derek", new HashMap<>());
@@ -909,7 +933,8 @@ public class TestConfigValidate {
 
         for (Object value : failCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_7, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
@@ -925,13 +950,15 @@ public class TestConfigValidate {
             config.put(TestConfig.TEST_MAP_CONFIG_8, value);
             ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class));
         }
-        //will fail since org.apache.storm.nimbus.NimbusInfo doesn't implement or extend org.apache.storm.networktopography
+        // will fail since org.apache.storm.nimbus.NimbusInfo doesn't implement or extend
+        // org.apache.storm.networktopography
         // .DNSToSwitchMapping
         failCases.add("org.apache.storm.nimbus.NimbusInfo");
         failCases.add(null);
         for (Object value : failCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_8, value);
-            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(config, Collections.singletonList(TestConfig.class)));
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation
+                    .validateFields(config, Collections.singletonList(TestConfig.class)));
         }
     }
 
@@ -940,8 +967,8 @@ public class TestConfigValidate {
         public static final String TEST_MAP_CONFIG = "test.map.config";
 
         @IsMapEntryCustom(
-            keyValidatorClasses = { StringValidator.class },
-            valueValidatorClasses = { PositiveNumberValidator.class, IntegerValidator.class })
+                keyValidatorClasses = {StringValidator.class},
+                valueValidatorClasses = {PositiveNumberValidator.class, IntegerValidator.class})
         public static final String TEST_MAP_CONFIG_2 = "test.map.config.2";
 
         @IsListEntryType(type = Number.class)
@@ -949,25 +976,29 @@ public class TestConfigValidate {
         public static final String TEST_MAP_CONFIG_3 = "test.map.config.3";
 
         @IsListEntryCustom(
-            entryValidatorClasses = { PositiveNumberValidator.class, NotNullValidator.class })
+                entryValidatorClasses = {PositiveNumberValidator.class, NotNullValidator.class})
         @IsNoDuplicateInList
         public static final String TEST_MAP_CONFIG_4 = "test.map.config.4";
 
-        @IsString(acceptedValues = { "aaa", "bbb", "ccc" })
+        @IsString(acceptedValues = {"aaa", "bbb", "ccc"})
         public static final String TEST_MAP_CONFIG_5 = "test.map.config.5";
 
-        @IsMapEntryCustom(keyValidatorClasses = { StringValidator.class }, valueValidatorClasses = { ImpersonationAclUserEntryValidator
-            .class })
+        @IsMapEntryCustom(keyValidatorClasses = {StringValidator.class},
+                valueValidatorClasses = {ImpersonationAclUserEntryValidator
+                        .class})
         public static final String TEST_MAP_CONFIG_6 = "test.map.config.6";
 
-        @IsMapEntryCustom(keyValidatorClasses = { StringValidator.class }, valueValidatorClasses = { UserResourcePoolEntryValidator.class })
+        @IsMapEntryCustom(keyValidatorClasses = {StringValidator.class},
+                valueValidatorClasses = {UserResourcePoolEntryValidator.class})
         public static final String TEST_MAP_CONFIG_7 = "test.map.config.7";
 
-        @IsImplementationOfClass(implementsClass = org.apache.storm.networktopography.DNSToSwitchMapping.class)
+        @IsImplementationOfClass(implementsClass =
+                org.apache.storm.networktopography.DNSToSwitchMapping.class)
         @NotNull
         public static final String TEST_MAP_CONFIG_8 = "test.map.config.8";
 
-        @IsExactlyOneOf(valueValidatorClasses = {ListOfListOfStringValidator.class, RasConstraintsTypeValidator.class})
+        @IsExactlyOneOf(valueValidatorClasses = {ListOfListOfStringValidator.class,
+            RasConstraintsTypeValidator.class})
         @NotNull
         public static final String TEST_MAP_CONFIG_9 = "test.map.config.9";
     }

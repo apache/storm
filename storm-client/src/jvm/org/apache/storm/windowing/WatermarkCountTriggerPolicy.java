@@ -15,7 +15,8 @@ package org.apache.storm.windowing;
 import java.util.List;
 
 /**
- * A trigger policy that tracks event counts and sets the context for eviction policy to evict based on latest watermark time.
+ * A trigger policy that tracks event counts and sets the context for eviction policy to evict based
+ * on latest watermark time.
  *
  * @param <T> the type of event tracked by this policy.
  */
@@ -59,13 +60,15 @@ public class WatermarkCountTriggerPolicy<T> implements TriggerPolicy<T, Long> {
     }
 
     /**
-     * Triggers all the pending windows up to the waterMarkEvent timestamp based on the sliding interval count.
+     * Triggers all the pending windows up to the waterMarkEvent timestamp based on the sliding
+     * interval count.
      *
      * @param waterMarkEvent the watermark event
      */
     private void handleWaterMarkEvent(Event<T> waterMarkEvent) {
         long watermarkTs = waterMarkEvent.getTimestamp();
-        List<Long> eventTs = windowManager.getSlidingCountTimestamps(lastProcessedTs, watermarkTs, count);
+        List<Long> eventTs = windowManager.getSlidingCountTimestamps(lastProcessedTs, watermarkTs,
+                count);
         for (long ts : eventTs) {
             evictionPolicy.setContext(new DefaultEvictionContext(ts, null, Long.valueOf(count)));
             handler.onTrigger();

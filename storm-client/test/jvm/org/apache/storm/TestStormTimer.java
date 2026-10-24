@@ -12,12 +12,11 @@
 
 package org.apache.storm;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TestStormTimer {
 
@@ -27,52 +26,64 @@ public class TestStormTimer {
         AFTER_MILLISECONDS, AFTER_MILLISECONDS_WITH_JITTER,
         RECURRING, RECURRING_MS,
         RECURRING_WITH_JITTER
-    };
+    }
+    ;
+
     /**
-     * Test {@link StormTimer#schedule(int, Runnable)} and {@link StormTimer#schedule(int, Runnable, boolean, int)}
+     * Test {@link StormTimer#schedule(int, Runnable)} and {@link StormTimer#schedule(int, Runnable,
+     * boolean, int)}
      * for scheduling order under multithreaded environment.
      */
     @Test
     public void testSchedule() {
-        StormTimer stormTimer = new StormTimer("testSchedule", (x,y) -> {});
+        StormTimer stormTimer = new StormTimer("testSchedule", (x, y) -> {
+        });
         int threadCnt = 100;
         Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.IMMEDIATE));
         Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_1_SECOND));
         Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.IMMEDIATE_WITH_JITTER));
-        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS_WITH_JITTER));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt,
+                SCHEDULE_TYPE.AFTER_MILLISECONDS_WITH_JITTER));
         close(stormTimer);
     }
 
     /**
      * Test {@link StormTimer#scheduleMs(long, Runnable)} and
-     * {@link StormTimer#scheduleMs(long, Runnable, boolean, int)} for scheduling order under multithreaded environment.
+     * {@link StormTimer#scheduleMs(long, Runnable, boolean, int)} for scheduling order under
+     * multithreaded environment.
      */
     @Test
     public void testScheduleMs() {
-        StormTimer stormTimer = new StormTimer("testScheduleMs", (x,y) -> {});
+        StormTimer stormTimer = new StormTimer("testScheduleMs", (x, y) -> {
+        });
         int threadCnt = 100;
         Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS));
-        Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.AFTER_MILLISECONDS_WITH_JITTER));
+        Assertions.assertTrue(schedule(stormTimer, threadCnt,
+                SCHEDULE_TYPE.AFTER_MILLISECONDS_WITH_JITTER));
         close(stormTimer);
     }
 
     /**
-     * Test {@link StormTimer#scheduleRecurring(int, int, Runnable)} for scheduling order under multithreaded environment.
+     * Test {@link StormTimer#scheduleRecurring(int, int, Runnable)} for scheduling order under
+     * multithreaded environment.
      */
     @Test
     public void scheduleRecurring() {
-        StormTimer stormTimer = new StormTimer("testScheduleMs", (x,y) -> {});
+        StormTimer stormTimer = new StormTimer("testScheduleMs", (x, y) -> {
+        });
         int threadCnt = 10;
         Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING));
         close(stormTimer);
     }
 
     /**
-     * Test {@link StormTimer#scheduleRecurringMs(long, long, Runnable)} for scheduling order under multithreaded environment.
+     * Test {@link StormTimer#scheduleRecurringMs(long, long, Runnable)} for scheduling order under
+     * multithreaded environment.
      */
     @Test
     public void testScheduleRecurringMs() {
-        StormTimer stormTimer = new StormTimer("testScheduleRecurringMs", (x,y) -> {});
+        StormTimer stormTimer = new StormTimer("testScheduleRecurringMs", (x, y) -> {
+        });
         int threadCnt = 10;
         Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING_MS));
         close(stormTimer);
@@ -84,7 +95,8 @@ public class TestStormTimer {
      */
     @Test
     public void testScheduleRecurringWithJitter() {
-        StormTimer stormTimer = new StormTimer("testScheduleRecurringWithJitter", (x,y) -> {});
+        StormTimer stormTimer = new StormTimer("testScheduleRecurringWithJitter", (x, y) -> {
+        });
         int threadCnt = 10;
         Assertions.assertTrue(schedule(stormTimer, threadCnt, SCHEDULE_TYPE.RECURRING_WITH_JITTER));
         close(stormTimer);
@@ -100,9 +112,12 @@ public class TestStormTimer {
 
     /**
      * Schedule specified number of threads. The threads are not executed in the order in which
-     * they call {@link StormTimer#schedule(int, Runnable)}. Just check if all of them are called (a weaker guarantee).
-     * If the threads are executed in the order they are scheduled, then the counter will match the number in the thread.
-     * Which they dont. If all the threads are executed, then the total number will match the total jobs scheduled.
+     * they call {@link StormTimer#schedule(int, Runnable)}. Just check if all of them are called (a
+     * weaker guarantee).
+     * If the threads are executed in the order they are scheduled, then the counter will match the
+     * number in the thread.
+     * Which they dont. If all the threads are executed, then the total number will match the total
+     * jobs scheduled.
      *
      * @param stormTimer StormTimer stormTimer.
      * @param threadCnt Number of threads to fire.
@@ -132,7 +147,7 @@ public class TestStormTimer {
             }
         }
         ScheduleRunnable[] runnables = new ScheduleRunnable[threadCnt];
-        for (int i = 0; i < threadCnt ; i++) {
+        for (int i = 0; i < threadCnt; i++) {
             runnables[i] = new ScheduleRunnable(i);
         }
         long sleepMsBeforeCheck = 3000;
@@ -144,7 +159,7 @@ public class TestStormTimer {
             final int delayMs = 300;
             final int recurSecs = 3;
             final int recurMs = 300;
-            switch(scheduleType) {
+            switch (scheduleType) {
                 case IMMEDIATE:
                     delaySecs = 0;
                     stormTimer.schedule(delaySecs, runnables[i]);
@@ -170,22 +185,26 @@ public class TestStormTimer {
                 case RECURRING:
                     stormTimer.scheduleRecurring(delaySecs, recurSecs, runnables[i]);
                     sleepMsBeforeCheck = 10000 + delaySecs * 1000;
-                    int sleepSecsBeforeCheck = (int)(sleepMsBeforeCheck / 1000);
-                    expectedCounterAtCheck = ((sleepSecsBeforeCheck - delaySecs) / recurSecs) * threadCnt;
+                    int sleepSecsBeforeCheck = (int) (sleepMsBeforeCheck / 1000);
+                    expectedCounterAtCheck =
+                            ((sleepSecsBeforeCheck - delaySecs) / recurSecs) * threadCnt;
                     break;
                 case RECURRING_MS:
                     stormTimer.scheduleRecurringMs(delayMs, recurMs, runnables[i]);
                     sleepMsBeforeCheck = 10000 + delayMs;
-                    expectedCounterAtCheck = threadCnt * (int)((sleepMsBeforeCheck - delayMs) / recurMs);
+                    expectedCounterAtCheck =
+                            threadCnt * (int) ((sleepMsBeforeCheck - delayMs) / recurMs);
                     break;
                 case RECURRING_WITH_JITTER:
-                    stormTimer.scheduleRecurringWithJitter(delaySecs, recurSecs, jitterMs, runnables[i]);
+                    stormTimer.scheduleRecurringWithJitter(delaySecs, recurSecs, jitterMs,
+                        runnables[i]);
                     sleepMsBeforeCheck = 10000 + delaySecs * 1000;
-                    sleepSecsBeforeCheck = (int)(sleepMsBeforeCheck / 1000);
-                    expectedCounterAtCheck = ((sleepSecsBeforeCheck - delaySecs) / recurSecs) * threadCnt;
+                    sleepSecsBeforeCheck = (int) (sleepMsBeforeCheck / 1000);
+                    expectedCounterAtCheck =
+                            ((sleepSecsBeforeCheck - delaySecs) / recurSecs) * threadCnt;
                     break;
                 default:
-                    // do nothing
+                // do nothing
             }
         }
 
@@ -201,24 +220,29 @@ public class TestStormTimer {
             for (int i = 0; i < threadCnt; i++) {
                 ScheduleRunnable runnable = runnables[i];
                 if (!runnable.isSuccess()) {
-                    errs.add(String.format("Runnable %d was expecting counter value %d but found %d",
-                        runnable.runnableNum, runnable.runnableNum, runnable.counterValueBeforeIncrement));
+                    errs.add(String
+                            .format("Runnable %d was expecting counter value %d but found %d",
+                            runnable.runnableNum, runnable.runnableNum, runnable.counterValueBeforeIncrement));
                 }
             }
             Assertions.assertTrue(errs.isEmpty(), String.join(",\n\t", errs));
             return errs.isEmpty();
         } else {
-            // this weaker guarantee of total number of executions should succeed except for recurring schedule
+            // this weaker guarantee of total number of executions should succeed except for
+            // recurring schedule
             int actualCounter = counter.get();
-            if (scheduleType == SCHEDULE_TYPE.RECURRING ||
-                scheduleType == SCHEDULE_TYPE.RECURRING_MS ||
-                scheduleType == SCHEDULE_TYPE.RECURRING_WITH_JITTER) {
+            if (scheduleType == SCHEDULE_TYPE.RECURRING
+                    || scheduleType == SCHEDULE_TYPE.RECURRING_MS
+                    || scheduleType == SCHEDULE_TYPE.RECURRING_WITH_JITTER) {
                 if (expectedCounterAtCheck != counter.get()) {
-                    System.err.printf("Ignoring count mismatch with recurring scheduleType of %s, expected=%d, actual=%d\n",
-                        scheduleType, expectedCounterAtCheck, actualCounter);
+                    System.err
+                            .printf("Ignoring count mismatch with recurring scheduleType of %s, "
+                            + "expected=%d, actual=%d\n",
+                            scheduleType, expectedCounterAtCheck, actualCounter);
                 }
             } else {
-                Assertions.assertEquals(expectedCounterAtCheck, actualCounter, "Number of runnables completed");
+                Assertions.assertEquals(expectedCounterAtCheck, actualCounter,
+                        "Number of runnables completed");
             }
             return true;
         }

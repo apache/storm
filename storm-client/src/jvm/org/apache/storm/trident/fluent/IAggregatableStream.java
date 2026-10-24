@@ -20,7 +20,8 @@ import org.apache.storm.tuple.Fields;
 public interface IAggregatableStream {
     IAggregatableStream each(Fields inputFields, Function function, Fields functionFields);
 
-    IAggregatableStream partitionAggregate(Fields inputFields, Aggregator agg, Fields functionFields);
+    IAggregatableStream partitionAggregate(Fields inputFields, Aggregator agg,
+            Fields functionFields);
 
     Stream toStream();
 

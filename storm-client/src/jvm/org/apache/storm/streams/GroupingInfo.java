@@ -30,7 +30,8 @@ abstract class GroupingInfo implements Serializable {
     public static GroupingInfo shuffle() {
         return new GroupingInfo() {
             @Override
-            public void declareGrouping(BoltDeclarer declarer, String componentId, String streamId, Fields fields) {
+            public void declareGrouping(BoltDeclarer declarer, String componentId, String streamId,
+                Fields fields) {
                 declarer.shuffleGrouping(componentId, streamId);
             }
         };
@@ -39,7 +40,8 @@ abstract class GroupingInfo implements Serializable {
     public static GroupingInfo fields(Fields fields) {
         return new GroupingInfo(fields) {
             @Override
-            public void declareGrouping(BoltDeclarer declarer, String componentId, String streamId, Fields fields) {
+            public void declareGrouping(BoltDeclarer declarer, String componentId, String streamId,
+                Fields fields) {
                 declarer.fieldsGrouping(componentId, streamId, fields);
             }
         };
@@ -48,7 +50,8 @@ abstract class GroupingInfo implements Serializable {
     public static GroupingInfo global() {
         return new GroupingInfo() {
             @Override
-            public void declareGrouping(BoltDeclarer declarer, String componentId, String streamId, Fields fields) {
+            public void declareGrouping(BoltDeclarer declarer, String componentId, String streamId,
+                Fields fields) {
                 declarer.globalGrouping(componentId, streamId);
             }
         };
@@ -57,13 +60,15 @@ abstract class GroupingInfo implements Serializable {
     public static GroupingInfo all() {
         return new GroupingInfo() {
             @Override
-            public void declareGrouping(BoltDeclarer declarer, String componentId, String streamId, Fields fields) {
+            public void declareGrouping(BoltDeclarer declarer, String componentId, String streamId,
+                Fields fields) {
                 declarer.allGrouping(componentId, streamId);
             }
         };
     }
 
-    public abstract void declareGrouping(BoltDeclarer declarer, String componentId, String streamId, Fields fields);
+    public abstract void declareGrouping(BoltDeclarer declarer, String componentId, String streamId,
+            Fields fields);
 
     public Fields getFields() {
         return fields;

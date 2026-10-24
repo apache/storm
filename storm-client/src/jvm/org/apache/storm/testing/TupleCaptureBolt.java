@@ -27,12 +27,16 @@ import org.apache.storm.tuple.Tuple;
 public class TupleCaptureBolt implements IRichBolt {
 
     /*
-     * Even though normally bolts do not need to care about thread safety, this particular bolt is different.
-     * It maintains a static field that is prepopulated before the topology starts, is written into by the topology,
-     * and is then read from after the topology is completed - all of this by potentially different threads.
+     * Even though normally bolts do not need to care about thread safety, this particular bolt is
+     * different.
+     * It maintains a static field that is prepopulated before the topology starts, is written into
+     * by the topology,
+     * and is then read from after the topology is completed - all of this by potentially different
+     * threads.
      */
 
-    private static final transient Map<String, Map<String, List<FixedTuple>>> emitted_tuples = new ConcurrentHashMap<>();
+    private static final transient Map<String, Map<String, List<FixedTuple>>> emitted_tuples =
+            new ConcurrentHashMap<>();
 
     private final String name;
     private OutputCollector collector;
@@ -43,7 +47,8 @@ public class TupleCaptureBolt implements IRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         this.collector = collector;
     }
 
@@ -51,13 +56,13 @@ public class TupleCaptureBolt implements IRichBolt {
     public void execute(Tuple input) {
         String component = input.getSourceComponent();
         emitted_tuples.get(name)
-            .compute(component, (String key, List<FixedTuple> tuples) -> {
-                if (tuples == null) {
-                    tuples = new ArrayList<>();
-                }
-                tuples.add(new FixedTuple(input.getSourceStreamId(), input.getValues()));
-                return tuples;
-            });
+                .compute(component, (String key, List<FixedTuple> tuples) -> {
+                    if (tuples == null) {
+                        tuples = new ArrayList<>();
+                    }
+                    tuples.add(new FixedTuple(input.getSourceStreamId(), input.getValues()));
+                    return tuples;
+                });
         collector.ack(input);
     }
 

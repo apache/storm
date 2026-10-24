@@ -52,7 +52,8 @@ public class SaslMessageToken implements INettySerializable {
             }
             short identifier = smBuffer.readShort();
             int payloadLen = smBuffer.readInt();
-            if (identifier != IDENTIFIER || payloadLen < 0 || payloadLen > smBuffer.readableBytes()) {
+            if (identifier != IDENTIFIER || payloadLen < 0 || payloadLen > smBuffer
+                    .readableBytes()) {
                 return null;
             }
             byte[] token = new byte[payloadLen];
@@ -87,7 +88,7 @@ public class SaslMessageToken implements INettySerializable {
     }
 
     /**
-     * encode the current SaslToken Message into a ByteBuf.
+     * Encode the current SaslToken Message into a ByteBuf.
      * 
      * <p>SaslTokenMessageRequest is encoded as: identifier .... short(2) payload
      * length .... int payload .... byte[]

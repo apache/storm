@@ -22,7 +22,6 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.IBatchSpout;
 import org.apache.storm.tuple.Fields;
 
-
 public class FixedBatchSpout implements IBatchSpout {
 
     Fields fields;

@@ -21,7 +21,6 @@ import org.apache.storm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class FixedGroupsMapping implements IGroupMappingServiceProvider {
 
     public static final String STORM_FIXED_GROUP_MAPPING = "storm.fixed.group.mapping";
@@ -36,7 +35,8 @@ public class FixedGroupsMapping implements IGroupMappingServiceProvider {
     @Override
     public void prepare(Map<String, Object> stormConf) {
         Map<?, ?> params = (Map<?, ?>) stormConf.get(Config.STORM_GROUP_MAPPING_SERVICE_PARAMS);
-        Map<String, Set<String>> mapping = (Map<String, Set<String>>) params.get(STORM_FIXED_GROUP_MAPPING);
+        Map<String, Set<String>> mapping = (Map<String, Set<String>>) params
+                .get(STORM_FIXED_GROUP_MAPPING);
         if (mapping != null) {
             cachedGroups.putAll(mapping);
         } else {

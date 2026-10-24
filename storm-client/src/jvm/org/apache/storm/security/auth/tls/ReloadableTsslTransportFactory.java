@@ -40,31 +40,38 @@ public class ReloadableTsslTransportFactory extends TSSLTransportFactory {
     public static TServerSocket getServerSocket(int port, int clientTimeout, InetAddress ifAddress,
                                                 ThriftConnectionType type, Map<String, Object> conf) throws Exception {
         SSLContext ctx = createSslContext(type, conf);
-        return createServerSocket(ctx.getServerSocketFactory(), port, clientTimeout, type.isClientAuthRequired(conf),
+        return createServerSocket(ctx.getServerSocketFactory(), port, clientTimeout, type
+                .isClientAuthRequired(conf),
                 ifAddress, type);
     }
 
-    private static SSLContext createSslContext(ThriftConnectionType type, Map<String, Object> conf) throws Exception {
-        X509TrustManager trustManager = new ReloadableX509TrustManager(type.getServerTrustStorePath(conf),
+    private static SSLContext createSslContext(ThriftConnectionType type, Map<String,
+            Object> conf) throws Exception {
+        X509TrustManager trustManager = new ReloadableX509TrustManager(type
+                .getServerTrustStorePath(conf),
                 type.getServerTrustStorePassword(conf));
         X509KeyManager keyManager = new ReloadableX509KeyManager(type.getServerKeyStorePath(conf),
                 type.getServerKeyStorePassword(conf));
         SSLContext ctx = SSLContext.getInstance("TLSv1.2");
 
-        ctx.init(new KeyManager[]{keyManager}, new TrustManager[]{trustManager}, new SecureRandom());
+        ctx.init(new KeyManager[] {keyManager}, new TrustManager[] {trustManager},
+                new SecureRandom());
         return ctx;
     }
 
-    private static TServerSocket createServerSocket(SSLServerSocketFactory factory, int port, int timeout,
+    private static TServerSocket createServerSocket(SSLServerSocketFactory factory, int port,
+            int timeout,
                                                     boolean clientAuth, InetAddress ifAddress,
                                                     ThriftConnectionType type) throws TTransportException {
         try {
-            SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(port, 100, ifAddress);
-            serverSocket.setEnabledProtocols(new String[]{"TLSv1.2"});
+            SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(port, 100,
+                    ifAddress);
+            serverSocket.setEnabledProtocols(new String[] {"TLSv1.2"});
 
             serverSocket.setSoTimeout(timeout);
             serverSocket.setNeedClientAuth(clientAuth);
-            return new TServerSocket(new TServerSocket.ServerSocketTransportArgs().serverSocket(serverSocket).clientTimeout(timeout));
+            return new TServerSocket(new TServerSocket.ServerSocketTransportArgs()
+                    .serverSocket(serverSocket).clientTimeout(timeout));
         } catch (Exception e) {
             throw new TTransportException("Could not bind to port " + port, e);
         }

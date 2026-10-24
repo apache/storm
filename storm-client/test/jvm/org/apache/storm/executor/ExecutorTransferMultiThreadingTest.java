@@ -12,6 +12,11 @@
 
 package org.apache.storm.executor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,18 +47,14 @@ import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 /**
- * Some topologies might spawn extra threads inside components to perform real processing work and emit processed results.
+ * Some topologies might spawn extra threads inside components to perform real processing work and
+ * emit processed results.
  * This unit test is to mimic these scenarios in the {@link ExecutorTransfer} level
  * and make sure the tuples sent out in a multi-threading fashion to the workerTransferQueue
  * is properly handled and received by the remote Worker (consumer)
  *
- * The topology structure this test mimics is
+ * <p>The topology structure this test mimics is
  * {worker1: taskId=1, component="1"} --> {worker2: taskId=2, component="2"}.
  */
 public class ExecutorTransferMultiThreadingTest {
@@ -83,7 +84,7 @@ public class ExecutorTransferMultiThreadingTest {
         workerState = mock(WorkerState.class);
         when(workerState.getWorkerTopologyContext()).thenReturn(workerTopologyContext);
         Map<Integer, JCQueue> receiveQMap = new HashMap<>();
-        //local recvQ is not important in this test; simple mock it
+        // local recvQ is not important in this test; simple mock it
         receiveQMap.put(selfTaskId, mock(JCQueue.class));
         when(workerState.getLocalReceiveQueues()).thenReturn(receiveQMap);
         when(workerState.getTopologyId()).thenReturn(topologyId);
@@ -91,15 +92,20 @@ public class ExecutorTransferMultiThreadingTest {
         when(workerState.getMetricRegistry()).thenReturn(new StormMetricRegistry());
         when(workerState.tryTransferRemote(any(), any(), any())).thenCallRealMethod();
 
-        //the actual worker transfer queue to be used in this test
-        //taskId for worker transfer queue should be -1.
-        //But there is already one worker transfer queue initialized by WorkerTransfer class (taskId=-1).
-        //However the taskId is only used for metrics and it is not important here. Making it -100 to avoid collision.
-        transferQueue = new JCQueue("worker-transfer-queue", "worker-transfer-queue", 1024, 0, 1, new WaitStrategyPark(100),
-            workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, Collections.singletonList(-100), workerState.getPort(),
-            workerState.getMetricRegistry());
+        // the actual worker transfer queue to be used in this test
+        // taskId for worker transfer queue should be -1.
+        // But there is already one worker transfer queue initialized by WorkerTransfer class
+        // (taskId=-1).
+        // However the taskId is only used for metrics and it is not important here. Making it -100
+        // to avoid collision.
+        transferQueue = new JCQueue("worker-transfer-queue", "worker-transfer-queue", 1024, 0, 1,
+                new WaitStrategyPark(100),
+                workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, Collections
+                .singletonList(-100), workerState.getPort(),
+                workerState.getMetricRegistry());
 
-        //Replace the transferQueue inside WorkerTransfer (inside WorkerState) with the customized transferQueue to be used in this test
+        // Replace the transferQueue inside WorkerTransfer (inside WorkerState) with the customized
+        // transferQueue to be used in this test
         WorkerTransfer workerTransfer = new WorkerTransfer(workerState, topoConf, 2);
         setPrivateField(workerTransfer, "transferQueue", transferQueue);
         setPrivateField(workerState, "workerTransfer", workerTransfer);
@@ -107,7 +113,8 @@ public class ExecutorTransferMultiThreadingTest {
         generalTopologyContext = mock(GeneralTopologyContext.class);
     }
 
-    private void setPrivateField(Object target, String fieldName, Object fieldValue) throws NoSuchFieldException, IllegalAccessException {
+    private void setPrivateField(Object target, String fieldName,
+            Object fieldValue) throws NoSuchFieldException, IllegalAccessException {
         Field privateField = target.getClass().getDeclaredField(fieldName);
         privateField.setAccessible(true);
         privateField.set(target, fieldValue);
@@ -115,13 +122,14 @@ public class ExecutorTransferMultiThreadingTest {
 
     @Test
     public void testExecutorTransfer() throws InterruptedException {
-        //There is one ExecutorTransfer per executor
+        // There is one ExecutorTransfer per executor
         ExecutorTransfer executorTransfer = new ExecutorTransfer(workerState, topoConf);
         executorTransfer.initLocalRecvQueues();
         ExecutorService executorService = Executors.newFixedThreadPool(5);
 
-        //There can be multiple producer threads sending out tuples inside each executor
-        //This mimics the case of multi-threading components where a component spawns extra threads to emit tuples.
+        // There can be multiple producer threads sending out tuples inside each executor
+        // This mimics the case of multi-threading components where a component spawns extra threads
+        // to emit tuples.
         int producerTaskNum = 10;
         Runnable[] producerTasks = new Runnable[producerTaskNum];
         for (int i = 0; i < producerTaskNum; i++) {
@@ -131,12 +139,13 @@ public class ExecutorTransferMultiThreadingTest {
             executorService.submit(task);
         }
 
-        //give producers enough time to insert messages into the queue
+        // give producers enough time to insert messages into the queue
         executorService.awaitTermination(1000, TimeUnit.MILLISECONDS);
 
-        //consume all the tuples in the queue and deserialize them one by one
-        //this mimics a remote worker.
-        KryoTupleDeserializer deserializer = new KryoTupleDeserializer(topoConf, workerState.getWorkerTopologyContext());
+        // consume all the tuples in the queue and deserialize them one by one
+        // this mimics a remote worker.
+        KryoTupleDeserializer deserializer = new KryoTupleDeserializer(topoConf, workerState
+                .getWorkerTopologyContext());
         SingleThreadedConsumer consumer = new SingleThreadedConsumer(deserializer, producerTaskNum);
         transferQueue.consume(consumer);
         consumer.finalCheck();
@@ -145,7 +154,8 @@ public class ExecutorTransferMultiThreadingTest {
 
     private Runnable createProducerTask(ExecutorTransfer executorTransfer) {
         return new Runnable() {
-            final Tuple tuple = new TupleImpl(generalTopologyContext, new Values(value1, value2), sourceComp, selfTaskId, "default");
+            final Tuple tuple = new TupleImpl(generalTopologyContext, new Values(value1, value2),
+                    sourceComp, selfTaskId, "default");
             final AddressedTuple addressedTuple = new AddressedTuple(remoteTaskId, tuple);
 
             @Override
@@ -158,7 +168,8 @@ public class ExecutorTransferMultiThreadingTest {
     private StormTopology createStormTopology() {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(sourceComp, new TestWordSpout(true), 1);
-        builder.setBolt(destComp, new TestWordCounter(), 1).fieldsGrouping(sourceComp, new Fields("word"));
+        builder.setBolt(destComp, new TestWordCounter(), 1).fieldsGrouping(sourceComp,
+                new Fields("word"));
         return builder.createTopology();
     }
 
@@ -175,7 +186,9 @@ public class ExecutorTransferMultiThreadingTest {
         /**
          * There are multiple producers sending messages to the queue simultaneously.
          * The consumer receives messages one by one and tries to deserialize them.
-         * If there is any issues/exceptions during the process, it basically means data corruption is happening.
+         * If there is any issues/exceptions during the process, it basically means data corruption
+         * is happening.
+         *
          * @param o the received object
          */
         @Override
@@ -196,7 +209,7 @@ public class ExecutorTransferMultiThreadingTest {
 
         @Override
         public void flush() {
-            //no op
+            // no op
         }
     }
 }

@@ -52,11 +52,12 @@ public class DependencyUploader {
 
     public DependencyUploader() {
         conf = Utils.readStormConfig();
-        this.uploadChunkSize = ObjectReader.getInt(conf.get(Config.STORM_BLOBSTORE_DEPENDENCY_JAR_UPLOAD_CHUNK_SIZE_BYTES), 1024 * 1024);
+        this.uploadChunkSize = ObjectReader.getInt(conf
+                .get(Config.STORM_BLOBSTORE_DEPENDENCY_JAR_UPLOAD_CHUNK_SIZE_BYTES), 1024 * 1024);
     }
 
     public void init() {
-        //NOOP
+        // NOOP
     }
 
     public void shutdown() {
@@ -77,14 +78,17 @@ public class DependencyUploader {
         this.blobStore = blobStore;
     }
 
-    public List<String> uploadFiles(List<File> dependencies, boolean cleanupIfFails) throws IOException, AuthorizationException {
+    public List<String> uploadFiles(List<File> dependencies,
+            boolean cleanupIfFails) throws IOException, AuthorizationException {
         checkFilesExist(dependencies);
 
         List<String> keys = new ArrayList<>(dependencies.size());
         try {
             for (File dependency : dependencies) {
                 String fileName = dependency.getName();
-                String key = DependencyBlobStoreUtils.generateDependencyBlobKey(DependencyBlobStoreUtils.applyUUIDToFileName(fileName));
+                String key = DependencyBlobStoreUtils
+                        .generateDependencyBlobKey(DependencyBlobStoreUtils
+                        .applyUUIDToFileName(fileName));
 
                 try {
                     uploadDependencyToBlobStore(key, dependency);
@@ -119,8 +123,8 @@ public class DependencyUploader {
                 // an existing blob under that key was reused without checking that it holds
                 // the artifact we resolved
                 String key = DependencyBlobStoreUtils.generateDependencyBlobKey(
-                    DependencyBlobStoreUtils.applyUUIDToFileName(
-                        convertArtifactToJarFileName(artifact)));
+                        DependencyBlobStoreUtils.applyUUIDToFileName(
+                                convertArtifactToJarFileName(artifact)));
                 try {
                     uploadDependencyToBlobStore(key, dependency);
                 } catch (KeyAlreadyExistsException e) {
@@ -131,7 +135,8 @@ public class DependencyUploader {
                 keys.add(key);
             }
         } catch (Throwable e) {
-            // the keys are unique to this upload and no topology refers to them, so the ones that made it to
+            // the keys are unique to this upload and no topology refers to them, so the ones that
+            // made it to
             // the blob store are only reachable from here
             if (getBlobStore() != null) {
                 deleteBlobs(keys);
@@ -157,20 +162,22 @@ public class DependencyUploader {
     }
 
     private boolean uploadDependencyToBlobStore(String key, File dependency)
-        throws KeyAlreadyExistsException, AuthorizationException, IOException {
+            throws KeyAlreadyExistsException, AuthorizationException, IOException {
 
         boolean uploadNew = false;
         try {
-            // FIXME: we can filter by listKeys() with local blobstore when STORM-1986 is going to be resolved
+            // FIXME: we can filter by listKeys() with local blobstore when STORM-1986 is going to
+            // be resolved
             // as a workaround, we call getBlobMeta() for all keys
             getBlobStore().getBlobMeta(key);
         } catch (KeyNotFoundException e) {
-            // set acl to below so that it can be shared by other users as well, but allows only read
+            // set acl to below so that it can be shared by other users as well, but allows only
+            // read
             List<AccessControl> acls = new ArrayList<>();
             acls.add(new AccessControl(AccessControlType.USER,
-                                       BlobStoreAclHandler.READ | BlobStoreAclHandler.WRITE | BlobStoreAclHandler.ADMIN));
+                    BlobStoreAclHandler.READ | BlobStoreAclHandler.WRITE | BlobStoreAclHandler.ADMIN));
             acls.add(new AccessControl(AccessControlType.OTHER,
-                                       BlobStoreAclHandler.READ));
+                    BlobStoreAclHandler.READ));
 
             AtomicOutputStream blob = null;
             try {

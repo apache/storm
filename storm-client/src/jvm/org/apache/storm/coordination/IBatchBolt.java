@@ -19,7 +19,8 @@ import org.apache.storm.topology.IComponent;
 import org.apache.storm.tuple.Tuple;
 
 public interface IBatchBolt<T> extends Serializable, IComponent {
-    void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, T id);
+    void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector,
+            T id);
 
     void execute(Tuple tuple);
 

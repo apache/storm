@@ -29,7 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Wraps a {@link IStatefulWindowedBolt} and handles the execution. Saves the last expired and evaluated states of the window during
+ * Wraps a {@link IStatefulWindowedBolt} and handles the execution. Saves the last expired and
+ * evaluated states of the window during
  * checkpoint and restores the state during recovery.
  */
 public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltExecutor implements IStatefulBolt<T> {
@@ -52,7 +53,8 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         prepare(topoConf, context, collector, getWindowState(topoConf, context));
     }
 
@@ -63,12 +65,14 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
         super.prepare(topoConf, context, collector);
     }
 
-    private void init(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector,
+    private void init(Map<String, Object> topoConf, TopologyContext context,
+            OutputCollector collector,
                       KeyValueState<TaskStream, WindowState> windowState) {
         if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME)) {
             msgIdFieldName = (String) topoConf.get(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME);
         } else {
-            throw new IllegalArgumentException(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME + " is not set");
+            throw new IllegalArgumentException(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME
+                    + " is not set");
         }
         topologyContext = context;
         outputCollector = collector;
@@ -82,7 +86,8 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
     @Override
     public void execute(Tuple input) {
         if (!isStateInitialized()) {
-            throw new IllegalStateException("execute invoked before initState with input tuple " + input);
+            throw new IllegalStateException("execute invoked before initState with input tuple "
+                    + input);
         } else if (isRecovering()) {
             handleRecovery(input);
         } else {
@@ -107,13 +112,15 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
         if (state != null) {
             LOG.debug("Tuple msgid {}, saved state {}", msgId, state);
             if (msgId <= state.lastExpired) {
-                LOG.debug("Ignoring tuple since msg id {} <= lastExpired id {}", msgId, state.lastExpired);
+                LOG.debug("Ignoring tuple since msg id {} <= lastExpired id {}", msgId,
+                        state.lastExpired);
                 outputCollector.ack(input);
             } else if (msgId <= state.lastEvaluated) {
                 super.execute(input);
             } else {
-                LOG.debug("Tuple msg id {} > lastEvaluated id {}, adding to pendingTuples and clearing recovery state "
-                                + "for taskStream {}",
+                LOG.debug("Tuple msg id {} > lastEvaluated id {}, adding to pendingTuples and "
+                        + "clearing recovery state "
+                        + "for taskStream {}",
                         msgId,
                         state.lastEvaluated,
                         taskStream);
@@ -204,10 +211,13 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
             }
 
             @Override
-            public void onActivation(List<Tuple> events, List<Tuple> newEvents, List<Tuple> expired, Long timestamp) {
+            public void onActivation(List<Tuple> events, List<Tuple> newEvents, List<Tuple> expired,
+                Long timestamp) {
                 if (isRecovering()) {
-                    String msg = String.format("Unexpected activation with events %s, newEvents %s, expired %s in "
-                                    + "recovering state. recoveryStates %s ",
+                    String msg = String
+                            .format("Unexpected activation with events %s, newEvents %s, expired "
+                            + "%s in "
+                            + "recovering state. recoveryStates %s ",
                             events,
                             newEvents,
                             expired,
@@ -223,14 +233,16 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
     }
 
     private void updateWindowState(List<Tuple> expired, List<Tuple> newEvents) {
-        LOG.debug("Update window state, {} expired, {} new events", expired.size(), newEvents.size());
+        LOG.debug("Update window state, {} expired, {} new events", expired.size(), newEvents
+                .size());
         Map<TaskStream, WindowState> state = new HashMap<>();
         updateState(state, expired, false);
         updateState(state, newEvents, true);
         updateStreamState(state);
     }
 
-    private void updateState(Map<TaskStream, WindowState> state, List<Tuple> tuples, boolean newEvents) {
+    private void updateState(Map<TaskStream, WindowState> state, List<Tuple> tuples,
+            boolean newEvents) {
         for (Tuple tuple : tuples) {
             TaskStream taskStream = TaskStream.fromTuple(tuple);
             WindowState curState = state.get(taskStream);
@@ -250,9 +262,11 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
             if (curState == null) {
                 streamState.put(taskStream, newState);
             } else {
-                WindowState updatedState = new WindowState(Math.max(newState.lastExpired, curState.lastExpired),
-                                                           Math.max(newState.lastEvaluated, curState.lastEvaluated));
-                LOG.debug("Update window state, taskStream {}, curState {}, newState {}", taskStream, curState, updatedState);
+                WindowState updatedState = new WindowState(Math.max(newState.lastExpired,
+                        curState.lastExpired),
+                        Math.max(newState.lastEvaluated, curState.lastEvaluated));
+                LOG.debug("Update window state, taskStream {}, curState {}, newState {}",
+                        taskStream, curState, updatedState);
                 streamState.put(taskStream, updatedState);
             }
         }
@@ -280,9 +294,11 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
         return input.getLongByField(msgIdFieldName);
     }
 
-    private KeyValueState<TaskStream, WindowState> getWindowState(Map<String, Object> topoConf, TopologyContext context) {
+    private KeyValueState<TaskStream, WindowState> getWindowState(Map<String, Object> topoConf,
+            TopologyContext context) {
         String namespace = context.getThisComponentId() + "-" + context.getThisTaskId() + "-window";
-        return (KeyValueState<TaskStream, WindowState>) StateFactory.getState(namespace, topoConf, context);
+        return (KeyValueState<TaskStream, WindowState>) StateFactory.getState(namespace, topoConf,
+                context);
     }
 
     static class WindowState {

@@ -20,14 +20,18 @@ import org.apache.storm.metric.api.StateMetric;
 import org.apache.storm.task.TopologyContext;
 
 public class BuiltinMetricsUtil {
-    public static void registerIconnectionServerMetric(Object server, Map<String, Object> topoConf, TopologyContext context) {
+    public static void registerIconnectionServerMetric(Object server, Map<String, Object> topoConf,
+            TopologyContext context) {
         if (server instanceof IStatefulObject) {
-            registerMetric("__recv-iconnection", new StateMetric((IStatefulObject) server), topoConf, context);
+            registerMetric("__recv-iconnection", new StateMetric((IStatefulObject) server),
+                    topoConf, context);
         }
     }
 
-    public static void registerMetric(String name, IMetric metric, Map<String, Object> topoConf, TopologyContext context) {
-        int bucketSize = ((Number) topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)).intValue();
+    public static void registerMetric(String name, IMetric metric, Map<String, Object> topoConf,
+            TopologyContext context) {
+        int bucketSize = ((Number) topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS))
+                .intValue();
         context.registerMetric(name, metric, bucketSize);
     }
 }

@@ -70,17 +70,19 @@ public class NimbusClient extends ThriftClient {
             return this;
         }
 
-        public NimbusClient buildWithNimbusHostPort(String host, Integer port) throws TTransportException {
+        public NimbusClient buildWithNimbusHostPort(String host,
+                Integer port) throws TTransportException {
             return new NimbusClient(conf, host, port, timeout, asUser, false);
         }
 
-        public NimbusClient build()  {
+        public NimbusClient build() {
             return createNimbusClient(conf, asUser, timeout);
         }
     }
 
     /**
      * Constructor.
+     *
      * @param conf the conf for the client.
      * @param host the host the client is to talk to.
      * @param port the port the client is to talk to.
@@ -89,35 +91,42 @@ public class NimbusClient extends ThriftClient {
      * @deprecated use {@link Builder #buildWithNimbusHostPort()} instead.
      */
     @Deprecated
-    public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
+    public NimbusClient(Map<String, Object> conf, String host, int port,
+        Integer timeout) throws TTransportException {
         this(conf, host, port, timeout, null);
     }
 
     /**
      * Constructor.
+     *
      * @param conf the conf for the client.
      * @param host the host the client is to talk to.
      * @param port the port the client is to talk to.
      * @param timeout the timeout to use when connecting.
-     * @param asUser the name of the user you want to impersonate (use with caution as it is not always supported).
+     * @param asUser the name of the user you want to impersonate (use with caution as it is not
+     *     always supported).
      * @throws TTransportException on any error.
      * @deprecated use {@link Builder #buildWithNimbusHostPort()} instead.
      */
     @Deprecated
-    public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
+    public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout,
+        String asUser) throws TTransportException {
         this(conf, host, port, timeout, asUser, false);
     }
 
     @Deprecated
-    public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser, boolean useTls)
+    public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout,
+        String asUser, boolean useTls)
             throws TTransportException {
-        super(conf, useTls ? ThriftConnectionType.NIMBUS_TLS : ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
+        super(conf, useTls ? ThriftConnectionType.NIMBUS_TLS : ThriftConnectionType.NIMBUS, host,
+                port, timeout, asUser);
         client = new Nimbus.Client(protocol);
         isLocal = false;
     }
 
     /**
      * Constructor.
+     *
      * @param conf the conf for the client.
      * @param host the host the client is to talk to.
      * @throws TTransportException on any error.
@@ -136,7 +145,9 @@ public class NimbusClient extends ThriftClient {
 
     /**
      * Is the local override set or not.
-     * @return true of new clients will be overridden to connect to a local cluster and not the configured remote cluster.
+     *
+     * @return true of new clients will be overridden to connect to a local cluster and not the
+     *     configured remote cluster.
      */
     public static boolean isLocalOverride() {
         return _localOverrideClient != null;
@@ -144,6 +155,7 @@ public class NimbusClient extends ThriftClient {
 
     /**
      * Execute cb with a configured nimbus client that will be closed once cb returns.
+     *
      * @param cb the callback to send to nimbus.
      * @throws Exception on any kind of error.
      */
@@ -153,11 +165,13 @@ public class NimbusClient extends ThriftClient {
 
     /**
      * Execute cb with a configured nimbus client that will be closed once cb returns.
+     *
      * @param cb the callback to send to nimbus.
      * @param conf the conf to use instead of reading the global storm conf.
      * @throws Exception on any kind of error.
      */
-    public static void withConfiguredClient(WithNimbus cb, Map<String, Object> conf) throws Exception {
+    public static void withConfiguredClient(WithNimbus cb, Map<String,
+            Object> conf) throws Exception {
         try (NimbusClient client = NimbusClient.Builder.withConf(conf).build()) {
             cb.run(client.getClient());
         }
@@ -165,6 +179,7 @@ public class NimbusClient extends ThriftClient {
 
     /**
      * Get a nimbus client as configured by conf.
+     *
      * @param conf the configuration to use.
      * @return the client, don't forget to close it when done.
      * @deprecated use {@link Builder #build()} instead.
@@ -176,6 +191,7 @@ public class NimbusClient extends ThriftClient {
 
     /**
      * Get a nimbus client as configured by conf.
+     *
      * @param conf the configuration to use.
      * @param timeout the timeout to use when connecting.
      * @return the client, don't forget to close it when done.
@@ -187,8 +203,10 @@ public class NimbusClient extends ThriftClient {
     }
 
     /**
-     * Check to see if we should log the leader we are connecting to or not.  This typically happens when the leader changes or if debug
-     * logging is enabled. The code remembers the last leader it was called with, but it should be transparent to the caller.
+     * Check to see if we should log the leader we are connecting to or not. This typically happens
+     * when the leader changes or if debug
+     * logging is enabled. The code remembers the last leader it was called with, but it should be
+     * transparent to the caller.
      *
      * @param leader the leader we are trying to connect to.
      * @return true if it should be logged else false.
@@ -196,10 +214,10 @@ public class NimbusClient extends ThriftClient {
     private static synchronized boolean shouldLogLeader(String leader) {
         assert leader != null;
         if (LOG.isDebugEnabled()) {
-            //If debug logging is turned on we should just log the leader all the time....
+            // If debug logging is turned on we should just log the leader all the time....
             return true;
         }
-        //Only log if the leader has changed.  It is not interesting otherwise.
+        // Only log if the leader has changed.  It is not interesting otherwise.
         if (oldLeader.equals(leader)) {
             return false;
         }
@@ -209,6 +227,7 @@ public class NimbusClient extends ThriftClient {
 
     /**
      * Get a nimbus client as configured by conf.
+     *
      * @param conf the configuration to use.
      * @param asUser the user to impersonate (this does not always work).
      * @return the client, don't forget to close it when done.
@@ -221,6 +240,7 @@ public class NimbusClient extends ThriftClient {
 
     /**
      * Get a nimbus client as configured by conf.
+     *
      * @param conf the configuration to use.
      * @param asUser the user to impersonate (this does not always work).
      * @param timeout the timeout to use when connecting.
@@ -228,11 +248,13 @@ public class NimbusClient extends ThriftClient {
      * @deprecated use {@link Builder #build()} instead.
      */
     @Deprecated
-    public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser, Integer timeout) {
+    public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser,
+        Integer timeout) {
         return createNimbusClient(conf, asUser, timeout);
     }
 
-    private static NimbusClient createNimbusClient(Map<String, Object> conf, String asUser, Integer timeout) {
+    private static NimbusClient createNimbusClient(Map<String, Object> conf, String asUser,
+            Integer timeout) {
         Nimbus.Iface override = _localOverrideClient;
         if (override != null) {
             return new NimbusClient(override);
@@ -243,14 +265,15 @@ public class NimbusClient extends ThriftClient {
         conf = fullConf;
         if (conf.containsKey(Config.STORM_DO_AS_USER)) {
             if (asUser != null && !asUser.isEmpty()) {
-                LOG.warn("You have specified a doAsUser as param {} and a doAsParam as config, config will take precedence.",
-                         asUser, conf.get(Config.STORM_DO_AS_USER));
+                LOG.warn("You have specified a doAsUser as param {} and a doAsParam as config, "
+                        + "config will take precedence.",
+                        asUser, conf.get(Config.STORM_DO_AS_USER));
             }
             asUser = (String) conf.get(Config.STORM_DO_AS_USER);
         }
 
         if (asUser == null || asUser.isEmpty()) {
-            //The user is not set so lets see what the request context is.
+            // The user is not set so lets see what the request context is.
             ReqContext context = ReqContext.context();
             Principal principal = context.principal();
             asUser = principal == null ? null : principal.getName();
@@ -259,8 +282,10 @@ public class NimbusClient extends ThriftClient {
 
         List<String> seeds = (List<String>) conf.get(Config.NIMBUS_SEEDS);
 
-        boolean useTls = ObjectReader.getBoolean(conf.get(Config.NIMBUS_THRIFT_CLIENT_USE_TLS), false);
-        if (useTls && null == ObjectReader.getString(conf.get(Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN))) {
+        boolean useTls = ObjectReader.getBoolean(conf.get(Config.NIMBUS_THRIFT_CLIENT_USE_TLS),
+                false);
+        if (useTls && null == ObjectReader.getString(conf
+                .get(Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN))) {
             throw new RuntimeException(Config.NIMBUS_THRIFT_TLS_TRANSPORT_PLUGIN
                     + " must be set to use a transport plugin that supports tls");
         }
@@ -276,42 +301,48 @@ public class NimbusClient extends ThriftClient {
                 client = new NimbusClient(conf, host, configuredPortToUse, timeout, asUser, useTls);
                 nimbusSummary = client.getClient().getLeader();
                 if (nimbusSummary != null) {
-                    String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port() + ":" + nimbusSummary.get_tlsPort();
+                    String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port()
+                            + ":" + nimbusSummary.get_tlsPort();
                     if (shouldLogLeader(leaderNimbus)) {
                         LOG.info("Found leader nimbus : {}", leaderNimbus);
                     }
 
-                    int nimbusPortFromSummary = useTls ? nimbusSummary.get_tlsPort() : nimbusSummary.get_port();
+                    int nimbusPortFromSummary = useTls ? nimbusSummary.get_tlsPort() : nimbusSummary
+                            .get_port();
                     if (nimbusSummary.get_host().equals(host) && nimbusPortFromSummary == port) {
                         NimbusClient ret = client;
                         client = null;
                         return ret;
                     }
                     try {
-                        return new NimbusClient(conf, nimbusSummary.get_host(), nimbusPortFromSummary, timeout, asUser, useTls);
+                        return new NimbusClient(conf, nimbusSummary.get_host(),
+                                nimbusPortFromSummary, timeout, asUser, useTls);
                     } catch (TTransportException e) {
-                        throw new RuntimeException("Failed to create a nimbus client for the leader " + leaderNimbus, e);
+                        throw new RuntimeException("Failed to create a nimbus client for the "
+                                + "leader " + leaderNimbus, e);
                     }
                 }
             } catch (Exception e) {
                 LOG.warn("Ignoring exception while trying to get leader nimbus info from " + host
-                         + ". will retry with a different seed host.", e);
+                        + ". will retry with a different seed host.", e);
                 continue;
             } finally {
                 if (client != null) {
                     client.close();
                 }
             }
-            throw new NimbusLeaderNotFoundException("Could not find a nimbus leader, please try again after some time.");
+            throw new NimbusLeaderNotFoundException("Could not find a nimbus leader, please try "
+                    + "again after some time.");
         }
         throw new NimbusLeaderNotFoundException(
-            "Could not find leader nimbus from seed hosts " + seeds + ". "
-            + "Did you specify a valid list of nimbus hosts for config "
-            + Config.NIMBUS_SEEDS + "?");
+                "Could not find leader nimbus from seed hosts " + seeds + ". "
+                        + "Did you specify a valid list of nimbus hosts for config "
+                        + Config.NIMBUS_SEEDS + "?");
     }
 
     /**
      * Get the underlying thrift client.
+     *
      * @return the underlying thrift client.
      */
     public Nimbus.Iface getClient() {
@@ -324,6 +355,7 @@ public class NimbusClient extends ThriftClient {
     public interface WithNimbus {
         /**
          * Run what you need with the nimbus client.
+         *
          * @param client the client.
          * @throws Exception on any error.
          */

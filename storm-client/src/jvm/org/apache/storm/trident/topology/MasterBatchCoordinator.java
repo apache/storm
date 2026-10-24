@@ -36,7 +36,6 @@ public class MasterBatchCoordinator extends BaseRichSpout {
 
     public static final long INIT_TXID = 1L;
 
-
     public static final String BATCH_STREAM_ID = "$batch";
     public static final String COMMIT_STREAM_ID = "$commit";
     public static final String SUCCESS_STREAM_ID = "$success";
@@ -79,8 +78,10 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        throttler = new WindowedTimeThrottler((Number) conf.get(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS), 1);
+    public void open(Map<String, Object> conf, TopologyContext context,
+        SpoutOutputCollector collector) {
+        throttler = new WindowedTimeThrottler((Number) conf
+                .get(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS), 1);
         for (String spoutId : managedSpoutIds) {
             states.add(TransactionalState.newCoordinatorState(conf, spoutId));
         }
@@ -94,7 +95,6 @@ public class MasterBatchCoordinator extends BaseRichSpout {
             maxTransactionActive = active.intValue();
         }
         attemptIds = getStoredCurrAttempts(currTransaction, maxTransactionActive);
-
 
         for (int i = 0; i < spouts.size(); i++) {
             String txId = managedSpoutIds.get(i);
@@ -133,7 +133,8 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                 for (TransactionalState state : states) {
                     state.setData(CURRENT_TX, currTransaction);
                 }
-                LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], [{}]", SUCCESS_STREAM_ID, tx, status, this);
+                LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], [{}]",
+                        SUCCESS_STREAM_ID, tx, status, this);
             }
             sync();
         }
@@ -152,7 +153,8 @@ public class MasterBatchCoordinator extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        // in partitioned example, in case an emitter task receives a later transaction than it's emitted so far,
+        // in partitioned example, in case an emitter task receives a later transaction than it's
+        // emitted so far,
         // when it sees the earlier txid it should know to emit nothing
         declarer.declareStream(BATCH_STREAM_ID, new Fields("tx"));
         declarer.declareStream(COMMIT_STREAM_ID, new Fields("tx"));
@@ -162,13 +164,15 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     private void sync() {
         // note that sometimes the tuples active may be less than max_spout_pending, e.g.
         // max_spout_pending = 3
-        // tx 1, 2, 3 active, tx 2 is acked. there won't be a commit for tx 2 (because tx 1 isn't committed yet),
+        // tx 1, 2, 3 active, tx 2 is acked. there won't be a commit for tx 2 (because tx 1 isn't
+        // committed yet),
         // and there won't be a batch for tx 4 because there's max_spout_pending tx active
         TransactionStatus maybeCommit = activeTx.get(currTransaction);
         if (maybeCommit != null && maybeCommit.status == AttemptStatus.PROCESSED) {
             maybeCommit.status = AttemptStatus.COMMITTING;
             collector.emit(COMMIT_STREAM_ID, new Values(maybeCommit.attempt), maybeCommit.attempt);
-            LOG.debug("Emitted on [stream = {}], [tx_status = {}], [{}]", COMMIT_STREAM_ID, maybeCommit, this);
+            LOG.debug("Emitted on [stream = {}], [tx_status = {}], [{}]", COMMIT_STREAM_ID,
+                    maybeCommit, this);
         }
 
         if (active) {
@@ -191,11 +195,13 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                         }
 
                         TransactionAttempt attempt = new TransactionAttempt(curr, attemptId);
-                        final TransactionStatus newTransactionStatus = new TransactionStatus(attempt);
+                        final TransactionStatus newTransactionStatus =
+                                new TransactionStatus(attempt);
                         activeTx.put(curr, newTransactionStatus);
                         collector.emit(BATCH_STREAM_ID, new Values(attempt), attempt);
-                        LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], [{}]", BATCH_STREAM_ID, attempt,
-                                  newTransactionStatus, this);
+                        LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], "
+                                + "[{}]", BATCH_STREAM_ID, attempt,
+                                newTransactionStatus, this);
                         throttler.markEvent();
                     }
                     curr = nextTransactionId(curr);
@@ -208,7 +214,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         if (throttler.isThrottled()) {
             return false;
         }
-        //TODO: make this strategy configurable?... right now it goes if anyone is ready
+        // TODO: make this strategy configurable?... right now it goes if anyone is ready
         for (ITridentSpout.BatchCoordinator coord : coordinators) {
             if (coord.isReady(txid)) {
                 return true;

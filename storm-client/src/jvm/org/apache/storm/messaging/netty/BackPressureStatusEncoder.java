@@ -30,8 +30,9 @@ public class BackPressureStatusEncoder extends MessageToMessageEncoder<BackPress
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, BackPressureStatus msg, List<Object> out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, BackPressureStatus msg,
+        List<Object> out) throws Exception {
         out.add(msg.buffer(ctx.alloc(), ser));
     }
-    
+
 }

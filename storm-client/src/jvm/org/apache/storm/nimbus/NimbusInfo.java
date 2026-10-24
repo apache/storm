@@ -26,8 +26,10 @@ import org.slf4j.LoggerFactory;
 public class NimbusInfo implements Serializable {
     private static final long serialVersionUID = 2161446155116099333L;
     private static final Logger LOG = LoggerFactory.getLogger(NimbusInfo.class);
-    private static final Pattern NON_TLS_HOST_PORT_PATTERN_FALLBACK = Pattern.compile("^(.*):([0-9]+)$");
-    private static final Pattern TLS_HOST_PORT_PATTERN = Pattern.compile("^(.*):([0-9]+):([0-9]+)$");
+    private static final Pattern NON_TLS_HOST_PORT_PATTERN_FALLBACK = Pattern
+            .compile("^(.*):([0-9]+)$");
+    private static final Pattern TLS_HOST_PORT_PATTERN = Pattern
+            .compile("^(.*):([0-9]+):([0-9]+)$");
     private String host;
     private int port;
     private int tlsPort;
@@ -53,14 +55,17 @@ public class NimbusInfo implements Serializable {
     public static NimbusInfo parse(String nimbusInfo) {
         Matcher m = TLS_HOST_PORT_PATTERN.matcher(nimbusInfo);
         if (m.matches()) {
-            return new NimbusInfo(m.group(1), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)), false);
+            return new NimbusInfo(m.group(1), Integer.parseInt(m.group(2)), Integer.parseInt(m
+                    .group(3)), false);
         } else {
-            LOG.info("nimbusInfo {} doesn't match the format of host:port:tlsPort; fall back to the non-tls format host:port", nimbusInfo);
+            LOG.info("nimbusInfo {} doesn't match the format of host:port:tlsPort; fall back to "
+                    + "the non-tls format host:port", nimbusInfo);
             m = NON_TLS_HOST_PORT_PATTERN_FALLBACK.matcher(nimbusInfo);
             if (m.matches()) {
                 return new NimbusInfo(m.group(1), Integer.parseInt(m.group(2)), false);
             } else {
-                throw new RuntimeException("nimbusInfo should have format of host:port:tlsPort or host:port, invalid string " + nimbusInfo);
+                throw new RuntimeException("nimbusInfo should have format of host:port:tlsPort or "
+                        + "host:port, invalid string " + nimbusInfo);
             }
         }
     }
@@ -80,7 +85,8 @@ public class NimbusInfo implements Serializable {
             return new NimbusInfo(host, port, tlsPort, false);
 
         } catch (UnknownHostException e) {
-            throw new RuntimeException("Something wrong with network/dns config, host cant figure out its name", e);
+            throw new RuntimeException("Something wrong with network/dns config, host cant figure "
+                    + "out its name", e);
         }
     }
 

@@ -25,9 +25,7 @@ import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.api.CuratorEvent;
 import org.apache.storm.shade.org.apache.curator.framework.api.CuratorEventType;
-import org.apache.storm.shade.org.apache.curator.framework.api.CuratorListener;
 import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
@@ -49,7 +47,8 @@ public class ClientZookeeper {
     private static ClientZookeeper _instance = INSTANCE;
 
     /**
-     * Provide an instance of this class for delegates to use.  To mock out delegated methods, provide an instance of a subclass that
+     * Provide an instance of this class for delegates to use. To mock out delegated methods,
+     * provide an instance of a subclass that
      * overrides the implementation of the delegated method.
      *
      * @param u a ClientZookeeper instance
@@ -59,7 +58,8 @@ public class ClientZookeeper {
     }
 
     /**
-     * Resets the singleton instance to the default. This is helpful to reset the class to its original functionality when mocking is no
+     * Resets the singleton instance to the default. This is helpful to reset the class to its
+     * original functionality when mocking is no
      * longer desired.
      */
     public static void resetInstance() {
@@ -70,14 +70,16 @@ public class ClientZookeeper {
         _instance.mkdirsImpl(zk, path, acls);
     }
 
-    public static CuratorFramework mkClient(Map<String, Object> conf, List<String> servers, Object port,
+    public static CuratorFramework mkClient(Map<String, Object> conf, List<String> servers,
+            Object port,
                                             String root, final WatcherCallBack watcher, Map<String, Object> authConf, DaemonType type) {
         return _instance.mkClientImpl(conf, servers, port, root, watcher, authConf, type);
     }
 
     // Deletes the state inside the zookeeper for a key, for which the
     // contents of the key starts with nimbus host port information
-    public static void deleteNodeBlobstore(CuratorFramework zk, String parentPath, String hostPortInfo) {
+    public static void deleteNodeBlobstore(CuratorFramework zk, String parentPath,
+            String hostPortInfo) {
         String normalizedParentPath = normalizePath(parentPath);
         List<String> childPathList = null;
         if (existsNode(zk, normalizedParentPath, false)) {
@@ -91,11 +93,13 @@ public class ClientZookeeper {
         }
     }
 
-    public static String createNode(CuratorFramework zk, String path, byte[] data, CreateMode mode, List<ACL> acls) {
+    public static String createNode(CuratorFramework zk, String path, byte[] data, CreateMode mode,
+            List<ACL> acls) {
         String ret = null;
         try {
             String npath = normalizePath(path);
-            ret = zk.create().creatingParentsIfNeeded().withMode(mode).withACL(acls).forPath(npath, data);
+            ret = zk.create().creatingParentsIfNeeded().withMode(mode).withACL(acls).forPath(npath,
+                    data);
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -187,7 +191,8 @@ public class ClientZookeeper {
         }
     }
 
-    public static Integer getVersion(CuratorFramework zk, String path, boolean watch) throws Exception {
+    public static Integer getVersion(CuratorFramework zk, String path,
+            boolean watch) throws Exception {
         String npath = normalizePath(path);
         // checkExists returns the Stat directly (null when absent) and still arms the watch when
         // watch is true. request 1.
@@ -241,7 +246,8 @@ public class ClientZookeeper {
      * @param watch should a watch be enabled
      * @return null if no data is found, else the data with the version.
      */
-    public static VersionedData<byte[]> getDataWithVersion(CuratorFramework zk, String path, boolean watch) {
+    public static VersionedData<byte[]> getDataWithVersion(CuratorFramework zk, String path,
+            boolean watch) {
         VersionedData<byte[]> data = null;
         String npath = normalizePath(path);
         Stat stats = new Stat();
@@ -300,13 +306,16 @@ public class ClientZookeeper {
         }
     }
 
-    public CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root,
+    public CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers,
+            Object port, String root,
                                          final WatcherCallBack watcher, Map<String, Object> authConf, DaemonType type) {
         CuratorFramework fk;
         if (authConf != null) {
-            fk = CuratorUtils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf), type.getDefaultZkAcls(conf));
+            fk = CuratorUtils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf),
+                    type.getDefaultZkAcls(conf));
         } else {
-            fk = CuratorUtils.newCurator(conf, servers, port, root, null, type.getDefaultZkAcls(conf));
+            fk = CuratorUtils.newCurator(conf, servers, port, root, null, type
+                    .getDefaultZkAcls(conf));
         }
 
         fk.getCuratorListenable().addListener((unused, e) -> {

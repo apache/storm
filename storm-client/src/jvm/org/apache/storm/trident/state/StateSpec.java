@@ -14,7 +14,6 @@ package org.apache.storm.trident.state;
 
 import java.io.Serializable;
 
-
 public class StateSpec implements Serializable {
     public StateFactory stateFactory;
     public Integer requiredNumPartitions = null;

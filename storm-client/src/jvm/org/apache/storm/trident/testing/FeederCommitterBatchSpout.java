@@ -21,7 +21,6 @@ import org.apache.storm.trident.spout.ITridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.tuple.Fields;
 
-
 public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Integer, List<List<Object>>>>, IFeeder {
 
     FeederBatchSpout spout;
@@ -40,7 +39,8 @@ public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Int
     }
 
     @Override
-    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map<String, Object> conf,
+    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId,
+        Map<String, Object> conf,
                                                                              TopologyContext context) {
         return spout.getCoordinator(txStateId, conf, context);
     }
@@ -63,7 +63,6 @@ public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Int
     static class CommitterEmitter implements ICommitterTridentSpout.Emitter {
         ITridentSpout.Emitter emitter;
 
-
         CommitterEmitter(ITridentSpout.Emitter e) {
             emitter = e;
         }
@@ -73,7 +72,8 @@ public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Int
         }
 
         @Override
-        public void emitBatch(TransactionAttempt tx, Object coordinatorMeta, TridentCollector collector) {
+        public void emitBatch(TransactionAttempt tx, Object coordinatorMeta,
+            TridentCollector collector) {
             emitter.emitBatch(tx, coordinatorMeta, collector);
         }
 

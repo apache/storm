@@ -18,9 +18,12 @@ import java.util.Map;
 /**
  * Parent interface for Trident `Filter`s and `Function`s.
  *
- * <p>`Operation` defines two lifecycle methods for Trident components. The `prepare()` method is called once when the `Operation` is first
- * initialized. The `cleanup()` method is called in local mode when the local cluster is being shut down. In distributed mode, the
- * `cleanup()` method is not guaranteed to be called in every situation, but Storm will make a best effort call `cleanup()` whenever
+ * <p>`Operation` defines two lifecycle methods for Trident components. The `prepare()` method is
+ * called once when the `Operation` is first
+ * initialized. The `cleanup()` method is called in local mode when the local cluster is being shut
+ * down. In distributed mode, the
+ * `cleanup()` method is not guaranteed to be called in every situation, but Storm will make a best
+ * effort call `cleanup()` whenever
  * possible.
  */
 public interface Operation extends Serializable {
@@ -28,7 +31,8 @@ public interface Operation extends Serializable {
      * Called when the `Operation` is first initialized.
      *
      * @param conf    the Storm configuration map
-     * @param context the operation context which provides information such as the number of partitions in the stream, and the current
+     * @param context the operation context which provides information such as the number of
+     *     partitions in the stream, and the current
      *                partition index. It also provides methods for registering operation-specific metrics.
      * @see org.apache.storm.trident.operation.TridentOperationContext
      */

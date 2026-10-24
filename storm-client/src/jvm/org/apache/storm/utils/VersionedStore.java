@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import org.apache.storm.shade.org.apache.commons.io.FileUtils;
 
@@ -143,7 +142,8 @@ public class VersionedStore {
         List<Long> ret = new ArrayList<Long>();
         for (String s : listDir(root)) {
 
-            if (s.endsWith(FINISHED_VERSION_SUFFIX) && new File(s.substring(0, s.length() - FINISHED_VERSION_SUFFIX.length())).exists()) {
+            if (s.endsWith(FINISHED_VERSION_SUFFIX) && new File(s.substring(0, s
+                    .length() - FINISHED_VERSION_SUFFIX.length())).exists()) {
                 ret.add(validateAndGetVersion(s));
             }
         }

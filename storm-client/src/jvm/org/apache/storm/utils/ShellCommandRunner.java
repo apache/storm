@@ -20,13 +20,15 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Contains convenience functions for running shell commands for cases that are too simple to need a full {@link ShellUtils}
+ * Contains convenience functions for running shell commands for cases that are too simple to need a
+ * full {@link ShellUtils}
  * implementation.
  */
 public interface ShellCommandRunner {
 
     /**
-     * Method to execute a shell command. Covers most of the simple cases without requiring the user to implement the {@link ShellUtils}
+     * Method to execute a shell command. Covers most of the simple cases without requiring the user
+     * to implement the {@link ShellUtils}
      * interface.
      *
      * @param cmd shell command to execute.
@@ -35,7 +37,8 @@ public interface ShellCommandRunner {
     String execCommand(String... cmd) throws IOException;
 
     /**
-     * Method to execute a shell command. Covers most of the simple cases without requiring the user to implement the {@link ShellUtils}
+     * Method to execute a shell command. Covers most of the simple cases without requiring the user
+     * to implement the {@link ShellUtils}
      * interface.
      *
      * @param env     the map of environment key=value
@@ -48,7 +51,8 @@ public interface ShellCommandRunner {
                        long timeout) throws IOException;
 
     /**
-     * Method to execute a shell command. Covers most of the simple cases without requiring the user to implement the {@link ShellUtils}
+     * Method to execute a shell command. Covers most of the simple cases without requiring the user
+     * to implement the {@link ShellUtils}
      * interface.
      *
      * @param env the map of environment key=value
@@ -56,7 +60,7 @@ public interface ShellCommandRunner {
      * @return the output of the executed command.
      */
     String execCommand(Map<String, String> env, String... cmd)
-        throws IOException;
+            throws IOException;
 
     /**
      * Token separator regex used to parse Shell tool outputs.

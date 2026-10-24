@@ -17,7 +17,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 
-
 public class BufferFileInputStream {
     byte[] buffer;
     FileInputStream stream;

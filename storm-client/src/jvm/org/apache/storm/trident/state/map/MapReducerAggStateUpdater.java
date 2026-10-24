@@ -29,7 +29,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
-    //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
+    // ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
     private static final long serialVersionUID = 8667174018978959987L;
 
     ReducerAggregator agg;
@@ -39,7 +39,8 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
     transient ProjectionFactory inputFactory;
     ComboList.Factory factory;
 
-    public MapReducerAggStateUpdater(ReducerAggregator agg, Fields groupFields, Fields inputFields) {
+    public MapReducerAggStateUpdater(ReducerAggregator agg, Fields groupFields,
+            Fields inputFields) {
         this.agg = agg;
         this.groupFields = groupFields;
         this.inputFields = inputFields;
@@ -69,7 +70,7 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
         for (int i = 0; i < uniqueGroups.size(); i++) {
             List<Object> group = uniqueGroups.get(i);
             Object result = results.get(i);
-            collector.emit(factory.create(new List[]{ group, new Values(result) }));
+            collector.emit(factory.create(new List[] {group, new Values(result)}));
         }
     }
 

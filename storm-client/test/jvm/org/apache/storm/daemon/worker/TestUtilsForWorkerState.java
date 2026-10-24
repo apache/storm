@@ -16,6 +16,16 @@
 
 package org.apache.storm.daemon.worker;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
@@ -30,53 +40,33 @@ import org.apache.storm.task.WorkerUserContext;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.SupervisorIfaceFactory;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class TestUtilsForWorkerState {
 
     public static final String RESOURCE_KEY = "resource-key";
     public static final String RESOURCE_VALUE = "resource-value";
 
-    public static WorkerState getWorkerState(Map<String, Object> conf, String topologyId) throws IOException, TException {
+    public static WorkerState getWorkerState(Map<String, Object> conf, String topologyId)
+            throws IOException, TException {
         return getWorkerState(conf, topologyId, Collections.emptyMap());
     }
 
     /**
-     * Builds a WorkerState whose topology conf is the test default plus {@code extraTopologyConf}, which is kept
-     * separate from the daemon {@code conf} so tests can check which of the two a setting is read from.
+     * Builds a WorkerState whose topology conf is the test default plus {@code extraTopologyConf},
+     * which is kept separate from the daemon {@code conf} so tests can check which of the two a
+     * setting is read from.
      */
-    public static WorkerState getWorkerState(Map<String, Object> conf, String topologyId, Map<String, Object> extraTopologyConf)
-        throws IOException, TException {
-        IContext context = mock(IContext.class);
-
-        String assignmentId = null;
-        Assignment assignment = mock(Assignment.class);
-        when(assignment.get_executor_node_port()).thenReturn(new HashMap<>());
-        Supervisor.Iface supervisorIface = mock(Supervisor.Iface.class);
-        when(supervisorIface.getLocalAssignmentForStorm(anyString())).thenReturn(assignment);
-        SupervisorIfaceFactory supervisorIfaceFactory = mock(SupervisorIfaceFactory.class);
-        when(supervisorIfaceFactory.getIface()).thenReturn(supervisorIface);
-        Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier = () -> supervisorIfaceFactory;
-
-        int port = 0;
-        String workerId = null;
-
+    public static WorkerState getWorkerState(Map<String, Object> conf, String topologyId,
+                                             Map<String, Object> extraTopologyConf)
+            throws IOException, TException {
         Map<String, Object> topologyConf = new HashMap<>();
-        topologyConf.put(Config.STORM_MESSAGING_TRANSPORT, "org.apache.storm.messaging.netty.Context");
+        topologyConf.put(Config.STORM_MESSAGING_TRANSPORT,
+                "org.apache.storm.messaging.netty.Context");
         topologyConf.put(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS, 1);
         topologyConf.put(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE, 32768);
         topologyConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1);
         topologyConf.put(Config.TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT, 0);
-        topologyConf.put(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyProgressive");
+        topologyConf.put(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY,
+                "org.apache.storm.policy.WaitStrategyProgressive");
         topologyConf.put(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL1_COUNT, 1);
         topologyConf.put(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL2_COUNT, 1000);
         topologyConf.put(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS, 1);
@@ -89,13 +79,31 @@ public class TestUtilsForWorkerState {
         topologyConf.put(Config.TOPOLOGY_TRANSFER_BATCH_SIZE, 1);
         topologyConf.putAll(extraTopologyConf);
 
+        Assignment assignment = mock(Assignment.class);
+        when(assignment.get_executor_node_port()).thenReturn(new HashMap<>());
+        return getWorkerState(conf, topologyId, topologyConf, null, assignment);
+    }
+
+    public static WorkerState getWorkerState(Map<String, Object> conf, String topologyId,
+                                             Map<String, Object> topologyConf, String assignmentId, Assignment assignment)
+            throws IOException, TException {
+        IContext context = mock(IContext.class);
+        Supervisor.Iface supervisorIface = mock(Supervisor.Iface.class);
+        when(supervisorIface.getLocalAssignmentForStorm(anyString())).thenReturn(assignment);
+        SupervisorIfaceFactory supervisorIfaceFactory = mock(SupervisorIfaceFactory.class);
+        when(supervisorIfaceFactory.getIface()).thenReturn(supervisorIface);
+        Supplier<SupervisorIfaceFactory> supervisorIfaceSupplier = () -> supervisorIfaceFactory;
+        int port = 0;
+        String workerId = null;
+
         IStateStorage stateStorage = null;
         IStormClusterState stormClusterState = null;
         Collection<IAutoCredentials> autoCreds = null;
         StormMetricRegistry metricRegistry = mock(StormMetricRegistry.class);
         Credentials initialCredentials = null;
 
-        WorkerState workerState = new WorkerState(conf, context, topologyId, assignmentId, supervisorIfaceSupplier, port, workerId,
+        WorkerState workerState = new WorkerState(conf, context, topologyId, assignmentId,
+                supervisorIfaceSupplier, port, workerId,
                 topologyConf, stateStorage, stormClusterState, autoCreds, metricRegistry, initialCredentials);
 
         return workerState;

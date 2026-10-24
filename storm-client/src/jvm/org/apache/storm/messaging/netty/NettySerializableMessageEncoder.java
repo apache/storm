@@ -20,17 +20,21 @@ import org.apache.storm.shade.io.netty.handler.codec.MessageToByteEncoder;
 @ChannelHandler.Sharable
 public class NettySerializableMessageEncoder extends MessageToByteEncoder<INettySerializable> {
 
-    public static final NettySerializableMessageEncoder INSTANCE = new NettySerializableMessageEncoder();
-    
-    private NettySerializableMessageEncoder() {}
-    
+    public static final NettySerializableMessageEncoder INSTANCE =
+            new NettySerializableMessageEncoder();
+
+    private NettySerializableMessageEncoder() {
+    }
+
     @Override
-    protected void encode(ChannelHandlerContext ctx, INettySerializable msg, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, INettySerializable msg,
+        ByteBuf out) throws Exception {
         msg.write(out);
     }
 
     @Override
-    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, INettySerializable msg, boolean preferDirect) throws Exception {
+    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, INettySerializable msg,
+        boolean preferDirect) throws Exception {
         return ctx.alloc().ioBuffer(msg.encodeLength());
     }
 

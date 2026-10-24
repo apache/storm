@@ -16,16 +16,15 @@
 
 package org.apache.storm.daemon.worker;
 
-import org.apache.storm.Config;
-import org.apache.storm.daemon.supervisor.AdvancedFSOps;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.thrift.TException;
-import org.apache.storm.tuple.AddressedTuple;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.task.WorkerTopologyContext;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,16 +35,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.storm.Config;
+import org.apache.storm.daemon.supervisor.AdvancedFSOps;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.tuple.AddressedTuple;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.Utils;
+import org.junit.jupiter.api.Test;
 
 public class WorkerStateTest {
 
@@ -58,16 +57,19 @@ public class WorkerStateTest {
             Map<String, Object> conf = new HashMap<>();
             conf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 1);
 
-            List<ByteBuffer> workerHookBuffers = Collections.singletonList(ByteBuffer.wrap(Utils.javaSerialize(new TestUtilsForWorkerState.StateTrackingWorkerHook())));
+            List<ByteBuffer> workerHookBuffers = Collections.singletonList(ByteBuffer.wrap(Utils
+                    .javaSerialize(new TestUtilsForWorkerState.StateTrackingWorkerHook())));
             String topologyId = "1";
             StormTopology topology = mock(StormTopology.class);
             when(topology.deepCopy()).thenReturn(topology);
             when(topology.is_set_worker_hooks()).thenReturn(true);
             when(topology.get_worker_hooks()).thenReturn(workerHookBuffers);
-            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId), any(AdvancedFSOps.class))).thenReturn(topology);
+            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId),
+                    any(AdvancedFSOps.class))).thenReturn(topology);
 
             WorkerState workerState = TestUtilsForWorkerState.getWorkerState(conf, topologyId);
-            TestUtilsForWorkerState.StateTrackingWorkerHook workerHook = workerState.getDeserializedWorkerHooks().stream()
+            TestUtilsForWorkerState.StateTrackingWorkerHook workerHook = workerState
+                    .getDeserializedWorkerHooks().stream()
                     .filter(iwh -> iwh instanceof TestUtilsForWorkerState.StateTrackingWorkerHook)
                     .map(iwh -> (TestUtilsForWorkerState.StateTrackingWorkerHook) iwh)
                     .findFirst()
@@ -94,20 +96,25 @@ public class WorkerStateTest {
             Map<String, Object> conf = new HashMap<>();
             conf.put(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE, 1);
 
-            TestUtilsForWorkerState.ResourceInitializingWorkerHook workerHook = new TestUtilsForWorkerState.ResourceInitializingWorkerHook();
-            List<ByteBuffer> workerHookBuffers = Collections.singletonList(ByteBuffer.wrap(Utils.javaSerialize(workerHook)));
+            TestUtilsForWorkerState.ResourceInitializingWorkerHook workerHook =
+                    new TestUtilsForWorkerState.ResourceInitializingWorkerHook();
+            List<ByteBuffer> workerHookBuffers = Collections.singletonList(ByteBuffer.wrap(Utils
+                    .javaSerialize(workerHook)));
             String topologyId = "1";
             StormTopology topology = mock(StormTopology.class);
             when(topology.deepCopy()).thenReturn(topology);
             when(topology.is_set_worker_hooks()).thenReturn(true);
             when(topology.get_worker_hooks()).thenReturn(workerHookBuffers);
-            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId), any(AdvancedFSOps.class))).thenReturn(topology);
+            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId),
+                    any(AdvancedFSOps.class))).thenReturn(topology);
 
             WorkerState workerState = TestUtilsForWorkerState.getWorkerState(conf, topologyId);
-            assertNull(workerState.getWorkerTopologyContext().getResource(TestUtilsForWorkerState.RESOURCE_KEY));
+            assertNull(workerState.getWorkerTopologyContext()
+                    .getResource(TestUtilsForWorkerState.RESOURCE_KEY));
 
             workerState.runWorkerStartHooks();
-            assertEquals(TestUtilsForWorkerState.RESOURCE_VALUE, workerState.getWorkerTopologyContext().getResource(TestUtilsForWorkerState.RESOURCE_KEY));
+            assertEquals(TestUtilsForWorkerState.RESOURCE_VALUE, workerState
+                    .getWorkerTopologyContext().getResource(TestUtilsForWorkerState.RESOURCE_KEY));
 
             workerState.runWorkerShutdownHooks();
         } finally {
@@ -127,7 +134,8 @@ public class WorkerStateTest {
             String topologyId = "1";
             StormTopology topology = mock(StormTopology.class);
             when(topology.deepCopy()).thenReturn(topology);
-            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId), any(AdvancedFSOps.class))).thenReturn(topology);
+            when(mockedConfigUtils.readSupervisorTopologyImpl(eq(conf), eq(topologyId),
+                    any(AdvancedFSOps.class))).thenReturn(topology);
 
             WorkerState workerState = TestUtilsForWorkerState.getWorkerState(conf, topologyId);
 
@@ -136,7 +144,8 @@ public class WorkerStateTest {
             AddressedTuple tupleForUnknownTask = new AddressedTuple(42, mock(Tuple.class));
 
             assertDoesNotThrow(() ->
-                workerState.transferLocalBatch(new ArrayList<>(Collections.singletonList(tupleForUnknownTask))));
+                    workerState.transferLocalBatch(new ArrayList<>(Collections
+                    .singletonList(tupleForUnknownTask))));
         } finally {
             ConfigUtils.setInstance(previousConfigUtils);
         }

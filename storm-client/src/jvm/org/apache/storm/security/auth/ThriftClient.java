@@ -27,7 +27,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.UUID;
-
 import org.apache.storm.Config;
 import org.apache.storm.thrift.protocol.TBinaryProtocol;
 import org.apache.storm.thrift.protocol.TProtocol;
@@ -60,13 +59,15 @@ public class ThriftClient implements AutoCloseable {
         this(topoConf, type, host, null, null, null);
     }
 
-    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host, Integer port, Integer timeout) {
+    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host,
+            Integer port, Integer timeout) {
         this(topoConf, type, host, port, timeout, null);
     }
 
-    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host, Integer port, Integer timeout,
+    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host,
+            Integer port, Integer timeout,
                         String asUser) {
-        //create a socket with server
+        // create a socket with server
         if (host == null) {
             throw new IllegalArgumentException("host is not set");
         }
@@ -100,6 +101,7 @@ public class ThriftClient implements AutoCloseable {
 
     /**
      * Get the private key using BouncyCastle library from a PKCS#1 format file.
+     *
      * @return The Private Key
      * @throws IOException The IOException
      */
@@ -115,6 +117,7 @@ public class ThriftClient implements AutoCloseable {
 
     /**
      * Function to create a keystore and return the keystore file.
+     *
      * @param keyStorePass The keystore password.
      * @return The keystore file
      * @throws CertificateException CertificateException
@@ -156,26 +159,35 @@ public class ThriftClient implements AutoCloseable {
                 LOG.debug("Tls is enabled");
                 TSSLTransportFactory.TSSLTransportParameters params =
                         new TSSLTransportFactory.TSSLTransportParameters();
-                if (type.getClientTrustStorePath(conf) != null && type.getClientTrustStorePassword(conf) != null) {
+                if (type.getClientTrustStorePath(conf) != null && type
+                        .getClientTrustStorePassword(conf) != null) {
                     // override the keyStoreType, there is no direct setter method
-                    params.setTrustStore(type.getClientTrustStorePath(conf), type.getClientTrustStorePassword(conf), null,
-                            SecurityUtils.inferKeyStoreTypeFromPath(type.getClientTrustStorePath(conf)));
+                    params.setTrustStore(type.getClientTrustStorePath(conf), type
+                            .getClientTrustStorePassword(conf), null,
+                            SecurityUtils.inferKeyStoreTypeFromPath(type
+                            .getClientTrustStorePath(conf)));
                 } else {
-                    throw new IllegalArgumentException("The client truststore is not configured properly");
+                    throw new IllegalArgumentException("The client truststore is not configured "
+                            + "properly");
                 }
 
                 if (type.isClientAuthRequired(conf)) {
-                    if (type.getClientKeyPath(conf) != null && type.getClientCertPath(conf) != null) {
+                    if (type.getClientKeyPath(conf) != null && type
+                            .getClientCertPath(conf) != null) {
                         String keyStorePass = UUID.randomUUID().toString();
                         file = getKeyStoreFile(keyStorePass);
                         params.setKeyStore(file.getAbsolutePath(), keyStorePass, null,
                                 SecurityUtils.inferKeyStoreTypeFromPath(file.getAbsolutePath()));
-                    } else if (type.getClientKeyStorePath(conf) != null && type.getClientKeyStorePassword(conf) != null) {
+                    } else if (type.getClientKeyStorePath(conf) != null && type
+                            .getClientKeyStorePassword(conf) != null) {
                         // override the keyStoreType, there is no direct setter method
-                        params.setKeyStore(type.getClientKeyStorePath(conf), type.getClientKeyStorePassword(conf), null,
-                                SecurityUtils.inferKeyStoreTypeFromPath(type.getClientKeyStorePath(conf)));
+                        params.setKeyStore(type.getClientKeyStorePath(conf), type
+                                .getClientKeyStorePassword(conf), null,
+                                SecurityUtils.inferKeyStoreTypeFromPath(type
+                                .getClientKeyStorePath(conf)));
                     } else {
-                        throw new IllegalArgumentException("The client credentials are not configured properly");
+                        throw new IllegalArgumentException("The client credentials are not "
+                                + "configured properly");
                     }
                 }
                 socket = TSSLTransportFactory.getClientSocket(host, port, 0, params);
@@ -186,17 +198,17 @@ public class ThriftClient implements AutoCloseable {
                 socket.setTimeout(timeout);
             }
 
-            //construct a transport plugin
+            // construct a transport plugin
             ITransportPlugin transportPlugin = ClientAuthUtils.getTransportPlugin(type, conf);
 
-            //TODO: get this from type instead of hardcoding to Nimbus.
-            //establish client-server transport via plugin
-            //do retries if the connect fails
+            // TODO: get this from type instead of hardcoding to Nimbus.
+            // establish client-server transport via plugin
+            // do retries if the connect fails
             TBackoffConnect connectionRetry
-                = new TBackoffConnect(
-                ObjectReader.getInt(conf.get(Config.STORM_NIMBUS_RETRY_TIMES)),
-                ObjectReader.getInt(conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL)),
-                ObjectReader.getInt(conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL_CEILING)),
+                    = new TBackoffConnect(
+                    ObjectReader.getInt(conf.get(Config.STORM_NIMBUS_RETRY_TIMES)),
+                    ObjectReader.getInt(conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL)),
+                    ObjectReader.getInt(conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL_CEILING)),
                     retryForever);
             transport = connectionRetry.doConnectWithRetry(transportPlugin, socket, host, asUser);
         } catch (Exception ex) {
@@ -205,7 +217,7 @@ public class ThriftClient implements AutoCloseable {
                 try {
                     socket.close();
                 } catch (Exception e) {
-                    //ignore
+                    // ignore
                 }
             }
             if (file != null) {

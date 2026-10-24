@@ -27,13 +27,16 @@ import org.apache.storm.tuple.Tuple;
  * Extends AbstractList so that it can be emitted directly as Storm tuples.
  */
 public class TridentTupleView extends AbstractList<Object> implements TridentTuple {
-    public static final TridentTupleView EMPTY_TUPLE = new TridentTupleView(null, new ValuePointer[0], new HashMap());
+    public static final TridentTupleView EMPTY_TUPLE = new TridentTupleView(null,
+            new ValuePointer[0], new HashMap());
     private final ValuePointer[] index;
     private final Map<String, ValuePointer> fieldIndex;
     private final List<List<Object>> delegates;
 
-    // index and fieldIndex are precomputed, delegates built up over many operations using persistent data structures
-    public TridentTupleView(List delegates, ValuePointer[] index, Map<String, ValuePointer> fieldIndex) {
+    // index and fieldIndex are precomputed, delegates built up over many operations using
+    // persistent data structures
+    public TridentTupleView(List delegates, ValuePointer[] index, Map<String,
+            ValuePointer> fieldIndex) {
         this.delegates = delegates;
         this.index = index;
         this.fieldIndex = fieldIndex;
@@ -218,7 +221,8 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
             if (index.length == 0) {
                 return EMPTY_TUPLE;
             } else {
-                return new TridentTupleView(((TridentTupleView) parent).delegates, index, fieldIndex);
+                return new TridentTupleView(((TridentTupleView) parent).delegates, index,
+                        fieldIndex);
             }
         }
 
@@ -290,8 +294,10 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
             for (String f : selfFields) {
                 if (parentFieldsSet.contains(f)) {
                     throw new IllegalArgumentException(
-                        "Additive operations cannot add fields with same name as already exists. "
-                        + "Tried adding " + selfFields + " to " + parent.getOutputFields());
+                            "Additive operations cannot add fields with same name as already "
+                            + "exists. "
+                                    + "Tried adding " + selfFields + " to " + parent
+                                    .getOutputFields());
                 }
                 myOrder.add(f);
             }

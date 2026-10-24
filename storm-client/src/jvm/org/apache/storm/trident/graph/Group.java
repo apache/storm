@@ -63,6 +63,7 @@ public class Group {
 
     /**
      * Get shared memory.
+     *
      * @return the shared memory requests for the entire group
      */
     public Set<SharedMemory> getSharedMemory() {
@@ -74,7 +75,8 @@ public class Group {
     }
 
     /**
-     * In case no resources are specified, returns empty map. In case differing types of resources are specified, throw. Otherwise, add all
+     * In case no resources are specified, returns empty map. In case differing types of resources
+     * are specified, throw. Otherwise, add all
      * the resources for a group.
      */
     public Map<String, Number> getResources(Map<String, Number> defaults) {
@@ -100,29 +102,35 @@ public class Group {
                     for (Node nod : nodes) {
                         Set<String> resourceKeys = new HashSet<>(defaults.keySet());
                         resourceKeys.addAll(nod.getResources().keySet());
-                        ops.append("\t[ " + nod.shortString() + ", Resources Set: " + resourceKeys + " ]\n");
+                        ops.append("\t[ " + nod.shortString() + ", Resources Set: " + resourceKeys
+                                + " ]\n");
                     }
 
                     if (nodeRes.keySet().containsAll(resources.keySet())) {
                         Set<String> diffset = new HashSet<>(nodeRes.keySet());
                         diffset.removeAll(resources.keySet());
                         throw new RuntimeException(
-                            "Found an operation with resources set which are not set in other operations in the group:\n"
-                                    + "\t[ " + n.shortString() + " ]: " + diffset + "\n"
-                                    + "Either set these resources in all other operations in the group, add a default "
-                                    + "setting, or remove the setting from this operation.\n"
-                                    + "The group at fault:\n"
-                                    + ops);
+                                "Found an operation with resources set which are not set in other "
+                                + "operations in the group:\n"
+                                        + "\t[ " + n.shortString() + " ]: " + diffset + "\n"
+                                        + "Either set these resources in all other operations in "
+                                        + "the group, add a default "
+                                        + "setting, or remove the setting from this operation.\n"
+                                        + "The group at fault:\n"
+                                        + ops);
                     } else if (resources.keySet().containsAll(nodeRes.keySet())) {
                         Set<String> diffset = new HashSet<>(resources.keySet());
                         diffset.removeAll(nodeRes.keySet());
                         throw new RuntimeException(
-                            "Found an operation with resources unset which are set in other operations in the group:\n"
-                                    + "\t[ " + n.shortString() + " ]: " + diffset + "\n"
-                                    + "Either set these resources in all other operations in the group, add a default "
-                                    + "setting, or remove the setting from all other operations.\n"
-                                    + "The group at fault:\n"
-                                    + ops);
+                                "Found an operation with resources unset which are set in other "
+                                + "operations in the group:\n"
+                                        + "\t[ " + n.shortString() + " ]: " + diffset + "\n"
+                                        + "Either set these resources in all other operations in "
+                                        + "the group, add a default "
+                                        + "setting, or remove the setting from all other "
+                                        + "operations.\n"
+                                        + "The group at fault:\n"
+                                        + ops);
                     }
                 }
 
@@ -130,7 +138,8 @@ public class Group {
                     String key = kv.getKey();
                     Number val = kv.getValue();
 
-                    Number newval = new Double(val.doubleValue() + resources.get(key).doubleValue());
+                    Number newval = new Double(val.doubleValue() + resources.get(key)
+                            .doubleValue());
                     resources.put(key, newval);
                 }
             }

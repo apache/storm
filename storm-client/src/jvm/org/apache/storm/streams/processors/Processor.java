@@ -23,7 +23,8 @@ import org.apache.storm.annotation.InterfaceStability;
 @InterfaceStability.Unstable
 public interface Processor<T> extends Serializable {
     /**
-     * Initializes the processor. This is typically invoked from the underlying storm bolt's prepare method.
+     * Initializes the processor. This is typically invoked from the underlying storm bolt's prepare
+     * method.
      *
      * @param context the processor context
      */
@@ -38,7 +39,8 @@ public interface Processor<T> extends Serializable {
     void execute(T input, String streamId);
 
     /**
-     * Punctuation marks end of a batch which can be used to compute and pass the results of one stage in the pipeline to the next. For e.g.
+     * Punctuation marks end of a batch which can be used to compute and pass the results of one
+     * stage in the pipeline to the next. For e.g.
      * emit the results of an aggregation.
      *
      * @param stream the stream id on which the punctuation arrived

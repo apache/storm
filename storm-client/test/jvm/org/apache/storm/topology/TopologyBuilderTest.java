@@ -12,6 +12,11 @@
 
 package org.apache.storm.topology;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.GlobalStreamId;
@@ -25,29 +30,25 @@ import org.apache.storm.topology.base.BaseStatefulBolt;
 import org.apache.storm.tuple.Tuple;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-
 public class TopologyBuilderTest {
     private final TopologyBuilder builder = new TopologyBuilder();
 
     @Test
     public void testSetRichBolt() {
-        assertThrows(IllegalArgumentException.class, () -> builder.setBolt("bolt", mock(IRichBolt.class), 0));
+        assertThrows(IllegalArgumentException.class, () -> builder.setBolt("bolt",
+                mock(IRichBolt.class), 0));
     }
 
     @Test
     public void testSetBasicBolt() {
         assertThrows(IllegalArgumentException.class,
-            () -> builder.setBolt("bolt", mock(IBasicBolt.class), 0));
+                () -> builder.setBolt("bolt", mock(IBasicBolt.class), 0));
     }
 
     @Test
     public void testSetSpout() {
         assertThrows(IllegalArgumentException.class,
-            () -> builder.setSpout("spout", mock(IRichSpout.class), 0));
+                () -> builder.setSpout("spout", mock(IRichSpout.class), 0));
     }
 
     @Test
@@ -60,10 +61,10 @@ public class TopologyBuilderTest {
         builder.setSpout("spout1", makeDummySpout());
         builder.setSpout("spout2", makeDummySpout());
         builder.setBolt("bolt1", makeDummyStatefulBolt(), 1)
-               .shuffleGrouping("spout1").shuffleGrouping("spout2");
+                .shuffleGrouping("spout1").shuffleGrouping("spout2");
         builder.setBolt("bolt2", makeDummyStatefulBolt(), 1).shuffleGrouping("spout1");
         builder.setBolt("bolt3", makeDummyStatefulBolt(), 1)
-               .shuffleGrouping("bolt1").shuffleGrouping("bolt2");
+                .shuffleGrouping("bolt1").shuffleGrouping("bolt2");
         StormTopology topology = builder.createTopology();
 
         assertNotNull(topology);
@@ -72,44 +73,52 @@ public class TopologyBuilderTest {
         assertEquals(ImmutableSet.of("spout1", "spout2", "$checkpointspout"), spouts);
         // bolt1, bolt2 should also receive from checkpoint spout
         assertEquals(ImmutableSet.of(new GlobalStreamId("spout1", "default"),
-                                            new GlobalStreamId("spout2", "default"),
-                                            new GlobalStreamId("$checkpointspout", "$checkpoint")),
-                            topology.get_bolts().get("bolt1").get_common().get_inputs().keySet());
+                        new GlobalStreamId("spout2", "default"),
+                        new GlobalStreamId("$checkpointspout", "$checkpoint")),
+                topology.get_bolts().get("bolt1").get_common().get_inputs().keySet());
         assertEquals(ImmutableSet.of(new GlobalStreamId("spout1", "default"),
-                                            new GlobalStreamId("$checkpointspout", "$checkpoint")),
-                            topology.get_bolts().get("bolt2").get_common().get_inputs().keySet());
+                        new GlobalStreamId("$checkpointspout", "$checkpoint")),
+                topology.get_bolts().get("bolt2").get_common().get_inputs().keySet());
         // bolt3 should also receive from checkpoint streams of bolt1, bolt2
         assertEquals(ImmutableSet.of(new GlobalStreamId("bolt1", "default"),
-                                            new GlobalStreamId("bolt1", "$checkpoint"),
-                                            new GlobalStreamId("bolt2", "default"),
-                                            new GlobalStreamId("bolt2", "$checkpoint")),
-                            topology.get_bolts().get("bolt3").get_common().get_inputs().keySet());
+                        new GlobalStreamId("bolt1", "$checkpoint"),
+                        new GlobalStreamId("bolt2", "default"),
+                        new GlobalStreamId("bolt2", "$checkpoint")),
+                topology.get_bolts().get("bolt3").get_common().get_inputs().keySet());
     }
 
     private IRichSpout makeDummySpout() {
         return new BaseRichSpout() {
             @Override
-            public void declareOutputFields(OutputFieldsDeclarer declarer) {}
+            public void declareOutputFields(OutputFieldsDeclarer declarer) {
+            }
 
             @Override
-            public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {}
+            public void open(Map<String, Object> conf, TopologyContext context,
+                SpoutOutputCollector collector) {
+            }
 
             @Override
-            public void nextTuple() {}
+            public void nextTuple() {
+            }
 
-            private void writeObject(java.io.ObjectOutputStream stream) {}
+            private void writeObject(java.io.ObjectOutputStream stream) {
+            }
         };
     }
 
     private IStatefulBolt makeDummyStatefulBolt() {
         return new BaseStatefulBolt() {
             @Override
-            public void execute(Tuple input) {}
+            public void execute(Tuple input) {
+            }
 
             @Override
-            public void initState(State state) {}
+            public void initState(State state) {
+            }
 
-            private void writeObject(java.io.ObjectOutputStream stream) {}
+            private void writeObject(java.io.ObjectOutputStream stream) {
+            }
         };
     }
 }

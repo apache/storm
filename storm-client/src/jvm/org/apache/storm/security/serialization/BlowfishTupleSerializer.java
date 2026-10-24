@@ -31,16 +31,19 @@ import org.slf4j.LoggerFactory;
 /**
  * Apply Blowfish encryption for tuple communication to bolts.
  *
- * @deprecated since 2.8.6. Blowfish uses a 64-bit block size which is vulnerable to birthday attacks (Sweet32).
+ * @deprecated since 2.8.6. Blowfish uses a 64-bit block size which is vulnerable to birthday
+ *     attacks (Sweet32).
  *     Use TLS-based transport encryption instead (see storm.messaging.netty.tls.enable).
  */
 @Deprecated(since = "2.8.6", forRemoval = true)
 public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     /**
-     * The secret key (if any) for data encryption by blowfish payload serialization factory (BlowfishSerializationFactory). You should use
+     * The secret key (if any) for data encryption by blowfish payload serialization factory
+     * (BlowfishSerializationFactory). You should use
      * in via:
      *
-     * <p>```storm -c topology.tuple.serializer.blowfish.key=YOURKEY -c topology.tuple.serializer=org.apache.storm.security.serialization
+     * <p>```storm -c topology.tuple.serializer.blowfish.key=YOURKEY -c
+     * topology.tuple.serializer=org.apache.storm.security.serialization
      * .BlowfishTupleSerializer
      * jar ...```
      */
@@ -52,19 +55,23 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
         String encryptionkey;
         try {
             encryptionkey = (String) topoConf.get(SECRET_KEY);
-            LOG.warn("BlowfishTupleSerializer is deprecated and will be removed in a future release. "
-                    + "Blowfish uses a 64-bit block size which is vulnerable to birthday attacks (Sweet32). "
-                    + "Use TLS-based transport encryption instead (storm.messaging.netty.tls.enable).");
+            LOG.warn("BlowfishTupleSerializer is deprecated and will be removed in a future "
+                    + "release. "
+                    + "Blowfish uses a 64-bit block size which is vulnerable to birthday attacks "
+                    + "(Sweet32). "
+                    + "Use TLS-based transport encryption instead "
+                    + "(storm.messaging.netty.tls.enable).");
 
             byte[] bytes;
             if (encryptionkey != null) {
                 bytes = Hex.decodeHex(encryptionkey.toCharArray());
             } else {
                 // try to use zookeeper secret
-                String payload = (String) topoConf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
+                String payload = (String) topoConf
+                        .get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
                 if (payload != null) {
                     LOG.debug("{} is not present. Use {} as Blowfish encryption key", SECRET_KEY,
-                              Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
+                            Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
                     bytes = payload.getBytes();
                 } else {
                     throw new RuntimeException("Blowfish encryption key not specified");

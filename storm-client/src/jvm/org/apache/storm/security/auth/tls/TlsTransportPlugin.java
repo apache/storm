@@ -71,12 +71,14 @@ public class TlsTransportPlugin implements ITransportPlugin {
         int configuredPort = type.getPort(conf);
         Integer socketTimeout = type.getSocketTimeOut(conf);
 
-        if (type.getServerKeyStorePath(conf) == null || type.getServerKeyStorePassword(conf) == null) {
+        if (type.getServerKeyStorePath(conf) == null || type
+                .getServerKeyStorePassword(conf) == null) {
             throw new IllegalArgumentException("The server keystore is not configured properly");
         }
 
         if (type.isClientAuthRequired(conf)
-                && (type.getServerTrustStorePath(conf) == null || type.getServerTrustStorePassword(conf) == null)) {
+                && (type.getServerTrustStorePath(conf) == null || type
+                .getServerTrustStorePassword(conf) == null)) {
             throw new IllegalArgumentException("The server truststore is not configured properly");
         }
 
@@ -84,7 +86,8 @@ public class TlsTransportPlugin implements ITransportPlugin {
 
         TServerSocket serverTransport = null;
         try {
-            serverTransport = ReloadableTsslTransportFactory.getServerSocket(configuredPort, clientTimeout,
+            serverTransport = ReloadableTsslTransportFactory.getServerSocket(configuredPort,
+                    clientTimeout,
                     InetAddress.getLocalHost(), type, conf);
         } catch (Exception e) {
             throw new IOException(e);
@@ -93,7 +96,7 @@ public class TlsTransportPlugin implements ITransportPlugin {
         ServerSocket socket = serverTransport.getServerSocket();
         socket.setReuseAddress(true);
         this.port = socket.getLocalPort();
-        
+
         int numWorkerThreads = type.getNumThreads(conf);
         Integer queueSize = type.getQueueSize(conf);
 
@@ -107,7 +110,8 @@ public class TlsTransportPlugin implements ITransportPlugin {
         if (queueSize != null) {
             workQueue = new ArrayBlockingQueue<>(queueSize);
         }
-        ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
+        ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads,
+                numWorkerThreads,
                 60, TimeUnit.SECONDS, workQueue,
                 StormThreadFactory.create(conf, type.getHandlerThreadNamePrefix()));
         serverArgs.executorService(executorService);
@@ -116,7 +120,8 @@ public class TlsTransportPlugin implements ITransportPlugin {
     }
 
     @Override
-    public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException {
+    public TTransport connect(TTransport transport, String serverHost,
+        String asUser) throws IOException, TTransportException {
         return transport;
     }
 
@@ -150,7 +155,8 @@ public class TlsTransportPlugin implements ITransportPlugin {
             try {
                 Certificate[] peers = socket.getSession().getPeerCertificates();
                 if (peers.length > 0 && peers[0] instanceof X509Certificate) {
-                    principalName = ((X509Certificate) peers[0]).getSubjectX500Principal().getName();
+                    principalName = ((X509Certificate) peers[0]).getSubjectX500Principal()
+                            .getName();
                 } else if (clientAuthRequired) {
                     throw new TException("TLS peer presented no X.509 certificate");
                 }
@@ -163,15 +169,16 @@ public class TlsTransportPlugin implements ITransportPlugin {
                             socket.getInetAddress());
                     throw new TException("TLS peer not verified", e);
                 }
-                LOG.debug("Client cert not presented; clientAuthRequired=false, using {}", principalName);
+                LOG.debug("Client cert not presented; clientAuthRequired=false, using {}",
+                        principalName);
             }
             LOG.debug("principalName : {} ", principalName);
             ReqContext reqContext = ReqContext.context();
 
-            //remote address
+            // remote address
             reqContext.setRemoteAddress(socket.getInetAddress());
 
-            //remote subject
+            // remote subject
             Subject remoteUser = new Subject();
             remoteUser.getPrincipals().add(new SingleUserPrincipal(principalName));
             reqContext.setSubject(remoteUser);

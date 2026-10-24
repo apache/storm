@@ -22,7 +22,8 @@ import org.apache.storm.metrics2.StormMetricRegistry;
  *
  * <p>Messaging plugin is specified via Storm config parameter, storm.messaging.transport.
  *
- * <p>A messaging plugin should have a default constructor and implements IContext interface. Upon construction, we will invoke
+ * <p>A messaging plugin should have a default constructor and implements IContext interface. Upon
+ * construction, we will invoke
  * IContext::prepare(topoConf) to enable context to be configured according to storm configuration.
  */
 public interface IContext {
@@ -55,11 +56,13 @@ public interface IContext {
      * @param stormId topology ID
      * @param port     port #
      * @param cb The callback to deliver received messages to
-     * @param newConnectionResponse Supplier of the initial message to send to new client connections. If authentication
+     * @param newConnectionResponse Supplier of the initial message to send to new client
+     *     connections. If authentication
      *                              is required, the message will be sent after authentication is complete.
      * @return server side connection
      */
-    IConnection bind(String stormId, int port, IConnectionCallback cb, Supplier<Object> newConnectionResponse);
+    IConnection bind(String stormId, int port, IConnectionCallback cb,
+            Supplier<Object> newConnectionResponse);
 
     /**
      * This method establish a client side connection to a remote server

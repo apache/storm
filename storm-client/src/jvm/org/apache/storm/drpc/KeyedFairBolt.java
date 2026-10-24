@@ -24,7 +24,6 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.KeyedRoundRobinQueue;
 
-
 public class KeyedFairBolt implements IRichBolt, FinishedCallback {
     IRichBolt delegate;
     KeyedRoundRobinQueue<Tuple> rrQueue;
@@ -40,7 +39,8 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         if (delegate instanceof FinishedCallback) {
             callback = (FinishedCallback) delegate;
         }
@@ -54,7 +54,7 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
                         delegate.execute(rrQueue.take());
                     }
                 } catch (InterruptedException e) {
-                    //ignore
+                    // ignore
                 }
             }
         });

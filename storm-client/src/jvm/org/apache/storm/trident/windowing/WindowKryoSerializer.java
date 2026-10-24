@@ -20,7 +20,8 @@ import java.util.Map;
 import org.apache.storm.serialization.SerializationFactory;
 
 /**
- * Kryo serializer/deserializer for values that are stored as part of windowing. This can be used in {@link WindowsStore}. This class is not
+ * Kryo serializer/deserializer for values that are stored as part of windowing. This can be used in
+ * {@link WindowsStore}. This class is not
  * thread safe.
  */
 public class WindowKryoSerializer {
@@ -47,7 +48,8 @@ public class WindowKryoSerializer {
     }
 
     /**
-     * Serializes the given object into a {@link ByteBuffer} backed by the byte array returned by Kryo serialization.
+     * Serializes the given object into a {@link ByteBuffer} backed by the byte array returned by
+     * Kryo serialization.
      *
      * @param obj Object to be serialized.
      */

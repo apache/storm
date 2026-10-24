@@ -23,7 +23,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
-import javax.security.auth.login.Configuration;
 import javax.security.sasl.SaslServer;
 import org.apache.storm.security.auth.ITransportPlugin;
 import org.apache.storm.security.auth.ReqContext;
@@ -62,7 +61,8 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
     public TServer getServer(TProcessor processor) throws IOException, TTransportException {
         int configuredPort = type.getPort(conf);
         Integer socketTimeout = type.getSocketTimeOut(conf);
-        TTransportFactory serverTransportFactory = getServerTransportFactory(type.isImpersonationAllowed());
+        TTransportFactory serverTransportFactory = getServerTransportFactory(type
+                .isImpersonationAllowed());
         TServerSocket serverTransport = null;
         if (socketTimeout != null) {
             serverTransport = new TServerSocket(configuredPort, socketTimeout);
@@ -74,10 +74,10 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
         Integer queueSize = type.getQueueSize(conf);
 
         TThreadPoolServer.Args serverArgs = new TThreadPoolServer.Args(serverTransport)
-            .processor(new TUGIWrapProcessor(processor))
-            .minWorkerThreads(numWorkerThreads)
-            .maxWorkerThreads(numWorkerThreads)
-            .protocolFactory(new TBinaryProtocol.Factory(false, true));
+                .processor(new TUGIWrapProcessor(processor))
+                .minWorkerThreads(numWorkerThreads)
+                .maxWorkerThreads(numWorkerThreads)
+                .protocolFactory(new TBinaryProtocol.Factory(false, true));
 
         if (serverTransportFactory != null) {
             serverArgs.transportFactory(serverTransportFactory);
@@ -86,10 +86,10 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
         if (queueSize != null) {
             workQueue = new ArrayBlockingQueue<>(queueSize);
         }
-        ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
-                                                                            60, TimeUnit.SECONDS, workQueue,
-                                                                            StormThreadFactory.create(conf,
-                                                                                type.getHandlerThreadNamePrefix()));
+        ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads,
+                numWorkerThreads,
+                60, TimeUnit.SECONDS, workQueue,
+                StormThreadFactory.create(conf, type.getHandlerThreadNamePrefix()));
         serverArgs.executorService(executorService);
         return new TThreadPoolServer(serverArgs);
     }
@@ -113,9 +113,9 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
         return this.port;
     }
 
-
     /**
-     * Processor that pulls the SaslServer object out of the transport, and assumes the remote user's UGI before calling through to the
+     * Processor that pulls the SaslServer object out of the transport, and assumes the remote
+     * user's UGI before calling through to the
      * original processor. This is used on the server side to set the UGI for each specific call.
      */
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
@@ -128,30 +128,30 @@ public abstract class SaslTransportPlugin implements ITransportPlugin, Closeable
 
         @Override
         public void process(final TProtocol inProt, final TProtocol outProt) throws TException {
-            //populating request context
+            // populating request context
             ReqContext reqContext = ReqContext.context();
 
             TTransport trans = inProt.getTransport();
-            //Sasl transport
+            // Sasl transport
             TSaslServerTransport saslTrans = (TSaslServerTransport) trans;
 
             if (trans instanceof NoOpTTrasport) {
                 return;
             }
 
-            //remote address
+            // remote address
             TSocket tsocket = (TSocket) saslTrans.getUnderlyingTransport();
             Socket socket = tsocket.getSocket();
             reqContext.setRemoteAddress(socket.getInetAddress());
 
-            //remote subject
+            // remote subject
             SaslServer saslServer = saslTrans.getSaslServer();
             String authId = saslServer.getAuthorizationID();
             Subject remoteUser = new Subject();
             remoteUser.getPrincipals().add(new User(authId));
             reqContext.setSubject(remoteUser);
 
-            //invoke service handler
+            // invoke service handler
             wrapped.process(inProt, outProt);
         }
     }

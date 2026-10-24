@@ -12,6 +12,9 @@
 
 package org.apache.storm.security.serialization;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -24,9 +27,6 @@ import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.utils.ListDelegate;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 public class BlowfishTupleSerializerTest {
 
     /**
@@ -34,7 +34,8 @@ public class BlowfishTupleSerializerTest {
      */
     @Test
     public void testConstructorThrowsOnNullKey() {
-        assertThrows(RuntimeException.class, () -> new BlowfishTupleSerializer(null, new HashMap<>()));
+        assertThrows(RuntimeException.class, () -> new BlowfishTupleSerializer(null,
+                new HashMap<>()));
     }
 
     /**
@@ -44,43 +45,49 @@ public class BlowfishTupleSerializerTest {
     public void testConstructorThrowsOnInvalidKey() {
         // The encryption key must be hexadecimal.
         assertThrows(RuntimeException.class,
-            () -> new BlowfishTupleSerializer(null, ImmutableMap.of(BlowfishTupleSerializer.SECRET_KEY, "0123456789abcdefg")));
+                () -> new BlowfishTupleSerializer(null, ImmutableMap
+                .of(BlowfishTupleSerializer.SECRET_KEY, "0123456789abcdefg")));
     }
 
     /**
-     * Test using {@link org.apache.storm.security.serialization.BlowfishTupleSerializer#SECRET_KEY}.
+     * Test using {@link
+     * org.apache.storm.security.serialization.BlowfishTupleSerializer#SECRET_KEY}.
      */
     @Test
     public void testUseBlowfishKey() {
         String arbitraryKey = "7dd6fb3203878381b08f9c89d25ed105";
-        Map<String, Object> topoConf = ImmutableMap.of(BlowfishTupleSerializer.SECRET_KEY, arbitraryKey);
+        Map<String, Object> topoConf = ImmutableMap.of(BlowfishTupleSerializer.SECRET_KEY,
+                arbitraryKey);
         testEncryptsAndDecryptsMessage(topoConf);
     }
 
     /**
      * Test using {@link org.apache.storm.Config#STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD}
-     * when {@link org.apache.storm.security.serialization.BlowfishTupleSerializer#SECRET_KEY} is not present.
+     * when {@link org.apache.storm.security.serialization.BlowfishTupleSerializer#SECRET_KEY} is
+     * not present.
      */
     @Test
     public void testUseZookeeperSecret() {
-        Map<String, Object> topoConf = ImmutableMap.of(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD, "user:password");
+        Map<String, Object> topoConf = ImmutableMap.of(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD,
+                "user:password");
         testEncryptsAndDecryptsMessage(topoConf);
     }
 
     /**
-     * Reads a string encrypted by another instance with a shared key
+     * Reads a string encrypted by another instance with a shared key.
      */
     private void testEncryptsAndDecryptsMessage(Map<String, Object> topoConf) {
-        String testText = "Tetraodontidae is a family of primarily marine and estuarine fish of the order" +
-                          " Tetraodontiformes. The family includes many familiar species, which are" +
-                          " variously called pufferfish, puffers, balloonfish, blowfish, bubblefish," +
-                          " globefish, swellfish, toadfish, toadies, honey toads, sugar toads, and sea" +
-                          " squab.[1] They are morphologically similar to the closely related" +
-                          " porcupinefish, which have large external spines (unlike the thinner, hidden" +
-                          " spines of Tetraodontidae, which are only visible when the fish has puffed up)." +
-                          " The scientific name refers to the four large teeth, fused into an upper and" +
-                          " lower plate, which are used for crushing the shells of crustaceans and" +
-                          " mollusks, their natural prey.";
+        String testText =
+                "Tetraodontidae is a family of primarily marine and estuarine fish of the order"
+                + " Tetraodontiformes. The family includes many familiar species, which are"
+                + " variously called pufferfish, puffers, balloonfish, blowfish, bubblefish,"
+                + " globefish, swellfish, toadfish, toadies, honey toads, sugar toads, and sea"
+                + " squab.[1] They are morphologically similar to the closely related"
+                + " porcupinefish, which have large external spines (unlike the thinner, hidden"
+                + " spines of Tetraodontidae, which are only visible when the fish has puffed up)."
+                + " The scientific name refers to the four large teeth, fused into an upper and"
+                + " lower plate, which are used for crushing the shells of crustaceans and"
+                + " mollusks, their natural prey.";
         Kryo kryo = new Kryo();
         kryo.setRegistrationRequired(false);
         BlowfishTupleSerializer writerBTS = new BlowfishTupleSerializer(null, topoConf);

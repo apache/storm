@@ -16,12 +16,16 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.GeneralTopologyContext;
 
 /**
- * The tuple is the main data structure in Storm. A tuple is a named list of values, where each value can be any type. Tuples are
- * dynamically typed -- the types of the fields do not need to be declared. Tuples have helper methods like getInteger and getString to get
+ * The tuple is the main data structure in Storm. A tuple is a named list of values, where each
+ * value can be any type. Tuples are
+ * dynamically typed -- the types of the fields do not need to be declared. Tuples have helper
+ * methods like getInteger and getString to get
  * field values without having to cast the result.
  *
- * <p>Storm needs to know how to serialize all the values in a tuple. By default, Storm knows how to serialize the primitive types, strings,
- * and byte arrays. If you want to use another type, you'll need to implement and register a serializer for that type.
+ * <p>Storm needs to know how to serialize all the values in a tuple. By default, Storm knows how to
+ * serialize the primitive types, strings,
+ * and byte arrays. If you want to use another type, you'll need to implement and register a
+ * serializer for that type.
  *
  * @see <a href="http://storm.apache.org/documentation/Serialization.html">Serialization</a>
  */

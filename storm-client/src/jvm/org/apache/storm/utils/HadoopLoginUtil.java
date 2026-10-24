@@ -30,7 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * UserGroupInformation#loginUserFromKeytab(String, String) changes the static fields of UserGroupInformation,
+ * UserGroupInformation#loginUserFromKeytab(String, String) changes the static fields of
+ * UserGroupInformation,
  * especially the current logged-in user, and UserGroupInformation itself is not thread-safe.
  * So it could introduce bugs if it is called multiple times in a JVM process.
  * HadoopLoginUtil.loginHadoop guarantees at-most-once login in a JVM process.
@@ -47,6 +48,7 @@ public class HadoopLoginUtil {
      * Login if a HDFS keytab/principal have been supplied;
      * otherwise, assume it's already logged in or running on insecure HDFS.
      * This also guarantees that login only happens at most once.
+     *
      * @param conf the daemon conf
      * @return the logged in subject or null
      */
@@ -65,10 +67,12 @@ public class HadoopLoginUtil {
                         loginFromKeytab(principal, keyTab);
                     } else {
                         if (principal == null && keyTab != null) {
-                            throw new IllegalArgumentException("HDFS principal is null while keytab is present");
+                            throw new IllegalArgumentException("HDFS principal is null while "
+                                    + "keytab is present");
                         } else {
                             if (principal != null && keyTab == null) {
-                                throw new IllegalArgumentException("HDFS keytab is null while principal is present");
+                                throw new IllegalArgumentException("HDFS keytab is null while "
+                                        + "principal is present");
                             }
                         }
                     }
@@ -86,8 +90,9 @@ public class HadoopLoginUtil {
         return loginSubject;
     }
 
-    //The Hadoop UserGroupInformation class name
-    private static final String HADOOP_USER_GROUP_INFORMATION_CLASS = "org.apache.hadoop.security.UserGroupInformation";
+    // The Hadoop UserGroupInformation class name
+    private static final String HADOOP_USER_GROUP_INFORMATION_CLASS =
+            "org.apache.hadoop.security.UserGroupInformation";
 
     private static void loginFromKeytab(String principal, String keyTab) {
         Preconditions.checkNotNull(principal);
@@ -136,7 +141,7 @@ public class HadoopLoginUtil {
             Method doAsMethod = ugiClass.getMethod("doAs", PrivilegedAction.class);
             Object ugi = currentUserMethod.invoke(null);
             return (Subject) doAsMethod.invoke(ugi,
-                (PrivilegedAction<Subject>) SubjectCompat::currentSubject);
+                    (PrivilegedAction<Subject>) SubjectCompat::currentSubject);
         } catch (Exception e) {
             throw new RuntimeException("Error getting hadoop user!", e);
         }

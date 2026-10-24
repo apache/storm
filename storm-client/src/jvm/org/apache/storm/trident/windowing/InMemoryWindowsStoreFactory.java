@@ -17,8 +17,10 @@ import java.util.Map;
 import org.apache.storm.trident.operation.TridentCollector;
 
 /**
- * InMemoryWindowsStoreFactory contains a single instance of {@link InMemoryWindowsStore} which will be used for storing tuples and triggers
- * of the window. The same InMemoryWindowsStoreFactory instance is passed to {@link WindowsStateUpdater}, which removes successfully emitted
+ * InMemoryWindowsStoreFactory contains a single instance of {@link InMemoryWindowsStore} which will
+ * be used for storing tuples and triggers
+ * of the window. The same InMemoryWindowsStoreFactory instance is passed to {@link
+ * WindowsStateUpdater}, which removes successfully emitted
  * triggers from the same {@code inMemoryWindowsStore} instance in {@link WindowsStateUpdater#updateState(WindowsState, List,
  * TridentCollector)}.
  */

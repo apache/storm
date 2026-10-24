@@ -21,7 +21,6 @@ public class MicroBatchIBackingMap<T> implements IBackingMap<T> {
     IBackingMap<T> delegate;
     Options options;
 
-
     public MicroBatchIBackingMap(final Options options, final IBackingMap<T> delegate) {
         this.options = options;
         this.delegate = delegate;

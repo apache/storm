@@ -14,7 +14,6 @@ package org.apache.storm.topology;
 
 import org.apache.storm.tuple.Fields;
 
-
 public interface OutputFieldsDeclarer {
     /**
      * Uses default stream id.

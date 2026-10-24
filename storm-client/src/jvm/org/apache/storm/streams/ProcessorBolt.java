@@ -33,7 +33,8 @@ class ProcessorBolt extends BaseRichBolt implements StreamBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         delegate.prepare(topoConf, context, collector);
     }
 
@@ -46,7 +47,6 @@ class ProcessorBolt extends BaseRichBolt implements StreamBolt {
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         delegate.declareOutputFields(declarer);
     }
-
 
     @Override
     public void setTimestampField(String fieldName) {

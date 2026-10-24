@@ -60,7 +60,8 @@ public class GeneralTopologyContext implements JSONAware {
     }
 
     /**
-     * Gets the unique id assigned to this topology. The id is the storm name with a unique nonce appended to it.
+     * Gets the unique id assigned to this topology. The id is the storm name with a unique nonce
+     * appended to it.
      *
      * @return the storm id
      */
@@ -78,7 +79,8 @@ public class GeneralTopologyContext implements JSONAware {
     }
 
     /**
-     * Gets the component id for the specified task id. The component id maps to a component id specified for a Spout or Bolt in the
+     * Gets the component id for the specified task id. The component id maps to a component id
+     * specified for a Spout or Bolt in the
      * topology definition.
      *
      * @param taskId the task id
@@ -100,7 +102,8 @@ public class GeneralTopologyContext implements JSONAware {
     }
 
     /**
-     * Gets the task ids allocated for the given component id. The task ids are always returned in ascending order.
+     * Gets the task ids allocated for the given component id. The task ids are always returned in
+     * ascending order.
      */
     public List<Integer> getComponentTasks(String componentId) {
         List<Integer> ret = componentToTasks.get(componentId);
@@ -117,7 +120,8 @@ public class GeneralTopologyContext implements JSONAware {
     public Fields getComponentOutputFields(String componentId, String streamId) {
         Fields ret = componentToStreamToFields.get(componentId).get(streamId);
         if (ret == null) {
-            throw new IllegalArgumentException("No output fields defined for component:stream " + componentId + ":" + streamId);
+            throw new IllegalArgumentException("No output fields defined for component:stream "
+                    + componentId + ":" + streamId);
         }
         return ret;
     }
@@ -146,7 +150,8 @@ public class GeneralTopologyContext implements JSONAware {
     public Map<String, Map<String, Grouping>> getTargets(String componentId) {
         Map<String, Map<String, Grouping>> ret = new HashMap<>();
         for (String otherComponentId : getComponentIds()) {
-            Map<GlobalStreamId, Grouping> inputs = getComponentCommon(otherComponentId).get_inputs();
+            Map<GlobalStreamId, Grouping> inputs = getComponentCommon(otherComponentId)
+                    .get_inputs();
             for (Map.Entry<GlobalStreamId, Grouping> entry : inputs.entrySet()) {
                 GlobalStreamId id = entry.getKey();
                 if (id.get_componentId().equals(componentId)) {

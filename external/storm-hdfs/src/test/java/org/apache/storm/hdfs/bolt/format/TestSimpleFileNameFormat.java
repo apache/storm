@@ -62,11 +62,9 @@ public class TestSimpleFileNameFormat {
         assertEquals(time + "." + host + ".Xcom.7.1.txt", name);
     }
 
+    @Test
     public void testTimeFormat() {
-        Map<String, Object> topoConf = new HashMap();
-        SimpleFileNameFormat format = new SimpleFileNameFormat()
-            .withTimeFormat("xyz");
-        assertThrows(IllegalArgumentException.class, () -> format.prepare(null, createTopologyContext(topoConf)));
+        assertThrows(IllegalArgumentException.class, () -> new SimpleFileNameFormat().withTimeFormat("xyz"));
     }
 
     private TopologyContext createTopologyContext(Map<String, Object> topoConf) {

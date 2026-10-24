@@ -17,7 +17,6 @@ import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
-
 import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.security.auth.ClientAuthUtils;
 import org.apache.storm.security.auth.sasl.SaslTransportPlugin;
@@ -43,21 +42,24 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
         if (workerTokenAuthorizer == null) {
             workerTokenAuthorizer = new WorkerTokenAuthorizer(conf, type);
         }
-        //create an authentication callback handler
-        CallbackHandler serverCallbackHandler = new SimpleSaslServerCallbackHandler(impersonationAllowed,
-                                                                                    workerTokenAuthorizer,
-                                                                                    new JassPasswordProvider(conf));
+        // create an authentication callback handler
+        CallbackHandler serverCallbackHandler =
+                new SimpleSaslServerCallbackHandler(impersonationAllowed,
+                workerTokenAuthorizer,
+                new JassPasswordProvider(conf));
 
-        //create a transport factory that will invoke our auth callback for digest
+        // create a transport factory that will invoke our auth callback for digest
         TSaslServerTransport.Factory factory = new TSaslServerTransport.Factory();
-        factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, "localhost", null, serverCallbackHandler);
+        factory.addServerDefinition(DIGEST, ClientAuthUtils.SERVICE, "localhost", null,
+                serverCallbackHandler);
 
         LOG.info("SASL DIGEST-MD5 transport factory will be used");
         return factory;
     }
 
     @Override
-    public TTransport connect(TTransport transport, String serverHost, String asUser) throws TTransportException, IOException {
+    public TTransport connect(TTransport transport, String serverHost,
+        String asUser) throws TTransportException, IOException {
         CallbackHandler clientCallbackHandler;
         WorkerToken token = WorkerTokenClientCallbackHandler.findWorkerTokenInSubject(type);
         if (token != null) {
@@ -67,10 +69,11 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
             if (loginConf == null) {
                 throw new IOException("Could not find any way to authenticate with the server.");
             }
-            AppConfigurationEntry[] configurationEntries = loginConf.getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
+            AppConfigurationEntry[] configurationEntries = loginConf
+                    .getAppConfigurationEntry(ClientAuthUtils.LOGIN_CONTEXT_CLIENT);
             if (configurationEntries == null) {
                 String errorMessage = "Could not find a '" + ClientAuthUtils.LOGIN_CONTEXT_CLIENT
-                                      + "' entry in this configuration: Client cannot start.";
+                        + "' entry in this configuration: Client cannot start.";
                 throw new IOException(errorMessage);
             }
 
@@ -85,12 +88,12 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
         }
 
         TSaslClientTransport wrapperTransport = new TSaslClientTransport(DIGEST,
-                                                                         null,
-                                                                         ClientAuthUtils.SERVICE,
-                                                                         serverHost,
-                                                                         null,
-                                                                         clientCallbackHandler,
-                                                                         transport);
+                null,
+                ClientAuthUtils.SERVICE,
+                serverHost,
+                null,
+                clientCallbackHandler,
+                transport);
 
         wrapperTransport.open();
         LOG.debug("SASL DIGEST-MD5 client transport has been established");

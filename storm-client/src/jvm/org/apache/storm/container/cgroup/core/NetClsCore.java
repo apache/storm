@@ -54,7 +54,8 @@ public class NetClsCore implements CgroupCore {
     }
 
     public Device getClassId() throws IOException {
-        String output = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, NET_CLS_CLASSID)).get(0);
+        String output = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, NET_CLS_CLASSID))
+                .get(0);
         output = Integer.toHexString(Integer.parseInt(output));
         int major = Integer.parseInt(output.substring(0, output.length() - 4));
         int minor = Integer.parseInt(output.substring(output.length() - 4));

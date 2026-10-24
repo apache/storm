@@ -35,25 +35,28 @@ import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * A class that is called when a TaskMessage arrives.
  */
 public class DeserializingConnectionCallback implements IConnectionCallback, IMetric {
-    private static final Logger LOG = LoggerFactory.getLogger(DeserializingConnectionCallback.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(DeserializingConnectionCallback.class);
 
-    // A tuple that cannot be decoded is dropped instead of killing the worker; anything outside this set keeps
-    // the fatal handling in StormServerHandler. TupleDeserializationException is thrown by KryoTupleDeserializer
+    // A tuple that cannot be decoded is dropped instead of killing the worker; anything outside
+    // this set keeps
+    // the fatal handling in StormServerHandler. TupleDeserializationException is thrown by
+    // KryoTupleDeserializer
     // for unknown task or stream ids.
-    private static final Set<Class<?>> TOLERATED_DESERIALIZATION_FAILURES = new HashSet<>(Arrays.asList(
-        IOException.class,
-        KryoException.class,
-        IllegalArgumentException.class,
-        NegativeArraySizeException.class,
-        ClassCastException.class,
-        ArrayIndexOutOfBoundsException.class,
-        BufferUnderflowException.class,
-        ClassNotFoundException.class));
+    private static final Set<Class<?>> TOLERATED_DESERIALIZATION_FAILURES = new HashSet<>(Arrays
+            .asList(
+            IOException.class,
+            KryoException.class,
+            IllegalArgumentException.class,
+            NegativeArraySizeException.class,
+            ClassCastException.class,
+            ArrayIndexOutOfBoundsException.class,
+            BufferUnderflowException.class,
+            ClassNotFoundException.class));
 
     // Rate limits for drop logging; see recv().
     private static final int INDIVIDUAL_DROP_LOG_LIMIT = 10;
@@ -65,12 +68,12 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
     private final GeneralTopologyContext context;
 
     private ThreadLocal<KryoTupleDeserializer> des =
-        new ThreadLocal<KryoTupleDeserializer>() {
-            @Override
-            protected KryoTupleDeserializer initialValue() {
-                return new KryoTupleDeserializer(conf, context);
-            }
-        };
+            new ThreadLocal<KryoTupleDeserializer>() {
+                @Override
+                protected KryoTupleDeserializer initialValue() {
+                    return new KryoTupleDeserializer(conf, context);
+                }
+            };
 
     private final boolean strictMode;
 
@@ -84,13 +87,16 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
     private final AtomicLong totalDropCount = new AtomicLong(0L);
     private final AtomicLong consecutiveDropCount = new AtomicLong(0L);
 
-    public DeserializingConnectionCallback(final Map<String, Object> conf, final GeneralTopologyContext context,
+    public DeserializingConnectionCallback(final Map<String, Object> conf,
+            final GeneralTopologyContext context,
                                            WorkerState.ILocalTransferCallback callback) {
         this.conf = conf;
         this.context = context;
         cb = callback;
-        sizeMetricsEnabled = ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS), false);
-        strictMode = ObjectReader.getBoolean(conf.get(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE), false);
+        sizeMetricsEnabled = ObjectReader.getBoolean(conf
+                .get(Config.TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS), false);
+        strictMode = ObjectReader.getBoolean(conf
+                .get(Config.TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE), false);
 
     }
 
@@ -111,8 +117,9 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
             } catch (Exception e) {
                 if (strictMode) {
                     int size = payload == null ? -1 : payload.length;
-                    throw new FatalDeserializationException("Failed to deserialize a message of " + size
-                                                            + " bytes destined for task " + message.task(), e);
+                    throw new FatalDeserializationException("Failed to deserialize a message of "
+                            + size
+                            + " bytes destined for task " + message.task(), e);
                 }
                 if (!isToleratedDeserializationFailure(e)) {
                     throw e;
@@ -120,19 +127,20 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
                 deserializationFailures.incrementAndGet();
                 long totalDrops = totalDropCount.incrementAndGet();
                 if (totalDrops <= INDIVIDUAL_DROP_LOG_LIMIT) {
-                    LOG.error("Failed to deserialize a message of {} bytes destined for task {}, dropping it",
-                              message.message().length, message.task(), e);
+                    LOG.error("Failed to deserialize a message of {} bytes destined for task {}, "
+                            + "dropping it",
+                            message.message().length, message.task(), e);
                 } else if ((totalDrops - INDIVIDUAL_DROP_LOG_LIMIT)
-                           % DROP_LOG_SUMMARY_INTERVAL == 0) {
+                        % DROP_LOG_SUMMARY_INTERVAL == 0) {
                     LOG.error("Dropped {} further messages that failed to deserialize "
-                              + "since the last summary. Total Drop Count= {}",
-                              DROP_LOG_SUMMARY_INTERVAL, totalDrops, e);
+                            + "since the last summary. Total Drop Count= {}",
+                            DROP_LOG_SUMMARY_INTERVAL, totalDrops, e);
                 }
                 long consecutiveDrops = consecutiveDropCount.incrementAndGet();
                 if (consecutiveDrops == CONSECUTIVE_DROP_WARN_THRESHOLD) {
                     LOG.warn("{} consecutive messages have failed to deserialize, which usually "
-                             + "means a class is missing from the worker classpath",
-                             consecutiveDrops, e);
+                            + "means a class is missing from the worker classpath",
+                            consecutiveDrops, e);
                 }
                 continue;
             }

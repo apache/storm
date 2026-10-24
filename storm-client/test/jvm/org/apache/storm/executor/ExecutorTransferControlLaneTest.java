@@ -44,9 +44,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Verifies the control-lane routing in {@link ExecutorTransfer#tryTransferLocal}: whitelisted control streams
- * (see {@link Constants#SYSTEM_CONTROL_STREAM_IDS}) must reach the destination's control lane regardless of
- * pendingEmits ordering and data-queue saturation, while data tuples and the lane-disabled path must keep the
+ * Verifies the control-lane routing in {@link ExecutorTransfer#tryTransferLocal}: whitelisted
+ * control streams
+ * (see {@link Constants#SYSTEM_CONTROL_STREAM_IDS}) must reach the destination's control lane
+ * regardless of
+ * pendingEmits ordering and data-queue saturation, while data tuples and the lane-disabled path
+ * must keep the
  * original semantics.
  */
 public class ExecutorTransferControlLaneTest {
@@ -86,12 +89,14 @@ public class ExecutorTransferControlLaneTest {
 
     private JCQueue mkQueue(String name, int size, int controlQueueSize) {
         return new JCQueue(name, name, size, 0, 1, new WaitStrategyPark(100), "test", "test",
-            Collections.singletonList(DEST_TASK_ID), 6701, new StormMetricRegistry(), false, controlQueueSize);
+                Collections
+                .singletonList(DEST_TASK_ID), 6701, new StormMetricRegistry(), false, controlQueueSize);
     }
 
     private AddressedTuple mkTuple(String streamId) {
-        TupleImpl tuple = new TupleImpl(generalTopologyContext, new Values("v"), Constants.SYSTEM_COMPONENT_ID,
-            (int) Constants.SYSTEM_TASK_ID, streamId);
+        TupleImpl tuple = new TupleImpl(generalTopologyContext, new Values("v"),
+                Constants.SYSTEM_COMPONENT_ID,
+                (int) Constants.SYSTEM_TASK_ID, streamId);
         return new AddressedTuple(DEST_TASK_ID, tuple);
     }
 
@@ -116,12 +121,14 @@ public class ExecutorTransferControlLaneTest {
         ExecutorTransfer executorTransfer = mkExecutorTransfer(queue);
 
         Queue<AddressedTuple> pendingEmits = new ArrayDeque<>();
-        pendingEmits.add(mkTuple("default")); // non-empty: the data path would reject and append here
+        pendingEmits
+                .add(mkTuple("default")); // non-empty: the data path would reject and append here
 
         AddressedTuple controlTuple = mkTuple(Constants.SYSTEM_FLUSH_STREAM_ID);
         assertTrue(executorTransfer.tryTransferLocal(controlTuple, queue, pendingEmits),
-            "control tuple must be reported as handled");
-        assertEquals(1, pendingEmits.size(), "control tuple must not be queued behind pendingEmits");
+                "control tuple must be reported as handled");
+        assertEquals(1, pendingEmits.size(),
+                "control tuple must not be queued behind pendingEmits");
         assertEquals(Collections.singletonList(controlTuple), drain(queue));
     }
 
@@ -135,7 +142,8 @@ public class ExecutorTransferControlLaneTest {
 
         AddressedTuple controlTuple = mkTuple(Constants.SYSTEM_TICK_STREAM_ID);
         assertTrue(executorTransfer.tryTransferLocal(controlTuple, queue, null));
-        assertEquals(controlTuple, drain(queue).get(0), "control tuple must be drained ahead of the data backlog");
+        assertEquals(controlTuple, drain(queue).get(0),
+                "control tuple must be drained ahead of the data backlog");
     }
 
     @Test
@@ -150,9 +158,11 @@ public class ExecutorTransferControlLaneTest {
         assertTrue(accepted > 0 && accepted < 64);
 
         Queue<AddressedTuple> pendingEmits = new ArrayDeque<>();
-        assertTrue(executorTransfer.tryTransferLocal(mkTuple(Constants.SYSTEM_FLUSH_STREAM_ID), queue, pendingEmits),
-            "a dropped control tuple is self-healing and must be reported as handled");
-        assertTrue(pendingEmits.isEmpty(), "a dropped control tuple must not fall back to pendingEmits");
+        assertTrue(executorTransfer.tryTransferLocal(mkTuple(Constants.SYSTEM_FLUSH_STREAM_ID),
+                queue, pendingEmits),
+                "a dropped control tuple is self-healing and must be reported as handled");
+        assertTrue(pendingEmits.isEmpty(),
+                "a dropped control tuple must not fall back to pendingEmits");
         assertEquals(accepted, drain(queue).size());
     }
 
@@ -166,7 +176,7 @@ public class ExecutorTransferControlLaneTest {
 
         AddressedTuple dataTuple = mkTuple("default");
         assertFalse(executorTransfer.tryTransferLocal(dataTuple, queue, pendingEmits),
-            "data tuples must keep the original ordering semantics");
+                "data tuples must keep the original ordering semantics");
         assertEquals(2, pendingEmits.size());
         assertTrue(drain(queue).isEmpty());
     }
@@ -179,8 +189,9 @@ public class ExecutorTransferControlLaneTest {
         Queue<AddressedTuple> pendingEmits = new ArrayDeque<>();
         pendingEmits.add(mkTuple("default"));
 
-        assertFalse(executorTransfer.tryTransferLocal(mkTuple(Constants.SYSTEM_FLUSH_STREAM_ID), queue, pendingEmits),
-            "with the lane disabled, control tuples must keep the original data-path semantics");
+        assertFalse(executorTransfer.tryTransferLocal(mkTuple(Constants.SYSTEM_FLUSH_STREAM_ID),
+                queue, pendingEmits),
+                "with the lane disabled, control tuples must keep the original data-path semantics");
         assertEquals(2, pendingEmits.size());
     }
 }

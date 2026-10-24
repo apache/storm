@@ -13,7 +13,6 @@
 package org.apache.storm.metrics2.cgroup;
 
 import com.codahale.metrics.Gauge;
-
 import java.io.IOException;
 import java.util.Map;
 import org.apache.storm.container.cgroup.SubSystemType;

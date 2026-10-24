@@ -13,8 +13,10 @@
 package org.apache.storm.messaging;
 
 /**
- * Wraps a tuple deserialization failure under {@link org.apache.storm.Config#TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE}.
- * The messaging layer treats it as fatal even when the cause chain contains an exception it would otherwise tolerate,
+ * Wraps a tuple deserialization failure under {@link
+ * org.apache.storm.Config#TOPOLOGY_TUPLE_DESERIALIZATION_STRICT_ENABLE}.
+ * The messaging layer treats it as fatal even when the cause chain contains an exception it would
+ * otherwise tolerate,
  * such as the {@code IOException} of a corrupt compressed frame.
  */
 public class FatalDeserializationException extends RuntimeException {

@@ -18,7 +18,7 @@ import java.util.Set;
 public interface CgroupCommonOperation {
 
     /**
-     * add task to cgroup.
+     * Add task to cgroup.
      *
      * @param taskid task id of task to add
      */
@@ -30,39 +30,39 @@ public interface CgroupCommonOperation {
     Set<Integer> getTasks() throws IOException;
 
     /**
-     * add a process to cgroup.
+     * Add a process to cgroup.
      *
      * @param pid the PID of the process to add
      */
     void addProcs(int pid) throws IOException;
 
     /**
-     * get the PIDs of processes running in cgroup.
+     * Get the PIDs of processes running in cgroup.
      */
     Set<Long> getPids() throws IOException;
 
     /**
-     * to get the notify_on_release config.
+     * To get the notify_on_release config.
      */
     boolean getNotifyOnRelease() throws IOException;
 
     /**
-     * to set notify_on_release config in cgroup.
+     * To set notify_on_release config in cgroup.
      */
     void setNotifyOnRelease(boolean flag) throws IOException;
 
     /**
-     * get the command for the relase agent to execute.
+     * Get the command for the relase agent to execute.
      */
     String getReleaseAgent() throws IOException;
 
     /**
-     * set a command for the release agent to execute.
+     * Set a command for the release agent to execute.
      */
     void setReleaseAgent(String command) throws IOException;
 
     /**
-     * get the cgroup.clone_children config.
+     * Get the cgroup.clone_children config.
      */
     boolean getCgroupCloneChildren() throws IOException;
 
@@ -72,7 +72,7 @@ public interface CgroupCommonOperation {
     void setCgroupCloneChildren(boolean flag) throws IOException;
 
     /**
-     * set event control config.
+     * Set event control config.
      */
     void setEventControl(String eventFd, String controlFd, String... args) throws IOException;
 }

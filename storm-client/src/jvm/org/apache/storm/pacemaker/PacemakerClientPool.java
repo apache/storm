@@ -26,8 +26,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Pool of clients for the configured Pacemaker servers.
  *
- * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed in a future release.
- *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports them to Nimbus over
+ * @deprecated Pacemaker is deprecated and only kept for backward compatibility; it will be removed
+ *     in a future release.
+ *     Use the default heartbeat path instead: workers heartbeat to their supervisor, which reports
+ *     them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
 @Deprecated(since = "3.1.0", forRemoval = true)
@@ -72,7 +74,8 @@ public class PacemakerClientPool {
                 HBMessage response = getClientForServer(s).send(m);
                 responses.add(response);
             } catch (PacemakerConnectionException e) {
-                LOG.warn("Failed to connect to the pacemaker server {}, attempting to reconnect", s);
+                LOG.warn("Failed to connect to the pacemaker server {}, attempting to reconnect",
+                        s);
                 getClientForServer(s).reconnect();
             }
         }

@@ -45,7 +45,8 @@ public class TupleImpl implements Tuple {
         }
     }
 
-    public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent, int taskId, String streamId, MessageId id) {
+    public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent,
+            int taskId, String streamId, MessageId id) {
         this.values = context.doSanityCheck() ? Collections.unmodifiableList(values) : values;
         this.taskId = taskId;
         this.streamId = streamId;
@@ -57,13 +58,15 @@ public class TupleImpl implements Tuple {
             String componentId = context.getComponentId(taskId);
             Fields schema = context.getComponentOutputFields(componentId, streamId);
             if (values.size() != schema.size()) {
-                throw new IllegalArgumentException("Tuple created with wrong number of fields. Expected " + schema.size()
-                                                   + " fields but got " + values.size() + " fields");
+                throw new IllegalArgumentException("Tuple created with wrong number of fields. "
+                        + "Expected " + schema.size()
+                        + " fields but got " + values.size() + " fields");
             }
         }
     }
 
-    public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent, int taskId, String streamId) {
+    public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent,
+            int taskId, String streamId) {
         this(context, values, srcComponent, taskId, streamId, MessageId.makeUnanchored());
     }
 

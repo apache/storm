@@ -13,7 +13,8 @@
 package org.apache.storm.streams.processors;
 
 /**
- * Top level marker interface for processors that computes results for a batch of tuples like Aggregate, Join etc.
+ * Top level marker interface for processors that computes results for a batch of tuples like
+ * Aggregate, Join etc.
  */
 public interface BatchProcessor {
 }

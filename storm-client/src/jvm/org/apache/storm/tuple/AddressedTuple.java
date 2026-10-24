@@ -32,9 +32,11 @@ public final class AddressedTuple {
     }
 
     public static AddressedTuple createFlushTuple(GeneralTopologyContext workerTopologyContext) {
-        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(), Constants.SYSTEM_COMPONENT_ID,
-                                        (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_FLUSH_STREAM_ID);
-        return new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple); // one instance per executor avoids false sharing of CPU cache
+        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(),
+                Constants.SYSTEM_COMPONENT_ID,
+                (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_FLUSH_STREAM_ID);
+        return new AddressedTuple(AddressedTuple.BROADCAST_DEST,
+                tuple); // one instance per executor avoids false sharing of CPU cache
     }
 
     public Tuple getTuple() {

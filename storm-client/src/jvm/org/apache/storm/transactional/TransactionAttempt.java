@@ -22,7 +22,6 @@ public class TransactionAttempt {
     BigInteger txid;
     long attemptId;
 
-
     // for kryo compatibility
     public TransactionAttempt() {
 

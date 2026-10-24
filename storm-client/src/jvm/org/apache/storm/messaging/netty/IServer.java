@@ -19,5 +19,6 @@ public interface IServer {
 
     void received(Object message, String remote, Channel channel) throws InterruptedException;
 
-    default void terminating() {}
+    default void terminating() {
+    }
 }

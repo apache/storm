@@ -25,7 +25,6 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class TestAggregatesCounter extends BaseRichBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
 
@@ -33,7 +32,8 @@ public class TestAggregatesCounter extends BaseRichBolt {
     OutputCollector collector;
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+        OutputCollector collector) {
         this.collector = collector;
         counts = new HashMap<String, Integer>();
     }

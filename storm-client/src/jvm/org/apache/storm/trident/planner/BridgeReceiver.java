@@ -16,7 +16,6 @@ import org.apache.storm.coordination.BatchOutputCollector;
 import org.apache.storm.trident.tuple.ConsList;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-
 public class BridgeReceiver implements TupleReceiver {
 
     BatchOutputCollector collector;
