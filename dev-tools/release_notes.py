@@ -97,25 +97,39 @@ def get_issues(owner, repo, milestone):
 def issue_link(issue):
     return issue["html_url"]
 
-UPGRADE_NOTES_HEADING = re.compile(r"^#{1,6}[ \t]*Upgrade notes[ \t]*$", re.IGNORECASE | re.MULTILINE)
-NEXT_HEADING = re.compile(r"^#{1,6}[ \t]", re.MULTILINE)
-TEMPLATE_HINT = re.compile(r"^\*\(.*\)\*$")
+HEADING = re.compile(r"^(#{1,6})[ \t]+(\S.*?)[ \t]*$")
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+# The hint of .github/pull_request_template.md. It does not count as a note.
+TEMPLATE_HINT = ("*(Only for breaking or behaviour changes: what changes for users and what they must do. "
+                 "Delete this section otherwise.)*")
 
 def extract_upgrade_notes(issue):
     """
     Return the text under the "Upgrade notes" heading of the issue body, or None if there is none.
-    The italic hint from the pull request template does not count as a note.
+    The section ends at the next heading of the same or a higher level. Headings inside fenced code
+    blocks are ignored.
     """
-    body = (issue.get("body") or "").replace("\r\n", "\n")
-    heading = UPGRADE_NOTES_HEADING.search(body)
-    if not heading:
-        return None
-    section = body[heading.end():]
-    next_heading = NEXT_HEADING.search(section)
-    if next_heading:
-        section = section[:next_heading.start()]
-    lines = [line for line in section.strip().split("\n") if not TEMPLATE_HINT.match(line.strip())]
-    return "\n".join(lines).strip() or None
+    level = None  # level of the "Upgrade notes" heading, once found
+    fence = None  # marker of the open code fence, if any
+    section = []
+    for line in (issue.get("body") or "").replace("\r\n", "\n").split("\n"):
+        marker = FENCE.match(line)
+        if fence:
+            if marker and set(line.strip()) == {fence[0]} and len(line.strip()) >= len(fence):
+                fence = None
+        elif marker:
+            fence = marker.group(1)
+        else:
+            heading = HEADING.match(line)
+            if heading:
+                if level is not None and len(heading.group(1)) <= level:
+                    break
+                if level is None and heading.group(2).lower() == "upgrade notes":
+                    level = len(heading.group(1))
+                    continue
+        if level is not None:
+            section.append(line)
+    return "\n".join(line for line in section if line.strip() != TEMPLATE_HINT).strip() or None
 
 if __name__ == "__main__":
     issues = get_issues(owner, repo, milestone)
@@ -175,7 +189,7 @@ if __name__ == "__main__":
         f"\n\t<h2>{label}</h2>" +
         f"\n\t<ul>" +
         "\n\t\t".join([
-            f'<li>[<a href="{issue_link(issue)}">#{issue["number"]}</a>] - {issue["title"]}</li>'
+            f'<li>[<a href="{issue_link(issue)}">#{issue["number"]}</a>] - {html.escape(issue["title"], quote=False)}</li>'
             for issue in issues
         ]) +
         "\n\t</ul>"
@@ -187,8 +201,8 @@ if __name__ == "__main__":
     upgrade_notes = [(issue, note) for issue, note in upgrade_notes if note]
     if upgrade_notes:
         issues_str = "\n\t<h2>Upgrade notes</h2>\n\t<ul>" + "\n\t\t".join([
-            f'<li>[<a href="{issue_link(issue)}">#{issue["number"]}</a>] - {issue["title"]}'
-            f'\n<pre>{html.escape(note)}</pre></li>'
+            f'<li>[<a href="{issue_link(issue)}">#{issue["number"]}</a>] - {html.escape(issue["title"], quote=False)}'
+            f'\n<pre>{html.escape(note, quote=False)}</pre></li>'
             for issue, note in upgrade_notes
         ]) + "\n\t</ul>" + issues_str
 
