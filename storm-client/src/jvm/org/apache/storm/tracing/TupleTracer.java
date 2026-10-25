@@ -41,7 +41,7 @@ public interface TupleTracer {
 
     /**
      * Returns the context of a tuple tree that spout task {@code taskId} starts on {@code streamId}, or null to leave it untraced.
-     * Not called for checkpoint tuples.
+     * Not called for checkpoint tuples. Called synchronously from {@code emit()} or {@code emitDirect()}, on the calling thread.
      */
     Object spoutEmit(int taskId, String streamId);
 
