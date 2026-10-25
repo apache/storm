@@ -1258,8 +1258,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         ret.put(Config.TOPOLOGY_WORKER_NIMBUS_THRIFT_CLIENT_USE_TLS, workerNimbusClientTlsEnabled);
         ret.put(Config.NIMBUS_THRIFT_CLIENT_USE_TLS, workerNimbusClientTlsEnabled);
 
-        if (!mergedConf.containsKey(Config.TOPOLOGY_METRICS_REPORTERS) && mergedConf.containsKey(Config.STORM_METRICS_REPORTERS)) {
-            ret.put(Config.TOPOLOGY_METRICS_REPORTERS, mergedConf.get(Config.STORM_METRICS_REPORTERS));
+        if (mergedConf.containsKey("storm.metrics.reporters")) {
+            LOG.warn("storm.metrics.reporters was removed and is ignored; "
+                + "use topology.metrics.reporters instead");
         }
 
         // add any system metrics reporters to the topology metrics reporters
