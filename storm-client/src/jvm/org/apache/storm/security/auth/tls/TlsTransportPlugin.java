@@ -42,6 +42,7 @@ import org.apache.storm.thrift.transport.TSocket;
 import org.apache.storm.thrift.transport.TTransport;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.ExtendedThreadPoolExecutor;
+import org.apache.storm.utils.StormThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,7 +112,8 @@ public class TlsTransportPlugin implements ITransportPlugin {
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads,
                 numWorkerThreads,
-                60, TimeUnit.SECONDS, workQueue);
+                60, TimeUnit.SECONDS, workQueue,
+                StormThreadFactory.create(conf, type.getHandlerThreadNamePrefix()));
         serverArgs.executorService(executorService);
         tThreadPoolServer = new TThreadPoolServer(serverArgs);
         return tThreadPoolServer;
