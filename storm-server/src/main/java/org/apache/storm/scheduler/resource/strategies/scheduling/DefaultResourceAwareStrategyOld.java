@@ -18,6 +18,12 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+/**
+ * Default Resource Aware Strategy Old.
+ *
+ * @deprecated Please use {@link DefaultResourceAwareStrategy} instead.
+ */
+@Deprecated(since = "2.3.0", forRemoval = false)
 public class DefaultResourceAwareStrategyOld extends BaseResourceAwareStrategy {
 
     public DefaultResourceAwareStrategyOld() {

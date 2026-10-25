@@ -61,16 +61,16 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     public enum NodeSortType {
         /**
          * Generic Resource Aware Strategy sorting type.
-         * @deprecated used by GenericResourceAwareStrategyOld only. Use {link #COMMON} instead.
+         * @deprecated used by GenericResourceAwareStrategyOld only. Use {@link #COMMON} instead.
          */
-        @Deprecated
+        @Deprecated(since = "2.3.0", forRemoval = false)
         GENERIC_RAS,
 
         /**
          * Default Resource Aware Strategy sorting type.
-         * @deprecated used by DefaultResourceAwareStrategyOld only. Use {link #COMMON} instead.
+         * @deprecated used by DefaultResourceAwareStrategyOld only. Use {@link #COMMON} instead.
          */
-        @Deprecated
+        @Deprecated(since = "2.3.0", forRemoval = false)
         DEFAULT_RAS,
 
         /**

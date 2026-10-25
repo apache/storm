@@ -24,7 +24,11 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
 
-@Deprecated
+/**
+ * Plain SASL server implementation for testing.
+ * @deprecated This should never be used except for testing as it provides no security.
+ */
+@Deprecated(since = "2.0.0", forRemoval = true)
 public class SaslPlainServer implements SaslServer {
     private CallbackHandler cbh;
     private boolean completed;

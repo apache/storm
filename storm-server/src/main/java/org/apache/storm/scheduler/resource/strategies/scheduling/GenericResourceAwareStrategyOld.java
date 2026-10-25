@@ -18,6 +18,12 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+/**
+ * Generic Resource Aware Strategy Old.
+ *
+ * @deprecated Please use {@link GenericResourceAwareStrategy} instead.
+ */
+@Deprecated(since = "2.3.0", forRemoval = false)
 public class GenericResourceAwareStrategyOld extends BaseResourceAwareStrategy {
 
     public GenericResourceAwareStrategyOld() {

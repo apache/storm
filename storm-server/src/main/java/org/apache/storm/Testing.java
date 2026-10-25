@@ -129,7 +129,7 @@ public class Testing {
      *     ```
      * @param code what to run
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static void withSimulatedTime(Runnable code) {
         try (SimulatedTime st = new SimulatedTime()) {
             code.run();
@@ -177,7 +177,7 @@ public class Testing {
      *     ```
      * @param code what to run
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static void withLocalCluster(TestJob code) {
         withLocalCluster(new MkClusterParam(), code);
     }
@@ -193,7 +193,7 @@ public class Testing {
      * @param param configs to set in the cluster
      * @param code what to run
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static void withLocalCluster(MkClusterParam param, TestJob code) {
         try (LocalCluster lc = cluster(param)) {
             code.run(lc);
@@ -212,7 +212,7 @@ public class Testing {
      *     ```
      * @param clusterConf some configs to set in the cluster
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static ILocalCluster getLocalCluster(Map<String, Object> clusterConf) {
         @SuppressWarnings("unchecked")
         Map<String, Object> conf = (Map<String, Object>) clusterConf.get("daemon-conf");
@@ -248,7 +248,7 @@ public class Testing {
      *     ```
      * @param code what to run
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static void withSimulatedTimeLocalCluster(TestJob code) {
         withSimulatedTimeLocalCluster(new MkClusterParam(), code);
     }
@@ -264,7 +264,7 @@ public class Testing {
      * @param param configs to set in the cluster
      * @param code what to run
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static void withSimulatedTimeLocalCluster(MkClusterParam param, TestJob code) {
         try (LocalCluster lc = cluster(param, true)) {
             code.run(lc);
@@ -283,7 +283,7 @@ public class Testing {
      *     ```
      * @param code what to run
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static void withTrackedCluster(TestJob code) {
         withTrackedCluster(new MkClusterParam(), code);
     }
@@ -299,7 +299,7 @@ public class Testing {
      * @param param configs to set in the cluster
      * @param code what to run
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static void withTrackedCluster(MkClusterParam param, TestJob code) {
         try (LocalCluster lc = cluster(param, Utils.uuid(), true)) {
             code.run(lc);
@@ -315,9 +315,10 @@ public class Testing {
      * @param id the id of the tracked cluster
      * @param key the name of the metric to get.
      * @return the metric
+     * @deprecated internal test utility; use {@link org.apache.storm.testing.TrackedTopology} instead.
      */
     @SuppressWarnings("unchecked")
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static int globalAmt(String id, String key) {
         LOG.warn("Reading tracked metrics for ID {}", id);
         return ((ConcurrentHashMap<String, AtomicInteger>) RegisteredGlobalState.getState(id)).get(key).get();
@@ -523,7 +524,7 @@ public class Testing {
      * Create a tracked topology.
      * @deprecated use {@link org.apache.storm.testing.TrackedTopology} directly.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static TrackedTopology mkTrackedTopology(ILocalCluster cluster, StormTopology topology) {
         return new TrackedTopology(topology, cluster);
     }
