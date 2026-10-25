@@ -153,7 +153,6 @@ public interface IStormClusterState {
 
     List<String> errorTopologies();
 
-
     /**
      * Get leader info from state store, which was written when a master gains leadership.
      *
