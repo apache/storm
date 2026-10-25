@@ -99,7 +99,7 @@ public class SupervisorClient extends ThriftClient implements SupervisorIfaceFac
      * @throws TTransportException on any error.
      * @deprecated use {@link SupervisorClient.Builder #build()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.6.4", forRemoval = true)
     public SupervisorClient(Map conf, String host, int port) throws TTransportException {
         this(conf, host, port, null, null);
     }
@@ -114,7 +114,7 @@ public class SupervisorClient extends ThriftClient implements SupervisorIfaceFac
      * @throws TTransportException on any error.
      * @deprecated use {@link SupervisorClient.Builder #build()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.6.4", forRemoval = true)
     public SupervisorClient(Map conf, String host, int port,
         Integer timeout) throws TTransportException {
         super(conf, ThriftConnectionType.SUPERVISOR, host, port, timeout, null);
@@ -132,7 +132,7 @@ public class SupervisorClient extends ThriftClient implements SupervisorIfaceFac
      * @throws TTransportException on any error.
      * @deprecated use {@link SupervisorClient.Builder #build()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.6.4", forRemoval = true)
     public SupervisorClient(Map conf, String host, Integer port, Integer timeout,
         String asUser) throws TTransportException {
         super(conf, ThriftConnectionType.SUPERVISOR, host, port, timeout, asUser);
@@ -147,7 +147,7 @@ public class SupervisorClient extends ThriftClient implements SupervisorIfaceFac
      * @throws TTransportException on any error.
      * @deprecated use {@link SupervisorClient.Builder #build()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.6.4", forRemoval = true)
     public SupervisorClient(Map conf, String host) throws TTransportException {
         super(conf, ThriftConnectionType.SUPERVISOR, host, null, null, null);
         client = new Supervisor.Client(protocol);
@@ -161,7 +161,7 @@ public class SupervisorClient extends ThriftClient implements SupervisorIfaceFac
      * @return the client, don't forget to close it when done.
      * @deprecated use {@link SupervisorClient.Builder #createSupervisorClient()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.6.4", forRemoval = true)
     public static SupervisorClient getConfiguredClient(Map conf, String host) {
         // use the default server port.
         int port = Integer.parseInt(conf.get(Config.SUPERVISOR_THRIFT_PORT).toString());
@@ -177,7 +177,7 @@ public class SupervisorClient extends ThriftClient implements SupervisorIfaceFac
      * @return the client, don't forget to close it when done.
      * @deprecated use {@link SupervisorClient.Builder #createSupervisorClient()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.6.4", forRemoval = true)
     public static SupervisorClient getConfiguredClient(Map conf, String host, int port) {
         return getConfiguredClientAs(conf, host, port, null);
     }
@@ -192,7 +192,7 @@ public class SupervisorClient extends ThriftClient implements SupervisorIfaceFac
      * @return the client, don't forget to close it when done.
      * @deprecated use {@link SupervisorClient.Builder #createSupervisorClient()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.6.4", forRemoval = true)
     public static SupervisorClient getConfiguredClientAs(Map conf, String host, int port,
         String asUser) {
         if (conf.containsKey(Config.STORM_DO_AS_USER)) {

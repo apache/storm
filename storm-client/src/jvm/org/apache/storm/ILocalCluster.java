@@ -112,7 +112,7 @@ public interface ILocalCluster extends AutoCloseable {
      *
      * @deprecated use {@link #close()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     void shutdown();
 
     /**

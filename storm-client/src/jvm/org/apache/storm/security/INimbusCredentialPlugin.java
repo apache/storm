@@ -38,8 +38,9 @@ public interface INimbusCredentialPlugin extends Shutdownable {
      *
      * @param credentials  credentials map where more credentials will be added.
      * @param topologyConf topology configuration
+     * @deprecated please use {@link #populateCredentials(Map, Map, String)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     default void populateCredentials(Map<String, String> credentials, Map<String,
         Object> topologyConf) {
         throw new IllegalStateException("One of the populateCredentials methods must be "

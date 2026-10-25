@@ -25,8 +25,10 @@ import org.apache.storm.container.cgroup.core.CpuacctCore.StatType;
 
 /**
  * Report CPU used in the cgroup.
+ *
+ * @deprecated please use Metrics V2 ({@link org.apache.storm.metrics2.cgroup.CGroupCpu}) instead.
  */
-@Deprecated
+@Deprecated(since = "2.3.0", forRemoval = true)
 public class CGroupCpu extends CGroupMetricsBase<Map<String, Long>> {
     long previousSystem = 0;
     long previousUser = 0;
