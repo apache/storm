@@ -17,7 +17,8 @@
 
 """Usage: release_notes.py <milestone_id_from_github> > RELEASE_NOTES.html
 
-Depends on "requests", please use pip to install this module.
+Depends on "requests", please use pip to install this module. "markdown" is only needed when a pull request has an
+"Upgrade notes" section.
 
 Generates release notes for a Storm release by generating an HTML doc containing some introductory information about the
  release with links to the Storm docs followed by a list of issues resolved in the release. The script will fail if it finds
@@ -131,6 +132,18 @@ def extract_upgrade_notes(issue):
             section.append(line)
     return "\n".join(line for line in section if line.strip() != TEMPLATE_HINT).strip() or None
 
+def note_to_html(note):
+    """
+    Render the Markdown of an upgrade note as HTML. HTML tags in the note are shown as text, not passed through.
+    """
+    import markdown  # imported here so that the script runs without it when no pull request has a note
+    md = markdown.Markdown(extensions=["fenced_code"])
+    md.preprocessors.deregister("html_block")
+    md.inlinePatterns.deregister("html")
+    # only web, mail and in-page targets are kept, so a link like [x](javascript:...) does not end up in the page
+    return re.sub(r'(<(?:a|img)\s[^>]*?\b)(href|src)="(?!https?://|mailto:|#)[^"]*"', r'\1\2="#"', md.convert(note),
+                  flags=re.IGNORECASE)
+
 if __name__ == "__main__":
     issues = get_issues(owner, repo, milestone)
 
@@ -202,7 +215,7 @@ if __name__ == "__main__":
     if upgrade_notes:
         issues_str = "\n\t<h2>Upgrade notes</h2>\n\t<ul>" + "\n\t\t".join([
             f'<li>[<a href="{issue_link(issue)}">#{issue["number"]}</a>] - {html.escape(issue["title"], quote=False)}'
-            f'\n<pre>{html.escape(note, quote=False)}</pre></li>'
+            f'\n{note_to_html(note)}</li>'
             for issue, note in upgrade_notes
         ]) + "\n\t</ul>" + issues_str
 
