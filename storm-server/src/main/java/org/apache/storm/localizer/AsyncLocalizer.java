@@ -54,13 +54,13 @@ import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
+import org.apache.storm.shade.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusLeaderNotFoundException;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
-import org.apache.storm.utils.StormThreadFactory;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
 import org.slf4j.Logger;
@@ -131,9 +131,9 @@ public class AsyncLocalizer implements AutoCloseable {
 
         int downloadThreadPoolSize = ObjectReader.getInt(conf.get(DaemonConfig.SUPERVISOR_BLOBSTORE_DOWNLOAD_THREAD_COUNT), 5);
         downloadExecService = Executors.newScheduledThreadPool(downloadThreadPoolSize,
-                StormThreadFactory.create(conf, "AsyncLocalizer Download Executor - "));
+                new ThreadFactoryBuilder().setNameFormat("AsyncLocalizer Download Executor - %d").build());
         taskExecService = Executors.newScheduledThreadPool(3,
-                StormThreadFactory.create(conf, "AsyncLocalizer Task Executor - "));
+                new ThreadFactoryBuilder().setNameFormat("AsyncLocalizer Task Executor - %d").build());
         reconstructLocalizedResources();
 
         symlinksDisabled = (boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
@@ -142,11 +142,6 @@ public class AsyncLocalizer implements AutoCloseable {
 
     public AsyncLocalizer(Map<String, Object> conf, StormMetricsRegistry metricsRegistry) throws IOException {
         this(conf, AdvancedFSOps.make(conf), ConfigUtils.supervisorLocalDir(conf), metricsRegistry);
-    }
-
-    @VisibleForTesting
-    ScheduledExecutorService getDownloadExecService() {
-        return downloadExecService;
     }
 
     @VisibleForTesting

@@ -25,14 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Builds the {@link ThreadFactory} used by Storm's blocking I/O thread pools.
+ * Builds the {@link ThreadFactory} used by the Thrift server handler pools.
  *
  * <p>When {@link Config#STORM_VIRTUAL_THREADS_ENABLED} is true the factory creates virtual threads.
  * Otherwise it creates non-daemon platform threads with normal priority, matching
  * {@code Executors.defaultThreadFactory()}. Note that virtual threads are always daemon threads, so
- * with the flag on none of these pools keeps the JVM alive. Storm daemons and workers exit through
- * explicit {@code System.exit} / {@code Runtime.halt} calls and their shutdown hooks do not join
- * these pools, so this makes no difference to them, but it does to an embedding application that
+ * with the flag on none of these pools keeps the JVM alive. Storm daemons exit through explicit
+ * {@code System.exit} / {@code Runtime.halt} calls and their shutdown hooks do not join these
+ * pools, so this makes no difference to them, but it does to an embedding application that
  * relies on non-daemon threads to keep running. In both modes threads are named
  * {@code <namePrefix><n>} with {@code n} starting at 0; the prefix is used verbatim, so callers
  * include their own separator.
@@ -64,7 +64,7 @@ public final class StormThreadFactory {
     }
 
     /**
-     * Whether virtual threads are enabled for blocking I/O pools.
+     * Whether virtual threads are enabled for the Thrift server handler pools.
      *
      * <p>Boolean values are honoured. String values, which only reach here through
      * {@code storm.options} since daemon and topology confs are validated as boolean, are accepted

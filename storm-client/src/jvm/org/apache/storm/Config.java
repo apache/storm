@@ -1082,17 +1082,16 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE =
         "topology.worker.shared.thread.pool.size";
     /**
-     * When true, Storm's blocking I/O thread pools run on Java virtual threads instead of platform
-     * threads. Affected pools: the Nimbus and Supervisor Thrift server handlers (SASL, TLS and
-     * simple transports), the supervisor blob localizer download and task executors, the Nimbus
-     * assignment distribution service, the supervisor heartbeat executor, the DRPC spout background
-     * executor and the worker shared thread pool exposed through the TopologyContext. Pool sizes
-     * configured through the corresponding {@code *.threads} settings keep their meaning as a bound
-     * on concurrency. Spout/bolt executor threads, worker transfer threads and Netty event loops
-     * are never affected.
+     * When true, the Thrift server handler pools run on Java virtual threads instead of platform
+     * threads. This covers the Nimbus, Supervisor and DRPC servers with every transport plugin
+     * (SASL, TLS and simple). Pool sizes configured through the corresponding {@code *.threads}
+     * settings keep their meaning as a bound on concurrency. No other pool is affected: the
+     * supervisor localizer and heartbeat executors, the Nimbus assignment distribution service,
+     * worker and executor threads and Netty event loops always use platform threads, so they stay
+     * visible in the thread dumps Storm logs itself.
      *
      * <p>DRPC server handler pools ({@code drpc.worker.threads}, {@code drpc.invocations.threads})
-     * are also affected, since the DRPC server uses the same transport plugins.
+     * are included, since the DRPC server uses the same transport plugins.
      *
      * <p>With the simple (non-authenticated) Thrift transport, Storm builds its own handler pool of
      * {@code *.threads} threads whenever a {@code *.queue.size} is configured, which the shipped
@@ -1105,28 +1104,21 @@ public class Config extends HashMap<String, Object> {
      * or DRPC server whose {@code *.queue.size} was explicitly unset.
      *
      * <p>Operational caveats. Virtual threads are always daemon threads, while the platform threads
-     * these pools use otherwise are not; Storm's daemons and workers exit explicitly and do not
-     * depend on that, but an application embedding them (for example a local cluster) might. All
-     * virtual threads in a JVM share one carrier scheduler sized to the number of available
-     * processors. The scheduler compensates for blocking file I/O by temporarily adding carriers
-     * (up to {@code jdk.virtualThreadScheduler.maxPoolSize}), and since JDK 24 {@code synchronized}
-     * no longer pins a carrier; what still pins is a native frame on the stack, for example Hadoop
-     * native libraries used by a blob store or JNI code run on the worker shared executor. Virtual
-     * threads are not time sliced, so a CPU-heavy Nimbus call such as {@code getTopologyPageInfo}
-     * or {@code submitTopology} on a large cluster can hold the carriers and delay cheap calls
-     * queued behind it.
+     * these pools use otherwise are not; Storm's daemons exit explicitly and do not depend on that,
+     * but an application embedding them (for example a local cluster) might. All virtual threads in
+     * a JVM share one carrier scheduler sized to the number of available processors. The scheduler
+     * compensates for blocking file I/O by temporarily adding carriers (up to
+     * {@code jdk.virtualThreadScheduler.maxPoolSize}), and since JDK 24 {@code synchronized} no
+     * longer pins a carrier; what still pins is a native frame on the stack, for example Hadoop
+     * native libraries used by a blob store.
      *
      * <p>Diagnostics. {@code jstack} and {@code Thread.getAllStackTraces()} do not report virtual
      * threads, so with this flag on the thread dumps Storm logs itself (the stuck-slot dump in the
-     * supervisor and the dump before a forced halt in a shutdown hook) do not show these pools, and
-     * a hung handler or blob download is simply absent from them. Use
+     * supervisor and the dump before a forced halt in a shutdown hook) do not show the Thrift
+     * handlers, and a hung handler is simply absent from them. Use
      * {@code jcmd <pid> Thread.dump_to_file -format=text <file>} instead;
      * {@code bin/flight.bash <pid> jstack <dir>} writes such a dump next to the jstack output when
      * {@code jcmd} is available.
-     *
-     * <p>A topology may override this key in its own config to control the pools that are built
-     * from the topology conf: the worker shared executor and the {@code DRPCSpout} background
-     * executor.
      */
     @IsBoolean
     public static final String STORM_VIRTUAL_THREADS_ENABLED = "storm.virtual.threads.enabled";
