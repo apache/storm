@@ -22,7 +22,15 @@ public interface StormReporter extends Reporter {
     String REPORT_PERIOD_UNITS = "report.period.units";
     String REPORT_DIMENSIONS_ENABLED = "report.dimensions.enabled";
 
-    @Deprecated
+    /**
+     * Prepares the reporter with a metric registry.
+     *
+     * @param metricsRegistry metric registry
+     * @param topoConf topology configuration
+     * @param reporterConf reporter configuration
+     * @deprecated please use {@link #prepare(MetricRegistryProvider, Map, Map)} instead.
+     */
+    @Deprecated(since = "2.3.0", forRemoval = true)
     void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf, Map<String,
         Object> reporterConf);
 
