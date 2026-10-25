@@ -31,8 +31,9 @@ public interface IContext {
      * This method is invoked at the startup of messaging plugin.
      *
      * @param topoConf storm configuration
+     * @deprecated use {@link #prepare(Map, StormMetricRegistry)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = true)
     void prepare(Map<String, Object> topoConf);
 
     /**

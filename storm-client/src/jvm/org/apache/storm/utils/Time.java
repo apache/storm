@@ -163,7 +163,7 @@ public class Time {
      *     {@link #currentTimeSecsLong()} for absolute timestamps; this method remains
      *     valid only for short relative durations such as uptime.
      */
-    @Deprecated
+    @Deprecated(since = "3.0.0", forRemoval = false)
     public static int currentTimeSecs() {
         return (int) (currentTimeMillis() / 1000);
     }
@@ -182,7 +182,7 @@ public class Time {
      * @deprecated int epoch-seconds overflow on 2038-01-19T03:14:07Z. Use
      *     {@link #deltaSecsLong(long)} when the reference point is an absolute timestamp.
      */
-    @Deprecated
+    @Deprecated(since = "3.0.0", forRemoval = false)
     public static int deltaSecs(int timeInSeconds) {
         return Time.currentTimeSecs() - timeInSeconds;
     }

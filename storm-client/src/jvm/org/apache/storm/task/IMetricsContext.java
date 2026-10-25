@@ -30,7 +30,7 @@ public interface IMetricsContext {
      *
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
-    @Deprecated
+    @Deprecated(since = "2.1.0", forRemoval = true)
     <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs);
 
     /**
@@ -38,7 +38,7 @@ public interface IMetricsContext {
      *
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
-    @Deprecated
+    @Deprecated(since = "2.1.0", forRemoval = true)
     ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs);
 
     /**
@@ -46,7 +46,7 @@ public interface IMetricsContext {
      *
      * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
      */
-    @Deprecated
+    @Deprecated(since = "2.1.0", forRemoval = true)
     CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs);
 
     Timer registerTimer(String name);

@@ -25,9 +25,10 @@ import java.util.Map.Entry;
  * <p>The advantage of this design is that the expiration thread only locks the object for O(1)
  * time, meaning the object
  * is essentially always available for gets/puts.
+ *
+ * @deprecated in favor of non-threaded {@link RotatingMap}.
  */
-// deprecated in favor of non-threaded RotatingMap
-@Deprecated
+@Deprecated(forRemoval = false)
 public class TimeCacheMap<K, V> {
     // this default ensures things expire at most 50% past the expiration time
     private static final int DEFAULT_NUM_BUCKETS = 3;
