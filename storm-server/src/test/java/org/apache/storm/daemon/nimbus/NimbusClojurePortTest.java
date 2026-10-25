@@ -396,25 +396,23 @@ public class NimbusClojurePortTest {
 
     @Test
     public void cleanupStormIdsPerformsUnionOfStormIdsWithActiveZnodes() {
-        List<String> activeTopos = List.of("hb1", "e2", "bp3");
+        List<String> activeTopos = List.of("hb1", "e2");
         List<String> hbTopos = List.of("hb1", "hb2", "hb3");
         List<String> errorTopos = List.of("e1", "e2", "e3");
-        List<String> bpTopos = List.of("bp1", "bp2", "bp3");
-        IStormClusterState mockState = mockClusterState(activeTopos, hbTopos, errorTopos, bpTopos, null);
+        IStormClusterState mockState = mockClusterState(activeTopos, hbTopos, errorTopos, null);
         BlobStore store = Mockito.mock(BlobStore.class);
         Mockito.when(store.storedTopoIds()).thenReturn(Set.of());
 
-        assertEquals(Set.of("hb2", "hb3", "e1", "e3", "bp1", "bp2"),
+        assertEquals(Set.of("hb2", "hb3", "e1", "e3"),
             Nimbus.topoIdsToClean(mockState, store, Map.of(DaemonConfig.NIMBUS_TOPOLOGY_BLOBSTORE_DELETION_DELAY_MS, 0)));
     }
 
     @Test
     public void cleanupStormIdsReturnsEmptySetWhenAllToposAreActive() {
-        List<String> activeTopos = List.of("hb1", "hb2", "hb3", "e1", "e2", "e3", "bp1", "bp2", "bp3");
+        List<String> activeTopos = List.of("hb1", "hb2", "hb3", "e1", "e2", "e3");
         List<String> hbTopos = List.of("hb1", "hb2", "hb3");
         List<String> errorTopos = List.of("e1", "e2", "e3");
-        List<String> bpTopos = List.of("bp1", "bp2", "bp3");
-        IStormClusterState mockState = mockClusterState(activeTopos, hbTopos, errorTopos, bpTopos, null);
+        IStormClusterState mockState = mockClusterState(activeTopos, hbTopos, errorTopos, null);
         BlobStore store = Mockito.mock(BlobStore.class);
         Mockito.when(store.storedTopoIds()).thenReturn(Set.of());
 
@@ -1005,18 +1003,17 @@ public class NimbusClojurePortTest {
     }
 
     private static IStormClusterState mockClusterState(List<String> activeTopos, List<String> inactiveTopos) {
-        return mockClusterState(activeTopos, inactiveTopos, inactiveTopos, inactiveTopos, null);
+        return mockClusterState(activeTopos, inactiveTopos, inactiveTopos, null);
     }
 
     private static IStormClusterState mockClusterState(
             List<String> activeTopos, List<String> hbTopos,
-            List<String> errorTopos, List<String> bpTopos,
+            List<String> errorTopos,
             List<String> wtTopos) {
         IStormClusterState state = Mockito.mock(IStormClusterState.class);
         Mockito.when(state.activeStorms()).thenReturn(activeTopos);
         Mockito.when(state.heartbeatStorms()).thenReturn(hbTopos);
         Mockito.when(state.errorTopologies()).thenReturn(errorTopos);
-        Mockito.when(state.backpressureTopologies()).thenReturn(bpTopos);
         Mockito.when(state.idsOfTopologiesWithPrivateWorkerKeys())
             .thenReturn(wtTopos != null ? new HashSet<>(wtTopos) : Set.of());
         return state;

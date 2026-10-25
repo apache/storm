@@ -154,13 +154,6 @@ public interface IStormClusterState {
     List<String> errorTopologies();
 
     /**
-     * Get backpressure topologies.
-     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    List<String> backpressureTopologies();
-
-    /**
      * Get leader info from state store, which was written when a master gains leadership.
      *
      * <p>Caution: it can not be used for fencing and is only for informational purposes because we
@@ -181,34 +174,6 @@ public interface IStormClusterState {
     void removeWorkerHeartbeat(String stormId, String node, Long port);
 
     void supervisorHeartbeat(String supervisorId, SupervisorInfo info);
-
-    /**
-     * Get topoloy backpressure.
-     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback);
-
-    /**
-     * Setup backpressure.
-     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    void setupBackpressure(String stormId, Map<String, Object> topoConf);
-
-    /**
-     * Remove backpressure.
-     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    void removeBackpressure(String stormId);
-
-    /**
-     * Remove worker backpressure.
-     * Note: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    void removeWorkerBackpressure(String stormId, String node, Long port);
 
     void activateStorm(String stormId, StormBase stormBase, Map<String, Object> topoConf);
 
