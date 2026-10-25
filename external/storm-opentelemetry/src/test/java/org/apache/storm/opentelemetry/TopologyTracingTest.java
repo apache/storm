@@ -67,8 +67,8 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.TupleUtils;
 import org.apache.storm.utils.Utils;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -109,18 +109,20 @@ public class TopologyTracingTest {
     /** Epoch nanos at which the spout's last ack() or fail() started. */
     private static final AtomicLong SPOUT_CALLBACK_START_NANOS = new AtomicLong();
 
-    private static ILocalCluster cluster;
     private static int topologyCount;
     private static String topologyName;
     private static volatile int sinkTaskId;
 
-    @BeforeAll
-    public static void startCluster() throws Exception {
+    private ILocalCluster cluster;
+
+    @BeforeEach
+    public void startCluster() throws Exception {
         cluster = new LocalCluster();
     }
 
-    @AfterAll
-    public static void stopCluster() throws Exception {
+    // closing the topology does not wait for its workers to stop, so the cluster stops them here
+    @AfterEach
+    public void stopCluster() throws Exception {
         cluster.close();
     }
 
