@@ -12,7 +12,9 @@
 
 package org.apache.storm.executor.bolt;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ import org.apache.storm.executor.ExecutorTransfer;
 import org.apache.storm.hooks.info.BoltAckInfo;
 import org.apache.storm.hooks.info.BoltFailInfo;
 import org.apache.storm.task.IOutputCollector;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.Tuple;
@@ -46,6 +49,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     private final ExecutorTransfer xsfer;
     private final boolean isDebug;
     private boolean ackingEnabled;
+    private final TupleTracer tracer;
 
     public BoltOutputCollectorImpl(BoltExecutor executor, Task taskData, Random random,
                                    boolean isEventLoggers, boolean ackingEnabled, boolean isDebug) {
@@ -57,6 +61,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         this.ackingEnabled = ackingEnabled;
         this.isDebug = isDebug;
         this.xsfer = executor.getExecutorTransfer();
+        this.tracer = executor.getTupleTracer();
     }
 
     @Override
@@ -88,6 +93,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         } else {
             outTasks = task.getOutgoingTasks(streamId, values);
         }
+        Object traceContext = tracer == null ? null : tracer.boltEmit(taskId, streamId, traceContexts(anchors));
 
         for (int i = 0; i < outTasks.size(); ++i) {
             Integer t = outTasks.get(i);
@@ -111,6 +117,9 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             TupleImpl tupleExt = new TupleImpl(
                     executor.getWorkerTopologyContext(), values, executor
                     .getComponentId(), taskId, streamId, msgId);
+            if (traceContext != null) {
+                tupleExt.setTraceContext(traceContext);
+            }
             xsfer.tryTransfer(new AddressedTuple(t, tupleExt), executor.getPendingEmits());
         }
         if (isEventLoggers) {
@@ -118,6 +127,26 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
                     executor.getPendingEmits());
         }
         return outTasks;
+    }
+
+    /**
+     * Returns the trace contexts of the anchors, in anchor order, skipping anchors without one.
+     */
+    private static List<Object> traceContexts(Collection<Tuple> anchors) {
+        if (anchors == null) {
+            return Collections.emptyList();
+        }
+        List<Object> contexts = null;
+        for (Tuple anchor : anchors) {
+            Object context = anchor instanceof TupleImpl impl ? impl.getTraceContext() : null;
+            if (context != null) {
+                if (contexts == null) {
+                    contexts = new ArrayList<>(anchors.size());
+                }
+                contexts.add(context);
+            }
+        }
+        return contexts == null ? Collections.emptyList() : contexts;
     }
 
     @Override
@@ -151,6 +180,10 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
 
     @Override
     public void fail(Tuple input) {
+        Object traceContext = tracer != null && input instanceof TupleImpl impl ? impl.getTraceContext() : null;
+        if (traceContext != null) {
+            tracer.boltFail(taskId, traceContext);
+        }
         if (!ackingEnabled) {
             return;
         }

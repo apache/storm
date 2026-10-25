@@ -18,14 +18,17 @@ import java.util.Random;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.executor.TupleInfo;
+import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.spout.ISpout;
 import org.apache.storm.spout.ISpoutOutputCollector;
+import org.apache.storm.tracing.TupleTracer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.MutableLong;
 import org.apache.storm.utils.RotatingMap;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +49,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final Boolean isDebug;
     private final RotatingMap<Long, TupleInfo> pending;
     private final long spoutExecutorThdId;
+    private final TupleTracer tracer;
     private TupleInfo globalTupleInfo = new TupleInfo();
 
     // thread safety: assumes Collector.emit*() calls are externally synchronized (if needed).
@@ -64,6 +68,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
         this.isDebug = isDebug;
         this.pending = pending;
         this.spoutExecutorThdId = executor.getThreadId();
+        this.tracer = executor.getTupleTracer();
     }
 
     @Override
@@ -125,6 +130,11 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
         final long rootId = needAck ? MessageId.generateId(random) : 0;
 
+        // checkpoint tuples of stateful bolts are system tuples: no trace
+        final Object traceContext = tracer != null && !CheckpointSpout.CHECKPOINT_STREAM_ID.equals(stream)
+            ? tracer.spoutEmit(taskId, stream) : null;
+        final long traceEmitTimeMs = traceContext != null ? Time.currentTimeMillis() : 0;
+
         for (int i = 0; i < outTasks.size(); i++) { // perf critical path. don't use iterators.
             Integer t = outTasks.get(i);
             MessageId msgId;
@@ -139,6 +149,9 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             final TupleImpl tuple =
                     new TupleImpl(executor.getWorkerTopologyContext(), values, executor
                     .getComponentId(), this.taskId, stream, msgId);
+            if (traceContext != null) {
+                tuple.setTraceContext(traceContext);
+            }
             AddressedTuple adrTuple = new AddressedTuple(t, tuple);
             executor.getExecutorTransfer().tryTransfer(adrTuple, executor.getPendingEmits());
         }
@@ -153,6 +166,10 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             info.setStream(stream);
             info.setMessageId(messageId);
             info.setRootId(rootId);
+            if (traceContext != null) {
+                info.setTraceContext(traceContext);
+                info.setTraceEmitTimeMs(traceEmitTimeMs);
+            }
             if (isDebug) {
                 info.setValues(values);
             }

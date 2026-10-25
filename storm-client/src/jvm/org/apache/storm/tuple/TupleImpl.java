@@ -27,6 +27,7 @@ public class TupleImpl implements Tuple {
     private Long processSampleStartTime;
     private Long executeSampleStartTime;
     private long outAckVal = 0;
+    private Object traceContext;
 
     public TupleImpl(Tuple t) {
         this.values = t.getValues();
@@ -40,6 +41,7 @@ public class TupleImpl implements Tuple {
             this.processSampleStartTime = ti.processSampleStartTime;
             this.executeSampleStartTime = ti.executeSampleStartTime;
             this.outAckVal = ti.outAckVal;
+            this.traceContext = ti.traceContext;
         } catch (ClassCastException e) {
             // ignore ... if t is not a TupleImpl type .. faster than checking and then casting
         }
@@ -84,6 +86,21 @@ public class TupleImpl implements Tuple {
 
     public void setExecuteSampleStartTime(long ms) {
         executeSampleStartTime = ms;
+    }
+
+    /**
+     * Returns the trace context this tuple carries, or null. The context is created by the configured
+     * {@link org.apache.storm.tracing.TupleTracer}.
+     */
+    public Object getTraceContext() {
+        return traceContext;
+    }
+
+    /**
+     * Sets the trace context this tuple carries; null removes it.
+     */
+    public void setTraceContext(Object traceContext) {
+        this.traceContext = traceContext;
     }
 
     public void updateAckVal(long val) {
