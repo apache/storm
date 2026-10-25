@@ -101,7 +101,7 @@ HEADING = re.compile(r"^(#{1,6})[ \t]+(\S.*?)[ \t]*$")
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 # The hint of .github/pull_request_template.md. It does not count as a note.
 TEMPLATE_HINT = ("*(Only for breaking or behaviour changes: what changes for users and what they must do. "
-                 "Delete this section otherwise.)*")
+                 "Otherwise, leave this section as it is or delete it.)*")
 
 def extract_upgrade_notes(issue):
     """
