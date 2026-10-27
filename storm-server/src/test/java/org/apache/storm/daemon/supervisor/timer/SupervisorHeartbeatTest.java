@@ -24,10 +24,12 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.scheduler.ISupervisor;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -63,9 +65,10 @@ public class SupervisorHeartbeatTest {
     }
 
     @Test
-    public void transientHeartbeatFailureIsSwallowedInsteadOfKillingTheProcess() {
+    public void transientZkHeartbeatFailureIsSwallowedInsteadOfKillingTheProcess() {
         IStormClusterState clusterState = mock(IStormClusterState.class);
-        doThrow(new RuntimeException("simulated transient ZK failure"))
+        doThrow(new RuntimeException(
+            new KeeperException.ConnectionLossException()))
             .when(clusterState).supervisorHeartbeat(anyString(), any(SupervisorInfo.class));
 
         Supervisor supervisor = mockSupervisor(clusterState);
@@ -73,6 +76,18 @@ public class SupervisorHeartbeatTest {
 
         assertDoesNotThrow(heartbeat::run);
         verify(clusterState, atLeastOnce()).supervisorHeartbeat(anyString(), any(SupervisorInfo.class));
+    }
+
+    @Test
+    public void nonZkHeartbeatFailureStillPropagates() {
+        IStormClusterState clusterState = mock(IStormClusterState.class);
+        doThrow(new IllegalStateException("broken local config"))
+            .when(clusterState).supervisorHeartbeat(anyString(), any(SupervisorInfo.class));
+
+        Supervisor supervisor = mockSupervisor(clusterState);
+        SupervisorHeartbeat heartbeat = new SupervisorHeartbeat(baseConf(), supervisor);
+
+        assertThrows(IllegalStateException.class, heartbeat::run);
     }
 
     @Test

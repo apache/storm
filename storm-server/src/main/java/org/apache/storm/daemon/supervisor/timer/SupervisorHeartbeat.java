@@ -29,8 +29,10 @@ import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.normalization.NormalizedResources;
 import org.apache.storm.shade.org.apache.commons.collections4.ListUtils;
+import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -165,7 +167,11 @@ public class SupervisorHeartbeat implements Runnable {
             try {
                 stormClusterState.supervisorHeartbeat(supervisorInfoEntry.getKey(), supervisorInfoEntry.getValue());
             } catch (Exception e) {
-                // Liveness is tracked via ephemeral ZK nodes, not this write. Safe to skip.
+                if (!Utils.exceptionCauseIsInstanceOf(KeeperException.class, e)) {
+                    throw e;
+                }
+                // A transient ZK failure: the ephemeral node is recreated on the next heartbeat.
+                // Local/config errors are rethrown so a persistent misconfiguration still surfaces.
                 LOG.warn("Supervisor ZK heartbeat failed for {}, will retry next cycle",
                     supervisorInfoEntry.getKey(), e);
             }
