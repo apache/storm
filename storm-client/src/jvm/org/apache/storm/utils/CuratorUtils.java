@@ -38,17 +38,20 @@ public class CuratorUtils {
     public static final String CLIENT_CNXN
             = org.apache.storm.shade.org.apache.zookeeper.ClientCnxnSocketNetty.class.getName();
 
-    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers, Object port, String root,
+    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers,
+            Object port, String root,
                                               List<ACL> defaultAcl) {
         return newCurator(conf, servers, port, root, null, defaultAcl);
     }
 
-    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers, Object port, ZookeeperAuthInfo auth,
+    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers,
+            Object port, ZookeeperAuthInfo auth,
                                               List<ACL> defaultAcl) {
         return newCurator(conf, servers, port, "", auth, defaultAcl);
     }
 
-    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers, Object port, String root,
+    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers,
+            Object port, String root,
                                               ZookeeperAuthInfo auth, final List<ACL> defaultAcl) {
         List<String> serverPorts = new ArrayList<>();
         for (String zkServer : servers) {
@@ -75,15 +78,19 @@ public class CuratorUtils {
         return builder.build();
     }
 
-    protected static void setupBuilder(CuratorFrameworkFactory.Builder builder, final String zkStr, Map<String, Object> conf,
+    protected static void setupBuilder(CuratorFrameworkFactory.Builder builder, final String zkStr,
+            Map<String, Object> conf,
                                        ZookeeperAuthInfo auth) {
         builder.connectString(zkStr);
         builder
-                .connectionTimeoutMs(ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
-                .sessionTimeoutMs(ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)))
+                .connectionTimeoutMs(ObjectReader.getInt(conf
+                .get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
+                .sessionTimeoutMs(ObjectReader.getInt(conf
+                .get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)))
                 .retryPolicy(new StormBoundedExponentialBackoffRetry(
                         ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL)),
-                        ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING)),
+                        ObjectReader.getInt(conf
+                        .get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING)),
                         ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES))));
 
         if (auth != null && auth.scheme != null && auth.payload != null) {
@@ -104,6 +111,7 @@ public class CuratorUtils {
 
     /**
      * Configure ZooKeeper Client with SSL/TLS connection.
+     *
      * @param zkClientConfig ZooKeeper Client configuration
      * @param x509Util The X509 utility
      * @param sslConf The truststore and keystore configs
@@ -147,17 +155,20 @@ public class CuratorUtils {
         }
         if (StringUtils.isEmpty(sslConf.getTruststoreLocation())) {
             throw new ConfigurationException(
-                    "The truststore location parameter is empty for the ZooKeeper client connection" + ".");
+                    "The truststore location parameter is empty for the ZooKeeper client "
+                    + "connection" + ".");
         }
         if (StringUtils.isEmpty(sslConf.getTruststorePassword())) {
             throw new ConfigurationException(
-                    "The truststore password parameter is empty for the ZooKeeper client connection" + ".");
+                    "The truststore password parameter is empty for the ZooKeeper client "
+                    + "connection" + ".");
         }
     }
 
     public static SslConf getSslConf(Map<String, Object> conf) {
         return new SslConf(conf);
     }
+
     /**
      * Helper class to contain the Truststore/Keystore paths for the ZK client connection over
      * SSL/TLS.
@@ -176,11 +187,16 @@ public class CuratorUtils {
          * @param conf configuration map
          */
         private SslConf(Map<String, Object> conf) {
-            keystoreLocation = ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PATH), "");
-            keystorePassword = ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD), "");
-            truststoreLocation = ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH), "");
-            truststorePassword = ObjectReader.getString(conf.get(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD), "");
-            hostnameVerification = ObjectReader.getBoolean(conf.get(Config.STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION), true);
+            keystoreLocation = ObjectReader.getString(conf
+                    .get(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PATH), "");
+            keystorePassword = ObjectReader.getString(conf
+                    .get(Config.STORM_ZOOKEEPER_SSL_KEYSTORE_PASSWORD), "");
+            truststoreLocation = ObjectReader.getString(conf
+                    .get(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PATH), "");
+            truststorePassword = ObjectReader.getString(conf
+                    .get(Config.STORM_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD), "");
+            hostnameVerification = ObjectReader.getBoolean(conf
+                    .get(Config.STORM_ZOOKEEPER_SSL_HOSTNAME_VERIFICATION), true);
         }
 
         public String getKeystoreLocation() {
@@ -205,11 +221,12 @@ public class CuratorUtils {
     }
 
     public static void testSetupBuilder(CuratorFrameworkFactory.Builder
-                                            builder, String zkStr, Map<String, Object> conf, ZookeeperAuthInfo auth) {
+                                                builder, String zkStr, Map<String, Object> conf, ZookeeperAuthInfo auth) {
         setupBuilder(builder, zkStr, conf, auth);
     }
 
-    public static CuratorFramework newCuratorStarted(Map<String, Object> conf, List<String> servers, Object port,
+    public static CuratorFramework newCuratorStarted(Map<String, Object> conf, List<String> servers,
+            Object port,
                                                      String root, ZookeeperAuthInfo auth, List<ACL> defaultAcl) {
         CuratorFramework ret = newCurator(conf, servers, port, root, auth, defaultAcl);
         LOG.info("Starting Utils Curator...");
@@ -217,7 +234,8 @@ public class CuratorUtils {
         return ret;
     }
 
-    public static CuratorFramework newCuratorStarted(Map<String, Object> conf, List<String> servers, Object port,
+    public static CuratorFramework newCuratorStarted(Map<String, Object> conf, List<String> servers,
+            Object port,
                                                      ZookeeperAuthInfo auth, List<ACL> defaultAcl) {
         CuratorFramework ret = newCurator(conf, servers, port, auth, defaultAcl);
         LOG.info("Starting Utils Curator (2)...");
