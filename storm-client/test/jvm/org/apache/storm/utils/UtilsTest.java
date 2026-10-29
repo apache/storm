@@ -603,6 +603,7 @@ public class UtilsTest {
                 "Compressed size should be smaller than original for repetitive data");
     }
 
+    @Test
     void compress_variousLevels_roundtrip() {
         byte[] input = zstdSampleData(4096);
         for (int level : Set.of(1, 3, 9, 19)) {
