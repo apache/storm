@@ -107,7 +107,7 @@
         <httpclient.core.version>4.4.16</httpclient.core.version>
         <jctools.version>4.0.7</jctools.version>
         <jgrapht.version>1.5.3</jgrapht.version>
-        <guava.version>33.7.1-jre</guava.version>
+        <guava.version>33.7.2-jre</guava.version>
         <!-- Guava's nullness-annotation transitive. Bump it together with guava.version, and
              keep it equal to the value in that Guava release's guava-parent pom - never above.
              It is pinned because JUnit 6 also declares org.jspecify:jspecify, at a nearer depth
