@@ -128,7 +128,7 @@
         <jline.version>2.14.6</jline.version>
         <hikari.version>7.1.0</hikari.version>
         <hadoop.version>3.5.0</hadoop.version>
-        <hbase.version>2.6.6-hadoop3</hbase.version>
+        <hbase.version>2.6.7-hadoop3</hbase.version>
         <!-- Pinned deliberately: storm-iceberg must stay buildable against the Java baseline
              above, so this is bumped explicitly rather than tracking the newest release. -->
         <iceberg.version>1.12.0</iceberg.version>
