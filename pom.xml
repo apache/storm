@@ -73,7 +73,7 @@
         <rewrite-maven-plugin.version>6.46.1</rewrite-maven-plugin.version>
         <rewrite-static-analysis.version>2.41.1</rewrite-static-analysis.version>
         <gmavenplus.version>5.1.0</gmavenplus.version>
-        <groovy.version>4.0.33</groovy.version>
+        <groovy.version>6.0.0</groovy.version>
         <!-- Used by both the checkstyle check and checkstyle-autofix.groovy. If you change this, you should
         also update the storm_checkstyle.xml file to be based on the google_checks.xml from the version
         of checkstyle you are choosing. -->
