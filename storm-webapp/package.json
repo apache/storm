@@ -29,7 +29,7 @@
     "mustache": "4.2.0",
     "typeahead.js": "0.11.1",
     "vis-data": "8.0.5",
-    "vis-network": "10.1.2"
+    "vis-network": "10.1.4"
   },
   "devDependencies": {
     "css-loader": "^7.1.5",
