@@ -30,7 +30,7 @@
     <description>Traces Storm tuple trees with OpenTelemetry.</description>
 
     <properties>
-        <opentelemetry.version>1.66.0</opentelemetry.version>
+        <opentelemetry.version>1.67.0</opentelemetry.version>
     </properties>
 
     <dependencyManagement>
