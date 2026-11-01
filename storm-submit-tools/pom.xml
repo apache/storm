@@ -82,10 +82,15 @@
             <artifactId>maven-resolver-transport-file</artifactId>
             <version>${maven-resolver.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-transport-apache</artifactId>
+            <version>${maven-resolver.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.maven.resolver</groupId>
-            <artifactId>maven-resolver-transport-http</artifactId>
+            <artifactId>maven-resolver-supplier-mvn3</artifactId>
             <version>${maven-resolver.version}</version>
         </dependency>
 
