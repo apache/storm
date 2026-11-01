@@ -18,8 +18,11 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.data.LinkData;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.sdk.trace.samplers.SamplingResult;
 import java.util.List;
@@ -49,7 +52,7 @@ public class OpenTelemetryTupleTracerTest {
         OpenTelemetryTupleTracer tracer = preparedTracer();
         try (SimulatedTime ignored = new SimulatedTime();
              MockedStatic<GlobalOpenTelemetry> global = mockStatic(GlobalOpenTelemetry.class);
-             OpenTelemetrySdk sdk = OpenTelemetrySdk.builder().setTracerProvider(SdkTracerProvider.builder().build()).build()) {
+             OpenTelemetrySdk sdk = OpenTelemetrySdk.builder().setTracerProvider(tracerProvider().build()).build()) {
             global.when(GlobalOpenTelemetry::isSet).thenReturn(false);
 
             assertNull(tracer.spoutEmit(SPOUT_TASK, Utils.DEFAULT_STREAM_ID));
@@ -92,12 +95,17 @@ public class OpenTelemetryTupleTracerTest {
         assertFalse(Span.fromContext(context).getSpanContext().isSampled());
     }
 
+    /** The SDK hands out no-op tracers when it has no span processor, so the tests need one. */
+    private static SdkTracerProviderBuilder tracerProvider() {
+        return SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(InMemorySpanExporter.create()));
+    }
+
     /** Returns the context of one spout emit, with an SDK that uses {@code sampler} registered as the global instance. */
     private static Object spoutEmitSampledBy(Sampler sampler) {
         OpenTelemetryTupleTracer tracer = preparedTracer();
         try (MockedStatic<GlobalOpenTelemetry> global = mockStatic(GlobalOpenTelemetry.class);
              OpenTelemetrySdk sdk = OpenTelemetrySdk.builder()
-                 .setTracerProvider(SdkTracerProvider.builder().setSampler(sampler).build()).build()) {
+                 .setTracerProvider(tracerProvider().setSampler(sampler).build()).build()) {
             global.when(GlobalOpenTelemetry::isSet).thenReturn(true);
             global.when(GlobalOpenTelemetry::get).thenReturn(sdk);
             return tracer.spoutEmit(SPOUT_TASK, Utils.DEFAULT_STREAM_ID);
