@@ -79,6 +79,34 @@ public class SupervisorHeartbeatTest {
     }
 
     @Test
+    public void otherTransientZkFailuresAreSwallowed() {
+        for (KeeperException failure : Arrays.asList(new KeeperException.SessionExpiredException(),
+            new KeeperException.OperationTimeoutException())) {
+            IStormClusterState clusterState = mock(IStormClusterState.class);
+            doThrow(new RuntimeException(failure))
+                .when(clusterState).supervisorHeartbeat(anyString(), any(SupervisorInfo.class));
+
+            SupervisorHeartbeat heartbeat = new SupervisorHeartbeat(baseConf(), mockSupervisor(clusterState));
+
+            assertDoesNotThrow(heartbeat::run);
+        }
+    }
+
+    @Test
+    public void persistentZkFailureStillPropagates() {
+        for (KeeperException failure : Arrays.asList(new KeeperException.NoAuthException(),
+            new KeeperException.InvalidACLException())) {
+            IStormClusterState clusterState = mock(IStormClusterState.class);
+            doThrow(new RuntimeException(failure))
+                .when(clusterState).supervisorHeartbeat(anyString(), any(SupervisorInfo.class));
+
+            SupervisorHeartbeat heartbeat = new SupervisorHeartbeat(baseConf(), mockSupervisor(clusterState));
+
+            assertThrows(RuntimeException.class, heartbeat::run);
+        }
+    }
+
+    @Test
     public void nonZkHeartbeatFailureStillPropagates() {
         IStormClusterState clusterState = mock(IStormClusterState.class);
         doThrow(new IllegalStateException("broken local config"))

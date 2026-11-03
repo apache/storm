@@ -167,14 +167,20 @@ public class SupervisorHeartbeat implements Runnable {
             try {
                 stormClusterState.supervisorHeartbeat(supervisorInfoEntry.getKey(), supervisorInfoEntry.getValue());
             } catch (Exception e) {
-                if (!Utils.exceptionCauseIsInstanceOf(KeeperException.class, e)) {
+                if (!isTransientZkFailure(e)) {
                     throw e;
                 }
                 // A transient ZK failure: the ephemeral node is recreated on the next heartbeat.
-                // Local/config errors are rethrown so a persistent misconfiguration still surfaces.
+                // Local and persistent ZK errors (e.g. bad ACLs) are rethrown so they surface.
                 LOG.warn("Supervisor ZK heartbeat failed for {}, will retry next cycle",
                     supervisorInfoEntry.getKey(), e);
             }
         }
+    }
+
+    private static boolean isTransientZkFailure(Throwable t) {
+        return Utils.exceptionCauseIsInstanceOf(KeeperException.ConnectionLossException.class, t)
+            || Utils.exceptionCauseIsInstanceOf(KeeperException.SessionExpiredException.class, t)
+            || Utils.exceptionCauseIsInstanceOf(KeeperException.OperationTimeoutException.class, t);
     }
 }
