@@ -1282,7 +1282,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         // 3) the nimbus conf with conf 2 above added on top.
         //
         // By first forcing the topology conf to contain the nimbus settings, we guarantee all three confs
-        // will have the correct settings that cannot be overriden by the submitter.
+        // will have the correct settings that cannot be overridden by the submitter.
         ret.put(Config.STORM_CGROUP_HIERARCHY_DIR, conf.get(Config.STORM_CGROUP_HIERARCHY_DIR));
         ret.put(Config.WORKER_METRICS, conf.get(Config.WORKER_METRICS));
 
