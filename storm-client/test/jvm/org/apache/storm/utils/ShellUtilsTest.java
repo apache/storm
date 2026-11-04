@@ -54,11 +54,9 @@ public class ShellUtilsTest {
      */
     @Test
     public void getLogHandler_notFound() {
-        try {
-            configureLogHandler("class.not.Found");
-        } catch (RuntimeException e) {
-            assert (e.getCause().getClass() == ClassNotFoundException.class);
-        }
+        Map<String, Object> conf = configureLogHandler("class.not.Found");
+        RuntimeException e = assertThrows(RuntimeException.class, () -> ShellUtils.getLogHandler(conf));
+        assertSame(ClassNotFoundException.class, e.getCause().getClass());
     }
 
     /**
@@ -68,11 +66,9 @@ public class ShellUtilsTest {
      */
     @Test
     public void getLogHandler_notAShellLogHandler() {
-        try {
-            configureLogHandler("java.lang.String");
-        } catch (RuntimeException e) {
-            assert (e.getCause().getClass() == ClassCastException.class);
-        }
+        Map<String, Object> conf = configureLogHandler("java.lang.String");
+        RuntimeException e = assertThrows(RuntimeException.class, () -> ShellUtils.getLogHandler(conf));
+        assertSame(ClassCastException.class, e.getCause().getClass());
     }
 
     /**
