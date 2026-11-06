@@ -297,7 +297,7 @@ workerHooks:
 It's common for developers to want to easily switch between configurations, for example switching deployment between
 a development environment and a production environment. This can be accomplished by using separate YAML configuration
 files, but that approach would lead to unnecessary duplication, especially in situations where the Storm topology
-does not change, but configuration settings such as host names, ports, and parallelism paramters do.
+does not change, but configuration settings such as host names, ports, and parallelism parameters do.
 
 For this case, Flux offers properties filtering to allow you two externalize values to a `.properties` file and have
 them substituted before the `.yaml` file is parsed.

@@ -5324,7 +5324,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
             //put [owner-> StormBase-list] mapping to ownerToBasesMap
             //if this owner (the input parameter) is null, add all the owners with stormbase and guarantees
-            //else, add only this owner (the input paramter) to the map
+            //else, add only this owner (the input parameter) to the map
             Map<String, List<StormBase>> ownerToBasesMap = new HashMap<>();
 
             if (owner == null) {
