@@ -126,7 +126,7 @@ public class TridentKafkaState<K, V> implements State {
                 throw new FailedException(message);
             }
             long latestTime = System.currentTimeMillis();
-            LOG.info("Emitted record {} sucessfully in {} ms to topic {} ", emittedRecords, latestTime - startTime, topic);
+            LOG.info("Emitted record {} successfully in {} ms to topic {} ", emittedRecords, latestTime - startTime, topic);
 
         } catch (Exception ex) {
             String errorMsg = "Could not send messages " + tuples + " to topic = " + topic;

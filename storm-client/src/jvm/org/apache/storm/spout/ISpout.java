@@ -66,7 +66,7 @@ public interface ISpout extends Serializable {
     void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector);
 
     /**
-     * Called when an ISpout is going to be shutdown. There is no guarentee that close will be
+     * Called when an ISpout is going to be shutdown. There is no guarantee that close will be
      * called, because the supervisor kill -9's
      * worker processes on the cluster.
      *
