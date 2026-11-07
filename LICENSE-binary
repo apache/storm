@@ -687,7 +687,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * error-prone annotations (com.google.errorprone:error_prone_annotations:2.50.0 - https://errorprone.info/error_prone_annotations)
         * FindBugs-jsr305 (com.google.code.findbugs:jsr305:3.0.2 - http://findbugs.sourceforge.net/)
         * Graphite Integration for Metrics (io.dropwizard.metrics:metrics-graphite:4.2.40 - https://metrics.dropwizard.io/metrics-graphite)
-        * Gson (com.google.code.gson:gson:2.14.0 - https://github.com/google/gson)
+        * Gson (com.google.code.gson:gson:2.15.0 - https://github.com/google/gson)
         * Guava: Google Core Libraries for Java (com.google.guava:guava:33.7.2-jre - https://github.com/google/guava)
         * Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.3 - https://github.com/google/guava/failureaccess)
         * Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)
@@ -775,7 +775,7 @@ The license texts of these dependencies can be found in the licenses directory.
         * snappy-java (org.xerial.snappy:snappy-java:1.1.10.12 - https://github.com/xerial/snappy-java)
         * Throttling Appender (io.dropwizard.logback:logback-throttling-appender:1.5.3 - https://github.com/dropwizard/logback-throttling-appender/)
         * Woodstox (com.fasterxml.woodstox:woodstox-core:7.3.0 - https://github.com/FasterXML/woodstox)
-        * Apache Thrift (org.apache.thrift:libthrift:0.24.0 - http://thrift.apache.org)
+        * Apache Thrift (org.apache.thrift:libthrift:0.25.0 - http://thrift.apache.org)
         * Java Concurrency Tools Core Library (org.jctools:jctools-core:4.0.7 - https://github.com/JCTools)
         * JHeaps (org.jheaps:jheaps:0.14 - http://www.jheaps.org)
         * Netty/All-in-One (io.netty:netty-all:4.2.19.Final - https://netty.io/netty-all/)
@@ -864,7 +864,7 @@ The license texts of these dependencies can be found in the licenses directory.
 
     BSD 3-Clause License
 
-        * asm (org.ow2.asm:asm:9.10.1 - http://asm.ow2.io/)
+        * asm (org.ow2.asm:asm:9.11.1 - http://asm.ow2.io/)
         * dnsjava (dnsjava:dnsjava:3.6.1 - https://github.com/dnsjava/dnsjava)
         * Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0 - http://code.google.com/p/protobuf)
 
