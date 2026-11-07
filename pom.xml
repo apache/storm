@@ -135,7 +135,7 @@
         <kryo.version>5.7.1</kryo.version>
         <objensis.version>3.6</objensis.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
-        <thrift.version>0.24.0</thrift.version>
+        <thrift.version>0.25.0</thrift.version>
         <junit.jupiter.version>6.1.3</junit.jupiter.version>
         <surefire.version>3.6.1</surefire.version>
         <awaitility.version>4.3.0</awaitility.version>
