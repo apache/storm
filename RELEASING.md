@@ -96,6 +96,11 @@ and only votes from the Storm PMC are binding. Staging and publishing through SV
 
    `atr set tokens.pat` asks for the token without echoing it. Run `atr --help` or `atr docs` for the full command reference. The client is not yet stable, so do not use it in unattended scripts.
 6. Log in on the website and check that the Storm project is listed. Its project key is `storm`.
+7. The vote email template lives in this repository, in [`dev-tools/atr/start-vote-template.txt`](dev-tools/atr/start-vote-template.txt). Once, in the project settings in ATR
+   (**Vote** tab), set **Start vote template URL** to
+   `https://raw.githubusercontent.com/apache/storm/master/dev-tools/atr/start-vote-template.txt`. ATR fetches the template whenever the vote form is shown, so changes to
+   the file in `master` apply to the next vote. The file uses ATR's `{{VARIABLES}}`, listed under **Available template variables** on the same settings page.
+   It is sent as the body of the email, so it must not carry a license header.
 
 ### ATR operations at a glance
 
@@ -242,7 +247,10 @@ and only votes from the Storm PMC are binding. Staging and publishing through SV
 11. Start the VOTE thread. The vote should follow the [ASF voting process](https://www.apache.org/foundation/voting.html).
 
     - **ATR:** start the vote on the website (Compose page → **Start voting**) or from the command line. ATR sends the email to the list you choose, in your name.
-      Put the body of the template below in a file, and pass the subject line separately:
+      On the website the form is filled in from [`dev-tools/atr/start-vote-template.txt`](dev-tools/atr/start-vote-template.txt) (see [One-time setup](#using-atr)),
+      with the ATR variables replaced. Replace `[REPO_NUM]` with the number of the Nexus staging repository, review the text, and send. This is the easier way for Storm,
+      because ATR fills in the variables for you.
+      From the command line, write the whole email body yourself, with every value filled in (use the template file as the starting point), and pass the subject line separately:
 
       ```bash
       atr vote start storm x.x.x -m dev@storm.apache.org -d 72 --subject "[VOTE] Release Apache Storm x.x.x (rcN)" --body-file vote.txt
