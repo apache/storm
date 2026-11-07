@@ -307,7 +307,7 @@
                                 <exclude>integration-test/config/.vagrant/**</exclude>
 
                                 <!-- flagged since apache-rat-plugin 0.18 -->
-                                <exclude>flux/flux-core/src/main/resources/splash.txt</exclude>
+                                <exclude>**/splash.txt</exclude>
 
                             </excludes>
                         </configuration>
