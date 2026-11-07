@@ -146,7 +146,7 @@
         <commons-logging.version>1.4.0</commons-logging.version>
 
         <jackson.version>2.22.4</jackson.version>
-        <jackson.databind.version>2.22.3</jackson.databind.version>
+        <jackson.databind.version>2.22.4</jackson.databind.version>
         <storm.kafka.client.version>4.4.0</storm.kafka.client.version>
         <testcontainers.version>1.21.4</testcontainers.version>
 
