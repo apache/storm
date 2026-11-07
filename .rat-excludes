@@ -71,6 +71,9 @@ install.txt
 integration-test/config/.vagrant/**
 **/splash.txt
 
+# email templates fetched by ATR; they are sent as an email body, so no license header
+dev-tools/atr/**
+
 # only present in the binary distribution
 RELEASE
 **/public/dist/**
