@@ -1,0 +1,76 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Exclusions for the Apache RAT check of the Apache Storm release archives, read by ATR
+# (https://releases.apache.org). Paths are relative to the top directory of the archive.
+# Keep this list in sync with the apache-rat-plugin excludes in the rat profile of pom.xml.
+
+**/target/**
+**/target/rat.txt
+**/*.iml
+**/.idea/**
+**/*.classpath
+**/.project
+**/.settings/**
+**/metastore_db/**
+**/build/**
+**/logs/**
+**/CHANGELOG.md
+**/README.md
+**/AGENTS.md
+**/README.markdown
+**/DEVELOPER.md
+**/RELEASING.md
+**/BYLAWS.md
+**/STORM-UI-REST-API.md
+SECURITY.md
+VERSION
+TODO
+DEPENDENCY-LICENSES
+LICENSE-binary
+NOTICE-binary
+licenses/**
+**/src/py/**
+install.txt
+**/install-shade.txt
+**/src/main/java/org/apache/storm/daemon/ui/WEB-INF/images/*
+**/node_modules/**
+**/package-lock.json
+**/storm-webapp/node/**
+**/src/main/resources/Audit.50.csv
+**/src/main/resources/KNIME_PMML_4.1_Examples_single_audit_logreg.xml
+**/src/main/sampledata/**
+**/dependency-reduced-pom.xml
+**/docs/**
+**/.git/**
+**/.github/**
+**/derby.log
+**/src/dev/**
+**/src/test/resources/test-3072.log.test
+**/src/test/resources/small-worker.log.test
+**/src/test/resources/test-worker.log.test
+**/src/test/resources/logviewer-search-context-tests.log.test
+**/dev-tools/cluster/grafana/dashboards/*.json
+**/src/codegen/config.fmpp
+**/src/codegen/data/Parser.tdd
+**/src/test/resources/FixedAvroSerializer.config
+integration-test/config/.vagrant/**
+**/splash.txt
+
+# only present in the binary distribution
+RELEASE
+**/public/dist/**
