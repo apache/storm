@@ -309,9 +309,6 @@
                                 <!-- flagged since apache-rat-plugin 0.18 -->
                                 <exclude>**/splash.txt</exclude>
 
-                                <!-- email templates fetched by ATR; they are sent as the body of an email, so no license header -->
-                                <exclude>dev-tools/atr/**</exclude>
-
                             </excludes>
                         </configuration>
                     </plugin>
