@@ -53,18 +53,35 @@ import org.slf4j.LoggerFactory;
 public class Flux {
     private static final Logger LOG = LoggerFactory.getLogger(Flux.class);
 
-    @Deprecated
+    /**
+     * CLI option for local mode.
+     * @deprecated Ignored: to run in local mode use {@code storm local}
+     *     instead of {@code storm jar}.
+     */
+    @Deprecated(since = "2.0.0", forRemoval = true)
     private static final String OPTION_LOCAL = "local";
-    @Deprecated
+    /**
+     * CLI option for remote mode.
+     * @deprecated Ignored: to run on a remote cluster launch using {@code storm jar}.
+     */
+    @Deprecated(since = "2.0.0", forRemoval = true)
     private static final String OPTION_REMOTE = "remote";
     private static final String OPTION_RESOURCE = "resource";
-    @Deprecated
+    /**
+     * CLI option for sleep time in local mode.
+     * @deprecated Ignored in local mode.
+     */
+    @Deprecated(since = "2.0.0", forRemoval = true)
     private static final String OPTION_SLEEP = "sleep";
     private static final String OPTION_DRY_RUN = "dry-run";
     private static final String OPTION_NO_DETAIL = "no-detail";
     private static final String OPTION_NO_SPLASH = "no-splash";
     private static final String OPTION_INACTIVE = "inactive";
-    @Deprecated
+    /**
+     * CLI option for zookeeper connection string.
+     * @deprecated Ignored.
+     */
+    @Deprecated(since = "2.0.0", forRemoval = true)
     private static final String OPTION_ZOOKEEPER = "zookeeper";
     private static final String OPTION_FILTER = "filter";
     private static final String OPTION_ENV_FILTER = "env-filter";

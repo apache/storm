@@ -31,7 +31,9 @@ import org.slf4j.LoggerFactory;
  * This should never be used except for testing. It provides no security at all. The password is
  * hard coded, and even if it were not it is
  * sent in plain text.
- * @deprecated This should never be used except for testing as it provides no security.
+ * @deprecated This should never be used except for testing as it provides no security. Please use
+ *     {@link org.apache.storm.security.auth.digest.DigestSaslTransportPlugin} or
+ *     {@link org.apache.storm.security.auth.kerberos.KerberosSaslTransportPlugin} instead.
  */
 @Deprecated(since = "2.0.0", forRemoval = true)
 public class PlainSaslTransportPlugin extends SaslTransportPlugin {

@@ -654,14 +654,15 @@ public class ServerUtils {
     }
 
     /**
-     * Given a zip File input it will return its size Only works for zip files whose uncompressed size is less than 4 GB, otherwise returns
-     * the size module 2^32, per gzip specifications.
+     * Given a zip File input it will return its size. Only works for zip files whose uncompressed
+     * size is less than 4 GB, otherwise returns the size modulo 2^32, per gzip specifications.
      *
      * @param myFile The zip file as input
      * @return zip file size as a long
-     * @deprecated no longer used by Storm, it will be removed in a future release
+     * @deprecated no longer used by Storm, it will be removed in a future release. Please use
+     *     {@link java.io.File#length()} or standard Java zip utilities instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public static long zipFileSize(File myFile) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(myFile, "r")) {
             raf.seek(raf.length() - 4);

@@ -252,7 +252,7 @@ public class NodeSorter implements INodeSorter {
      * @return a sorted list of ObjectResources
      * @deprecated used by GenericResourceAwareStrategyOld only; use COMMON node sorting instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = false)
     private List<ObjectResourcesItem> sortObjectResourcesGeneric(
             final ObjectResourcesSummary allResources, ExecutorDetails exec,
             final ExistingScheduleFunc existingScheduleFunc) {
@@ -305,7 +305,7 @@ public class NodeSorter implements INodeSorter {
      * @return a sorted list of ObjectResources
      * @deprecated used by DefaultResourceAwareStrategyOld only; use COMMON node sorting instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = false)
     private List<ObjectResourcesItem> sortObjectResourcesDefault(
             final ObjectResourcesSummary allResources,
             final ExistingScheduleFunc existingScheduleFunc) {
