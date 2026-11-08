@@ -38,6 +38,14 @@
             <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- jspecify belongs on the worker classpath: the dependency-reduced pom of storm-shaded-deps lists it, but a
+             reactor build reads the source pom, where it is only reachable through JUnit as a test dependency.
+             Declared here so the worker jars, and with them lib-common, are the same in both kinds of build.
+             The version is managed in the root pom. -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
