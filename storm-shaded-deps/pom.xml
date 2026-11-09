@@ -44,6 +44,13 @@
             <artifactId>guava</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Guava's nullness annotations are not shaded into the jar. Mark them optional like the other shaded libraries, so
+             the dependency-reduced pom does not turn them into a real dependency of the modules that use this jar. -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
