@@ -26,6 +26,7 @@ import javax.security.sasl.SaslServerFactory;
 
 /**
  * Plain SASL server implementation for testing.
+ *
  * @deprecated This should never be used except for testing as it provides no security. Please use
  *     standard SASL mechanisms such as DIGEST-MD5 via
  *     {@link org.apache.storm.security.auth.digest.DigestSaslTransportPlugin} or GSSAPI via

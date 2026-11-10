@@ -70,7 +70,7 @@ public class LinearDRPCTopologyBuilder {
      * @return input declarer
      * @deprecated please use {@link #addBolt(IBatchBolt, Number)} or {@link #addBolt(IBasicBolt, Number)} instead.
      */
-    @Deprecated(since = "1.0.0", forRemoval = true)
+    @Deprecated(since = "0.7.0", forRemoval = true)
     public LinearDRPCInputDeclarer addBolt(IRichBolt bolt, Number parallelism) {
         if (parallelism == null) {
             parallelism = 1;
@@ -87,7 +87,7 @@ public class LinearDRPCTopologyBuilder {
      * @return input declarer
      * @deprecated please use {@link #addBolt(IBatchBolt)} or {@link #addBolt(IBasicBolt)} instead.
      */
-    @Deprecated(since = "1.0.0", forRemoval = true)
+    @Deprecated(since = "0.7.0", forRemoval = true)
     public LinearDRPCInputDeclarer addBolt(IRichBolt bolt) {
         return addBolt(bolt, null);
     }
