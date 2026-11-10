@@ -257,12 +257,10 @@ and only votes from the Storm PMC are binding. Staging and publishing through SV
       ```
 
       Add `--concerns-noted <keys>` to acknowledge the remaining concerns. `--auto-publish` (PMC members only) publishes the files as soon as the vote is resolved;
-      leave it out if you want to control when that happens. In the template, `[CANDIDATE_URL]` is the candidate page of the release in ATR,
-      and `[RELEASE_NOTES_URL]` is the link to `RELEASE_NOTES.html` on that page.
-    - **SVN:** send the email yourself. In the template, `[CANDIDATE_URL]` is https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/
-      and `[RELEASE_NOTES_URL]` is `[CANDIDATE_URL]RELEASE_NOTES.html`.
+      leave it out if you want to control when that happens.
+    - **SVN:** send the email yourself, using the sample template below.
 
-    *Sample template, sent to dev@storm.apache.org:*
+    *Sample template for an SVN vote, sent to dev@storm.apache.org:*
 
     ```
     Subject: [VOTE] Release Apache Storm [VERSION] (rcN)
@@ -275,7 +273,7 @@ and only votes from the Storm PMC are binding. Staging and publishing through SV
         https://repository.apache.org/content/repositories/orgapachestorm-[REPO_NUM]
 
     Storm Source and Binary Release with sha512 signature files are here:
-        [CANDIDATE_URL]
+        https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/
     The release artifacts are signed with the following key:
         https://keyserver.ubuntu.com/pks/lookup?op=index&fingerprint=on&search=[KEY]
         in this file https://downloads.apache.org/storm/KEYS
@@ -284,7 +282,7 @@ and only votes from the Storm PMC are binding. Staging and publishing through SV
         https://github.com/apache/storm/tree/v[VERSION]
 
     Full list of changes in this release:
-        [RELEASE_NOTES_URL]
+        https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/RELEASE_NOTES.html
 
     To use it in a maven build set the version for Storm to [VERSION] and add the following URL to your settings.xml file:
     https://repository.apache.org/content/repositories/orgapachestorm-[REPO_NUM]
@@ -474,7 +472,7 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
    ```text
    Subject: [VOTE][CANCELED] Storm [VERSION] Release Candidate [N]
 
-   This release candidate Storm Release candidate [VERSION] rcN [CANDIDATE_URL] has been canceled.
+   This release candidate Storm Release candidate [VERSION] rcN https://dist.apache.org/repos/dist/dev/storm/apache-storm-[VERSION]-rcN/ has been canceled.
    New vote request will be sent out on RC[N+1] with further updates.
 
    [RELEASE MANAGER NAME]
