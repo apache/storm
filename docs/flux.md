@@ -154,13 +154,13 @@ The example below illustrates Flux usage with the Maven shade plugin:
  ```
 
 ### Deploying and Running a Flux Topology
-Once your topology components are packaged with the Flux dependency, you can run different topologies either locally
-or remotely using the `storm jar` command. For example, if your fat jar is named `myTopology-0.1.0-SNAPSHOT.jar` you
+Once your topology components are packaged with the Flux dependency, you can run different topologies either locally using the `storm local` command
+or remotely using `storm jar`. For example, if your fat jar is named `myTopology-0.1.0-SNAPSHOT.jar` you
 could run it locally with the command:
 
 
 ```bash
-storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --local my_config.yaml
+storm local myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux my_config.yaml
 
 ```
 
@@ -180,20 +180,22 @@ usage: storm jar <my_topology_uber_jar.jar> org.apache.storm.flux.Flux
                               and replace keys identified with {$[property
                               name]} with the value defined in the
                               properties file.
+ -h,--help                    Print this help message
  -i,--inactive                Deploy the topology, but do not activate it.
- -l,--local                   Run the topology in local mode.
+ -l,--local                   Ignored: to run in local mode use `storm
+                              local` instead of `storm jar`
  -n,--no-splash               Suppress the printing of the splash screen.
  -q,--no-detail               Suppress the printing of topology details.
- -r,--remote                  Deploy the topology to a remote cluster.
+ -r,--remote                  Ignored: to run on a remote cluster launch
+                              using `storm jar` to run in a local cluster
+                              use `storm local`
  -R,--resource                Treat the supplied path as a classpath
                               resource instead of a file.
- -s,--sleep <ms>              When running locally, the amount of time to
-                              sleep (in ms.) before killing the topology
-                              and shutting down the local cluster.
- -z,--zookeeper <host:port>   When running in local mode, use the
-                              ZooKeeper at the specified <host>:<port>
-                              instead of the in-process ZooKeeper.
-                              (requires Storm 0.9.3 or later)
+ -s,--sleep <ms>              Ignored: to set cluster run time use
+                              `--local-ttl` with `storm local` instead.
+ -z,--zookeeper <host:port>   Ignored, if you want to set the zookeeper
+                              host/port in local mode use
+                              `--local-zookeeper` instead
 ```
 
 **NOTE:** Flux tries to avoid command line switch collision with the `storm` command, and allows any other command line
@@ -203,7 +205,7 @@ For example, you can use the `storm` command switch `-c` to override a topology 
 example command will run Flux and override the `nimbus.seeds` configuration:
 
 ```bash
-storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --remote my_config.yaml -c 'nimbus.seeds=["localhost"]'
+storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux my_config.yaml -c 'nimbus.seeds=["localhost"]'
 ```
 
 ### Sample output
@@ -306,7 +308,7 @@ To enable property filtering, use the `--filter` command line option and specify
 if you invoked flux like so:
 
 ```bash
-storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --local my_config.yaml --filter dev.properties
+storm local myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux my_config.yaml --filter dev.properties
 ```
 With the following `dev.properties` file:
 
