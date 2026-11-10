@@ -28,7 +28,10 @@ public interface IMetricsContext {
     /**
      * Register metric.
      *
-     * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
+     * @deprecated in favor of metrics v2. Please use {@link #registerGauge(String, Gauge)},
+     *     {@link #registerCounter(String)}, {@link #registerMeter(String)},
+     *     {@link #registerHistogram(String)}, {@link #registerTimer(String)}, or
+     *     {@link #registerMetricSet(String, MetricSet)} instead.
      */
     @Deprecated(since = "2.1.0", forRemoval = true)
     <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs);
@@ -36,7 +39,10 @@ public interface IMetricsContext {
     /**
      * Register metric.
      *
-     * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
+     * @deprecated in favor of metrics v2. Please use {@link #registerGauge(String, Gauge)},
+     *     {@link #registerCounter(String)}, {@link #registerMeter(String)},
+     *     {@link #registerHistogram(String)}, {@link #registerTimer(String)}, or
+     *     {@link #registerMetricSet(String, MetricSet)} instead.
      */
     @Deprecated(since = "2.1.0", forRemoval = true)
     ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs);
@@ -44,7 +50,10 @@ public interface IMetricsContext {
     /**
      * Register metric.
      *
-     * @deprecated in favor of metrics v2 (the non-deprecated methods on this class)
+     * @deprecated in favor of metrics v2. Please use {@link #registerGauge(String, Gauge)},
+     *     {@link #registerCounter(String)}, {@link #registerMeter(String)},
+     *     {@link #registerHistogram(String)}, {@link #registerTimer(String)}, or
+     *     {@link #registerMetricSet(String, MetricSet)} instead.
      */
     @Deprecated(since = "2.1.0", forRemoval = true)
     CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs);

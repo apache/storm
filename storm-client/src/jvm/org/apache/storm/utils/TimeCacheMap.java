@@ -28,7 +28,7 @@ import java.util.Map.Entry;
  *
  * @deprecated in favor of non-threaded {@link RotatingMap}.
  */
-@Deprecated(forRemoval = false)
+@Deprecated(since = "0.8.1", forRemoval = false)
 public class TimeCacheMap<K, V> {
     // this default ensures things expire at most 50% past the expiration time
     private static final int DEFAULT_NUM_BUCKETS = 3;

@@ -260,7 +260,7 @@ public class NodeSorterHostProximity implements INodeSorter {
      * @return an {@link Iterable} of sorted {@link ObjectResourcesItem}
      * @deprecated used by GenericResourceAwareStrategyOld only; use COMMON node sorting instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = false)
     private Iterable<ObjectResourcesItem> sortObjectResourcesGeneric(
             final ObjectResourcesSummary allResources, ExecutorDetails exec,
             final ExistingScheduleFunc existingScheduleFunc) {
@@ -324,7 +324,7 @@ public class NodeSorterHostProximity implements INodeSorter {
      * @return an {@link Iterable} of sorted {@link ObjectResourcesItem}
      * @deprecated used by DefaultResourceAwareStrategyOld only; use COMMON node sorting instead.
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0", forRemoval = false)
     private Iterable<ObjectResourcesItem> sortObjectResourcesDefault(
             final ObjectResourcesSummary allResources,
             final ExistingScheduleFunc existingScheduleFunc) {
