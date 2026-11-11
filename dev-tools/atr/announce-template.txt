@@ -1,0 +1,39 @@
+The Apache {{COMMITTEE}} project team is pleased to announce the release of
+Apache {{PROJECT_NAME}} {{VERSION}}. This is a stable release available for
+production use.
+
+Apache Storm is a distributed, fault-tolerant, and high-performance
+realtime computation system that provides strong guarantees on the
+processing of data. You can read more about Apache Storm on the project
+website:
+
+  {{HOMEPAGE}}
+
+Downloads of source and binary distributions are listed in our download
+section:
+
+  {{DOWNLOAD_PAGE}}
+
+They are also available from the Apache download area:
+
+  {{DOWNLOAD_URL}}
+
+You can read more about this release in the following blog post:
+
+  https://storm.apache.org/[YEAR]/[MONTH]/[DAY]/storm[VERSION-WITHOUT-DOTS]-released.html
+
+Distribution artifacts are available in Maven Central at the following
+coordinates:
+
+  groupId: org.apache.storm
+  artifactId: storm-{component}
+  version: {{VERSION}}
+
+The full list of changes is available here [1]. Please let us know [2] if
+you encounter any problems.
+
+On behalf of the Apache {{COMMITTEE}} project team,
+{{YOUR_FULL_NAME}} ({{YOUR_ASF_ID}})
+
+[1] https://downloads.apache.org/storm/apache-storm-{{VERSION}}/RELEASE_NOTES.html
+[2] {{BUG_DATABASE}}
