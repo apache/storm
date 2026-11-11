@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
  *     them to Nimbus over
  *     Thrift, with the default ZooKeeper-based cluster state store ({@code org.apache.storm.cluster.ZKStateStorageFactory}).
  */
-@Deprecated(since = "3.1.0", forRemoval = true)
+@Deprecated(since = "3.2.0", forRemoval = true)
 public class PacemakerClient implements ISaslClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(PacemakerClient.class);
