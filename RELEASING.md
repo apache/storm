@@ -17,7 +17,7 @@ Apache Storm follows the basic idea of [Semantic Versioning](https://semver.org/
 
 - We strongly encourage you to read the [Apache release signing page](https://www.apache.org/dev/release-signing.html), the [release distribution page](https://www.apache.org/dev/release-distribution.html#sigs-and-sums), as well as the [release publishing](https://www.apache.org/dev/release-publishing), [release policy](https://www.apache.org/legal/release-policy.html) and [Maven publishing](https://infra.apache.org/publishing-maven-artifacts.html) pages. ASF has common guidelines that apply to all projects.
 - Ensure you can log in to https://repository.apache.org. You should use your Apache ID username and password.
-- Install a SVN client, and ensure you can access the https://dist.apache.org/repos/dist/dev/storm/ and https://dist.apache.org/repos/dist/release/storm/ repositories. You should be able to access these with your Apache ID username and password.
+- Install a SVN client, and ensure you can access the https://dist.apache.org/repos/dist/dev/storm/ and https://dist.apache.org/repos/dist/release/storm/ repositories. You should be able to access these with your Apache ID username and password. You need this to maintain the KEYS file, and to stage and publish the release through SVN. If you stage and publish through ATR instead, see [Using Apache Trusted Releases (ATR)](#using-atr).
 - During the release phase, artifacts will be uploaded to https://repository.apache.org. This means Maven needs to know your LDAP credentials. It is recommended that you use Maven's mechanism for [password encryption](https://maven.apache.org/guides/mini/guide-encryption.html). Please configure this in your `${user.home}/.m2/settings.xml`:
   
 ```xml
@@ -57,7 +57,77 @@ Apache Storm follows the basic idea of [Semantic Versioning](https://semver.org/
 If you are setting up a new MINOR version release, create a new branch based on `master` branch, e.g. `2.7.x-branch`. Then on master branch, set the version to a higher MINOR version (with SNAPSHOT), e.g. `mvn versions:set -DnewVersion=2.8.0-SNAPSHOT -P dist,rat,externals,examples`.
 In this way, you create a new release line and then you can create PATCH version releases from it, e.g. `2.7.1`.
 
+<a id="using-atr"></a>
+## Using Apache Trusted Releases (ATR)
+
+[ATR](https://releases.apache.org/) is the ASF platform for staging, voting on and publishing releases. It replaces the `dist/dev`
+staging area, sends the vote and announcement emails on your behalf, and publishes the approved files to `dist/release`. It is currently
+in beta. ATR does **not** build or sign the artifacts and does **not** publish to Maven Central: building, signing and the Nexus staging
+repository work as described in the steps below.
+
+> **Pick one path for each release, ATR or SVN, and never mix them.** The two paths diverge at staging (step 6 of
+> [Setting up a vote](#setting-up-a-vote)), at the vote email (step 11), and again when publishing and announcing after the vote.
+> Decide before you start and follow only the matching variant in every step. Mixing them, for example staging in `dist/dev` and also
+> starting the release in ATR, or running `svn mv` into `dist/release` while ATR holds the release, leaves two diverging copies of the
+> release candidate. Inside ATR you are free to switch between the website and the command line.
+
+Every ATR step can be done either on the **website** (https://releases.apache.org, log in with your ASF account) or from the
+**command line** with the `atr` client. The steps below give both. Voting still happens on dev@storm.apache.org,
+and only votes from the Storm PMC are binding. Staging and publishing through SVN without ATR still works; the SVN variants are marked in the steps below.
+
+### One-time setup
+
+1. Register for the ASF multi-factor authentication at https://mfa.apache.org/.
+2. You must be a PMC member, or be designated as a release manager by a PMC member on the Storm committee page in ATR.
+3. Make sure ATR knows your OpenPGP signing key. By default ATR imports the Storm KEYS file from SVN, so adding your key to KEYS as described in [Preparation](#preparation)
+   is enough. You can also add the key at https://releases.apache.org/keys. New keys must be RSA of at least 4096 bits, or Ed25519 / ECDSA (P-256 or stronger); DSA keys are rejected.
+4. Get the credentials for the way you upload files:
+   - website: nothing more than your ASF login;
+   - `rsync`: add an SSH **public** key at https://releases.apache.org/keys. This is a different key from your OpenPGP key. You connect as your ASF UID on port 2222;
+   - command line: create a personal access token at https://releases.apache.org/tokens (it expires after 180 days).
+5. To use the command line, install the client (it needs [uv](https://docs.astral.sh/uv/getting-started/installation/)) and sign in:
+
+   ```bash
+   uv tool install "apache-trusted-releases @ git+https://github.com/apache/tooling-releases-client"
+   atr set asf.uid <your-asf-uid>
+   atr set tokens.pat
+   atr jwt refresh
+   ```
+
+   `atr set tokens.pat` asks for the token without echoing it. Run `atr --help` or `atr docs` for the full command reference. The client is not yet stable, so do not use it in unattended scripts.
+6. Log in on the website and check that the Storm project is listed. Its project key is `storm`.
+7. The vote email template lives in this repository, in [`dev-tools/atr/start-vote-template.txt`](dev-tools/atr/start-vote-template.txt). Once, in the project settings in ATR
+   (**Vote** tab), set **Start vote template URL** to
+   `https://raw.githubusercontent.com/apache/storm/master/dev-tools/atr/start-vote-template.txt`. ATR fetches the template whenever the vote form is shown, so changes to
+   the file in `master` apply to the next vote. The file uses ATR's `{{VARIABLES}}`, listed under **Available template variables** on the same settings page.
+   It is sent as the body of the email, so it must not carry a license header.
+8. The announcement email template is in [`dev-tools/atr/announce-template.txt`](dev-tools/atr/announce-template.txt). In the same project settings, set
+   **Announce release template URL** to
+   `https://raw.githubusercontent.com/apache/storm/master/dev-tools/atr/announce-template.txt`, and **Announce release subject** to
+   `[ANNOUNCE] Apache {{PROJECT_NAME}} {{VERSION}} Released`. The blog post line has `[YEAR]`, `[MONTH]`, `[DAY]` and `[VERSION-WITHOUT-DOTS]` to fill in when you send,
+   for example `https://storm.apache.org/2026/09/12/storm310-released.html` for 3.1.0.
+9. In the project settings, set **Default download path suffix** to `apache-storm-{{VERSION}}`. It pre-fills the publish path. Storm is the top-level project of its committee,
+   so with the field empty ATR publishes the files straight into `dist/release/storm/`, and not into `apache-storm-x.x.x/` as every earlier release did.
+
+### ATR operations at a glance
+
+| Step | Website | Command line (`x.x.x` is the release version) |
+|---|---|---|
+| Start the release | **Draft → Candidates → Start a new release** | `atr release start storm x.x.x` |
+| Upload the files | Compose page → **Upload files** (browser, `svn` or `rsync`) | `atr rsync storm x.x.x ./candidate/` or `atr upload ...` |
+| Review the checks | Compose page | `atr check wait\|status\|blockers\|concerns storm x.x.x` |
+| Start the vote | Compose page → **Start voting** | `atr vote start storm x.x.x -m dev@storm.apache.org --subject ... --body-file vote.txt` |
+| Read the tally | Vote page | `atr vote tabulate storm x.x.x` |
+| Resolve the vote | Vote page → **Resolve vote** (the only way for email votes) | not available for email votes |
+| Record the Maven Central release | Finish page → **Verify a third-party distribution** | `atr distribution record storm x.x.x MAVEN org.apache.storm <artifactId> x.x.x` |
+| Publish to `dist/release` | Finish page → **Publish to ASF Distribution Area** | add `--auto-publish` to `vote start` (PMC members only) |
+| Announce | Finish page → **Announce** | `atr announce storm x.x.x -m announce@apache.org --body-file announce.txt` |
+
+<a id="setting-up-a-vote"></a>
 ## Setting up a vote
+
+> **Choose your path first: ATR or SVN, not both.** Steps marked **ATR** and **SVN** are alternatives. Follow the variant of the path you chose and skip the other.
+> See [Using Apache Trusted Releases (ATR)](#using-atr).
 
 1. Checkout to the branch to be released.
 
@@ -112,7 +182,11 @@ In this way, you create a new release line and then you can create PATCH version
    > omits them. Both must be signed, checksummed and staged for the release candidate.
    > See [Storm lite distribution](#storm-lite-distribution) below.
 
-6. <a id="rc-svn-dir"></a>Create a directory in the dist svn repo for the release candidate: https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx
+6. <a id="rc-svn-dir"></a>Decide where the release candidate is staged.
+
+   - **ATR:** start the release, on the website (**Draft → Candidates → Start a new release**) or from the command line: `atr release start storm x.x.x`.
+     A failed vote returns the release to the Compose phase, so the version stays the same and the `rcN` counter only appears in the vote email.
+   - **SVN:** create a directory in the dist svn repo for the release candidate: https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx
 
 7. Before generating the release notes, please double check if all merged pull requests for the version being released are assigned the milestone in question. They won't be placed in the release notes otherwise.
 
@@ -137,7 +211,7 @@ In this way, you create a new release line and then you can create PATCH version
    - Click on the milestone you want to create release notes for.
    - Look at the URL in your browser. It will look like this: `https://github.com/apache/storm/milestone/40`, where the last number is the milestone ID.
 
-9. Move the release files from the [tag checkout](#rc-checkout-tag), [checksums](#rc-checksums) and [release notes](#rc-release-notes) steps to the [dist svn directory](#rc-svn-dir). Example of the set of files:
+9. Move the release files from the [tag checkout](#rc-checkout-tag), [checksums](#rc-checksums) and [release notes](#rc-release-notes) steps to the [staging location](#rc-svn-dir): a local directory such as `./candidate/` for ATR, or the dist svn directory for SVN. Example of the set of files:
 
    ```
    apache-storm-2.8.3-src.tar.gz         apache-storm-2.8.3-src.zip         apache-storm-2.8.3.tar.gz         apache-storm-2.8.3.zip         RELEASE_NOTES.html
@@ -148,17 +222,52 @@ In this way, you create a new release line and then you can create PATCH version
    apache-storm-2.8.3-lite.tar.gz.sha512 apache-storm-2.8.3-lite.zip.sha512
    ```
 
-10. Add and commit the files to SVN. This makes them available in the Apache staging repo.
+10. Upload or commit the files.
 
-    ```bash
-    cd <your-svn-checkout>/apache-storm-x.x.x-rcx
-    svn add *
-    svn commit -m "Add release candidate apache-storm-x.x.x-rcx"
-    ```
+    - **ATR:** upload on the website (Compose page → **Upload files**, by browser, `svn` or `rsync`) or from the command line:
+
+      ```bash
+      atr rsync storm x.x.x ./candidate/
+      ```
+
+      `rsync` needs an SSH public key registered at https://releases.apache.org/keys, and connects as your ASF UID on port 2222. Then wait for the checks
+      on the Compose page, or run:
+
+      ```bash
+      atr check wait storm x.x.x --timeout 300
+      atr check status storm x.x.x --verbose
+      atr check blockers storm x.x.x --members
+      atr check concerns storm x.x.x --members
+      ```
+
+      Fix every blocker (re-sign, re-checksum and re-upload the affected files). Read every concern: you acknowledge the remaining ones when you start the vote.
+      ATR also asks for the full 40-character commit the sources were built from, which is `git rev-parse vx.x.x^{commit}`.
+      Expect the concern `RELEASE_NOTES.html: Unknown top level file`: ATR only accepts `CHANGES`, `LICENSE`, `NOTICE`, `README` and `SECURITY` (with an empty, `.adoc`, `.md`, `.rst` or `.txt` suffix) at the top level of a candidate.
+    - **SVN:** add and commit the files to SVN. This makes them available in the Apache staging repo.
+
+      ```bash
+      cd <your-svn-checkout>/apache-storm-x.x.x-rcx
+      svn add *
+      svn commit -m "Add release candidate apache-storm-x.x.x-rcx"
+      ```
 
 11. Start the VOTE thread. The vote should follow the [ASF voting process](https://www.apache.org/foundation/voting.html).
 
-    *Sample template, sent to dev@storm.apache.org:*
+    - **ATR:** start the vote on the website (Compose page → **Start voting**) or from the command line. ATR sends the email to the list you choose, in your name.
+      On the website the form is filled in from [`dev-tools/atr/start-vote-template.txt`](dev-tools/atr/start-vote-template.txt) (see [One-time setup](#using-atr)),
+      with the ATR variables replaced. Replace `[REPO_NUM]` with the number of the Nexus staging repository, review the text, and send. This is the easier way for Storm,
+      because ATR fills in the variables for you.
+      From the command line, write the whole email body yourself, with every value filled in (use the template file as the starting point), and pass the subject line separately:
+
+      ```bash
+      atr vote start storm x.x.x -m dev@storm.apache.org -d 72 --subject "[VOTE] Release Apache Storm x.x.x (rcN)" --body-file vote.txt
+      ```
+
+      Add `--concerns-noted <keys>` to acknowledge the remaining concerns. `--auto-publish` (PMC members only) publishes the files as soon as the vote is resolved;
+      leave it out if you want to control when that happens.
+    - **SVN:** send the email yourself, using the sample template below.
+
+    *Sample template for an SVN vote, sent to dev@storm.apache.org:*
 
     ```
     Subject: [VOTE] Release Apache Storm [VERSION] (rcN)
@@ -228,7 +337,13 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
 
 ## Releasing if the vote succeeds
 
-0. Announce the results. Use the following template:
+> Continue on the path you chose when you [set up the vote](#setting-up-a-vote): the **ATR** and **SVN** variants below are alternatives.
+
+0. Announce the results.
+
+   - **ATR:** check ATR's tally against the vote thread, then resolve the vote on the vote page (**Resolve vote**; this is the only way to resolve an email vote).
+     `atr vote tabulate storm x.x.x` shows the tally from the command line. ATR emails the outcome to the list, and a passing vote moves the release to the Finish phase.
+   - **SVN:** use the following template:
 
    ```text
    Subject: [VOTE][RESULT] Storm [VERSION] Release Candidate [N]
@@ -251,17 +366,31 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
    [RELEASE MANAGER NAME]
    ```
 
-1. Move the release candidate to the release directory and publish it:
+1. Publish the release candidate to the release directory.
 
-   ```bash
-   svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx \
-          https://dist.apache.org/repos/dist/release/storm/apache-storm-x.x.x \
-          -m "Publish Apache Storm x.x.x release"
-   ```
+   - **ATR:** on the Finish page use **Publish to ASF Distribution Area**, and set the download path suffix to `apache-storm-x.x.x` so the files end up where they always have.
+     The field is pre-filled if you did the [One-time setup](#using-atr); check it before you publish. If it is empty the files land directly in `dist/release/storm/`, and you
+     have to move them into `apache-storm-x.x.x/` with one `svn mv` commit afterwards.
+     If you started the vote with `--auto-publish`, ATR has already done this when the vote was resolved.
+   - **SVN:**
 
-   This will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
+     ```bash
+     svn mv https://dist.apache.org/repos/dist/dev/storm/apache-storm-x.x.x-rcx \
+            https://dist.apache.org/repos/dist/release/storm/apache-storm-x.x.x \
+            -m "Publish Apache Storm x.x.x release"
+     ```
+
+   Either way, this will make the release artifacts available on dist.apache.org and the artifacts will start replicating to mirrors.
 
 2. Go to https://repository.apache.org and release the staging repository.
+
+   **ATR:** then record the Maven Central release in ATR, on the Finish page (**Verify a third-party distribution**) or from the command line, once per artifact:
+
+   ```bash
+   atr distribution record storm x.x.x MAVEN org.apache.storm <artifactId> x.x.x
+   ```
+
+   ATR can require this before it lets you announce.
 
 3. Wait at least 24 hrs. for the mirrors to catch up.
 
@@ -272,6 +401,7 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
 5. Update `doap_Storm.rdf` with the new release version.
 
 6. Delete any outdated releases from the https://dist.apache.org/repos/dist/release/storm/ repository. See [when to archive](https://www.apache.org/legal/release-policy.html#when-to-archive).
+   With ATR, you can instead archive the superseded release from its page in ATR.
 
 7. Delete any outdated releases from the storm-site releases directory, and republish the site.
 
@@ -281,7 +411,17 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
 
 10. Create a new release for [Storm Docker](https://github.com/apache/storm-docker). Example of a version release [here](https://github.com/apache/storm-docker/commit/177a1534bf910c2271845f4eaedef7c040559fbc). After that is done, a PR to [docker-library](https://github.com/docker-library/official-images) must be submitted, so that the new docker-storm version is officially released. Example of such a PR is [here](https://github.com/docker-library/official-images/pull/21525#issuecomment-4526751672).
 
-11. Post, promote, celebrate. ;) Announce the new release to dev@storm.apache.org, user@storm.apache.org, and announce@apache.org (you must use your @apache.org email to post to announce@apache.org), using the following template:
+11. Post, promote, celebrate. ;) Announce the new release to dev@storm.apache.org, user@storm.apache.org, and announce@apache.org (you must use your @apache.org email to post to announce@apache.org), using the following template.
+
+    With ATR, you can send the announcement from ATR once the files have reached the download servers: on the Finish page (**Announce**) or from the command line.
+    On the website the form is filled in from [`dev-tools/atr/announce-template.txt`](dev-tools/atr/announce-template.txt) (see [One-time setup](#using-atr)); fill in the blog post line and send.
+    From the command line, use that file as the body, with every `{{VARIABLE}}` filled in (`--cc` and `--bcc` add other permitted lists):
+
+    ```bash
+    atr announce storm x.x.x -m announce@apache.org --body-file announce.txt
+    ```
+
+    With SVN, send it yourself.
 
     ```text
     Subject: [ANNOUNCE] Apache Storm [VERSION] Released
@@ -330,7 +470,10 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
 
 1. Go to https://repository.apache.org and drop the staging repository.
 
-2. Delete the staged distribution files from https://dist.apache.org/repos/dist/dev/storm/.
+2. Clean up the staged files.
+
+   - **ATR:** nothing to delete in `dist`. Resolve the vote as failed on the vote page; the release returns to the Compose phase, where you upload the next candidate.
+   - **SVN:** delete the staged distribution files from https://dist.apache.org/repos/dist/dev/storm/.
 
 3. Delete the git tag.
 
@@ -351,6 +494,8 @@ We encourage everyone to review and vote on a release candidate to make an Apach
 
 Below is a checklist that one could do to review a release candidate. 
 Please note this list is not exhaustive and only includes some of the common steps. Feel free to add your own tests.
+
+0. Get the candidate files from the link in the vote email: a `dist.apache.org` directory for an SVN vote, or the vote page for an ATR vote, which also shows the check results. On the ATR vote page anyone can download the files in the browser or with `curl`; the ZIP download and `rsync` need a login.
 
 1. Verify files such as *.asc, *.sha512; some scripts are available under `dev-tools/rc` to help with it;
 2. <a id="vote-build-distribution"></a>Build Apache Storm source code and run unit tests, create an Apache Storm distribution;
