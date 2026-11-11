@@ -1420,7 +1420,7 @@ public class Config extends HashMap<String, Object> {
      *     to Nimbus) instead.
      */
     @IsStringList
-    @Deprecated(since = "3.1.0", forRemoval = true)
+    @Deprecated(since = "3.2.0", forRemoval = true)
     public static final String PACEMAKER_SERVERS = "pacemaker.servers";
     /**
      * The port Pacemaker should run on. Clients should connect to this port to submit or read
@@ -1433,7 +1433,7 @@ public class Config extends HashMap<String, Object> {
      */
     @IsNumber
     @IsPositiveNumber
-    @Deprecated(since = "3.1.0", forRemoval = true)
+    @Deprecated(since = "3.2.0", forRemoval = true)
     public static final String PACEMAKER_PORT = "pacemaker.port";
     /**
      * The maximum number of threads that should be used by the Pacemaker client.
@@ -1447,7 +1447,7 @@ public class Config extends HashMap<String, Object> {
      */
     @IsNumber
     @IsPositiveNumber
-    @Deprecated(since = "3.1.0", forRemoval = true)
+    @Deprecated(since = "3.2.0", forRemoval = true)
     public static final String PACEMAKER_CLIENT_MAX_THREADS = "pacemaker.client.max.threads";
     /**
      * This should be one of "DIGEST", "KERBEROS", or "NONE" Determines the mode of authentication
@@ -1464,7 +1464,7 @@ public class Config extends HashMap<String, Object> {
      *     to Nimbus) instead.
      */
     @CustomValidator(validatorClass = ConfigValidation.PacemakerAuthTypeValidator.class)
-    @Deprecated(since = "3.1.0", forRemoval = true)
+    @Deprecated(since = "3.2.0", forRemoval = true)
     public static final String PACEMAKER_AUTH_METHOD = "pacemaker.auth.method";
     /**
      * Pacemaker Thrift Max Message Size (bytes).
@@ -1476,7 +1476,7 @@ public class Config extends HashMap<String, Object> {
      */
     @IsInteger
     @IsPositiveNumber
-    @Deprecated(since = "3.1.0", forRemoval = true)
+    @Deprecated(since = "3.2.0", forRemoval = true)
     public static final String PACEMAKER_THRIFT_MESSAGE_SIZE_MAX =
         "pacemaker.thrift.message.size.max";
     /**
