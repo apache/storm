@@ -101,6 +101,13 @@ and only votes from the Storm PMC are binding. Staging and publishing through SV
    `https://raw.githubusercontent.com/apache/storm/master/dev-tools/atr/start-vote-template.txt`. ATR fetches the template whenever the vote form is shown, so changes to
    the file in `master` apply to the next vote. The file uses ATR's `{{VARIABLES}}`, listed under **Available template variables** on the same settings page.
    It is sent as the body of the email, so it must not carry a license header.
+8. The announcement email template is in [`dev-tools/atr/announce-template.txt`](dev-tools/atr/announce-template.txt). In the same project settings, set
+   **Announce release template URL** to
+   `https://raw.githubusercontent.com/apache/storm/master/dev-tools/atr/announce-template.txt`, and **Announce release subject** to
+   `[ANNOUNCE] Apache {{PROJECT_NAME}} {{VERSION}} Released`. The blog post line has `[YEAR]`, `[MONTH]`, `[DAY]` and `[VERSION-WITHOUT-DOTS]` to fill in when you send,
+   for example `https://storm.apache.org/2026/09/12/storm310-released.html` for 3.1.0.
+9. In the project settings, set **Default download path suffix** to `apache-storm-{{VERSION}}`. It pre-fills the publish path. Storm is the top-level project of its committee,
+   so with the field empty ATR publishes the files straight into `dist/release/storm/`, and not into `apache-storm-x.x.x/` as every earlier release did.
 
 ### ATR operations at a glance
 
@@ -362,6 +369,8 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
 1. Publish the release candidate to the release directory.
 
    - **ATR:** on the Finish page use **Publish to ASF Distribution Area**, and set the download path suffix to `apache-storm-x.x.x` so the files end up where they always have.
+     The field is pre-filled if you did the [One-time setup](#using-atr); check it before you publish. If it is empty the files land directly in `dist/release/storm/`, and you
+     have to move them into `apache-storm-x.x.x/` with one `svn mv` commit afterwards.
      If you started the vote with `--auto-publish`, ATR has already done this when the vote was resolved.
    - **SVN:**
 
@@ -404,8 +413,9 @@ from Maven Central (or an internal mirror configured in `settings.xml`).
 
 11. Post, promote, celebrate. ;) Announce the new release to dev@storm.apache.org, user@storm.apache.org, and announce@apache.org (you must use your @apache.org email to post to announce@apache.org), using the following template.
 
-    With ATR, you can send the announcement from ATR once the files have reached the download servers: on the Finish page (**Announce**) or from the command line,
-    with the template below in a file as the body (`--cc` and `--bcc` add other permitted lists):
+    With ATR, you can send the announcement from ATR once the files have reached the download servers: on the Finish page (**Announce**) or from the command line.
+    On the website the form is filled in from [`dev-tools/atr/announce-template.txt`](dev-tools/atr/announce-template.txt) (see [One-time setup](#using-atr)); fill in the blog post line and send.
+    From the command line, use that file as the body, with every `{{VARIABLE}}` filled in (`--cc` and `--bcc` add other permitted lists):
 
     ```bash
     atr announce storm x.x.x -m announce@apache.org --body-file announce.txt
