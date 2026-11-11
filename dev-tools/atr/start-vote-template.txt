@@ -1,0 +1,51 @@
+Hello {{COMMITTEE}},
+
+I'd like to call a vote on releasing the following artifacts as
+Apache {{PROJECT_NAME}} {{VERSION}}. This vote is being conducted using a
+Beta version of the Apache Trusted Releases (ATR) platform.
+Please report any bugs or issues to the ASF Tooling team.
+
+The page of the release candidate from ATR revision {{REVISION}},
+which includes downloads and the release notes, can be found at:
+
+  {{REVIEW_URL}}
+
+The file manifest for ATR revision {{REVISION}}, including file digests,
+can be found at:
+
+  {{MANIFEST_URL}}
+
+The release artifacts are signed with one or more OpenPGP keys from:
+
+  {{KEYS_FILE}}
+{{COMMIT_PARAGRAPH}}{{FIRST_ROUND_THREAD}}
+The Nexus staging repository is here:
+
+  https://repository.apache.org/content/repositories/orgapachestorm-[REPO_NUM]
+
+To use it in a maven build, set the version for Storm to {{VERSION}} and add
+that URL to your settings.xml file.
+
+The binary release comes in two flavours: the full distribution and the lite
+distribution (apache-storm-{{VERSION}}-lite.*), which omits the storm-autocreds
+and storm-kafka-monitor jars. Please verify both, and the source release.
+
+"How to vote" is described here:
+https://github.com/apache/storm/blob/master/RELEASING.md#how-to-vote-on-a-release-candidate
+When voting, please list the actions taken to verify the release.
+
+Please review the release candidate and vote accordingly.
+
+[ ] +1 Release this package
+[ ] +0 Abstain
+[ ] -1 Do not release this package (please provide specific comments)
+
+You can vote on ATR at the URL above, or manually by replying to this email.
+
+The vote is open for {{DURATION}} hours. Only votes from the Storm PMC are
+binding, but everyone is welcome to vote. The vote passes with at least three
+binding +1 votes.
+
+{{RELEASE_CHECKLIST}}
+Thanks,
+{{YOUR_FULL_NAME}} ({{YOUR_ASF_ID}})
