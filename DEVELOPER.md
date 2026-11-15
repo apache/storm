@@ -24,7 +24,7 @@ Table of Contents
     * <a href="#best-practices-versions">Version Changes</a>
 * <a href="#tools">Tools</a>
     * <a href="#code-repositories">Source code repositories (git)</a>
-    * <a href="#issue-tracking">Issue tracking (JIRA)</a>
+    * <a href="#issue-tracking">Issue tracking (GitHub Issues)</a>
 * <a href="#questions">Questions?</a>
 
 ---
@@ -47,9 +47,9 @@ This section explains how to perform common activities such as reporting a bug o
 
 ## Report a bug
 
-To report a bug you should [open an issue](https://issues.apache.org/jira/browse/STORM) in our issue tracker that
-summarizes the bug.  Set the form field "Issue type" to "Bug".  If you have not used the issue tracker before you will
-need to register an account (free), log in, and then click on the blue "Create Issue" button in the top navigation bar.
+To report a bug you should [open an issue](https://github.com/apache/storm/issues) in our issue tracker that
+summarizes the bug.  If you have not used the issue tracker before you will need a GitHub account, then click the
+"New issue" button.
 
 In order to help us understand and fix the bug it would be great if you could provide us with:
 
@@ -57,12 +57,12 @@ In order to help us understand and fix the bug it would be great if you could pr
 2. The expected behavior.
 3. The actual, incorrect behavior.
 
-Feel free to search the issue tracker for existing issues (aka tickets) that already describe the problem;  if there is
-such a ticket please add your information as a comment.
+Feel free to search the issue tracker for existing issues that already describe the problem;  if there is
+such an issue please add your information as a comment.
 
 **If you want to provide a patch along with your bug report:**
 That is great!  In this case please send us a pull request as described in section _Create a pull request_ below.
-You can also opt to attach a patch file to the issue ticket, but we prefer pull requests because they are easier to work
+You can also opt to attach a patch file to the issue, but we prefer pull requests because they are easier to work
 with.
 
 
@@ -70,10 +70,9 @@ with.
 
 ## Request a new feature
 
-To request a new feature you should [open an issue](https://issues.apache.org/jira/browse/STORM) in our issue tracker
-and summarize the desired functionality.  Set the form field "Issue type" to "New feature".  If you have not used the
-issue tracker before you will need to register an account (free), log in, and then click on the blue "Create Issue"
-button in the top navigation bar.
+To request a new feature you should [open an issue](https://github.com/apache/storm/issues) in our issue tracker
+and summarize the desired functionality.  If you have not used the issue tracker before you will need a GitHub
+account, then click the "New issue" button.
 
 You can also opt to send a message to the [Storm Users mailing list](http://storm.apache.org/community.html).
 
@@ -88,11 +87,9 @@ reading through the
 
 _If you are interested in contributing code to Storm but do not know where to begin:_
 In this case you should
-[browse our issue tracker for open issues and tasks](https://issues.apache.org/jira/browse/STORM/?selectedTab=com.atlassian.jira.jira-projects-plugin:issues-panel).
+[browse our issue tracker for open issues and tasks](https://github.com/apache/storm/issues).
 You may want to start with beginner-friendly, easier issues
-([newbie issues](https://issues.apache.org/jira/issues/?jql=project%20%3D%20STORM%20AND%20status%20%3D%20Open%20AND%20labels%20%3D%20newbie)
-and
-[trivial issues](https://issues.apache.org/jira/secure/IssueNavigator.jspa?reset=true&jqlQuery=project+%3D+STORM+AND+resolution+%3D+Unresolved+AND+priority+%3D+Trivial+ORDER+BY+key+DESC&mode=hide))
+([good first issues](https://github.com/apache/storm/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22))
 because they require learning about only an isolated portion of the codebase and are a relatively small amount of work.
 
 Contributions to the Storm codebase should be sent as GitHub pull requests.  See section _Create a pull request_ below
@@ -103,7 +100,7 @@ GitHub.
 * For _larger code contributions_, please use the following process. The idea behind this process is to prevent any
   wasted work and catch design issues early on.
 
-    1. [Open an issue](https://issues.apache.org/jira/browse/STORM) on our issue tracker if a similar issue does not
+    1. [Open an issue](https://github.com/apache/storm/issues) on our issue tracker if a similar issue does not
        exist already.  If a similar issue does exist, then you may consider participating in the work on the existing
        issue.
     2. Comment on the issue with your plan for implementing the issue.  Explain what pieces of the codebase you are
@@ -156,9 +153,9 @@ need to:
    account.  See [Fork a repo](https://help.github.com/articles/fork-a-repo) for detailed instructions.
 2. Commit any changes to your fork.
 3. Send a [pull request](https://help.github.com/articles/creating-a-pull-request) to the Storm GitHub repository
-   that you forked in step 1.  If your pull request is related to an existing Storm JIRA ticket -- for instance, because
-   you reported a bug report via JIRA earlier -- then prefix the title of your pull request with the corresponding JIRA
-   ticket number (e.g. `STORM-123: ...`).
+   that you forked in step 1.  Use a short descriptive title.  If your pull request is related to an existing GitHub
+   issue -- for instance, because you reported a bug earlier -- mention the issue number in the pull request
+   description (e.g. `Fixes #123`).
 
 You may want to read [Syncing a fork](https://help.github.com/articles/syncing-a-fork) for instructions on how to keep
 your fork up to date with the latest changes of the upstream (official) `storm` repository.
@@ -195,10 +192,10 @@ To pull in a merge request you should generally follow the command line instruct
         $ git fetch origin
         $ git merge origin/master
 
-2. Create a local branch for integrating and testing the pull request.  You may want to name the branch according to the
-   Storm JIRA ticket associated with the pull request (example: `STORM-1234`).
+2. Create a local branch for integrating and testing the pull request.  You may want to name the branch after the
+   pull request or a related GitHub issue (example: `pr-1234`).
 
-        $ git checkout -b <local_test_branch>  # e.g. git checkout -b STORM-1234
+        $ git checkout -b <local_test_branch>  # e.g. git checkout -b pr-1234
 
 3. Merge the pull request into your local test branch.
 
@@ -212,15 +209,16 @@ To pull in a merge request you should generally follow the command line instruct
 
         # Pull request looks ok, change log was updated, etc.  We are ready for pushing.
         $ git checkout master
-        $ git merge <local_test_branch>  # e.g. git merge STORM-1234
+        $ git merge <local_test_branch>  # e.g. git merge pr-1234
 
         # At this point our local master branch is ready, so now we will push the changes
         # to the official Apache repo.  Note: The read-only mirror on GitHub will be updated
         # automatically a short while after you have pushed to the Apache repo.
         $ git push origin master
 
-6. The last step is updating the corresponding JIRA ticket.  [Go to JIRA](https://issues.apache.org/jira/browse/STORM)
-   and resolve the ticket.  Be sure to set the `Fix Version/s` field to the version you pushed your changes to.
+6. The last step is updating the corresponding GitHub issue, if there is one.  If the pull request used
+   `Fixes #123` (or similar), GitHub will close the issue automatically when the pull request is merged.
+   Otherwise go to the [issue tracker](https://github.com/apache/storm/issues) and close the issue, mentioning the pull request.
    It is usually good practice to thank the author of the pull request for their contribution if you have not done
    so already.
 
@@ -400,16 +398,16 @@ repository associated with Storm.
 
 <a name="issue-tracking"></a>
 
-## Issue tracking (JIRA)
+## Issue tracking (GitHub Issues)
 
 Issue tracking includes tasks such as reporting bugs, requesting and collaborating on new features, and administrative
-activities for release management. As an Apache software project we use JIRA as our issue tracking tool.
+activities for release management.  We use GitHub Issues as our issue tracking tool.
 
-The Storm JIRA is available at:
+The Storm issue tracker is available at:
 
-* [https://issues.apache.org/jira/browse/STORM](https://issues.apache.org/jira/browse/STORM)
+* [https://github.com/apache/storm/issues](https://github.com/apache/storm/issues)
 
-If you do not have a JIRA account yet, then you can create one via the link above (registration is free).
+If you do not have a GitHub account yet, then you can create one via the link above (registration is free).
 
 <a name="questions"></a>
 
