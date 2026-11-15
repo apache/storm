@@ -321,7 +321,7 @@ To enable property filtering, use the `--filter` command line option and specify
 if you invoked flux like so:
 
 ```bash
-storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --local my_config.yaml --filter dev.properties
+storm local myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux my_config.yaml --filter dev.properties
 ```
 With the following `dev.properties` file:
 

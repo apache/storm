@@ -16,14 +16,14 @@ the `storm` command:
 
 ```bash
 cd flux-examples
-storm jar ./target/flux-examples-*-SNAPSHOT.jar org.apache.storm.flux.Flux --local ./src/main/resources/simple_wordcount.yaml
+storm local ./target/flux-examples-*-SNAPSHOT.jar org.apache.storm.flux.Flux ./src/main/resources/simple_wordcount.yaml
 ```
 
 The example YAML files are also packaged in the examples jar, so they can also be referenced with Flux's `--resource`
 command line switch:
 
 ```bash
-storm jar ./target/flux-examples-*.jar org.apache.storm.flux.Flux --local --resource /simple_wordcount.yaml
+storm local ./target/flux-examples-*.jar org.apache.storm.flux.Flux --resource /simple_wordcount.yaml
 ```
 
 ## Available Examples
@@ -52,7 +52,7 @@ To run the `simple_hdfs.yaml` example, copy the `hdfs_bolt.properties` file to a
 least, the property `hdfs.url` to point to a HDFS cluster. Then you can run the example something like:
 
 ```bash
-storm jar ./target/flux-examples-*.jar org.apache.storm.flux.Flux --local ./src/main/resources/simple_hdfs.yaml --filter my_hdfs_bolt.properties
+storm local ./target/flux-examples-*.jar org.apache.storm.flux.Flux ./src/main/resources/simple_hdfs.yaml --filter my_hdfs_bolt.properties
 ```
 
 ### [simple_hbase.yaml](src/main/resources/simple_hbase.yaml)
@@ -63,7 +63,7 @@ To run the `simple_hbase.yaml` example, copy the `hbase_bolt.properties` file to
  `hbase.rootdir` and `hbase.zookeeper.quorum`. Then you can run the example something like:
 
 ```bash
-storm jar ./target/flux-examples-*.jar org.apache.storm.flux.Flux --local ./src/main/resources/simple_hbase.yaml --filter my_hbase_bolt.properties
+storm local ./target/flux-examples-*.jar org.apache.storm.flux.Flux ./src/main/resources/simple_hbase.yaml --filter my_hbase_bolt.properties
 ```
 
 ### [simple_windowing.yaml](src/main/resources/simple_windowing.yaml)
@@ -73,7 +73,7 @@ This example illustrates how to use Flux to set up a storm topology that contain
 To run,
 
 ```bash
-storm jar ./target/flux-examples-*.jar org.apache.storm.flux.Flux --local ./src/main/resources/simple_windowing.yaml
+storm local ./target/flux-examples-*.jar org.apache.storm.flux.Flux ./src/main/resources/simple_windowing.yaml
 ```
 
 ### [simple_stateful_wordcount.yaml](src/main/resources/simple_stateful_wordcount.yaml)
@@ -82,12 +82,12 @@ Flux also supports stateful bolts which is illustrated with this example. It is 
 The state is periodically saved (checkpointed) and restored when the topology is restarted.
 
 ```bash
-storm jar ./target/flux-examples-*.jar org.apache.storm.flux.Flux --local ./src/main/resources/simple_stateful_wordcount.yaml
+storm local ./target/flux-examples-*.jar org.apache.storm.flux.Flux ./src/main/resources/simple_stateful_wordcount.yaml
 ```
 
 By default the state is stored in-memory only. As such you won't see a resumed state unless you configure to use Redis as the state backend.
 Ensure that you have Redis running at `localhost:6379` and that `storm-redis-*.jar` is in the classpath.
 
 ```bash
-STORM_EXT_CLASSPATH=../../storm-redis/target storm jar ./target/flux-examples-*.jar -c topology.state.provider=org.apache.storm.redis.state.RedisKeyValueStateProvider org.apache.storm.flux.Flux --local ./src/main/resources/simple_stateful_wordcount.yaml
+STORM_EXT_CLASSPATH=../../storm-redis/target storm local ./target/flux-examples-*.jar -c topology.state.provider=org.apache.storm.redis.state.RedisKeyValueStateProvider org.apache.storm.flux.Flux ./src/main/resources/simple_stateful_wordcount.yaml
 ```
