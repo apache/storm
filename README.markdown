@@ -46,7 +46,7 @@ If you are using a pre-built binary distribution of Storm, then you should send 
 
 If you are building storm from source, developing new features, or otherwise hacking storm source code, then [dev@storm.apache.org](mailto:dev@storm.apache.org) is more appropriate.
 
-If you are committers and/or PMCs, or contributors looking for following up and participating development of Storm, then you would want to also subscribe [issues@storm.apache.org](issues@storm.apache.org) in addition to [dev@storm.apache.org](dev@storm.apache.org).
+If you are committers and/or PMCs, or contributors looking for following up and participating development of Storm, then you would want to also subscribe to [issues@storm.apache.org](mailto:issues@storm.apache.org) in addition to [dev@storm.apache.org](mailto:dev@storm.apache.org).
 
 ### What happened with storm-user@googlegroups.com?
 All existing messages will remain archived there, and can be accessed/searched [here](https://groups.google.com/forum/#!forum/storm-user).
