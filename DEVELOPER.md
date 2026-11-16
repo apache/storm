@@ -370,7 +370,7 @@ mvn versions:set #This prompts for a new version
 mvn versions:commit
 ```
 
-[Plugin Documentation] (http://www.mojohaus.org/versions-maven-plugin/)
+[Plugin Documentation](https://www.mojohaus.org/versions/versions-maven-plugin/)
 
 <a name="tools"></a>
 

@@ -258,7 +258,7 @@ If you are using Trident and sequence files you can do something like this:
 
 ### Data Partitioning
 Data can be partitioned to different HDFS directories based on characteristics of the tuple being processed or purely
-external factors, such as system time.  To partition your your data, write a class that implements the ```Partitioner```
+external factors, such as system time.  To partition your data, write a class that implements the ```Partitioner```
 interface and pass it to the withPartitioner() method of your bolt. The getPartitionPath() method returns a partition
 path for a given tuple.
 
