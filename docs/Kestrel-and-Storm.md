@@ -24,7 +24,7 @@ Kestrel is:
 * durable
 * reliable
 
-For instance, Twitter uses Kestrel as the backbone of its messaging infrastructure as described [here] (http://bhavin.directi.com/notes-on-kestrel-the-open-source-twitter-queue/).
+For instance, Twitter uses Kestrel as the backbone of its messaging infrastructure as described [here](http://bhavin.directi.com/notes-on-kestrel-the-open-source-twitter-queue/).
 
 ## Add items to Kestrel
 At first, we need to have a program that can add items to a Kestrel queue. The following method takes benefit of the KestrelClient implementation in [storm-kestrel](https://github.com/nathanmarz/storm-kestrel). It adds sentences into a Kestrel queue randomly chosen out of an array that holds five possible sentences.

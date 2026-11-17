@@ -432,7 +432,7 @@ the command
 
 ##### Kill a container
 
-To kill a container, `RuncLibContainerManager` sends the `SIGTERM` or `SIGKILL` signal to the container process. It then invokes worker-launcher to to umount the mounts and clean up the directories. 
+To kill a container, `RuncLibContainerManager` sends the `SIGTERM` or `SIGKILL` signal to the container process. It then invokes worker-launcher to umount the mounts and clean up the directories. 
 The worker-launcher will invoke `runc delete container-id` to delete the container at the end.
 
 
