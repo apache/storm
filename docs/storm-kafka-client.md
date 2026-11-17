@@ -303,6 +303,52 @@ Currently the Kafka spout has the following default values, which have been show
 * max.uncommitted.offsets = 10000000
 <br/>
 
+# Records that are never acked
+
+With the `AT_LEAST_ONCE` processing guarantee the spout commits an offset only after the tuple for that offset, and every
+tuple before it, has been acked. A record whose tuple is never acked therefore holds back commits for its whole partition.
+
+One way to get there is a tuple that always fails to deserialize on the receiving worker. The worker logs the failure,
+counts it in the `deserializationFailures` metric and drops the message, but nothing tells the spout. The tuple times
+out, the spout fails it and schedules a retry, and the retry fails the same way. Meanwhile:
+
+* the spout keeps polling past the bad record, but no later offset on that partition can be committed
+* once `max.uncommitted.offsets` (10,000,000 by default) offsets are pending, the spout stops polling that partition
+* the only visible symptom is consumer lag that keeps climbing
+
+The default retry service retries forever (`KafkaSpoutConfig.DEFAULT_MAX_RETRIES` is `Integer.MAX_VALUE`), so this
+does not resolve on its own. To let the partition move on, configure a retry service with a finite number of retries.
+When the last retry fails, the spout logs an ERROR, calls `KafkaTupleListener.onMaxRetryReached` and then acks the
+tuple, so commits can move past its offset. The record is not processed. `onMaxRetryReached` is the last point where
+you can keep track of it: the `KafkaSpoutMessageId` gives the topic, partition and offset, so you can log it, alert on it,
+or re-read the record later and send it to a dead-letter topic.
+
+```java
+KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
+  .builder(bootstrapServers, topic)
+  .setRetry(new KafkaSpoutRetryExponentialBackoff(
+      TimeInterval.seconds(0), TimeInterval.milliSeconds(2), 10, TimeInterval.seconds(10)))
+  .setTupleListener(new MyTupleListener())  // implements KafkaTupleListener
+  .build();
+```
+
+```java
+public class MyTupleListener implements KafkaTupleListener {
+    @Override
+    public void onMaxRetryReached(KafkaSpoutMessageId msgId) {
+        LOG.error("Giving up on record {}-{} at offset {}", msgId.topic(), msgId.partition(), msgId.offset());
+    }
+
+    // open, onEmit, onAck, onPartitionsReassigned and onRetry can be left empty
+}
+```
+
+Pick the retry count with the topology message timeout in mind: each retry only happens after the tuple times out, so
+a record can hold up its partition for roughly `maxRetries` times `topology.message.timeout.secs`, plus the backoff.
+
+Note that a finite `maxRetries` applies to every failed tuple, not only undecodable ones. A tuple that fails because of a
+temporary downstream problem is also given up on once it runs out of retries.
+
 # Tuple Tracking
 
 By default the spout only tracks emitted tuples when the processing guarantee is AT_LEAST_ONCE. It may be necessary to track
