@@ -46,8 +46,8 @@ public interface ITuple {
     /**
      * Gets the field at position i in the tuple. Returns object since tuples are dynamically typed.
      *
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     Object getValue(int i);
 
@@ -55,8 +55,8 @@ public interface ITuple {
      * Returns the String at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a String
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     String getString(int i);
 
@@ -64,8 +64,8 @@ public interface ITuple {
      * Returns the Integer at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a Integer
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     Integer getInteger(int i);
 
@@ -73,8 +73,8 @@ public interface ITuple {
      * Returns the Long at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a Long
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     Long getLong(int i);
 
@@ -82,8 +82,8 @@ public interface ITuple {
      * Returns the Boolean at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a Boolean
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     Boolean getBoolean(int i);
 
@@ -91,8 +91,8 @@ public interface ITuple {
      * Returns the Short at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a Short
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     Short getShort(int i);
 
@@ -100,8 +100,8 @@ public interface ITuple {
      * Returns the Byte at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a Byte
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     Byte getByte(int i);
 
@@ -109,8 +109,8 @@ public interface ITuple {
      * Returns the Double at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a Double
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     Double getDouble(int i);
 
@@ -118,8 +118,8 @@ public interface ITuple {
      * Returns the Float at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a Float
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     Float getFloat(int i);
 
@@ -127,8 +127,8 @@ public interface ITuple {
      * Returns the byte array at position i in the tuple.
      *
      * @throws ClassCastException        If that field is not a byte array
-     * @throws IndexOutOfBoundsException - if the index is out of range `(index < 0 || index >=
-     *     size())`
+     * @throws IndexOutOfBoundsException - if the index is out of range {@code (index < 0 || index >=
+     *     size())}
      */
     byte[] getBinary(int i);
 

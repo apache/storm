@@ -61,7 +61,6 @@ import org.slf4j.LoggerFactory;
  *   }
  * }
  * </pre>
- * </p>
  */
 public class PersistentWindowingTopology {
     private static final Logger LOG = LoggerFactory.getLogger(PersistentWindowingTopology.class);

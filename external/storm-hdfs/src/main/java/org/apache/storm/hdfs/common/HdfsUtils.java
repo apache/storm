@@ -26,7 +26,7 @@ import org.apache.hadoop.ipc.RemoteException;
 
 public class HdfsUtils {
     /** list files sorted by modification time that have not been modified since 'olderThan'. if
-     * 'olderThan' is <= 0 then the filtering is disabled */
+     * 'olderThan' is &lt;= 0 then the filtering is disabled */
     public static ArrayList<Path> listFilesByModificationTime(FileSystem fs, Path directory, long olderThan)
         throws IOException {
         ArrayList<LocatedFileStatus> fstats = new ArrayList<>();

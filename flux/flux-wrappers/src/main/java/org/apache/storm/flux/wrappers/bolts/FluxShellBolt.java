@@ -60,8 +60,8 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
 
     /**
      * Add configuration for this bolt. This method is called from YAML file:
-     * <p/>
-     * ```
+     *
+     * <pre>
      * className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
      * constructorArgs:
      * # command line
@@ -71,7 +71,7 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
      * configMethods:
      * - name: "addComponentConfig"
      *   args: ["publisher.data_paths", "actions"]
-     * ```
+     * </pre>
      *
      * @param key config key
      * @param value config value
@@ -85,8 +85,8 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
 
     /**
      * Add configuration for this bolt. This method is called from YAML file:
-     * <p/>
-     * ```
+     *
+     * <pre>
      * className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
      * constructorArgs:
      * # command line
@@ -98,7 +98,7 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
      *   args:
      *   - "publisher.data_paths"
      *   - ["actions"]
-     * ```
+     * </pre>
      *
      * @param key config key
      * @param values config values
@@ -112,8 +112,8 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
 
     /**
      * Set default stream outputFields, this method is called from YAML file:
-     * <p/>
-     * ```
+     *
+     * <pre>
      * bolts:
      * - className: org.apache.storm.flux.wrappers.bolts.FluxShellBolt
      *   id: my_bolt
@@ -123,7 +123,7 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
      *   - name: setDefaultStream
      *     args:
      *     - [word, count]
-     * ```
+     * </pre>
      * 
      * @param outputFields Names of fields the bolt will emit (if any) in default stream.
      */
@@ -133,8 +133,8 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
 
     /**
      * Set custom *named* stream outputFields, this method is called from YAML file:
-     * <p/>
-     * ```
+     *
+     * <pre>
      * bolts:
      * - className: org.apache.storm.flux.wrappers.bolts.FluxShellBolt
      *   id: my_bolt
@@ -145,7 +145,7 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt {
      *     args:
      *     - first
      *     - [word, count]
-     * ```
+     * </pre>
      * @param name Name of stream the bolt will emit into.
      * @param outputFields Names of fields the bolt will emit in custom *named* stream.
      */

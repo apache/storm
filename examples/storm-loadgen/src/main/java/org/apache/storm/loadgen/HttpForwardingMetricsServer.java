@@ -79,7 +79,7 @@ public abstract class HttpForwardingMetricsServer {
 
     /**
      * Start the server.
-     * @param port the port it shuld listen on, or null/<= 0 to pick a free ephemeral port.
+     * @param port the port it shuld listen on, or null/&lt;= 0 to pick a free ephemeral port.
      */
     public void serve(Integer port) {
         try {

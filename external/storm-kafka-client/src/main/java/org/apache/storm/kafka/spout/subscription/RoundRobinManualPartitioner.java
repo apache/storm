@@ -29,8 +29,8 @@ import org.apache.storm.task.TopologyContext;
  * not just the ones that are alive. Because the parallelism of 
  * the spouts does not typically change while running this makes
  * the assignments more stable in the face of crashing spouts.
- * <p/>
- * Round Robin means that first spout of N spouts will get the first
+ *
+ * <p>Round Robin means that first spout of N spouts will get the first
  * partition, and the N+1th partition... The second spout will get the second partition and
  * N+2th partition etc.
  */

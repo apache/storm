@@ -26,7 +26,7 @@ import org.apache.storm.trident.tuple.TridentTuple;
  *
  * <p>```java public class MyFunction extends BaseFunction { public void execute(TridentTuple tuple,
  * TridentCollector collector)
- * { for(int i=0; i < tuple.getInteger(0); i++) { collector.emit(new Values(i)); } } }
+ * { for(int i=0; i &lt; tuple.getInteger(0); i++) { collector.emit(new Values(i)); } } }
  * ```
  *
  * <p>Now suppose you have a stream in the variable `mystream` with the fields `["a", "b", "c"]`

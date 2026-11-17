@@ -28,8 +28,7 @@ import java.util.concurrent.TimeUnit;
  * Class that allows using a ScheduledReporter to report V2 task metrics with support for
  * dimensions.
  *
- * <p></p>
- * This reporter will be started and scheduled with the MetricRegistry. Once it is called on to
+ * <p>This reporter will be started and scheduled with the MetricRegistry. Once it is called on to
  * report,
  * it will query the StormMetricRegistry for various sets of task metrics with unique dimensions.
  * The

@@ -20,8 +20,8 @@ package org.apache.storm.flux.model;
 
 /**
  * Represents an include. Includes can be either a file or a classpath resource.
- *<p/>
- * If an include is marked as `override=true` then existing properties will be replaced.
+ *
+ * <p>If an include is marked as `override=true` then existing properties will be replaced.
  *
  */
 public class IncludeDef {

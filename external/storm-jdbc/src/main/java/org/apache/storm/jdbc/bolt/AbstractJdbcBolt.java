@@ -53,7 +53,7 @@ public abstract class AbstractJdbcBolt extends BaseTickTupleAwareRichBolt {
 
     /**
      * Constructor.
-     * <p/>
+     *
      * @param connectionProviderParam database connection provider
      */
     public AbstractJdbcBolt(final ConnectionProvider connectionProviderParam) {
@@ -64,8 +64,8 @@ public abstract class AbstractJdbcBolt extends BaseTickTupleAwareRichBolt {
     /**
      * Subclasses should call this to ensure output collector and connection
      * provider are set up, and finally jdbcClient is initialized properly.
-     * <p/>
-     * {@inheritDoc}
+     *
+     * <p>{@inheritDoc}
      */
     @Override
     public void prepare(final Map<String, Object> map, final TopologyContext topologyContext,
@@ -85,8 +85,8 @@ public abstract class AbstractJdbcBolt extends BaseTickTupleAwareRichBolt {
 
     /**
      * Cleanup.
-     * <p/>
-     * Subclasses should call this to ensure connection provider can be
+     *
+     * <p>Subclasses should call this to ensure connection provider can be
      * also cleaned up.
      */
     @Override

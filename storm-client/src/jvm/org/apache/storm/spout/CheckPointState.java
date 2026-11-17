@@ -21,8 +21,8 @@ import static org.apache.storm.spout.CheckPointState.State.PREPARING;
  * are as follows.
  * <pre>
  *                  ROLLBACK(tx2)
- *               <-------------                  PREPARE(tx2)                     COMMIT(tx2)
- * COMMITTED(tx1)-------------> PREPARING(tx2) --------------> COMMITTING(tx2) -----------------> COMMITTED (tx2)
+ *               &lt;-------------                  PREPARE(tx2)                     COMMIT(tx2)
+ * COMMITTED(tx1)-------------&gt; PREPARING(tx2) --------------&gt; COMMITTING(tx2) -----------------&gt; COMMITTED (tx2)
  *
  * </pre>
  *

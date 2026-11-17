@@ -98,7 +98,7 @@ public abstract class Container implements Killable {
      * @param conf the supervisor config
      * @param supervisorId the ID of the supervisor this is a part of.
      * @param supervisorPort the thrift server port of the supervisor this is a part of.
-     * @param port the port the container is on. Should be <= 0 if only a partial recovery @param assignment
+     * @param port the port the container is on. Should be &lt;= 0 if only a partial recovery @param assignment
      *     the assignment for this container. Should be null if only a partial recovery.
      * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
      * @param workerId the id of the worker to use. Must not be null if doing a partial recovery.

@@ -41,16 +41,16 @@ import org.slf4j.LoggerFactory;
  * <pre>
  * $ storm jar examples/storm-starter/storm-starter-topologies-*.jar storm.starter.StatefulTopology statetopology
  * </pre>
- * <p/>
- * The default state used is 'InMemoryKeyValueState' which does not persist the state across restarts. You could use 'RedisKeyValueState' to
+ *
+ * <p>The default state used is 'InMemoryKeyValueState' which does not persist the state across restarts. You could use 'RedisKeyValueState' to
  * test state persistence by setting below property in conf/storm.yaml
  * <pre>
  * topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider
  * </pre>
- * <p/>
- * You should also start a local redis instance before running the 'storm jar' command. The default RedisKeyValueStateProvider parameters
+ *
+ * <p>You should also start a local redis instance before running the 'storm jar' command. The default RedisKeyValueStateProvider parameters
  * can be overridden in conf/storm.yaml, for e.g.
- * <p/>
+ *
  * <pre>
  * topology.state.provider.config: '{"keyClass":"...", "valueClass":"...",
  *                                   "keySerializerClass":"...", "valueSerializerClass":"...",

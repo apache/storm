@@ -142,7 +142,7 @@ public class StatsUtil {
     }
 
     /**
-     * aggregate number executed and process & execute latencies.
+     * aggregate number executed and process and execute latencies.
      */
     public static <K> Map<K, Map> aggBoltStreamsLatAndCount(Map<K, Double> id2execAvg,
                                                             Map<K, Double> id2procAvg,

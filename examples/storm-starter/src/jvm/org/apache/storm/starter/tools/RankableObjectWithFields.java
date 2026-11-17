@@ -20,8 +20,8 @@ import org.apache.storm.tuple.Tuple;
 
 /**
  * This class wraps an objects and its associated count, including any additional data fields.
- * <p/>
- * This class can be used, for instance, to track the number of occurrences of an object in a Storm topology.
+ *
+ * <p>This class can be used, for instance, to track the number of occurrences of an object in a Storm topology.
  */
 public class RankableObjectWithFields implements Rankable, Serializable {
 
@@ -47,8 +47,8 @@ public class RankableObjectWithFields implements Rankable, Serializable {
 
     /**
      * Construct a new instance based on the provided {@link Tuple}.
-     * <p/>
-     * This method expects the object to be ranked in the first field (index 0) of the provided tuple, and the number of
+     *
+     * <p>This method expects the object to be ranked in the first field (index 0) of the provided tuple, and the number of
      * occurrences of the object (its count) in the second field (index 1). Any further fields in the tuple will be
      * extracted and tracked, too. These fields can be accessed via {@link RankableObjectWithFields#getFields()}.
      *
