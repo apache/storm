@@ -212,6 +212,41 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
+                <executions>
+                    <execution>
+                        <!-- Fail the build if main code imports one of the relocated packages of storm-shaded-deps.
+                             Keep the list in sync with the relocated packages in storm-shaded-deps/pom.xml.
+                             Relocated packages that storm-server declares as dependencies are allowed: commons-io,
+                             commons-lang3, commons-collections4, json-smart (net.minidev.json) and snakeyaml.
+                             com.google is narrowed to com.google.common and com.google.thirdparty, the packages in
+                             the shaded jar, so the auto-service annotation stays allowed. -->
+                        <id>check-unshaded-imports</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <checkstyleRules>
+                                <module name="Checker">
+                                    <module name="TreeWalker">
+                                        <module name="IllegalImport">
+                                            <property name="illegalPkgs" value="org.apache.thrift, com.google.common,
+                                                com.google.thirdparty, org.apache.curator, org.apache.zookeeper, org.apache.jute,
+                                                org.jctools, org.jboss.netty, io.netty, org.jgrapht, org.apache.commons.codec,
+                                                net.minidev.asm, org.objectweb.asm, org.xerial.snappy, uk.org.lidalia.sysoutslf4j"/>
+                                        </module>
+                                    </module>
+                                </module>
+                            </checkstyleRules>
+                            <failOnViolation>true</failOnViolation>
+                            <violationSeverity>error</violationSeverity>
+                            <logViolationsToConsole>true</logViolationsToConsole>
+                            <consoleOutput>true</consoleOutput>
+                            <outputFile>target/checkstyle-unshaded-imports.xml</outputFile>
+                            <cacheFile>target/checkstyle-unshaded-imports-cachefile</cacheFile>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

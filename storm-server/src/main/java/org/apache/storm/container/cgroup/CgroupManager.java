@@ -12,7 +12,6 @@
 
 package org.apache.storm.container.cgroup;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,6 +35,7 @@ import org.apache.storm.container.cgroup.core.CpusetCore;
 import org.apache.storm.container.cgroup.core.MemoryCore;
 import org.apache.storm.daemon.supervisor.ClientSupervisorUtils;
 import org.apache.storm.daemon.supervisor.ExitCodeCallback;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
 import org.slf4j.Logger;

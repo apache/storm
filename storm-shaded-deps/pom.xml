@@ -249,6 +249,8 @@
                             <include>uk.org.lidalia:sysout-over-slf4j</include>
                         </includes>
                     </artifactSet>
+                    <!-- storm-client/pom.xml and storm-server/pom.xml ban imports of these relocated packages (check-unshaded-imports).
+                         Update both when adding a relocated package. -->
                     <relocations>
                         <relocation>
                             <pattern>org.apache.thrift</pattern>

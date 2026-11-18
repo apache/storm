@@ -216,6 +216,38 @@
                 <configuration>
                     <excludes>**/generated/**</excludes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <!-- Fail the build if main code imports one of the relocated packages of storm-shaded-deps.
+                             Keep the list in sync with the relocated packages in storm-shaded-deps/pom.xml. -->
+                        <id>check-unshaded-imports</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <checkstyleRules>
+                                <module name="Checker">
+                                    <module name="TreeWalker">
+                                        <module name="IllegalImport">
+                                            <property name="illegalPkgs" value="org.apache.thrift, com.google, org.apache.curator,
+                                                org.apache.zookeeper, org.apache.jute, org.apache.commons.io, org.apache.commons.lang3,
+                                                org.apache.commons.collections4, org.jctools, org.yaml.snakeyaml, org.jboss.netty,
+                                                io.netty, org.jgrapht, org.apache.commons.codec, net.minidev.json, net.minidev.asm,
+                                                org.objectweb.asm, org.xerial.snappy, uk.org.lidalia.sysoutslf4j"/>
+                                        </module>
+                                    </module>
+                                </module>
+                            </checkstyleRules>
+                            <failOnViolation>true</failOnViolation>
+                            <violationSeverity>error</violationSeverity>
+                            <logViolationsToConsole>true</logViolationsToConsole>
+                            <consoleOutput>true</consoleOutput>
+                            <outputFile>target/checkstyle-unshaded-imports.xml</outputFile>
+                            <cacheFile>target/checkstyle-unshaded-imports-cachefile</cacheFile>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
