@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.zookeeper.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 public class LocalFsBlobStoreSynchronizer {
     private static final Logger LOG = LoggerFactory.getLogger(LocalFsBlobStoreSynchronizer.class);
-    private CuratorFramework zkClient;
+    private ZkClient zkClient;
     private Map<String, Object> conf;
     private BlobStore blobStore;
     private Set<String> blobStoreKeySet = new HashSet<String>();
@@ -53,7 +53,7 @@ public class LocalFsBlobStoreSynchronizer {
         this.nimbusInfo = nimbusInfo;
     }
 
-    public void setZkClient(CuratorFramework zkClient) {
+    public void setZkClient(ZkClient zkClient) {
         this.zkClient = zkClient;
     }
 

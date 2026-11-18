@@ -15,12 +15,12 @@ package org.apache.storm.blobstore;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.log4j.Logger;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.api.ExistsBuilder;
-import org.apache.storm.shade.org.apache.curator.framework.api.GetChildrenBuilder;
-import org.apache.storm.shade.org.apache.curator.framework.api.Pathable;
 import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
+import org.apache.storm.zookeeper.ZkClient;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -30,42 +30,31 @@ public class MockZookeeperClientBuilder {
 
     private static final Logger LOG = Logger.getLogger(MockZookeeperClientBuilder.class);
 
-    private CuratorFramework zkClient = mock(CuratorFramework.class);
+    private final ZkClient zkClient = mock(ZkClient.class);
 
-    private ExistsBuilder existsBuilder = mock(ExistsBuilder.class);
-    private GetChildrenBuilder getChildrenBuilder = mock(GetChildrenBuilder.class);
-
-    public MockZookeeperClientBuilder() {
-        when(zkClient.checkExists()).thenReturn(existsBuilder);
-        when(zkClient.getChildren()).thenReturn(getChildrenBuilder);
-    }
-
-    public CuratorFramework build() {
+    public ZkClient build() {
         return zkClient;
     }
 
-    private <T extends Pathable<U>, U> T mockForPath(T pathable, String path, U toReturn) {
+    public void withExists(String path, boolean returnValue) {
+        Stat stat = returnValue ? new Stat() : null;
         try {
-            when(pathable.forPath(path)).thenReturn(toReturn);
+            when(zkClient.exists(eq(path), anyBoolean())).thenReturn(stat);
         } catch (Exception e) {
             LOG.warn(e.toString());
         }
-        return pathable;
     }
 
-    public ExistsBuilder withExists(String path, boolean returnValue) {
-        when(existsBuilder.watched()).thenReturn(existsBuilder);
-        Stat stat = returnValue ? new Stat() : null;
-        return mockForPath(existsBuilder, path, stat);
+    public void withGetChildren(String path, String... returnValue) {
+        withGetChildren(path, Arrays.asList(returnValue));
     }
 
-    public GetChildrenBuilder withGetChildren(String path, String... returnValue) {
-        return withGetChildren(path, Arrays.asList(returnValue));
-    }
-
-    public GetChildrenBuilder withGetChildren(String path, List<String> returnValue) {
-        when(getChildrenBuilder.watched()).thenReturn(getChildrenBuilder);
-        return mockForPath(getChildrenBuilder, path, returnValue);
+    public void withGetChildren(String path, List<String> returnValue) {
+        try {
+            when(zkClient.getChildren(eq(path), anyBoolean())).thenReturn(returnValue);
+        } catch (Exception e) {
+            LOG.warn(e.toString());
+        }
     }
 
     public void verifyExists() {
@@ -77,7 +66,11 @@ public class MockZookeeperClientBuilder {
     }
 
     public void verifyExists(int times) {
-        verify(zkClient, times(times)).checkExists();
+        try {
+            verify(zkClient, times(times)).exists(anyString(), anyBoolean());
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
     }
 
     public void verifyGetChildren() {
@@ -89,6 +82,10 @@ public class MockZookeeperClientBuilder {
     }
 
     public void verifyGetChildren(int times) {
-        verify(zkClient, times(times)).getChildren();
+        try {
+            verify(zkClient, times(times)).getChildren(anyString(), anyBoolean());
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
     }
 }

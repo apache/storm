@@ -12,6 +12,10 @@
 
 package org.apache.storm.cluster;
 
+/**
+ * Listener for connection state changes of the client backing an {@link IStateStorage}.
+ */
+@FunctionalInterface
 public interface ClusterStateListener {
     void stateChanged(ConnectionState newState);
 }

@@ -37,13 +37,12 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.shade.com.google.common.base.Joiner;
 import org.apache.storm.shade.com.google.common.collect.Sets;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.zookeeper.ClientZookeeper;
+import org.apache.storm.zookeeper.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +61,7 @@ public class LeaderListenerCallback {
     private final BlobStore blobStore;
     private final TopoCache tc;
     private final IStormClusterState clusterState;
-    private final CuratorFramework zk;
+    private final ZkClient zk;
     private final ILeaderElector leaderElector;
     private final Map conf;
     private final List<ACL> acls;
@@ -72,14 +71,14 @@ public class LeaderListenerCallback {
      * Creates a {@link LeaderListenerCallback}.
      *
      * @param conf config
-     * @param zk zookeeper CuratorFramework client
+     * @param zk zookeeper client
      * @param blobStore BlobStore
      * @param leaderElector Leader elector
      * @param tc TopoCache
      * @param clusterState IStormClusterState
      * @param acls zookeeper acls
      */
-    public LeaderListenerCallback(Map conf, CuratorFramework zk, BlobStore blobStore, ILeaderElector leaderElector,
+    public LeaderListenerCallback(Map conf, ZkClient zk, BlobStore blobStore, ILeaderElector leaderElector,
                                   TopoCache tc, IStormClusterState clusterState, List<ACL> acls, StormMetricsRegistry metricsRegistry) {
         this.blobStore = blobStore;
         this.tc = tc;

@@ -30,8 +30,6 @@ import org.apache.storm.daemon.nimbus.TopoCache;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.Participant;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.storm.shade.org.apache.zookeeper.server.ZooKeeperServer;
@@ -95,13 +93,22 @@ public class Zookeeper {
         handle.shutdown();
     }
 
-    public static NimbusInfo toNimbusInfo(Participant participant) {
-        String id = participant.getId();
+    /**
+     * Convert a leader election participant into a {@link NimbusInfo}.
+     *
+     * @param participantId the participant id, which is the nimbus {@code host:port} string
+     * @param isLeader whether the participant is the current leader
+     * @return the parsed nimbus info
+     * @throws RuntimeException if {@code participantId} is blank, which is the case when there is
+     *     no leader
+     */
+    public static NimbusInfo toNimbusInfo(String participantId, boolean isLeader) {
+        String id = participantId;
         if (StringUtils.isBlank(id)) {
             throw new RuntimeException("No nimbus leader participant host found, have you started your nimbus hosts?");
         }
         NimbusInfo nimbusInfo = NimbusInfo.parse(id);
-        nimbusInfo.setLeader(participant.isLeader());
+        nimbusInfo.setLeader(isLeader);
         return nimbusInfo;
     }
 
@@ -116,13 +123,13 @@ public class Zookeeper {
      * @param acls         ACLs
      * @return Instance of {@link ILeaderElector}
      */
-    public static ILeaderElector zkLeaderElector(Map<String, Object> conf, CuratorFramework zkClient, BlobStore blobStore,
+    public static ILeaderElector zkLeaderElector(Map<String, Object> conf, ZkClient zkClient, BlobStore blobStore,
                                                  final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
                                                  StormMetricsRegistry metricsRegistry, Object submitLock) {
         return instance.zkLeaderElectorImpl(conf, zkClient, blobStore, tc, clusterState, acls, metricsRegistry, submitLock);
     }
 
-    protected ILeaderElector zkLeaderElectorImpl(Map<String, Object> conf, CuratorFramework zk, BlobStore blobStore,
+    protected ILeaderElector zkLeaderElectorImpl(Map<String, Object> conf, ZkClient zk, BlobStore blobStore,
                                                  final TopoCache tc, IStormClusterState clusterState, List<ACL> acls,
                                                  StormMetricsRegistry metricsRegistry, Object submitLock) {
         String id = NimbusInfo.fromConf(conf).toHostPortString();

@@ -30,7 +30,7 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.security.auth.NimbusPrincipal;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
@@ -79,9 +79,9 @@ public class AclEnforcement {
         int port = ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_PORT));
         String stormRoot = (String) conf.get(Config.STORM_ZOOKEEPER_ROOT);
 
-        try (CuratorFramework zk = ClientZookeeper.mkClient(conf, zkServers, port, "",
-                                                            new DefaultWatcherCallBack(), conf, DaemonType.NIMBUS)) {
-            if (zk.checkExists().forPath(stormRoot) != null) {
+        try (ZkClient zk = ClientZookeeper.mkClient(conf, zkServers, port, "",
+                                                    new DefaultWatcherCallBack(), conf, DaemonType.NIMBUS)) {
+            if (zk.exists(stormRoot, false) != null) {
                 //First off we want to verify that ROOT is good
                 verifyAclStrict(zk, superAcl, stormRoot, fixUp);
             } else {
@@ -91,21 +91,21 @@ public class AclEnforcement {
         }
 
         // Now that the root is fine we can start to look at the other paths under it.
-        try (CuratorFramework zk = ClientZookeeper.mkClient(conf, zkServers, port, stormRoot,
-                                                            new DefaultWatcherCallBack(), conf, DaemonType.NIMBUS)) {
+        try (ZkClient zk = ClientZookeeper.mkClient(conf, zkServers, port, stormRoot,
+                                                    new DefaultWatcherCallBack(), conf, DaemonType.NIMBUS)) {
             //Next verify that the blob store is correct before we start it up.
-            if (zk.checkExists().forPath(ClusterUtils.BLOBSTORE_SUBTREE) != null) {
+            if (zk.exists(ClusterUtils.BLOBSTORE_SUBTREE, false) != null) {
                 verifyAclStrictRecursive(zk, superAcl, ClusterUtils.BLOBSTORE_SUBTREE, fixUp);
             }
 
-            if (zk.checkExists().forPath(ClusterUtils.BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE) != null) {
+            if (zk.exists(ClusterUtils.BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE, false) != null) {
                 verifyAclStrict(zk, superAcl, ClusterUtils.BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE, fixUp);
             }
 
             //The blobstore is good, now lets get the list of all topo Ids
             Set<String> topoIds = new HashSet<>();
-            if (zk.checkExists().forPath(ClusterUtils.STORMS_SUBTREE) != null) {
-                topoIds.addAll(zk.getChildren().forPath(ClusterUtils.STORMS_SUBTREE));
+            if (zk.exists(ClusterUtils.STORMS_SUBTREE, false) != null) {
+                topoIds.addAll(zk.getChildren(ClusterUtils.STORMS_SUBTREE, false));
             }
 
             Map<String, Id> topoToZkCreds = new HashMap<>();
@@ -143,14 +143,15 @@ public class AclEnforcement {
             //There is a race on backpressure too...
             verifyParentWithReadWriteTopoChildrenDeleteDead(zk, superUserAcl, ClusterUtils.BACKPRESSURE_SUBTREE, topoToZkCreds, fixUp);
 
-            if (zk.checkExists().forPath(ClusterUtils.ERRORS_SUBTREE) != null) {
+            if (zk.exists(ClusterUtils.ERRORS_SUBTREE, false) != null) {
                 //errors is a bit special because in older versions of storm the worker created the parent directories lazily
                 // because of this it means we need to auto create at least the topo-id directory for all running topos.
                 for (String topoId : topoToZkCreds.keySet()) {
                     String path = ClusterUtils.errorStormRoot(topoId);
-                    if (zk.checkExists().forPath(path) == null) {
+                    if (zk.exists(path, false) == null) {
                         LOG.warn("Creating missing errors location {}", path);
-                        zk.create().withACL(getTopoReadWrite(path, topoId, topoToZkCreds, superUserAcl, fixUp)).forPath(path);
+                        zk.createWithDefaultData(path, CreateMode.PERSISTENT,
+                            getTopoReadWrite(path, topoId, topoToZkCreds, superUserAcl, fixUp), false);
                     }
                 }
             }
@@ -158,25 +159,25 @@ public class AclEnforcement {
             // for some odd reason they are leaked.
             verifyParentWithReadWriteTopoChildrenDeleteDead(zk, superUserAcl, ClusterUtils.ERRORS_SUBTREE, topoToZkCreds, fixUp);
 
-            if (zk.checkExists().forPath(ClusterUtils.SECRET_KEYS_SUBTREE) != null) {
+            if (zk.exists(ClusterUtils.SECRET_KEYS_SUBTREE, false) != null) {
                 verifyAclStrict(zk, superAcl, ClusterUtils.SECRET_KEYS_SUBTREE, fixUp);
                 verifyAclStrictRecursive(zk, superAcl, ClusterUtils.secretKeysPath(WorkerTokenServiceType.NIMBUS), fixUp);
                 verifyAclStrictRecursive(zk, drpcFullAcl, ClusterUtils.secretKeysPath(WorkerTokenServiceType.DRPC), fixUp);
             }
 
-            if (zk.checkExists().forPath(ClusterUtils.NIMBUSES_SUBTREE) != null) {
+            if (zk.exists(ClusterUtils.NIMBUSES_SUBTREE, false) != null) {
                 verifyAclStrictRecursive(zk, superAcl, ClusterUtils.NIMBUSES_SUBTREE, fixUp);
             }
 
-            if (zk.checkExists().forPath("/leader-lock") != null) {
+            if (zk.exists("/leader-lock", false) != null) {
                 verifyAclStrictRecursive(zk, superAcl, "/leader-lock", fixUp);
             }
 
-            if (zk.checkExists().forPath(ClusterUtils.PROFILERCONFIG_SUBTREE) != null) {
+            if (zk.exists(ClusterUtils.PROFILERCONFIG_SUBTREE, false) != null) {
                 verifyAclStrictRecursive(zk, superAcl, ClusterUtils.PROFILERCONFIG_SUBTREE, fixUp);
             }
 
-            if (zk.checkExists().forPath(ClusterUtils.SUPERVISORS_SUBTREE) != null) {
+            if (zk.exists(ClusterUtils.SUPERVISORS_SUBTREE, false) != null) {
                 verifyAclStrictRecursive(zk, superAcl, ClusterUtils.SUPERVISORS_SUBTREE, fixUp);
             }
 
@@ -204,12 +205,12 @@ public class AclEnforcement {
         return getTopoAcl(path, topoId, topoToZkCreds, superAcl, fixUp, ZooDefs.Perms.ALL);
     }
 
-    private static void verifyParentWithTopoChildrenDeleteDead(CuratorFramework zk, ACL superUserAcl, String path,
+    private static void verifyParentWithTopoChildrenDeleteDead(ZkClient zk, ACL superUserAcl, String path,
                                                                Map<String, Id> topoToZkCreds, boolean fixUp, int perms) throws Exception {
-        if (zk.checkExists().forPath(path) != null) {
+        if (zk.exists(path, false) != null) {
             verifyAclStrict(zk, Arrays.asList(superUserAcl), path, fixUp);
             Set<String> possiblyBadIds = new HashSet<>();
-            for (String topoId : zk.getChildren().forPath(path)) {
+            for (String topoId : zk.getChildren(path, false)) {
                 String childPath = path + ClusterUtils.ZK_SEPERATOR + topoId;
                 if (!topoToZkCreds.containsKey(topoId)) {
                     //Save it to try again later...
@@ -222,31 +223,31 @@ public class AclEnforcement {
 
             if (!possiblyBadIds.isEmpty()) {
                 //Lets reread the children in STORMS as the source of truth and see if a new one was created in the background
-                possiblyBadIds.removeAll(zk.getChildren().forPath(ClusterUtils.STORMS_SUBTREE));
+                possiblyBadIds.removeAll(zk.getChildren(ClusterUtils.STORMS_SUBTREE, false));
                 for (String topoId : possiblyBadIds) {
                     //Now we know for sure that this is a bad id
                     String childPath = path + ClusterUtils.ZK_SEPERATOR + topoId;
-                    zk.delete().deletingChildrenIfNeeded().forPath(childPath);
+                    zk.delete(childPath, true);
                 }
             }
         }
     }
 
-    private static void verifyParentWithReadOnlyTopoChildrenDeleteDead(CuratorFramework zk, ACL superUserAcl, String path,
+    private static void verifyParentWithReadOnlyTopoChildrenDeleteDead(ZkClient zk, ACL superUserAcl, String path,
                                                                        Map<String, Id> topoToZkCreds, boolean fixUp) throws Exception {
         verifyParentWithTopoChildrenDeleteDead(zk, superUserAcl, path, topoToZkCreds, fixUp, ZooDefs.Perms.READ);
     }
 
-    private static void verifyParentWithReadWriteTopoChildrenDeleteDead(CuratorFramework zk, ACL superUserAcl, String path,
+    private static void verifyParentWithReadWriteTopoChildrenDeleteDead(ZkClient zk, ACL superUserAcl, String path,
                                                                         Map<String, Id> topoToZkCreds, boolean fixUp) throws Exception {
         verifyParentWithTopoChildrenDeleteDead(zk, superUserAcl, path, topoToZkCreds, fixUp, ZooDefs.Perms.ALL);
     }
 
-    private static void verifyParentWithTopoChildren(CuratorFramework zk, ACL superUserAcl, String path,
+    private static void verifyParentWithTopoChildren(ZkClient zk, ACL superUserAcl, String path,
                                                      Map<String, Id> topoToZkCreds, boolean fixUp, int perms) throws Exception {
-        if (zk.checkExists().forPath(path) != null) {
+        if (zk.exists(path, false) != null) {
             verifyAclStrict(zk, Arrays.asList(superUserAcl), path, fixUp);
-            for (String topoId : zk.getChildren().forPath(path)) {
+            for (String topoId : zk.getChildren(path, false)) {
                 String childPath = path + ClusterUtils.ZK_SEPERATOR + topoId;
                 List<ACL> rwAcl = getTopoAcl(path, topoId, topoToZkCreds, superUserAcl, fixUp, perms);
                 verifyAclStrictRecursive(zk, rwAcl, childPath, fixUp);
@@ -254,31 +255,31 @@ public class AclEnforcement {
         }
     }
 
-    private static void verifyParentWithReadOnlyTopoChildren(CuratorFramework zk, ACL superUserAcl, String path,
+    private static void verifyParentWithReadOnlyTopoChildren(ZkClient zk, ACL superUserAcl, String path,
                                                              Map<String, Id> topoToZkCreds, boolean fixUp) throws Exception {
         verifyParentWithTopoChildren(zk, superUserAcl, path, topoToZkCreds, fixUp, ZooDefs.Perms.READ);
     }
 
-    private static void verifyParentWithReadWriteTopoChildren(CuratorFramework zk, ACL superUserAcl, String path,
+    private static void verifyParentWithReadWriteTopoChildren(ZkClient zk, ACL superUserAcl, String path,
                                                               Map<String, Id> topoToZkCreds, boolean fixUp) throws Exception {
         verifyParentWithTopoChildren(zk, superUserAcl, path, topoToZkCreds, fixUp, ZooDefs.Perms.ALL);
     }
 
-    private static void verifyAclStrictRecursive(CuratorFramework zk, List<ACL> strictAcl, String path, boolean fixUp) throws Exception {
+    private static void verifyAclStrictRecursive(ZkClient zk, List<ACL> strictAcl, String path, boolean fixUp) throws Exception {
         verifyAclStrict(zk, strictAcl, path, fixUp);
-        for (String child : zk.getChildren().forPath(path)) {
+        for (String child : zk.getChildren(path, false)) {
             String newPath = path + ClusterUtils.ZK_SEPERATOR + child;
             verifyAclStrictRecursive(zk, strictAcl, newPath, fixUp);
         }
     }
 
-    private static void verifyAclStrict(CuratorFramework zk, List<ACL> strictAcl, String path, boolean fixUp) throws Exception {
+    private static void verifyAclStrict(ZkClient zk, List<ACL> strictAcl, String path, boolean fixUp) throws Exception {
         try {
-            List<ACL> foundAcl = zk.getACL().forPath(path);
+            List<ACL> foundAcl = zk.getAcl(path);
             if (!equivalent(foundAcl, strictAcl)) {
                 if (fixUp) {
                     LOG.warn("{} expected to have ACL {}, but has {}.  Fixing...", path, strictAcl, foundAcl);
-                    zk.setACL().withACL(strictAcl).forPath(path);
+                    zk.setAcl(path, strictAcl);
                 } else {
                     throw new IllegalStateException(path + " did not have the correct ACL found " + foundAcl + " expected " + strictAcl);
                 }

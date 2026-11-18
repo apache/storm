@@ -29,13 +29,12 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.security.auth.NimbusPrincipal;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.thrift.transport.TTransportException;
-import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
-import org.apache.storm.utils.ZookeeperAuthInfo;
+import org.apache.storm.zookeeper.ClientZookeeper;
+import org.apache.storm.zookeeper.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,16 +48,12 @@ public class BlobStoreUtils {
     }
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static CuratorFramework createZKClient(Map<String, Object> conf, DaemonType type) {
+    public static ZkClient createZKClient(Map<String, Object> conf, DaemonType type) {
         @SuppressWarnings("unchecked")
         List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
-        ZookeeperAuthInfo zkAuthInfo = new ZookeeperAuthInfo(conf);
-        CuratorFramework zkClient = CuratorUtils.newCurator(conf, zkServers, port,
-                                                            (String) conf.get(Config.STORM_ZOOKEEPER_ROOT), zkAuthInfo,
-                                                            type.getDefaultZkAcls(conf));
-        zkClient.start();
-        return zkClient;
+        return ClientZookeeper.mkClient(conf, zkServers, port, (String) conf.get(Config.STORM_ZOOKEEPER_ROOT), null, conf,
+                                        type);
     }
 
     public static Subject getNimbusSubject() {
@@ -77,10 +72,10 @@ public class BlobStoreUtils {
     }
 
     // Check for latest sequence number of a key inside zookeeper and return nimbodes containing the latest sequence number
-    public static Set<NimbusInfo> getNimbodesWithLatestSequenceNumberOfBlob(CuratorFramework zkClient, String key) throws Exception {
+    public static Set<NimbusInfo> getNimbodesWithLatestSequenceNumberOfBlob(ZkClient zkClient, String key) throws Exception {
         List<String> stateInfoList;
         try {
-            stateInfoList = zkClient.getChildren().forPath("/blobstore/" + key);
+            stateInfoList = zkClient.getChildren("/blobstore/" + key, false);
         } catch (KeeperException.NoNodeException e) {
             // there's a race condition with a delete: blobstore
             // this should be thrown to the caller to indicate that the key is invalid now
@@ -243,7 +238,7 @@ public class BlobStoreUtils {
         cb.createStateInZookeeper(key);
     }
 
-    public static void updateKeyForBlobStore(Map<String, Object> conf, BlobStore blobStore, CuratorFramework zkClient, String key,
+    public static void updateKeyForBlobStore(Map<String, Object> conf, BlobStore blobStore, ZkClient zkClient, String key,
                                              NimbusInfo nimbusDetails) {
         try {
             // Most of clojure tests currently try to access the blobs using getBlob. Since, updateKeyForBlobStore
@@ -257,10 +252,10 @@ public class BlobStoreUtils {
             }
             boolean isListContainsCurrentNimbusInfo = false;
             List<String> stateInfo;
-            if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + "/" + key) == null) {
+            if (zkClient.exists(BLOBSTORE_SUBTREE + "/" + key, false) == null) {
                 return;
             }
-            stateInfo = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + "/" + key);
+            stateInfo = zkClient.getChildren(BLOBSTORE_SUBTREE + "/" + key, false);
             if (stateInfo == null || stateInfo.isEmpty()) {
                 return;
             }

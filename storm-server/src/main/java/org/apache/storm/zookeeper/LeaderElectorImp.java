@@ -24,11 +24,20 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatch;
+import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.Participant;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.zookeeper.curator.CuratorZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * ZooKeeper based {@link ILeaderElector}.
+ *
+ * <p>Leader election is still implemented with Curator's {@code LeaderLatch} recipe, which is why
+ * the {@link ZkClient} passed in must be Curator-backed (as all clients created by
+ * {@link ClientZookeeper#mkClient} are). This is an implementation detail and not part of the API.
+ */
 public class LeaderElectorImp implements ILeaderElector {
     private static final Logger LOG = LoggerFactory.getLogger(LeaderElectorImp.class);
     private final CuratorFramework zk;
@@ -38,10 +47,10 @@ public class LeaderElectorImp implements ILeaderElector {
     private final LeaderListenerCallbackFactory leaderListenerCallbackFactory;
     private final StormTimer timer;
 
-    public LeaderElectorImp(CuratorFramework zk, String id, LeaderListenerCallbackFactory leaderListenerCallbackFactory) {
-        this.zk = zk;
+    public LeaderElectorImp(ZkClient zk, String id, LeaderListenerCallbackFactory leaderListenerCallbackFactory) {
+        this.zk = CuratorZkClient.unwrap(zk);
         this.id = id;
-        this.leaderLatch = new AtomicReference<>(new LeaderLatch(zk, leaderLockPath, id));
+        this.leaderLatch = new AtomicReference<>(new LeaderLatch(this.zk, leaderLockPath, id));
         this.leaderListenerCallbackFactory = leaderListenerCallbackFactory;
         this.timer = new StormTimer("leader-elector-timer", Utils.createDefaultUncaughtExceptionHandler());
     }
@@ -56,14 +65,14 @@ public class LeaderElectorImp implements ILeaderElector {
         // if this latch is closed, we need to create new instance.
         if (LeaderLatch.State.CLOSED.equals(leaderLatch.get().getState())) {
             LeaderLatch latch = new LeaderLatch(zk, leaderLockPath, id);
-            latch.addListener(leaderListenerCallbackFactory.create(this));
+            latch.addListener(toLatchListener(leaderListenerCallbackFactory.create(this)));
             latch.start();
             leaderLatch.set(latch);
             LOG.info("LeaderLatch was in closed state. Reset the leaderLatch, and queued for leader lock.");
         }
         // If the latch is not started yet, start it
         if (LeaderLatch.State.LATENT.equals(leaderLatch.get().getState())) {
-            leaderLatch.get().addListener(leaderListenerCallbackFactory.create(this));
+            leaderLatch.get().addListener(toLatchListener(leaderListenerCallbackFactory.create(this)));
             leaderLatch.get().start();
             LOG.info("Queued up for leader lock.");
         } else {
@@ -106,7 +115,8 @@ public class LeaderElectorImp implements ILeaderElector {
     @Override
     public NimbusInfo getLeader() {
         try {
-            return Zookeeper.toNimbusInfo(leaderLatch.get().getLeader());
+            Participant leader = leaderLatch.get().getLeader();
+            return Zookeeper.toNimbusInfo(leader.getId(), leader.isLeader());
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -117,7 +127,7 @@ public class LeaderElectorImp implements ILeaderElector {
         List<NimbusInfo> nimbusInfos = new ArrayList<>();
         Collection<Participant> participants = leaderLatch.get().getParticipants();
         for (Participant participant : participants) {
-            nimbusInfos.add(Zookeeper.toNimbusInfo(participant));
+            nimbusInfos.add(Zookeeper.toNimbusInfo(participant.getId(), participant.isLeader()));
         }
         return nimbusInfos;
     }
@@ -126,5 +136,19 @@ public class LeaderElectorImp implements ILeaderElector {
     public void close() throws Exception {
         timer.close();
         removeFromLeaderLockQueue();
+    }
+
+    private static LeaderLatchListener toLatchListener(LeaderListener listener) {
+        return new LeaderLatchListener() {
+            @Override
+            public void isLeader() {
+                listener.isLeader();
+            }
+
+            @Override
+            public void notLeader() {
+                listener.notLeader();
+            }
+        };
     }
 }

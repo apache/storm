@@ -48,13 +48,13 @@ import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedKeyAlreadyExistsException;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
+import org.apache.storm.zookeeper.ZkClient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +87,7 @@ public class LocalFsBlobStore extends BlobStore {
     private NimbusInfo nimbusInfo;
     private FileBlobStoreImpl fbs;
     private Map<String, Object> conf;
-    private CuratorFramework zkClient;
+    private ZkClient zkClient;
     private IStormClusterState stormClusterState;
     private Timer timer;
     private ILeaderElector leaderElector;
@@ -438,11 +438,11 @@ public class LocalFsBlobStore extends BlobStore {
         validateKey(key);
         SettableBlobMeta meta = getStoredBlobMeta(key);
         aclHandler.hasPermissions(meta.get_acl(), READ, who, key);
-        if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + key) == null) {
+        if (zkClient.exists(BLOBSTORE_SUBTREE + key, false) == null) {
             return 0;
         }
         try {
-            replicationCount = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + key).size();
+            replicationCount = zkClient.getChildren(BLOBSTORE_SUBTREE + key, false).size();
         } catch (KeeperException.NoNodeException e) {
             //Race with delete
             //If it is not here the replication is 0 
@@ -462,7 +462,7 @@ public class LocalFsBlobStore extends BlobStore {
         try {
             List<String> keyList = BlobStoreUtils.getKeyListFromBlobStore(this);
             if (!keyList.contains(key)) {
-                if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + key) != null) {
+                if (zkClient.exists(BLOBSTORE_SUBTREE + key, false) != null) {
                     Set<NimbusInfo> nimbusSet = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
                     nimbusSet.remove(this.nimbusInfo);
                     if (BlobStoreUtils.downloadMissingBlob(conf, this, key, nimbusSet)) {

@@ -31,6 +31,7 @@ import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFacto
 import org.apache.storm.shade.org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.testing.InProcessZookeeper;
+import org.apache.storm.zookeeper.curator.CuratorZkClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,7 +118,7 @@ public class LocalFsBlobStoreSynchronizerTest {
             // Creating nimbus hosts containing the latest version of blob
             zkClient.create().creatingParentContainersIfNeeded().forPath("/blobstore/key1/nimbus1:7800-1");
             zkClient.create().creatingParentContainersIfNeeded().forPath("/blobstore/key1/nimbus2:7800-2");
-            Set<NimbusInfo> set = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(zkClient, "key1");
+            Set<NimbusInfo> set = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(CuratorZkClient.wrap(zkClient), "key1");
             assertEquals("nimbus2", (set.iterator().next()).getHost(), "Failed to get the correct nimbus hosts with latest blob version");
             zkClient.delete().deletingChildrenIfNeeded().forPath("/blobstore/key1/nimbus1:7800-1");
             zkClient.delete().deletingChildrenIfNeeded().forPath("/blobstore/key1/nimbus2:7800-2");

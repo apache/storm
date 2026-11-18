@@ -16,38 +16,74 @@
  * limitations under the License.
  */
 
-package org.apache.storm.utils;
+package org.apache.storm.zookeeper.curator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.naming.ConfigurationException;
 import org.apache.storm.Config;
+import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.shade.org.apache.curator.framework.api.ACLProvider;
+import org.apache.storm.shade.org.apache.curator.framework.api.CuratorEventType;
+import org.apache.storm.shade.org.apache.zookeeper.WatchedEvent;
 import org.apache.storm.shade.org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.storm.shade.org.apache.zookeeper.common.ClientX509Util;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ZookeeperAuthInfo;
+import org.apache.storm.zookeeper.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CuratorUtils {
+/**
+ * Internal. Builds Curator clients from a Storm configuration.
+ *
+ * <p>Not part of Storm's public API; may change or be removed without notice. Use
+ * {@link org.apache.storm.zookeeper.ClientZookeeper#mkClient} to obtain a {@link ZkClient}.
+ */
+public final class CuratorUtils {
     public static final Logger LOG = LoggerFactory.getLogger(CuratorUtils.class);
     public static final String CLIENT_CNXN
             = org.apache.storm.shade.org.apache.zookeeper.ClientCnxnSocketNetty.class.getName();
+
+    private CuratorUtils() {
+    }
+
+    /**
+     * Build, start and wrap a Curator client.
+     *
+     * @param conf the Storm configuration
+     * @param servers the ZooKeeper servers
+     * @param port the ZooKeeper port
+     * @param root the chroot, {@code ""} for none
+     * @param auth the authentication to add, may be {@code null}
+     * @param defaultAcl the default ACL for created nodes, {@code null} for OPEN_ACL_UNSAFE
+     * @param watcher receives watch events, {@code null} to drop them
+     * @return the started client
+     */
+    public static ZkClient newClient(Map<String, Object> conf, List<String> servers, Object port,
+            String root, ZookeeperAuthInfo auth, List<ACL> defaultAcl, WatcherCallBack watcher) {
+        CuratorFramework fk = newCurator(conf, servers, port, root, auth, defaultAcl);
+        if (watcher != null) {
+            fk.getCuratorListenable().addListener((unused, e) -> {
+                if (e.getType().equals(CuratorEventType.WATCHED)) {
+                    WatchedEvent event = e.getWatchedEvent();
+                    watcher.execute(event.getState(), event.getType(), event.getPath());
+                }
+            });
+        }
+        fk.start();
+        return new CuratorZkClient(fk);
+    }
 
     public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers,
             Object port, String root,
                                               List<ACL> defaultAcl) {
         return newCurator(conf, servers, port, root, null, defaultAcl);
-    }
-
-    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers,
-            Object port, ZookeeperAuthInfo auth,
-                                              List<ACL> defaultAcl) {
-        return newCurator(conf, servers, port, "", auth, defaultAcl);
     }
 
     public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers,
@@ -87,7 +123,7 @@ public class CuratorUtils {
                 .get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
                 .sessionTimeoutMs(ObjectReader.getInt(conf
                 .get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)))
-                .retryPolicy(new StormBoundedExponentialBackoffRetry(
+                .retryPolicy(new CuratorRetryPolicy(
                         ObjectReader.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL)),
                         ObjectReader.getInt(conf
                         .get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING)),
@@ -223,23 +259,5 @@ public class CuratorUtils {
     public static void testSetupBuilder(CuratorFrameworkFactory.Builder
                                                 builder, String zkStr, Map<String, Object> conf, ZookeeperAuthInfo auth) {
         setupBuilder(builder, zkStr, conf, auth);
-    }
-
-    public static CuratorFramework newCuratorStarted(Map<String, Object> conf, List<String> servers,
-            Object port,
-                                                     String root, ZookeeperAuthInfo auth, List<ACL> defaultAcl) {
-        CuratorFramework ret = newCurator(conf, servers, port, root, auth, defaultAcl);
-        LOG.info("Starting Utils Curator...");
-        ret.start();
-        return ret;
-    }
-
-    public static CuratorFramework newCuratorStarted(Map<String, Object> conf, List<String> servers,
-            Object port,
-                                                     ZookeeperAuthInfo auth, List<ACL> defaultAcl) {
-        CuratorFramework ret = newCurator(conf, servers, port, auth, defaultAcl);
-        LOG.info("Starting Utils Curator (2)...");
-        ret.start();
-        return ret;
     }
 }

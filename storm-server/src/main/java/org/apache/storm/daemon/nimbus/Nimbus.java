@@ -205,7 +205,6 @@ import org.apache.storm.shade.com.google.common.base.Strings;
 import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.shade.com.google.common.collect.MapDifference;
 import org.apache.storm.shade.com.google.common.collect.Maps;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.stats.ClientStatsUtil;
@@ -234,6 +233,7 @@ import org.apache.storm.utils.WrappedNotAliveException;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.zookeeper.AclEnforcement;
 import org.apache.storm.zookeeper.ClientZookeeper;
+import org.apache.storm.zookeeper.ZkClient;
 import org.apache.storm.zookeeper.Zookeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -476,8 +476,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final ClusterSummaryMetricSet clusterMetricSet;
     private MetricStore metricsStore;
     private IAuthorizer authorizationHandler;
-    //Cached CuratorFramework, mainly used for BlobStore.
-    private final CuratorFramework zkClient;
+    //Cached zookeeper client, mainly used for BlobStore.
+    private final ZkClient zkClient;
     //Cached topology -> executor ids, used for deciding timeout workers of heartbeatsCache.
     private AtomicReference<Map<String, Set<List<Integer>>>> idToExecutors;
     //May be null if worker tokens are not supported by the thrift transport.
@@ -775,17 +775,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     public static int getVersionForKey(String key, NimbusInfo nimbusInfo,
-        CuratorFramework zkClient) throws KeyNotFoundException {
+        ZkClient zkClient) throws KeyNotFoundException {
         return getVersionForKey(key, nimbusInfo, zkClient, true);
     }
 
     /**
      * Get the version to register the copy of a blob held by a nimbus under.
      *
-     * @see KeySequenceNumber#getKeySequenceNumber(CuratorFramework, boolean)
+     * @see KeySequenceNumber#getKeySequenceNumber(ZkClient, boolean)
      */
     public static int getVersionForKey(String key, NimbusInfo nimbusInfo,
-        CuratorFramework zkClient, boolean mayCreateKey) throws KeyNotFoundException {
+        ZkClient zkClient, boolean mayCreateKey) throws KeyNotFoundException {
         KeySequenceNumber kseq = new KeySequenceNumber(key, nimbusInfo);
         return kseq.getKeySequenceNumber(zkClient, mayCreateKey);
     }
@@ -1718,11 +1718,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    private static CuratorFramework makeZKClient(Map<String, Object> conf) {
+    private static ZkClient makeZKClient(Map<String, Object> conf) {
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         String root = (String) conf.get(Config.STORM_ZOOKEEPER_ROOT);
-        CuratorFramework ret = null;
+        ZkClient ret = null;
         if (servers != null && port != null) {
             ret = ClientZookeeper.mkClient(conf, servers, port, root, new DefaultWatcherCallBack(), conf, DaemonType.NIMBUS);
         }
