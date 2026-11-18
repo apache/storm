@@ -43,6 +43,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -725,6 +726,95 @@ class UIHelpersTest {
         SslContextFactory factory = connector.getConnectionFactory(SslConnectionFactory.class).getSslContextFactory();
         assertEquals(expectedProtocols, new LinkedHashSet<>(Arrays.asList(factory.getExcludeProtocols())));
         assertEquals(expectedCiphers, new LinkedHashSet<>(Arrays.asList(factory.getExcludeCipherSuites())));
+    }
+
+    /**
+     * Creates a real keystore holding one self-signed key pair with the JDK keytool.
+     */
+    private static Path createKeyStore(Path dir, String fileName, String storeType) throws Exception {
+        Path keyStore = dir.resolve(fileName);
+        String keytool = Paths.get(System.getProperty("java.home"), "bin", "keytool").toString();
+        Process process = new ProcessBuilder(keytool, "-genkeypair", "-alias", "test", "-keyalg", "RSA",
+                "-keysize", "2048", "-dname", "CN=localhost", "-storetype", storeType,
+                "-keystore", keyStore.toString(), "-storepass", "password", "-keypass", "password")
+                .redirectErrorStream(true)
+                .start();
+        String output = new String(process.getInputStream().readAllBytes());
+        assertEquals(0, process.waitFor(), output);
+        return keyStore;
+    }
+
+    private static SslContextFactory.Server sslContextFactory(Server server) {
+        ServerConnector connector = (ServerConnector) server.getConnectors()[0];
+        return (SslContextFactory.Server) connector.getConnectionFactory(SslConnectionFactory.class)
+                .getSslContextFactory();
+    }
+
+    @Test
+    public void testConfigSslInfersStoreTypesFromExtension(@TempDir Path tempDir) throws Exception {
+        // Expected behavior from issue 7742: without a configured type, a keystore or truststore
+        // ending in .p12 is read as PKCS12 and one ending in .jks is read as JKS.
+        Path pkcs12KeyStore = createKeyStore(tempDir, "keystore.p12", "PKCS12");
+        Path jksTrustStore = createKeyStore(tempDir, "truststore.jks", "JKS");
+        Server server = new Server();
+        UIHelpers.configSsl(server, 8443, pkcs12KeyStore.toString(), "password", null, "password",
+                jksTrustStore.toString(), "password", null, false, false, false);
+
+        SslContextFactory.Server factory = sslContextFactory(server);
+        assertEquals("PKCS12", factory.getKeyStoreType());
+        assertEquals("JKS", factory.getTrustStoreType());
+        assertNotNull(factory.getTrustStorePath());
+        // Starting the factory loads both files with the inferred types
+        factory.start();
+        try {
+            assertEquals("PKCS12", factory.getKeyStore().getType());
+            assertEquals("JKS", factory.getTrustStore().getType());
+        } finally {
+            factory.stop();
+        }
+    }
+
+    @Test
+    public void testConfigSslKeystoreFallsBackToJksForUnknownExtension(@TempDir Path tempDir) throws Exception {
+        // drpc.https.keystore.type used to default to "JKS" in defaults.yaml. Without a configured
+        // type and without a known extension the keystore is still read as JKS.
+        Path keyStore = createKeyStore(tempDir, "keystore.dat", "JKS");
+        Server server = new Server();
+        UIHelpers.configSsl(server, 8443, keyStore.toString(), "password", null, "password",
+                null, null, null, false, false, false);
+
+        SslContextFactory.Server factory = sslContextFactory(server);
+        assertEquals("JKS", factory.getKeyStoreType());
+        assertNull(factory.getTrustStorePath());
+    }
+
+    @Test
+    public void testConfigSslSkipsTruststoreWithUnknownExtension(@TempDir Path tempDir) throws Exception {
+        // docs/SECURITY.md: a truststore with an unknown extension is not used unless its type is
+        // set. Only the keystore falls back to JKS.
+        Path keyStore = createKeyStore(tempDir, "keystore.jks", "JKS");
+        Path trustStore = createKeyStore(tempDir, "truststore.dat", "JKS");
+        Server server = new Server();
+        UIHelpers.configSsl(server, 8443, keyStore.toString(), "password", null, "password",
+                trustStore.toString(), "password", null, false, false, false);
+
+        SslContextFactory.Server factory = sslContextFactory(server);
+        assertNull(factory.getTrustStorePath());
+        assertNull(factory.getTrustStoreType());
+    }
+
+    @Test
+    public void testConfigSslKeepsExplicitStoreTypes(@TempDir Path tempDir) throws Exception {
+        // A configured type must win over the extension, so existing configurations keep working.
+        Path keyStore = createKeyStore(tempDir, "keystore.p12", "PKCS12");
+        Path trustStore = createKeyStore(tempDir, "truststore.jks", "JKS");
+        Server server = new Server();
+        UIHelpers.configSsl(server, 8443, keyStore.toString(), "password", "JKS", "password",
+                trustStore.toString(), "password", "PKCS12", false, false, false);
+
+        SslContextFactory.Server factory = sslContextFactory(server);
+        assertEquals("JKS", factory.getKeyStoreType());
+        assertEquals("PKCS12", factory.getTrustStoreType());
     }
 
     @Test

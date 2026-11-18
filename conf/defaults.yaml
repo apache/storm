@@ -154,7 +154,6 @@ drpc.childopts: "-Xmx768m"
 drpc.http.port: 3774
 drpc.https.port: -1
 drpc.https.keystore.password: ""
-drpc.https.keystore.type: "JKS"
 drpc.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
 drpc.authorizer.acl.filename: "drpc-auth-acl.yaml"
 drpc.authorizer.acl.strict: false

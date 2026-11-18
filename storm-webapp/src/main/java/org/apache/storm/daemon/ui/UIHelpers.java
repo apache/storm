@@ -93,6 +93,7 @@ import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.IVersionInfo;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.SecurityUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.TopologySpoutLag;
 import org.apache.storm.utils.Utils;
@@ -238,14 +239,23 @@ public class UIHelpers {
         factory.addExcludeCipherSuites("SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA");
         factory.addExcludeProtocols("SSLv3");
         factory.setRenegotiationAllowed(false);
+        // An explicitly configured type is used as is. Otherwise the type is inferred from the file
+        // extension, and the keystore falls back to JKS.
+        String keyStoreType = ksType != null
+            ? ksType : SecurityUtils.inferKeyStoreTypeFromPath(ksPath);
+        if (keyStoreType == null) {
+            keyStoreType = "JKS";
+        }
+        String trustStoreType = tsType != null
+            ? tsType : SecurityUtils.inferKeyStoreTypeFromPath(tsPath);
         factory.setKeyStorePath(ksPath);
-        factory.setKeyStoreType(ksType);
+        factory.setKeyStoreType(keyStoreType);
         factory.setKeyStorePassword(ksPassword);
         factory.setKeyManagerPassword(keyPassword);
 
-        if (tsPath != null && tsPassword != null && tsType != null) {
+        if (tsPath != null && tsPassword != null && trustStoreType != null) {
             factory.setTrustStorePath(tsPath);
-            factory.setTrustStoreType(tsType);
+            factory.setTrustStoreType(trustStoreType);
             factory.setTrustStorePassword(tsPassword);
         }
 
