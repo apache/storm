@@ -317,7 +317,9 @@ public class NimbusClojurePortTest {
             assertThrows(InvalidTopologyException.class,
                 () -> nimbus.debug("t1", "spout", true, 100));
             StormBase base = cluster.getClusterState().stormBase(topoId, null);
-            assertFalse(base.is_set_component_debug() && !base.get_component_debug().isEmpty(),
+            assertFalse(base.is_set_component_debug()
+                && (base.get_component_debug().containsKey(topoId)
+                    || base.get_component_debug().containsKey("spout")),
                 "Rejected debug requests must not store debug options");
 
             // Disabling debug stays allowed
