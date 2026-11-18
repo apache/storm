@@ -26,6 +26,8 @@ The script must run as root and needs a Hadoop client: HADOOP_PREFIX (from the
 environment or --hadoop-prefix) is the Hadoop install directory, so the hadoop
 binary is $HADOOP_PREFIX/bin/hadoop. check_dependencies() runs once before the
 sub-command and calls hadoop, skopeo, /usr/sbin/mksquashfs, tar and setfattr.
+Because of Known issue #9289 (see shell_command), a missing tool does not make
+check_dependencies() fail.
 
 Each image is stored in HDFS under --hdfs-root (default /runc-root), which must
 match storm.oci.image.hdfs.toplevel.dir (see docs/OCI-support.md):
@@ -41,8 +43,9 @@ Every line of the image-tag-to-hash file has the form
     tag1[,tag2...]:<manifest hash>[#comment]
 
 where the comment is usually the image the tags were created from. In memory the
-file is held as two dicts, both built from the same file: hash_to_tags maps a manifest hash to a
-(tags list, comments list) tuple, and tag_to_hash maps each tag to its manifest hash.
+file is held as two dicts, both built from the same file: hash_to_tags maps a
+manifest hash to a (tags list, comments list) tuple, and tag_to_hash maps each tag
+to its manifest hash.
 
 Sub-commands that change the mapping (pull-build-push-update, push-update,
 add-tag, remove-tag, remove-image, copy-update) download the file into the working
@@ -50,6 +53,12 @@ directory, edit the dicts, write the file back and replace the HDFS copy with
 atomic_upload_mv_to_hdfs(). Layers, configs and manifests are uploaded with
 permissions 444. Files already in HDFS are skipped; pull-build-push-update and
 push-update overwrite them when --force is set.
+
+Known issue (#9291): the script does not run on Python 3. On Python 3.10 and
+later it fails at import, because collections.Iterable was removed. On earlier
+versions main() raises NameError for long while building the argument parser.
+Fixing those two exposes more bytes/str and Python 2 API problems, listed in the
+issue.
 """
 
 import argparse
@@ -89,10 +98,10 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error, timeout_s
     that stream goes to the console and is returned as None. stderr also goes to the console
     when LOG_LEVEL is DEBUG. The process is killed after timeout_sec seconds.
 
-    Because the return statement is in the finally clause, any exception raised in the try
-    block, including the one for raise_on_error, is discarded, so callers relying on
-    raise_on_error do not see failures. The returned code is -1 if the process could not
-    be started. The ARG_MAX check runs before the try block and still raises.
+    Known issue (#9289): the return statement is in the finally clause, so any exception
+    raised in the try block is discarded. Callers passing raise_on_error=True never see a
+    failure. They get the non-zero return code instead, or -1 if the process could not be
+    started. The ARG_MAX check runs before the try block and still raises.
     """
     global LOG_LEVEL
     global ARG_MAX
@@ -414,9 +423,12 @@ def get_manifest_from_docker_image(pull_format, image):
     Return (manifest, manifest hash) for image using `skopeo inspect --raw`.
 
     If skopeo returns a manifest list (a multi-arch image), the amd64 entry is picked and
-    fetched again by digest as <image>@<digest>. Here image loses its tag and, if it contains
-    a "/", everything up to the first "/": a private registry host is dropped, so the digest
-    is pulled from the default registry, and for library/ubuntu it is "library" that is dropped.
+    fetched again by digest as <image>@<digest>, without the tag.
+
+    Known issue (#9290): the digest reference is built from image.split("/", 1)[-1], which
+    drops everything up to the first "/". So registry.example.com/team/app:1.0 is fetched
+    again as team/app@<digest> from the default registry, and the Docker Hub image
+    myorg/app:1 as app@<digest>, which is library/app, a different repository.
     """
     pull_fmt_string = get_pull_fmt_string(pull_format)
     out, err, rc = shell_command(["skopeo", "inspect", "--raw", pull_fmt_string + image], False, True, True)
@@ -455,8 +467,13 @@ def split_image_and_tag(image_and_tag):
 def read_image_tag_to_hash(image_tag_to_hash):
     """
     Parse the local image-tag-to-hash file (format in the module docstring) and return
-    (hash_to_tags, tag_to_hash). Malformed lines are skipped. If a tag appears on more than
-    one line, the last line wins in tag_to_hash.
+    (hash_to_tags, tag_to_hash). Lines whose manifest hash is not a sha256 hash are skipped.
+    If a tag appears on more than one line, the last line wins in tag_to_hash.
+
+    Known issue (#9291): on Python 3, str(line) gives the bytes repr, such as
+    "b'tag:<hash>\\n'". A line without a #comment then fails the sha256 check and is skipped,
+    so its tags are silently lost. A line with a comment still parses, but its first tag gets
+    a "b'" prefix and its comment a "\\n'" suffix.
     """
     hash_to_tags = dict()
     tag_to_hash = dict()
@@ -555,7 +572,12 @@ def add_tag_to_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment):
 
 
 def write_local_image_tag_to_hash(image_tag_to_hash, hash_to_tags):
-    """Write hash_to_tags to the local file, sorted, dropping manifest hashes with no tags left."""
+    """
+    Write hash_to_tags to the local file, sorted, dropping manifest hashes with no tags left.
+
+    Known issue (#9291): hash_to_tags.iteritems() does not exist on Python 3, so this raises
+    AttributeError and every sub-command that changes the tag mapping fails.
+    """
     file_contents = []
     for key, value in hash_to_tags.iteritems():
         manifest_hash = key
@@ -666,6 +688,10 @@ def convert_oci_whiteouts(tmp_dir):
     ".wh..wh..opq" (opaque directory) becomes the trusted.overlay.opaque=y xattr on its
     directory. ".wh.<name>" (deleted file) becomes a 0/0 character device named <name>
     with the owner and group of the whiteout file. The OCI whiteout files are then removed.
+
+    Known issue (#9291): on Python 3, str(out).splitlines() returns the bytes repr as one
+    string, so all paths are joined into one bogus path. mknod on it fails, Known issue
+    #9289 hides the failure, and no whiteout is converted or removed.
     """
     out, err, rc = shell_command(["find", tmp_dir, "-name", ".wh.*"], False, False, True)
     whiteouts = str(out).splitlines()
@@ -713,7 +739,7 @@ def atomic_upload_mv_to_hdfs(src, dest, replication, image_tag_to_hash_file_hash
     mvlink, so readers never see a partially written file. The tool comes from the
     hadoop-extras jar under $HADOOP_PREFIX/share/hadoop/tools/lib. <dest>.tmp is removed only
     when an exception reaches this function, such as the jar not being found; failed hadoop
-    commands do not raise (see shell_command).
+    commands do not raise (see Known issue #9289 in shell_command).
     """
     global HADOOP_PREFIX
     global HADOOP_BIN_DIR
@@ -894,6 +920,12 @@ def pull_build(args):
     """
     Pull each image and convert its layers to squashfs in the working directory without
     touching HDFS. The image directory is left in place; it is only removed if the build fails.
+
+    Known issue (#9292): get_working_dir() is called once per image and always creates a new
+    directory. If the working directory does not exist yet, the first image goes into it,
+    the second into its docker-to-squash subdirectory, and the third fails with "File
+    exists". If it already exists, the second image fails. push-update cannot find any of
+    them.
     """
     skopeo_format = args.skopeo_format
     pull_format = args.pull_format
@@ -940,6 +972,12 @@ def push_update(args):
     Upload images that were already pulled and converted locally, then update the
     image-tag-to-hash file. Each image is read from <working dir>/<last path component of
     the image name>, and its manifest from manifest.json in that directory.
+
+    Known issue (#9292): get_working_dir() always creates a new, empty directory, so the
+    images left by pull-build are never found. If the working directory did not exist before
+    pull-build, this fails with "skopeo_dir doesn't exists" after a pull-build of one image,
+    and with "File exists" after two or more. If it already existed, this fails with "File
+    exists" after any pull-build.
     """
     global HDFS_ROOT
     global HDFS_MANIFEST_DIR
