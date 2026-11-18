@@ -21,6 +21,35 @@ docker_to_squash.py is a tool to facilitate the process of converting
 Docker images into squashFS layers, manifests, and configs.
 
 Tool dependencies: skopeo, squashfs-tools, tar, setfattr
+
+The script must run as root and needs a Hadoop client: HADOOP_PREFIX (from the
+environment or --hadoop-prefix) is the Hadoop install directory, so the hadoop
+binary is $HADOOP_PREFIX/bin/hadoop. check_dependencies() runs once before the
+sub-command and calls hadoop, skopeo, /usr/sbin/mksquashfs, tar and setfattr.
+
+Each image is stored in HDFS under --hdfs-root (default /runc-root), which must
+match storm.oci.image.hdfs.toplevel.dir (see docs/OCI-support.md):
+
+    <hdfs-root>/layers/<layer sha256>.sqsh   one squashfs file per image layer
+    <hdfs-root>/config/<config sha256>       the image config
+    <hdfs-root>/manifests/<manifest hash>    the image manifest
+    <hdfs-root>/unreferenced/<manifest hash> empty marker used by "cleanup"
+    <hdfs-root>/<image-tag-to-hash>          tag to manifest hash mapping
+
+Every line of the image-tag-to-hash file has the form
+
+    tag1[,tag2...]:<manifest hash>[#comment]
+
+where the comment is usually the image the tags were created from. In memory the
+file is held as two dicts, both built from the same file: hash_to_tags maps a manifest hash to a
+(tags list, comments list) tuple, and tag_to_hash maps each tag to its manifest hash.
+
+Sub-commands that change the mapping (pull-build-push-update, push-update,
+add-tag, remove-tag, remove-image, copy-update) download the file into the working
+directory, edit the dicts, write the file back and replace the HDFS copy with
+atomic_upload_mv_to_hdfs(). Layers, configs and manifests are uploaded with
+permissions 444. Files already in HDFS are skipped; pull-build-push-update and
+push-update overwrite them when --force is set.
 """
 
 import argparse
@@ -36,6 +65,9 @@ import subprocess
 import time
 from threading import Timer
 
+# Placeholders only: main() sets these globals from the command line arguments,
+# except ARG_MAX, which comes from os.sysconf("SC_ARG_MAX").
+# UNTAGGED_TRANSITION_SEC and DEAD_PERMS are only defined by main().
 LOG_LEVEL = None
 HADOOP_BIN_DIR = "/undefined"
 MAX_IMAGE_LAYERS = 0
@@ -50,6 +82,18 @@ HDFS_UNREF_DIR = "/undefined"
 
 
 def shell_command(command, print_stdout, print_stderr, raise_on_error, timeout_sec=600):
+    """
+    Run command (a list of arguments) and return (stdout, stderr, returncode).
+
+    stdout and stderr are captured unless print_stdout or print_stderr is set, in which case
+    that stream goes to the console and is returned as None. stderr also goes to the console
+    when LOG_LEVEL is DEBUG. The process is killed after timeout_sec seconds.
+
+    Because the return statement is in the finally clause, any exception raised in the try
+    block, including the one for raise_on_error, is discarded, so callers relying on
+    raise_on_error do not see failures. The returned code is -1 if the process could not
+    be started. The ARG_MAX check runs before the try block and still raises.
+    """
     global LOG_LEVEL
     global ARG_MAX
     stdout_val = subprocess.PIPE
@@ -102,6 +146,10 @@ def process_timeout(process):
 
 
 def does_hdfs_entry_exist(entry, raise_on_error=True):
+    """
+    entry may be a path or a list of paths.
+    Returns True only if `hadoop fs -ls` succeeds for all of them.
+    """
     out, err, rc = hdfs_ls(entry, raise_on_error=raise_on_error)
     if rc:
         return False
@@ -237,6 +285,11 @@ def hdfs_stat(file_path, fmt, print_stdout=False, print_stderr=True, raise_on_er
 
 
 def get_working_dir(directory):
+    """
+    Create and return the local working directory. If directory already exists, a new
+    "docker-to-squash" subdirectory is created inside it, otherwise directory itself is
+    created. Raises if the directory to create already exists.
+    """
     working_dir = "(undefined)"
     try:
         if os.path.isdir(directory):
@@ -291,6 +344,11 @@ def get_hdfs_manifest_from_path(manifest_path):
 
 
 def get_hdfs_manifests_from_paths(manifest_paths):
+    """
+    Read several manifests with a single `hadoop fs -cat`. The output is the JSON files
+    concatenated, so it is split on "}{" and the braces removed by the split are added back.
+    Returns a list of (manifest, manifest hash) tuples.
+    """
     out, err, rc = hdfs_cat(manifest_paths)
     manifests_list = out.split("}{")
     manifests = []
@@ -352,6 +410,14 @@ def get_pull_fmt_string(pull_format):
 
 
 def get_manifest_from_docker_image(pull_format, image):
+    """
+    Return (manifest, manifest hash) for image using `skopeo inspect --raw`.
+
+    If skopeo returns a manifest list (a multi-arch image), the amd64 entry is picked and
+    fetched again by digest as <image>@<digest>. Here image loses its tag and, if it contains
+    a "/", everything up to the first "/": a private registry host is dropped, so the digest
+    is pulled from the default registry, and for library/ubuntu it is "library" that is dropped.
+    """
     pull_fmt_string = get_pull_fmt_string(pull_format)
     out, err, rc = shell_command(["skopeo", "inspect", "--raw", pull_fmt_string + image], False, True, True)
     manifest = json.loads(out)
@@ -387,6 +453,11 @@ def split_image_and_tag(image_and_tag):
 
 
 def read_image_tag_to_hash(image_tag_to_hash):
+    """
+    Parse the local image-tag-to-hash file (format in the module docstring) and return
+    (hash_to_tags, tag_to_hash). Malformed lines are skipped. If a tag appears on more than
+    one line, the last line wins in tag_to_hash.
+    """
     hash_to_tags = dict()
     tag_to_hash = dict()
     with open(image_tag_to_hash, 'rb') as file_pointer:
@@ -484,6 +555,7 @@ def add_tag_to_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment):
 
 
 def write_local_image_tag_to_hash(image_tag_to_hash, hash_to_tags):
+    """Write hash_to_tags to the local file, sorted, dropping manifest hashes with no tags left."""
     file_contents = []
     for key, value in hash_to_tags.iteritems():
         manifest_hash = key
@@ -525,6 +597,11 @@ def populate_tag_dicts(image_tag_to_hash, local_image_tag_to_hash):
 
 
 def populate_tag_dicts_set_root(image_tag_to_hash, local_image_tag_to_hash, hdfs_root):
+    """
+    Download <hdfs_root>/<image_tag_to_hash> to local_image_tag_to_hash and parse it.
+    Returns (hash_to_tags, tag_to_hash, sha256 of the downloaded file); the hash is later
+    passed to atomic_upload_mv_to_hdfs() to skip the upload when nothing changed.
+    """
     # Setting hdfs_root to None will default it to using the global
     global HDFS_ROOT
     if not hdfs_root:
@@ -583,6 +660,13 @@ def make_whiteout_block_device(file_path, whiteout):
 
 
 def convert_oci_whiteouts(tmp_dir):
+    """
+    Convert OCI whiteout files in an extracted layer to the overlayfs format.
+
+    ".wh..wh..opq" (opaque directory) becomes the trusted.overlay.opaque=y xattr on its
+    directory. ".wh.<name>" (deleted file) becomes a 0/0 character device named <name>
+    with the owner and group of the whiteout file. The OCI whiteout files are then removed.
+    """
     out, err, rc = shell_command(["find", tmp_dir, "-name", ".wh.*"], False, False, True)
     whiteouts = str(out).splitlines()
     for whiteout in whiteouts:
@@ -621,6 +705,16 @@ def upload_to_hdfs(src, dest, replication, mode, force=False):
 
 
 def atomic_upload_mv_to_hdfs(src, dest, replication, image_tag_to_hash_file_hash):
+    """
+    Replace the image-tag-to-hash file dest in HDFS with the local file src.
+
+    Nothing is uploaded if src still has the hash of the downloaded copy. Otherwise src is
+    uploaded to <dest>.tmp with permissions 444 and moved over dest with Hadoop's SymlinkTool
+    mvlink, so readers never see a partially written file. The tool comes from the
+    hadoop-extras jar under $HADOOP_PREFIX/share/hadoop/tools/lib. <dest>.tmp is removed only
+    when an exception reaches this function, such as the jar not being found; failed hadoop
+    commands do not raise (see shell_command).
+    """
     global HADOOP_PREFIX
     global HADOOP_BIN_DIR
 
@@ -657,6 +751,11 @@ def atomic_upload_mv_to_hdfs(src, dest, replication, image_tag_to_hash_file_hash
 
 
 def docker_to_squash(layer_dir, layer, working_dir):
+    """
+    Convert the layer tarball <layer_dir>/<layer> to <layer_dir>/<layer>.sqsh: extract it to a
+    temporary directory under working_dir, convert the whiteouts and run mksquashfs.
+    The tarball and the temporary directory are removed even if the conversion fails.
+    """
     tmp_dir = os.path.join(working_dir, "expand_archive_" + layer)
     layer_path = os.path.join(layer_dir, layer)
     squash_path = layer_path + ".sqsh"
@@ -676,6 +775,7 @@ def docker_to_squash(layer_dir, layer, working_dir):
 
 
 def check_image_for_magic_file(magic_file, skopeo_dir, layers):
+    """Return the contents of magic_file from the first layer that has it, else raise."""
     magic_file_absolute = magic_file.strip("/")
     logging.debug("Searching for magic file %s", magic_file_absolute)
     for layer in layers:
@@ -688,6 +788,13 @@ def check_image_for_magic_file(magic_file, skopeo_dir, layers):
 
 
 def pull_build_push_update(args):
+    """
+    For each "image,tag1[,tag2...]" argument: fetch the manifest and map the tags to it.
+    Unless all of its files are already in HDFS (and --force is not set), pull the image with
+    skopeo, convert each missing layer (every layer with --force) to squashfs and upload
+    layers, config and manifest. The image-tag-to-hash file is updated once after all images
+    are processed, and the working directory is removed.
+    """
     global HDFS_ROOT
     global HDFS_MANIFEST_DIR
     global HDFS_CONFIG_DIR
@@ -784,6 +891,10 @@ def pull_build_push_update(args):
 
 
 def pull_build(args):
+    """
+    Pull each image and convert its layers to squashfs in the working directory without
+    touching HDFS. The image directory is left in place; it is only removed if the build fails.
+    """
     skopeo_format = args.skopeo_format
     pull_format = args.pull_format
     images_and_tags = args.images_and_tags
@@ -825,6 +936,11 @@ def pull_build(args):
 
 
 def push_update(args):
+    """
+    Upload images that were already pulled and converted locally, then update the
+    image-tag-to-hash file. Each image is read from <working dir>/<last path component of
+    the image name>, and its manifest from manifest.json in that directory.
+    """
     global HDFS_ROOT
     global HDFS_MANIFEST_DIR
     global HDFS_CONFIG_DIR
@@ -910,6 +1026,11 @@ def push_update(args):
 
 
 def remove_image(args):
+    """
+    Remove images given by tag or manifest hash: drop their tags from image-tag-to-hash,
+    upload the file, then delete their manifest, config and unreferenced marker, plus the
+    layers that no other image in HDFS uses.
+    """
     global HDFS_ROOT
     global HDFS_MANIFEST_DIR
     global HDFS_CONFIG_DIR
@@ -1031,6 +1152,7 @@ def get_delete_list_from_images_to_remove(images_to_remove, known_images):
 
 
 def add_remove_tag(args):
+    """For add-tag, each argument's first item may be a tag, a manifest hash or a remote image."""
     global HDFS_ROOT
     global HDFS_MANIFEST_DIR
 
@@ -1085,6 +1207,14 @@ def add_remove_tag(args):
 
 
 def copy_update(args):
+    """
+    Copy images from src_root to dest_root (HDFS paths, possibly on different clusters).
+
+    Here each "image[,tag...]" argument names a tag in the source image-tag-to-hash file, and
+    defaults to that same tag at the destination if no tags are given. Only files missing at
+    the destination are copied, and the destination image-tag-to-hash file is updated after
+    each copied image.
+    """
     image_tag_to_hash = args.image_tag_to_hash
     replication = args.replication
     force = args.force
@@ -1267,6 +1397,18 @@ def bootstrap_setup(args):
 
 
 def cleanup_untagged_images(args):
+    """
+    Remove images that no tag in image-tag-to-hash points to anymore, in steps over
+    several runs so an image is not deleted right after it loses its tags.
+
+    Each run, with T = --untagged-transition-sec:
+      - tagged image: remove its unreferenced marker if there is one
+      - untagged, no marker: create the marker <hdfs-root>/unreferenced/<manifest hash>
+      - untagged, marker older than T, manifest permissions not --dead-perms: chmod the
+        manifest to --dead-perms and touch the marker again
+      - untagged, marker older than T, manifest permissions already --dead-perms: delete its
+        manifest, config, marker and the layers no other image uses
+    """
     global HDFS_ROOT
     global HDFS_MANIFEST_DIR
     global HDFS_CONFIG_DIR
@@ -1303,6 +1445,8 @@ def cleanup_untagged_images(args):
 
 
 class Filestat:
+    """One line of `hadoop fs -stat "%a %Y %n"`: octal permissions, mtime in ms, file name."""
+
     def __init__(self, perms, mod_time, name):
         self.perms = perms
         self.mod_time = mod_time
@@ -1316,6 +1460,11 @@ class Filestat:
 
 
 class Image:
+    """
+    An image in HDFS: its manifest Filestat (the name is the manifest hash), layer hashes,
+    config hash, and the Filestat of its unreferenced marker or None.
+    """
+
     def __init__(self, manifest_stat, layers, config, unref_file_stat):
         self.manifest_stat = manifest_stat
         self.layers = layers
