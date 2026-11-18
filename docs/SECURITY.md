@@ -126,7 +126,7 @@ The `drpc.http.creds.plugin` config can be used in cases where the default plugi
 
 UI,DRPC and LOGVIEWER allows users to configure ssl .
 
-The `*.https.keystore.type` and `*.https.truststore.type` configs are optional. A configured type is always used. When a type is not set, it is inferred from the file extension: `.jks` is read as JKS, and `.p12`, `.pkcs12` or `.pfx` is read as PKCS12. A keystore with any other extension is read as JKS. A truststore with any other extension is not used unless its type is set.
+The `*.https.keystore.type` and `*.https.truststore.type` configs are optional. A configured type is always used. When a type is not set, it is inferred from the file extension: `.jks` is read as JKS, and `.p12`, `.pkcs12` or `.pfx` is read as PKCS12. A keystore or truststore with any other extension is read as JKS.
 
 ### UI
 

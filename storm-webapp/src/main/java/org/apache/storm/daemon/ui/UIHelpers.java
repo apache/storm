@@ -228,6 +228,18 @@ public class UIHelpers {
             "errorMessage", String.format("User %s is not authorized.", user));
     }
 
+    /**
+     * An explicitly configured store type is used as is. Otherwise the type is inferred from the
+     * file extension, falling back to JKS like the Thrift TLS transport does.
+     */
+    private static String storeType(String configuredType, String path) {
+        if (configuredType != null) {
+            return configuredType;
+        }
+        String inferredType = SecurityUtils.inferKeyStoreTypeFromPath(path);
+        return inferredType != null ? inferredType : "JKS";
+    }
+
     private static ServerConnector mkSslConnector(Server server, Integer port, String ksPath,
                                                   String ksPassword, String ksType,
                                                   String keyPassword, String tsPath,
@@ -239,23 +251,14 @@ public class UIHelpers {
         factory.addExcludeCipherSuites("SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA");
         factory.addExcludeProtocols("SSLv3");
         factory.setRenegotiationAllowed(false);
-        // An explicitly configured type is used as is. Otherwise the type is inferred from the file
-        // extension, and the keystore falls back to JKS.
-        String keyStoreType = ksType != null
-            ? ksType : SecurityUtils.inferKeyStoreTypeFromPath(ksPath);
-        if (keyStoreType == null) {
-            keyStoreType = "JKS";
-        }
-        String trustStoreType = tsType != null
-            ? tsType : SecurityUtils.inferKeyStoreTypeFromPath(tsPath);
         factory.setKeyStorePath(ksPath);
-        factory.setKeyStoreType(keyStoreType);
+        factory.setKeyStoreType(storeType(ksType, ksPath));
         factory.setKeyStorePassword(ksPassword);
         factory.setKeyManagerPassword(keyPassword);
 
-        if (tsPath != null && tsPassword != null && trustStoreType != null) {
+        if (tsPath != null && tsPassword != null) {
             factory.setTrustStorePath(tsPath);
-            factory.setTrustStoreType(trustStoreType);
+            factory.setTrustStoreType(storeType(tsType, tsPath));
             factory.setTrustStorePassword(tsPassword);
         }
 

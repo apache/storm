@@ -41,9 +41,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -789,18 +791,33 @@ class UIHelpersTest {
     }
 
     @Test
-    public void testConfigSslSkipsTruststoreWithUnknownExtension(@TempDir Path tempDir) throws Exception {
-        // docs/SECURITY.md: a truststore with an unknown extension is not used unless its type is
-        // set. Only the keystore falls back to JKS.
-        Path keyStore = createKeyStore(tempDir, "keystore.jks", "JKS");
-        Path trustStore = createKeyStore(tempDir, "truststore.dat", "JKS");
+    public void testConfigSslTruststoreFallsBackToJksForUnknownExtension(@TempDir Path tempDir) throws Exception {
+        // A truststore with a path and password must not be ignored just because its extension is
+        // unknown. Like the keystore, it falls back to JKS. With the JDK default
+        // keystore.type.compat=true the JKS type also loads this PKCS12 file. The keystore is PKCS12,
+        // so a JKS truststore cannot be Jetty's fallback to the keystore.
+        Path keyStore = createKeyStore(tempDir, "keystore.p12", "PKCS12");
+        Path trustStore = createKeyStore(tempDir, "truststore.dat", "PKCS12");
         Server server = new Server();
         UIHelpers.configSsl(server, 8443, keyStore.toString(), "password", null, "password",
                 trustStore.toString(), "password", null, false, false, false);
 
         SslContextFactory.Server factory = sslContextFactory(server);
-        assertNull(factory.getTrustStorePath());
-        assertNull(factory.getTrustStoreType());
+        assertNotNull(factory.getTrustStorePath());
+        factory.start();
+        try {
+            assertNotNull(factory.getTrustStore());
+            assertEquals("JKS", factory.getTrustStore().getType());
+            // Both files use the alias "test" with different key pairs, so this proves the
+            // configured truststore file was loaded.
+            KeyStore expected = KeyStore.getInstance("PKCS12");
+            try (InputStream in = Files.newInputStream(trustStore)) {
+                expected.load(in, "password".toCharArray());
+            }
+            assertEquals(expected.getCertificate("test"), factory.getTrustStore().getCertificate("test"));
+        } finally {
+            factory.stop();
+        }
     }
 
     @Test
