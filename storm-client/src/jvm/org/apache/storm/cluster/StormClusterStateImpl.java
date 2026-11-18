@@ -41,7 +41,6 @@ import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.shade.org.apache.commons.lang3.StringUtils;
-import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionState;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
@@ -296,10 +295,10 @@ public class StormClusterStateImpl implements IStormClusterState {
     public void addNimbusHost(final String nimbusId, final NimbusSummary nimbusSummary) {
         // explicit delete for ephmeral node to ensure this session creates the entry.
         stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
-        stateStorage.add_listener((curatorFramework, connectionState) -> {
+        stateStorage.add_listener(connectionState -> {
             LOG.info("Connection state listener invoked, zookeeper connection state has changed "
                     + "to {}", connectionState);
-            if (connectionState.equals(ConnectionState.RECONNECTED)) {
+            if (connectionState == ConnectionState.RECONNECTED) {
                 LOG.info("Connection state has changed to reconnected so setting nimbuses entry "
                         + "one more time");
                 // explicit delete for ephemeral node to ensure this session creates the entry.

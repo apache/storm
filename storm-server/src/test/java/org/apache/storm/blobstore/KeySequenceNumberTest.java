@@ -28,6 +28,7 @@ import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.shade.org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.storm.testing.InProcessZookeeper;
+import org.apache.storm.zookeeper.curator.CuratorZkClient;
 import org.junit.jupiter.api.Test;
 
 class KeySequenceNumberTest {
@@ -82,7 +83,7 @@ class KeySequenceNumberTest {
      * Do what IStormClusterState#setupBlob does with the version KeySequenceNumber hands out.
      */
     private static int register(CuratorFramework zkClient, NimbusInfo nimbus, boolean mayCreateKey) throws Exception {
-        int version = new KeySequenceNumber(KEY, nimbus).getKeySequenceNumber(zkClient, mayCreateKey);
+        int version = new KeySequenceNumber(KEY, nimbus).getKeySequenceNumber(CuratorZkClient.wrap(zkClient), mayCreateKey);
         if (zkClient.checkExists().forPath(KEY_PATH) != null) {
             for (String child : zkClient.getChildren().forPath(KEY_PATH)) {
                 if (child.startsWith(nimbus.toHostPortString())) {

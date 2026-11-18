@@ -13,14 +13,22 @@
 package org.apache.storm.utils;
 
 import java.util.Random;
-import org.apache.storm.shade.org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBackoffRetry {
+/**
+ * Exponential-then-linear backoff calculator with jitter, used for ZooKeeper, Netty, Thrift and
+ * Pacemaker reconnects.
+ *
+ * <p>This class does not depend on any ZooKeeper client library. In earlier releases it extended
+ * Curator's {@code BoundedExponentialBackoffRetry}; it no longer is a Curator {@code RetryPolicy}.
+ */
+public class StormBoundedExponentialBackoffRetry {
     private static final Logger LOG = LoggerFactory
             .getLogger(StormBoundedExponentialBackoffRetry.class);
     private final Random random = new Random();
+    private final int baseSleepTimeMs;
+    private final int maxSleepTimeMs;
     private final int linearBaseSleepMs;
     private final int stepSize;
     private int expRetriesThreshold;
@@ -36,7 +44,8 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
      */
     public StormBoundedExponentialBackoffRetry(int baseSleepTimeMs, int maxSleepTimeMs,
             int maxRetries) {
-        super(baseSleepTimeMs, maxSleepTimeMs, maxRetries);
+        this.baseSleepTimeMs = baseSleepTimeMs;
+        this.maxSleepTimeMs = maxSleepTimeMs;
         expRetriesThreshold = 1;
         while ((1 << (expRetriesThreshold + 1)) < ((maxSleepTimeMs - baseSleepTimeMs) / 2)) {
             expRetriesThreshold++;
@@ -54,20 +63,34 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
         } else {
             this.stepSize = 1;
         }
-        this.linearBaseSleepMs = super.getBaseSleepTimeMs() + (1 << expRetriesThreshold);
+        this.linearBaseSleepMs = this.baseSleepTimeMs + (1 << expRetriesThreshold);
     }
 
-    @Override
+    public int getBaseSleepTimeMs() {
+        return baseSleepTimeMs;
+    }
+
+    public int getMaxSleepTimeMs() {
+        return maxSleepTimeMs;
+    }
+
+    /**
+     * Compute the time to sleep before the given retry.
+     *
+     * @param retryCount the number of retries already attempted (0 based)
+     * @param elapsedTimeMs elapsed time since the first attempt (unused)
+     * @return the time to sleep in milliseconds
+     */
     public long getSleepTimeMs(int retryCount, long elapsedTimeMs) {
         if (retryCount < expRetriesThreshold) {
             int exp = 1 << retryCount;
             int jitter = random.nextInt(exp);
-            long sleepTimeMs = super.getBaseSleepTimeMs() + exp + jitter;
+            long sleepTimeMs = baseSleepTimeMs + exp + jitter;
             LOG.debug("WILL SLEEP FOR {}ms (NOT MAX)", sleepTimeMs);
             return sleepTimeMs;
         } else {
             int stepJitter = random.nextInt(stepSize);
-            long sleepTimeMs = Math.min(super.getMaxSleepTimeMs(), (linearBaseSleepMs
+            long sleepTimeMs = Math.min(maxSleepTimeMs, (linearBaseSleepMs
                     + (stepSize * (retryCount - expRetriesThreshold)) + stepJitter));
             LOG.debug("WILL SLEEP FOR {}ms (MAX)", sleepTimeMs);
             return sleepTimeMs;

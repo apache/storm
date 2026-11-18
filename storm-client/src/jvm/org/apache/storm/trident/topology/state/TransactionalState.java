@@ -21,27 +21,25 @@ import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.shade.net.minidev.json.JSONValue;
 import org.apache.storm.shade.net.minidev.json.parser.ParseException;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.api.PathAndBytesable;
-import org.apache.storm.shade.org.apache.curator.framework.api.ProtectACLCreateModePathAndBytesable;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
-import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.ZookeeperAuthInfo;
+import org.apache.storm.zookeeper.ClientZookeeper;
+import org.apache.storm.zookeeper.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Class that contains the logic to extract the transactional state info from zookeeper. All
  * transactional state is kept in zookeeper. This
- * class only contains references to Curator, which is used to get all info from zookeeper.
+ * class only contains references to a {@link ZkClient}, which is used to get all info from
+ * zookeeper.
  */
 public class TransactionalState {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalState.class);
 
-    CuratorFramework curator;
+    ZkClient zkClient;
     List<ACL> zkAcls = null;
 
     protected TransactionalState(Map<String, Object> conf, String id, String subroot) {
@@ -54,9 +52,8 @@ public class TransactionalState {
                     Config.STORM_ZOOKEEPER_SERVERS);
             Object port = getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_PORT,
                     Config.STORM_ZOOKEEPER_PORT);
-            ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);
-            CuratorFramework initter = CuratorUtils.newCuratorStarted(conf, servers, port, auth,
-                    DaemonType.WORKER.getDefaultZkAcls(conf));
+            ZkClient initter = ClientZookeeper.mkClient(conf, servers, port, "", null, conf,
+                    DaemonType.WORKER);
             zkAcls = Utils.getWorkerACL(conf);
             try {
                 TransactionalState.createNode(initter, transactionalRoot, null, null, null);
@@ -70,8 +67,8 @@ public class TransactionalState {
             }
             initter.close();
 
-            curator = CuratorUtils.newCuratorStarted(conf, servers, port, rootDir, auth,
-                    DaemonType.WORKER.getDefaultZkAcls(conf));
+            zkClient = ClientZookeeper.mkClient(conf, servers, port, rootDir, null, conf,
+                    DaemonType.WORKER);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -85,30 +82,31 @@ public class TransactionalState {
         return new TransactionalState(conf, id, "coordinator");
     }
 
-    protected static String forPath(PathAndBytesable<String> builder,
-                                    String path, byte[] data) throws Exception {
-        return (data == null)
-                ? builder.forPath(path)
-                : builder.forPath(path, data);
-    }
-
-    protected static void createNode(CuratorFramework curator, String path,
+    /**
+     * Create a node, and any missing parents.
+     *
+     * <p>{@code mode} is only honoured when {@code acls} is {@code null}; when {@code acls} is
+     * given, or {@code mode} is {@code null}, the node is created {@link CreateMode#PERSISTENT}.
+     * When {@code data} is {@code null} the client's default payload is stored.
+     *
+     * @param zk the client to use
+     * @param path the path of the node
+     * @param data the data to store, or {@code null} for the client's default payload
+     * @param acls the ACL of the node, or {@code null} for the client's default ACL
+     * @param mode the create mode, see above
+     * @throws Exception on failure, ZooKeeper exceptions unwrapped
+     */
+    protected static void createNode(ZkClient zk, String path,
                                      byte[] data, List<ACL> acls, CreateMode mode) throws Exception {
-        ProtectACLCreateModePathAndBytesable<String> builder =
-                curator.create().creatingParentsIfNeeded();
         LOG.debug("Creating node  [path = {}],  [data = {}],  [acls = {}],  [mode = {}]", path,
                 asString(data), acls, mode);
 
-        if (acls == null) {
-            if (mode == null) {
-                TransactionalState.forPath(builder, path, data);
-            } else {
-                TransactionalState.forPath(builder.withMode(mode), path, data);
-            }
-            return;
+        CreateMode effectiveMode = (acls == null && mode != null) ? mode : CreateMode.PERSISTENT;
+        if (data == null) {
+            zk.createWithDefaultData(path, effectiveMode, acls, true);
+        } else {
+            zk.create(path, data, effectiveMode, acls, true);
         }
-
-        TransactionalState.forPath(builder.withACL(acls), path, data);
     }
 
     private static String asString(byte[] data) {
@@ -124,10 +122,10 @@ public class TransactionalState {
             throw new RuntimeException(e);
         }
         try {
-            if (curator.checkExists().forPath(path) != null) {
-                curator.setData().forPath(path, ser);
+            if (zkClient.exists(path, false) != null) {
+                zkClient.setData(path, ser);
             } else {
-                TransactionalState.createNode(curator, path, ser, zkAcls,
+                TransactionalState.createNode(zkClient, path, ser, zkAcls,
                         CreateMode.PERSISTENT);
             }
         } catch (KeeperException.NodeExistsException nne) {
@@ -140,7 +138,7 @@ public class TransactionalState {
     public void delete(String path) {
         path = "/" + path;
         try {
-            curator.delete().forPath(path);
+            zkClient.delete(path, false);
         } catch (KeeperException.NoNodeException nne) {
             LOG.warn("Path {} already deleted.", path);
         } catch (Exception e) {
@@ -153,10 +151,10 @@ public class TransactionalState {
         path = "/" + path;
         try {
             List<String> children;
-            if (curator.checkExists().forPath(path) == null) {
+            if (zkClient.exists(path, false) == null) {
                 children = new ArrayList<>();
             } else {
-                children = curator.getChildren().forPath(path);
+                children = zkClient.getChildren(path, false);
             }
             LOG.debug("List [path = {}], [children = {}]", path, children);
             return children;
@@ -173,12 +171,12 @@ public class TransactionalState {
         path = "/" + path;
         try {
             Object data;
-            if (curator.checkExists().forPath(path) != null) {
+            if (zkClient.exists(path, false) != null) {
                 // Use parseWithException instead of parse so we can capture deserialization errors
                 // in the log.
                 // They are likely to be bugs in the spout code.
                 try {
-                    data = JSONValue.parseWithException(new String(curator.getData().forPath(path),
+                    data = JSONValue.parseWithException(new String(zkClient.getData(path, false, null),
                             "UTF-8"));
                 } catch (ParseException e) {
                     LOG.warn("Failed to deserialize zookeeper data for path {}", path, e);
@@ -195,7 +193,7 @@ public class TransactionalState {
     }
 
     public void close() {
-        curator.close();
+        zkClient.close();
     }
 
     private Object getWithBackup(Map<String, Object> amap, String primary, String backup) {

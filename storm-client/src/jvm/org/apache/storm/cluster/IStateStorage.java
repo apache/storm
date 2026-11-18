@@ -15,7 +15,6 @@ package org.apache.storm.cluster;
 import java.io.Closeable;
 import java.util.List;
 import org.apache.storm.callback.ZKStateChangedCallback;
-import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 
 /**
@@ -206,11 +205,15 @@ public interface IStateStorage extends Closeable {
     void delete_worker_hb(String path);
 
     /**
-     * Add a StateStorageListener to the connection.
+     * Add a listener for connection state changes of the underlying store.
      *
-     * @param listener A StateStorageListener to handle changing cluster state events.
+     * <p>This takes Storm's own {@link ClusterStateListener}. Earlier releases took Curator's
+     * {@code ConnectionStateListener}; implementations of {@code storm.cluster.state.store} must
+     * be updated accordingly.
+     *
+     * @param listener A ClusterStateListener to handle changing cluster state events.
      */
-    void add_listener(ConnectionStateListener listener);
+    void add_listener(ClusterStateListener listener);
 
     /**
      * Force consistency on a path. Any writes committed on the path before this call will be

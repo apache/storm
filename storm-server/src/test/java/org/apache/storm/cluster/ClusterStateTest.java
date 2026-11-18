@@ -43,19 +43,16 @@ import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.testing.InProcessZookeeper;
-import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.callback.WatcherCallBack;
-import org.apache.storm.shade.org.apache.curator.framework.api.BackgroundVersionable;
-import org.apache.storm.shade.org.apache.curator.framework.api.DeleteBuilder;
-import org.apache.storm.shade.org.apache.curator.framework.api.ExistsBuilder;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
 import org.apache.storm.zookeeper.ClientZookeeper;
+import org.apache.storm.zookeeper.ZkClient;
+import org.apache.storm.zookeeper.curator.CuratorUtils;
 import org.junit.jupiter.api.Test;
 import org.awaitility.Awaitility;
 import org.mockito.Mockito;
@@ -551,21 +548,13 @@ public class ClusterStateTest {
     public void testDeleteNodeSwallowsConcurrentDelete() throws Exception {
         // Simulates the race where the node is present at the exists-check but removed by another
         // client before the delete runs: deleteNode must swallow NoNodeException, not rethrow it.
-        CuratorFramework zk = Mockito.mock(CuratorFramework.class);
-
-        ExistsBuilder existsBuilder = Mockito.mock(ExistsBuilder.class);
-        Mockito.when(zk.checkExists()).thenReturn(existsBuilder);
-        Mockito.when(existsBuilder.forPath("/race")).thenReturn(new Stat());
-
-        DeleteBuilder deleteBuilder = Mockito.mock(DeleteBuilder.class);
-        BackgroundVersionable childrenDeletable = Mockito.mock(BackgroundVersionable.class);
-        Mockito.when(zk.delete()).thenReturn(deleteBuilder);
-        Mockito.when(deleteBuilder.deletingChildrenIfNeeded()).thenReturn(childrenDeletable);
-        Mockito.when(childrenDeletable.forPath("/race")).thenThrow(new KeeperException.NoNodeException());
+        ZkClient zk = Mockito.mock(ZkClient.class);
+        Mockito.when(zk.exists("/race", false)).thenReturn(new Stat());
+        Mockito.doThrow(new KeeperException.NoNodeException()).when(zk).delete("/race", true);
 
         assertDoesNotThrow(() -> ClientZookeeper.deleteNode(zk, "/race"));
         // ensure to delete was actually attempted (the catch branch was exercised, not skipped)
-        Mockito.verify(deleteBuilder).deletingChildrenIfNeeded();
+        Mockito.verify(zk).delete("/race", true);
     }
 
     @Test
@@ -580,7 +569,7 @@ public class ClusterStateTest {
                 }
             };
 
-            CuratorFramework client = ClientZookeeper.mkClient(conf, List.of("localhost"),
+            ZkClient client = ClientZookeeper.mkClient(conf, List.of("localhost"),
                 zk.getPort(), "", watcher, null, DaemonType.UNKNOWN);
             try {
                 final String path = String.format("/node-%s", Time.currentTimeMillis());

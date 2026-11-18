@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.utils;
+package org.apache.storm.zookeeper.curator;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,6 +38,9 @@ import org.apache.storm.shade.org.apache.zookeeper.ClientCnxnSocketNetty;
 import org.apache.storm.shade.org.apache.zookeeper.ZooKeeper;
 import org.apache.storm.shade.org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.storm.shade.org.apache.zookeeper.common.ClientX509Util;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,8 +73,8 @@ public class CuratorUtilsTest {
         CuratorFramework curator = CuratorUtils.newCurator(config,
                 Collections.singletonList("bogus_server"), 42, "", DaemonType.WORKER
                 .getDefaultZkAcls(config));
-        StormBoundedExponentialBackoffRetry policy =
-                (StormBoundedExponentialBackoffRetry) curator.getZookeeperClient().getRetryPolicy();
+        CuratorRetryPolicy policy =
+                (CuratorRetryPolicy) curator.getZookeeperClient().getRetryPolicy();
         assertEquals(policy.getBaseSleepTimeMs(), expectedInterval);
         assertEquals(policy.getN(), expectedRetries);
         assertEquals(policy.getSleepTimeMs(10, 0), expectedCeiling);

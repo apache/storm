@@ -12,8 +12,18 @@
 
 package org.apache.storm.cluster;
 
+/**
+ * Connection state of a ZooKeeper client, as delivered to a {@link ClusterStateListener}.
+ */
 public enum ConnectionState {
+    /** The first successful connection. */
     CONNECTED,
+    /** The connection was re-established after being suspended or lost. */
     RECONNECTED,
-    LOST
+    /** The session is considered lost (expired or the connection timed out). */
+    LOST,
+    /** The connection was interrupted (ZooKeeper Disconnected); the session may still be alive. */
+    SUSPENDED,
+    /** Connected in read-only mode (ZooKeeper ConnectedReadOnly). */
+    READ_ONLY
 }

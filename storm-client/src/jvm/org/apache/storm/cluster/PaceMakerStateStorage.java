@@ -30,7 +30,6 @@ import org.apache.storm.generated.HBPulse;
 import org.apache.storm.generated.HBServerMessageType;
 import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.pacemaker.PacemakerConnectionException;
-import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WrappedHBExecutionException;
@@ -286,7 +285,7 @@ public class PaceMakerStateStorage implements IStateStorage {
     }
 
     @Override
-    public void add_listener(ConnectionStateListener listener) {
+    public void add_listener(ClusterStateListener listener) {
         stateStorage.add_listener(listener);
     }
 
