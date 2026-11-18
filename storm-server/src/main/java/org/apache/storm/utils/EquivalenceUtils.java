@@ -18,7 +18,6 @@
 
 package org.apache.storm.utils;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -26,6 +25,7 @@ import java.util.Set;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 
 public class EquivalenceUtils {
 
