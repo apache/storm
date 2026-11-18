@@ -32,8 +32,8 @@ public interface KeyFactory extends Serializable {
     class DefaultKeyFactory implements KeyFactory {
         /**
          * {@inheritDoc}
-         * <p/>
-         * Currently DefaultKeyFactory returns just first element of list.
+         *
+         * <p>Currently DefaultKeyFactory returns just first element of list.
          *
          * @param key state key
          * @return Redis key

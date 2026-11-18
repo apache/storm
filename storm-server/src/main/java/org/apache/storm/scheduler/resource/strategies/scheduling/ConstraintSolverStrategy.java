@@ -106,7 +106,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
     /**
      * Determines if a scheduling is valid and all constraints are satisfied (for use in testing).
      * This is done in three steps.
-     *
+     * <ol>
      * <li>Check if nodeCoLocationCnt-constraints are satisfied. Some components may allow only a certain number of
      * executors to exist on the same node {@link ConstraintSolverConfig#getMaxNodeCoLocationCnts()}.
      * </li>
@@ -120,6 +120,7 @@ public class ConstraintSolverStrategy extends BaseResourceAwareStrategy {
      * Check if CPU and Memory resources do not exceed availability on the node and total matches what is expected
      * when fully scheduled.
      * </li>
+     * </ol>
      *
      * @param cluster on which scheduling was done.
      * @param topo TopologyDetails being scheduled.

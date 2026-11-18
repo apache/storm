@@ -94,8 +94,8 @@ public class OffsetManager {
      * An offset can only be committed when all emitted records with lower offset have been
      * acked. This guarantees that all offsets smaller than the committedOffset
      * have been delivered, or that those offsets no longer exist in Kafka. 
-     * <p/>
-     * The returned offset points to the earliest uncommitted offset, and matches the semantics of the KafkaConsumer.commitSync API.
+     *
+     * <p>The returned offset points to the earliest uncommitted offset, and matches the semantics of the KafkaConsumer.commitSync API.
      *
      * @param commitMetadata Metadata information to commit to Kafka. It is constant per KafkaSpout instance per topology
      * @return the next OffsetAndMetadata to commit, or null if no offset is

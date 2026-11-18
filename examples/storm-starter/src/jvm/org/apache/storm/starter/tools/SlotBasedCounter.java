@@ -19,8 +19,8 @@ import java.util.Map;
 
 /**
  * This class provides per-slot counts of the occurrences of objects.
- * <p/>
- * It can be used, for instance, as a building block for implementing sliding window counting of objects.
+ *
+ * <p>It can be used, for instance, as a building block for implementing sliding window counting of objects.
  *
  * @param <T> The type of those objects we want to count.
  */

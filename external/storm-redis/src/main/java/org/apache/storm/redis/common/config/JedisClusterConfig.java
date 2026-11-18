@@ -35,10 +35,10 @@ public class JedisClusterConfig implements Serializable {
 
     /**
      * Constructor
-     * <p/>
-     * You can use JedisClusterConfig.Builder() for leaving some fields to apply default value.
-     * <p/>
-     * Note that list of node is mandatory, and when you didn't set nodes, it throws NullPointerException.
+     *
+     * <p>You can use JedisClusterConfig.Builder() for leaving some fields to apply default value.
+     *
+     * <p>Note that list of node is mandatory, and when you didn't set nodes, it throws NullPointerException.
      *
      * @param nodes list of node information for JedisCluster
      * @param timeout socket / connection timeout
@@ -51,10 +51,10 @@ public class JedisClusterConfig implements Serializable {
 
     /**
      * Constructor
-     * <p/>
-     * You can use JedisClusterConfig.Builder() for leaving some fields to apply default value.
-     * <p/>
-     * Note that list of node is mandatory, and when you didn't set nodes, it throws NullPointerException.
+     *
+     * <p>You can use JedisClusterConfig.Builder() for leaving some fields to apply default value.
+     *
+     * <p>Note that list of node is mandatory, and when you didn't set nodes, it throws NullPointerException.
      *
      * @param nodes list of node information for JedisCluster
      * @param timeout socket / connection timeout

@@ -205,7 +205,7 @@ public interface ISchedulingState {
     NormalizedResourceOffer getAvailableResources(SupervisorDetails sd);
 
     /**
-     * Would scheduling exec on ws fit? With a heap <= maxHeap total memory added <= memoryAvailable and cpu added <= cpuAvailable.
+     * Would scheduling exec on ws fit? With a heap &lt;= maxHeap total memory added &lt;= memoryAvailable and cpu added &lt;= cpuAvailable.
      *
      * @param ws                 the slot to put it in
      * @param exec               the executor to investigate

@@ -790,7 +790,6 @@ public class Config extends HashMap<String, Object> {
      *   <li>Higher values minimize the "observer effect" on the topology's throughput
      *       while still providing periodic statistical snapshots of health.</li>
      * </ul>
-     * </p>
      *
      * <p>Defaults to 10 if not explicitly configured.
      */

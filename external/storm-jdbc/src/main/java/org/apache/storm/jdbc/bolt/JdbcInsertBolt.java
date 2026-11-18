@@ -27,8 +27,8 @@ import org.apache.storm.tuple.Tuple;
 
 /**
  * Basic bolt for writing to any Database table.
- * <p/>
- * Note: Each JdbcInsertBolt defined in a topology is tied to a specific table.
+ *
+ * <p>Note: Each JdbcInsertBolt defined in a topology is tied to a specific table.
  */
 public class JdbcInsertBolt extends AbstractJdbcBolt {
 

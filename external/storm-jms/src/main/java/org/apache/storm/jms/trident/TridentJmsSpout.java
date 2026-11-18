@@ -67,8 +67,8 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
     /**
      * Return a friendly string for the given JMS acknowledge mode, or throw an IllegalArgumentException if
      * the mode is not recognized.
-     * <p/>
-     * Possible values:
+     *
+     * <p>Possible values:
      * <ul>
      * <li>jakarta.jms.Session.AUTO_ACKNOWLEDGE</li>
      * <li>jakarta.jms.Session.CLIENT_ACKNOWLEDGE</li>
@@ -124,8 +124,8 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
 
     /**
      * Set the JMS acknowledge mode for messages being processed by this spout.
-     * <p/>
-     * Possible values:
+     *
+     * <p>Possible values:
      * <ul>
      * <li>jakarta.jms.Session.AUTO_ACKNOWLEDGE</li>
      * <li>jakarta.jms.Session.CLIENT_ACKNOWLEDGE</li>

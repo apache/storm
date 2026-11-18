@@ -29,8 +29,8 @@ import org.apache.storm.trident.state.map.IBackingMap;
 
 /**
  * AbstractRedisMapState is base class of any RedisMapState, which implements IBackingMap.
- * <p/>
- * Derived classes should provide<br/>
+ *
+ * <p>Derived classes should provide<br/>
  * - which Serializer it uses<br/>
  * - which KeyFactory it uses<br/>
  * - how to retrieve values from Redis<br/>

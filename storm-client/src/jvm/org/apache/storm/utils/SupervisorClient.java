@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
  * Client for interacting with Supervisor server, now we use supervisor server mainly for cases
  * below.
  * <ul>
- * <li>worker <- supervisor: get worker local assignment for a storm.</li>
- * <li>nimbus -> supervisor: assign assignments for a node.</li>
+ * <li>worker &lt;- supervisor: get worker local assignment for a storm.</li>
+ * <li>nimbus -&gt; supervisor: assign assignments for a node.</li>
  * </ul>
  */
 public class SupervisorClient extends ThriftClient implements SupervisorIfaceFactory {

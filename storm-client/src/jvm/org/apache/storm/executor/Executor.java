@@ -439,7 +439,6 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      *   <li>Index 0: {@link IMetricsConsumer.TaskInfo}</li>
      *   <li>Index 1: {@link EwmaFeedbackRecord}</li>
      * </ul>
-     * </p>
      *
      * @param task  The {@link Task} associated with this update.
      * @param tuple The {@link TupleImpl} emitted by the upstream feedback builder.
