@@ -313,7 +313,7 @@ counts it in the `deserializationFailures` metric and drops the message, but not
 out, the spout fails it and schedules a retry, and the retry fails the same way. Meanwhile:
 
 * the spout keeps polling past the bad record, but no later offset on that partition can be committed
-* once `max.uncommitted.offsets` (10,000,000 by default) offsets are pending, the spout stops polling that partition
+* once `max.uncommitted.offsets` (10,000,000 by default) offsets are pending, the spout stops reading new records from that partition and only polls it to retry the failed tuple
 * the only visible symptom is consumer lag that keeps climbing
 
 The default retry service retries forever (`KafkaSpoutConfig.DEFAULT_MAX_RETRIES` is `Integer.MAX_VALUE`), so this
@@ -339,7 +339,7 @@ public class MyTupleListener implements KafkaTupleListener {
         LOG.error("Giving up on record {}-{} at offset {}", msgId.topic(), msgId.partition(), msgId.offset());
     }
 
-    // open, onEmit, onAck, onPartitionsReassigned and onRetry can be left empty
+    // the other methods (open, onEmit, onAck, onPartitionsReassigned, onRetry) must be implemented but can be empty
 }
 ```
 
