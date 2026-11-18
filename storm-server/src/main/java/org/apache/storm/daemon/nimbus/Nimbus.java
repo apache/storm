@@ -3987,6 +3987,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (topoId == null) {
                 throw new WrappedNotAliveException(topoName);
             }
+            if (enable && !StormCommon.hasEventLoggers(topoConf)) {
+                throw new WrappedInvalidTopologyException("Cannot enable debug for topology '"
+                    + topoName + "' because it has no event loggers. Set "
+                    + Config.TOPOLOGY_EVENTLOGGER_EXECUTORS + " to a value greater than 0.");
+            }
 
             DebugOptions options = new DebugOptions();
             options.set_enable(enable);

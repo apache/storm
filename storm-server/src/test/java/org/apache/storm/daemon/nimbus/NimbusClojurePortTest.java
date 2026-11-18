@@ -273,7 +273,8 @@ public class NimbusClojurePortTest {
             StormTopology topology = Thrift.buildTopology(
                 Map.of("spout", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 3)),
                 Map.of());
-            cluster.submitTopology("t1", Map.of(Config.TOPOLOGY_WORKERS, 1), topology);
+            cluster.submitTopology("t1", Map.of(Config.TOPOLOGY_WORKERS, 1,
+                Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 1), topology);
             nimbus.debug("t1", "spout", true, 100);
         }
     }
@@ -285,8 +286,78 @@ public class NimbusClojurePortTest {
             StormTopology topology = Thrift.buildTopology(
                 Map.of("spout", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 3)),
                 Map.of());
-            cluster.submitTopology("t1", Map.of(Config.TOPOLOGY_WORKERS, 1), topology);
+            cluster.submitTopology("t1", Map.of(Config.TOPOLOGY_WORKERS, 1,
+                Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 1), topology);
             nimbus.debug("t1", "", true, 100);
+        }
+    }
+
+    @Test
+    public void testDebugRejectedWithoutEventLoggers() throws Exception {
+        // Expected behavior from docs/Eventlogging.md ("Event logging needs to be enabled
+        // first by setting the storm config topology.eventlogger.executors to a non zero value")
+        // and issue 7588: a direct debug request must not enable debug when the topology has
+        // no event loggers.
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .withDaemonConf(Map.of(
+                    DaemonConfig.SUPERVISOR_ENABLE, false,
+                    Config.TOPOLOGY_ACKER_EXECUTORS, 0))
+                .build()) {
+            Nimbus nimbus = cluster.getNimbus();
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("spout", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 3)),
+                Map.of());
+            cluster.submitTopology("t1", Map.of(Config.TOPOLOGY_WORKERS, 1,
+                Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, 0), topology);
+            String topoId = cluster.getClusterState().getTopoId("t1").get();
+
+            assertThrows(InvalidTopologyException.class,
+                () -> nimbus.debug("t1", "", true, 100));
+            assertThrows(InvalidTopologyException.class,
+                () -> nimbus.debug("t1", "spout", true, 100));
+            StormBase base = cluster.getClusterState().stormBase(topoId, null);
+            assertFalse(base.is_set_component_debug() && !base.get_component_debug().isEmpty(),
+                "Rejected debug requests must not store debug options");
+
+            // Disabling debug stays allowed
+            nimbus.debug("t1", "", false, 0);
+        }
+    }
+
+    @Test
+    public void testDebugAllowedWithNullEventLoggers() throws Exception {
+        // Expected behavior from docs/Eventlogging.md: "topology.eventlogger.executors": nil means
+        // "One event logger task per worker.", so the topology has event loggers and debug can be
+        // enabled.
+        try (LocalCluster cluster = new LocalCluster.Builder()
+                .withSimulatedTime()
+                .withDaemonConf(Map.of(
+                    DaemonConfig.SUPERVISOR_ENABLE, false,
+                    Config.TOPOLOGY_ACKER_EXECUTORS, 0))
+                .build()) {
+            Nimbus nimbus = cluster.getNimbus();
+            StormTopology topology = Thrift.buildTopology(
+                Map.of("spout", Thrift.prepareSpoutDetails(new TestPlannerSpout(true), 3)),
+                Map.of());
+            Map<String, Object> submitConf = new HashMap<>();
+            submitConf.put(Config.TOPOLOGY_WORKERS, 1);
+            submitConf.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, null);
+            cluster.submitTopology("t1", submitConf, topology);
+            String topoId = cluster.getClusterState().getTopoId("t1").get();
+
+            // defaults.yaml sets 0, so check that the conf debug() merges really holds null
+            Map<String, Object> nimbusConf = fromJson(nimbus.getNimbusConf());
+            assertEquals(0,
+                ((Number) nimbusConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS)).intValue());
+            Map<String, Object> mergedConf =
+                Utils.merge(nimbusConf, fromJson(nimbus.getTopologyConf(topoId)));
+            assertTrue(mergedConf.containsKey(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS));
+            assertNull(mergedConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS));
+
+            nimbus.debug("t1", "", true, 100);
+            StormBase base = cluster.getClusterState().stormBase(topoId, null);
+            assertTrue(base.get_component_debug().get(topoId).is_enable());
         }
     }
 
