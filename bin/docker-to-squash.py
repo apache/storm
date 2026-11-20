@@ -351,6 +351,20 @@ def get_pull_fmt_string(pull_format):
     return pull_fmt_string
 
 
+def get_image_without_tag_or_digest(image):
+    """Strip the tag and/or digest from an image reference, keeping the registry and namespace.
+
+    A ':' only starts a tag when it comes after the last '/', so a registry port
+    (e.g. "localhost:5000/app") is left alone.
+    """
+    name = image.split("@", 1)[0]
+    last_slash = name.rfind("/")
+    last_colon = name.rfind(":")
+    if last_colon > last_slash:
+        name = name[:last_colon]
+    return name
+
+
 def get_manifest_from_docker_image(pull_format, image):
     pull_fmt_string = get_pull_fmt_string(pull_format)
     out, err, rc = shell_command(["skopeo", "inspect", "--raw", pull_fmt_string + image], False, True, True)
@@ -366,8 +380,7 @@ def get_manifest_from_docker_image(pull_format, image):
         if not sha:
             raise Exception("Could not find amd64 manifest for image " + image)
 
-        image_without_tag = image.split("/", 1)[-1].split(":", 1)[0]
-        image_and_sha = image_without_tag + "@" + sha
+        image_and_sha = get_image_without_tag_or_digest(image) + "@" + sha
 
         logging.debug("amd64 manifest sha is: %s", sha)
 
