@@ -153,6 +153,7 @@ public class WorkerState {
     private final BackPressureTracker bpTracker;
     private final List<IWorkerHook> deserializedWorkerHooks;
     private final TupleTracer tupleTracer;
+    private final MessageTimeoutReporter messageTimeoutReporter;
     // global variables only used internally in class
     private final Set<Integer> outboundTasks;
     private final AtomicLong nextLoadUpdate = new AtomicLong(0);
@@ -261,6 +262,8 @@ public class WorkerState {
             return bpStatus;
         };
         this.receiver = this.mqContext.bind(topologyId, port, cb, newConnectionResponse);
+        // last, so that a constructor that throws leaves no thread behind
+        this.messageTimeoutReporter = mkMessageTimeoutReporter();
     }
 
     public static boolean isConnectionReady(IConnection connection) {
@@ -287,6 +290,14 @@ public class WorkerState {
      */
     public TupleTracer getTupleTracer() {
         return tupleTracer;
+    }
+
+    /**
+     * Returns the message timeout reporter of this worker, or null unless
+     * {@link Config#TOPOLOGY_MESSAGE_TIMEOUT_REPORT} is {@code timeout-events}.
+     */
+    public MessageTimeoutReporter getMessageTimeoutReporter() {
+        return messageTimeoutReporter;
     }
 
     public List<IWorkerHook> getDeserializedWorkerHooks() {
@@ -721,6 +732,15 @@ public class WorkerState {
         return tracer;
     }
 
+    private MessageTimeoutReporter mkMessageTimeoutReporter() {
+        if (!"timeout-events".equals(topologyConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_REPORT))) {
+            return null;
+        }
+        MessageTimeoutReporter reporter = new MessageTimeoutReporter();
+        reporter.start();
+        return reporter;
+    }
+
     private List<IWorkerHook> deserializeWorkerHooks() {
         List<IWorkerHook> myHookList = new ArrayList<>();
         if (topology.is_set_worker_hooks()) {
@@ -751,6 +771,9 @@ public class WorkerState {
         ((ExecutorService) defaultSharedResources.get(WorkerTopologyContext.SHARED_EXECUTOR))
                 .shutdownNow();
         LOG.info("Shut down default resources");
+        if (messageTimeoutReporter != null) {
+            messageTimeoutReporter.close();
+        }
     }
 
     public boolean areAllConnectionsReady() {

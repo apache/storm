@@ -83,6 +83,7 @@ We're also notifying it via annotating classes with marker interface `@Interface
 * [Searching Worker Logs](Logs.html)
 * [Worker Profiling](dynamic-worker-profiling.html)
 * [Event Logging](Eventlogging.html)
+* [Message Timeout Report](Message-timeout-report.html)
 
 ### Integration With External Systems, and Other Libraries
 * [Kafka Consumer (storm-kafka-client)](storm-kafka-client.html)

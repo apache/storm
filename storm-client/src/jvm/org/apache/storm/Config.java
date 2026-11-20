@@ -613,6 +613,15 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     public static final String TOPOLOGY_MESSAGE_TIMEOUT_SECS = "topology.message.timeout.secs";
     /**
+     * What a worker logs about message timeouts. With {@code timeout-events}, the worker logs the timeouts that its
+     * spouts declare, with the root id of the tuple tree, the task and component of the spout and the message id if it
+     * is a {@code String}. The lines go to the logger
+     * {@code org.apache.storm.daemon.worker.MessageTimeoutReporter} at INFO. With {@code disabled}, the default,
+     * nothing is reported.
+     */
+    @IsString(acceptedValues = {"disabled", "timeout-events"})
+    public static final String TOPOLOGY_MESSAGE_TIMEOUT_REPORT = "topology.message.timeout.report";
+    /**
      * A list of serialization registrations for Kryo ( https://github.com/EsotericSoftware/kryo ), the underlying serialization framework
      * for Storm. A serialization can either be the name of a class (in which case Kryo will
      * automatically create a serializer for the class
