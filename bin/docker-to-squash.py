@@ -88,12 +88,15 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error, timeout_s
     except Exception as ex:
         if process and process.poll() is None:
             process.kill()
-        raise Exception("Popen failure, " + str(ex))
+        if raise_on_error:
+            raise Exception("Popen failure, " + str(ex)) from ex
+        logging.debug("command %s failed: %s", command, ex)
     finally:
-        # Note that finally clause executes even when there is no exception, hence the "return" statement
         if timer:
             timer.cancel()
-        return out, err, (process.returncode if process else -1)
+
+    # Don't return from the finally clause, it would discard the exception raised above.
+    return out, err, (process.returncode if process else -1)
 
 
 def process_timeout(process):
