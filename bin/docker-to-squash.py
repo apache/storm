@@ -236,9 +236,22 @@ def hdfs_stat(file_path, fmt, print_stdout=False, print_stderr=True, raise_on_er
     return out, err, rc
 
 
-def get_working_dir(directory):
+def get_working_dir(directory, reuse=False):
+    """Create the working directory and return its path.
+
+    By default a directory that already exists is not used directly: a fresh
+    "docker-to-squash" subdirectory is created in it instead, because most commands
+    remove their working directory when they finish.
+
+    pull-build and push-update are two halves of one workflow and don't remove the
+    working directory, so they pass reuse=True and both use ``directory`` itself.
+    """
     working_dir = "(undefined)"
     try:
+        if reuse:
+            working_dir = directory
+            os.makedirs(working_dir, exist_ok=True)
+            return working_dir
         if os.path.isdir(directory):
             working_dir = os.path.join(directory, "docker-to-squash")
         else:
@@ -806,7 +819,7 @@ def pull_build(args):
         skopeo_dir = None
 
         try:
-            working_dir = get_working_dir(args.working_dir)
+            working_dir = get_working_dir(args.working_dir, reuse=True)
             skopeo_dir = os.path.join(working_dir, image.split("/")[-1])
             logging.debug(f"skopeo_dir: {skopeo_dir}")
             skopeo_copy_image(pull_format, image, skopeo_format, skopeo_dir)
@@ -840,7 +853,7 @@ def push_update(args):
     local_image_tag_to_hash = None
 
     try:
-        working_dir = get_working_dir(args.working_dir)
+        working_dir = get_working_dir(args.working_dir, reuse=True)
         local_image_tag_to_hash = os.path.join(working_dir, os.path.basename(image_tag_to_hash))
         if bootstrap:
             hdfs_dirs = [HDFS_ROOT, HDFS_LAYERS_DIR, HDFS_CONFIG_DIR, HDFS_MANIFEST_DIR, HDFS_UNREF_DIR]
