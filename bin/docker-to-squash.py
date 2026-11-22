@@ -237,16 +237,11 @@ def hdfs_stat(file_path, fmt, print_stdout=False, print_stderr=True, raise_on_er
 
 
 def get_working_dir(directory):
-    working_dir = "(undefined)"
     try:
-        if os.path.isdir(directory):
-            working_dir = os.path.join(directory, "docker-to-squash")
-        else:
-            working_dir = directory
-        os.makedirs(working_dir)
+        os.makedirs(directory, exist_ok=True)
     except Exception as ex:
-        raise Exception(f"Could not create working_dir: {working_dir}, {ex}")
-    return working_dir
+        raise Exception(f"Could not create working_dir: {directory}, {ex}")
+    return directory
 
 
 def is_sha256_hash(string):
