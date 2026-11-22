@@ -24,7 +24,7 @@ Tool dependencies: skopeo, squashfs-tools, tar, setfattr
 """
 
 import argparse
-from collections import Iterable
+from collections.abc import Iterable
 import glob
 import hashlib
 import json
@@ -274,7 +274,7 @@ def calculate_file_hash(filename):
 
 def calculate_string_hash(string):
     sha = hashlib.sha256()
-    sha.update(string)
+    sha.update(string.encode("utf-8"))
     return sha.hexdigest()
 
 
@@ -501,7 +501,7 @@ def add_tag_to_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment):
 
 def write_local_image_tag_to_hash(image_tag_to_hash, hash_to_tags):
     file_contents = []
-    for key, value in hash_to_tags.iteritems():
+    for key, value in hash_to_tags.items():
         manifest_hash = key
         # Sort tags list to preserve consistent order
         value[0].sort()
@@ -1352,13 +1352,13 @@ def get_all_known_images():
     global HDFS_UNREF_DIR
 
     known_manifest_paths, err, returncode = hdfs_stat(HDFS_MANIFEST_DIR + "/*", "%a %Y %n", False, False, False)
-    known_manifests = [image for image in known_manifest_paths.split("\n") if image is not "" or None]
+    known_manifests = [image for image in known_manifest_paths.split("\n") if image != "" or None]
 
     unref_manifest_paths, err, returncode = hdfs_stat(HDFS_UNREF_DIR + "/*", "%a %Y %n", False, False, False)
     logging.debug("unref_manifest_paths:\n%s", unref_manifest_paths)
     unref_manifests = []
     if unref_manifest_paths:
-        unref_manifests = [image for image in unref_manifest_paths.split("\n") if image is not "" or None]
+        unref_manifests = [image for image in unref_manifest_paths.split("\n") if image != "" or None]
     logging.debug("unref_manifests:\n%s", unref_manifests)
 
     unref_manifests_stats_dict = {}
@@ -1701,7 +1701,7 @@ def add_parser_default_arguments(parser):
                         default=37, help="Maximum number of layers an image is allowed to have")
     parser.add_argument("--max-size", type=int, dest='MAX_IMAGE_SIZE',
                         default=10 * 1024 * 1024 * 1024, help="Maximum size an image is allowed to be")
-    parser.add_argument("--untagged-transition-sec", type=long, dest='UNTAGGED_TRANSITION_SEC',
+    parser.add_argument("--untagged-transition-sec", type=int, dest='UNTAGGED_TRANSITION_SEC',
                         default=7 * 24 * 60 * 60, help="Time that untagged images will spend in each state"
                                                        + "before moving to the next one")
     parser.add_argument("--dead-perms", type=str, dest='DEAD_PERMS',
