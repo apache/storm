@@ -366,7 +366,9 @@ def get_manifest_from_docker_image(pull_format, image):
         if not sha:
             raise Exception("Could not find amd64 manifest for image " + image)
 
-        image_without_tag = image.split("/", 1)[-1].split(":", 1)[0]
+        image_without_tag = image.split("@", 1)[0]
+        if ":" in image_without_tag.rsplit("/", 1)[-1]:
+            image_without_tag = image_without_tag.rsplit(":", 1)[0]
         image_and_sha = image_without_tag + "@" + sha
 
         logging.debug("amd64 manifest sha is: %s", sha)
