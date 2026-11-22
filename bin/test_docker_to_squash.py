@@ -33,10 +33,16 @@ class Test(TestCase):
         out, err, rc = dtsq.shell_command(cmd, True, True, True, timeout_sec=10)
         self.assertEqual(0, rc, f"Failed cmd={cmd}\nrc={rc}\nout={out}\nerr={err}")
 
-        # expect failure
+        # expect failure: with raise_on_error set, a command that cannot be
+        # started raises instead of returning a return code
         cmd = ["badcmd", "-l"]
-        out, err, rc = dtsq.shell_command(cmd, True, True, True, timeout_sec=10)
-        self.assertNotEqual(0, rc, f"Expected to fail cmd={cmd}\nrc={rc}\nout={out}\nerr={err}")
+        with self.assertRaises(Exception):
+            dtsq.shell_command(cmd, True, True, True, timeout_sec=10)
+
+        # expect failure: with raise_on_error set, a non-zero exit code raises
+        cmd = ["ls", "/nope"]
+        with self.assertRaises(Exception):
+            dtsq.shell_command(cmd, True, True, True, timeout_sec=10)
 
     # TODO:
     #  def test_read_image_tag_to_hash(self):
