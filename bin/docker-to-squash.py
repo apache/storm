@@ -817,10 +817,12 @@ def pull_build(args):
         logging.debug(f"Layers: {layers}")
         logging.debug(f"Config: {config_hash}")
         skopeo_dir = None
+        created_skopeo_dir = False
 
         try:
             working_dir = get_working_dir(args.working_dir, reuse=True)
             skopeo_dir = os.path.join(working_dir, image.split("/")[-1])
+            created_skopeo_dir = not os.path.exists(skopeo_dir)
             logging.debug(f"skopeo_dir: {skopeo_dir}")
             skopeo_copy_image(pull_format, image, skopeo_format, skopeo_dir)
 
@@ -832,7 +834,7 @@ def pull_build(args):
                 docker_to_squash(skopeo_dir, layer, working_dir)
 
         except Exception as _:
-            if skopeo_dir and os.path.isdir(skopeo_dir):
+            if created_skopeo_dir and skopeo_dir and os.path.isdir(skopeo_dir):
                 shutil.rmtree(skopeo_dir)
             raise
 
@@ -1668,7 +1670,9 @@ def create_parsers():
 
 def add_parser_default_arguments(parser):
     parser.add_argument("--working-dir", type=str, dest='working_dir', default="dts-work-dir",
-                        help="Name of working directory")
+                        help="Name of working directory. pull-build and push-update reuse this "
+                             "directory as-is so they can share it; other commands create a "
+                             "subdirectory if it already exists")
     parser.add_argument("--skopeo-format", type=str, dest='skopeo_format',
                         default='dir', help="Output format for skopeo copy")
     parser.add_argument("--pull-format", type=str, dest='pull_format',

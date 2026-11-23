@@ -90,6 +90,52 @@ class Test(TestCase):
                     dtsq.push_update(push_args)
             self.assertEqual([os.path.join(work_dir, "ubuntu:22.04", "manifest.json")], seen)
 
+    def test_pull_build_keeps_existing_skopeo_dir_on_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work_dir = os.path.join(tmp, "dts-work-dir")
+            skopeo_dir = os.path.join(work_dir, "ubuntu:22.04")
+            os.makedirs(skopeo_dir)
+            leftover = os.path.join(skopeo_dir, "layer.sqsh")
+            with open(leftover, "w") as f:
+                f.write("previous-run")
+
+            args = argparse.Namespace(skopeo_format="dir", pull_format="docker",
+                                      images_and_tags=["ubuntu:22.04,ubuntu"],
+                                      check_magic_file=False, magic_file=None, working_dir=work_dir)
+
+            with mock.patch.object(dtsq, "get_manifest_from_docker_image", return_value=({}, "hash")), \
+                    mock.patch.object(dtsq, "get_layer_hashes_from_manifest", return_value=[]), \
+                    mock.patch.object(dtsq, "get_config_hash_from_manifest", return_value="config"), \
+                    mock.patch.object(dtsq, "skopeo_copy_image", side_effect=RuntimeError("copy failed")):
+                with self.assertRaisesRegex(RuntimeError, "copy failed"):
+                    dtsq.pull_build(args)
+
+            self.assertTrue(os.path.isdir(skopeo_dir))
+            self.assertTrue(os.path.isfile(leftover))
+            with open(leftover) as f:
+                self.assertEqual("previous-run", f.read())
+
+    def test_pull_build_removes_skopeo_dir_created_this_run_on_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work_dir = os.path.join(tmp, "dts-work-dir")
+            skopeo_dir = os.path.join(work_dir, "ubuntu:22.04")
+            args = argparse.Namespace(skopeo_format="dir", pull_format="docker",
+                                      images_and_tags=["ubuntu:22.04,ubuntu"],
+                                      check_magic_file=False, magic_file=None, working_dir=work_dir)
+
+            def fake_copy(pull_format, image, skopeo_format, dest):
+                os.makedirs(dest)
+                raise RuntimeError("copy failed")
+
+            with mock.patch.object(dtsq, "get_manifest_from_docker_image", return_value=({}, "hash")), \
+                    mock.patch.object(dtsq, "get_layer_hashes_from_manifest", return_value=[]), \
+                    mock.patch.object(dtsq, "get_config_hash_from_manifest", return_value="config"), \
+                    mock.patch.object(dtsq, "skopeo_copy_image", side_effect=fake_copy):
+                with self.assertRaisesRegex(RuntimeError, "copy failed"):
+                    dtsq.pull_build(args)
+
+            self.assertFalse(os.path.exists(skopeo_dir))
+
     # TODO:
     #  def test_read_image_tag_to_hash(self):
     #     """
