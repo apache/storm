@@ -28,7 +28,7 @@ import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
  *
  * <p>Custom Bolts may want to follow this pattern:
  *
- * <p><blockquote><pre>
+ * <blockquote><pre>
  * JedisCommands jedisCommands = null;
  * try {
  *     jedisCommand = getInstance();
@@ -85,8 +85,10 @@ public abstract class AbstractRedisBolt extends BaseTickTupleAwareRichBolt {
     }
 
     /**
-     * Borrow JedisCommands instance from container.<p/>
-     * JedisCommands is an interface which contains single key operations.
+     * Borrow JedisCommands instance from container.
+     *
+     * <p>JedisCommands is an interface which contains single key operations.
+     *
      * @return implementation of JedisCommands
      * @see JedisCommandsContainer
      */

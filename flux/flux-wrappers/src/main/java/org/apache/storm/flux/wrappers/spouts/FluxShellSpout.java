@@ -49,8 +49,8 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
 
     /**
      * Create a ShellSpout with command line arguments and output fields
-     * <p/>
-     * Keep this constructor for backward compatibility.
+     *
+     * <p>Keep this constructor for backward compatibility.
      * 
      * @param args Command line arguments for the spout
      * @param outputFields Names of fields the spout will emit.
@@ -62,8 +62,8 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
 
     /**
      * Add configuration for this spout. This method is called from YAML file:
-     * <p></p>
-     * ```
+     *
+     * <pre>
      * className: "org.apache.storm.flux.wrappers.bolts.FluxShellSpout"
      * constructorArgs:
      * # command line
@@ -73,7 +73,7 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
      * configMethods:
      * - name: "addComponentConfig"
      *   args: ["publisher.data_paths", "actions"]
-     * ```
+     * </pre>
      *
      * @param key config key
      * @param value config value
@@ -87,8 +87,8 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
 
     /**
      * Add configuration for this spout. This method is called from YAML file:
-     * <p/>
-     * ```
+     *
+     * <pre>
      * className: "org.apache.storm.flux.wrappers.bolts.FluxShellSpout"
      * constructorArgs:
      * # command line
@@ -100,7 +100,7 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
      *   args:
      *   - "publisher.data_paths"
      *   - ["actions"]
-     * ```
+     * </pre>
      *
      * @param key config key
      * @param values config values
@@ -114,8 +114,8 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
 
     /**
      * Set default stream outputFields, this method is called from YAML file:
-     * <p/>
-     * ```
+     *
+     * <pre>
      * spouts:
      * - className: org.apache.storm.flux.wrappers.bolts.FluxShellSpout
      *   id: my_spout
@@ -125,7 +125,7 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
      *   - name: setDefaultStream
      *     args:
      *     - [word, count]
-     * ```
+     * </pre>
      * 
      * @param outputFields Names of fields the spout will emit (if any) in default stream.
      */
@@ -135,8 +135,8 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
 
     /**
      * Set custom *named* stream outputFields, this method is called from YAML file:
-     * <p/>
-     * ```
+     *
+     * <pre>
      * spouts:
      * - className: org.apache.storm.flux.wrappers.bolts.FluxShellSpout
      *   id: my_spout
@@ -147,7 +147,7 @@ public class FluxShellSpout extends ShellSpout implements IRichSpout {
      *     args:
      *     - first
      *     - [word, count]
-     * ```
+     * </pre>
      * @param name Name of stream the spout will emit into.
      * @param outputFields Names of fields the spout will emit in custom *named* stream.
      */

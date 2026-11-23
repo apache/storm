@@ -36,7 +36,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  * </li>
  * <li>The name of the connection factory bean</li>
  * <li>The name of the destination bean</li>
- * </ol></p>
+ * </ol>
  */
 @SuppressWarnings("serial")
 public class SpringJmsProvider implements JmsProvider {

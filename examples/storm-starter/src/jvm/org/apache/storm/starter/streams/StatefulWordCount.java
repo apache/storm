@@ -31,7 +31,7 @@ import org.apache.storm.topology.base.BaseWindowedBolt;
  * the connection will be attempted at localhost:6379. The default
  * RedisKeyValueStateProvider parameters can be overridden in conf/storm.yaml, for e.g.
  *
- * <p><pre>
+ * <pre>
  * topology.state.provider.config: '{"keyClass":"...", "valueClass":"...",
  *  "keySerializerClass":"...", "valueSerializerClass":"...",
  *  "jedisPoolConfig":{"host":"localhost", "port":6379,

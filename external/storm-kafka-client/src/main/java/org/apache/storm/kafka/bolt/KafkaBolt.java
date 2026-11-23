@@ -42,15 +42,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Bolt implementation that can send Tuple data to Kafka.
- * <p/>
- * Most configuration for this bolt should be through the various 
+ *
+ * <p>Most configuration for this bolt should be through the various 
  * setter methods in the bolt.
  * For backwards compatibility it supports the producer
  * configuration and topic to be placed in the storm config under
- * <p/>
- * 'kafka.broker.properties' and 'topic'
- * <p/>
- * respectively.
+ * 'kafka.broker.properties' and 'topic' respectively.
  */
 public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     private static final long serialVersionUID = -5205886631877033478L;

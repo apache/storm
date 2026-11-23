@@ -30,8 +30,8 @@ public class StreamUtil {
 
     /**
      * Skips over and discards N bytes of data from the input stream.
-     * <p/>
-     * FileInputStream#skip may not work the first time, so ensure it successfully skips the given number of bytes.
+     *
+     * <p>FileInputStream#skip may not work the first time, so ensure it successfully skips the given number of bytes.
      *
      * @param stream the stream to skip
      * @param n bytes to skip

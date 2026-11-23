@@ -430,7 +430,7 @@ public class NormalizedResources {
 
     /**
      * Are any of the resources positive.
-     * @return true of any of the resources are positive.  False if they are all <= 0.
+     * @return true of any of the resources are positive.  False if they are all &lt;= 0.
      */
     public boolean areAnyOverZero() {
         return areAnyOverZero(false);
@@ -438,7 +438,7 @@ public class NormalizedResources {
 
     /**
      * Are any of the non cpu resources positive.
-     * @return true of any of the non cpu resources are positive.  False if they are all <= 0.
+     * @return true of any of the non cpu resources are positive.  False if they are all &lt;= 0.
      */
     public boolean anyNonCpuOverZero() {
         return areAnyOverZero(true);

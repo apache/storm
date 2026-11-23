@@ -34,8 +34,8 @@ import org.slf4j.LoggerFactory;
 /**
  * This bolt is used by the HBase example. It simply emits the first field
  * found in the incoming tuple as "word", with a "count" of `1`.
- * <p/>
- * In this case, the downstream HBase bolt handles the counting, so a value
+ *
+ * <p>In this case, the downstream HBase bolt handles the counting, so a value
  * of `1` will just increment the HBase counter by one.
  */
 public class WordCounter extends BaseBasicBolt {

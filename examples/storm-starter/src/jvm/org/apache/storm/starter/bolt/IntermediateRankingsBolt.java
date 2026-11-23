@@ -19,8 +19,8 @@ import org.apache.storm.tuple.Tuple;
 
 /**
  * This bolt ranks incoming objects by their count.
- * <p/>
- * It assumes the input tuples to adhere to the following format: (object, object_count, additionalField1,
+ *
+ * <p>It assumes the input tuples to adhere to the following format: (object, object_count, additionalField1,
  * additionalField2, ..., additionalFieldN).
  */
 public final class IntermediateRankingsBolt extends AbstractRankerBolt {

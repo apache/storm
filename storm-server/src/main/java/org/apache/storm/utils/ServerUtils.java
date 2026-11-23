@@ -413,8 +413,8 @@ public class ServerUtils {
 
     /**
      * Given a Tar File as input it will untar the file in a the untar directory passed as the second parameter
-     * <p/>
-     * This utility will untar ".tar" files and ".tar.gz","tgz" files.
+     *
+     * <p>This utility will untar ".tar" files and ".tar.gz","tgz" files.
      *
      * @param inFile   The tar file as input
      * @param untarDir The untar directory where to untar the tar file
@@ -1229,10 +1229,10 @@ public class ServerUtils {
     /**
      * Find if all processes for the user on workId are dead.
      * This method attempts to optimize the calls by:
-     * <p>
+     * <ul>
      *     <li>checking a collection of ProcessIds at once</li>
      *     <li>using userId one Posix systems instead of user</li>
-     * </p>
+     * </ul>
      *
      * @return true if all processes for the user are dead on the worker
      * @throws IOException if external commands have exception.
@@ -1406,7 +1406,7 @@ public class ServerUtils {
      * RAS scheduler will try to distribute ackers evenly over workers by adding some ackers to each newly launched worker.
      * Validations are performed here:
      * ({@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} * memory for an acker
-     *      + memory for the biggest topo executor) < max worker heap memory.
+     *      + memory for the biggest topo executor) &lt; max worker heap memory.
      *    When RAS tries to schedule an executor to a new worker,
      *    it will put {@link Config#TOPOLOGY_RAS_ACKER_EXECUTORS_PER_WORKER} ackers into the worker first.
      *    So {@link Config#TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB} need to be able to accommodate this.

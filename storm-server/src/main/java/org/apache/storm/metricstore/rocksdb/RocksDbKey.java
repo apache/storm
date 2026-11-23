@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * Class representing the data used as a Key in RocksDB.  Keys can be used either for metadata or metrics.
  *
  * <P>Keys are 38 bytes in size.  The fields for a key are:
- * <pre><
+ * <pre>
  * Field             Size         Offset
  *
  * Type                 1              0      The type maps to the KeyType enum, specifying a metric or various types of metadata
