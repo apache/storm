@@ -97,6 +97,8 @@ curl  -i --negotiate -u:anyUser  -b ~/cookiejar.txt -c ~/cookiejar.txt  http://s
 
 Both UI and DRPC allow users to configure ssl.
 
+The `*.https.keystore.type` and `*.https.truststore.type` configs are optional. See [UI / DRPC / LOGVIEWER SSL](docs/SECURITY.md#ui--drpc--logviewer-ssl) for how the type is chosen when it is not set.
+
 ### UI
 
 For UI, set the following config in `storm.yaml`. Generating keystores with proper keys and certs should be taken care of by the user before this step.

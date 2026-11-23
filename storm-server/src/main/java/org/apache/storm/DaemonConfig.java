@@ -495,6 +495,7 @@ public class DaemonConfig implements Validated {
     /**
      * Type of the keystore for HTTPS for Storm Logviewer. see http://docs.oracle.com/javase/8/docs/api/java/security/KeyStore.html for more
      * details.
+     * If unset, it is inferred from the file extension, falling back to JKS. See docs/SECURITY.md.
      */
     @IsString
     public static final String LOGVIEWER_HTTPS_KEYSTORE_TYPE = "logviewer.https.keystore.type";
@@ -522,6 +523,7 @@ public class DaemonConfig implements Validated {
     /**
      * Type of the truststore for HTTPS for Storm Logviewer. see http://docs.oracle.com/javase/8/docs/api/java/security/Truststore.html for
      * more details.
+     * If unset, it is inferred from the file extension, falling back to JKS. See docs/SECURITY.md.
      */
     @IsString
     public static final String LOGVIEWER_HTTPS_TRUSTSTORE_TYPE = "logviewer.https.truststore.type";
@@ -620,6 +622,7 @@ public class DaemonConfig implements Validated {
      * Type of keystore used by Storm UI for setting up HTTPS (SSL). see http://docs.oracle.com/javase/7/docs/api/java/security/KeyStore
      * .html
      * for more details.
+     * If unset, it is inferred from the file extension, falling back to JKS. See docs/SECURITY.md.
      */
     @IsString
     public static final String UI_HTTPS_KEYSTORE_TYPE = "ui.https.keystore.type";
@@ -648,6 +651,7 @@ public class DaemonConfig implements Validated {
      * Type of truststore used by Storm UI for setting up HTTPS (SSL). see http://docs.oracle
      * .com/javase/7/docs/api/java/security/KeyStore.html
      * for more details.
+     * If unset, it is inferred from the file extension, falling back to JKS. See docs/SECURITY.md.
      */
     @IsString
     public static final String UI_HTTPS_TRUSTSTORE_TYPE = "ui.https.truststore.type";
@@ -719,6 +723,7 @@ public class DaemonConfig implements Validated {
      * Type of keystore used by Storm DRPC for setting up HTTPS (SSL). see http://docs.oracle
      * .com/javase/7/docs/api/java/security/KeyStore.html
      * for more details.
+     * If unset, it is inferred from the file extension, falling back to JKS. See docs/SECURITY.md.
      */
     @IsString
     public static final String DRPC_HTTPS_KEYSTORE_TYPE = "drpc.https.keystore.type";
@@ -747,6 +752,7 @@ public class DaemonConfig implements Validated {
      * Type of truststore used by Storm DRPC for setting up HTTPS (SSL). see http://docs.oracle
      * .com/javase/7/docs/api/java/security/KeyStore.html
      * for more details.
+     * If unset, it is inferred from the file extension, falling back to JKS. See docs/SECURITY.md.
      */
     @IsString
     public static final String DRPC_HTTPS_TRUSTSTORE_TYPE = "drpc.https.truststore.type";

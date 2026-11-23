@@ -93,6 +93,7 @@ import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.IVersionInfo;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.SecurityUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.TopologySpoutLag;
 import org.apache.storm.utils.Utils;
@@ -227,6 +228,18 @@ public class UIHelpers {
             "errorMessage", String.format("User %s is not authorized.", user));
     }
 
+    /**
+     * An explicitly configured store type is used as is. Otherwise the type is inferred from the
+     * file extension, falling back to JKS like the Thrift TLS transport does.
+     */
+    private static String storeType(String configuredType, String path) {
+        if (configuredType != null) {
+            return configuredType;
+        }
+        String inferredType = SecurityUtils.inferKeyStoreTypeFromPath(path);
+        return inferredType != null ? inferredType : "JKS";
+    }
+
     private static ServerConnector mkSslConnector(Server server, Integer port, String ksPath,
                                                   String ksPassword, String ksType,
                                                   String keyPassword, String tsPath,
@@ -239,13 +252,13 @@ public class UIHelpers {
         factory.addExcludeProtocols("SSLv3");
         factory.setRenegotiationAllowed(false);
         factory.setKeyStorePath(ksPath);
-        factory.setKeyStoreType(ksType);
+        factory.setKeyStoreType(storeType(ksType, ksPath));
         factory.setKeyStorePassword(ksPassword);
         factory.setKeyManagerPassword(keyPassword);
 
-        if (tsPath != null && tsPassword != null && tsType != null) {
+        if (tsPath != null && tsPassword != null) {
             factory.setTrustStorePath(tsPath);
-            factory.setTrustStoreType(tsType);
+            factory.setTrustStoreType(storeType(tsType, tsPath));
             factory.setTrustStorePassword(tsPassword);
         }
 
