@@ -78,6 +78,8 @@
         also update the storm_checkstyle.xml file to be based on the google_checks.xml from the version
         of checkstyle you are choosing. -->
         <checkstyle.version>14.3.0</checkstyle.version>
+        <!-- check-unshaded-imports runs only in modules that set this to validate and set unshaded.illegalPkgs. -->
+        <unshaded.check.phase>none</unshaded.check.phase>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <maven.javadoc.failOnWarnings>false</maven.javadoc.failOnWarnings>
 
@@ -1296,6 +1298,32 @@
                             <goals>
                                 <goal>check</goal>
                             </goals>
+                        </execution>
+                        <execution>
+                            <!-- Fail the build if main code imports one of the relocated packages of storm-shaded-deps.
+                                 Each module that enables it lists the banned packages in unshaded.illegalPkgs. -->
+                            <id>check-unshaded-imports</id>
+                            <phase>${unshaded.check.phase}</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <configuration>
+                                <checkstyleRules>
+                                    <module name="Checker">
+                                        <module name="TreeWalker">
+                                            <module name="IllegalImport">
+                                                <property name="illegalPkgs" value="${unshaded.illegalPkgs}"/>
+                                            </module>
+                                        </module>
+                                    </module>
+                                </checkstyleRules>
+                                <failOnViolation>true</failOnViolation>
+                                <violationSeverity>error</violationSeverity>
+                                <logViolationsToConsole>true</logViolationsToConsole>
+                                <consoleOutput>true</consoleOutput>
+                                <outputFile>target/checkstyle-unshaded-imports.xml</outputFile>
+                                <cacheFile>target/checkstyle-unshaded-imports-cachefile</cacheFile>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>

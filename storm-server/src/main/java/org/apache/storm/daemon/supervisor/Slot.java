@@ -12,7 +12,6 @@
 
 package org.apache.storm.daemon.supervisor;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +41,7 @@ import org.apache.storm.localizer.GoodToGo;
 import org.apache.storm.localizer.LocallyCachedBlob;
 import org.apache.storm.metricstore.WorkerMetricsProcessor;
 import org.apache.storm.scheduler.ISupervisor;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.EnumUtil;
 import org.apache.storm.utils.EquivalenceUtils;
 import org.apache.storm.utils.LocalState;

@@ -33,6 +33,16 @@
     <packaging>jar</packaging>
     <description>The client side (including worker) of Storm implementations.</description>
 
+    <properties>
+        <!-- Relocated packages of storm-shaded-deps that main code must not import (check-unshaded-imports in the root pom). -->
+        <unshaded.check.phase>validate</unshaded.check.phase>
+        <unshaded.illegalPkgs>org.apache.thrift, com.google, org.apache.curator,
+            org.apache.zookeeper, org.apache.jute, org.apache.commons.io, org.apache.commons.lang3,
+            org.apache.commons.collections4, org.jctools, org.yaml.snakeyaml, org.jboss.netty,
+            io.netty, org.jgrapht, org.apache.commons.codec, net.minidev.json, net.minidev.asm,
+            org.objectweb.asm, org.xerial.snappy, uk.org.lidalia.sysoutslf4j</unshaded.illegalPkgs>
+    </properties>
+
     <dependencies>
         <!-- logging -->
 
