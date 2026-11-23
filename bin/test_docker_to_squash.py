@@ -16,7 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import TestCase
+import json
+from unittest import TestCase, mock
 # import docker-to-squash as dtsq
 dtsq = __import__('docker-to-squash')  # TODO: rename docker-to-squash.py as docker_to_squash.py
 
@@ -42,6 +43,41 @@ class Test(TestCase):
         for cmd in (["badcmd", "-l"], ["false"]):
             with self.assertRaises(Exception, msg=f"Expected to raise cmd={cmd}"):
                 dtsq.shell_command(cmd, True, True, True, timeout_sec=10)
+
+    def test_get_image_without_tag_or_digest(self):
+        cases = {
+            "ubuntu": "ubuntu",
+            "ubuntu:22.04": "ubuntu",
+            "myorg/app:1": "myorg/app",
+            "registry.example.com/team/app:1.0": "registry.example.com/team/app",
+            "localhost:5000/app": "localhost:5000/app",
+            "localhost:5000/team/app:1.0": "localhost:5000/team/app",
+            "myorg/app@sha256:abc": "myorg/app",
+            "myorg/app:1@sha256:abc": "myorg/app",
+        }
+        for image, expected in cases.items():
+            self.assertEqual(expected, dtsq.get_image_without_tag_or_digest(image), image)
+
+    def test_get_manifest_from_docker_image_keeps_repository_for_manifest_list(self):
+        manifest_list = json.dumps({"manifests": [
+            {"digest": "sha256:arm", "platform": {"architecture": "arm64"}},
+            {"digest": "sha256:amd", "platform": {"architecture": "amd64"}},
+        ]}).encode()
+        image_manifest = json.dumps({"layers": []}).encode()
+        inspected = []
+
+        def fake_shell_command(cmd, *args, **kwargs):
+            inspected.append(cmd[-1])
+            return (manifest_list if len(inspected) == 1 else image_manifest), b"", 0
+
+        # calculate_string_hash is stubbed: it is handed a str today and can't hash it on Python 3,
+        # which is a separate problem from the one tested here.
+        with mock.patch.object(dtsq, "shell_command", side_effect=fake_shell_command), \
+                mock.patch.object(dtsq, "calculate_string_hash", return_value="hash"):
+            dtsq.get_manifest_from_docker_image("docker", "registry.example.com/team/app:1.0")
+
+        self.assertEqual(["docker://registry.example.com/team/app:1.0",
+                          "docker://registry.example.com/team/app@sha256:amd"], inspected)
 
     # TODO:
     #  def test_read_image_tag_to_hash(self):
