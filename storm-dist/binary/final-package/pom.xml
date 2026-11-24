@@ -44,6 +44,45 @@
         <finalName>apache-storm-${project.version}</finalName>
         <plugins>
             <!--
+                The assembly descriptors and the staging step below copy files that other modules
+                build (the *-bin siblings and storm-webapp). maven-assembly-plugin silently skips a
+                fileSet whose directory does not exist, so if one of those modules was not built the
+                distribution comes out incomplete without any error. Fail early instead and name
+                what is missing. Build from the repository root (or build those modules first) to
+                produce them.
+                The paths are rooted at maven.multiModuleProjectDirectory (the directory with .mvn)
+                because requireFilesExist rejects paths that contain "..".
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>require-sibling-build-outputs</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireFilesExist>
+                                    <message>The Storm binary distribution needs build output from other modules that is missing (listed below). Run "mvn package" in storm-dist/binary rather than in final-package alone, so the *-bin modules are built first, and install the rest of the project from the repository root beforehand (the storm-webapp files come from that build).</message>
+                                    <files>
+                                        <file>${maven.multiModuleProjectDirectory}/storm-dist/binary/storm-client-bin/target/client/client/lib-worker</file>
+                                        <file>${maven.multiModuleProjectDirectory}/storm-dist/binary/storm-webapp-bin/target/webapp/webapp/lib-webapp</file>
+                                        <file>${maven.multiModuleProjectDirectory}/storm-dist/binary/storm-autocreds-bin/target/autocreds/autocreds/lib-autocreds</file>
+                                        <file>${maven.multiModuleProjectDirectory}/storm-dist/binary/storm-submit-tools-bin/target/submit-tools/submit-tools/lib-submit-tools</file>
+                                        <file>${maven.multiModuleProjectDirectory}/storm-dist/binary/storm-kafka-monitor-bin/target/kafka-monitor/kafka-monitor/lib-kafka-monitor</file>
+                                        <file>${maven.multiModuleProjectDirectory}/storm-webapp/target/classes/WEB-INF/index.html</file>
+                                        <file>${maven.multiModuleProjectDirectory}/storm-webapp/target/classes/WEB-INF/dist</file>
+                                    </files>
+                                </requireFilesExist>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
                 Stage the daemon (lib) and shared (lib-common) jars before assembly and de-duplicate
                 them. The worker classpath is a byte-identical subset of the daemon classpath, so the
                 shared jars are kept once in lib-common (referenced by both classpaths in bin/storm.py)

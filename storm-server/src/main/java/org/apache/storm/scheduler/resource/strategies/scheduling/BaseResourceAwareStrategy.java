@@ -132,20 +132,25 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * Note that this method is not thread-safe.
      * Several instance variables are generated from supplied
      * parameters. In addition, the following instance variables are set to complete scheduling:
+     * <ul>
      *  <li>{@link #searcherState}</li>
      *  <li>{@link #execSorter} to sort executors</li>
      *  <li>{@link #nodeSorter} to sort nodes</li>
-     * <p>
-     * Scheduling consists of three main steps:
+     * </ul>
+     *
+     * <p>Scheduling consists of three main steps:
+     * <ul>
      *  <li>{@link #prepareForScheduling(Cluster, TopologyDetails)}</li>
      *  <li>{@link #checkSchedulingFeasibility()}, and</li>
      *  <li>{@link #scheduleExecutorsOnNodes(List, Iterable)}</li>
-     * </p><p>
-     * The executors and nodes are sorted in the order most conducive to scheduling for the strategy.
+     * </ul>
+     *
+     * <p>The executors and nodes are sorted in the order most conducive to scheduling for the strategy.
      * Those interfaces may be overridden by subclasses using mutators:
+     * <ul>
      *  <li>{@link #setExecSorter(IExecSorter)} and</li>
      *  <li>{@link #setNodeSorter(INodeSorter)}</li>
-     *</p>
+     * </ul>
      *
      * @param cluster on which executors will be scheduled.
      * @param td the topology to schedule for.

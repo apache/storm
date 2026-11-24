@@ -29,10 +29,10 @@ import org.apache.storm.tuple.Values;
 /**
  * A simple <code>JmsTupleProducer</code> that expects to receive
  * JMS <code>TextMessage</code> objects with a body in JSON format.
- * <p/>
- * Ouputs a tuple with field name "json" and a string value
+ *
+ * <p>Ouputs a tuple with field name "json" and a string value
  * containing the raw json.
- * <p/>
+ *
  * <b>NOTE: </b> Currently this implementation assumes the text is valid
  * JSON and does not attempt to parse or validate it.
  * 

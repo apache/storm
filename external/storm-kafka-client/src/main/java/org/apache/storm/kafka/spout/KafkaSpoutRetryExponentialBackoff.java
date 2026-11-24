@@ -154,8 +154,8 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
      * The time stamp of the next retry is scheduled according to the exponential backoff formula (geometric progression):
      * nextRetry = failCount == 1 ? currentTime + initialDelay : currentTime + delayPeriod^(failCount-1),
      * where failCount = 1, 2, 3, ... nextRetry = Min(nextRetry, currentTime + maxDelay).
-     * <p/>
-     * By specifying a value for maxRetries lower than Integer.MAX_VALUE, the user decides to sacrifice guarantee of delivery for the
+     *
+     * <p>By specifying a value for maxRetries lower than Integer.MAX_VALUE, the user decides to sacrifice guarantee of delivery for the
      * previous polled records in favor of processing more records. Setting a finite limit also stops the spout from retrying forever
      * tuples that fail every time they are emitted, e.g. tuples the receiving worker drops because they cannot be deserialized:
      * once the limit is reached, the tuple is acked and offsets past it can be committed. These tuples are reported to

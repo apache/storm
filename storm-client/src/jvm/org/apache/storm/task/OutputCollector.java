@@ -185,7 +185,7 @@ public class OutputCollector implements IOutputCollector {
      *
      * <p>The default stream must be declared as direct in the topology definition. See
      * OutputDeclarer#declare for how this is done when
-     * defining topologies in Java.<
+     * defining topologies in Java.
      *
      * <p>Note that this method does not use anchors, so downstream failures won't affect the
      * failure status of any spout tuples.

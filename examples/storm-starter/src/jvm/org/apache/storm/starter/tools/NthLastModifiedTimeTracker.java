@@ -18,10 +18,10 @@ import org.apache.storm.utils.Time;
 
 /**
  * This class tracks the time-since-last-modify of a "thing" in a rolling fashion.
- * <p/>
- * For example, create a 5-slot tracker to track the five most recent time-since-last-modify.
- * <p/>
- * You must manually "mark" that the "something" that you want to track -- in terms of modification times -- has just
+ *
+ * <p>For example, create a 5-slot tracker to track the five most recent time-since-last-modify.
+ *
+ * <p>You must manually "mark" that the "something" that you want to track -- in terms of modification times -- has just
  * been modified.
  */
 public class NthLastModifiedTimeTracker {

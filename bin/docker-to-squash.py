@@ -88,12 +88,15 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error, timeout_s
     except Exception as ex:
         if process and process.poll() is None:
             process.kill()
-        raise Exception("Popen failure, " + str(ex))
+        if raise_on_error:
+            raise Exception("Popen failure, " + str(ex)) from ex
+        logging.debug("command %s failed: %s", command, ex)
     finally:
-        # Note that finally clause executes even when there is no exception, hence the "return" statement
         if timer:
             timer.cancel()
-        return out, err, (process.returncode if process else -1)
+
+    # Don't return from the finally clause, it would discard the exception raised above.
+    return out, err, (process.returncode if process else -1)
 
 
 def process_timeout(process):
@@ -364,6 +367,20 @@ def get_pull_fmt_string(pull_format):
     return pull_fmt_string
 
 
+def get_image_without_tag_or_digest(image):
+    """Strip the tag and/or digest from an image reference, keeping the registry and namespace.
+
+    A ':' only starts a tag when it comes after the last '/', so a registry port
+    (e.g. "localhost:5000/app") is left alone.
+    """
+    name = image.split("@", 1)[0]
+    last_slash = name.rfind("/")
+    last_colon = name.rfind(":")
+    if last_colon > last_slash:
+        name = name[:last_colon]
+    return name
+
+
 def get_manifest_from_docker_image(pull_format, image):
     pull_fmt_string = get_pull_fmt_string(pull_format)
     out, err, rc = shell_command(["skopeo", "inspect", "--raw", pull_fmt_string + image], False, True, True)
@@ -379,8 +396,7 @@ def get_manifest_from_docker_image(pull_format, image):
         if not sha:
             raise Exception("Could not find amd64 manifest for image " + image)
 
-        image_without_tag = image.split("/", 1)[-1].split(":", 1)[0]
-        image_and_sha = image_without_tag + "@" + sha
+        image_and_sha = get_image_without_tag_or_digest(image) + "@" + sha
 
         logging.debug("amd64 manifest sha is: %s", sha)
 

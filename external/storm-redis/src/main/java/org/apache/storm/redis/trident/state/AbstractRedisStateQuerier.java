@@ -24,8 +24,8 @@ import org.apache.storm.tuple.Values;
 
 /**
  * AbstractRedisStateQuerier is base class of any RedisStateQuerier, which implements BaseQueryFunction.
- * <p/>
- * Derived classes should provide how to retrieve values from Redis,
+ *
+ * <p>Derived classes should provide how to retrieve values from Redis,
  * and AbstractRedisStateQuerier takes care of rest things.
  *
  * @param <T> type of State

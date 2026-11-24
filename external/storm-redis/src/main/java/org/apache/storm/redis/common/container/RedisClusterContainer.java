@@ -24,8 +24,8 @@ import redis.clients.jedis.JedisCluster;
 
 /**
  * Container for managing JedisCluster.
- * <p/>
- * Note that JedisCluster doesn't need to be pooled since it's thread-safe and it stores pools internally.
+ *
+ * <p>Note that JedisCluster doesn't need to be pooled since it's thread-safe and it stores pools internally.
  */
 public class RedisClusterContainer implements RedisCommandsInstanceContainer {
     private JedisCluster jedisCluster;

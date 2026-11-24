@@ -132,7 +132,7 @@ public class JoinBolt extends BaseWindowedBolt {
      * .select("field1, stream2:field2, field3") Nested
      * Key names are supported for nested types: e.g: .select("outerKey1.innerKey1,
      * outerKey1.innerKey2, stream3:outerKey2.innerKey3)" Inner
-     * types (non leaf) must be Map<> in order to support nested lookup using this dot notation This
+     * types (non leaf) must be {@code Map<>} in order to support nested lookup using this dot notation This
      * selected fields implicitly declare the
      * output fieldNames for the bolt based.
      */

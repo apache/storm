@@ -32,11 +32,11 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 /**
  * Connects to the 'WordCount' HBase table and prints counts for each word.
- * <p/>
- * Assumes you have run (or are running) the YAML topology definition in
+ *
+ * <p>Assumes you have run (or are running) the YAML topology definition in
  * <code>simple_hbase.yaml</code>
- * <p/>
- * You will also need to modify `src/main/resources/hbase-site.xml`
+ *
+ * <p>You will also need to modify `src/main/resources/hbase-site.xml`
  * to point to your HBase instance, and then repackage with `mvn package`.
  * This is a known issue.
  *

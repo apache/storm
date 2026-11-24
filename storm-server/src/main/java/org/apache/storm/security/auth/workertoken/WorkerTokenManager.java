@@ -18,7 +18,6 @@
 
 package org.apache.storm.security.auth.workertoken;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -33,6 +32,7 @@ import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.generated.WorkerTokenInfo;
 import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.security.auth.ClientAuthUtils;
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;

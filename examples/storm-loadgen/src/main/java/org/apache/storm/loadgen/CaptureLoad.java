@@ -431,7 +431,6 @@ public class CaptureLoad {
      * @param topologyResources map of resouces requirements
      * @param componentId component for which initialization is being conducted
      * @param topologyConf topology configuration
-     * @throws Exception on any error
      */
     public static void checkInitialization(Map<String, Double> topologyResources, String componentId, Map<String, Object> topologyConf) {
         StringBuilder msgBuilder = new StringBuilder();

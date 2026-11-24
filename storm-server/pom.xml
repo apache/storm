@@ -32,6 +32,16 @@
     <name>Storm Server</name>
     <properties>
         <storm-server.test.introspection.argLine>--add-opens java.base/java.lang=ALL-UNNAMED</storm-server.test.introspection.argLine>
+        <!-- Relocated packages of storm-shaded-deps that main code must not import (check-unshaded-imports in the root pom).
+             Relocated packages that storm-server declares as dependencies are allowed: commons-io,
+             commons-lang3, commons-collections4, json-smart (net.minidev.json) and snakeyaml.
+             com.google is narrowed to com.google.common and com.google.thirdparty, the packages in
+             the shaded jar, so the auto-service annotation stays allowed. -->
+        <unshaded.check.phase>validate</unshaded.check.phase>
+        <unshaded.illegalPkgs>org.apache.thrift, com.google.common,
+            com.google.thirdparty, org.apache.curator, org.apache.zookeeper, org.apache.jute,
+            org.jctools, org.jboss.netty, io.netty, org.jgrapht, org.apache.commons.codec,
+            net.minidev.asm, org.objectweb.asm, org.xerial.snappy, uk.org.lidalia.sysoutslf4j</unshaded.illegalPkgs>
     </properties>
 
     <dependencies>
