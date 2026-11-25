@@ -28,8 +28,6 @@ import org.apache.storm.daemon.nimbus.TopoCache;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.LeaderListenerCallback;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +37,7 @@ public class LeaderListenerCallbackFactory {
     private static final Logger LOG = LoggerFactory.getLogger(LeaderListenerCallbackFactory.class);
     
     private final Map<String, Object> conf;
-    private final CuratorFramework zk;
+    private final ZkClient zk;
     private final BlobStore blobStore;
     private final TopoCache tc;
     private final IStormClusterState clusterState;
@@ -47,7 +45,7 @@ public class LeaderListenerCallbackFactory {
     private final StormMetricsRegistry metricsRegistry;
     private final Object submitLock;
 
-    public LeaderListenerCallbackFactory(Map<String, Object> conf, CuratorFramework zk, BlobStore blobStore, TopoCache tc,
+    public LeaderListenerCallbackFactory(Map<String, Object> conf, ZkClient zk, BlobStore blobStore, TopoCache tc,
         IStormClusterState clusterState, List<ACL> acls, StormMetricsRegistry metricsRegistry, Object submitLock) {
         this.conf = conf;
         this.zk = zk;
@@ -59,11 +57,11 @@ public class LeaderListenerCallbackFactory {
         this.submitLock = submitLock;
     }
     
-    public LeaderLatchListener create(ILeaderElector elector) throws UnknownHostException {
+    public LeaderListener create(ILeaderElector elector) throws UnknownHostException {
         final LeaderListenerCallback callback = new LeaderListenerCallback(conf, zk, blobStore, elector,
             tc, clusterState, acls, metricsRegistry);
         final String hostName = InetAddress.getLocalHost().getCanonicalHostName();
-        return new LeaderLatchListener() {
+        return new LeaderListener() {
 
             @Override
             public void isLeader() {

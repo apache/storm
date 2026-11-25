@@ -14,9 +14,9 @@ package org.apache.storm.trident.topology.state;
 
 import java.util.List;
 import java.util.Map;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
+import org.apache.storm.zookeeper.ZkClient;
 
 /**
  * Facilitates testing of non-public methods in the parent class.
@@ -30,9 +30,9 @@ public class TestTransactionalState extends TransactionalState {
         super(conf, id, subroot);
     }
 
-    public static void createNode(CuratorFramework curator,
+    public static void createNode(ZkClient zk,
                                   String rootDir, byte[] data, List<ACL> acls, CreateMode mode)
             throws Exception {
-        TransactionalState.createNode(curator, rootDir, data, acls, mode);
+        TransactionalState.createNode(zk, rootDir, data, acls, mode);
     }
 }

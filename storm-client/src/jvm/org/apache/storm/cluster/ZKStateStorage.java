@@ -27,14 +27,13 @@ import org.apache.storm.Config;
 import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.callback.ZKStateChangedCallback;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.Watcher;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.zookeeper.ClientZookeeper;
+import org.apache.storm.zookeeper.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +44,8 @@ public class ZKStateStorage implements IStateStorage {
 
     private ConcurrentHashMap<String, ZKStateChangedCallback> callbacks =
             new ConcurrentHashMap<String, ZKStateChangedCallback>();
-    private CuratorFramework zkWriter;
-    private CuratorFramework zkReader;
+    private ZkClient zkWriter;
+    private ZkClient zkReader;
     private AtomicBoolean active;
 
     private boolean isNimbus;
@@ -62,7 +61,7 @@ public class ZKStateStorage implements IStateStorage {
         }
 
         // just mkdir STORM_ZOOKEEPER_ROOT dir
-        CuratorFramework zkTemp = mkZk(context.getDaemonType());
+        ZkClient zkTemp = mkZk(context.getDaemonType());
         String rootPath = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT));
         ClientZookeeper.mkdirs(zkTemp, rootPath, context.getDefaultZkAcls());
         zkTemp.close();
@@ -78,14 +77,14 @@ public class ZKStateStorage implements IStateStorage {
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk(DaemonType type) {
+    private ZkClient mkZk(DaemonType type) {
         return ClientZookeeper.mkClient(conf, (List<String>) conf
                 .get(Config.STORM_ZOOKEEPER_SERVERS),
                 conf.get(Config.STORM_ZOOKEEPER_PORT), "", new DefaultWatcherCallBack(), authConf, type);
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk(WatcherCallBack watcher,
+    private ZkClient mkZk(WatcherCallBack watcher,
         DaemonType type) throws NumberFormatException {
         return ClientZookeeper.mkClient(conf, (List<String>) conf
                 .get(Config.STORM_ZOOKEEPER_SERVERS),
@@ -225,10 +224,8 @@ public class ZKStateStorage implements IStateStorage {
     }
 
     @Override
-    public void add_listener(final ConnectionStateListener listener) {
-        ClientZookeeper.addListener(zkReader,
-                (curatorFramework, connectionState) -> listener.stateChanged(curatorFramework,
-                connectionState));
+    public void add_listener(ClusterStateListener listener) {
+        ClientZookeeper.addListener(zkReader, listener);
     }
 
     @Override

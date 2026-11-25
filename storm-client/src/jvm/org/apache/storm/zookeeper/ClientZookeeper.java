@@ -22,19 +22,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.storm.callback.WatcherCallBack;
+import org.apache.storm.cluster.ClusterStateListener;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.VersionedData;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.api.CuratorEventType;
-import org.apache.storm.shade.org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
-import org.apache.storm.shade.org.apache.zookeeper.WatchedEvent;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.data.Stat;
-import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
+import org.apache.storm.zookeeper.curator.CuratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,11 +63,24 @@ public class ClientZookeeper {
         _instance = INSTANCE;
     }
 
-    public static void mkdirs(CuratorFramework zk, String path, List<ACL> acls) {
+    public static void mkdirs(ZkClient zk, String path, List<ACL> acls) {
         _instance.mkdirsImpl(zk, path, acls);
     }
 
-    public static CuratorFramework mkClient(Map<String, Object> conf, List<String> servers,
+    /**
+     * Create and start a ZooKeeper client.
+     *
+     * @param conf the Storm configuration (timeouts, retries, TLS)
+     * @param servers the ZooKeeper servers
+     * @param port the ZooKeeper port
+     * @param root the chroot, {@code ""} for none
+     * @param watcher receives events of watches set through the client; may be {@code null}, in
+     *     which case watch events are dropped
+     * @param authConf configuration holding the ZooKeeper authentication, may be {@code null}
+     * @param type the daemon type, which determines the client's default ACL
+     * @return the started client
+     */
+    public static ZkClient mkClient(Map<String, Object> conf, List<String> servers,
             Object port,
                                             String root, final WatcherCallBack watcher, Map<String, Object> authConf, DaemonType type) {
         return _instance.mkClientImpl(conf, servers, port, root, watcher, authConf, type);
@@ -78,7 +88,7 @@ public class ClientZookeeper {
 
     // Deletes the state inside the zookeeper for a key, for which the
     // contents of the key starts with nimbus host port information
-    public static void deleteNodeBlobstore(CuratorFramework zk, String parentPath,
+    public static void deleteNodeBlobstore(ZkClient zk, String parentPath,
             String hostPortInfo) {
         String normalizedParentPath = normalizePath(parentPath);
         List<String> childPathList = null;
@@ -93,20 +103,19 @@ public class ClientZookeeper {
         }
     }
 
-    public static String createNode(CuratorFramework zk, String path, byte[] data, CreateMode mode,
+    public static String createNode(ZkClient zk, String path, byte[] data, CreateMode mode,
             List<ACL> acls) {
         String ret = null;
         try {
             String npath = normalizePath(path);
-            ret = zk.create().creatingParentsIfNeeded().withMode(mode).withACL(acls).forPath(npath,
-                    data);
+            ret = zk.create(npath, data, mode, acls, true);
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
         return ret;
     }
 
-    public static String createNode(CuratorFramework zk, String path, byte[] data, List<ACL> acls) {
+    public static String createNode(ZkClient zk, String path, byte[] data, List<ACL> acls) {
         return createNode(zk, path, data, CreateMode.PERSISTENT, acls);
     }
 
@@ -139,25 +148,21 @@ public class ClientZookeeper {
         return rtn;
     }
 
-    public static boolean existsNode(CuratorFramework zk, String path, boolean watch) {
+    public static boolean existsNode(ZkClient zk, String path, boolean watch) {
         Stat stat = null;
         try {
-            if (watch) {
-                stat = zk.checkExists().watched().forPath(normalizePath(path));
-            } else {
-                stat = zk.checkExists().forPath(normalizePath(path));
-            }
+            stat = zk.exists(normalizePath(path), watch);
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
         return stat != null;
     }
 
-    public static void deleteNode(CuratorFramework zk, String path) {
+    public static void deleteNode(ZkClient zk, String path) {
         try {
             String npath = normalizePath(path);
             if (existsNode(zk, npath, false)) {
-                zk.delete().deletingChildrenIfNeeded().forPath(normalizePath(path));
+                zk.delete(normalizePath(path), true);
             }
         } catch (Exception e) {
             if (Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
@@ -178,54 +183,41 @@ public class ClientZookeeper {
         return toksToPath(toks);
     }
 
-    public static boolean exists(CuratorFramework zk, String path, boolean watch) {
+    public static boolean exists(ZkClient zk, String path, boolean watch) {
         return existsNode(zk, path, watch);
     }
 
-    public static Stat setData(CuratorFramework zk, String path, byte[] data) {
+    public static Stat setData(ZkClient zk, String path, byte[] data) {
         try {
             String npath = normalizePath(path);
-            return zk.setData().forPath(npath, data);
+            return zk.setData(npath, data);
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
     }
 
-    public static Integer getVersion(CuratorFramework zk, String path,
+    public static Integer getVersion(ZkClient zk, String path,
             boolean watch) throws Exception {
         String npath = normalizePath(path);
-        // checkExists returns the Stat directly (null when absent) and still arms the watch when
-        // watch is true. request 1.
-        Stat stat;
-        if (watch) {
-            stat = zk.checkExists().watched().forPath(npath);
-        } else {
-            stat = zk.checkExists().forPath(npath); // request 2.
-        }
+        // exists returns the Stat directly (null when absent) and still arms the watch when
+        // watch is true.
+        Stat stat = zk.exists(npath, watch);
         return stat == null ? null : Integer.valueOf(stat.getVersion());
     }
 
-    public static List<String> getChildren(CuratorFramework zk, String path, boolean watch) {
+    public static List<String> getChildren(ZkClient zk, String path, boolean watch) {
         try {
             String npath = normalizePath(path);
-            if (watch) {
-                return zk.getChildren().watched().forPath(npath);
-            } else {
-                return zk.getChildren().forPath(npath);
-            }
+            return zk.getChildren(npath, watch);
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
     }
 
-    public static byte[] getData(CuratorFramework zk, String path, boolean watch) {
+    public static byte[] getData(ZkClient zk, String path, boolean watch) {
         String npath = normalizePath(path);
         try {
-            if (watch) {
-                return zk.getData().watched().forPath(npath);
-            } else {
-                return zk.getData().forPath(npath);
-            }
+            return zk.getData(npath, watch, null);
         } catch (Exception e) {
             if (Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
                 // Node is absent. A watcher can notify when the node is announced.
@@ -246,18 +238,13 @@ public class ClientZookeeper {
      * @param watch should a watch be enabled
      * @return null if no data is found, else the data with the version.
      */
-    public static VersionedData<byte[]> getDataWithVersion(CuratorFramework zk, String path,
+    public static VersionedData<byte[]> getDataWithVersion(ZkClient zk, String path,
             boolean watch) {
         VersionedData<byte[]> data = null;
         String npath = normalizePath(path);
         Stat stats = new Stat();
         try {
-            byte[] bytes;
-            if (watch) {
-                bytes = zk.getData().storingStatIn(stats).watched().forPath(npath);
-            } else {
-                bytes = zk.getData().storingStatIn(stats).forPath(npath);
-            }
+            byte[] bytes = zk.getData(npath, watch, stats);
             if (bytes != null) {
                 data = new VersionedData<>(stats.getVersion(), bytes);
             }
@@ -275,19 +262,19 @@ public class ClientZookeeper {
         return data;
     }
 
-    public static void addListener(CuratorFramework zk, ConnectionStateListener listener) {
-        zk.getConnectionStateListenable().addListener(listener);
+    public static void addListener(ZkClient zk, ClusterStateListener listener) {
+        zk.addConnectionStateListener(listener);
     }
 
-    public static void syncPath(CuratorFramework zk, String path) {
+    public static void syncPath(ZkClient zk, String path) {
         try {
-            zk.sync().forPath(normalizePath(path));
+            zk.sync(normalizePath(path));
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
     }
 
-    public void mkdirsImpl(CuratorFramework zk, String path, List<ACL> acls) {
+    public void mkdirsImpl(ZkClient zk, String path, List<ACL> acls) {
         String npath = ClientZookeeper.normalizePath(path);
         if (npath.equals("/")) {
             return;
@@ -306,26 +293,12 @@ public class ClientZookeeper {
         }
     }
 
-    public CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers,
+    public ZkClient mkClientImpl(Map<String, Object> conf, List<String> servers,
             Object port, String root,
                                          final WatcherCallBack watcher, Map<String, Object> authConf, DaemonType type) {
-        CuratorFramework fk;
-        if (authConf != null) {
-            fk = CuratorUtils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf),
-                    type.getDefaultZkAcls(conf));
-        } else {
-            fk = CuratorUtils.newCurator(conf, servers, port, root, null, type
-                    .getDefaultZkAcls(conf));
-        }
-
-        fk.getCuratorListenable().addListener((unused, e) -> {
-            if (e.getType().equals(CuratorEventType.WATCHED)) {
-                WatchedEvent event = e.getWatchedEvent();
-                watcher.execute(event.getState(), event.getType(), event.getPath());
-            }
-        });
+        ZookeeperAuthInfo auth = authConf != null ? new ZookeeperAuthInfo(authConf) : null;
         LOG.info("Starting ZK Curator");
-        fk.start();
-        return fk;
+        return CuratorUtils.newClient(conf, servers, port, root, auth, type.getDefaultZkAcls(conf),
+                watcher);
     }
 }

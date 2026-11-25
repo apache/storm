@@ -19,9 +19,6 @@
 
 package org.apache.storm.trident;
 
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.shade.org.apache.curator.framework.api.CreateBuilder;
-import org.apache.storm.shade.org.apache.curator.framework.api.ProtectACLCreateModeStatPathAndBytesable;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.data.ACL;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
@@ -36,6 +33,7 @@ import org.apache.storm.trident.testing.MemoryBackingMap;
 import org.apache.storm.trident.testing.MemoryMapState;
 import org.apache.storm.trident.topology.state.TestTransactionalState;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.zookeeper.ZkClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -141,16 +139,41 @@ public class StateTest {
     @Test
     public void testCreateNodeAcl() throws Exception {
         // Creates ZooKeeper nodes with the correct ACLs
-        CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-        CreateBuilder builder0 = Mockito.mock(CreateBuilder.class);
-        ProtectACLCreateModeStatPathAndBytesable builder1 = Mockito.mock(ProtectACLCreateModeStatPathAndBytesable.class);
+        ZkClient zk = Mockito.mock(ZkClient.class);
         List<ACL> expectedAcls = ZooDefs.Ids.CREATOR_ALL_ACL;
-        Mockito.when(curator.create()).thenReturn(builder0);
-        Mockito.when(builder0.creatingParentsIfNeeded()).thenReturn(builder1);
-        Mockito.when(builder1.withMode(ArgumentMatchers.isA(CreateMode.class))).thenReturn(builder1);
-        Mockito.when(builder1.withACL(Mockito.anyList())).thenReturn(builder1);
-        TestTransactionalState.createNode(curator, "", new byte[0], expectedAcls, null);
-        Mockito.verify(builder1).withACL(expectedAcls);
+        TestTransactionalState.createNode(zk, "", new byte[0], expectedAcls, null);
+        Mockito.verify(zk).create(ArgumentMatchers.eq(""), ArgumentMatchers.any(byte[].class),
+            ArgumentMatchers.eq(CreateMode.PERSISTENT), ArgumentMatchers.eq(expectedAcls),
+            ArgumentMatchers.eq(true));
+        Mockito.verifyNoMoreInteractions(zk);
+    }
+
+    @Test
+    public void testCreateNodeAclIgnoresModeWhenAclsGiven() throws Exception {
+        // As with the former Curator builder chain, the mode is only honoured without explicit ACLs
+        ZkClient zk = Mockito.mock(ZkClient.class);
+        List<ACL> expectedAcls = ZooDefs.Ids.CREATOR_ALL_ACL;
+        TestTransactionalState.createNode(zk, "/n", new byte[]{1}, expectedAcls, CreateMode.EPHEMERAL);
+        Mockito.verify(zk).create(ArgumentMatchers.eq("/n"), ArgumentMatchers.any(byte[].class),
+            ArgumentMatchers.eq(CreateMode.PERSISTENT), ArgumentMatchers.eq(expectedAcls),
+            ArgumentMatchers.eq(true));
+    }
+
+    @Test
+    public void testCreateNodeNullDataUsesDefaultData() throws Exception {
+        ZkClient zk = Mockito.mock(ZkClient.class);
+        TestTransactionalState.createNode(zk, "/root", null, null, null);
+        Mockito.verify(zk).createWithDefaultData("/root", CreateMode.PERSISTENT, null, true);
+        Mockito.verifyNoMoreInteractions(zk);
+    }
+
+    @Test
+    public void testCreateNodeNullAclsKeepsMode() throws Exception {
+        ZkClient zk = Mockito.mock(ZkClient.class);
+        byte[] data = new byte[]{1, 2};
+        TestTransactionalState.createNode(zk, "/eph", data, null, CreateMode.EPHEMERAL);
+        Mockito.verify(zk).create("/eph", data, CreateMode.EPHEMERAL, null, true);
+        Mockito.verifyNoMoreInteractions(zk);
     }
 
     @Test

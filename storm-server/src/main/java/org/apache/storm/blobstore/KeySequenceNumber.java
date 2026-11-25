@@ -17,11 +17,11 @@ import java.util.List;
 import java.util.TreeSet;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.shade.org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.shade.org.apache.zookeeper.CreateMode;
 import org.apache.storm.shade.org.apache.zookeeper.KeeperException;
 import org.apache.storm.shade.org.apache.zookeeper.ZooDefs;
 import org.apache.storm.utils.WrappedKeyNotFoundException;
+import org.apache.storm.zookeeper.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,7 +123,7 @@ public class KeySequenceNumber {
         this.nimbusInfo = nimbusInfo;
     }
 
-    public synchronized int getKeySequenceNumber(CuratorFramework zkClient) throws KeyNotFoundException {
+    public synchronized int getKeySequenceNumber(ZkClient zkClient) throws KeyNotFoundException {
         return getKeySequenceNumber(zkClient, true);
     }
 
@@ -137,17 +137,17 @@ public class KeySequenceNumber {
      * @return the sequence number
      * @throws KeyNotFoundException if the key is not in zookeeper and may not be created, or it is deleted meanwhile
      */
-    public synchronized int getKeySequenceNumber(CuratorFramework zkClient, boolean mayCreateKey) throws KeyNotFoundException {
+    public synchronized int getKeySequenceNumber(ZkClient zkClient, boolean mayCreateKey) throws KeyNotFoundException {
         TreeSet<Integer> sequenceNumbers = new TreeSet<Integer>();
         try {
             // Key has not been created yet and it is the first time it is being created
-            if (zkClient.checkExists().forPath(BlobStoreUtils.getBlobStoreSubtree() + "/" + key) == null) {
+            if (zkClient.exists(BlobStoreUtils.getBlobStoreSubtree() + "/" + key, false) == null) {
                 if (!mayCreateKey) {
                     throw new KeeperException.NoNodeException(BlobStoreUtils.getBlobStoreSubtree() + "/" + key);
                 }
-                zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
-                        .withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key);
-                zkClient.setData().forPath(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key,
+                zkClient.createWithDefaultData(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key, CreateMode.PERSISTENT,
+                        ZooDefs.Ids.OPEN_ACL_UNSAFE, true);
+                zkClient.setData(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key,
                                            ByteBuffer.allocate(INT_CAPACITY).putInt(INITIAL_SEQUENCE_NUMBER).array());
                 return INITIAL_SEQUENCE_NUMBER;
             }
@@ -155,7 +155,7 @@ public class KeySequenceNumber {
             // When all nimbodes go down and one or few of them come up
             // Unfortunately there might not be an exact way to know which one contains the most updated blob,
             // if all go down which is unlikely. Hence there might be a need to update the blob if all go down.
-            List<String> stateInfoList = zkClient.getChildren().forPath(BlobStoreUtils.getBlobStoreSubtree() + "/" + key);
+            List<String> stateInfoList = zkClient.getChildren(BlobStoreUtils.getBlobStoreSubtree() + "/" + key, false);
             LOG.debug("stateInfoList-size {} stateInfoList-data {}", stateInfoList.size(), stateInfoList);
             if (stateInfoList.isEmpty()) {
                 return getMaxSequenceNumber(zkClient);
@@ -229,13 +229,12 @@ public class KeySequenceNumber {
         return containsNimbusHost;
     }
 
-    private void incrementMaxSequenceNumber(CuratorFramework zkClient, int count) throws Exception {
-        zkClient.setData().forPath(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key,
-                                   ByteBuffer.allocate(INT_CAPACITY).putInt(count + 1).array());
+    private void incrementMaxSequenceNumber(ZkClient zkClient, int count) throws Exception {
+        zkClient.setData(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key,
+                         ByteBuffer.allocate(INT_CAPACITY).putInt(count + 1).array());
     }
 
-    private int getMaxSequenceNumber(CuratorFramework zkClient) throws Exception {
-        return ByteBuffer.wrap(zkClient.getData()
-                                       .forPath(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key)).getInt();
+    private int getMaxSequenceNumber(ZkClient zkClient) throws Exception {
+        return ByteBuffer.wrap(zkClient.getData(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key, false, null)).getInt();
     }
 }
