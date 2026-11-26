@@ -16,7 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 import json
+import os
+import tempfile
 from unittest import TestCase, mock
 # import docker-to-squash as dtsq
 dtsq = __import__('docker-to-squash')  # TODO: rename docker-to-squash.py as docker_to_squash.py
@@ -79,13 +82,46 @@ class Test(TestCase):
         self.assertEqual(["docker://registry.example.com/team/app:1.0",
                           "docker://registry.example.com/team/app@sha256:amd"], inspected)
 
-    # TODO:
-    #  def test_read_image_tag_to_hash(self):
-    #     """
-    #     The base method behaves differently, since string in python3 is always unicode. Base method was flips between
-    #     byte arrays and strings. This may not always work properly in python3.
-    #     :return:
-    #     """
-    #     image_tag_to_hash = ""
-    #     hash_to_tags, tag_to_hash = dtsq.read_image_tag_to_hash(image_tag_to_hash)
+    def test_calculate_bytes_hash_matches_hashlib(self):
+        """
+        Manifest hashes must be computed over the raw manifest bytes, not over
+        str(bytes) (which hashes the literal "b'...'" repr and produces wrong hashes).
+        """
+        manifest = b'{"schemaVersion":2,"config":{"digest":"sha256:abc"}}'
+        expected = hashlib.sha256(manifest).hexdigest()
+        self.assertEqual(expected, dtsq.calculate_bytes_hash(manifest))
+        # The old code hashed str(manifest); that must NOT equal the real hash.
+        self.assertNotEqual(expected, dtsq.calculate_string_hash(str(manifest)))
+        # The str helper still agrees with the bytes helper for real text.
+        self.assertEqual(expected, dtsq.calculate_string_hash(manifest.decode("utf-8")))
+
+    def test_decode_output(self):
+        self.assertEqual("root:root", dtsq.decode_output(b"root:root\n").strip())
+        self.assertEqual("", dtsq.decode_output(None))
+        self.assertEqual("already text", dtsq.decode_output("already text"))
+
+    def test_read_write_image_tag_to_hash_round_trip(self):
+        """
+        The tag file written by write_local_image_tag_to_hash must read back
+        identically. Before the fix, read_image_tag_to_hash did str(line) on
+        bytes, mangling every entry (e.g. "b'img:hash\\n'") so the hash failed
+        validation and the entry was silently skipped.
+        """
+        manifest_hash = hashlib.sha256(b"fake-manifest").hexdigest()
+        other_hash = hashlib.sha256(b"other-manifest").hexdigest()
+        hash_to_tags = {
+            manifest_hash: (["img:latest", "img:1.0"], ["first upload"]),
+            other_hash: (["img:2.0"], []),
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tag_file = os.path.join(tmp_dir, "image-tag-to-hash")
+            dtsq.write_local_image_tag_to_hash(tag_file, hash_to_tags)
+            read_hash_to_tags, read_tag_to_hash = dtsq.read_image_tag_to_hash(tag_file)
+        self.assertEqual(sorted(["img:1.0", "img:latest"]),
+                         sorted(read_hash_to_tags[manifest_hash][0]))
+        self.assertEqual(["first upload"], read_hash_to_tags[manifest_hash][1])
+        self.assertEqual(["img:2.0"], read_hash_to_tags[other_hash][0])
+        self.assertEqual(manifest_hash, read_tag_to_hash["img:latest"])
+        self.assertEqual(manifest_hash, read_tag_to_hash["img:1.0"])
+        self.assertEqual(other_hash, read_tag_to_hash["img:2.0"])
 

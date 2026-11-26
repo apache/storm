@@ -24,7 +24,7 @@ Tool dependencies: skopeo, squashfs-tools, tar, setfattr
 """
 
 import argparse
-from collections import Iterable
+from collections.abc import Iterable
 import glob
 import hashlib
 import json
@@ -47,6 +47,19 @@ HDFS_MANIFEST_DIR = "/undefined"
 HDFS_CONFIG_DIR = "/undefined"
 HDFS_LAYERS_DIR = "/undefined"
 HDFS_UNREF_DIR = "/undefined"
+
+
+def decode_output(data):
+    """Decode subprocess output (bytes) to str for logging/display.
+
+    subprocess.Popen.communicate() returns bytes; str(bytes) would produce
+    the literal "b'...'" repr instead of the actual output.
+    """
+    if data is None:
+        return ""
+    if isinstance(data, bytes):
+        return data.decode("utf-8", errors="replace")
+    return data
 
 
 def shell_command(command, print_stdout, print_stderr, raise_on_error, timeout_sec=600):
@@ -81,9 +94,9 @@ def shell_command(command, print_stdout, print_stderr, raise_on_error, timeout_s
         if raise_on_error and process.returncode:
             exception_string = f"Command: {command} failed with returncode: {process.returncode}"
             if out:
-                exception_string = exception_string + "\nstdout: " + str(out)
+                exception_string = exception_string + "\nstdout: " + decode_output(out)
             if err:
-                exception_string = exception_string + "\nstderr: " + str(err)
+                exception_string = exception_string + "\nstderr: " + decode_output(err)
             raise Exception(exception_string)
     except Exception as ex:
         if process and process.poll() is None:
@@ -272,30 +285,35 @@ def calculate_file_hash(filename):
     return hex_digest
 
 
-def calculate_string_hash(string):
+def calculate_bytes_hash(data):
+    """sha256 hex digest of raw bytes (e.g. a manifest as returned by a subprocess)."""
     sha = hashlib.sha256()
-    sha.update(string)
+    sha.update(data)
     return sha.hexdigest()
+
+
+def calculate_string_hash(string):
+    return calculate_bytes_hash(string.encode("utf-8"))
 
 
 def get_local_manifest_from_path(manifest_path):
     with open(manifest_path, "rb") as file_pointer:
         out = file_pointer.read()
-    manifest_hash = calculate_string_hash(str(out))
+    manifest_hash = calculate_bytes_hash(out)
     manifest = json.loads(out)
     return manifest, manifest_hash
 
 
 def get_hdfs_manifest_from_path(manifest_path):
     out, err, rc = hdfs_cat(manifest_path)
-    manifest_hash = calculate_string_hash(str(out))
+    manifest_hash = calculate_bytes_hash(out)
     manifest = json.loads(out)
     return manifest, manifest_hash
 
 
 def get_hdfs_manifests_from_paths(manifest_paths):
     out, err, rc = hdfs_cat(manifest_paths)
-    manifests_list = out.split("}{")
+    manifests_list = out.decode("utf-8").split("}{")
     manifests = []
     for manifest_str in manifests_list:
         if manifest_str[0] != "{":
@@ -389,7 +407,7 @@ def get_manifest_from_docker_image(pull_format, image):
 
         manifest, manifest_hash = get_manifest_from_docker_image(pull_format, image_and_sha)
     else:
-        manifest_hash = calculate_string_hash(str(out))
+        manifest_hash = calculate_bytes_hash(out)
 
     logging.debug("manifest: %s", str(manifest))
     return manifest, manifest_hash
@@ -410,7 +428,7 @@ def read_image_tag_to_hash(image_tag_to_hash):
             line = file_pointer.readline()
             if not line:
                 break
-            line = str(line).rstrip()
+            line = line.decode("utf-8").rstrip()
 
             if not line:
                 continue
@@ -501,7 +519,7 @@ def add_tag_to_dicts(hash_to_tags, tag_to_hash, tag, manifest_hash, comment):
 
 def write_local_image_tag_to_hash(image_tag_to_hash, hash_to_tags):
     file_contents = []
-    for key, value in hash_to_tags.iteritems():
+    for key, value in hash_to_tags.items():
         manifest_hash = key
         # Sort tags list to preserve consistent order
         value[0].sort()
@@ -593,14 +611,14 @@ def make_whiteout_block_device(file_path, whiteout):
     shell_command(["mknod", "-m", "000", file_path, "c", "0", "0"], False, True, True)
 
     out, err, rc = shell_command(["stat", "-c", "%U:%G", whiteout], False, True, True)
-    perms = str(out).strip()
+    perms = decode_output(out).strip()
 
     shell_command(["chown", perms, file_path], False, True, True)
 
 
 def convert_oci_whiteouts(tmp_dir):
     out, err, rc = shell_command(["find", tmp_dir, "-name", ".wh.*"], False, False, True)
-    whiteouts = str(out).splitlines()
+    whiteouts = decode_output(out).splitlines()
     for whiteout in whiteouts:
         if whiteout == 0:
             continue
@@ -1352,13 +1370,13 @@ def get_all_known_images():
     global HDFS_UNREF_DIR
 
     known_manifest_paths, err, returncode = hdfs_stat(HDFS_MANIFEST_DIR + "/*", "%a %Y %n", False, False, False)
-    known_manifests = [image for image in known_manifest_paths.split("\n") if image is not "" or None]
+    known_manifests = [image for image in decode_output(known_manifest_paths).split("\n") if image]
 
     unref_manifest_paths, err, returncode = hdfs_stat(HDFS_UNREF_DIR + "/*", "%a %Y %n", False, False, False)
     logging.debug("unref_manifest_paths:\n%s", unref_manifest_paths)
     unref_manifests = []
     if unref_manifest_paths:
-        unref_manifests = [image for image in unref_manifest_paths.split("\n") if image is not "" or None]
+        unref_manifests = [image for image in decode_output(unref_manifest_paths).split("\n") if image]
     logging.debug("unref_manifests:\n%s", unref_manifests)
 
     unref_manifests_stats_dict = {}
@@ -1366,7 +1384,7 @@ def get_all_known_images():
         for unref_manifest in unref_manifests:
             unref_manifest_split = unref_manifest.split()
             unref_manifest_perms = unref_manifest_split[0]
-            unref_manifest_mod_time = long(unref_manifest_split[1])
+            unref_manifest_mod_time = int(unref_manifest_split[1])
             unref_manifest_name = unref_manifest_split[2]
             unref_manifest_stat = Filestat(unref_manifest_perms, unref_manifest_mod_time, unref_manifest_name)
             unref_manifests_stats_dict[unref_manifest_name] = unref_manifest_stat
@@ -1380,7 +1398,7 @@ def get_all_known_images():
     for manifest in known_manifests:
         manifest_split = manifest.split()
         manifest_perms = manifest_split[0]
-        manifest_mod_time = long(manifest_split[1])
+        manifest_mod_time = int(manifest_split[1])
         manifest_name = manifest_split[2]
         manifest_stat = Filestat(manifest_perms, manifest_mod_time, manifest_name)
 
@@ -1474,7 +1492,7 @@ def does_image_have_dead_perms(image):
 def is_mod_time_old(mod_time):
     global UNTAGGED_TRANSITION_SEC
 
-    cutoff_time = long(time.time() * 1000) - UNTAGGED_TRANSITION_SEC * 1000
+    cutoff_time = int(time.time() * 1000) - UNTAGGED_TRANSITION_SEC * 1000
     logging.debug("Mod time: %d, Cutoff time: %d", mod_time, cutoff_time)
     return mod_time < cutoff_time
 
@@ -1701,7 +1719,7 @@ def add_parser_default_arguments(parser):
                         default=37, help="Maximum number of layers an image is allowed to have")
     parser.add_argument("--max-size", type=int, dest='MAX_IMAGE_SIZE',
                         default=10 * 1024 * 1024 * 1024, help="Maximum size an image is allowed to be")
-    parser.add_argument("--untagged-transition-sec", type=long, dest='UNTAGGED_TRANSITION_SEC',
+    parser.add_argument("--untagged-transition-sec", type=int, dest='UNTAGGED_TRANSITION_SEC',
                         default=7 * 24 * 60 * 60, help="Time that untagged images will spend in each state"
                                                        + "before moving to the next one")
     parser.add_argument("--dead-perms", type=str, dest='DEAD_PERMS',
