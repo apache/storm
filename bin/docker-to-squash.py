@@ -1370,13 +1370,13 @@ def get_all_known_images():
     global HDFS_UNREF_DIR
 
     known_manifest_paths, err, returncode = hdfs_stat(HDFS_MANIFEST_DIR + "/*", "%a %Y %n", False, False, False)
-    known_manifests = [image for image in decode_output(known_manifest_paths).split("\n") if image != "" or None]
+    known_manifests = [image for image in decode_output(known_manifest_paths).split("\n") if image]
 
     unref_manifest_paths, err, returncode = hdfs_stat(HDFS_UNREF_DIR + "/*", "%a %Y %n", False, False, False)
     logging.debug("unref_manifest_paths:\n%s", unref_manifest_paths)
     unref_manifests = []
     if unref_manifest_paths:
-        unref_manifests = [image for image in decode_output(unref_manifest_paths).split("\n") if image != "" or None]
+        unref_manifests = [image for image in decode_output(unref_manifest_paths).split("\n") if image]
     logging.debug("unref_manifests:\n%s", unref_manifests)
 
     unref_manifests_stats_dict = {}
