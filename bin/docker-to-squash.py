@@ -869,10 +869,12 @@ def push_update(args):
     bootstrap = args.bootstrap
 
     local_image_tag_to_hash = None
+    created_local_image_tag_to_hash = False
 
     try:
         working_dir = get_working_dir(args.working_dir, reuse=True)
         local_image_tag_to_hash = os.path.join(working_dir, os.path.basename(image_tag_to_hash))
+        created_local_image_tag_to_hash = not os.path.exists(local_image_tag_to_hash)
         if bootstrap:
             hdfs_dirs = [HDFS_ROOT, HDFS_LAYERS_DIR, HDFS_CONFIG_DIR, HDFS_MANIFEST_DIR, HDFS_UNREF_DIR]
             image_tag_to_hash_path = HDFS_ROOT + "/" + image_tag_to_hash
@@ -935,7 +937,7 @@ def push_update(args):
         atomic_upload_mv_to_hdfs(local_image_tag_to_hash, f"{HDFS_ROOT}/{image_tag_to_hash}",
                                  replication, image_tag_to_hash_hash)
     finally:
-        if local_image_tag_to_hash:
+        if created_local_image_tag_to_hash and local_image_tag_to_hash:
             if os.path.isfile(local_image_tag_to_hash):
                 os.remove(local_image_tag_to_hash)
 

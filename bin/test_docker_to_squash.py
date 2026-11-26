@@ -177,6 +177,47 @@ class Test(TestCase):
 
             self.assertFalse(os.path.exists(skopeo_dir))
 
+    def test_push_update_keeps_existing_tag_file_on_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work_dir = os.path.join(tmp, "dts-work-dir")
+            os.makedirs(work_dir)
+            tag_file = os.path.join(work_dir, "image-tag-to-hash")
+            with open(tag_file, "w") as f:
+                f.write("previous-run")
+
+            push_args = argparse.Namespace(image_tag_to_hash="image-tag-to-hash", replication=1, force=False,
+                                           images_and_tags=["ubuntu:22.04,ubuntu"], bootstrap=False,
+                                           working_dir=work_dir)
+
+            with mock.patch.object(dtsq, "populate_tag_dicts", side_effect=RuntimeError("download failed")):
+                with self.assertRaisesRegex(RuntimeError, "download failed"):
+                    dtsq.push_update(push_args)
+
+            self.assertTrue(os.path.isfile(tag_file))
+            with open(tag_file) as f:
+                self.assertEqual("previous-run", f.read())
+
+    def test_push_update_removes_tag_file_created_this_run_on_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work_dir = os.path.join(tmp, "dts-work-dir")
+            os.makedirs(work_dir)
+            tag_file = os.path.join(work_dir, "image-tag-to-hash")
+
+            def fake_populate(image_tag_to_hash, local_image_tag_to_hash):
+                with open(local_image_tag_to_hash, "w") as f:
+                    f.write("downloaded")
+                raise RuntimeError("download failed")
+
+            push_args = argparse.Namespace(image_tag_to_hash="image-tag-to-hash", replication=1, force=False,
+                                           images_and_tags=["ubuntu:22.04,ubuntu"], bootstrap=False,
+                                           working_dir=work_dir)
+
+            with mock.patch.object(dtsq, "populate_tag_dicts", side_effect=fake_populate):
+                with self.assertRaisesRegex(RuntimeError, "download failed"):
+                    dtsq.push_update(push_args)
+
+            self.assertFalse(os.path.exists(tag_file))
+
     # TODO:
     #  def test_read_image_tag_to_hash(self):
     #     """
