@@ -23,6 +23,7 @@ import org.apache.storm.ICredentialsListener;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
+import org.apache.storm.daemon.worker.MessageTimeoutReporter;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.executor.TupleInfo;
@@ -60,6 +61,8 @@ public class SpoutExecutor extends Executor {
     private final MutableLong emptyEmitStreak;
     private final boolean hasAckers;
     private final SpoutExecutorStats stats;
+    /** Null when the message timeout report is disabled. */
+    private final MessageTimeoutReporter timeoutReporter;
     SpoutOutputCollectorImpl spoutOutputCollector;
     private Integer maxSpoutPending;
     private List<ISpout> spouts;
@@ -82,6 +85,7 @@ public class SpoutExecutor extends Executor {
 
         this.lastActive = new AtomicBoolean(false);
         this.hasAckers = StormCommon.hasAckers(topoConf);
+        this.timeoutReporter = workerData.getMessageTimeoutReporter();
         this.emittedCount = new MutableLong(0);
         this.emptyEmitStreak = new MutableLong(0);
         this.stats = new SpoutExecutorStats(
@@ -125,6 +129,9 @@ public class SpoutExecutor extends Executor {
         this.pending = new RotatingMap<>(2, new RotatingMap.ExpiredCallback<Long, TupleInfo>() {
             @Override
             public void expire(Long key, TupleInfo tupleInfo) {
+                if (timeoutReporter != null) {
+                    timeoutReporter.timedOut(key, tupleInfo.getTaskId(), componentId, tupleInfo.getMessageId());
+                }
                 Long timeDelta = null;
                 if (tupleInfo.getTimestamp() != 0) {
                     timeDelta = Time.deltaMs(tupleInfo.getTimestamp());

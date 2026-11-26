@@ -18,6 +18,7 @@
 
 package org.apache.storm;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,6 +89,21 @@ public class TestConfigValidate {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.PACEMAKER_AUTH_METHOD, "invalid");
         assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf));
+    }
+
+    @Test
+    public void testMessageTimeoutReportAcceptsItsModesAndIsDisabledByDefault() {
+        Map<String, Object> conf = new HashMap<>();
+        for (String mode : List.of("disabled", "timeout-events")) {
+            conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_REPORT, mode);
+            ConfigValidation.validateFields(conf);
+        }
+        for (Object invalid : List.of("timeout-event", "off", true)) {
+            conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_REPORT, invalid);
+            assertThrows(IllegalArgumentException.class, () -> ConfigValidation.validateFields(conf),
+                String.valueOf(invalid));
+        }
+        assertEquals("disabled", Utils.readDefaultConfig().get(Config.TOPOLOGY_MESSAGE_TIMEOUT_REPORT));
     }
 
     @Test
