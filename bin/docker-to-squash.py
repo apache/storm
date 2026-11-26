@@ -239,9 +239,22 @@ def hdfs_stat(file_path, fmt, print_stdout=False, print_stderr=True, raise_on_er
     return out, err, rc
 
 
-def get_working_dir(directory):
+def get_working_dir(directory, reuse=False):
+    """Create the working directory and return its path.
+
+    By default a directory that already exists is not used directly: a fresh
+    "docker-to-squash" subdirectory is created in it instead, because most commands
+    remove their working directory when they finish.
+
+    pull-build and push-update are two halves of one workflow and don't remove the
+    working directory, so they pass reuse=True and both use ``directory`` itself.
+    """
     working_dir = "(undefined)"
     try:
+        if reuse:
+            working_dir = directory
+            os.makedirs(working_dir, exist_ok=True)
+            return working_dir
         if os.path.isdir(directory):
             working_dir = os.path.join(directory, "docker-to-squash")
         else:
@@ -820,10 +833,12 @@ def pull_build(args):
         logging.debug(f"Layers: {layers}")
         logging.debug(f"Config: {config_hash}")
         skopeo_dir = None
+        created_skopeo_dir = False
 
         try:
-            working_dir = get_working_dir(args.working_dir)
+            working_dir = get_working_dir(args.working_dir, reuse=True)
             skopeo_dir = os.path.join(working_dir, image.split("/")[-1])
+            created_skopeo_dir = not os.path.exists(skopeo_dir)
             logging.debug(f"skopeo_dir: {skopeo_dir}")
             skopeo_copy_image(pull_format, image, skopeo_format, skopeo_dir)
 
@@ -835,7 +850,7 @@ def pull_build(args):
                 docker_to_squash(skopeo_dir, layer, working_dir)
 
         except Exception as _:
-            if skopeo_dir and os.path.isdir(skopeo_dir):
+            if created_skopeo_dir and skopeo_dir and os.path.isdir(skopeo_dir):
                 shutil.rmtree(skopeo_dir)
             raise
 
@@ -854,10 +869,12 @@ def push_update(args):
     bootstrap = args.bootstrap
 
     local_image_tag_to_hash = None
+    created_local_image_tag_to_hash = False
 
     try:
-        working_dir = get_working_dir(args.working_dir)
+        working_dir = get_working_dir(args.working_dir, reuse=True)
         local_image_tag_to_hash = os.path.join(working_dir, os.path.basename(image_tag_to_hash))
+        created_local_image_tag_to_hash = not os.path.exists(local_image_tag_to_hash)
         if bootstrap:
             hdfs_dirs = [HDFS_ROOT, HDFS_LAYERS_DIR, HDFS_CONFIG_DIR, HDFS_MANIFEST_DIR, HDFS_UNREF_DIR]
             image_tag_to_hash_path = HDFS_ROOT + "/" + image_tag_to_hash
@@ -920,7 +937,7 @@ def push_update(args):
         atomic_upload_mv_to_hdfs(local_image_tag_to_hash, f"{HDFS_ROOT}/{image_tag_to_hash}",
                                  replication, image_tag_to_hash_hash)
     finally:
-        if local_image_tag_to_hash:
+        if created_local_image_tag_to_hash and local_image_tag_to_hash:
             if os.path.isfile(local_image_tag_to_hash):
                 os.remove(local_image_tag_to_hash)
 
@@ -1671,7 +1688,9 @@ def create_parsers():
 
 def add_parser_default_arguments(parser):
     parser.add_argument("--working-dir", type=str, dest='working_dir', default="dts-work-dir",
-                        help="Name of working directory")
+                        help="Name of working directory. pull-build and push-update reuse this "
+                             "directory as-is so they can share it; other commands create a "
+                             "subdirectory if it already exists")
     parser.add_argument("--skopeo-format", type=str, dest='skopeo_format',
                         default='dir', help="Output format for skopeo copy")
     parser.add_argument("--pull-format", type=str, dest='pull_format',
