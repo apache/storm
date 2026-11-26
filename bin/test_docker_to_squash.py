@@ -79,6 +79,32 @@ class Test(TestCase):
         self.assertEqual(["docker://registry.example.com/team/app:1.0",
                           "docker://registry.example.com/team/app@sha256:amd"], inspected)
 
+    def test_check_dependencies_uses_mksquashfs_from_path(self):
+        """check_dependencies should probe mksquashfs via PATH, not a hard-coded /usr/sbin path."""
+        found = "/usr/bin/mksquashfs"
+        commands = []
+
+        def fake_shell_command(command, *args, **kwargs):
+            commands.append(list(command))
+            return b"", b"", 0
+
+        with mock.patch.object(dtsq.shutil, "which", return_value=found) as which_mock, \
+                mock.patch.object(dtsq, "shell_command", side_effect=fake_shell_command):
+            self.assertEqual(0, dtsq.check_dependencies())
+
+        which_mock.assert_called_with("mksquashfs")
+        mksquashfs_cmds = [cmd for cmd in commands if cmd and cmd[0].endswith("mksquashfs")]
+        self.assertEqual([[found, "-version"]], mksquashfs_cmds)
+        self.assertFalse(any(cmd and cmd[0] == "/usr/sbin/mksquashfs" for cmd in commands))
+
+    def test_check_dependencies_fails_when_mksquashfs_missing(self):
+        def fake_shell_command(command, *args, **kwargs):
+            return b"", b"", 0
+
+        with mock.patch.object(dtsq.shutil, "which", return_value=None), \
+                mock.patch.object(dtsq, "shell_command", side_effect=fake_shell_command):
+            self.assertEqual(1, dtsq.check_dependencies())
+
     # TODO:
     #  def test_read_image_tag_to_hash(self):
     #     """

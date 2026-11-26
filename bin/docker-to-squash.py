@@ -1734,11 +1734,14 @@ def check_dependencies():
         return 1
 
     try:
-        command = ["/usr/sbin/mksquashfs", "-version"]
+        mksquashfs = shutil.which("mksquashfs")
+        if mksquashfs is None:
+            raise FileNotFoundError("mksquashfs not found on PATH")
+        command = [mksquashfs, "-version"]
         shell_command(command, False, False, True)
     except Exception as _:
-        logging.error("Could not find /usr/sbin/mksquashfs. Make sure squashfs-tools is installed " +
-                      "and /usr/sbin/mksquashfs is present on the the PATH")
+        logging.error("Could not find mksquashfs. Make sure squashfs-tools is installed " +
+                      "and mksquashfs is present on the PATH")
         return 1
 
     try:
